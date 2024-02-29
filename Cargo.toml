@@ -9,3 +9,5 @@ edition = "2021"
 gpui = { git = "https://github.com/zed-industries/zed" }
 assets = { git = "https://github.com/zed-industries/zed" }
 smallvec = "1.6"
+palette = "0.7.5"
+uuid = { version = "1.7.0", features = ["v4"] }

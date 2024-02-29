@@ -2,11 +2,13 @@ use assets::Assets;
 use gpui::{
     App, AppContext, AssetSource, Bounds, Point, Size, VisualContext, WindowBounds, WindowOptions,
 };
+use show::Show;
 use ui::{
     pool::{Pool, PoolKind},
     pool_grid::PoolGrid,
 };
 
+pub mod show;
 pub mod ui;
 
 fn main() {
@@ -23,27 +25,30 @@ fn main() {
             ])
             .unwrap();
 
-        let window_options = WindowOptions {
-            bounds: WindowBounds::Fixed(Bounds {
-                origin: Point {
-                    x: 500.0.into(),
-                    y: 350.0.into(),
-                },
-                size: Size {
-                    width: 1280.0.into(),
-                    height: 720.0.into(),
-                },
-            }),
-            ..Default::default()
-        };
+        cx.set_global(Show::new());
 
-        cx.open_window(window_options, |cx| {
-            let mut pool_grid = PoolGrid::new(5, 10, cx);
+        cx.open_window(
+            WindowOptions {
+                bounds: WindowBounds::Fixed(Bounds {
+                    origin: Point {
+                        x: 500.0.into(),
+                        y: 350.0.into(),
+                    },
+                    size: Size {
+                        width: 1280.0.into(),
+                        height: 720.0.into(),
+                    },
+                }),
+                ..Default::default()
+            },
+            |cx| {
+                let mut pool_grid = PoolGrid::new(5, 10, cx);
 
-            pool_grid.add_pool(cx.new_view(|cx| Pool::new(PoolKind::Color, 2, 8, 0, 0, cx)));
-            pool_grid.add_pool(cx.new_view(|cx| Pool::new(PoolKind::Group, 2, 8, 0, 2, cx)));
+                pool_grid.add_pool(cx.new_view(|cx| Pool::new(PoolKind::Color, 2, 8, 0, 0, cx)));
+                pool_grid.add_pool(cx.new_view(|cx| Pool::new(PoolKind::Group, 2, 8, 0, 2, cx)));
 
-            cx.new_view(|_| pool_grid)
-        });
+                cx.new_view(|_| pool_grid)
+            },
+        );
     })
 }
