@@ -9,11 +9,11 @@ impl<D: GridDelegate> Grid<D> {
         Self { delegate }
     }
 
-    fn render_rows(&self) -> Vec<impl IntoElement> {
+    fn render_rows(&self, cx: &mut ViewContext<Self>) -> Vec<impl IntoElement> {
         (0..self.delegate.rows())
             .map(|r| {
                 let row = (0..self.delegate.cols()).map(|c| {
-                    let cell = self.delegate.render_cell(r, c);
+                    let cell = self.delegate.render_cell(r, c, cx);
 
                     div()
                         .child(cell)
@@ -31,8 +31,8 @@ impl<D: GridDelegate> Grid<D> {
 }
 
 impl<D: GridDelegate> Render for Grid<D> {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let rows = self.render_rows();
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        let rows = self.render_rows(cx);
 
         div().child(
             div()
@@ -56,5 +56,5 @@ pub trait GridDelegate: Sized + 'static {
 
     fn cols(&self) -> usize;
 
-    fn render_cell(&self, row: usize, col: usize) -> Self::Cell;
+    fn render_cell(&self, row: usize, col: usize, cx: &mut ViewContext<Grid<Self>>) -> Self::Cell;
 }

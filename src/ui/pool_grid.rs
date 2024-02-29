@@ -1,5 +1,5 @@
 use gpui::{
-    div, rgb, white, IntoElement, ParentElement, Render, RenderOnce, Styled, View, ViewContext,
+    div, px, rgb, white, IntoElement, ParentElement, Render, RenderOnce, Styled, View, ViewContext,
     VisualContext, WindowContext,
 };
 
@@ -19,7 +19,7 @@ impl PoolGrid {
     pub const GRID_SIZE: usize = 80;
     pub const GRID_GAP: usize = 1;
 
-    pub fn new(cx: &mut WindowContext, rows: usize, cols: usize) -> Self {
+    pub fn new(rows: usize, cols: usize, cx: &mut WindowContext) -> Self {
         let delegate = PoolGridDelegate::new(rows, cols);
         let grid = cx.new_view(|_| Grid::new(delegate));
 
@@ -45,8 +45,15 @@ impl PoolGrid {
 }
 
 impl Render for PoolGrid {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let pool_views = self.pools.iter().cloned();
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        let pool_views = self.pools.iter().map(|pool| {
+            div()
+                .child(pool.clone())
+                .top(px(pool.model.read(cx).y() as f32
+                    * (PoolGrid::GRID_SIZE + PoolGrid::GRID_GAP) as f32))
+                .left(px(pool.model.read(cx).x() as f32
+                    * (PoolGrid::GRID_SIZE + PoolGrid::GRID_GAP) as f32))
+        });
 
         div()
             .relative()
@@ -87,7 +94,12 @@ impl GridDelegate for PoolGridDelegate {
         self.cols
     }
 
-    fn render_cell(&self, _row: usize, _col: usize) -> Self::Cell {
+    fn render_cell(
+        &self,
+        _row: usize,
+        _col: usize,
+        _cx: &mut ViewContext<Grid<Self>>,
+    ) -> Self::Cell {
         GridCell
     }
 }
