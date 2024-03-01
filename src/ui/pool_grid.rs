@@ -1,6 +1,6 @@
 use gpui::{
-    div, px, rgb, white, IntoElement, ParentElement, Render, RenderOnce, Styled, View, ViewContext,
-    VisualContext, WindowContext,
+    div, px, rgb, white, AnyElement, IntoElement, ParentElement, Render, RenderOnce, Styled, View,
+    ViewContext, VisualContext, WindowContext,
 };
 
 use super::{
@@ -76,8 +76,6 @@ impl PoolGridDelegate {
 }
 
 impl GridDelegate for PoolGridDelegate {
-    type Cell = GridCell;
-
     fn cell_size(&self) -> usize {
         PoolGrid::GRID_SIZE
     }
@@ -99,8 +97,8 @@ impl GridDelegate for PoolGridDelegate {
         _row: usize,
         _col: usize,
         _cx: &mut ViewContext<Grid<Self>>,
-    ) -> Self::Cell {
-        GridCell
+    ) -> AnyElement {
+        GridCell.into_any_element()
     }
 }
 

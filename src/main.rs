@@ -2,7 +2,8 @@ use assets::Assets;
 use gpui::{
     App, AppContext, AssetSource, Bounds, Point, Size, VisualContext, WindowBounds, WindowOptions,
 };
-use show::Show;
+use palette::Srgb;
+use show::{LedGroup, Show};
 use ui::{
     pool::{Pool, PoolKind},
     pool_grid::PoolGrid,
@@ -44,8 +45,21 @@ fn main() {
             |cx| {
                 let mut pool_grid = PoolGrid::new(5, 10, cx);
 
-                pool_grid.add_pool(cx.new_view(|cx| Pool::new(PoolKind::Color, 2, 8, 0, 0, cx)));
-                pool_grid.add_pool(cx.new_view(|cx| Pool::new(PoolKind::Group, 2, 8, 0, 2, cx)));
+                let mut pool = Pool::new(PoolKind::Color, 2, 8, 0, 0, cx);
+                let color = cx.global_mut::<Show>().add_color(Srgb::new(0.8, 0.3, 0.3));
+                pool.update(cx, |pool, cx| {
+                    pool.insert_cell(2, color, cx);
+                });
+                pool_grid.add_pool(pool);
+
+                let mut pool = Pool::new(PoolKind::Group, 2, 6, 0, 3, cx);
+                let group = cx
+                    .global_mut::<Show>()
+                    .add_group(LedGroup::new(vec![0, 1, 2, 3]));
+                pool.update(cx, |pool, cx| {
+                    pool.insert_cell(2, group, cx);
+                });
+                pool_grid.add_pool(pool);
 
                 cx.new_view(|_| pool_grid)
             },

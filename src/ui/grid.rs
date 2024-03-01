@@ -1,4 +1,7 @@
-use gpui::{div, px, IntoElement, ParentElement, Render, Styled, ViewContext};
+use gpui::{
+    div, px, AnyElement, EventEmitter, InteractiveElement, IntoElement, ParentElement, Render,
+    Styled, ViewContext,
+};
 
 pub struct Grid<D: GridDelegate> {
     pub delegate: D,
@@ -13,12 +16,24 @@ impl<D: GridDelegate> Grid<D> {
         (0..self.delegate.rows())
             .map(|r| {
                 let row = (0..self.delegate.cols()).map(|c| {
-                    let cell = self.delegate.render_cell(r, c, cx);
+                    let cell = match (r, c) {
+                        (0, 0) => self.delegate.render_first_cell(cx),
+                        _ => self.delegate.render_cell(r, c, cx),
+                    };
 
                     div()
                         .child(cell)
                         .w(px(self.delegate.cell_size() as f32))
                         .h(px(self.delegate.cell_size() as f32))
+                        .on_mouse_down(
+                            gpui::MouseButton::Left,
+                            cx.listener(move |_, _, cx| {
+                                cx.stop_propagation();
+                                cx.prevent_default();
+
+                                cx.emit(GridEvent::CellClicked { row: r, col: c });
+                            }),
+                        )
                 });
                 div()
                     .children(row)
@@ -46,8 +61,6 @@ impl<D: GridDelegate> Render for Grid<D> {
 }
 
 pub trait GridDelegate: Sized + 'static {
-    type Cell: IntoElement;
-
     fn cell_size(&self) -> usize;
 
     fn grid_gap(&self) -> usize;
@@ -56,5 +69,15 @@ pub trait GridDelegate: Sized + 'static {
 
     fn cols(&self) -> usize;
 
-    fn render_cell(&self, row: usize, col: usize, cx: &mut ViewContext<Grid<Self>>) -> Self::Cell;
+    fn render_cell(&self, row: usize, col: usize, cx: &mut ViewContext<Grid<Self>>) -> AnyElement;
+
+    fn render_first_cell(&self, cx: &mut ViewContext<Grid<Self>>) -> AnyElement {
+        self.render_cell(0, 0, cx)
+    }
+}
+
+impl<D: GridDelegate> EventEmitter<GridEvent> for Grid<D> {}
+
+pub enum GridEvent {
+    CellClicked { row: usize, col: usize },
 }
