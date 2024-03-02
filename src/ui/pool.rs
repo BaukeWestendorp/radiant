@@ -42,19 +42,17 @@ impl Pool {
             let this = this.clone();
             move |grid, event, cx| match event {
                 GridEvent::CellClicked { row, col } => match (row, col) {
-                    (0, 0) => this.read(cx).open_pool_settings(),
+                    (0, 0) => this.update(cx, |this, _| {
+                        this.open_pool_settings();
+                    }),
                     _ => {
                         this.update(cx, |this, cx| {
-                            let cell_ix = row * grid.read(cx).delegate.cols() + col;
-                            let object = match this.kind {
-                                PoolKind::Color => {
-                                    cx.global_mut::<Show>().add_color(Srgb::default())
-                                }
-                                PoolKind::Group => {
-                                    cx.global_mut::<Show>().add_group(LedGroup::new(vec![]))
-                                }
-                            };
-                            this.insert_cell(cell_ix, object, cx);
+                            let cell_is_empty = grid.read(cx).delegate.cell_is_empty(*row, *col);
+                            if cell_is_empty {
+                                this.handle_empty_cell_clicked(*row, *col, cx);
+                            } else {
+                                this.handle_pool_object_clicked(*row, *col, cx);
+                            }
                         });
                     }
                 },
@@ -79,8 +77,21 @@ impl Pool {
         });
     }
 
-    fn open_pool_settings(&self) {
+    fn open_pool_settings(&mut self) {
         todo!("Show pool settings");
+    }
+
+    fn handle_empty_cell_clicked(&mut self, row: usize, col: usize, cx: &mut ViewContext<Self>) {
+        let cell_ix = row * self.grid.read(cx).delegate.cols() + col;
+        let object = match self.kind {
+            PoolKind::Color => cx.global_mut::<Show>().add_color(Srgb::default()),
+            PoolKind::Group => cx.global_mut::<Show>().add_group(LedGroup::new(vec![])),
+        };
+        self.insert_cell(cell_ix, object, cx);
+    }
+
+    fn handle_pool_object_clicked(&mut self, row: usize, col: usize, cx: &mut ViewContext<Self>) {
+        println!("Pool object clicked: ({}, {})", row, col);
     }
 }
 
@@ -109,6 +120,11 @@ impl PoolGridDelegate {
 
     pub fn insert_cell(&mut self, cell_ix: usize, object_id: ObjectId) {
         self.objects.insert(cell_ix, object_id);
+    }
+
+    pub fn cell_is_empty(&self, row: usize, col: usize) -> bool {
+        let cell_ix = row * self.cols + col;
+        self.objects.get(&cell_ix).is_none()
     }
 }
 
