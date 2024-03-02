@@ -3722,6 +3722,7 @@ dependencies = [
  "assets",
  "gpui",
  "serde",
+ "serde_json",
  "smallvec",
 ]
 
