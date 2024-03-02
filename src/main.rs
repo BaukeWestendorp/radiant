@@ -27,7 +27,7 @@ fn main() {
             .unwrap();
 
         let mut show = Show::new();
-        let main_layout_id = show.add_layout(Layout::new("Main Layout"));
+        let main_layout_id = show.add_layout(Layout::new());
         let main_layout = show.layout_mut(main_layout_id);
         main_layout.add_window(Window::new(WindowKind::ColorPreset(
             ColorPresetWindow::new(),

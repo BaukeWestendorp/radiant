@@ -1,30 +1,18 @@
-use gpui::{
-    div, rgb, white, IntoElement, ParentElement, Render, SharedString, Styled, ViewContext,
-};
+use gpui::{div, rgb, white, IntoElement, ParentElement, Render, Styled, ViewContext};
 use serde::{Deserialize, Serialize};
 
 use super::window::Window;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Layout {
-    label: SharedString,
     windows: Vec<Window>,
 }
 
 impl Layout {
-    pub fn new(label: &str) -> Self {
+    pub fn new() -> Self {
         Self {
-            label: label.to_string().into(),
             windows: Vec::new(),
         }
-    }
-
-    pub fn label(&self) -> &str {
-        &self.label
-    }
-
-    pub fn set_label(&mut self, label: &str) {
-        self.label = label.to_string().into();
     }
 
     pub fn add_window(&mut self, window: Window) {
@@ -35,24 +23,19 @@ impl Layout {
         &self.windows
     }
 
-    pub fn render_header(&self) -> impl IntoElement {
+    pub fn render_content(&self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
-            .child(self.label.to_string())
-            .flex()
-            .items_center()
-            .w_full()
-            .px_3()
-            .h_10()
+            .children(self.windows.iter().map(|window| window.get_view(cx)))
+            .size_full()
+            .bg(rgb(0x202020))
+            .p_2()
     }
 }
 
 impl Render for Layout {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let content = div().size_full().bg(rgb(0x202020));
-
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
-            .child(self.render_header())
-            .child(content)
+            .child(self.render_content(cx))
             .flex()
             .flex_col()
             .size_full()
