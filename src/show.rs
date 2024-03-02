@@ -1,72 +1,66 @@
 use std::collections::HashMap;
 
 use gpui::Global;
-use palette::Srgb;
-use uuid::Uuid;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+use crate::{
+    dmx::color::DmxColor,
+    ui::layout::{Layout, LayoutId},
+};
+
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Show {
-    colors: HashMap<ObjectId, Srgb>,
-    groups: HashMap<ObjectId, LedGroup>,
+    layouts: HashMap<LayoutId, Layout>,
+    presets: Presets,
 }
 
 impl Show {
     pub fn new() -> Self {
         Self {
-            colors: HashMap::new(),
-            groups: HashMap::new(),
+            layouts: HashMap::new(),
+            presets: Presets::new(),
         }
     }
 
-    pub fn add_color(&mut self, color: Srgb) -> ObjectId {
-        let id = ObjectId::new();
-        self.colors.insert(id, color);
+    pub fn add_layout(&mut self, layout: Layout) -> LayoutId {
+        let id = self.get_new_layout_id();
+        self.layouts.insert(id, layout);
         id
     }
 
-    pub fn add_group(&mut self, group: LedGroup) -> ObjectId {
-        let id = ObjectId::new();
-        self.groups.insert(id, group);
-        id
+    fn get_new_layout_id(&self) -> LayoutId {
+        // TODO: This is not a good way to get a new id. This only works if you can't remove layouts.
+        LayoutId(self.layouts.len() as usize)
     }
 
-    pub fn get_color(&self, id: &ObjectId) -> Option<&Srgb> {
-        self.colors.get(id)
+    pub fn layout(&self, id: LayoutId) -> &Layout {
+        self.layouts.get(&id).unwrap()
     }
 
-    pub fn get_group(&self, id: &ObjectId) -> Option<&LedGroup> {
-        self.groups.get(id)
+    pub fn layout_mut(&mut self, id: LayoutId) -> &mut Layout {
+        self.layouts.get_mut(&id).unwrap()
     }
 }
 
 impl Global for Show {}
 
-#[derive(Debug, Clone)]
-pub struct LedGroup {
-    led_ids: Vec<LedIndex>,
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Presets {
+    pub colors: HashMap<ColorPresetId, ColorPreset>,
 }
 
-impl LedGroup {
-    pub fn new(led_ids: Vec<LedIndex>) -> Self {
-        Self { led_ids }
-    }
-
-    pub fn led_ids(&self) -> &[LedIndex] {
-        &self.led_ids
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct ObjectId(Uuid);
-
-impl ObjectId {
+impl Presets {
     pub fn new() -> Self {
-        Self(Uuid::new_v4())
-    }
-
-    pub fn uuid(&self) -> &Uuid {
-        &self.0
+        Self {
+            colors: HashMap::new(),
+        }
     }
 }
 
-pub type LedIndex = usize;
+#[derive(Clone, Serialize, Deserialize)]
+pub struct ColorPreset {
+    pub color: DmxColor,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ColorPresetId(pub(crate) usize);

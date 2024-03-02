@@ -2,13 +2,13 @@ use assets::Assets;
 use gpui::{
     App, AppContext, AssetSource, Bounds, Point, Size, VisualContext, WindowBounds, WindowOptions,
 };
-use palette::Srgb;
-use show::{LedGroup, Show};
+use show::Show;
 use ui::{
-    pool::{Pool, PoolKind},
-    pool_grid::PoolGrid,
+    layout::Layout,
+    window::{ColorPresetWindow, Window, WindowKind},
 };
 
+pub mod dmx;
 pub mod show;
 pub mod ui;
 
@@ -26,7 +26,13 @@ fn main() {
             ])
             .unwrap();
 
-        cx.set_global(Show::new());
+        let mut show = Show::new();
+        let main_layout_id = show.add_layout(Layout::new("Main Layout"));
+        let main_layout = show.layout_mut(main_layout_id);
+        main_layout.add_window(Window::new(WindowKind::ColorPreset(
+            ColorPresetWindow::new(),
+        )));
+        cx.set_global(show);
 
         cx.open_window(
             WindowOptions {
@@ -43,25 +49,10 @@ fn main() {
                 ..Default::default()
             },
             |cx| {
-                let mut pool_grid = PoolGrid::new(5, 10, cx);
-
-                let pool = Pool::new(PoolKind::Color, 2, 8, 0, 0, cx);
-                let color = cx.global_mut::<Show>().add_color(Srgb::new(0.8, 0.3, 0.3));
-                pool.update(cx, |pool, cx| {
-                    pool.insert_cell(2, color, cx);
-                });
-                pool_grid.add_pool(pool);
-
-                let pool = Pool::new(PoolKind::Group, 2, 6, 0, 3, cx);
-                let group = cx
-                    .global_mut::<Show>()
-                    .add_group(LedGroup::new(vec![0, 1, 2, 3]));
-                pool.update(cx, |pool, cx| {
-                    pool.insert_cell(2, group, cx);
-                });
-                pool_grid.add_pool(pool);
-
-                cx.new_view(|_| pool_grid)
+                cx.new_view(|cx| {
+                    let main_layout = cx.global::<Show>().layout(main_layout_id);
+                    main_layout.clone()
+                })
             },
         );
     })
