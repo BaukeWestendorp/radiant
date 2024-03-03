@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use super::window::Window;
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Layout {
     windows: Vec<Window>,
 }
@@ -23,7 +23,7 @@ impl Layout {
         &self.windows
     }
 
-    pub fn render_content(&self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render_content(&self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .children(self.windows.iter().map(|window| window.get_view(cx)))
             .size_full()
@@ -43,6 +43,3 @@ impl Render for Layout {
             .font("Zed Sans")
     }
 }
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct LayoutId(pub(crate) usize);

@@ -7,14 +7,18 @@ pub struct DmxColor {
     pub blue: u8,
 }
 
-impl DmxColor {}
+impl DmxColor {
+    pub fn new(red: u8, green: u8, blue: u8) -> Self {
+        Self { red, green, blue }
+    }
+}
 
-impl Into<gpui::Rgba> for DmxColor {
-    fn into(self) -> gpui::Rgba {
+impl From<DmxColor> for gpui::Rgba {
+    fn from(value: DmxColor) -> Self {
         gpui::Rgba {
-            r: self.red as f32 / 255.0,
-            g: self.green as f32 / 255.0,
-            b: self.blue as f32 / 255.0,
+            r: value.red as f32 / 255.0,
+            g: value.green as f32 / 255.0,
+            b: value.blue as f32 / 255.0,
             a: 1.0,
         }
     }

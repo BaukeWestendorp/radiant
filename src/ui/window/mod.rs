@@ -5,7 +5,7 @@ pub mod color_preset_window;
 
 pub use color_preset_window::ColorPresetWindow;
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Window {
     pub kind: WindowKind,
 }
@@ -44,7 +44,7 @@ impl Window {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum WindowKind {
     ColorPreset(ColorPresetWindow),
 }
