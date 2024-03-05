@@ -1,20 +1,34 @@
-use gpui::{div, rgb, IntoElement, ParentElement, Render, Styled, ViewContext, VisualContext};
-use serde::{Deserialize, Serialize};
+use gpui::{
+    div, rgb, IntoElement, ParentElement, Render, Styled, View, ViewContext, VisualContext,
+    WindowContext,
+};
 
-use crate::show::Show;
+use crate::show::{ProgrammerState, ShowModel};
 
 use super::layout::Layout;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone)]
 pub struct Screen {
     layout: Layout,
+    programmer_state: ProgrammerState,
 }
 
 impl Screen {
-    pub fn new() -> Self {
-        Screen {
-            layout: Layout::new(),
-        }
+    pub fn build(cx: &mut WindowContext) -> View<Self> {
+        cx.new_view(|cx| {
+            let show = ShowModel::global(cx).clone();
+            let programmer_state = show.inner.read(cx).programmer_state.clone();
+            cx.observe(&show.inner, |this: &mut Self, model, cx| {
+                this.programmer_state = model.read(cx).programmer_state.clone();
+                cx.notify();
+            })
+            .detach();
+
+            Screen {
+                layout: Layout::new(),
+                programmer_state,
+            }
+        })
     }
 
     pub fn layout(&self) -> &Layout {
@@ -28,25 +42,23 @@ impl Screen {
 
 impl Render for Screen {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let show = cx.global::<Show>();
-
         let status_bar = div()
+            .flex()
+            .justify_center()
+            .bg(rgb(0x303030))
+            .p_1()
+            .h_10()
+            .text_xs()
             .child(format!(
                 "Programmer State: {}",
-                show.programmer_state().to_string()
-            ))
-            .flex()
-            .bg(rgb(0x303030))
-            .text_xs()
-            .justify_center()
-            .p_1()
-            .h_10();
+                self.programmer_state.to_string()
+            ));
 
         div()
-            .child(cx.new_view(|_| self.layout.clone()))
-            .child(status_bar)
             .flex()
             .flex_col()
             .size_full()
+            .child(cx.new_view(|_| self.layout.clone()))
+            .child(status_bar)
     }
 }

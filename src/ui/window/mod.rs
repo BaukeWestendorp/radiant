@@ -1,11 +1,10 @@
 use gpui::{div, rgb, IntoElement, ParentElement, Styled, VisualContext, WindowContext};
-use serde::{Deserialize, Serialize};
 
 pub mod color_preset_window;
 
 pub use color_preset_window::ColorPresetWindow;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone)]
 pub struct Window {
     pub kind: WindowKind,
 }
@@ -44,7 +43,7 @@ impl Window {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone)]
 pub enum WindowKind {
     ColorPreset(ColorPresetWindow),
 }

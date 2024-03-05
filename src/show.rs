@@ -1,124 +1,109 @@
-use std::collections::HashMap;
-
-use gpui::{Global, SharedString};
+use gpui::{
+    div, AppContext, Context, FocusHandle, FocusableView, Global, InteractiveElement, IntoElement,
+    Model, ParentElement, Render, View, ViewContext, VisualContext, WindowContext,
+};
 use serde::{Deserialize, Serialize};
 
-use crate::{dmx::color::DmxColor, ui::screen::Screen};
+use crate::{presets::Presets, ui::screen::Screen};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Show {
-    screen: Screen,
-    presets: Presets,
+pub mod cmd {
+    use gpui::actions;
 
-    #[serde(skip_serializing)]
-    programmer_state: ProgrammerState,
+    actions!(cmd, [Store, Clear]);
 }
 
-impl Show {
-    pub fn new() -> Self {
-        Self {
-            screen: Screen::new(),
+#[derive(Clone)]
+pub struct Show {
+    pub presets: Presets,
+    pub programmer_state: ProgrammerState,
+}
+
+#[derive(Clone)]
+pub struct ShowModel {
+    pub inner: Model<Show>,
+}
+
+impl ShowModel {
+    pub fn init(cx: &mut WindowContext) {
+        let inner = cx.new_model(|_cx| Show {
             presets: Presets::new(),
             programmer_state: ProgrammerState::default(),
-        }
+        });
+
+        let this = ShowModel { inner };
+
+        cx.set_global(this);
     }
 
-    pub fn screen(&self) -> &Screen {
-        &self.screen
+    pub fn update(cx: &mut WindowContext, f: impl FnOnce(&mut Self, &mut WindowContext)) {
+        cx.update_global::<ShowModel, _>(|mut this, cx| f(&mut this, cx));
     }
 
-    pub fn screen_mut(&mut self) -> &mut Screen {
-        &mut self.screen
-    }
-
-    pub fn presets(&self) -> &Presets {
-        &self.presets
-    }
-
-    pub fn presets_mut(&mut self) -> &mut Presets {
-        &mut self.presets
-    }
-
-    pub fn programmer_state(&self) -> ProgrammerState {
-        self.programmer_state
-    }
-
-    pub fn set_programmer_state(&mut self, programmer_state: ProgrammerState) {
-        self.programmer_state = programmer_state;
+    pub fn global(cx: &AppContext) -> &Self {
+        cx.global()
     }
 }
 
-impl Global for Show {}
+impl Global for ShowModel {}
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Presets {
-    colors: HashMap<ColorPresetId, ColorPreset>,
+#[derive(Clone)]
+pub struct ShowView {
+    screen: View<Screen>,
+    focus_handle: FocusHandle,
 }
 
-impl Presets {
-    pub fn new() -> Self {
-        Self {
-            colors: HashMap::new(),
-        }
+impl ShowView {
+    pub fn build(cx: &mut WindowContext) -> View<Self> {
+        cx.new_view(|cx| {
+            let focus_handle = cx.focus_handle();
+
+            let screen = Screen::build(cx);
+
+            Self {
+                screen,
+                focus_handle,
+            }
+        })
     }
 
-    pub fn add_color_preset(&mut self, color_preset: ColorPreset) -> ColorPresetId {
-        let id = self.get_new_color_id();
-        self.colors.insert(id, color_preset);
-        id
+    pub fn store_command(&mut self, _action: &cmd::Store, cx: &mut ViewContext<Self>) {
+        self.update_programmer_state(ProgrammerState::Store, cx)
     }
 
-    pub fn color_preset(&self, id: ColorPresetId) -> &ColorPreset {
-        self.colors.get(&id).unwrap()
+    pub fn clear_command(&mut self, _action: &cmd::Clear, cx: &mut ViewContext<Self>) {
+        self.update_programmer_state(ProgrammerState::Normal, cx)
     }
 
-    pub fn color_preset_mut(&mut self, id: ColorPresetId) -> &mut ColorPreset {
-        self.colors.get_mut(&id).unwrap()
-    }
-
-    pub fn color_presets(&self) -> impl Iterator<Item = (ColorPresetId, &ColorPreset)> {
-        self.colors.iter().map(|(id, preset)| (*id, preset))
-    }
-
-    fn get_new_color_id(&self) -> ColorPresetId {
-        // TODO: This is not a good way to get a new id. This only works if you can't remove colors.
-        ColorPresetId(self.colors.len() as usize)
-    }
-}
-
-pub trait Preset {
-    fn label(&self) -> &str;
-
-    fn set_label(&mut self, label: &str);
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ColorPreset {
-    label: SharedString,
-    pub color: DmxColor,
-}
-
-impl ColorPreset {
-    pub fn new(label: &str, color: DmxColor) -> Self {
-        Self {
-            label: label.to_string().into(),
-            color,
-        }
+    fn update_programmer_state(
+        &mut self,
+        programmer_state: ProgrammerState,
+        cx: &mut ViewContext<Self>,
+    ) {
+        ShowModel::update(cx, |model, cx| {
+            model.inner.update(cx, |show, cx| {
+                show.programmer_state = programmer_state;
+                cx.notify();
+            })
+        });
     }
 }
 
-impl Preset for ColorPreset {
-    fn label(&self) -> &str {
-        &self.label
-    }
-
-    fn set_label(&mut self, label: &str) {
-        self.label = label.to_string().into();
+impl FocusableView for ShowView {
+    fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
+        self.focus_handle.clone()
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct ColorPresetId(pub(crate) usize);
+impl Render for ShowView {
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        div()
+            .track_focus(&self.focus_handle)
+            .key_context("Show")
+            .on_action(cx.listener(Self::store_command))
+            .on_action(cx.listener(Self::clear_command))
+            .child(self.screen.clone())
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum ProgrammerState {

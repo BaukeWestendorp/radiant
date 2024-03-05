@@ -1,9 +1,8 @@
 use gpui::{div, rgb, white, IntoElement, ParentElement, Render, Styled, ViewContext};
-use serde::{Deserialize, Serialize};
 
 use super::window::Window;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone)]
 pub struct Layout {
     windows: Vec<Window>,
 }
