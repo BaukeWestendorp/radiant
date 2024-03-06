@@ -25,7 +25,10 @@ fn main() {
             ])
             .unwrap();
 
-        cx.bind_keys([KeyBinding::new("s", cmd::Store, Some("Show"))]);
+        cx.bind_keys([
+            KeyBinding::new("s", cmd::Store, Some("Show")),
+            KeyBinding::new("escape", cmd::Clear, Some("Show")),
+        ]);
 
         cx.open_window(
             WindowOptions {
