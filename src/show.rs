@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display};
+use std::fmt::Display;
 
 use gpui::{
     div, rgb, white, AppContext, Context, FocusHandle, FocusableView, Global, InteractiveElement,
@@ -6,7 +6,7 @@ use gpui::{
     WindowContext,
 };
 
-use crate::presets::Presets;
+use crate::{layout::Layout, presets::Presets};
 
 use super::screen::{Screen, ScreenView};
 
@@ -20,7 +20,7 @@ pub mod cmd {
 pub struct Show {
     pub presets: Presets,
     pub programmer_state: ProgrammerState,
-    screens: HashMap<ScreenId, Screen>,
+    screen: Screen,
 }
 
 impl Show {
@@ -28,7 +28,9 @@ impl Show {
         Self {
             presets: Presets::new(),
             programmer_state: ProgrammerState::default(),
-            screens: HashMap::new(),
+            screen: Screen {
+                layout: Layout { windows: vec![] },
+            },
         }
     }
 
@@ -41,29 +43,6 @@ impl Show {
         f: impl FnOnce(&mut Show, &mut ViewContext<V>),
     ) {
         cx.update_global::<Show, _>(f);
-    }
-
-    pub fn add_screen(&mut self, screen: Screen) -> ScreenId {
-        let id = self.get_new_screen_id();
-        self.screens.insert(id.clone(), screen);
-        id
-    }
-
-    pub fn get_screen(&self, id: &ScreenId) -> Option<&Screen> {
-        self.screens.get(id)
-    }
-
-    pub fn get_screen_mut(&mut self, id: &ScreenId) -> Option<&mut Screen> {
-        self.screens.get_mut(id)
-    }
-
-    pub fn screens(&self) -> &HashMap<ScreenId, Screen> {
-        &self.screens
-    }
-
-    fn get_new_screen_id(&self) -> ScreenId {
-        // TODO: This is not a good way to get a new id. This only works if you can't remove colors.
-        ScreenId(self.screens.len())
     }
 }
 
@@ -89,7 +68,7 @@ impl Display for ProgrammerState {
 }
 
 pub struct ShowView {
-    screens: Vec<Model<Screen>>,
+    screen: Model<Screen>,
     programmer_state: ProgrammerState,
 
     focus_handle: FocusHandle,
@@ -104,18 +83,18 @@ impl FocusableView for ShowView {
 impl ShowView {
     pub fn build(cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
-            let screens = Self::get_screens(cx);
-
             let focus_handle = cx.focus_handle();
 
             let this = Self {
-                screens,
+                screen: cx.new_model(|cx| Show::global(cx).screen.clone()),
                 programmer_state: Show::global(cx).programmer_state,
                 focus_handle,
             };
 
             cx.observe_global::<Show>(move |this: &mut Self, cx| {
-                this.screens = Self::get_screens(cx);
+                this.screen.update(cx, |screen, cx| {
+                    *screen = Show::global(cx).screen.clone();
+                });
                 this.programmer_state = Show::global(cx).programmer_state;
                 cx.notify();
             })
@@ -123,15 +102,6 @@ impl ShowView {
 
             this
         })
-    }
-
-    fn get_screens(cx: &mut AppContext) -> Vec<Model<Screen>> {
-        Show::global(cx)
-            .screens()
-            .clone()
-            .into_iter()
-            .map(|(_id, screen)| cx.new_model(|_cx| screen))
-            .collect()
     }
 
     fn cmd_store(&mut self, _action: &cmd::Store, cx: &mut ViewContext<Self>) {
@@ -163,6 +133,8 @@ impl Render for ShowView {
             .items_center()
             .bg(rgb(0x2a2a2a));
 
+        let screen = ScreenView::build(self.screen.clone(), cx);
+
         div()
             .track_focus(&self.focus_handle)
             .key_context("Show")
@@ -170,11 +142,7 @@ impl Render for ShowView {
             .on_action(cx.listener(Self::cmd_clear))
             .font("Zed Sans")
             .text_color(white())
-            .children({
-                self.screens
-                    .iter()
-                    .map(|screen| ScreenView::build(screen.clone(), cx))
-            })
+            .child(screen)
             .child(status_bar)
     }
 }
