@@ -1,15 +1,15 @@
 use assets::Assets;
 use gpui::{
-    App, AppContext, AssetSource, Bounds, Context, KeyBinding, Point, Size, WindowBounds,
-    WindowOptions,
+    App, AppContext, AssetSource, Bounds, KeyBinding, Point, Size, WindowBounds, WindowOptions,
 };
-use show::Show;
-use ui::show::ShowView;
+use show::{cmd, Show, ShowView};
 
 pub mod dmx;
+pub mod layout;
 pub mod presets;
+pub mod screen;
 pub mod show;
-pub mod ui;
+pub mod window;
 
 fn main() {
     App::new().run(|cx: &mut AppContext| {
@@ -25,7 +25,7 @@ fn main() {
             ])
             .unwrap();
 
-        cx.bind_keys([KeyBinding::new("s", show::cmd::Store, Some("Show"))]);
+        cx.bind_keys([KeyBinding::new("s", cmd::Store, Some("Show"))]);
 
         cx.open_window(
             WindowOptions {
@@ -42,9 +42,8 @@ fn main() {
                 ..Default::default()
             },
             |cx| {
-                let show_model = cx.new_model(|_cx| Show::new());
-
-                ShowView::build(show_model, cx)
+                cx.set_global(Show::new());
+                ShowView::build(cx)
             },
         );
     })

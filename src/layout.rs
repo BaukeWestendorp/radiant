@@ -1,11 +1,16 @@
 use gpui::{
-    div, Context, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
+    div, AppContext, Context, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
     VisualContext, WindowContext,
 };
 
-use crate::show::{Layout, Window};
+use crate::window::Window;
 
 use super::window::WindowView;
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct Layout {
+    pub windows: Vec<Window>,
+}
 
 pub struct LayoutView {
     windows: Vec<Model<Window>>,
@@ -14,30 +19,28 @@ pub struct LayoutView {
 impl LayoutView {
     pub fn build(layout: Model<Layout>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
-            let this = Self {
-                windows: layout
-                    .read(cx)
-                    .windows
-                    .clone()
-                    .iter()
-                    .map(|window| cx.new_model(|_cx| window.clone()))
-                    .collect(),
-            };
+            let windows = Self::get_windows(&layout, cx);
+
+            let this = Self { windows };
 
             cx.observe(&layout, |this: &mut Self, layout, cx| {
-                let layout = layout.read(cx);
-                this.windows = layout
-                    .windows
-                    .clone()
-                    .iter()
-                    .map(|window| cx.new_model(|_cx| window.clone()))
-                    .collect();
+                this.windows = Self::get_windows(&layout, cx);
                 cx.notify();
             })
             .detach();
 
             this
         })
+    }
+
+    fn get_windows(layout: &Model<Layout>, cx: &mut AppContext) -> Vec<Model<Window>> {
+        layout
+            .read(cx)
+            .windows
+            .clone()
+            .iter()
+            .map(|window| cx.new_model(|_cx| window.clone()))
+            .collect()
     }
 }
 

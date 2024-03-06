@@ -3,9 +3,12 @@ use gpui::{
     VisualContext, WindowContext,
 };
 
-use crate::show::{Layout, Screen};
+use super::layout::{Layout, LayoutView};
 
-use super::layout::LayoutView;
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct Screen {
+    pub layout: Layout,
+}
 
 pub struct ScreenView {
     layout: Model<Layout>,
@@ -14,19 +17,20 @@ pub struct ScreenView {
 impl ScreenView {
     pub fn build(screen: Model<Screen>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
-            let this = Self {
-                layout: cx.new_model({
-                    let screen = screen.clone();
-                    move |cx| screen.read(cx).layout.clone()
-                }),
-            };
+            let layout = cx.new_model({
+                let screen = screen.clone();
+                move |cx| screen.read(cx).layout.clone()
+            });
+
+            let this = Self { layout };
 
             cx.observe(&screen, move |this: &mut Self, screen, cx| {
-                let screen = screen.clone();
-                this.layout.update(cx, move |layout, cx| {
-                    let screen = screen.read(cx);
-                    *layout = screen.layout.clone();
-                    cx.notify();
+                this.layout.update(cx, {
+                    let screen = screen.clone();
+                    move |layout, cx| {
+                        *layout = screen.read(cx).layout.clone();
+                        cx.notify();
+                    }
                 });
             })
             .detach();
