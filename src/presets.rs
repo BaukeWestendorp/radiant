@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
 use gpui::SharedString;
-use serde::{Deserialize, Serialize};
 
 use crate::dmx::color::DmxColor;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Presets {
     colors: HashMap<ColorPresetId, ColorPreset>,
 }
@@ -47,7 +46,7 @@ pub trait Preset {
     fn set_label(&mut self, label: &str);
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ColorPreset {
     label: SharedString,
     pub color: DmxColor,
@@ -72,5 +71,5 @@ impl Preset for ColorPreset {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct ColorPresetId(pub(crate) usize);

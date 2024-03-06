@@ -1,11 +1,10 @@
 use assets::Assets;
-use dmx::color::DmxColor;
 use gpui::{
-    App, AppContext, AssetSource, Bounds, KeyBinding, Point, Size, WindowBounds, WindowOptions,
+    App, AppContext, AssetSource, Bounds, Context, KeyBinding, Point, Size, WindowBounds,
+    WindowOptions,
 };
-use presets::ColorPreset;
-use show::{ShowModel, ShowView};
-use ui::window::{ColorPresetWindow, Window, WindowKind};
+use show::Show;
+use ui::show::ShowView;
 
 pub mod dmx;
 pub mod presets;
@@ -26,10 +25,7 @@ fn main() {
             ])
             .unwrap();
 
-        cx.bind_keys([
-            KeyBinding::new("s", show::cmd::Store, Some("Show")),
-            KeyBinding::new("escape", show::cmd::Clear, Some("Show")),
-        ]);
+        cx.bind_keys([KeyBinding::new("s", show::cmd::Store, Some("Show"))]);
 
         cx.open_window(
             WindowOptions {
@@ -46,26 +42,9 @@ fn main() {
                 ..Default::default()
             },
             |cx| {
-                ShowModel::init(cx);
+                let show_model = cx.new_model(|_cx| Show::new());
 
-                // ShowModel::update(cx, |model, cx| {
-                //     model.inner.update(cx, |show, cx| {
-                //         show.screen.update(cx, |screen, _cx| {
-                //             screen
-                //                 .layout_mut()
-                //                 .add_window(Window::new(WindowKind::ColorPreset(
-                //                     ColorPresetWindow::new(),
-                //                 )))
-                //         });
-
-                //         show.presets.add_color_preset(ColorPreset::new(
-                //             "Magenta",
-                //             DmxColor::new(255, 0, 255),
-                //         ));
-                //     })
-                // });
-
-                ShowView::build(cx)
+                ShowView::build(show_model, cx)
             },
         );
     })

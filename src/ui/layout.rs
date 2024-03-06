@@ -1,44 +1,54 @@
-use gpui::{div, rgb, white, IntoElement, ParentElement, Render, Styled, ViewContext};
+use gpui::{
+    div, Context, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
+    VisualContext, WindowContext,
+};
 
-use super::window::Window;
+use crate::show::{Layout, Window};
 
-#[derive(Clone)]
-pub struct Layout {
-    windows: Vec<Window>,
+use super::window::WindowView;
+
+pub struct LayoutView {
+    windows: Vec<Model<Window>>,
 }
 
-impl Layout {
-    pub fn new() -> Self {
-        Self {
-            windows: Vec::new(),
-        }
-    }
+impl LayoutView {
+    pub fn build(layout: Model<Layout>, cx: &mut WindowContext) -> View<Self> {
+        cx.new_view(|cx| {
+            let this = Self {
+                windows: layout
+                    .read(cx)
+                    .windows
+                    .clone()
+                    .iter()
+                    .map(|window| cx.new_model(|_cx| window.clone()))
+                    .collect(),
+            };
 
-    pub fn add_window(&mut self, window: Window) {
-        self.windows.push(window);
-    }
+            cx.observe(&layout, |this: &mut Self, layout, cx| {
+                let layout = layout.read(cx);
+                this.windows = layout
+                    .windows
+                    .clone()
+                    .iter()
+                    .map(|window| cx.new_model(|_cx| window.clone()))
+                    .collect();
+                cx.notify();
+            })
+            .detach();
 
-    pub fn windows(&self) -> &Vec<Window> {
-        &self.windows
-    }
-
-    fn render_content(&self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        div()
-            .children(self.windows.iter().map(|window| window.get_view(cx)))
-            .size_full()
-            .bg(rgb(0x202020))
-            .p_2()
+            this
+        })
     }
 }
 
-impl Render for Layout {
+impl Render for LayoutView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        div()
-            .child(self.render_content(cx))
-            .flex()
-            .flex_col()
-            .size_full()
-            .text_color(white())
-            .font("Zed Sans")
+        let window_views = self
+            .windows
+            .iter()
+            .map(|window_model| WindowView::build(window_model.clone(), cx))
+            .collect::<Vec<_>>();
+
+        div().size_full().children(window_views)
     }
 }
