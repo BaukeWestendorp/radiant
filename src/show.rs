@@ -1,19 +1,24 @@
 use std::fmt::Display;
 
 use gpui::{
-    div, rgb, white, AppContext, Context, FocusHandle, FocusableView, Global, InteractiveElement,
+    div, white, AppContext, Context, FocusHandle, FocusableView, Global, InteractiveElement,
     IntoElement, Model, ParentElement, Render, Styled, View, ViewContext, VisualContext,
     WindowContext,
 };
 
-use crate::{layout::Layout, presets::Presets};
+use crate::{
+    dmx::color::DmxColor,
+    layout::Layout,
+    presets::{ColorPreset, Presets},
+    window::{Window, WindowKind},
+};
 
 use super::screen::{Screen, ScreenView};
 
 pub mod cmd {
     use gpui::actions;
 
-    actions!(show_cmd, [Store, Clear]);
+    actions!(show_cmd, [Store, Clear, Test]);
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -29,7 +34,13 @@ impl Show {
             presets: Presets::new(),
             programmer_state: ProgrammerState::default(),
             screen: Screen {
-                layout: Layout { windows: vec![] },
+                layout: Layout {
+                    windows: vec![Window {
+                        kind: WindowKind::ColorPresetPool,
+                        cols: 3,
+                        rows: 3,
+                    }],
+                },
             },
         }
     }
@@ -117,22 +128,17 @@ impl ShowView {
             cx.notify();
         });
     }
+
+    fn cmd_test(&mut self, _action: &cmd::Test, cx: &mut ViewContext<Self>) {
+        Show::update(cx, |show, _cx| {
+            show.presets
+                .add_color_preset(ColorPreset::new("Magneta", DmxColor::new(255, 0, 255)));
+        });
+    }
 }
 
 impl Render for ShowView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let show = Show::global(cx);
-
-        let status_bar = div()
-            .child(format!("Programmer State: {}", show.programmer_state))
-            .h_10()
-            .px_2()
-            .border_t()
-            .border_color(rgb(0x3a3a3a))
-            .flex()
-            .items_center()
-            .bg(rgb(0x2a2a2a));
-
         let screen = ScreenView::build(self.screen.clone(), cx);
 
         div()
@@ -140,9 +146,10 @@ impl Render for ShowView {
             .key_context("Show")
             .on_action(cx.listener(Self::cmd_store))
             .on_action(cx.listener(Self::cmd_clear))
+            .on_action(cx.listener(Self::cmd_test))
             .font("Zed Sans")
             .text_color(white())
+            .size_full()
             .child(screen)
-            .child(status_bar)
     }
 }

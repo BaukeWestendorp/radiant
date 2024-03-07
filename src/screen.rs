@@ -1,7 +1,9 @@
 use gpui::{
-    div, Context, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
+    div, rgb, Context, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
     VisualContext, WindowContext,
 };
+
+use crate::show::Show;
 
 use super::layout::{Layout, LayoutView};
 
@@ -44,9 +46,23 @@ impl Render for ScreenView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let layout_view = LayoutView::build(self.layout.clone(), cx);
 
+        let show = Show::global(cx);
+
+        let status_bar = div()
+            .child(format!("Programmer State: {}", show.programmer_state))
+            .h_10()
+            .px_2()
+            .border_t()
+            .border_color(rgb(0x3a3a3a))
+            .flex()
+            .items_center()
+            .bg(rgb(0x2a2a2a));
+
         div()
-            .border()
-            .border_color(gpui::green())
+            .flex()
+            .flex_col()
+            .size_full()
             .child(layout_view)
+            .child(status_bar)
     }
 }

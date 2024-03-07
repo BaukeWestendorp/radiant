@@ -9,6 +9,7 @@ pub mod layout;
 pub mod presets;
 pub mod screen;
 pub mod show;
+pub mod ui;
 pub mod window;
 
 fn main() {
@@ -28,6 +29,7 @@ fn main() {
         cx.bind_keys([
             KeyBinding::new("s", cmd::Store, Some("Show")),
             KeyBinding::new("escape", cmd::Clear, Some("Show")),
+            KeyBinding::new("t", cmd::Test, Some("Show")),
         ]);
 
         cx.open_window(
@@ -46,6 +48,13 @@ fn main() {
             },
             |cx| {
                 cx.set_global(Show::new());
+
+                cx.update_global::<Show, _>(|show, _cx| {
+                    show.presets.add_color_preset(presets::ColorPreset::new(
+                        "Magneta",
+                        dmx::color::DmxColor::new(255, 0, 255),
+                    ));
+                });
                 ShowView::build(cx)
             },
         );

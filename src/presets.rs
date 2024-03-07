@@ -22,12 +22,12 @@ impl Presets {
         id
     }
 
-    pub fn color_preset(&self, id: ColorPresetId) -> &ColorPreset {
-        self.colors.get(&id).unwrap()
+    pub fn color_preset(&self, id: ColorPresetId) -> Option<&ColorPreset> {
+        self.colors.get(&id)
     }
 
-    pub fn color_preset_mut(&mut self, id: ColorPresetId) -> &mut ColorPreset {
-        self.colors.get_mut(&id).unwrap()
+    pub fn color_preset_mut(&mut self, id: ColorPresetId) -> Option<&mut ColorPreset> {
+        self.colors.get_mut(&id)
     }
 
     pub fn color_presets(&self) -> impl Iterator<Item = (ColorPresetId, &ColorPreset)> {
@@ -72,4 +72,4 @@ impl Preset for ColorPreset {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
-pub struct ColorPresetId(pub(crate) usize);
+pub struct ColorPresetId(pub usize);

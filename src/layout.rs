@@ -1,11 +1,13 @@
 use gpui::{
-    div, AppContext, Context, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
-    VisualContext, WindowContext,
+    div, rgb, AppContext, Context, IntoElement, Model, ParentElement, Render, Styled, View,
+    ViewContext, VisualContext, WindowContext,
 };
 
 use crate::window::Window;
 
 use super::window::WindowView;
+
+pub const LAYOUT_CELL_SIZE: usize = 80;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Layout {
@@ -52,6 +54,10 @@ impl Render for LayoutView {
             .map(|window_model| WindowView::build(window_model.clone(), cx))
             .collect::<Vec<_>>();
 
-        div().size_full().children(window_views)
+        div()
+            .size_full()
+            .bg(rgb(0x181818))
+            .p_2()
+            .children(window_views)
     }
 }
