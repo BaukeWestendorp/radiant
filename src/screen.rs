@@ -13,29 +13,30 @@ pub struct Screen {
 }
 
 pub struct ScreenView {
-    layout: Model<Layout>,
+    pub screen: Model<Screen>,
+    layout: View<LayoutView>,
 }
 
 impl ScreenView {
     pub fn build(screen: Model<Screen>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
-            let layout = cx.new_model({
+            let layout_model = cx.new_model({
                 let screen = screen.clone();
                 move |cx| screen.read(cx).layout.clone()
             });
+            let layout = LayoutView::build(layout_model, cx);
 
-            let this = Self { layout };
-
-            cx.observe(&screen, move |this: &mut Self, screen, cx| {
-                this.layout.update(cx, {
-                    let screen = screen.clone();
-                    move |layout, cx| {
+            cx.observe(&screen, |this: &mut Self, screen, cx| {
+                this.layout.update(cx, |layout, cx| {
+                    layout.layout.update(cx, |layout, cx| {
                         *layout = screen.read(cx).layout.clone();
-                        cx.notify();
-                    }
+                    })
                 });
+                cx.notify();
             })
             .detach();
+
+            let this = Self { screen, layout };
 
             this
         })
@@ -44,8 +45,6 @@ impl ScreenView {
 
 impl Render for ScreenView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let layout_view = LayoutView::build(self.layout.clone(), cx);
-
         let show = Show::global(cx);
 
         let status_bar = div()
@@ -62,7 +61,7 @@ impl Render for ScreenView {
             .flex()
             .flex_col()
             .size_full()
-            .child(layout_view)
+            .child(self.layout.clone())
             .child(status_bar)
     }
 }

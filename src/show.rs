@@ -2,15 +2,17 @@ use std::fmt::Display;
 
 use gpui::{
     div, white, AppContext, Context, FocusHandle, FocusableView, Global, InteractiveElement,
-    IntoElement, Model, ParentElement, Render, Styled, View, ViewContext, VisualContext,
-    WindowContext,
+    IntoElement, ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 
 use crate::{
     dmx::color::DmxColor,
     layout::Layout,
     presets::{ColorPreset, Presets},
-    window::{Window, WindowKind},
+    window::{
+        pool_window::{PoolWindow, PoolWindowKind},
+        Window, WindowKind,
+    },
 };
 
 use super::screen::{Screen, ScreenView};
@@ -36,9 +38,7 @@ impl Show {
             screen: Screen {
                 layout: Layout {
                     windows: vec![Window {
-                        kind: WindowKind::ColorPresetPool,
-                        cols: 3,
-                        rows: 3,
+                        kind: WindowKind::Pool(PoolWindow::new(PoolWindowKind::Color, 8, 4)),
                     }],
                 },
             },
@@ -79,7 +79,7 @@ impl Display for ProgrammerState {
 }
 
 pub struct ShowView {
-    screen: Model<Screen>,
+    screen: View<ScreenView>,
     programmer_state: ProgrammerState,
 
     focus_handle: FocusHandle,
@@ -94,19 +94,24 @@ impl FocusableView for ShowView {
 impl ShowView {
     pub fn build(cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
+            let screen_model = cx.new_model(|cx| Show::global(cx).screen.clone());
+            let screen = ScreenView::build(screen_model.clone(), cx);
+
             let focus_handle = cx.focus_handle();
 
             let this = Self {
-                screen: cx.new_model(|cx| Show::global(cx).screen.clone()),
+                screen,
                 programmer_state: Show::global(cx).programmer_state,
                 focus_handle,
             };
 
-            cx.observe_global::<Show>(move |this: &mut Self, cx| {
-                this.screen.update(cx, |screen, cx| {
-                    *screen = Show::global(cx).screen.clone();
-                });
+            cx.observe_global::<Show>(|this: &mut Self, cx| {
                 this.programmer_state = Show::global(cx).programmer_state;
+                this.screen.update(cx, |screen, cx| {
+                    screen.screen.update(cx, |screen, cx| {
+                        *screen = Show::global(cx).screen.clone();
+                    })
+                });
                 cx.notify();
             })
             .detach();
@@ -130,17 +135,16 @@ impl ShowView {
     }
 
     fn cmd_test(&mut self, _action: &cmd::Test, cx: &mut ViewContext<Self>) {
-        Show::update(cx, |show, _cx| {
+        Show::update(cx, |show, cx| {
             show.presets
                 .add_color_preset(ColorPreset::new("Magneta", DmxColor::new(255, 0, 255)));
+            cx.notify();
         });
     }
 }
 
 impl Render for ShowView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let screen = ScreenView::build(self.screen.clone(), cx);
-
         div()
             .track_focus(&self.focus_handle)
             .key_context("Show")
@@ -150,6 +154,6 @@ impl Render for ShowView {
             .font("Zed Sans")
             .text_color(white())
             .size_full()
-            .child(screen)
+            .child(self.screen.clone())
     }
 }

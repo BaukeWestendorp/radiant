@@ -22,6 +22,10 @@ impl Presets {
         id
     }
 
+    pub fn set_color_preset(&mut self, id: ColorPresetId, color_preset: ColorPreset) {
+        self.colors.insert(id, color_preset);
+    }
+
     pub fn color_preset(&self, id: ColorPresetId) -> Option<&ColorPreset> {
         self.colors.get(&id)
     }

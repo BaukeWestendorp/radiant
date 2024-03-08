@@ -1,6 +1,6 @@
 use gpui::{
-    div, rgb, AppContext, Context, IntoElement, Model, ParentElement, Render, Styled, View,
-    ViewContext, VisualContext, WindowContext,
+    div, rgb, Context, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
+    VisualContext, WindowContext,
 };
 
 use crate::window::Window;
@@ -15,49 +15,49 @@ pub struct Layout {
 }
 
 pub struct LayoutView {
-    windows: Vec<Model<Window>>,
+    pub layout: Model<Layout>,
+    windows: Vec<View<WindowView>>,
 }
 
 impl LayoutView {
     pub fn build(layout: Model<Layout>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
-            let windows = Self::get_windows(&layout, cx);
+            let window_models = layout
+                .read(cx)
+                .windows
+                .clone()
+                .iter()
+                .map(|window| cx.new_model(|_cx| window.clone()))
+                .collect::<Vec<_>>();
 
-            let this = Self { windows };
+            let windows = window_models
+                .iter()
+                .map(|window_model| WindowView::build(window_model.clone(), cx))
+                .collect::<Vec<_>>();
 
             cx.observe(&layout, |this: &mut Self, layout, cx| {
-                this.windows = Self::get_windows(&layout, cx);
+                for (ix, window) in this.windows.iter_mut().enumerate() {
+                    window.update(cx, |window, cx| {
+                        window.window.update(cx, |window, cx| {
+                            *window = layout.read(cx).windows[ix].clone();
+                        })
+                    })
+                }
                 cx.notify();
             })
             .detach();
 
-            this
+            Self { layout, windows }
         })
-    }
-
-    fn get_windows(layout: &Model<Layout>, cx: &mut AppContext) -> Vec<Model<Window>> {
-        layout
-            .read(cx)
-            .windows
-            .clone()
-            .iter()
-            .map(|window| cx.new_model(|_cx| window.clone()))
-            .collect()
     }
 }
 
 impl Render for LayoutView {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let window_views = self
-            .windows
-            .iter()
-            .map(|window_model| WindowView::build(window_model.clone(), cx))
-            .collect::<Vec<_>>();
-
+    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .size_full()
             .bg(rgb(0x181818))
             .p_2()
-            .children(window_views)
+            .children(self.windows.clone())
     }
 }

@@ -167,7 +167,7 @@ impl Element for UniformGrid {
             content_size,
             &mut state.interactive,
             cx,
-            |style, mut _scroll_offset, cx| {
+            |_style, mut _scroll_offset, cx| {
                 if item_count == 0 {
                     return;
                 }

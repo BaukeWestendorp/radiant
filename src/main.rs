@@ -50,10 +50,13 @@ fn main() {
                 cx.set_global(Show::new());
 
                 cx.update_global::<Show, _>(|show, _cx| {
-                    show.presets.add_color_preset(presets::ColorPreset::new(
-                        "Magneta",
-                        dmx::color::DmxColor::new(255, 0, 255),
-                    ));
+                    show.presets.set_color_preset(
+                        presets::ColorPresetId(3),
+                        presets::ColorPreset::new(
+                            "Magneta",
+                            dmx::color::DmxColor::new(255, 0, 255),
+                        ),
+                    );
                 });
                 ShowView::build(cx)
             },
