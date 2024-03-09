@@ -37,16 +37,24 @@ impl Show {
             programmer_state: ProgrammerState::default(),
             screen: Screen {
                 layout: Layout {
-                    windows: vec![Window {
-                        kind: WindowKind::Pool(PoolWindow::new(
-                            PoolWindowKind::Color,
-                            GridSize { rows: 3, cols: 4 },
-                        )),
-                        bounds: GridBounds {
-                            origin: GridPoint { x: 1, y: 1 },
-                            size: GridSize { rows: 3, cols: 4 },
+                    windows: vec![
+                        Window {
+                            kind: WindowKind::Pool(PoolWindow::new(
+                                PoolWindowKind::Color,
+                                GridSize::new(10, 2),
+                                10,
+                            )),
+                            bounds: GridBounds::new(GridPoint::new(0, 0), GridSize::new(10, 2)),
                         },
-                    }],
+                        Window {
+                            kind: WindowKind::Pool(PoolWindow::new(
+                                PoolWindowKind::Color,
+                                GridSize::new(4, 3),
+                                0,
+                            )),
+                            bounds: GridBounds::new(GridPoint::new(0, 3), GridSize::new(4, 3)),
+                        },
+                    ],
                 },
             },
         }

@@ -50,7 +50,6 @@ fn main() {
                         height: 720.0.into(),
                     },
                 }),
-                kind: gpui::WindowKind::PopUp,
                 ..Default::default()
             },
             |cx| {
