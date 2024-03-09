@@ -1,6 +1,7 @@
 use assets::Assets;
 use gpui::{
-    App, AppContext, AssetSource, Bounds, KeyBinding, Point, Size, WindowBounds, WindowOptions,
+    actions, App, AppContext, AssetSource, Bounds, KeyBinding, Point, Size, WindowBounds,
+    WindowOptions,
 };
 use show::{cmd, Show, ShowView};
 
@@ -11,6 +12,8 @@ pub mod screen;
 pub mod show;
 pub mod ui;
 pub mod window;
+
+actions!(app, [Quit]);
 
 fn main() {
     App::new().run(|cx: &mut AppContext| {
@@ -27,10 +30,13 @@ fn main() {
             .unwrap();
 
         cx.bind_keys([
+            KeyBinding::new("cmd-q", Quit, None),
             KeyBinding::new("s", cmd::Store, Some("Show")),
             KeyBinding::new("escape", cmd::Clear, Some("Show")),
             KeyBinding::new("t", cmd::Test, Some("Show")),
         ]);
+
+        cx.on_action(|_action: &Quit, cx: &mut AppContext| cx.quit());
 
         cx.open_window(
             WindowOptions {
