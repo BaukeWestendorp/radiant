@@ -26,7 +26,7 @@ impl WindowKind {
 
     pub fn show_header(&self) -> bool {
         match self {
-            WindowKind::Pool(_) => false,
+            WindowKind::Pool(_) => true,
         }
     }
 }
@@ -53,16 +53,15 @@ impl WindowView {
         }
 
         let header = div()
-            .child(window.kind.window_title().to_string())
             .flex()
             .items_center()
-            .w_full()
             .px_3()
             .h_10()
             .bg(rgb(0x222280))
             .border_color(rgb(0x0000ff))
             .border_1()
-            .rounded_t_md();
+            .rounded_t_md()
+            .child(window.kind.window_title().to_string());
 
         Some(header)
     }
@@ -86,10 +85,9 @@ impl Render for WindowView {
             .child(self.content.clone());
 
         div()
-            .children(self.render_header(cx))
-            .child(content)
             .flex()
             .flex_col()
-            .size_full()
+            .children(self.render_header(cx))
+            .child(content)
     }
 }

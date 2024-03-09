@@ -57,7 +57,8 @@ impl Render for LayoutView {
         div()
             .size_full()
             .bg(rgb(0x181818))
-            .p_2()
+            .flex()
+            .flex_shrink()
             .children(self.windows.clone())
     }
 }

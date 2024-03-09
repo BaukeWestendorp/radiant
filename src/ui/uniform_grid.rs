@@ -4,9 +4,10 @@ use std::{cmp, ops::Range};
 use gpui::{
     point, size, AnyElement, AvailableSpace, Bounds, ContentMask, Element, ElementContext,
     ElementId, InteractiveElement, InteractiveElementState, Interactivity, IntoElement, LayoutId,
-    Overflow, Pixels, Render, Size, StyleRefinement, View, ViewContext, WindowContext,
+    Pixels, Render, Size, StyleRefinement, Styled, View, ViewContext, WindowContext,
 };
 
+/// This is a very ad-hoc implementation of a grid layout. It is not intended to be a general-purpose grid layout.
 pub fn uniform_grid<I, R, V>(
     view: View<V>,
     id: I,
@@ -30,8 +31,7 @@ where
 
     let id = id.into();
 
-    let mut base_style = StyleRefinement::default();
-    base_style.overflow.y = Some(Overflow::Scroll);
+    let base_style = StyleRefinement::default();
 
     let mut interactivity = Interactivity::default();
     interactivity.element_id = Some(id.clone());
@@ -41,8 +41,8 @@ where
         id,
         cols,
         rows,
-        item_to_measure_index: 0,
-        render_items: Box::new(render_range),
+        cell_to_measure_index: 0,
+        render_cells: Box::new(render_range),
         interactivity,
     }
 }
@@ -51,18 +51,18 @@ pub struct UniformGrid {
     id: ElementId,
     cols: usize,
     rows: usize,
-    item_to_measure_index: usize,
-    render_items:
+    cell_to_measure_index: usize,
+    render_cells:
         Box<dyn for<'a> Fn(Range<usize>, &'a mut WindowContext) -> SmallVec<[AnyElement; 64]>>,
     interactivity: Interactivity,
 }
 
 impl UniformGrid {
-    fn item_count(&self) -> usize {
+    fn cell_count(&self) -> usize {
         self.cols * self.rows
     }
 
-    fn measure_item(
+    fn measure_cell(
         &self,
         cell_width: Option<Pixels>,
         cell_height: Option<Pixels>,
@@ -72,9 +72,9 @@ impl UniformGrid {
             return Size::default();
         }
 
-        let item_ix = cmp::min(self.item_to_measure_index, self.item_count() - 1);
-        let mut items = (self.render_items)(item_ix..item_ix + 1, cx);
-        let mut item_to_measure = items.pop().unwrap();
+        let cell_ix = cmp::min(self.cell_to_measure_index, self.cell_count() - 1);
+        let mut cells = (self.render_cells)(cell_ix..cell_ix + 1, cx);
+        let mut cell_to_measure = cells.pop().unwrap();
         let available_space = size(
             cell_width.map_or(AvailableSpace::MinContent, |width| {
                 AvailableSpace::Definite(width)
@@ -83,7 +83,8 @@ impl UniformGrid {
                 AvailableSpace::Definite(height)
             }),
         );
-        item_to_measure.measure(available_space, cx)
+
+        cell_to_measure.measure(available_space, cx)
     }
 }
 
@@ -91,7 +92,9 @@ impl UniformGrid {
 #[derive(Default)]
 pub struct GridState {
     interactive: InteractiveElementState,
-    item_size: Size<Pixels>,
+    cols: usize,
+    rows: usize,
+    cell_size: Size<Pixels>,
 }
 
 impl Element for UniformGrid {
@@ -103,20 +106,29 @@ impl Element for UniformGrid {
         cx: &mut ElementContext,
     ) -> (LayoutId, Self::State) {
         let rows = self.rows;
-        let item_size = state
+        let cols = self.cols;
+        let cell_size = state
             .as_ref()
-            .map(|s| s.item_size)
-            .unwrap_or_else(|| self.measure_item(None, None, cx));
+            .map(|s| s.cell_size)
+            .unwrap_or_else(|| self.measure_cell(None, None, cx));
 
         let (layout_id, interactive) =
             self.interactivity
                 .layout(state.map(|s| s.interactive), cx, |style, cx| {
                     cx.request_measured_layout(
                         style,
-                        move |_known_dimensions, available_space, _cx| {
-                            let desired_height = item_size.height * rows;
+                        move |known_dimensions, available_space, _cx| {
+                            let desired_height = cell_size.height * rows;
 
-                            let width = gpui::px(200.0);
+                            let width =
+                                known_dimensions
+                                    .width
+                                    .unwrap_or(match available_space.width {
+                                        AvailableSpace::Definite(x) => x,
+                                        AvailableSpace::MinContent | AvailableSpace::MaxContent => {
+                                            cell_size.width
+                                        }
+                                    });
 
                             let height = match available_space.height {
                                 AvailableSpace::Definite(height) => desired_height.min(height),
@@ -124,6 +136,7 @@ impl Element for UniformGrid {
                                     desired_height
                                 }
                             };
+
                             size(width, height)
                         },
                     )
@@ -131,16 +144,26 @@ impl Element for UniformGrid {
 
         let element_state = GridState {
             interactive,
-            item_size,
+            cols,
+            rows,
+            cell_size,
         };
 
         (layout_id, element_state)
     }
 
     fn paint(&mut self, bounds: Bounds<Pixels>, state: &mut Self::State, cx: &mut ElementContext) {
+        let content_size = Size {
+            width: state.cell_size.width * state.cols as f32,
+            height: state.cell_size.height * state.rows as f32,
+        };
+
+        let bounds = Bounds::new(bounds.origin, content_size);
+
         let style = self
             .interactivity
             .compute_style(Some(bounds), &mut state.interactive, cx);
+
         let border = style.border_widths.to_pixels(cx.rem_size());
         let padding = style.padding.to_pixels(bounds.size.into(), cx.rem_size());
 
@@ -150,47 +173,37 @@ impl Element for UniformGrid {
                 - point(border.right + padding.right, border.bottom + padding.bottom),
         );
 
-        let content_size = Size {
-            width: padded_bounds.size.width,
-            height: padded_bounds.size.height,
-        };
-
-        let item_size = self.measure_item(
-            Some(padded_bounds.size.width),
-            Some(padded_bounds.size.height),
-            cx,
-        );
-
-        let item_count = self.item_count();
+        let cell_size = state.cell_size;
+        let cell_count = self.cell_count();
         self.interactivity.paint(
             bounds,
             content_size,
             &mut state.interactive,
             cx,
             |_style, mut _scroll_offset, cx| {
-                if item_count == 0 {
+                if cell_count == 0 {
                     return;
                 }
 
-                let visible_range = 0..item_count;
+                let visible_range = 0..cell_count;
 
-                let mut items = (self.render_items)(visible_range.clone(), cx);
+                let mut cells = (self.render_cells)(visible_range.clone(), cx);
                 cx.with_z_index(1, |cx| {
                     let content_mask = ContentMask { bounds };
                     cx.with_content_mask(Some(content_mask), |cx| {
-                        for (item, ix) in items.iter_mut().zip(visible_range) {
-                            let item_origin = padded_bounds.origin
+                        for (cell, ix) in cells.iter_mut().zip(visible_range) {
+                            let cell_origin = padded_bounds.origin
                                 + point(
-                                    item_size.width * (ix % self.cols) + padding.top,
-                                    item_size.height * (ix / self.cols) + padding.left,
+                                    cell_size.width * (ix % self.cols) + padding.top,
+                                    cell_size.height * (ix / self.cols) + padding.left,
                                 );
 
                             let available_space = size(
-                                AvailableSpace::Definite(item_size.width),
-                                AvailableSpace::Definite(item_size.height),
+                                AvailableSpace::Definite(cell_size.width),
+                                AvailableSpace::Definite(cell_size.height),
                             );
 
-                            item.draw(item_origin, available_space, cx)
+                            cell.draw(cell_origin, available_space, cx)
                         }
                     })
                 })
@@ -214,5 +227,11 @@ impl IntoElement for UniformGrid {
 impl InteractiveElement for UniformGrid {
     fn interactivity(&mut self) -> &mut gpui::Interactivity {
         &mut self.interactivity
+    }
+}
+
+impl Styled for UniformGrid {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.interactivity.base_style
     }
 }

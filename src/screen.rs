@@ -48,20 +48,22 @@ impl Render for ScreenView {
         let show = Show::global(cx);
 
         let status_bar = div()
-            .child(format!("Programmer State: {}", show.programmer_state))
             .h_10()
             .px_2()
             .border_t()
             .border_color(rgb(0x3a3a3a))
             .flex()
             .items_center()
-            .bg(rgb(0x2a2a2a));
+            .bg(rgb(0x2a2a2a))
+            .child(format!("Programmer State: {}", show.programmer_state));
+
+        let content = self.layout.clone();
 
         div()
             .flex()
             .flex_col()
             .size_full()
-            .child(self.layout.clone())
+            .child(content)
             .child(status_bar)
     }
 }
