@@ -1,9 +1,10 @@
 use gpui::{
-    div, px, rgb, size, InteractiveElement, IntoElement, Model, ParentElement, Render, Rgba,
+    div, px, rgb, InteractiveElement, IntoElement, Model, ParentElement, Render, Rgba,
     ScrollWheelEvent, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 
 use crate::{
+    layout::GridSize,
     presets::{ColorPresetId, Preset},
     show::Show,
     ui::{grid_div, uniform_grid::uniform_grid},
@@ -13,17 +14,15 @@ use crate::{
 pub struct PoolWindow {
     pub kind: PoolWindowKind,
     row_scroll_offset: i16,
-    cols: usize,
-    rows: usize,
+    size: GridSize,
 }
 
 impl PoolWindow {
-    pub fn new(kind: PoolWindowKind, cols: usize, rows: usize) -> Self {
+    pub fn new(kind: PoolWindowKind, size: GridSize) -> Self {
         Self {
             kind,
             row_scroll_offset: 0,
-            cols,
-            rows,
+            size,
         }
     }
 
@@ -34,7 +33,7 @@ impl PoolWindow {
     }
 
     pub fn cell_count(&self) -> usize {
-        self.cols * self.rows
+        self.size.rows * self.size.cols
     }
 }
 
@@ -70,7 +69,7 @@ impl PoolWindowView {
         range
             .map(|ix| {
                 let pool_window = pool_window.read(cx);
-                let id = ix + pool_window.row_scroll_offset as usize * pool_window.cols;
+                let id = ix + pool_window.row_scroll_offset as usize * pool_window.size.cols;
 
                 let pool_item = PoolItemView::build(pool_window.kind, id, cx);
                 pool_item
@@ -88,7 +87,7 @@ impl PoolWindowView {
         let pool_window = self.pool_window.read(cx);
 
         let scroll_delta_y = event.delta.pixel_delta(px(Self::SCROLL_SENSITIVITY)).y;
-        self.row_scroll_offset += scroll_delta_y.0 as i16 * pool_window.cols as i16;
+        self.row_scroll_offset += scroll_delta_y.0 as i16 * pool_window.size.cols as i16;
         self.row_scroll_offset = self.row_scroll_offset.clamp(
             0,
             Self::ROW_SCROLL_OFFSET_MAX - pool_window.cell_count() as i16,
@@ -107,16 +106,18 @@ impl Render for PoolWindowView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let pool_window = self.pool_window.read(cx);
 
-        grid_div(size(pool_window.cols, pool_window.rows), None)
+        grid_div(pool_window.size, None)
             .child(uniform_grid(
                 cx.view().clone(),
                 "pool_items",
-                pool_window.cols,
-                pool_window.rows,
+                pool_window.size.cols,
+                pool_window.size.rows,
                 |view, _range, _cx| {
                     view.pool_items
                         .iter()
-                        .map(|pool_item| grid_div(size(1, 1), None).child(pool_item.clone()))
+                        .map(|pool_item| {
+                            grid_div(GridSize { cols: 1, rows: 1 }, None).child(pool_item.clone())
+                        })
                         .collect::<Vec<_>>()
                 },
             ))

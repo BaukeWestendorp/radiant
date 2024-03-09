@@ -9,6 +9,24 @@ use super::window::WindowView;
 
 pub const LAYOUT_CELL_SIZE: usize = 80;
 
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub struct GridBounds {
+    pub origin: GridPoint,
+    pub size: GridSize,
+}
+
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub struct GridPoint {
+    pub x: usize,
+    pub y: usize,
+}
+
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub struct GridSize {
+    pub cols: usize,
+    pub rows: usize,
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Layout {
     pub windows: Vec<Window>,

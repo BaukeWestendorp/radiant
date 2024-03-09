@@ -7,7 +7,7 @@ use gpui::{
 
 use crate::{
     dmx::color::DmxColor,
-    layout::Layout,
+    layout::{GridBounds, GridPoint, GridSize, Layout},
     presets::{ColorPreset, Presets},
     window::{
         pool_window::{PoolWindow, PoolWindowKind},
@@ -38,7 +38,14 @@ impl Show {
             screen: Screen {
                 layout: Layout {
                     windows: vec![Window {
-                        kind: WindowKind::Pool(PoolWindow::new(PoolWindowKind::Color, 8, 4)),
+                        kind: WindowKind::Pool(PoolWindow::new(
+                            PoolWindowKind::Color,
+                            GridSize { rows: 3, cols: 4 },
+                        )),
+                        bounds: GridBounds {
+                            origin: GridPoint { x: 1, y: 1 },
+                            size: GridSize { rows: 3, cols: 4 },
+                        },
                     }],
                 },
             },

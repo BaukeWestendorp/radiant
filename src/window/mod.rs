@@ -3,6 +3,8 @@ use gpui::{
     ViewContext, VisualContext, WindowContext,
 };
 
+use crate::{layout::GridBounds, ui::grid_div};
+
 use self::pool_window::{PoolWindow, PoolWindowView};
 
 pub mod pool_window;
@@ -10,6 +12,7 @@ pub mod pool_window;
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Window {
     pub kind: WindowKind,
+    pub bounds: GridBounds,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -26,7 +29,7 @@ impl WindowKind {
 
     pub fn show_header(&self) -> bool {
         match self {
-            WindowKind::Pool(_) => true,
+            WindowKind::Pool(_) => false,
         }
     }
 }
@@ -79,12 +82,14 @@ impl WindowView {
 
 impl Render for WindowView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        let window = self.window.read(cx);
+
         let content = div()
             .bg(rgb(0x202020))
             .rounded_b_md()
             .child(self.content.clone());
 
-        div()
+        grid_div(window.bounds.size, Some(window.bounds.origin))
             .flex()
             .flex_col()
             .children(self.render_header(cx))
