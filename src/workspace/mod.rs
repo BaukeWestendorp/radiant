@@ -5,10 +5,12 @@ use gpui::{
     ParentElement, Render, Styled, View, ViewContext,
 };
 
-use crate::show::Show;
+use crate::show::{self, Show};
 use screen::Screen;
 
-// pub mod layout;
+use self::layout::{LayoutBounds, LayoutPoint, LayoutSize};
+
+pub mod layout;
 pub mod screen;
 
 pub mod actions {
@@ -37,7 +39,7 @@ impl Workspace {
     pub fn new(show: Model<Show>, cx: &mut ViewContext<Self>) -> Self {
         cx.observe(&show, |_, _, cx| cx.notify()).detach();
 
-        let screen = Screen::build(cx);
+        let screen = Screen::build(show.clone(), cx);
 
         let focus_handle = cx.focus_handle();
 
@@ -62,6 +64,11 @@ impl Workspace {
         self.show.update(cx, |show, cx| {
             let mut new_show = Show::default();
             new_show.name = "Super mega show".into();
+            new_show.layout.windows.push(show::Window {
+                bounds: LayoutBounds::new(LayoutPoint::new(0, 0), LayoutSize::new(8, 4)),
+                kind: show::WindowKind::Pool,
+            });
+
             *show = new_show;
             cx.notify();
         });

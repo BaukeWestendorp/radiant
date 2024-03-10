@@ -1,20 +1,23 @@
 use gpui::{
-    div, rgb, IntoElement, ParentElement, Render, Styled, View, ViewContext, VisualContext,
+    div, rgb, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext, VisualContext,
 };
 
+use crate::show::Show;
 use crate::workspace::{ProgrammerState, Workspace};
 
+use super::layout::Layout;
+
 pub struct Screen {
-    // pub layout: View<LayoutView>,
+    pub layout: View<Layout>,
     programmer_state: ProgrammerState,
 }
 
 impl Screen {
-    pub fn build(cx: &mut ViewContext<Workspace>) -> View<Self> {
+    pub fn build(show: Model<Show>, cx: &mut ViewContext<Workspace>) -> View<Self> {
         let workspace_view = cx.view().clone();
 
         cx.new_view(|cx| {
-            // let layout = cx.new_view(|cx| LayoutView::new(cx));
+            let layout = Layout::build(show, cx);
 
             cx.observe(&workspace_view, |this: &mut Screen, workspace, cx| {
                 this.programmer_state = workspace.read(cx).programmer_state;
@@ -22,7 +25,7 @@ impl Screen {
             .detach();
 
             Self {
-                // layout,
+                layout,
                 programmer_state: ProgrammerState::default(),
             }
         })
@@ -31,7 +34,7 @@ impl Screen {
 
 impl Render for Screen {
     fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
-        // let content = self.layout.clone();
+        let content = self.layout.clone();
 
         let status_bar = div()
             .h_10()
@@ -47,7 +50,7 @@ impl Render for Screen {
             .flex()
             .flex_col()
             .size_full()
-            // .child(content)
+            .child(content)
             .child(status_bar)
     }
 }

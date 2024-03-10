@@ -1,13 +1,13 @@
-use gpui::prelude::FluentBuilder;
-use gpui::{div, px, rgb, IntoElement, ParentElement, Render, Rgba, Styled, ViewContext};
+use gpui::{div, IntoElement, ParentElement, Render, Rgba, Styled, ViewContext};
 
 use crate::color;
+use crate::show::presets::{ColorPreset, Preset};
 
-struct PoolItemView {
+pub struct PoolItem {
     id: usize,
 }
 
-impl PoolItemView {
+impl PoolItem {
     pub fn build(id: usize) -> Self {
         Self { id }
     }
@@ -38,8 +38,8 @@ impl PoolItemView {
     }
 }
 
-impl Render for PoolItemView {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+impl Render for PoolItem {
+    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
         // let pool_color = ();
 
         // let mut has_content = false;
@@ -75,6 +75,7 @@ impl Render for PoolItemView {
         //             .pl(px(4.0))
         //             .child(format!("{}", self.id)),
         //     )
-        todo!();
+        div()
+        // TODO:
     }
 }

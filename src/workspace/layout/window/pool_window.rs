@@ -4,21 +4,22 @@ use gpui::{
     WindowContext,
 };
 
+use crate::workspace::layout::LayoutSize;
 use crate::{
     color,
-    layout::GridSize,
-    presets::{ColorPreset, Preset},
     ui::{grid_div, uniform_grid::uniform_grid},
 };
 
-pub struct PoolWindowView {
+use super::pool_item::PoolItem;
+
+pub struct PoolWindow {
     kind: PoolWindowKind,
     scroll_offset: i16,
-    header_cell: View<HeaderCellView>,
-    pool_items: Vec<View<PoolItemView>>,
+    header_cell: View<HeaderCell>,
+    pool_items: Vec<View<PoolItem>>,
 }
 
-impl PoolWindowView {
+impl PoolWindow {
     const ROW_SCROLL_OFFSET_MAX: i16 = 10000;
     const SCROLL_SENSITIVITY: f32 = 0.5;
 
@@ -26,7 +27,7 @@ impl PoolWindowView {
         Self {
             scroll_offset,
             pool_items,
-            header_cell: HeaderCellView::new(cx),
+            header_cell: HeaderCell::new(cx),
             pool_window,
         }
     }
@@ -49,7 +50,7 @@ impl PoolWindowView {
     fn get_pool_items(
         pool_window: Model<PoolWindow>,
         cx: &mut ViewContext<Self>,
-    ) -> Vec<View<PoolItemView>> {
+    ) -> Vec<View<PoolItem>> {
         let total_items = pool_window.read(cx).item_count();
         let range = 0..total_items;
         range
@@ -58,13 +59,13 @@ impl PoolWindowView {
                 let pool_window = pool_window.read(cx);
                 let id = ix + pool_window.scroll_offset as usize * pool_window.size.cols;
 
-                let pool_item = PoolItemView::build(pool_window_model, id, cx);
+                let pool_item = PoolItem::build(pool_window_model, id, cx);
                 pool_item
             })
             .collect()
     }
 
-    fn update_pool_items(&mut self, cx: &mut WindowContext, f: impl Fn(usize, &mut PoolItemView)) {
+    fn update_pool_items(&mut self, cx: &mut WindowContext, f: impl Fn(usize, &mut PoolItem)) {
         for (ix, pool_item) in self.pool_items.iter_mut().enumerate() {
             pool_item.update(cx, |pool_item, _cx| f(ix, pool_item));
         }
@@ -89,7 +90,7 @@ impl PoolWindowView {
     }
 }
 
-impl Render for PoolWindowView {
+impl Render for PoolWindow {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let pool_window = self.pool_window.read(cx);
         let header_cell = self.header_cell.clone();
@@ -104,7 +105,7 @@ impl Render for PoolWindowView {
                     let mut cells = vec![div().child(header_cell.clone())];
 
                     cells.extend(view.pool_items.iter().map(|pool_cell| {
-                        grid_div(GridSize::new(1, 1), None).child(pool_cell.clone())
+                        grid_div(LayoutSize::new(1, 1), None).child(pool_cell.clone())
                     }));
 
                     cells
@@ -114,39 +115,41 @@ impl Render for PoolWindowView {
     }
 }
 
-struct HeaderCellView {
+struct HeaderCell {
     pool_window: Model<PoolWindow>,
 }
 
-impl HeaderCellView {
+impl HeaderCell {
     pub fn build(pool_window: Model<PoolWindow>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|_cx| Self { pool_window })
     }
 }
 
-impl Render for HeaderCellView {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let pool_window = self.pool_window.read(cx);
-        let title = pool_window.window_title().to_string();
-        let color = color::darken(pool_window.color(), 0.1);
-        let border_color = pool_window.color();
+impl Render for HeaderCell {
+    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+        // let pool_window = self.pool_window.read(cx);
+        // let title = pool_window.window_title().to_string();
+        // let color = color::darken(pool_window.color(), 0.1);
+        // let border_color = pool_window.color();
 
-        grid_div(GridSize::new(1, 1), None)
-            .bg(color)
-            .flex()
-            .justify_center()
-            .rounded_md()
-            .border()
-            .border_color(border_color)
-            .items_center()
-            .child(
-                div()
-                    .bg(rgba(0x00000040))
-                    .px_1()
-                    .rounded_sm()
-                    .text_sm()
-                    .child(title),
-            )
+        // grid_div(GridSize::new(1, 1), None)
+        //     .bg(color)
+        //     .flex()
+        //     .justify_center()
+        //     .rounded_md()
+        //     .border()
+        //     .border_color(border_color)
+        //     .items_center()
+        //     .child(
+        //         div()
+        //             .bg(rgba(0x00000040))
+        //             .px_1()
+        //             .rounded_sm()
+        //             .text_sm()
+        //             .child(title),
+        //     )
+        div()
+        // TODO:
     }
 }
 

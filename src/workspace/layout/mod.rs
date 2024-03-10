@@ -1,62 +1,44 @@
 use gpui::{
-    div, rgb, IntoElement, ParentElement, Render, Styled, View, ViewContext, WindowContext,
+    div, rgb, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext, VisualContext,
 };
 
 pub mod window;
 
-use window::WindowView;
+use window::Window;
+
+use crate::show::Show;
+
+use super::screen::Screen;
 
 pub const LAYOUT_CELL_SIZE: usize = 80;
 
-#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
-pub struct GridBounds {
-    pub origin: GridPoint,
-    pub size: GridSize,
+pub struct Layout {
+    windows: Vec<View<Window>>,
 }
 
-impl GridBounds {
-    pub fn new(origin: GridPoint, size: GridSize) -> Self {
-        Self { origin, size }
+impl Layout {
+    pub fn build(show: Model<Show>, cx: &mut ViewContext<Screen>) -> View<Self> {
+        cx.new_view(|cx| {
+            cx.observe(&show, |this: &mut Self, show, cx| {
+                this.windows = show
+                    .read(cx)
+                    .layout
+                    .windows
+                    .clone()
+                    .iter()
+                    .map(|window| Window::build(window, cx))
+                    .collect();
+            })
+            .detach();
+
+            Self {
+                windows: Vec::new(),
+            }
+        })
     }
 }
 
-#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
-pub struct GridPoint {
-    pub x: usize,
-    pub y: usize,
-}
-
-impl GridPoint {
-    pub fn new(x: usize, y: usize) -> Self {
-        Self { x, y }
-    }
-}
-
-#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
-pub struct GridSize {
-    pub cols: usize,
-    pub rows: usize,
-}
-
-impl GridSize {
-    pub fn new(cols: usize, rows: usize) -> Self {
-        Self { cols, rows }
-    }
-}
-
-pub struct LayoutView {
-    windows: Vec<View<WindowView>>,
-}
-
-impl LayoutView {
-    pub fn new(cx: &mut WindowContext) -> Self {
-        Self {
-            windows: Vec::new(),
-        }
-    }
-}
-
-impl Render for LayoutView {
+impl Render for Layout {
     fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .size_full()
@@ -64,5 +46,41 @@ impl Render for LayoutView {
             .flex()
             .flex_shrink()
             .children(self.windows.clone())
+    }
+}
+
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub struct LayoutBounds {
+    pub origin: LayoutPoint,
+    pub size: LayoutSize,
+}
+
+impl LayoutBounds {
+    pub fn new(origin: LayoutPoint, size: LayoutSize) -> Self {
+        Self { origin, size }
+    }
+}
+
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub struct LayoutPoint {
+    pub x: usize,
+    pub y: usize,
+}
+
+impl LayoutPoint {
+    pub fn new(x: usize, y: usize) -> Self {
+        Self { x, y }
+    }
+}
+
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub struct LayoutSize {
+    pub cols: usize,
+    pub rows: usize,
+}
+
+impl LayoutSize {
+    pub fn new(cols: usize, rows: usize) -> Self {
+        Self { cols, rows }
     }
 }
