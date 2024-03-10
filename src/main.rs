@@ -4,7 +4,7 @@ use gpui::{
     WindowBounds, WindowOptions,
 };
 use show::Show;
-use workspace::{cmd, Workspace};
+use workspace::Workspace;
 
 pub mod color;
 pub mod dmx;
@@ -12,7 +12,7 @@ pub mod show;
 pub mod ui;
 pub mod workspace;
 
-actions!(app, [Quit, OpenShow]);
+actions!(app, [Quit]);
 
 fn main() {
     App::new().run(|cx: &mut AppContext| {
@@ -30,26 +30,14 @@ fn main() {
 
         cx.bind_keys([
             KeyBinding::new("cmd-q", Quit, None),
-            KeyBinding::new("cmd-o", OpenShow, None),
-            KeyBinding::new("s", cmd::Store, Some("Workspace")),
-            KeyBinding::new("escape", cmd::Clear, Some("Workspace")),
+            KeyBinding::new("cmd-o", workspace::actions::OpenShow, Some("Workspace")),
+            KeyBinding::new("s", workspace::actions::cmd::Store, Some("Workspace")),
+            KeyBinding::new("escape", workspace::actions::cmd::Clear, Some("Workspace")),
         ]);
 
         cx.on_action(|_action: &Quit, cx: &mut AppContext| cx.quit());
 
         let show = cx.new_model(|_cx| Show::default());
-
-        cx.on_action({
-            let show = show.clone();
-            move |_action: &OpenShow, cx: &mut AppContext| {
-                show.update(cx, |show, cx| {
-                    let mut new_show = Show::default();
-                    new_show.name = "Super mega show".into();
-                    *show = new_show;
-                    cx.notify();
-                })
-            }
-        });
 
         cx.open_window(
             WindowOptions {

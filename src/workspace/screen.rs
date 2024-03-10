@@ -1,19 +1,16 @@
 use gpui::{
-    div, rgb, IntoElement, Model, ParentElement, Render, SharedString, Styled, View, ViewContext,
-    VisualContext,
+    div, rgb, IntoElement, ParentElement, Render, Styled, View, ViewContext, VisualContext,
 };
 
-use crate::show::Show;
 use crate::workspace::{ProgrammerState, Workspace};
 
 pub struct Screen {
     // pub layout: View<LayoutView>,
     programmer_state: ProgrammerState,
-    show_name: SharedString,
 }
 
 impl Screen {
-    pub fn build(show: Model<Show>, cx: &mut ViewContext<Workspace>) -> View<Self> {
+    pub fn build(cx: &mut ViewContext<Workspace>) -> View<Self> {
         let workspace_view = cx.view().clone();
 
         cx.new_view(|cx| {
@@ -24,14 +21,8 @@ impl Screen {
             })
             .detach();
 
-            cx.observe(&show, |this: &mut Screen, show, cx| {
-                this.show_name = show.read(cx).name.clone();
-            })
-            .detach();
-
             Self {
                 // layout,
-                show_name: show.read(cx).name.clone(),
                 programmer_state: ProgrammerState::default(),
             }
         })
@@ -50,8 +41,7 @@ impl Render for Screen {
             .flex()
             .items_center()
             .bg(rgb(0x2a2a2a))
-            .child(format!("Programmer State: {}", self.programmer_state))
-            .child(format!("name: {}", self.show_name));
+            .child(format!("Programmer State: {}", self.programmer_state));
 
         div()
             .flex()
