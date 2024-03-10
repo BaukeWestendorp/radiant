@@ -4,7 +4,7 @@ use gpui::SharedString;
 
 use crate::dmx::color::DmxColor;
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct Presets {
     colors: HashMap<ColorPresetId, ColorPreset>,
 }

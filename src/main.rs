@@ -1,20 +1,18 @@
 use assets::Assets;
 use gpui::{
-    actions, App, AppContext, AssetSource, Bounds, KeyBinding, Point, Size, WindowBounds,
-    WindowOptions,
+    actions, point, size, App, AppContext, AssetSource, Bounds, Context, KeyBinding, VisualContext,
+    WindowBounds, WindowOptions,
 };
-use show::{cmd, Show, ShowView};
+use show::Show;
+use workspace::{cmd, Workspace};
 
 pub mod color;
 pub mod dmx;
-pub mod layout;
-pub mod presets;
-pub mod screen;
 pub mod show;
 pub mod ui;
-pub mod window;
+pub mod workspace;
 
-actions!(app, [Quit]);
+actions!(app, [Quit, OpenShow]);
 
 fn main() {
     App::new().run(|cx: &mut AppContext| {
@@ -32,98 +30,36 @@ fn main() {
 
         cx.bind_keys([
             KeyBinding::new("cmd-q", Quit, None),
-            KeyBinding::new("s", cmd::Store, Some("Show")),
-            KeyBinding::new("escape", cmd::Clear, Some("Show")),
-            KeyBinding::new("t", cmd::Test, Some("Show")),
+            KeyBinding::new("cmd-o", OpenShow, None),
+            KeyBinding::new("s", cmd::Store, Some("Workspace")),
+            KeyBinding::new("escape", cmd::Clear, Some("Workspace")),
         ]);
 
         cx.on_action(|_action: &Quit, cx: &mut AppContext| cx.quit());
 
+        let show = cx.new_model(|_cx| Show::default());
+
+        cx.on_action({
+            let show = show.clone();
+            move |_action: &OpenShow, cx: &mut AppContext| {
+                show.update(cx, |show, cx| {
+                    let mut new_show = Show::default();
+                    new_show.name = "Super mega show".into();
+                    *show = new_show;
+                    cx.notify();
+                })
+            }
+        });
+
         cx.open_window(
             WindowOptions {
                 bounds: WindowBounds::Fixed(Bounds {
-                    origin: Point {
-                        x: 500.0.into(),
-                        y: 350.0.into(),
-                    },
-                    size: Size {
-                        width: 1280.0.into(),
-                        height: 720.0.into(),
-                    },
+                    origin: point(0.0.into(), 0.0.into()),
+                    size: size(600.0.into(), 400.0.into()),
                 }),
                 ..Default::default()
             },
-            |cx| {
-                cx.set_global(Show::new());
-
-                cx.update_global::<Show, _>(|show, _cx| {
-                    show.presets.add_color_preset(presets::ColorPreset::new(
-                        "White",
-                        dmx::color::DmxColor::new(255, 255, 255),
-                    ));
-
-                    show.presets.add_color_preset(presets::ColorPreset::new(
-                        "Red",
-                        dmx::color::DmxColor::new(255, 0, 0),
-                    ));
-
-                    show.presets.add_color_preset(presets::ColorPreset::new(
-                        "Orange",
-                        dmx::color::DmxColor::new(255, 128, 0),
-                    ));
-
-                    show.presets.add_color_preset(presets::ColorPreset::new(
-                        "Yellow",
-                        dmx::color::DmxColor::new(255, 255, 0),
-                    ));
-
-                    show.presets.add_color_preset(presets::ColorPreset::new(
-                        "Lime",
-                        dmx::color::DmxColor::new(128, 255, 0),
-                    ));
-
-                    show.presets.add_color_preset(presets::ColorPreset::new(
-                        "Green",
-                        dmx::color::DmxColor::new(0, 255, 0),
-                    ));
-
-                    show.presets.add_color_preset(presets::ColorPreset::new(
-                        "Sea Green",
-                        dmx::color::DmxColor::new(0, 255, 128),
-                    ));
-
-                    show.presets.add_color_preset(presets::ColorPreset::new(
-                        "Cyan",
-                        dmx::color::DmxColor::new(0, 255, 255),
-                    ));
-
-                    show.presets.add_color_preset(presets::ColorPreset::new(
-                        "Sky Blue",
-                        dmx::color::DmxColor::new(0, 128, 255),
-                    ));
-
-                    show.presets.add_color_preset(presets::ColorPreset::new(
-                        "Blue",
-                        dmx::color::DmxColor::new(0, 0, 255),
-                    ));
-
-                    show.presets.add_color_preset(presets::ColorPreset::new(
-                        "Purple",
-                        dmx::color::DmxColor::new(128, 0, 255),
-                    ));
-
-                    show.presets.add_color_preset(presets::ColorPreset::new(
-                        "Magenta",
-                        dmx::color::DmxColor::new(255, 0, 255),
-                    ));
-
-                    show.presets.add_color_preset(presets::ColorPreset::new(
-                        "Pink",
-                        dmx::color::DmxColor::new(255, 0, 128),
-                    ));
-                });
-                ShowView::build(cx)
-            },
+            |cx| cx.new_view(|cx| Workspace::new(show, cx)),
         );
     })
 }

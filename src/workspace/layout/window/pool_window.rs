@@ -7,51 +7,12 @@ use gpui::{
 use crate::{
     color,
     layout::GridSize,
-    presets::{ColorPreset, ColorPresetId, Preset},
-    show::Show,
+    presets::{ColorPreset, Preset},
     ui::{grid_div, uniform_grid::uniform_grid},
 };
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct PoolWindow {
-    pub kind: PoolWindowKind,
-    size: GridSize,
-    scroll_offset: i16,
-}
-
-impl PoolWindow {
-    pub fn new(kind: PoolWindowKind, size: GridSize, scroll_offset: i16) -> Self {
-        Self {
-            kind,
-            scroll_offset,
-            size,
-        }
-    }
-
-    pub fn window_title(&self) -> &str {
-        match &self.kind {
-            PoolWindowKind::Color => "Color",
-        }
-    }
-
-    pub fn color(&self) -> Rgba {
-        match &self.kind {
-            PoolWindowKind::Color => rgb(0x27D0CD),
-        }
-    }
-
-    pub fn item_count(&self) -> usize {
-        self.size.rows * self.size.cols - 1
-    }
-}
-
-#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
-pub enum PoolWindowKind {
-    Color,
-}
-
 pub struct PoolWindowView {
-    pool_window: Model<PoolWindow>,
+    kind: PoolWindowKind,
     scroll_offset: i16,
     header_cell: View<HeaderCellView>,
     pool_items: Vec<View<PoolItemView>>,
@@ -61,13 +22,28 @@ impl PoolWindowView {
     const ROW_SCROLL_OFFSET_MAX: i16 = 10000;
     const SCROLL_SENSITIVITY: f32 = 0.5;
 
-    pub fn build(pool_window: Model<PoolWindow>, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|cx| Self {
-            scroll_offset: pool_window.read(cx).scroll_offset,
-            pool_items: Self::get_pool_items(pool_window.clone(), cx),
-            header_cell: HeaderCellView::build(pool_window.clone(), cx),
+    pub fn build(cx: &mut WindowContext) -> Self {
+        Self {
+            scroll_offset,
+            pool_items,
+            header_cell: HeaderCellView::new(cx),
             pool_window,
-        })
+        }
+    }
+
+    pub fn new(kind: PoolWindowKind, size: GridSize, scroll_offset: i16) -> Self {
+        Self {
+            kind,
+            scroll_offset,
+            size,
+        }
+    }
+
+    /// Number of pool items shown in the window.
+    ///
+    /// This does not include the header cell.
+    pub fn item_count(&self) -> usize {
+        self.size.rows * self.size.cols - 1
     }
 
     fn get_pool_items(
@@ -174,84 +150,21 @@ impl Render for HeaderCellView {
     }
 }
 
-struct PoolItemView {
-    pool_window: Model<PoolWindow>,
-    id: usize,
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub enum PoolWindowKind {
+    Color,
 }
 
-impl PoolItemView {
-    pub fn build(
-        pool_window: Model<PoolWindow>,
-        id: usize,
-        cx: &mut ViewContext<PoolWindowView>,
-    ) -> View<Self> {
-        cx.new_view(|_cx| Self { pool_window, id })
+impl PoolWindowKind {
+    pub fn window_title(&self) -> &str {
+        match &self {
+            PoolWindowKind::Color => "Color",
+        }
     }
 
-    fn render_color_pool_item(&self, color_preset: &ColorPreset) -> impl IntoElement {
-        let color: Rgba = color_preset.color.clone().into();
-        let label = color_preset.label().to_string();
-
-        div()
-            .size_full()
-            .flex()
-            .flex_col_reverse()
-            .bg(color::opacify(color, 0.8))
-            .rounded_md()
-            .child(
-                div()
-                    .bg(color)
-                    .h_1_3()
-                    .border_t()
-                    .rounded_b_md()
-                    .border_color(color::darken(color, 0.4)),
-            )
-            .child(div().flex().justify_center().text_xs().child(label))
-    }
-
-    fn render_empty_pool_item(&self) -> impl IntoElement {
-        div().size_full()
-    }
-}
-
-impl Render for PoolItemView {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let pool_window = self.pool_window.read(cx);
-
-        let mut has_content = false;
-        let content = match &pool_window.kind {
-            PoolWindowKind::Color => {
-                let color_preset = Show::global(cx)
-                    .presets
-                    .color_preset(ColorPresetId(self.id));
-
-                match color_preset {
-                    Some(color_preset) => {
-                        has_content = true;
-                        self.render_color_pool_item(color_preset).into_any_element()
-                    }
-                    None => self.render_empty_pool_item().into_any_element(),
-                }
-            }
-        };
-
-        div()
-            .bg(rgb(0x202020))
-            .border_color(color::darken(pool_window.color(), 0.7))
-            .border_1()
-            .rounded_md()
-            .size_full()
-            .relative()
-            .child(div().size_full().absolute().inset_0().child(content))
-            .child(
-                div()
-                    .absolute()
-                    .size_full()
-                    .text_sm()
-                    .text_color(rgb(0x808080))
-                    .when(has_content, |this| this.text_color(rgb(0xffffff)))
-                    .pl(px(4.0))
-                    .child(format!("{}", self.id)),
-            )
+    pub fn color(&self) -> Rgba {
+        match &self {
+            PoolWindowKind::Color => rgb(0x27D0CD),
+        }
     }
 }
