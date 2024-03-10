@@ -5,6 +5,7 @@ use gpui::{
 };
 use show::{cmd, Show, ShowView};
 
+pub mod color;
 pub mod dmx;
 pub mod layout;
 pub mod presets;
@@ -56,13 +57,70 @@ fn main() {
                 cx.set_global(Show::new());
 
                 cx.update_global::<Show, _>(|show, _cx| {
-                    show.presets.set_color_preset(
-                        presets::ColorPresetId(3),
-                        presets::ColorPreset::new(
-                            "Magneta",
-                            dmx::color::DmxColor::new(255, 0, 255),
-                        ),
-                    );
+                    show.presets.add_color_preset(presets::ColorPreset::new(
+                        "White",
+                        dmx::color::DmxColor::new(255, 255, 255),
+                    ));
+
+                    show.presets.add_color_preset(presets::ColorPreset::new(
+                        "Red",
+                        dmx::color::DmxColor::new(255, 0, 0),
+                    ));
+
+                    show.presets.add_color_preset(presets::ColorPreset::new(
+                        "Orange",
+                        dmx::color::DmxColor::new(255, 128, 0),
+                    ));
+
+                    show.presets.add_color_preset(presets::ColorPreset::new(
+                        "Yellow",
+                        dmx::color::DmxColor::new(255, 255, 0),
+                    ));
+
+                    show.presets.add_color_preset(presets::ColorPreset::new(
+                        "Lime",
+                        dmx::color::DmxColor::new(128, 255, 0),
+                    ));
+
+                    show.presets.add_color_preset(presets::ColorPreset::new(
+                        "Green",
+                        dmx::color::DmxColor::new(0, 255, 0),
+                    ));
+
+                    show.presets.add_color_preset(presets::ColorPreset::new(
+                        "Sea Green",
+                        dmx::color::DmxColor::new(0, 255, 128),
+                    ));
+
+                    show.presets.add_color_preset(presets::ColorPreset::new(
+                        "Cyan",
+                        dmx::color::DmxColor::new(0, 255, 255),
+                    ));
+
+                    show.presets.add_color_preset(presets::ColorPreset::new(
+                        "Sky Blue",
+                        dmx::color::DmxColor::new(0, 128, 255),
+                    ));
+
+                    show.presets.add_color_preset(presets::ColorPreset::new(
+                        "Blue",
+                        dmx::color::DmxColor::new(0, 0, 255),
+                    ));
+
+                    show.presets.add_color_preset(presets::ColorPreset::new(
+                        "Purple",
+                        dmx::color::DmxColor::new(128, 0, 255),
+                    ));
+
+                    show.presets.add_color_preset(presets::ColorPreset::new(
+                        "Magenta",
+                        dmx::color::DmxColor::new(255, 0, 255),
+                    ));
+
+                    show.presets.add_color_preset(presets::ColorPreset::new(
+                        "Pink",
+                        dmx::color::DmxColor::new(255, 0, 128),
+                    ));
                 });
                 ShowView::build(cx)
             },

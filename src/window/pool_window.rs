@@ -1,11 +1,13 @@
 use gpui::{
-    div, px, rgb, rgba, InteractiveElement, IntoElement, Model, ParentElement, Render, Rgba,
-    ScrollWheelEvent, Styled, View, ViewContext, VisualContext, WindowContext,
+    div, prelude::FluentBuilder, px, rgb, rgba, InteractiveElement, IntoElement, Model,
+    ParentElement, Render, Rgba, ScrollWheelEvent, Styled, View, ViewContext, VisualContext,
+    WindowContext,
 };
 
 use crate::{
+    color,
     layout::GridSize,
-    presets::{ColorPresetId, Preset},
+    presets::{ColorPreset, ColorPresetId, Preset},
     show::Show,
     ui::{grid_div, uniform_grid::uniform_grid},
 };
@@ -150,7 +152,8 @@ impl Render for HeaderCellView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let pool_window = self.pool_window.read(cx);
         let title = pool_window.window_title().to_string();
-        let color = pool_window.color();
+        let color = color::darken(pool_window.color(), 0.1);
+        let border_color = pool_window.color();
 
         grid_div(GridSize::new(1, 1), None)
             .bg(color)
@@ -158,7 +161,7 @@ impl Render for HeaderCellView {
             .justify_center()
             .rounded_md()
             .border()
-            .border_color(rgba(0x00000040))
+            .border_color(border_color)
             .items_center()
             .child(
                 div()
@@ -184,14 +187,38 @@ impl PoolItemView {
     ) -> View<Self> {
         cx.new_view(|_cx| Self { pool_window, id })
     }
+
+    fn render_color_pool_item(&self, color_preset: &ColorPreset) -> impl IntoElement {
+        let color: Rgba = color_preset.color.clone().into();
+        let label = color_preset.label().to_string();
+
+        div()
+            .size_full()
+            .flex()
+            .flex_col_reverse()
+            .bg(color::opacify(color, 0.8))
+            .rounded_md()
+            .child(
+                div()
+                    .bg(color)
+                    .h_1_3()
+                    .border_t()
+                    .rounded_b_md()
+                    .border_color(color::darken(color, 0.4)),
+            )
+            .child(div().flex().justify_center().text_xs().child(label))
+    }
+
+    fn render_empty_pool_item(&self) -> impl IntoElement {
+        div().size_full()
+    }
 }
 
 impl Render for PoolItemView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let pool_window = self.pool_window.read(cx);
-        let mut border_color = pool_window.color();
-        border_color.a = 0.2;
 
+        let mut has_content = false;
         let content = match &pool_window.kind {
             PoolWindowKind::Color => {
                 let color_preset = Show::global(cx)
@@ -200,40 +227,31 @@ impl Render for PoolItemView {
 
                 match color_preset {
                     Some(color_preset) => {
-                        let color: Rgba = color_preset.color.clone().into();
-                        let label = color_preset.label().to_string();
-
-                        div()
-                            .size_full()
-                            .flex()
-                            .flex_col()
-                            .justify_center()
-                            .items_center()
-                            .text_xs()
-                            .child(label)
-                            .child(div().size_1_3().bg(color))
+                        has_content = true;
+                        self.render_color_pool_item(color_preset).into_any_element()
                     }
-                    None => div().size_full(),
+                    None => self.render_empty_pool_item().into_any_element(),
                 }
             }
         };
 
         div()
             .bg(rgb(0x202020))
-            .border_color(border_color)
+            .border_color(color::darken(pool_window.color(), 0.7))
             .border_1()
             .rounded_md()
             .size_full()
             .relative()
+            .child(div().size_full().absolute().inset_0().child(content))
             .child(
                 div()
-                    .size_full()
                     .absolute()
+                    .size_full()
                     .text_sm()
                     .text_color(rgb(0x808080))
+                    .when(has_content, |this| this.text_color(rgb(0xffffff)))
                     .pl(px(4.0))
                     .child(format!("{}", self.id)),
             )
-            .child(div().size_full().absolute().child(content))
     }
 }
