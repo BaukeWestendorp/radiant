@@ -43,8 +43,6 @@ impl Render for Layout {
         div()
             .size_full()
             .bg(rgb(0x181818))
-            .flex()
-            .flex_shrink()
             .children(self.windows.clone())
     }
 }

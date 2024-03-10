@@ -66,7 +66,10 @@ impl Workspace {
             new_show.name = "Super mega show".into();
             new_show.layout.windows.push(show::Window {
                 bounds: LayoutBounds::new(LayoutPoint::new(0, 0), LayoutSize::new(8, 4)),
-                kind: show::WindowKind::Pool,
+                kind: show::WindowKind::Pool(show::PoolWindow {
+                    kind: show::PoolWindowKind::Color,
+                    scroll_offset: 1,
+                }),
             });
 
             *show = new_show;
