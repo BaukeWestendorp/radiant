@@ -1,17 +1,20 @@
 use gpui::{
-    div, InteractiveElement, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
-    VisualContext, WindowContext,
+    div, rgba, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext, VisualContext,
+    WindowContext,
 };
 
-use crate::show::{self};
+use crate::color;
+use crate::show::{self, Show};
 use crate::ui::{grid_div, uniform_grid::uniform_grid};
 use crate::workspace::layout::LayoutSize;
+
+use super::pool_item::PoolItem;
+use super::Window;
 
 pub struct PoolWindow {
     show_pool_window: show::PoolWindow,
     show_window: show::Window,
-    // header_cell: View<HeaderCell>,
-    // pool_items: Vec<View<PoolItem>>,
+    pool_items: Vec<View<PoolItem>>,
 }
 
 impl PoolWindow {
@@ -21,15 +24,20 @@ impl PoolWindow {
     pub fn build(
         show_pool_window: &show::PoolWindow,
         show_window: &show::Window,
-        cx: &mut WindowContext,
+        show: Model<Show>,
+        cx: &mut ViewContext<Window>,
     ) -> View<Self> {
-        cx.new_view(|cx| {
-            Self {
-                show_pool_window: show_pool_window.clone(),
-                show_window: show_window.clone(),
-                // pool_items,
-                // header_cell: HeaderCell::new(cx),
-            }
+        let pool_items = create_pool_items(
+            show_window.bounds.size.rows * show_window.bounds.size.cols - 1,
+            show_pool_window,
+            show,
+            cx,
+        );
+
+        cx.new_view(|_cx| Self {
+            show_pool_window: show_pool_window.clone(),
+            show_window: show_window.clone(),
+            pool_items,
         })
     }
 
@@ -40,29 +48,28 @@ impl PoolWindow {
         self.show_window.bounds.size.rows * self.show_window.bounds.size.cols - 1
     }
 
-    // fn get_pool_items(
-    //     pool_window: Model<PoolWindow>,
-    //     cx: &mut ViewContext<Self>,
-    // ) -> Vec<View<PoolItem>> {
-    //     let total_items = pool_window.read(cx).item_count();
-    //     let range = 0..total_items;
-    //     range
-    //         .map(|ix| {
-    //             let pool_window_model = pool_window.clone();
-    //             let pool_window = pool_window.read(cx);
-    //             let id = ix + pool_window.scroll_offset as usize * pool_window.size.cols;
+    pub fn render_header_cell(&mut self) -> impl IntoElement {
+        let title = self.show_pool_window.kind.window_title().to_string();
+        let color = color::darken(self.show_pool_window.kind.color(), 0.1);
+        let border_color = self.show_pool_window.kind.color();
 
-    //             let pool_item = PoolItem::build(pool_window_model, id, cx);
-    //             pool_item
-    //         })
-    //         .collect()
-    // }
-
-    // fn update_pool_items(&mut self, cx: &mut WindowContext, f: impl Fn(usize, &mut PoolItem)) {
-    //     for (ix, pool_item) in self.pool_items.iter_mut().enumerate() {
-    //         pool_item.update(cx, |pool_item, _cx| f(ix, pool_item));
-    //     }
-    // }
+        grid_div(LayoutSize::new(1, 1), None)
+            .bg(color)
+            .flex()
+            .justify_center()
+            .rounded_md()
+            .border()
+            .border_color(border_color)
+            .items_center()
+            .child(
+                div()
+                    .bg(rgba(0x00000040))
+                    .px_1()
+                    .rounded_sm()
+                    .text_sm()
+                    .child(title),
+            )
+    }
 
     // fn handle_scroll(&mut self, event: &ScrollWheelEvent, cx: &mut ViewContext<Self>) {
     //     let pool_window = self.pool_window.read(cx);
@@ -83,67 +90,45 @@ impl PoolWindow {
     // }
 }
 
+fn create_pool_items(
+    item_count: usize,
+    show_pool_window: &show::PoolWindow,
+    show: Model<Show>,
+    cx: &mut WindowContext,
+) -> Vec<View<PoolItem>> {
+    (0..item_count)
+        .map(|ix| {
+            PoolItem::build(
+                // We subtract 1 to the id because we have to skip the header cell.
+                ix + show_pool_window.scroll_offset - 1,
+                show_pool_window.kind,
+                show.clone(),
+                cx,
+            )
+        })
+        .collect()
+}
+
 impl Render for PoolWindow {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        // let header_cell = self.header_cell.clone();
-
         grid_div(self.show_window.bounds.size, None)
             .size_full()
-            .bg(gpui::red())
-            .child("Pool window")
-        // .child(uniform_grid(
-        //     cx.view().clone(),
-        //     "pool_items",
-        //     self.show_window.bounds.size.cols,
-        //     self.show_window.bounds.size.rows,
-        //     move |view, _range, _cx| {
-        //         let mut cells = vec![div().child(header_cell.clone())];
+            .child(uniform_grid(
+                cx.view().clone(),
+                "pool_items",
+                self.show_window.bounds.size.cols,
+                self.show_window.bounds.size.rows,
+                move |view, _range, _cx| {
+                    let header_cell = view.render_header_cell();
+                    let mut cells = vec![div().child(header_cell)];
 
-        //         cells.extend(view.pool_items.iter().map(|pool_cell| {
-        //             grid_div(LayoutSize::new(1, 1), None).child(pool_cell.clone())
-        //         }));
+                    cells.extend(view.pool_items.iter().map(|pool_item| {
+                        grid_div(LayoutSize::new(1, 1), None).child(pool_item.clone())
+                    }));
 
-        //         cells
-        //     },
-        // ))
+                    cells
+                },
+            ))
         // .on_scroll_wheel(cx.listener(Self::handle_scroll))
-    }
-}
-
-struct HeaderCell {
-    pool_window: Model<PoolWindow>,
-}
-
-impl HeaderCell {
-    pub fn build(pool_window: Model<PoolWindow>, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|_cx| Self { pool_window })
-    }
-}
-
-impl Render for HeaderCell {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
-        // let pool_window = self.pool_window.read(cx);
-        // let title = pool_window.window_title().to_string();
-        // let color = color::darken(pool_window.color(), 0.1);
-        // let border_color = pool_window.color();
-
-        // grid_div(GridSize::new(1, 1), None)
-        //     .bg(color)
-        //     .flex()
-        //     .justify_center()
-        //     .rounded_md()
-        //     .border()
-        //     .border_color(border_color)
-        //     .items_center()
-        //     .child(
-        //         div()
-        //             .bg(rgba(0x00000040))
-        //             .px_1()
-        //             .rounded_sm()
-        //             .text_sm()
-        //             .child(title),
-        //     )
-        div()
-        // TODO:
     }
 }

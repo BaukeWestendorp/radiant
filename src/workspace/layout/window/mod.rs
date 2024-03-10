@@ -1,23 +1,29 @@
 use gpui::{
-    div, rgb, AnyView, IntoElement, ParentElement, Render, Styled, View, ViewContext,
+    div, rgb, AnyView, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
     VisualContext, WindowContext,
 };
 
-use crate::show::{self, WindowKind};
+use crate::show::{self, Show, WindowKind};
 use crate::ui::grid_div;
 
 use self::pool_window::PoolWindow;
 
-// pub mod pool_item;
+pub mod pool_item;
 pub mod pool_window;
 
 pub struct Window {
+    show: Model<Show>,
     show_window: show::Window,
 }
 
 impl Window {
-    pub fn build(show_window: &show::Window, cx: &mut WindowContext) -> View<Self> {
+    pub fn build(
+        show_window: &show::Window,
+        show: Model<Show>,
+        cx: &mut WindowContext,
+    ) -> View<Self> {
         cx.new_view(|_cx| Self {
+            show,
             show_window: show_window.clone(),
         })
     }
@@ -46,7 +52,7 @@ impl Window {
     fn render_content(&self, cx: &mut ViewContext<Self>) -> AnyView {
         match &self.show_window.kind {
             WindowKind::Pool(pool_window) => {
-                PoolWindow::build(pool_window, &self.show_window, cx).into()
+                PoolWindow::build(pool_window, &self.show_window, self.show.clone(), cx).into()
             }
         }
     }
@@ -68,8 +74,4 @@ impl Render for Window {
         .children(self.render_header())
         .child(content)
     }
-}
-
-pub trait WindowContent: Render {
-    fn render_test(&mut self) {}
 }

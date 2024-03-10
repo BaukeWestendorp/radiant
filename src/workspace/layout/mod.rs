@@ -26,7 +26,7 @@ impl Layout {
                     .windows
                     .clone()
                     .iter()
-                    .map(|window| Window::build(window, cx))
+                    .map(|window| Window::build(window, show.clone(), cx))
                     .collect();
             })
             .detach();

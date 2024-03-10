@@ -1,15 +1,32 @@
-use gpui::{div, IntoElement, ParentElement, Render, Rgba, Styled, ViewContext};
+use gpui::prelude::FluentBuilder;
+use gpui::{
+    div, px, rgb, IntoElement, Model, ParentElement, Render, Rgba, Styled, View, ViewContext,
+    VisualContext, WindowContext,
+};
 
 use crate::color;
-use crate::show::presets::{ColorPreset, Preset};
+use crate::show::presets::{ColorPreset, ColorPresetId, Preset};
+use crate::show::{PoolWindowKind, Show};
 
 pub struct PoolItem {
+    pool_window_kind: PoolWindowKind,
+    show: Model<Show>,
+
     id: usize,
 }
 
 impl PoolItem {
-    pub fn build(id: usize) -> Self {
-        Self { id }
+    pub fn build(
+        id: usize,
+        pool_window_kind: PoolWindowKind,
+        show: Model<Show>,
+        cx: &mut WindowContext,
+    ) -> View<Self> {
+        cx.new_view(|_cx| Self {
+            pool_window_kind,
+            show,
+            id,
+        })
     }
 
     fn render_color_pool_item(&self, color_preset: &ColorPreset) -> impl IntoElement {
@@ -39,43 +56,45 @@ impl PoolItem {
 }
 
 impl Render for PoolItem {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
-        // let pool_color = ();
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        let pool_color = self.pool_window_kind.color();
 
-        // let mut has_content = false;
-        // let content = match &pool_window.kind {
-        //     PoolWindowKind::Color => {
-        //         let color_preset = ();
+        let mut has_content = false;
+        let content = match &self.pool_window_kind {
+            PoolWindowKind::Color => {
+                let color_preset = self
+                    .show
+                    .read(cx)
+                    .presets
+                    .color_preset(ColorPresetId(self.id));
 
-        //         match color_preset {
-        //             Some(color_preset) => {
-        //                 has_content = true;
-        //                 self.render_color_pool_item(color_preset).into_any_element()
-        //             }
-        //             None => self.render_empty_pool_item().into_any_element(),
-        //         }
-        //     }
-        // };
+                match color_preset {
+                    Some(color_preset) => {
+                        has_content = true;
+                        self.render_color_pool_item(color_preset).into_any_element()
+                    }
+                    None => self.render_empty_pool_item().into_any_element(),
+                }
+            }
+        };
 
-        // div()
-        //     .bg(rgb(0x202020))
-        //     .border_color(color::darken(pool_color, 0.7))
-        //     .border_1()
-        //     .rounded_md()
-        //     .size_full()
-        //     .relative()
-        //     .child(div().size_full().absolute().inset_0().child(content))
-        //     .child(
-        //         div()
-        //             .absolute()
-        //             .size_full()
-        //             .text_sm()
-        //             .text_color(rgb(0x808080))
-        //             .when(has_content, |this| this.text_color(rgb(0xffffff)))
-        //             .pl(px(4.0))
-        //             .child(format!("{}", self.id)),
-        //     )
         div()
-        // TODO:
+            .bg(rgb(0x202020))
+            .border_color(color::darken(pool_color, 0.7))
+            .border_1()
+            .rounded_md()
+            .size_full()
+            .relative()
+            .child(div().size_full().absolute().inset_0().child(content))
+            .child(
+                div()
+                    .absolute()
+                    .size_full()
+                    .text_sm()
+                    .text_color(rgb(0x808080))
+                    .when(has_content, |this| this.text_color(rgb(0xffffff)))
+                    .pl(px(4.0))
+                    .child(format!("{}", self.id)),
+            )
     }
 }

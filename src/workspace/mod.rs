@@ -5,6 +5,8 @@ use gpui::{
     ParentElement, Render, Styled, View, ViewContext,
 };
 
+use crate::dmx::color::DmxColor;
+use crate::show::presets::ColorPreset;
 use crate::show::{self, Show};
 use screen::Screen;
 
@@ -71,8 +73,11 @@ impl Workspace {
                     scroll_offset: 1,
                 }),
             });
-
+            new_show
+                .presets
+                .add_color_preset(ColorPreset::new("Green", DmxColor::new(0, 255, 0)));
             *show = new_show;
+
             cx.notify();
         });
     }
