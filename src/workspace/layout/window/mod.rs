@@ -12,28 +12,28 @@ pub mod pool_item;
 pub mod pool_window;
 
 pub struct Window {
+    window_id: usize,
+    content: AnyView,
     show: Model<Show>,
-    show_window: show::Window,
 }
 
 impl Window {
-    pub fn build(
-        show_window: &show::Window,
-        show: Model<Show>,
-        cx: &mut WindowContext,
-    ) -> View<Self> {
-        cx.new_view(|_cx| Self {
+    pub fn build(window_id: usize, show: Model<Show>, cx: &mut WindowContext) -> View<Self> {
+        cx.new_view(|cx| Self {
+            window_id,
+            content: render_content(window_id, show.clone(), cx),
             show,
-            show_window: show_window.clone(),
         })
     }
 
-    fn render_header(&self) -> Option<impl IntoElement> {
-        if !self.show_window.kind.show_header() {
+    fn render_header(&self, cx: &mut ViewContext<Self>) -> Option<impl IntoElement> {
+        let show_window = self.show_window(cx);
+
+        if !show_window.kind.show_header() {
             return None;
         }
 
-        let window_title = self.show_window.kind.window_title().to_string();
+        let window_title = show_window.kind.window_title().to_string();
 
         let header = div()
             .flex()
@@ -49,29 +49,32 @@ impl Window {
         Some(header)
     }
 
-    fn render_content(&self, cx: &mut ViewContext<Self>) -> AnyView {
-        match &self.show_window.kind {
-            WindowKind::Pool(pool_window) => {
-                PoolWindow::build(pool_window, &self.show_window, self.show.clone(), cx).into()
-            }
-        }
+    fn show_window<'a>(&self, cx: &'a mut ViewContext<Self>) -> &'a show::Window {
+        self.show.read(cx).layout.window(self.window_id).unwrap()
+    }
+}
+
+fn render_content(window_id: usize, show: Model<Show>, cx: &mut ViewContext<Window>) -> AnyView {
+    let show_window = show.read(cx).layout.window(window_id).unwrap();
+
+    match show_window.kind {
+        WindowKind::Pool(_) => PoolWindow::build(window_id, show.clone(), cx).into(),
     }
 }
 
 impl Render for Window {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        let show_window = self.show_window(cx);
+
         let content = div()
             .bg(rgb(0x202020))
             .size_full()
-            .child(self.render_content(cx));
+            .child(self.content.clone());
 
-        grid_div(
-            self.show_window.bounds.size,
-            Some(self.show_window.bounds.origin),
-        )
-        .flex()
-        .flex_col()
-        .children(self.render_header())
-        .child(content)
+        grid_div(show_window.bounds.size, Some(show_window.bounds.origin))
+            .flex()
+            .flex_col()
+            .children(self.render_header(cx))
+            .child(content)
     }
 }

@@ -43,11 +43,15 @@ fn main() {
             WindowOptions {
                 bounds: WindowBounds::Fixed(Bounds {
                     origin: point(0.0.into(), 0.0.into()),
-                    size: size(600.0.into(), 400.0.into()),
+                    size: size(800.0.into(), 600.0.into()),
                 }),
                 ..Default::default()
             },
-            |cx| cx.new_view(|cx| Workspace::new(show, cx)),
+            |cx| {
+                let workspace = cx.new_view(|cx| Workspace::new(show, cx));
+
+                workspace
+            },
         );
     })
 }

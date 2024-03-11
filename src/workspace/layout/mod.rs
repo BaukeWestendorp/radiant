@@ -23,10 +23,10 @@ impl Layout {
                 this.windows = show
                     .read(cx)
                     .layout
-                    .windows
+                    .window_ids()
                     .clone()
                     .iter()
-                    .map(|window| Window::build(window, show.clone(), cx))
+                    .map(|window_id| Window::build(*window_id, show.clone(), cx))
                     .collect();
             })
             .detach();
@@ -56,6 +56,10 @@ pub struct LayoutBounds {
 impl LayoutBounds {
     pub fn new(origin: LayoutPoint, size: LayoutSize) -> Self {
         Self { origin, size }
+    }
+
+    pub fn cell_count(&self) -> usize {
+        self.size.cols * self.size.rows
     }
 }
 
