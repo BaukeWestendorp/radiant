@@ -32,6 +32,7 @@ impl Layout {
     pub fn pool_window(&self, id: usize) -> Option<&PoolWindow> {
         self.window(id).and_then(|window| match &window.kind {
             WindowKind::Pool(pool_window) => Some(pool_window),
+            _ => None,
         })
     }
 
@@ -39,6 +40,7 @@ impl Layout {
         self.window_mut(id)
             .and_then(|window| match &mut window.kind {
                 WindowKind::Pool(pool_window) => Some(pool_window),
+                _ => None,
             })
     }
 
@@ -67,18 +69,21 @@ pub struct Window {
 #[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]
 pub enum WindowKind {
     Pool(PoolWindow),
+    ColorPicker(ColorPickerWindow),
 }
 
 impl WindowKind {
     pub fn window_title(&self) -> &str {
         match self {
             WindowKind::Pool(_) => "Pool Window",
+            WindowKind::ColorPicker(_) => "Color Picker",
         }
     }
 
     pub fn show_header(&self) -> bool {
         match self {
             WindowKind::Pool(_) => false,
+            WindowKind::ColorPicker(_) => true,
         }
     }
 }
@@ -107,3 +112,6 @@ impl PoolWindowKind {
         }
     }
 }
+
+#[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]
+pub struct ColorPickerWindow {}

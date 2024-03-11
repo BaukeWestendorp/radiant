@@ -6,8 +6,10 @@ use gpui::{
 use crate::show::{self, Show, WindowKind};
 use crate::ui::grid_div;
 
+use self::color_picker::ColorPickerWindow;
 use self::pool_window::PoolWindow;
 
+pub mod color_picker;
 pub mod pool_item;
 pub mod pool_window;
 
@@ -59,6 +61,7 @@ fn render_content(window_id: usize, show: Model<Show>, cx: &mut ViewContext<Wind
 
     match show_window.kind {
         WindowKind::Pool(_) => PoolWindow::build(window_id, show.clone(), cx).into(),
+        WindowKind::ColorPicker(_) => ColorPickerWindow::build(window_id, show.clone(), cx).into(),
     }
 }
 
@@ -77,4 +80,20 @@ impl Render for Window {
             .children(self.render_header(cx))
             .child(content)
     }
+}
+
+pub fn show_window<'a>(
+    show: &Model<Show>,
+    window_id: usize,
+    cx: &'a mut WindowContext,
+) -> &'a show::Window {
+    show.read(cx).layout.window(window_id).unwrap()
+}
+
+pub fn show_pool_window<'a>(
+    show: &Model<Show>,
+    window_id: usize,
+    cx: &'a mut WindowContext,
+) -> &'a show::PoolWindow {
+    show.read(cx).layout.pool_window(window_id).unwrap()
 }

@@ -4,12 +4,12 @@ use gpui::{
 };
 
 use crate::color;
-use crate::show::{self, Show};
+use crate::show::Show;
 use crate::ui::{grid_div, uniform_grid::uniform_grid};
 use crate::workspace::layout::LayoutSize;
 
 use super::pool_item::PoolItem;
-use super::Window;
+use super::{show_pool_window, show_window, Window};
 
 pub struct PoolWindow {
     window_id: usize,
@@ -137,20 +137,4 @@ impl Render for PoolWindow {
             ))
             .on_scroll_wheel(cx.listener(Self::handle_scroll))
     }
-}
-
-fn show_window<'a>(
-    show: &Model<Show>,
-    window_id: usize,
-    cx: &'a mut WindowContext,
-) -> &'a show::Window {
-    show.read(cx).layout.window(window_id).unwrap()
-}
-
-fn show_pool_window<'a>(
-    show: &Model<Show>,
-    window_id: usize,
-    cx: &'a mut WindowContext,
-) -> &'a show::PoolWindow {
-    show.read(cx).layout.pool_window(window_id).unwrap()
 }

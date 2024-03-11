@@ -1,9 +1,12 @@
 use assets::Assets;
+use dmx::color::DmxColor;
 use gpui::{
     actions, point, size, App, AppContext, AssetSource, Bounds, Context, KeyBinding, VisualContext,
     WindowBounds, WindowOptions,
 };
-use show::Show;
+use show::presets::ColorPreset;
+use show::{ColorPickerWindow, Show};
+use workspace::layout::{LayoutBounds, LayoutPoint, LayoutSize};
 use workspace::Workspace;
 
 pub mod color;
@@ -48,7 +51,21 @@ fn main() {
                 ..Default::default()
             },
             |cx| {
-                let workspace = cx.new_view(|cx| Workspace::new(show, cx));
+                let workspace = cx.new_view(|cx| Workspace::new(show.clone(), cx));
+
+                show.update(cx, |show, cx| {
+                    let mut new_show = Show::default();
+                    new_show.name = "Super mega show".into();
+                    new_show.layout.add_window(show::Window {
+                        bounds: LayoutBounds::new(LayoutPoint::new(0, 0), LayoutSize::new(8, 4)),
+                        kind: show::WindowKind::ColorPicker(ColorPickerWindow {}),
+                    });
+                    new_show
+                        .presets
+                        .add_color_preset(ColorPreset::new("Green", DmxColor::new(0, 255, 0)));
+                    *show = new_show;
+                    cx.notify();
+                });
 
                 workspace
             },
