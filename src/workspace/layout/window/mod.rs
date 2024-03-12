@@ -61,7 +61,7 @@ fn render_content(window_id: usize, show: Model<Show>, cx: &mut ViewContext<Wind
 
     match show_window.kind {
         WindowKind::Pool(_) => PoolWindow::build(window_id, show.clone(), cx).into(),
-        WindowKind::ColorPicker(_) => ColorPickerWindow::build(window_id, show.clone(), cx).into(),
+        WindowKind::ColorPicker(_) => ColorPickerWindow::build(show.clone(), cx).into(),
     }
 }
 
