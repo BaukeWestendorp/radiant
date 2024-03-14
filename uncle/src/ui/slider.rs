@@ -76,14 +76,17 @@ impl<D: SliderDelegate + 'static> Render for Slider<D> {
             )
             // Bounds reader
             .child(
-                canvas({
-                    let this = cx.view().clone();
-                    move |bounds, cx| {
-                        this.update(cx, |this, _cx| {
-                            this.bounds = *bounds;
-                        })
-                    }
-                })
+                canvas(
+                    {
+                        let this = cx.view().clone();
+                        move |bounds, cx| {
+                            this.update(cx, |this, _cx| {
+                                this.bounds = bounds.clone();
+                            })
+                        }
+                    },
+                    |_, _, _| {},
+                )
                 .absolute()
                 .size_full(),
             )

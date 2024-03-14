@@ -1,6 +1,0 @@
-{
-  "context": "show",
-  "bindings": {
-    "s": "show::Store"
-  }
-}

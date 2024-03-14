@@ -55,7 +55,8 @@ impl Layout {
     }
 
     fn new_window_id(&self) -> usize {
-        // TODO: This is not a good way to get a new id. This only works if you can't remove colors.
+        // TODO: This is not a good way to get a new id. This only works if you can't
+        // remove colors.
         self.windows.len()
     }
 }
@@ -115,3 +116,6 @@ impl PoolWindowKind {
 
 #[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]
 pub struct ColorPickerWindow {}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+pub struct Programmer {}
