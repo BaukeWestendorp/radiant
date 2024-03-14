@@ -3,11 +3,12 @@ use std::{cmp, ops::Range};
 
 use gpui::{
     point, size, AnyElement, AvailableSpace, Bounds, ContentMask, Element, ElementContext,
-    ElementId, InteractiveElement, InteractiveElementState, Interactivity, IntoElement, LayoutId,
-    Pixels, Render, Size, StyleRefinement, Styled, View, ViewContext, WindowContext,
+    ElementId, Hitbox, InteractiveElement, Interactivity, IntoElement, LayoutId, Pixels, Render,
+    Size, StyleRefinement, Styled, View, ViewContext, WindowContext,
 };
 
-/// This is a very ad-hoc implementation of a grid layout. It is not intended to be a general-purpose grid layout.
+/// This is a very ad-hoc implementation of a grid layout. It is not intended to
+/// be a general-purpose grid layout.
 pub fn uniform_grid<I, R, V>(
     view: View<V>,
     id: I,
@@ -38,7 +39,6 @@ where
     interactivity.base_style = Box::new(base_style);
 
     UniformGrid {
-        id,
         cols,
         rows,
         cell_to_measure_index: 0,
@@ -48,7 +48,6 @@ where
 }
 
 pub struct UniformGrid {
-    id: ElementId,
     cols: usize,
     rows: usize,
     cell_to_measure_index: usize,
@@ -91,78 +90,65 @@ impl UniformGrid {
 #[doc(hidden)]
 #[derive(Default)]
 pub struct GridState {
-    interactive: InteractiveElementState,
     cols: usize,
     rows: usize,
+    cells: SmallVec<[AnyElement; 32]>,
     cell_size: Size<Pixels>,
 }
 
 impl Element for UniformGrid {
-    type State = GridState;
+    type BeforeLayout = GridState;
+    type AfterLayout = Option<Hitbox>;
 
-    fn request_layout(
-        &mut self,
-        state: Option<Self::State>,
-        cx: &mut ElementContext,
-    ) -> (LayoutId, Self::State) {
+    fn before_layout(&mut self, cx: &mut ElementContext) -> (LayoutId, Self::BeforeLayout) {
         let rows = self.rows;
         let cols = self.cols;
-        let cell_size = state
-            .as_ref()
-            .map(|s| s.cell_size)
-            .unwrap_or_else(|| self.measure_cell(None, None, cx));
+        let cell_size = self.measure_cell(None, None, cx);
 
-        let (layout_id, interactive) =
-            self.interactivity
-                .layout(state.map(|s| s.interactive), cx, |style, cx| {
-                    cx.request_measured_layout(
-                        style,
-                        move |known_dimensions, available_space, _cx| {
-                            let desired_height = cell_size.height * rows;
+        let layout_id = self.interactivity.before_layout(cx, |style, cx| {
+            cx.request_measured_layout(style, move |known_dimensions, available_space, _cx| {
+                let desired_height = cell_size.height * rows;
 
-                            let width =
-                                known_dimensions
-                                    .width
-                                    .unwrap_or(match available_space.width {
-                                        AvailableSpace::Definite(x) => x,
-                                        AvailableSpace::MinContent | AvailableSpace::MaxContent => {
-                                            cell_size.width
-                                        }
-                                    });
+                let width = known_dimensions
+                    .width
+                    .unwrap_or(match available_space.width {
+                        AvailableSpace::Definite(x) => x,
+                        AvailableSpace::MinContent | AvailableSpace::MaxContent => cell_size.width,
+                    });
 
-                            let height = match available_space.height {
-                                AvailableSpace::Definite(height) => desired_height.min(height),
-                                AvailableSpace::MinContent | AvailableSpace::MaxContent => {
-                                    desired_height
-                                }
-                            };
+                let height = match available_space.height {
+                    AvailableSpace::Definite(height) => desired_height.min(height),
+                    AvailableSpace::MinContent | AvailableSpace::MaxContent => desired_height,
+                };
 
-                            size(width, height)
-                        },
-                    )
-                });
+                size(width, height)
+            })
+        });
 
         let element_state = GridState {
-            interactive,
             cols,
             rows,
+            cells: SmallVec::new(),
             cell_size,
         };
 
         (layout_id, element_state)
     }
 
-    fn paint(&mut self, bounds: Bounds<Pixels>, state: &mut Self::State, cx: &mut ElementContext) {
+    fn after_layout(
+        &mut self,
+        bounds: Bounds<Pixels>,
+        before_layout: &mut Self::BeforeLayout,
+        cx: &mut ElementContext,
+    ) -> Self::AfterLayout {
         let content_size = Size {
-            width: state.cell_size.width * state.cols as f32,
-            height: state.cell_size.height * state.rows as f32,
+            width: before_layout.cell_size.width * before_layout.cols as f32,
+            height: before_layout.cell_size.height * before_layout.rows as f32,
         };
 
         let bounds = Bounds::new(bounds.origin, content_size);
 
-        let style = self
-            .interactivity
-            .compute_style(Some(bounds), &mut state.interactive, cx);
+        let style = self.interactivity.compute_style(None, cx);
 
         let border = style.border_widths.to_pixels(cx.rem_size());
         let padding = style.padding.to_pixels(bounds.size.into(), cx.rem_size());
@@ -173,51 +159,63 @@ impl Element for UniformGrid {
                 - point(border.right + padding.right, border.bottom + padding.bottom),
         );
 
-        let cell_size = state.cell_size;
+        let cell_size = before_layout.cell_size;
         let cell_count = self.cell_count();
-        self.interactivity.paint(
+
+        self.interactivity.after_layout(
             bounds,
             content_size,
-            &mut state.interactive,
             cx,
-            |_style, mut _scroll_offset, cx| {
+            |_style, _scroll_offset, hitbox, cx| {
                 if cell_count == 0 {
-                    return;
+                    return hitbox;
                 }
 
                 let visible_range = 0..cell_count;
 
-                let mut cells = (self.render_cells)(visible_range.clone(), cx);
-                cx.with_z_index(1, |cx| {
-                    let content_mask = ContentMask { bounds };
-                    cx.with_content_mask(Some(content_mask), |cx| {
-                        for (cell, ix) in cells.iter_mut().zip(visible_range) {
-                            let cell_origin = padded_bounds.origin
-                                + point(
-                                    cell_size.width * (ix % self.cols) + padding.top,
-                                    cell_size.height * (ix / self.cols) + padding.left,
-                                );
-
-                            let available_space = size(
-                                AvailableSpace::Definite(cell_size.width),
-                                AvailableSpace::Definite(cell_size.height),
+                let cells = (self.render_cells)(visible_range.clone(), cx);
+                let content_mask = ContentMask { bounds };
+                cx.with_content_mask(Some(content_mask), |cx| {
+                    for (mut cell, ix) in cells.into_iter().zip(visible_range) {
+                        let cell_origin = padded_bounds.origin
+                            + point(
+                                cell_size.width * (ix % self.cols) + padding.top,
+                                cell_size.height * (ix / self.cols) + padding.left,
                             );
 
-                            cell.draw(cell_origin, available_space, cx)
-                        }
-                    })
-                })
+                        let available_space = size(
+                            AvailableSpace::Definite(cell_size.width),
+                            AvailableSpace::Definite(cell_size.height),
+                        );
+
+                        cell.layout(cell_origin, available_space, cx);
+                        before_layout.cells.push(cell);
+                    }
+                });
+
+                hitbox
             },
-        );
+        )
+    }
+
+    fn paint(
+        &mut self,
+        bounds: Bounds<Pixels>,
+        before_layout: &mut Self::BeforeLayout,
+        hitbox: &mut Option<Hitbox>,
+        cx: &mut ElementContext,
+    ) {
+        self.interactivity
+            .paint(bounds, hitbox.as_ref(), cx, |_, cx| {
+                for cell in &mut before_layout.cells {
+                    cell.paint(cx);
+                }
+            })
     }
 }
 
 impl IntoElement for UniformGrid {
     type Element = Self;
-
-    fn element_id(&self) -> Option<ElementId> {
-        Some(self.id.clone())
-    }
 
     fn into_element(self) -> Self::Element {
         self
