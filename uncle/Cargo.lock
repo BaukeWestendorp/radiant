@@ -3727,7 +3727,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "uncle"
+name = "radiant"
 version = "0.1.0"
 dependencies = [
  "assets",

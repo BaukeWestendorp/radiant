@@ -41,7 +41,7 @@ fn main() {
 
         cx.set_menus(vec![
             Menu {
-                name: "Uncle",
+                name: "Radiant",
                 items: vec![MenuItem::action("Quit", Quit)],
             },
             Menu {

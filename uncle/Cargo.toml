@@ -1,5 +1,5 @@
 [package]
-name = "uncle"
+name = "radiant"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,7 +9,6 @@ edition = "2021"
 gpui = { git = "https://github.com/zed-industries/zed" }
 assets = { git = "https://github.com/zed-industries/zed" }
 smallvec = "1.6"
-color-art = "0.3.7"
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.114"
 gdtf = { path = "../gdtf" }
