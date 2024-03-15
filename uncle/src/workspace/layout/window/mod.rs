@@ -10,6 +10,7 @@ use self::color_picker::ColorPickerWindow;
 use self::pool_window::PoolWindow;
 
 pub mod color_picker;
+pub mod fixture_sheet;
 pub mod pool_item;
 pub mod pool_window;
 
@@ -61,7 +62,10 @@ fn render_content(window_id: usize, show: Model<Show>, cx: &mut ViewContext<Wind
 
     match show_window.kind {
         WindowKind::Pool(_) => PoolWindow::build(window_id, show.clone(), cx).into(),
-        WindowKind::ColorPicker(_) => ColorPickerWindow::build(show.clone(), cx).into(),
+        WindowKind::ColorPicker(_) => ColorPickerWindow::build(cx).into(),
+        WindowKind::FixtureSheet(_) => {
+            fixture_sheet::FixtureSheetWindow::build(show.clone(), cx).into()
+        }
     }
 }
 

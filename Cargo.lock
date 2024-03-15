@@ -4146,6 +4146,7 @@ version = "0.1.0"
 dependencies = [
  "assets",
  "color-art",
+ "gdtf",
  "gpui",
  "serde",
  "serde_json",

@@ -3,14 +3,11 @@ use gpui::{
     VisualContext,
 };
 
-use crate::show::Show;
 use crate::ui::slider::{Slider, SliderDelegate};
 
 use super::Window;
 
 pub struct ColorPickerWindow {
-    show: Model<Show>,
-
     red_slider: View<Slider<ColorComponentSliderDelegate>>,
     red: Model<f32>,
 
@@ -22,7 +19,7 @@ pub struct ColorPickerWindow {
 }
 
 impl ColorPickerWindow {
-    pub fn build(show: Model<Show>, cx: &mut ViewContext<Window>) -> View<Self> {
+    pub fn build(cx: &mut ViewContext<Window>) -> View<Self> {
         cx.new_view(|cx| {
             let red = cx.new_model(|_cx| 0.0);
             let red_slider = cx.new_view(|_cx| {
@@ -58,7 +55,6 @@ impl ColorPickerWindow {
             });
 
             Self {
-                show,
                 red_slider,
                 red,
                 green_slider,

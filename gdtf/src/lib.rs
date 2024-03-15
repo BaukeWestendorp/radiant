@@ -19,32 +19,14 @@ pub mod fixture_type;
 /// # A GDTF archive file.
 pub struct GdtfArchive {
     /// The GDTF file descriptor.
-    pub description: GdtfDescriptor,
-}
-
-impl GdtfArchive {
-    /// Create a new GDTF file from a system file.
-    pub fn from_file(file: &File) -> Result<GdtfDescriptor, Box<dyn std::error::Error>> {
-        let file_reader = BufReader::new(file);
-        let mut archive = zip::ZipArchive::new(file_reader).unwrap();
-
-        let description = archive
-            .by_name("description.xml")
-            .expect("expected 'description.xml'");
-
-        let description_reader = BufReader::new(description);
-
-        let gdtf: GdtfDescriptor = serde_xml_rs::from_reader(description_reader).unwrap();
-
-        Ok(gdtf)
-    }
+    pub description: GdtfDescription,
 }
 
 /// # A GDTF description.
 ///
 /// [GDTF Node Attributes](https://gdtf.eu/gdtf/file-spec/file-format-definition/#table-2-gdtf-node-attributes)
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-pub struct GdtfDescriptor {
+pub struct GdtfDescription {
     /// The DataVersion attribute defines the minimal version of compatibility.
     /// The Version format is “Major.Minor”, where major and minor is Uint with
     /// size 1 byte.
@@ -57,11 +39,27 @@ pub struct GdtfDescriptor {
     pub fixture_type: FixtureType,
 }
 
-impl GdtfDescriptor {
-    /// Create a new GDTF file from a descriptor file.
-    pub fn from_file(file: &File) -> Result<GdtfDescriptor, Box<dyn std::error::Error>> {
+impl GdtfDescription {
+    /// Create a new GDTF file from a .gdtf archive file.
+    pub fn from_archive_file(file: &File) -> Result<GdtfDescription, Box<dyn std::error::Error>> {
         let file_reader = BufReader::new(file);
-        let gdtf: GdtfDescriptor = serde_xml_rs::from_reader(file_reader).unwrap();
+        let mut archive = zip::ZipArchive::new(file_reader).unwrap();
+
+        let description = archive
+            .by_name("description.xml")
+            .expect("expected 'description.xml'");
+
+        let description_reader = BufReader::new(description);
+
+        let gdtf: GdtfDescription = serde_xml_rs::from_reader(description_reader).unwrap();
+
+        Ok(gdtf)
+    }
+
+    /// Create a new GDTF file from a descriptor file.
+    pub fn from_file(file: &File) -> Result<GdtfDescription, Box<dyn std::error::Error>> {
+        let file_reader = BufReader::new(file);
+        let gdtf: GdtfDescription = serde_xml_rs::from_reader(file_reader).unwrap();
 
         Ok(gdtf)
     }
@@ -499,7 +497,7 @@ mod tests {
     fn load_gdtf_file() {
         let root = std::env::current_dir().unwrap();
         let file = std::fs::File::open(root.join("tests/test_fixture.gdtf")).unwrap();
-        let gdtf = GdtfArchive::from_file(&file);
+        let gdtf = GdtfDescription::from_archive_file(&file);
 
         assert!(gdtf.is_ok())
     }

@@ -5,7 +5,7 @@ use gpui::{
     WindowBounds, WindowOptions,
 };
 use show::presets::ColorPreset;
-use show::{ColorPickerWindow, Show};
+use show::{ColorPickerWindow, Fixture, FixtureSheetWindow, PoolWindow, Show};
 use workspace::layout::{LayoutBounds, LayoutPoint, LayoutSize};
 use workspace::Workspace;
 
@@ -46,7 +46,7 @@ fn main() {
             WindowOptions {
                 bounds: WindowBounds::Fixed(Bounds {
                     origin: point(0.0.into(), 0.0.into()),
-                    size: size(800.0.into(), 600.0.into()),
+                    size: size(800.0.into(), 1000.0.into()),
                 }),
                 ..Default::default()
             },
@@ -56,13 +56,48 @@ fn main() {
                 show.update(cx, |show, cx| {
                     let mut new_show = Show::default();
                     new_show.name = "Super mega show".into();
+
                     new_show.layout.add_window(show::Window {
-                        bounds: LayoutBounds::new(LayoutPoint::new(0, 0), LayoutSize::new(8, 4)),
+                        bounds: LayoutBounds::new(LayoutPoint::new(0, 0), LayoutSize::new(4, 4)),
                         kind: show::WindowKind::ColorPicker(ColorPickerWindow {}),
                     });
+
+                    new_show.layout.add_window(show::Window {
+                        bounds: LayoutBounds::new(LayoutPoint::new(4, 0), LayoutSize::new(4, 4)),
+                        kind: show::WindowKind::Pool(PoolWindow {
+                            kind: show::PoolWindowKind::Color,
+                            scroll_offset: 0,
+                        })
+                    });
+
+                    new_show.layout.add_window(show::Window {
+                        bounds: LayoutBounds::new(LayoutPoint::new(0, 4), LayoutSize::new(8, 4)),
+                        kind: show::WindowKind::FixtureSheet(FixtureSheetWindow {}),
+                    });
+
                     new_show
                         .presets
                         .add_color_preset(ColorPreset::new("Green", DmxColor::new(0, 255, 0)));
+
+                    let fixture_path =
+                        "/Users/baukewestendorp/dev/projects/uncle/uncle/assets/fixtures/ledforce_7_rgbw.gdtf";
+                    let type_id = new_show.patch.register_fixture_type(
+                        fixture_path,
+                    );
+
+                    for i in 0..8 {
+                        new_show.patch.fixtures.insert(
+                            i,
+                            Fixture {
+                                mode_index:( i % 2) as u8,
+                                id: i,
+                                name: format!("Led {}", i).into(),
+                                r#type: type_id,
+                                universe: 0,
+                                address: 0,
+                            },
+                        );
+                    }
                     *show = new_show;
                     cx.notify();
                 });
