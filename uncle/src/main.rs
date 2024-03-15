@@ -1,8 +1,8 @@
 use assets::Assets;
 use dmx::color::DmxColor;
 use gpui::{
-    actions, point, size, App, AppContext, AssetSource, Bounds, Context, KeyBinding, VisualContext,
-    WindowBounds, WindowOptions,
+    actions, point, size, App, AppContext, AssetSource, Bounds, Context, KeyBinding, Menu,
+    MenuItem, VisualContext, WindowBounds, WindowOptions,
 };
 use show::presets::ColorPreset;
 use show::{ColorPickerWindow, Fixture, FixtureSheetWindow, PoolWindow, Show};
@@ -40,13 +40,24 @@ fn main() {
 
         cx.on_action(|_action: &Quit, cx: &mut AppContext| cx.quit());
 
+        cx.set_menus(vec![
+            Menu {
+                name: "Uncle",
+                items: vec![MenuItem::action("Quit", Quit)],
+            },
+            Menu {
+                name: "Commands",
+                items: vec![MenuItem::action("Store", workspace::actions::cmd::Store)],
+            },
+        ]);
+
         let show = cx.new_model(|_cx| Show::default());
 
         cx.open_window(
             WindowOptions {
                 bounds: WindowBounds::Fixed(Bounds {
                     origin: point(0.0.into(), 0.0.into()),
-                    size: size(800.0.into(), 1000.0.into()),
+                    size: size(1200.0.into(), 1000.0.into()),
                 }),
                 ..Default::default()
             },
@@ -97,6 +108,8 @@ fn main() {
                     *show = new_show;
                     cx.notify();
                 });
+
+                cx.focus_view(&workspace);
 
                 workspace
             },
