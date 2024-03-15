@@ -1,7 +1,7 @@
 use assets::Assets;
 use gpui::{
     actions, point, size, App, AppContext, AssetSource, Bounds, Context, KeyBinding, Menu,
-    MenuItem, VisualContext, WindowBounds, WindowOptions,
+    MenuItem, VisualContext, WindowOptions,
 };
 
 use show::Show;
@@ -64,7 +64,7 @@ fn main() {
 
         cx.open_window(
             WindowOptions {
-                bounds: WindowBounds::Fixed(Bounds {
+                bounds: Some(Bounds {
                     origin: point(0.0.into(), 0.0.into()),
                     size: size(1200.0.into(), 1000.0.into()),
                 }),

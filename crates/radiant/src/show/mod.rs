@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 
+use assets::Assets;
 use gdtf::fixture_type::dmx_modes::{DmxChannel, DmxMode};
 use gdtf::fixture_type::FixtureType;
 use gdtf::GdtfDescription;
-use gpui::SharedString;
+use gpui::{AssetSource, SharedString};
 
 use crate::workspace::layout::LayoutBounds;
 
@@ -149,12 +150,9 @@ impl Patch {
             return Some(fixture_type.clone());
         }
 
-        let root = std::env::current_dir().unwrap();
-        let path = root.join("assets").join("fixtures").join(file_name);
-        let file = std::fs::File::open(path).unwrap();
-        let description = GdtfDescription::from_archive_file(&file).unwrap();
-        let fixture_type = description.fixture_type;
-
+        let path = format!("fixtures/{}", file_name);
+        let gdtf_description = load_gdtf_description(&path);
+        let fixture_type = gdtf_description.fixture_type;
         self.fixture_type_cache
             .insert(file_name.clone(), fixture_type.clone());
 
@@ -172,6 +170,14 @@ impl Patch {
         // remove fixture types.
         self.fixture_types.len()
     }
+}
+
+fn load_gdtf_description(path: &str) -> GdtfDescription {
+    let fixture_file = Assets
+        .load(&path)
+        .expect(format!("Fixture asset not found at path '{}'", path).as_str());
+    GdtfDescription::from_archive_bytes(&fixture_file)
+        .expect(format!("Failed to parse GDTF file at path '{}'", path).as_str())
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]

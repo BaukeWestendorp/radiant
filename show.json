@@ -1,0 +1,138 @@
+{
+  "name": "Super mega show",
+  "presets": {
+    "colors": {
+      "0": {
+        "label": "Green",
+        "color": {
+          "red": 0,
+          "green": 255,
+          "blue": 0
+        }
+      }
+    }
+  },
+  "layout": {
+    "windows": {
+      "0": {
+        "bounds": {
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "size": {
+            "cols": 4,
+            "rows": 4
+          }
+        },
+        "kind": {
+          "ColorPicker": {}
+        }
+      },
+      "1": {
+        "bounds": {
+          "origin": {
+            "x": 4,
+            "y": 0
+          },
+          "size": {
+            "cols": 4,
+            "rows": 4
+          }
+        },
+        "kind": {
+          "Pool": {
+            "kind": "Color",
+            "scroll_offset": 0
+          }
+        }
+      },
+      "2": {
+        "bounds": {
+          "origin": {
+            "x": 0,
+            "y": 4
+          },
+          "size": {
+            "cols": 10,
+            "rows": 4
+          }
+        },
+        "kind": {
+          "FixtureSheet": {}
+        }
+      }
+    }
+  },
+  "patch": {
+    "fixtures": [
+      {
+        "id": 0,
+        "name": "Led 0",
+        "type": 0,
+        "universe": 0,
+        "address": 0,
+        "mode_index": 0
+      },
+      {
+        "id": 1,
+        "name": "Led 1",
+        "type": 0,
+        "universe": 0,
+        "address": 4,
+        "mode_index": 0
+      },
+      {
+        "id": 2,
+        "name": "Led 2",
+        "type": 0,
+        "universe": 0,
+        "address": 8,
+        "mode_index": 0
+      },
+      {
+        "id": 3,
+        "name": "Led 3",
+        "type": 0,
+        "universe": 0,
+        "address": 12,
+        "mode_index": 0
+      },
+      {
+        "id": 4,
+        "name": "Led 4",
+        "type": 0,
+        "universe": 0,
+        "address": 16,
+        "mode_index": 0
+      },
+      {
+        "id": 5,
+        "name": "Led 5",
+        "type": 0,
+        "universe": 0,
+        "address": 20,
+        "mode_index": 0
+      },
+      {
+        "id": 6,
+        "name": "Led 6",
+        "type": 0,
+        "universe": 0,
+        "address": 24,
+        "mode_index": 0
+      },
+      {
+        "id": 7,
+        "name": "Led 7",
+        "type": 0,
+        "universe": 0,
+        "address": 28,
+        "mode_index": 0
+      }
+    ],
+    "fixture_types": {
+      "0": "ledforce_7_rgbw.gdtf"
+    }
+  }
+}

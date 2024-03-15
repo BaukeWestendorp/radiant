@@ -1,16 +1,11 @@
 [package]
-name = "radiant"
+name = "assets"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-gdtf.workspace = true
-assets.workspace = true
-
 gpui.workspace = true
-gpui_assets.workspace = true
-smallvec.workspace = true
-serde.workspace = true
-serde_json.workspace = true
+rust-embed.workspace = true
+anyhow.workspace = true

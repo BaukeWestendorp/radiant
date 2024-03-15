@@ -5,7 +5,7 @@
 #![warn(missing_docs)]
 
 use std::fs::File;
-use std::io::BufReader;
+use std::io;
 
 use fixture_type::FixtureType;
 use once_cell::sync::Lazy;
@@ -41,24 +41,33 @@ pub struct GdtfDescription {
 
 impl GdtfDescription {
     /// Create a new GDTF file from a .gdtf archive file.
-    pub fn from_archive_file(file: &File) -> Result<GdtfDescription, Box<dyn std::error::Error>> {
-        let file_reader = BufReader::new(file);
-        let mut archive = zip::ZipArchive::new(file_reader).unwrap();
+    pub fn from_archive_reader<R>(reader: R) -> Result<GdtfDescription, Box<dyn std::error::Error>>
+    where
+        R: io::Read + io::Seek,
+    {
+        let mut archive = zip::ZipArchive::new(reader).unwrap();
 
         let description = archive
             .by_name("description.xml")
             .expect("expected 'description.xml'");
 
-        let description_reader = BufReader::new(description);
+        let description_reader = io::BufReader::new(description);
 
         let gdtf: GdtfDescription = serde_xml_rs::from_reader(description_reader).unwrap();
 
         Ok(gdtf)
     }
 
+    /// Create a new GDTF file from .gdtf archive bytes.
+    pub fn from_archive_bytes(bytes: &[u8]) -> Result<GdtfDescription, Box<dyn std::error::Error>> {
+        let bytes = std::io::Cursor::new(bytes);
+        let reader = std::io::BufReader::new(bytes);
+        Self::from_archive_reader(reader)
+    }
+
     /// Create a new GDTF file from a descriptor file.
     pub fn from_file(file: &File) -> Result<GdtfDescription, Box<dyn std::error::Error>> {
-        let file_reader = BufReader::new(file);
+        let file_reader = io::BufReader::new(file);
         let gdtf: GdtfDescription = serde_xml_rs::from_reader(file_reader).unwrap();
 
         Ok(gdtf)
@@ -497,7 +506,8 @@ mod tests {
     fn load_gdtf_file() {
         let root = std::env::current_dir().unwrap();
         let file = std::fs::File::open(root.join("tests/test_fixture.gdtf")).unwrap();
-        let gdtf = GdtfDescription::from_archive_file(&file);
+        let reader = io::BufReader::new(file);
+        let gdtf = GdtfDescription::from_archive_reader(reader);
 
         assert!(gdtf.is_ok())
     }
