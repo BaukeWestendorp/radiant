@@ -2,6 +2,7 @@ use gpui::{div, prelude::FluentBuilder, px, Div, Styled};
 
 use crate::workspace::layout::{LayoutPoint, LayoutSize, LAYOUT_CELL_SIZE};
 
+pub mod sheet;
 pub mod slider;
 pub mod uniform_grid;
 

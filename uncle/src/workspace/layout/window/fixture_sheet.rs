@@ -1,148 +1,85 @@
-use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, px, rgb, uniform_list, white, IntoElement, Model, ParentElement, Render, Styled, View,
-    ViewContext, VisualContext,
+    div, AnyElement, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
+    VisualContext,
 };
 
-use crate::show::Show;
+use crate::show::{Fixture, Show};
+use crate::ui::sheet::{Sheet, SheetDelegate};
 
 use super::Window;
 
 pub struct FixtureSheetWindow {
-    show: Model<Show>,
+    sheet: View<Sheet<FixtureSheetWindowDelegate>>,
 }
 
 impl FixtureSheetWindow {
     pub fn build(show: Model<Show>, cx: &mut ViewContext<Window>) -> View<Self> {
-        cx.new_view(|_cx| Self { show })
+        cx.new_view(|cx| {
+            let fixtures = show.read(cx).clone().patch.fixtures;
+            let sheet_delegate = FixtureSheetWindowDelegate::new(show.clone(), fixtures);
+            let sheet = cx.new_view(|_cx| Sheet::new(sheet_delegate, "fixture_sheet"));
+
+            Self { sheet }
+        })
     }
 }
 
 impl Render for FixtureSheetWindow {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let fixtures = self.show.read(cx).clone().patch.fixtures;
+    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+        div().size_full().child(self.sheet.clone())
+    }
+}
 
-        uniform_list(
-            cx.view().clone(),
-            "fixture_list",
-            fixtures.len(),
-            move |view, _visible_range, cx| {
-                let mut rows = vec![];
+pub struct FixtureSheetWindowDelegate {
+    show: Model<Show>,
 
-                let column_width = px(130.0);
+    fixtures: Vec<Fixture>,
+}
 
-                let header_row = div()
-                    .flex()
-                    .flex_row()
-                    .child(
-                        div()
-                            .child("ID")
-                            .w(column_width)
-                            .h(cx.line_height())
-                            .overflow_hidden()
-                            .border_color(white())
-                            .border_r(),
-                    )
-                    .child(
-                        div()
-                            .child("Name")
-                            .overflow_hidden()
-                            .w(column_width)
-                            .h(cx.line_height())
-                            .border_color(white())
-                            .border_r(),
-                    )
-                    .child(
-                        div()
-                            .child("Mode")
-                            .overflow_hidden()
-                            .w(column_width)
-                            .h(cx.line_height())
-                            .border_color(white())
-                            .border_r(),
-                    )
-                    .child(
-                        div()
-                            .child("Address")
-                            .overflow_hidden()
-                            .w(column_width)
-                            .h(cx.line_height())
-                            .border_color(white())
-                            .border_r(),
-                    )
-                    .child(
-                        div()
-                            .child("Universe")
-                            .overflow_hidden()
-                            .w(column_width)
-                            .h(cx.line_height())
-                            .border_color(white())
-                            .border_r(),
-                    );
+impl FixtureSheetWindowDelegate {
+    pub fn new(show: Model<Show>, fixtures: Vec<Fixture>) -> Self {
+        Self { show, fixtures }
+    }
+}
 
-                rows.push(header_row);
+impl SheetDelegate for FixtureSheetWindowDelegate {
+    type Data = Fixture;
 
-                let patch = &view.show.read(cx).patch;
-                for (ix, fixture) in fixtures.iter().enumerate() {
-                    let row = div()
-                        .flex()
-                        .flex_row()
-                        .when(ix % 2 == 0, |this| this.bg(rgb(0x444444)))
-                        .child(
-                            div()
-                                .child(format!("{}", fixture.id))
-                                .overflow_hidden()
-                                .w(column_width)
-                                .h(cx.line_height())
-                                .border_color(white())
-                                .border_r(),
-                        )
-                        .child(
-                            div()
-                                .child(format!("{}", fixture.name))
-                                .overflow_hidden()
-                                .w(column_width)
-                                .h(cx.line_height())
-                                .border_color(white())
-                                .border_r(),
-                        )
-                        .child(
-                            div()
-                                .child(format!(
-                                    "Mode {} ({} channels)",
-                                    fixture.mode_index,
-                                    fixture.get_valid_channels(&patch).len()
-                                ))
-                                .overflow_hidden()
-                                .w(column_width)
-                                .h(cx.line_height())
-                                .border_color(white())
-                                .border_r(),
-                        )
-                        .child(
-                            div()
-                                .child(format!("{}", fixture.address))
-                                .overflow_hidden()
-                                .w(column_width)
-                                .h(cx.line_height())
-                                .border_color(white())
-                                .border_r(),
-                        )
-                        .child(
-                            div()
-                                .child(format!("{}", fixture.universe))
-                                .overflow_hidden()
-                                .w(column_width)
-                                .h(cx.line_height())
-                                .border_color(white())
-                                .border_r(),
-                        );
+    fn value_labels(&self) -> Vec<String> {
+        vec![
+            "ID".into(),
+            "Name".into(),
+            "Address".into(),
+            "Universe".into(),
+            "Mode".into(),
+        ]
+    }
 
-                    rows.push(row);
-                }
+    fn values(&self) -> &Vec<Self::Data> {
+        &self.fixtures
+    }
 
-                rows
-            },
-        )
+    fn render_row_items(
+        &self,
+        fixture: &Self::Data,
+        cx: &mut ViewContext<Sheet<Self>>,
+    ) -> Vec<AnyElement> {
+        let valid_channels = self.show.update(cx, |show, _cx| {
+            fixture.get_valid_channels(&mut show.patch).len()
+        });
+
+        vec![
+            self.render_cell(div().child(format!("{}", fixture.id)), cx),
+            self.render_cell(div().child(fixture.name.clone()), cx),
+            self.render_cell(div().child(format!("{}", fixture.address)), cx),
+            self.render_cell(div().child(format!("{}", fixture.universe)), cx),
+            self.render_cell(
+                div().w_full().child(format!(
+                    "Mode {} ({} channels)",
+                    fixture.mode_index, valid_channels
+                )),
+                cx,
+            ),
+        ]
     }
 }

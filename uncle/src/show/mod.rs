@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use std::collections::HashMap;
 
 use gdtf::fixture_type::dmx_modes::{DmxChannel, DmxMode};
@@ -138,32 +137,33 @@ pub struct Patch {
     fixture_types: HashMap<FixtureTypeId, String>,
 
     #[serde(skip_serializing)]
-    fixture_type_cache: RefCell<HashMap<String, FixtureType>>,
+    fixture_type_cache: HashMap<String, FixtureType>,
 }
 
 pub type FixtureTypeId = usize;
 
 impl Patch {
-    pub fn get_fixture_type(&self, id: FixtureTypeId) -> Option<FixtureType> {
-        let path = self.fixture_types.get(&id).unwrap();
-        if let Some(fixture_type) = self.fixture_type_cache.borrow().get(path) {
+    pub fn get_fixture_type(&mut self, id: FixtureTypeId) -> Option<FixtureType> {
+        let file_name = self.fixture_types.get(&id).unwrap();
+        if let Some(fixture_type) = self.fixture_type_cache.get(file_name) {
             return Some(fixture_type.clone());
         }
 
+        let root = std::env::current_dir().unwrap();
+        let path = root.join("assets").join("fixtures").join(file_name);
         let file = std::fs::File::open(path).unwrap();
         let description = GdtfDescription::from_archive_file(&file).unwrap();
         let fixture_type = description.fixture_type;
 
         self.fixture_type_cache
-            .borrow_mut()
-            .insert(path.clone(), fixture_type.clone());
+            .insert(file_name.clone(), fixture_type.clone());
 
         Some(fixture_type)
     }
 
-    pub fn register_fixture_type(&mut self, path: &str) -> FixtureTypeId {
+    pub fn register_fixture_type(&mut self, file_name: &str) -> FixtureTypeId {
         let id = self.new_fixture_type_id();
-        self.fixture_types.insert(id, path.to_string());
+        self.fixture_types.insert(id, file_name.to_string());
         id
     }
 
@@ -185,7 +185,7 @@ pub struct Fixture {
 }
 
 impl Fixture {
-    pub fn get_mode(&self, patch: &Patch) -> DmxMode {
+    pub fn get_mode(&self, patch: &mut Patch) -> DmxMode {
         let fixture_type = patch.get_fixture_type(self.r#type).unwrap();
         fixture_type
             .dmx_modes
@@ -195,7 +195,7 @@ impl Fixture {
             .clone()
     }
 
-    pub fn get_valid_channels(&self, patch: &Patch) -> Vec<DmxChannel> {
+    pub fn get_valid_channels(&self, patch: &mut Patch) -> Vec<DmxChannel> {
         let mode = self.get_mode(patch);
         mode.dmx_channels
             .channels

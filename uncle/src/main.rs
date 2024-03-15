@@ -67,11 +67,11 @@ fn main() {
                         kind: show::WindowKind::Pool(PoolWindow {
                             kind: show::PoolWindowKind::Color,
                             scroll_offset: 0,
-                        })
+                        }),
                     });
 
                     new_show.layout.add_window(show::Window {
-                        bounds: LayoutBounds::new(LayoutPoint::new(0, 4), LayoutSize::new(8, 4)),
+                        bounds: LayoutBounds::new(LayoutPoint::new(0, 4), LayoutSize::new(10, 4)),
                         kind: show::WindowKind::FixtureSheet(FixtureSheetWindow {}),
                     });
 
@@ -79,22 +79,18 @@ fn main() {
                         .presets
                         .add_color_preset(ColorPreset::new("Green", DmxColor::new(0, 255, 0)));
 
-                    let fixture_path =
-                        "/Users/baukewestendorp/dev/projects/uncle/uncle/assets/fixtures/ledforce_7_rgbw.gdtf";
-                    let type_id = new_show.patch.register_fixture_type(
-                        fixture_path,
-                    );
+                    let type_id = new_show.patch.register_fixture_type("ledforce_7_rgbw.gdtf");
 
                     for i in 0..8 {
                         new_show.patch.fixtures.insert(
                             i,
                             Fixture {
-                                mode_index:( i % 2) as u8,
+                                mode_index: 0,
                                 id: i,
                                 name: format!("Led {}", i).into(),
                                 r#type: type_id,
                                 universe: 0,
-                                address: 0,
+                                address: (i * 4) as u16,
                             },
                         );
                     }
