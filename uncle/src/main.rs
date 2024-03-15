@@ -1,12 +1,10 @@
 use assets::Assets;
-use dmx::color::DmxColor;
 use gpui::{
     actions, point, size, App, AppContext, AssetSource, Bounds, Context, KeyBinding, Menu,
     MenuItem, VisualContext, WindowBounds, WindowOptions,
 };
-use show::presets::ColorPreset;
-use show::{ColorPickerWindow, Fixture, FixtureSheetWindow, PoolWindow, Show};
-use workspace::layout::{LayoutBounds, LayoutPoint, LayoutSize};
+
+use show::Show;
 use workspace::Workspace;
 
 pub mod color;
@@ -34,6 +32,7 @@ fn main() {
         cx.bind_keys([
             KeyBinding::new("cmd-q", Quit, None),
             KeyBinding::new("cmd-o", workspace::actions::OpenShow, Some("Workspace")),
+            KeyBinding::new("cmd-s", workspace::actions::SaveShow, Some("Workspace")),
             KeyBinding::new("s", workspace::actions::cmd::Store, Some("Workspace")),
             KeyBinding::new("escape", workspace::actions::cmd::Clear, Some("Workspace")),
         ]);
@@ -46,8 +45,18 @@ fn main() {
                 items: vec![MenuItem::action("Quit", Quit)],
             },
             Menu {
+                name: "Show",
+                items: vec![
+                    MenuItem::action("Open", workspace::actions::OpenShow),
+                    MenuItem::action("Save", workspace::actions::SaveShow),
+                ],
+            },
+            Menu {
                 name: "Commands",
-                items: vec![MenuItem::action("Store", workspace::actions::cmd::Store)],
+                items: vec![
+                    MenuItem::action("Store", workspace::actions::cmd::Store),
+                    MenuItem::action("Clear", workspace::actions::cmd::Clear),
+                ],
             },
         ]);
 
@@ -64,49 +73,8 @@ fn main() {
             |cx| {
                 let workspace = cx.new_view(|cx| Workspace::new(show.clone(), cx));
 
-                show.update(cx, |show, cx| {
-                    let mut new_show = Show::default();
-                    new_show.name = "Super mega show".into();
-
-                    new_show.layout.add_window(show::Window {
-                        bounds: LayoutBounds::new(LayoutPoint::new(0, 0), LayoutSize::new(4, 4)),
-                        kind: show::WindowKind::ColorPicker(ColorPickerWindow {}),
-                    });
-
-                    new_show.layout.add_window(show::Window {
-                        bounds: LayoutBounds::new(LayoutPoint::new(4, 0), LayoutSize::new(4, 4)),
-                        kind: show::WindowKind::Pool(PoolWindow {
-                            kind: show::PoolWindowKind::Color,
-                            scroll_offset: 0,
-                        }),
-                    });
-
-                    new_show.layout.add_window(show::Window {
-                        bounds: LayoutBounds::new(LayoutPoint::new(0, 4), LayoutSize::new(10, 4)),
-                        kind: show::WindowKind::FixtureSheet(FixtureSheetWindow {}),
-                    });
-
-                    new_show
-                        .presets
-                        .add_color_preset(ColorPreset::new("Green", DmxColor::new(0, 255, 0)));
-
-                    let type_id = new_show.patch.register_fixture_type("ledforce_7_rgbw.gdtf");
-
-                    for i in 0..8 {
-                        new_show.patch.fixtures.insert(
-                            i,
-                            Fixture {
-                                mode_index: 0,
-                                id: i,
-                                name: format!("Led {}", i).into(),
-                                r#type: type_id,
-                                universe: 0,
-                                address: (i * 4) as u16,
-                            },
-                        );
-                    }
-                    *show = new_show;
-                    cx.notify();
+                workspace.update(cx, |workspace, cx| {
+                    workspace.open_show(&workspace::actions::OpenShow, cx);
                 });
 
                 cx.focus_view(&workspace);

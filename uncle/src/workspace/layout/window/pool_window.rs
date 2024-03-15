@@ -24,7 +24,6 @@ impl PoolWindow {
     pub fn build(window_id: usize, show: Model<Show>, cx: &mut ViewContext<Window>) -> View<Self> {
         cx.new_view(|cx| {
             cx.observe(&show, move |this: &mut Self, show, cx| {
-                dbg!(&show);
                 this.pool_items = create_pool_items(window_id, &show, cx)
             })
             .detach();

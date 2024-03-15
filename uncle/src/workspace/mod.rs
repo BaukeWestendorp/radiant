@@ -5,20 +5,15 @@ use gpui::{
     ParentElement, Render, Styled, View, ViewContext,
 };
 
-use crate::dmx::color::DmxColor;
-use crate::show::presets::ColorPreset;
-use crate::show::{self, Show};
+use crate::show::Show;
 use screen::Screen;
-
-use self::layout::{LayoutBounds, LayoutPoint, LayoutSize};
-
 pub mod layout;
 pub mod screen;
 
 pub mod actions {
     use gpui::actions;
 
-    actions!(workspace_actions, [OpenShow]);
+    actions!(workspace_actions, [OpenShow, SaveShow]);
 
     pub mod cmd {
         use gpui::actions;
@@ -62,31 +57,30 @@ impl Workspace {
         cx.notify();
     }
 
-    fn open_show(&mut self, _action: &actions::OpenShow, cx: &mut ViewContext<Self>) {
+    pub fn open_show(&mut self, _action: &actions::OpenShow, cx: &mut ViewContext<Self>) {
         self.show.update(cx, |show, cx| {
-            let mut new_show = Show::default();
-            new_show.name = "Super mega show".into();
-            new_show.layout.add_window(show::Window {
-                bounds: LayoutBounds::new(LayoutPoint::new(0, 0), LayoutSize::new(8, 4)),
-                kind: show::WindowKind::Pool(show::PoolWindow {
-                    kind: show::PoolWindowKind::Color,
-                    scroll_offset: 0,
-                }),
-            });
-            new_show
-                .presets
-                .add_color_preset(ColorPreset::new("Green", DmxColor::new(0, 255, 0)));
-            *show = new_show;
+            let show_json = std::fs::read_to_string("show.json").unwrap();
+            let loaded_show = serde_json::from_str(&show_json).unwrap();
+
+            *show = loaded_show;
 
             cx.notify();
+            println!("Show opened");
         });
     }
 
-    fn cmd_store(&mut self, _action: &actions::cmd::Store, cx: &mut ViewContext<Self>) {
+    pub fn save_show(&mut self, _action: &actions::SaveShow, cx: &mut ViewContext<Self>) {
+        let show = self.show.read(cx);
+        let show_json = serde_json::to_string_pretty(&*show).unwrap();
+        std::fs::write("show.json", show_json).unwrap();
+        println!("Show saved");
+    }
+
+    pub fn cmd_store(&mut self, _action: &actions::cmd::Store, cx: &mut ViewContext<Self>) {
         self.set_programmer_state(ProgrammerState::Store, cx);
     }
 
-    fn cmd_clear(&mut self, _action: &actions::cmd::Clear, cx: &mut ViewContext<Self>) {
+    pub fn cmd_clear(&mut self, _action: &actions::cmd::Clear, cx: &mut ViewContext<Self>) {
         self.set_programmer_state(ProgrammerState::Normal, cx);
     }
 }
@@ -97,6 +91,7 @@ impl Render for Workspace {
             .track_focus(&self.focus_handle)
             .key_context("Workspace")
             .on_action(cx.listener(Self::open_show))
+            .on_action(cx.listener(Self::save_show))
             .on_action(cx.listener(Self::cmd_store))
             .on_action(cx.listener(Self::cmd_clear))
             .font("Zed Sans")

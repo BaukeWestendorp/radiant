@@ -136,7 +136,7 @@ pub struct Patch {
 
     fixture_types: HashMap<FixtureTypeId, String>,
 
-    #[serde(skip_serializing)]
+    #[serde(skip_serializing, default = "HashMap::new")]
     fixture_type_cache: HashMap<String, FixtureType>,
 }
 
