@@ -59,6 +59,16 @@ impl SheetDelegate for FixtureSheetWindowDelegate {
         &self.fixtures
     }
 
+    fn column_widths(&self) -> Vec<gpui::Pixels> {
+        vec![
+            gpui::px(50.0),
+            gpui::px(200.0),
+            gpui::px(80.0),
+            gpui::px(80.0),
+            gpui::px(200.0),
+        ]
+    }
+
     fn render_row_items(
         &self,
         fixture: &Self::Data,
@@ -74,7 +84,7 @@ impl SheetDelegate for FixtureSheetWindowDelegate {
             self.render_cell(div().child(format!("{}", fixture.address)), cx),
             self.render_cell(div().child(format!("{}", fixture.universe)), cx),
             self.render_cell(
-                div().w_full().child(format!(
+                div().child(format!(
                     "Mode {} ({} channels)",
                     fixture.mode_index, valid_channels
                 )),

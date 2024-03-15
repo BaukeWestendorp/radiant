@@ -45,7 +45,7 @@ impl<D: SheetDelegate + 'static> Render for Sheet<D> {
 }
 
 pub trait SheetDelegate: Sized {
-    const COLUMN_WIDTH: Pixels = px(150.0);
+    const DEFAULT_COLUMN_WIDTH: Pixels = px(100.0);
 
     type Data: Clone;
 
@@ -53,12 +53,23 @@ pub trait SheetDelegate: Sized {
 
     fn values(&self) -> &Vec<Self::Data>;
 
+    fn column_widths(&self) -> Vec<Pixels> {
+        vec![Self::DEFAULT_COLUMN_WIDTH; self.value_labels().len()]
+    }
+
     fn render_header_row(&self, cx: &mut ViewContext<Sheet<Self>>) -> AnyElement {
         let header_cells = self
             .value_labels()
             .iter()
-            .map(|name| self.render_cell(div().child(name.to_string()), cx))
+            .zip(self.column_widths())
+            .map(|(name, width)| {
+                div()
+                    .w(width)
+                    .h(cx.line_height())
+                    .child(self.render_cell(div().child(name.to_string()), cx))
+            })
             .collect::<Vec<_>>();
+
         div()
             .flex()
             .flex_row()
@@ -71,8 +82,14 @@ pub trait SheetDelegate: Sized {
         &self,
         ix: usize,
         children: impl IntoIterator<Item = impl IntoElement>,
-        _cx: &mut ViewContext<Sheet<Self>>,
+        cx: &mut ViewContext<Sheet<Self>>,
     ) -> AnyElement {
+        let children = children
+            .into_iter()
+            .zip(self.column_widths())
+            .map(|(child, width)| div().w(width).h(cx.line_height()).child(child))
+            .collect::<Vec<_>>();
+
         div()
             .flex()
             .flex_row()
@@ -91,11 +108,10 @@ pub trait SheetDelegate: Sized {
     fn render_cell(
         &self,
         content: impl IntoElement,
-        cx: &mut ViewContext<Sheet<Self>>,
+        _cx: &mut ViewContext<Sheet<Self>>,
     ) -> AnyElement {
         div()
-            .w(Self::COLUMN_WIDTH)
-            .h(cx.line_height())
+            .size_full()
             .whitespace_nowrap()
             .overflow_hidden()
             .border_r()
