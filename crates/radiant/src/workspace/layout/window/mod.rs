@@ -73,6 +73,7 @@ impl Render for Window {
         let content = div()
             .bg(rgb(0x202020))
             .size_full()
+            .rounded_b_md()
             .child(self.content.clone());
 
         grid_div(show_window.bounds.size, Some(show_window.bounds.origin))
