@@ -5,8 +5,9 @@ use gpui::{
 };
 
 use crate::color;
+use crate::show::layout::PoolWindowKind;
 use crate::show::presets::{ColorPreset, ColorPresetId, Preset};
-use crate::show::{PoolWindowKind, Show};
+use crate::show::Show;
 
 pub struct PoolItem {
     pool_window_kind: PoolWindowKind,

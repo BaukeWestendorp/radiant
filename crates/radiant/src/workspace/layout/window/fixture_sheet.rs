@@ -4,7 +4,8 @@ use gpui::{
     VisualContext,
 };
 
-use crate::show::{Fixture, Show};
+use crate::show::patch::Fixture;
+use crate::show::Show;
 use crate::ui::sheet::{Sheet, SheetDelegate};
 
 use super::Window;

@@ -3,7 +3,8 @@ use gpui::{
     VisualContext, WindowContext,
 };
 
-use crate::show::{self, Show, WindowKind};
+use crate::show::layout::WindowKind;
+use crate::show::{self, Show};
 use crate::ui::grid_div;
 
 use self::color_picker::ColorPickerWindow;
@@ -58,8 +59,8 @@ fn render_content(window_id: usize, show: Model<Show>, cx: &mut ViewContext<Wind
 
     match show_window.kind {
         WindowKind::Pool(_) => PoolWindow::build(window_id, show.clone(), cx).into(),
-        WindowKind::ColorPicker(_) => ColorPickerWindow::build(cx).into(),
-        WindowKind::FixtureSheet(_) => {
+        WindowKind::ColorPicker => ColorPickerWindow::build(cx).into(),
+        WindowKind::FixtureSheet => {
             fixture_sheet::FixtureSheetWindow::build(show.clone(), cx).into()
         }
     }

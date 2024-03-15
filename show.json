@@ -43,9 +43,7 @@
             "rows": 4
           }
         },
-        "kind": {
-          "ColorPicker": {}
-        }
+        "kind": "ColorPicker"
       },
       "2": {
         "bounds": {
@@ -58,9 +56,7 @@
             "rows": 4
           }
         },
-        "kind": {
-          "FixtureSheet": {}
-        }
+        "kind": "FixtureSheet"
       }
     }
   },

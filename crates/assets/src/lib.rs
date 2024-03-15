@@ -1,6 +1,8 @@
 use anyhow::anyhow;
-use gpui::{AssetSource, Result, SharedString};
+use gpui::{Result, SharedString};
 use rust_embed::RustEmbed;
+
+pub use gpui::AssetSource;
 
 #[derive(RustEmbed)]
 #[folder = "../../assets"]
