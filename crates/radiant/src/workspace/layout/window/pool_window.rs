@@ -82,10 +82,17 @@ impl PoolWindow {
         row_offset = row_offset.clamp(0, Self::ROW_SCROLL_OFFSET_MAX - item_count as i32);
 
         self.show.update(cx, |show, cx| {
-            show.layout
-                .pool_window_mut(self.window_id)
-                .unwrap()
-                .scroll_offset = row_offset;
+            match show.layout
+            .pool_window_mut(self.window_id)
+            {
+                Some(pool_window) => {
+                    pool_window.scroll_offset = row_offset;
+                }
+                None => {
+                    log::error!("Failed to update pool window scroll offset. Pool window with id '{}' not found", self.window_id);
+                }
+            }
+              
             cx.notify();
         })
     }

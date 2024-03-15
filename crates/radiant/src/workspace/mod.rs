@@ -33,6 +33,8 @@ pub struct Workspace {
 }
 
 impl Workspace {
+    const SHOW_FILE_PATH: &'static str = "show.json";
+
     pub fn new(show: Model<Show>, cx: &mut ViewContext<Self>) -> Self {
         cx.observe(&show, |_, _, cx| cx.notify()).detach();
 
@@ -59,21 +61,27 @@ impl Workspace {
 
     pub fn open_show(&mut self, _action: &actions::OpenShow, cx: &mut ViewContext<Self>) {
         self.show.update(cx, |show, cx| {
-            let show_json = std::fs::read_to_string("show.json").unwrap();
-            let loaded_show = serde_json::from_str(&show_json).unwrap();
-
-            *show = loaded_show;
+            match Show::from_file(Self::SHOW_FILE_PATH) {
+                Ok(loaded_show) => *show = loaded_show,
+                Err(e) => {
+                    log::error!("Failed to open show: {}", e);
+                }
+            }
 
             cx.notify();
-            println!("Show opened");
+            log::info!("Opened show file '{}'", Self::SHOW_FILE_PATH);
         });
     }
 
     pub fn save_show(&mut self, _action: &actions::SaveShow, cx: &mut ViewContext<Self>) {
-        let show = self.show.read(cx);
-        let show_json = serde_json::to_string_pretty(&*show).unwrap();
-        std::fs::write("show.json", show_json).unwrap();
-        println!("Show saved");
+        match self.show.read(cx).save_to_file(Self::SHOW_FILE_PATH) {
+            Ok(_) => {
+                log::info!("Saved show file '{}'", Self::SHOW_FILE_PATH);
+            }
+            Err(e) => {
+                log::error!("Failed to save show: {}", e);
+            }
+        }
     }
 
     pub fn cmd_store(&mut self, _action: &actions::cmd::Store, cx: &mut ViewContext<Self>) {

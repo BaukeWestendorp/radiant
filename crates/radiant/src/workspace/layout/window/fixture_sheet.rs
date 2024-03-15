@@ -1,5 +1,6 @@
+use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, AnyElement, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
+    div, rgb, AnyElement, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
     VisualContext,
 };
 
@@ -15,7 +16,7 @@ pub struct FixtureSheetWindow {
 impl FixtureSheetWindow {
     pub fn build(show: Model<Show>, cx: &mut ViewContext<Window>) -> View<Self> {
         cx.new_view(|cx| {
-            let fixtures = show.read(cx).clone().patch.fixtures;
+            let fixtures = show.read(cx).clone().patch_list.fixtures;
             let sheet_delegate = FixtureSheetWindowDelegate::new(show.clone(), fixtures);
             let sheet = cx.new_view(|_cx| Sheet::new(sheet_delegate, "fixture_sheet"));
 
@@ -46,13 +47,7 @@ impl SheetDelegate for FixtureSheetWindowDelegate {
     type Data = Fixture;
 
     fn value_labels(&self) -> Vec<String> {
-        vec![
-            "ID".into(),
-            "Name".into(),
-            "Address".into(),
-            "Universe".into(),
-            "Mode".into(),
-        ]
+        vec!["ID".into(), "Name".into(), "Patch".into(), "Mode".into()]
     }
 
     fn values(&self) -> &Vec<Self::Data> {
@@ -64,7 +59,6 @@ impl SheetDelegate for FixtureSheetWindowDelegate {
             gpui::px(50.0),
             gpui::px(200.0),
             gpui::px(80.0),
-            gpui::px(80.0),
             gpui::px(200.0),
         ]
     }
@@ -75,18 +69,43 @@ impl SheetDelegate for FixtureSheetWindowDelegate {
         cx: &mut ViewContext<Sheet<Self>>,
     ) -> Vec<AnyElement> {
         let valid_channels = self.show.update(cx, |show, _cx| {
-            fixture.get_valid_channels(&mut show.patch).len()
+            fixture
+                .get_valid_channels(&mut show.patch_list)
+                .collect::<Vec<_>>()
+                .len()
         });
 
+        let id = match fixture.id {
+            Some(id) => format!("{}", id),
+            None => "None".to_string(),
+        };
+
+        let patch = match &fixture.patch {
+            Some(patch) => patch.to_string(),
+            None => "None".to_string(),
+        };
+
         vec![
-            self.render_cell(div().child(format!("{}", fixture.id)), cx),
+            self.render_cell(
+                div()
+                    .when(fixture.id.is_none(), |this| this.text_color(rgb(0x888888)))
+                    .child(id),
+                cx,
+            ),
             self.render_cell(div().child(fixture.name.clone()), cx),
-            self.render_cell(div().child(format!("{}", fixture.address)), cx),
-            self.render_cell(div().child(format!("{}", fixture.universe)), cx),
+            self.render_cell(
+                div()
+                    .when(fixture.patch.is_none(), |this| {
+                        this.text_color(rgb(0x888888))
+                    })
+                    .child(patch),
+                cx,
+            ),
             self.render_cell(
                 div().child(format!(
                     "Mode {} ({} channels)",
-                    fixture.mode_index, valid_channels
+                    fixture.mode_index + 1,
+                    valid_channels
                 )),
                 cx,
             ),

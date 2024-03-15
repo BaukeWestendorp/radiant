@@ -30,7 +30,7 @@ impl Window {
     }
 
     fn render_header(&self, cx: &mut ViewContext<Self>) -> Option<impl IntoElement> {
-        let show_window = self.show_window(cx);
+        let show_window = show_window(&self.show, self.window_id, cx);
 
         if !show_window.kind.show_header() {
             return None;
@@ -51,10 +51,6 @@ impl Window {
 
         Some(header)
     }
-
-    fn show_window<'a>(&self, cx: &'a mut ViewContext<Self>) -> &'a show::Window {
-        self.show.read(cx).layout.window(self.window_id).unwrap()
-    }
 }
 
 fn render_content(window_id: usize, show: Model<Show>, cx: &mut ViewContext<Window>) -> AnyView {
@@ -71,7 +67,7 @@ fn render_content(window_id: usize, show: Model<Show>, cx: &mut ViewContext<Wind
 
 impl Render for Window {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let show_window = self.show_window(cx);
+        let show_window = show_window(&self.show, self.window_id, cx);
 
         let content = div()
             .bg(rgb(0x202020))
@@ -91,7 +87,16 @@ pub fn show_window<'a>(
     window_id: usize,
     cx: &'a mut WindowContext,
 ) -> &'a show::Window {
-    show.read(cx).layout.window(window_id).unwrap()
+    match show.read(cx).layout.window(window_id) {
+        Some(window) => window,
+        None => {
+            log::error!(
+                "Failed to get window with id '{}'. Window not found",
+                window_id
+            );
+            panic!()
+        }
+    }
 }
 
 pub fn show_pool_window<'a>(
@@ -99,5 +104,14 @@ pub fn show_pool_window<'a>(
     window_id: usize,
     cx: &'a mut WindowContext,
 ) -> &'a show::PoolWindow {
-    show.read(cx).layout.pool_window(window_id).unwrap()
+    match show.read(cx).layout.pool_window(window_id) {
+        Some(pool_window) => pool_window,
+        None => {
+            log::error!(
+                "Failed to get pool window with id '{}'. Pool window not found",
+                window_id
+            );
+            panic!()
+        }
+    }
 }

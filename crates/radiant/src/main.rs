@@ -16,6 +16,9 @@ pub mod workspace;
 actions!(app, [Quit]);
 
 fn main() {
+    env_logger::init();
+    log::info!("Starting Radiant");
+
     App::new().run(|cx: &mut AppContext| {
         cx.text_system()
             .add_fonts(vec![

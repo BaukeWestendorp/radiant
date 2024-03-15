@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use anyhow::{anyhow, Result};
 use assets::Assets;
 use gdtf::fixture_type::dmx_modes::{DmxChannel, DmxMode};
 use gdtf::fixture_type::FixtureType;
@@ -17,7 +18,25 @@ pub struct Show {
     pub name: SharedString,
     pub presets: Presets,
     pub layout: Layout,
-    pub patch: Patch,
+    pub patch_list: PatchList,
+}
+
+impl Show {
+    pub fn from_file(path: &str) -> Result<Self> {
+        let show_json = std::fs::read_to_string(path)
+            .map_err(|_| anyhow!("Failed to read show file '{}'", path))?;
+        let loaded_show = serde_json::from_str(&show_json)
+            .map_err(|_| anyhow!("Failed to parse show file '{}'", path))?;
+        Ok(loaded_show)
+    }
+
+    pub fn save_to_file(&self, path: &str) -> Result<()> {
+        let show_json = serde_json::to_string_pretty(self)
+            .map_err(|_| anyhow!("Failed to serialize show to json"))?;
+        std::fs::write(path, show_json)
+            .map_err(|_| anyhow!("Failed to write show file '{}'", path))?;
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
@@ -132,7 +151,7 @@ pub struct FixtureSheetWindow {}
 pub struct Programmer {}
 
 #[derive(Debug, Clone, serde::Deserialize, Default, serde::Serialize)]
-pub struct Patch {
+pub struct PatchList {
     pub fixtures: Vec<Fixture>,
 
     fixture_types: HashMap<FixtureTypeId, String>,
@@ -143,20 +162,25 @@ pub struct Patch {
 
 pub type FixtureTypeId = usize;
 
-impl Patch {
-    pub fn get_fixture_type(&mut self, id: FixtureTypeId) -> Option<FixtureType> {
-        let file_name = self.fixture_types.get(&id).unwrap();
-        if let Some(fixture_type) = self.fixture_type_cache.get(file_name) {
-            return Some(fixture_type.clone());
+impl PatchList {
+    pub fn get_fixture_type(&mut self, id: FixtureTypeId) -> Option<&FixtureType> {
+        let file_name = match self.fixture_types.get(&id) {
+            Some(file_name) => file_name,
+            None => {
+                log::error!("Fixture type not found for id '{}'.", id);
+                return None;
+            }
+        };
+
+        if !self.fixture_type_cache.contains_key(file_name) {
+            let path = format!("fixtures/{}", file_name);
+            let gdtf_description = load_gdtf_description(&path);
+            let fixture_type = gdtf_description.fixture_type;
+            self.fixture_type_cache
+                .insert(file_name.clone(), fixture_type.clone());
         }
 
-        let path = format!("fixtures/{}", file_name);
-        let gdtf_description = load_gdtf_description(&path);
-        let fixture_type = gdtf_description.fixture_type;
-        self.fixture_type_cache
-            .insert(file_name.clone(), fixture_type.clone());
-
-        Some(fixture_type)
+        self.fixture_type_cache.get(file_name)
     }
 
     pub fn register_fixture_type(&mut self, file_name: &str) -> FixtureTypeId {
@@ -182,33 +206,77 @@ fn load_gdtf_description(path: &str) -> GdtfDescription {
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct Fixture {
-    pub id: FixtureId,
+    pub id: Option<FixtureId>,
     pub name: SharedString,
-    pub r#type: FixtureTypeId,
-    pub universe: u16,
-    pub address: u16,
+    pub type_id: FixtureTypeId,
     pub mode_index: u8,
+    pub patch: Option<Patch>,
 }
 
 impl Fixture {
-    pub fn get_mode(&self, patch: &mut Patch) -> DmxMode {
-        let fixture_type = patch.get_fixture_type(self.r#type).unwrap();
-        fixture_type
-            .dmx_modes
-            .modes
-            .get(self.mode_index as usize)
-            .unwrap()
-            .clone()
+    pub fn new(
+        id: Option<FixtureId>,
+        name: SharedString,
+        type_id: FixtureTypeId,
+        mode_index: u8,
+        patch: Option<Patch>,
+    ) -> Self {
+        Self {
+            id,
+            name,
+            type_id,
+            mode_index,
+            patch,
+        }
     }
 
-    pub fn get_valid_channels(&self, patch: &mut Patch) -> Vec<DmxChannel> {
-        let mode = self.get_mode(patch);
+    pub fn fixture_type<'a>(&'a self, patch_list: &'a mut PatchList) -> &FixtureType {
+        match patch_list.get_fixture_type(self.type_id) {
+            Some(fixture_type) => fixture_type,
+            None => {
+                log::error!("Fixture type not found for id '{}'.", self.type_id);
+                panic!()
+            }
+        }
+    }
+
+    pub fn mode<'a>(&'a self, patch_list: &'a mut PatchList) -> &DmxMode {
+        let fixture_type = self.fixture_type(patch_list);
+        match fixture_type.dmx_modes.modes.get(self.mode_index as usize) {
+            Some(mode) => &mode,
+            None => {
+                log::error!(
+                    "Mode not found for index '{}' in fixture type '{}'.",
+                    self.mode_index,
+                    fixture_type.name
+                );
+                panic!()
+            }
+        }
+    }
+
+    pub fn get_valid_channels<'a>(
+        &'a self,
+        patch_list: &'a mut PatchList,
+    ) -> impl Iterator<Item = &DmxChannel> {
+        let mode = self.mode(patch_list);
         mode.dmx_channels
             .channels
-            .into_iter()
+            .iter()
             .filter(|c| c.offset.clone().is_some_and(|o| !o.is_empty()))
-            .collect()
     }
 }
 
 pub type FixtureId = usize;
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+pub struct Patch {
+    pub address: u16,
+    pub universe: u8,
+}
+
+impl std::fmt::Display for Patch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}.{:03}", self.universe, self.address)
+    }
+}

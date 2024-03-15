@@ -2,15 +2,18 @@
 name = "radiant"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 gdtf.workspace = true
 assets.workspace = true
 
-gpui.workspace = true
+anyhow.workspace = true
+log.workspace = true
+env_logger.workspace = true
 gpui_assets.workspace = true
-smallvec.workspace = true
-serde.workspace = true
+gpui.workspace = true
 serde_json.workspace = true
+serde.workspace = true
+smallvec.workspace = true

@@ -4,12 +4,10 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-serde.workspace = true
-serde-xml-rs.workspace = true
-zip.workspace = true
-regex.workspace = true
 once_cell.workspace = true
+regex.workspace = true
 serde-inline-default.workspace = true
+serde-xml-rs.workspace = true
+serde.workspace = true
+zip.workspace = true
