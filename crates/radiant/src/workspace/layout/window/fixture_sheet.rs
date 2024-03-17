@@ -4,6 +4,7 @@ use gpui::{
 };
 use itertools::Itertools;
 
+use crate::color;
 use crate::show::patch::Fixture;
 use crate::show::Show;
 use crate::ui::sheet::{Sheet, SheetDelegate};
@@ -123,7 +124,7 @@ impl SheetDelegate for FixtureSheetWindowDelegate {
                 render_value(Some(name))
             }
             FixtureSheetColumnId::Attribute(name) => {
-                let values_string = self.show.update(cx, |show, _cx| {
+                let values = self.show.update(cx, |show, _cx| {
                     show.patch_list
                         .fixture_type(fixture)
                         .used_dmx_channels_for_mode(fixture.mode_index)
@@ -141,19 +142,35 @@ impl SheetDelegate for FixtureSheetWindowDelegate {
                             let offsets = c.offset.as_ref()?;
 
                             if attribute == name {
-                                let values_string = offsets
+                                let values = offsets
                                     .iter()
-                                    .map(|v| v.to_string())
-                                    .collect::<Vec<_>>()
-                                    .join(", ");
-                                Some(values_string)
+                                    .map(|o| fixture.get_dmx_value_with_offset(*o as usize))
+                                    .collect::<Vec<_>>();
+                                Some(values)
                             } else {
                                 None
                             }
                         })
                 });
 
-                render_value(values_string)
+                let values = match values {
+                    Some(values) => values,
+                    None => return render_value::<String>(None),
+                };
+
+                let values_string = values
+                    .iter()
+                    .map(|v| v.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+
+                div()
+                    .bg(color::lighten(
+                        gpui::green().into(),
+                        values[0] as f32 / 255.0,
+                    ))
+                    .child(values_string)
+                    .into_any_element()
             }
         }
         .into_any_element()

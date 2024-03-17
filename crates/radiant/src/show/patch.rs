@@ -100,3 +100,29 @@ pub struct Fixture {
     pub patch: Option<DmxChannel>,
     pub dmx_values: Vec<u8>,
 }
+
+impl Fixture {
+    pub fn new(
+        name: SharedString,
+        gdtf_file_name: SharedString,
+        mode_index: usize,
+        patch: Option<DmxChannel>,
+    ) -> Self {
+        Fixture {
+            id: None,
+            name,
+            gdtf_file_name,
+            mode_index,
+            patch,
+            dmx_values: vec![0; 512],
+        }
+    }
+
+    pub fn get_dmx_value_with_offset(&self, offset: usize) -> u8 {
+        self.dmx_values[offset - 1]
+    }
+
+    pub fn set_dmx_value_with_offset(&mut self, offset: usize, value: u8) {
+        self.dmx_values[offset - 1] = value;
+    }
+}

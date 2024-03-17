@@ -4,9 +4,11 @@ use gpui::{
     div, white, AppContext, FocusHandle, FocusableView, InteractiveElement, IntoElement, Model,
     ParentElement, Render, Styled, View, ViewContext,
 };
+use rand::Rng;
 
 use crate::show::Show;
 use screen::Screen;
+
 pub mod layout;
 pub mod screen;
 
@@ -18,7 +20,7 @@ pub mod actions {
     pub mod cmd {
         use gpui::actions;
 
-        actions!(workspace, [Store, Clear]);
+        actions!(workspace, [Store, Clear, Test]);
     }
 }
 
@@ -68,9 +70,11 @@ impl Workspace {
                     return;
                 }
             }
+            log::info!("Opened show file '{}'", Self::SHOW_FILE_PATH);
+
+            show.init();
 
             cx.notify();
-            log::info!("Opened show file '{}'", Self::SHOW_FILE_PATH);
         });
     }
 
@@ -92,6 +96,22 @@ impl Workspace {
     pub fn cmd_clear(&mut self, _action: &actions::cmd::Clear, cx: &mut ViewContext<Self>) {
         self.set_programmer_state(ProgrammerState::Normal, cx);
     }
+
+    pub fn cmd_test(&mut self, _action: &actions::cmd::Test, cx: &mut ViewContext<Self>) {
+        self.show.update(cx, |show, cx| {
+            for fixture in show.patch_list.fixtures.iter_mut() {
+                fixture
+                    .set_dmx_value_with_offset(rand::thread_rng().gen_range(1..=6), rand::random())
+            }
+
+            show.update_dmx_output();
+            for artnet in show.dmx_protocols.artnet.iter() {
+                artnet.send_dmx(&show.dmx_output);
+                log::info!("Sending test data");
+            }
+            cx.notify();
+        });
+    }
 }
 
 impl Render for Workspace {
@@ -103,6 +123,7 @@ impl Render for Workspace {
             .on_action(cx.listener(Self::save_show))
             .on_action(cx.listener(Self::cmd_store))
             .on_action(cx.listener(Self::cmd_clear))
+            .on_action(cx.listener(Self::cmd_test))
             .font("Zed Sans")
             .text_color(white())
             .size_full()

@@ -28,7 +28,10 @@ impl DmxOutput {
             .map(|u| u.channels[channel.address as usize])
     }
 
-    pub fn add_universe(&mut self, universe: DmxUniverse) {
+    pub fn add_universe_if_absent(&mut self, universe: DmxUniverse) {
+        if self.get_universe(universe.id).is_some() {
+            return;
+        }
         self.0.push(universe);
     }
 
@@ -38,6 +41,14 @@ impl DmxOutput {
 
     pub fn get_universe_mut(&mut self, id: u32) -> Option<&mut DmxUniverse> {
         self.0.iter_mut().find(|u| u.id == id)
+    }
+
+    pub fn to_buffer(&self) -> Vec<u8> {
+        let mut buffer = Vec::new();
+        for universe in &self.0 {
+            buffer.extend_from_slice(&universe.channels);
+        }
+        buffer
     }
 }
 
@@ -64,7 +75,7 @@ impl DmxUniverse {
     }
 
     pub fn set_channel(&mut self, channel: u16, value: u8) {
-        if channel > 512 {
+        if channel == 0 || channel > 512 {
             log::warn!(
                 "Tried to set channel {} in universe {} but it is out of range",
                 channel,
@@ -73,7 +84,24 @@ impl DmxUniverse {
             return;
         }
 
-        self.channels[channel as usize] = value;
+        self.channels[channel as usize - 1] = value;
+    }
+
+    pub fn get_channel(&self, channel: u16) -> Option<u8> {
+        if channel == 0 || channel > 512 {
+            log::warn!(
+                "Tried to get channel {} in universe {} but it is out of range",
+                channel - 1,
+                self.id
+            );
+            return None;
+        }
+
+        Some(self.channels[channel as usize - 1])
+    }
+
+    pub fn get_channels(&self) -> &[u8; 512] {
+        &self.channels
     }
 }
 

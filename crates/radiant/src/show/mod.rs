@@ -2,7 +2,8 @@ use anyhow::{anyhow, Result};
 
 use gpui::SharedString;
 
-use crate::dmx::DmxOutput;
+use crate::dmx::{DmxChannel, DmxOutput, DmxUniverse};
+use crate::dmx_protocols::DmxProtocols;
 
 use self::layout::Layout;
 use self::patch::PatchList;
@@ -24,6 +25,8 @@ pub struct Show {
 
     #[serde(skip)]
     pub dmx_output: DmxOutput,
+
+    pub dmx_protocols: DmxProtocols,
 }
 
 impl Show {
@@ -42,7 +45,50 @@ impl Show {
             .map_err(|e| anyhow!("Failed to write show file '{}': {}", path, e))?;
         Ok(())
     }
-}
 
-#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
-pub struct Programmer {}
+    pub fn init(&mut self) {
+        log::info!("Initializing show");
+        self.init_dmx_protocols();
+        self.init_dmx_output();
+    }
+
+    pub fn init_dmx_protocols(&mut self) {
+        log::info!("Initializing DMX protocols");
+        for artnet in self.dmx_protocols.artnet.iter_mut() {
+            log::info!(
+                "Opening Artnet ({}) connection to {}",
+                artnet.name,
+                artnet.destination_ip
+            );
+            artnet.open();
+        }
+    }
+
+    pub fn init_dmx_output(&mut self) {
+        log::info!("Initializing DMX output");
+        self.dmx_output = DmxOutput::new();
+        for fixture in self.patch_list.fixtures.iter() {
+            if let Some(patch) = &fixture.patch {
+                let universe = DmxUniverse::new(patch.universe).unwrap();
+                self.dmx_output.add_universe_if_absent(universe);
+            }
+        }
+    }
+
+    pub fn update_dmx_output(&mut self) {
+        for fixture in self.patch_list.fixtures.iter() {
+            let patch = match &fixture.patch {
+                Some(patch) => patch,
+                None => continue,
+            };
+
+            for (offset, value) in fixture.dmx_values.iter().enumerate() {
+                let channel = DmxChannel {
+                    universe: patch.universe,
+                    address: patch.address + offset as u16,
+                };
+                self.dmx_output.set_channel(channel, *value);
+            }
+        }
+    }
+}
