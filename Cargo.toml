@@ -11,6 +11,7 @@ gpui = { git = "https://github.com/zed-industries/zed" }
 gpui_assets = { package = "assets", git = "https://github.com/zed-industries/zed" }
 
 anyhow = "1.0.57"
+itertools = "0.12.1"
 log = "0.4"
 env_logger = "0.11.3"
 once_cell = "1.19.0"

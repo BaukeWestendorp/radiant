@@ -5,9 +5,11 @@
 use crate::{deserialize_yes_no, Guid, Resource};
 
 use attribute_definitions::AttributeDefinitions;
+use serde_inline_default::serde_inline_default;
 use wheels::Wheels;
 
-use self::dmx_modes::DmxModes;
+use self::attribute_definitions::Attribute;
+use self::dmx_modes::{DmxChannel, DmxModes};
 
 pub mod attribute_definitions;
 pub mod dmx_modes;
@@ -19,6 +21,7 @@ pub mod wheels;
 /// type within the XML file. The defined Fixture Type Node attributes of the
 /// fixture type are specified in
 /// [table 3](https://gdtf.eu/gdtf/file-spec/fixture-type-node/#table-3-fixture-type-node-attributes).
+#[serde_inline_default]
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 pub struct FixtureType {
     /// Name of the fixture type. As it is based on Name, it is safe for
@@ -60,11 +63,13 @@ pub struct FixtureType {
 
     /// Horizontal offset in pixels from the top left of the viewbox to the
     /// insertion point on a label. Default value: 0
+    #[serde_inline_default(0)]
     #[serde(rename = "ThumbnailOffsetX")]
     pub thumbnail_offset_x: i32,
 
     /// Vertical offset in pixels from the top left of the viewbox to the
     /// insertion point on a label. Default value: 0
+    #[serde_inline_default(0)]
     #[serde(rename = "ThumbnailOffsetY")]
     pub thumbnail_offset_y: i32,
 
@@ -74,6 +79,7 @@ pub struct FixtureType {
 
     /// Describes if it is possible to mount other devices to this device.
     /// Value: “Yes”, “No”. Default value: “Yes”
+    #[serde_inline_default(true)]
     #[serde(rename = "CanHaveChildren", deserialize_with = "deserialize_yes_no")]
     pub can_have_children: bool,
 
@@ -113,4 +119,43 @@ pub struct FixtureType {
     // /// Is used to specify supported protocols.
     // #[serde(rename = "Protocols")]
     // pub protocols: Option<Protocols>,
+}
+
+impl FixtureType {
+    /// Returns the DMX channels that are actually used for the given mode.
+    pub fn used_dmx_channels_for_mode(&self, mode_index: usize) -> Option<Vec<&DmxChannel>> {
+        let mode = &self.dmx_modes.modes.get(mode_index)?;
+
+        Some(
+            mode.dmx_channels
+                .channels
+                .iter()
+                // FIXME: Is this the right way of checking if a channel is used?
+                .filter(|c| c.offset.as_ref().is_some_and(|c| !c.is_empty()))
+                .collect(),
+        )
+    }
+
+    /// Returns the attributes that are actually used for the given mode.
+    pub fn used_attributes_for_mode(&self, mode_index: usize) -> Option<Vec<&Attribute>> {
+        Some(
+            self.used_dmx_channels_for_mode(mode_index)?
+                .iter()
+                .map(|c| c.logical_channels.get(0).unwrap().attribute.clone())
+                .filter_map(|node| {
+                    let attribute_name = node.references().get(0).unwrap();
+                    self.attribute_from_name(attribute_name)
+                })
+                .collect(),
+        )
+    }
+
+    /// Returns the attribute with the given name.
+    pub fn attribute_from_name(&self, name: &str) -> Option<&Attribute> {
+        self.attribute_definitions
+            .attributes
+            .attributes
+            .iter()
+            .find(|a| a.name.to_string() == name)
+    }
 }

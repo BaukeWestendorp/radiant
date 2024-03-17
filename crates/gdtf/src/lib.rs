@@ -4,12 +4,16 @@
 
 #![warn(missing_docs)]
 
+use std::fmt::Display;
 use std::fs::File;
 use std::io;
+use std::str::FromStr;
 
 use fixture_type::FixtureType;
 use once_cell::sync::Lazy;
 use regex::Regex;
+
+use error::Error;
 
 #[allow(missing_docs)]
 pub mod error;
@@ -41,11 +45,12 @@ pub struct GdtfDescription {
 
 impl GdtfDescription {
     /// Create a new GDTF file from a .gdtf archive file.
-    pub fn from_archive_reader<R>(reader: R) -> Result<GdtfDescription, Box<dyn std::error::Error>>
+    pub fn from_archive_reader<R>(reader: R) -> Result<GdtfDescription, Error>
     where
         R: io::Read + io::Seek,
     {
-        let mut archive = zip::ZipArchive::new(reader).unwrap();
+        let mut archive =
+            zip::ZipArchive::new(reader).map_err(|e| Error::UnzipError(e.to_string()))?;
 
         let description = archive
             .by_name("description.xml")
@@ -53,20 +58,21 @@ impl GdtfDescription {
 
         let description_reader = io::BufReader::new(description);
 
-        let gdtf: GdtfDescription = serde_xml_rs::from_reader(description_reader).unwrap();
+        let gdtf: GdtfDescription = serde_xml_rs::from_reader(description_reader)
+            .map_err(|e| Error::ParseError(format!("failed to parse GDTF description: {}", e)))?;
 
         Ok(gdtf)
     }
 
     /// Create a new GDTF file from .gdtf archive bytes.
-    pub fn from_archive_bytes(bytes: &[u8]) -> Result<GdtfDescription, Box<dyn std::error::Error>> {
+    pub fn from_archive_bytes(bytes: &[u8]) -> Result<GdtfDescription, Error> {
         let bytes = std::io::Cursor::new(bytes);
         let reader = std::io::BufReader::new(bytes);
         Self::from_archive_reader(reader)
     }
 
     /// Create a new GDTF file from a descriptor file.
-    pub fn from_file(file: &File) -> Result<GdtfDescription, Box<dyn std::error::Error>> {
+    pub fn from_file(file: &File) -> Result<GdtfDescription, Error> {
         let file_reader = io::BufReader::new(file);
         let gdtf: GdtfDescription = serde_xml_rs::from_reader(file_reader).unwrap();
 
@@ -74,6 +80,7 @@ impl GdtfDescription {
     }
 }
 
+// FIXME: This type could be replaced with a string and a custom deserializer.
 /// Unique object names; The allowed characters are listed in Annex C Default
 /// value: object type with an index in parent.
 #[derive(Debug, Clone, PartialEq)]
@@ -89,6 +96,11 @@ impl Name {
             true => Ok(Self(name)),
             false => Err(error::Error::ParseError("invalid name".to_string())),
         }
+    }
+
+    /// Get the value of the name.
+    pub fn value(&self) -> &str {
+        &self.0
     }
 }
 
@@ -106,6 +118,12 @@ impl<'de> serde::Deserialize<'de> for Name {
     }
 }
 
+impl Display for Name {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 /// Link to an element: “Name” is the value of the attribute “Name” of a defined
 /// XML node. The starting point defines each attribute separately.
 #[derive(Debug, Clone, PartialEq)]
@@ -117,6 +135,11 @@ impl Node {
     /// Create a new node.
     pub fn new(references: Vec<String>) -> Self {
         Self { references }
+    }
+
+    /// Get the references of the node.
+    pub fn references(&self) -> &Vec<String> {
+        &self.references
     }
 }
 
@@ -203,21 +226,78 @@ pub type Rotation = String;
 /// You can use the byte shifting operator to use byte shifting for the
 /// conversion. So 255/1s in a 16 bit channel will result in 65280.
 #[derive(Debug, Clone, PartialEq)]
-pub struct DmxValue(u64);
+pub struct DmxValue {
+    value: u64,
+    byte_specifier: u8,
+    byte_shifting: bool,
+}
 
 impl DmxValue {
     /// Create a new DMX value from a string.
-    pub fn try_from_string(
-        value: &str,
-        channel_resolution: Option<ChannelBitResolution>,
-    ) -> Result<Self, error::Error> {
-        let channel_resolution = match channel_resolution {
-            Some(value) => value,
-            None => ChannelBitResolution::Bit8,
-        };
+    pub fn value(&self, channel_resolution: ChannelBitResolution) -> Result<u64, error::Error> {
+        // Check if the ByteSpecifier is different to the ChannelResolution.
+        let mut result = self.value;
+        if self.byte_shifting {
+            if self.byte_specifier != channel_resolution as u8 {
+                let shift: i32 = 8 * (channel_resolution as i32 - self.byte_specifier as i32);
+                if shift >= 0 {
+                    result <<= shift;
+                } else {
+                    result >>= -shift;
+                }
+            } else {
+                // We can take the value as it is defined in the document without scaling it to
+                // another BitResolution.
+                result = self.value;
+            }
+        } else {
+            if self.byte_specifier != channel_resolution as u8 {
+                let max_resolution = get_channel_max_dmx((self.byte_specifier as u8).into());
+                let max_channel_unit = get_channel_max_dmx(channel_resolution);
 
+                let percentage = self.value as f64 / max_resolution as f64;
+
+                result = (percentage * max_channel_unit as f64) as u64;
+            } else {
+                // We can take the value as it is defined in the document without scaling it to
+                // another BitResolution.
+                result = self.value;
+            }
+        }
+
+        if get_channel_max_dmx(channel_resolution) < result {
+            return Err(error::Error::ParseError(
+                format!(
+                    "DMX value of {} is out of range for the channel resolution: {:?}",
+                    result, channel_resolution
+                )
+                .to_string(),
+            ));
+        }
+
+        Ok(result)
+    }
+}
+
+fn get_channel_max_dmx(channel_resolution: ChannelBitResolution) -> u64 {
+    let max_val = match channel_resolution {
+        ChannelBitResolution::Bit8 => 256,
+        ChannelBitResolution::Bit16 => 256 * 256,
+        ChannelBitResolution::Bit24 => 256 * 256 * 256,
+        ChannelBitResolution::Bit32 => 256 * 256 * 256 * 256,
+    };
+
+    max_val - 1
+}
+
+impl FromStr for DmxValue {
+    type Err = error::Error;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
         if value.is_empty() {
-            return Ok(Self(0));
+            return Err(error::Error::ParseError(
+                "expected a non-empty string in the DMX value.".to_string(),
+            ));
         }
 
         let (first, mut second) = match value.split_once('/') {
@@ -235,7 +315,7 @@ impl DmxValue {
             second.pop();
         }
 
-        let mut dmx_value_raw: u64 = match first.parse() {
+        let mut value: u64 = match first.parse() {
             Ok(value) => value,
             Err(_) => {
                 return Err(error::Error::ParseError(
@@ -255,86 +335,15 @@ impl DmxValue {
 
         if !(first.parse::<u64>().is_ok() && second.parse::<u64>().is_ok()) {
             eprintln!("Error: DMX value has an invalid value");
-            dmx_value_raw = 0;
+            value = 0;
             byte_specifier = 1;
         }
 
-        // Check if the ByteSpecifier is different to the ChannelResolution.
-        let mut result = dmx_value_raw;
-        if byte_shifting {
-            if byte_specifier != channel_resolution as i32 {
-                let shift: i32 = 8 * (channel_resolution as i32 - byte_specifier);
-                if shift >= 0 {
-                    result <<= shift;
-                } else {
-                    result >>= -shift;
-                }
-            } else {
-                // We can take the value as it is defined in the document without scaling it to
-                // another BitResolution.
-                result = dmx_value_raw;
-            }
-        } else {
-            if byte_specifier != channel_resolution as i32 {
-                let max_resolution = get_channel_max_dmx((byte_specifier as u8).into());
-                let max_channel_unit = get_channel_max_dmx(channel_resolution);
-
-                let percentage = dmx_value_raw as f64 / max_resolution.0 as f64;
-
-                result = (percentage * max_channel_unit.0 as f64) as u64;
-            } else {
-                // We can take the value as it is defined in the document without scaling it to
-                // another BitResolution.
-                result = dmx_value_raw;
-            }
-        }
-
-        if get_channel_max_dmx(channel_resolution).0 < result {
-            return Err(error::Error::ParseError(
-                format!(
-                    "DMX value of {} is out of range for the channel resolution: {:?}",
-                    result, channel_resolution
-                )
-                .to_string(),
-            ));
-        }
-
-        Ok(Self(result))
-    }
-}
-
-fn get_channel_max_dmx(channel_resolution: ChannelBitResolution) -> DmxValue {
-    let max_val = match channel_resolution {
-        ChannelBitResolution::Bit8 => 256,
-        ChannelBitResolution::Bit16 => 256 * 256,
-        ChannelBitResolution::Bit24 => 256 * 256 * 256,
-        ChannelBitResolution::Bit32 => 256 * 256 * 256 * 256,
-    };
-
-    DmxValue(max_val - 1)
-}
-
-impl From<u64> for DmxValue {
-    fn from(value: u64) -> Self {
-        Self(value)
-    }
-}
-
-impl TryFrom<String> for DmxValue {
-    type Error = error::Error;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        let channel_resolution = ChannelBitResolution::Bit8;
-        DmxValue::try_from_string(value.as_str(), Some(channel_resolution))
-    }
-}
-
-impl TryFrom<&str> for DmxValue {
-    type Error = error::Error;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let value = value.to_string();
-        value.try_into()
+        Ok(DmxValue {
+            value,
+            byte_specifier: byte_specifier as u8,
+            byte_shifting,
+        })
     }
 }
 
@@ -345,8 +354,8 @@ impl<'de> serde::Deserialize<'de> for DmxValue {
     {
         let s: String = serde::Deserialize::deserialize(deserializer)?;
 
-        s.try_into()
-            .map_err(|error: error::Error| serde::de::Error::custom(error.message()))
+        DmxValue::from_str(s.as_str())
+            .map_err(|error: error::Error| serde::de::Error::custom(error.to_string()))
     }
 }
 
@@ -456,9 +465,9 @@ where
     Ok(floats)
 }
 
-pub(crate) fn deserialize_optional_int_array<'de, D>(
+pub(crate) fn deserialize_optional_u32_array<'de, D>(
     deserializer: D,
-) -> Result<Option<Vec<i32>>, D::Error>
+) -> Result<Option<Vec<u32>>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -472,7 +481,7 @@ where
         "None" => Ok(None),
         _ => {
             let split = s.split(',');
-            let ints: Vec<i32> = split.map(|s| s.parse().unwrap()).collect();
+            let ints: Vec<u32> = split.map(|s| s.parse().unwrap()).collect();
             Ok(Some(ints))
         }
     }
@@ -487,12 +496,11 @@ where
     let s: String = serde::Deserialize::deserialize(deserializer)?;
     match s.as_str() {
         "None" => Ok(None),
-        // TODO: We currently ignore the bit resolution
-        _ => match s.try_into() {
+        s => match DmxValue::from_str(s) {
             Ok(v) => Ok(Some(v)),
             Err(error) => Err(serde::de::Error::custom(format!(
                 "Invalid DmxValue value: {}",
-                error.message()
+                error.to_string()
             ))),
         },
     }
@@ -505,9 +513,8 @@ mod tests {
     #[test]
     fn load_gdtf_file() {
         let root = std::env::current_dir().unwrap();
-        let file = std::fs::File::open(root.join("tests/test_fixture.gdtf")).unwrap();
-        let reader = io::BufReader::new(file);
-        let gdtf = GdtfDescription::from_archive_reader(reader);
+        let file = std::fs::File::open(root.join("tests/advanced_description.xml")).unwrap();
+        let gdtf = GdtfDescription::from_file(&file);
 
         assert!(gdtf.is_ok())
     }
@@ -516,8 +523,8 @@ mod tests {
     fn dmx_value_conversion() {
         macro_rules! test_dmx_value {
             ($value:expr, $resolution:expr, $expected:expr) => {
-                let dmx_value = DmxValue::try_from_string($value, Some($resolution)).unwrap();
-                assert_eq!(dmx_value.0, $expected);
+                let dmx_value = DmxValue::from_str($value).unwrap();
+                assert_eq!(dmx_value.value($resolution).unwrap(), $expected);
             };
         }
 

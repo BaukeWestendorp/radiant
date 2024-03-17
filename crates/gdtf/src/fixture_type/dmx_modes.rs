@@ -4,7 +4,7 @@
 
 use serde_inline_default::serde_inline_default;
 
-use crate::{deserialize_optional_dmx_value, deserialize_optional_int_array, DmxValue, Name, Node};
+use crate::{deserialize_optional_dmx_value, deserialize_optional_u32_array, DmxValue, Name, Node};
 
 /// # [DMX Mode Collect](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#dmx-mode-collect)
 ///
@@ -93,8 +93,8 @@ pub struct DmxChannel {
     /// Relative addresses of the current DMX channel from highest to least
     /// significant; Separator of values is ","; Special value: "None" – does
     /// not have any addresses; Default value: "None"; Size per int: 4 bytes
-    #[serde(rename = "Offset", deserialize_with = "deserialize_optional_int_array")]
-    pub offset: Option<Vec<i32>>,
+    #[serde(rename = "Offset", deserialize_with = "deserialize_optional_u32_array")]
+    pub offset: Option<Vec<u32>>,
 
     /// Link to the channel function that will be activated by default for this
     /// DMXChannel. Default value is the first channel function of the first
@@ -240,15 +240,15 @@ pub enum Master {
 /// # [Channel Function](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-60-channel-function-attributes)
 ///
 /// The Fixture Type Attribute is assigned to a Channel Function and defines the
-/// function of its DMX Range. (XML node <ChannelFunction>). The currently
+/// function of its DMX Range. (XML node `<ChannelFunction>`). The currently
 /// defined XML attributes of channel function are specified in
 /// [table 60](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-60-channel-function-attributes).
 ///
 /// Note:
 /// For command based control systems, you can control the fixture by sending it
-/// a string in the following style: "`/FIXTURE_ID/CUSTOM_NAME_CHANNELFUCTION`
-/// ,`f FLOAT_VALUE_PHYSICAL`" or
-/// "`/FIXTURE_ID/CUSTOM_NAME_CHANNELFUCTION/percent` ,`f FLOAT_VALUE_PERCENT`"
+/// a string in the following style:
+/// "`/FIXTURE_ID/CUSTOM_NAME_CHANNELFUCTION`, `f FLOAT_VALUE_PHYSICAL`" or
+/// "`/FIXTURE_ID/CUSTOM_NAME_CHANNELFUCTION/percent`, `f FLOAT_VALUE_PERCENT`"
 ///
 /// Where:
 ///
@@ -287,11 +287,14 @@ pub struct ChannelFunction {
     /// next channel function – 1 or the maximum value of the DMX channel.
     /// Default value: “0/1”.
     #[serde(rename = "DMXFrom")]
-    #[serde_inline_default("0/1".try_into().unwrap())]
+    #[serde_inline_default("0/1".parse().unwrap())]
     pub dmx_from: DmxValue,
 
     /// Default DMX value of channel function when activated by the control
     /// system.
+    ///
+    /// This value is output as long as it is not
+    /// overwritten by a cue for instance.
     #[serde(rename = "Default")]
     pub default: DmxValue,
 
@@ -348,12 +351,12 @@ pub struct ChannelFunction {
 
     /// Only used together with ModeMaster; DMX start value; Default value: 0/1
     #[serde(rename = "ModeFrom")]
-    #[serde_inline_default(DmxValue::try_from("0/1").unwrap())]
+    #[serde_inline_default("0/1".parse().unwrap())]
     pub mode_from: DmxValue,
 
     /// Only used together with ModeMaster; DMX end value; Default value: 0/1
     #[serde(rename = "ModeTo")]
-    #[serde_inline_default(DmxValue::try_from("0/1").unwrap())]
+    #[serde_inline_default("0/1".parse().unwrap())]
     pub mode_to: DmxValue,
 
     /// Optional link to DMX Profile; Starting point: DMX Profile Collect
@@ -418,7 +421,7 @@ pub struct ChannelSet {
     /// next channel set – 1 or the maximum value of the current channel
     /// function; Default value: 0/1
     #[serde(rename = "DMXFrom")]
-    #[serde_inline_default(DmxValue::try_from("0/1").unwrap())]
+    #[serde_inline_default("0/1".parse().unwrap())]
     pub dmx_from: DmxValue,
 
     #[serde(rename = "PhysicalFrom")]

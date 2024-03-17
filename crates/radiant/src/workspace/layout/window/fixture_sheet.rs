@@ -1,8 +1,8 @@
-use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, rgb, AnyElement, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
-    VisualContext,
+    div, rgb, AnyElement, IntoElement, Model, ParentElement, Pixels, Render, Styled, View,
+    ViewContext, VisualContext,
 };
+use itertools::Itertools;
 
 use crate::show::patch::Fixture;
 use crate::show::Show;
@@ -46,70 +46,133 @@ impl FixtureSheetWindowDelegate {
 
 impl SheetDelegate for FixtureSheetWindowDelegate {
     type Data = Fixture;
+    type ColumnId = FixtureSheetColumnId;
 
-    fn value_labels(&self) -> Vec<String> {
-        vec!["ID".into(), "Name".into(), "Patch".into(), "Mode".into()]
+    fn columns(&self, cx: &mut ViewContext<Sheet<Self>>) -> Vec<Self::ColumnId> {
+        let mut labels = vec![
+            FixtureSheetColumnId::Id,
+            FixtureSheetColumnId::Name,
+            FixtureSheetColumnId::Patch,
+            FixtureSheetColumnId::Mode,
+        ];
+
+        let mut attribute_labels = self.show.update(cx, |show, _cx| {
+            let all_used_attributes = show.patch_list.all_used_attributes();
+
+            all_used_attributes
+                .iter()
+                .map(|a| FixtureSheetColumnId::Attribute(a.name.value().to_string()))
+                .unique()
+                .collect::<Vec<_>>()
+        });
+
+        labels.append(&mut attribute_labels);
+
+        labels
     }
 
-    fn values(&self) -> &Vec<Self::Data> {
+    fn values(&self, _cx: &mut ViewContext<Sheet<Self>>) -> &Vec<Self::Data> {
         &self.fixtures
     }
 
-    fn column_widths(&self) -> Vec<gpui::Pixels> {
-        vec![
-            gpui::px(50.0),
-            gpui::px(200.0),
-            gpui::px(80.0),
-            gpui::px(200.0),
-        ]
+    fn column_width(
+        &self,
+        column_id: &Self::ColumnId,
+        _cx: &mut ViewContext<Sheet<Self>>,
+    ) -> Pixels {
+        match column_id {
+            FixtureSheetColumnId::Id => 50.0,
+            FixtureSheetColumnId::Name => 100.0,
+            FixtureSheetColumnId::Patch => 80.0,
+            FixtureSheetColumnId::Mode => 150.0,
+            FixtureSheetColumnId::Attribute(_) => 120.0,
+        }
+        .into()
     }
 
-    fn render_row_items(
+    fn header_label(
         &self,
+        column_id: &Self::ColumnId,
+        _cx: &mut ViewContext<Sheet<Self>>,
+    ) -> String {
+        match column_id {
+            FixtureSheetColumnId::Id => "ID".to_string(),
+            FixtureSheetColumnId::Name => "Name".to_string(),
+            FixtureSheetColumnId::Patch => "Patch".to_string(),
+            FixtureSheetColumnId::Mode => "Mode".to_string(),
+            FixtureSheetColumnId::Attribute(name) => name.to_string(),
+        }
+    }
+
+    fn render_cell_content(
+        &self,
+        column_id: &Self::ColumnId,
         fixture: &Self::Data,
         cx: &mut ViewContext<Sheet<Self>>,
-    ) -> Vec<AnyElement> {
-        let valid_channels = self.show.update(cx, |show, _cx| {
-            fixture
-                .get_valid_channels(&mut show.patch_list)
-                .collect::<Vec<_>>()
-                .len()
-        });
+    ) -> AnyElement {
+        match column_id {
+            FixtureSheetColumnId::Id => render_value(fixture.id),
+            FixtureSheetColumnId::Name => render_value(Some(fixture.name.clone())),
+            FixtureSheetColumnId::Patch => render_value(fixture.patch.clone()),
+            FixtureSheetColumnId::Mode => {
+                let name = self.show.update(cx, |show, _cx| {
+                    show.patch_list.fixture_type(fixture).dmx_modes.modes[fixture.mode_index]
+                        .name
+                        .clone()
+                });
+                render_value(Some(name))
+            }
+            FixtureSheetColumnId::Attribute(name) => {
+                let values_string = self.show.update(cx, |show, _cx| {
+                    show.patch_list
+                        .fixture_type(fixture)
+                        .used_dmx_channels_for_mode(fixture.mode_index)
+                        .unwrap()
+                        .iter()
+                        .find_map(|c| {
+                            let attribute = c
+                                .logical_channels
+                                .get(0)
+                                .unwrap()
+                                .attribute
+                                .references()
+                                .get(0)?;
 
-        let id = match fixture.id {
-            Some(id) => format!("{}", id),
-            None => "None".to_string(),
-        };
+                            let offsets = c.offset.as_ref()?;
 
-        let patch = match &fixture.patch {
-            Some(patch) => patch.to_string(),
-            None => "None".to_string(),
-        };
+                            if attribute == name {
+                                let values_string = offsets
+                                    .iter()
+                                    .map(|v| v.to_string())
+                                    .collect::<Vec<_>>()
+                                    .join(", ");
+                                Some(values_string)
+                            } else {
+                                None
+                            }
+                        })
+                });
 
-        vec![
-            self.render_cell(
-                div()
-                    .when(fixture.id.is_none(), |this| this.text_color(rgb(0x888888)))
-                    .child(id),
-                cx,
-            ),
-            self.render_cell(div().child(fixture.name.clone()), cx),
-            self.render_cell(
-                div()
-                    .when(fixture.patch.is_none(), |this| {
-                        this.text_color(rgb(0x888888))
-                    })
-                    .child(patch),
-                cx,
-            ),
-            self.render_cell(
-                div().child(format!(
-                    "Mode {} ({} channels)",
-                    fixture.mode_index + 1,
-                    valid_channels
-                )),
-                cx,
-            ),
-        ]
+                render_value(values_string)
+            }
+        }
+        .into_any_element()
     }
+}
+
+fn render_value<T: ToString>(value: Option<T>) -> AnyElement {
+    match value {
+        Some(value) => div().child(value.to_string()),
+        None => div().child("None").text_color(rgb(0x666666)),
+    }
+    .into_any_element()
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub enum FixtureSheetColumnId {
+    Id,
+    Name,
+    Patch,
+    Mode,
+    Attribute(String),
 }

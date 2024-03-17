@@ -2,10 +2,18 @@
   "name": "Super mega show",
   "presets": {
     "colors": {
-      "0": {
+      "5": {
         "label": "Green",
         "color": {
           "red": 0,
+          "green": 255,
+          "blue": 0
+        }
+      },
+      "4": {
+        "label": "Yellow",
+        "color": {
+          "red": 255,
           "green": 255,
           "blue": 0
         }
@@ -52,7 +60,7 @@
             "y": 4
           },
           "size": {
-            "cols": 10,
+            "cols": 15,
             "rows": 4
           }
         },
@@ -62,86 +70,17 @@
   },
   "patch_list": {
     "fixtures": [
-      {
+        {
         "id": 0,
-        "name": "Led 0",
-        "type_id": 0,
-        "mode_index": 0,
-        "patch": null
-      },
-      {
-        "id": null,
         "name": "Led 1",
-        "type_id": 0,
-        "mode_index": 0,
+        "gdtf_file_name": "ledforce_7_rgbw.gdtf",
+        "mode_index": 1,
         "patch": {
-          "address": 4,
-          "universe": 0
-        }
-      },
-      {
-        "id": 2,
-        "name": "Led 2",
-        "type_id": 0,
-        "mode_index": 0,
-        "patch": {
-          "address": 8,
-          "universe": 0
-        }
-      },
-      {
-        "id": null,
-        "name": "Led 3",
-        "type_id": 0,
-        "mode_index": 0,
-        "patch": {
-          "address": 12,
-          "universe": 0
-        }
-      },
-      {
-        "id": 4,
-        "name": "Led 4",
-        "type_id": 0,
-        "mode_index": 0,
-        "patch": {
-          "address": 16,
-          "universe": 0
-        }
-      },
-      {
-        "id": 5,
-        "name": "Led 5",
-        "type_id": 0,
-        "mode_index": 0,
-        "patch": {
-          "address": 20,
-          "universe": 0
-        }
-      },
-      {
-        "id": 6,
-        "name": "Led 6",
-        "type_id": 0,
-        "mode_index": 0,
-        "patch": {
-          "address": 24,
-          "universe": 0
-        }
-      },
-      {
-        "id": 7,
-        "name": "Led 7",
-        "type_id": 0,
-        "mode_index": 0,
-        "patch": {
-          "address": 28,
-          "universe": 0
-        }
-      }
-    ],
-    "fixture_types": {
-      "0": "ledforce_7_rgbw.gdtf"
+            "address": 1,
+            "universe": 1
+        },
+        "dmx_values": [0, 1, 2, 3, 4, 5]
     }
+    ]
   }
 }

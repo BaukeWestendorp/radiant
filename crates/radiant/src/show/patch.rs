@@ -1,137 +1,102 @@
 use std::collections::HashMap;
 
+use anyhow::anyhow;
 use assets::{AssetSource, Assets};
-use gdtf::fixture_type::dmx_modes::{DmxChannel, DmxMode};
+use gdtf::fixture_type::attribute_definitions::Attribute;
+
 use gdtf::fixture_type::FixtureType;
 use gdtf::GdtfDescription;
 use gpui::SharedString;
 
+use crate::dmx::DmxChannel;
+
 pub type FixtureTypeId = usize;
 pub type FixtureId = usize;
 
-#[derive(Debug, Clone, serde::Deserialize, Default, serde::Serialize)]
+#[derive(Debug, Clone, Default)]
 pub struct PatchList {
     pub fixtures: Vec<Fixture>,
 
-    fixture_types: HashMap<FixtureTypeId, String>,
+    gdtf_descriptions: HashMap<SharedString, GdtfDescription>,
+}
 
-    #[serde(skip_serializing, default = "HashMap::new")]
-    fixture_type_cache: HashMap<String, FixtureType>,
+impl<'de> serde::Deserialize<'de> for PatchList {
+    fn deserialize<D>(deserializer: D) -> Result<PatchList, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(Debug, serde::Deserialize)]
+        struct Intermediate {
+            fixtures: Vec<Fixture>,
+        }
+
+        let intermediate: Intermediate = serde::Deserialize::deserialize(deserializer)?;
+
+        let fixtures = intermediate.fixtures;
+        let mut gdtf_descriptions = HashMap::new();
+        for fixture in fixtures.iter() {
+            match load_gdtf_description(format!("fixtures/{}", fixture.gdtf_file_name).as_str()) {
+                Ok(gdtf_description) => {
+                    gdtf_descriptions.insert(fixture.gdtf_file_name.clone(), gdtf_description);
+                }
+                Err(err) => {
+                    log::error!("{}", err);
+                    return Err(serde::de::Error::custom(format!(
+                        "Failed to load GDTF description for fixture: {}",
+                        fixture.gdtf_file_name
+                    )));
+                }
+            }
+        }
+
+        Ok(PatchList {
+            fixtures,
+            gdtf_descriptions,
+        })
+    }
+}
+
+fn load_gdtf_description(path: &str) -> Result<GdtfDescription, anyhow::Error> {
+    let fixture_file = Assets
+        .load(&path)
+        .map_err(|e| anyhow!("Failed to load fixture file: {}", e))?;
+    GdtfDescription::from_archive_bytes(&fixture_file)
+        .map_err(|e| anyhow!("Failed to parse GDTF: {}", e.to_string()))
+}
+
+impl serde::Serialize for PatchList {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.fixtures.serialize(serializer)
+    }
 }
 
 impl PatchList {
-    pub fn get_fixture_type(&mut self, id: FixtureTypeId) -> Option<&FixtureType> {
-        let file_name = match self.fixture_types.get(&id) {
-            Some(file_name) => file_name,
-            None => {
-                log::error!("Fixture type not found for id '{}'.", id);
-                return None;
-            }
-        };
-
-        if !self.fixture_type_cache.contains_key(file_name) {
-            let path = format!("fixtures/{}", file_name);
-            let gdtf_description = load_gdtf_description(&path);
-            let fixture_type = gdtf_description.fixture_type;
-            self.fixture_type_cache
-                .insert(file_name.clone(), fixture_type.clone());
-        }
-
-        self.fixture_type_cache.get(file_name)
+    pub fn all_used_attributes(&mut self) -> Vec<&Attribute> {
+        self.fixtures
+            .iter()
+            .filter_map(|f| self.fixture_type(f).used_attributes_for_mode(f.mode_index))
+            .flatten()
+            .collect()
     }
 
-    pub fn register_fixture_type(&mut self, file_name: &str) -> FixtureTypeId {
-        let id = self.new_fixture_type_id();
-        self.fixture_types.insert(id, file_name.to_string());
-        id
+    pub fn fixture_type(&self, fixture: &Fixture) -> &FixtureType {
+        &self
+            .gdtf_descriptions
+            .get(&fixture.gdtf_file_name)
+            .expect("Fixture type not found")
+            .fixture_type
     }
-
-    fn new_fixture_type_id(&self) -> FixtureTypeId {
-        // TODO: This is not a good way to get a new id. This only works if you can't
-        // remove fixture types.
-        self.fixture_types.len()
-    }
-}
-
-fn load_gdtf_description(path: &str) -> GdtfDescription {
-    let fixture_file = Assets
-        .load(&path)
-        .expect(format!("Fixture asset not found at path '{}'", path).as_str());
-    GdtfDescription::from_archive_bytes(&fixture_file)
-        .expect(format!("Failed to parse GDTF file at path '{}'", path).as_str())
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct Fixture {
     pub id: Option<FixtureId>,
     pub name: SharedString,
-    pub type_id: FixtureTypeId,
-    pub mode_index: u8,
-    pub patch: Option<Patch>,
-}
-
-impl Fixture {
-    pub fn new(
-        id: Option<FixtureId>,
-        name: SharedString,
-        type_id: FixtureTypeId,
-        mode_index: u8,
-        patch: Option<Patch>,
-    ) -> Self {
-        Self {
-            id,
-            name,
-            type_id,
-            mode_index,
-            patch,
-        }
-    }
-
-    pub fn fixture_type<'a>(&'a self, patch_list: &'a mut PatchList) -> &FixtureType {
-        match patch_list.get_fixture_type(self.type_id) {
-            Some(fixture_type) => fixture_type,
-            None => {
-                log::error!("Fixture type not found for id '{}'.", self.type_id);
-                panic!()
-            }
-        }
-    }
-
-    pub fn mode<'a>(&'a self, patch_list: &'a mut PatchList) -> &DmxMode {
-        let fixture_type = self.fixture_type(patch_list);
-        match fixture_type.dmx_modes.modes.get(self.mode_index as usize) {
-            Some(mode) => &mode,
-            None => {
-                log::error!(
-                    "Mode not found for index '{}' in fixture type '{}'.",
-                    self.mode_index,
-                    fixture_type.name
-                );
-                panic!()
-            }
-        }
-    }
-
-    pub fn get_valid_channels<'a>(
-        &'a self,
-        patch_list: &'a mut PatchList,
-    ) -> impl Iterator<Item = &DmxChannel> {
-        let mode = self.mode(patch_list);
-        mode.dmx_channels
-            .channels
-            .iter()
-            .filter(|c| c.offset.clone().is_some_and(|o| !o.is_empty()))
-    }
-}
-
-#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
-pub struct Patch {
-    pub address: u16,
-    pub universe: u8,
-}
-
-impl std::fmt::Display for Patch {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}.{:03}", self.universe, self.address)
-    }
+    pub gdtf_file_name: SharedString,
+    pub mode_index: usize,
+    pub patch: Option<DmxChannel>,
+    pub dmx_values: Vec<u8>,
 }

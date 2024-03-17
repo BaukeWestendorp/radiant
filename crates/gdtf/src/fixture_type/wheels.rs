@@ -94,14 +94,19 @@ pub struct WheelSlot {
     pub media_file_name: Option<Resource>,
 
     /// If the wheel slot has a prism, it has to have one or several children
-    /// called [PrismFacet].
+    /// called prism facet. If the wheel slot has an AnimationWheel, it has to
+    /// have one child called Animation Wheel.
     #[serde(rename = "$value", default = "Vec::new")]
-    pub prism_facets: Vec<PrismFacet>,
+    pub content: Vec<WheelSlotContent>,
+}
 
-    /// If the wheel slot has an AnimationWheel, it has to have one child called
-    /// [AnimationSystem].
-    #[serde(rename = "$value")]
-    pub animation_system: Option<AnimationSystem>,
+/// Either one or more prism facet or a single animation system.
+#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
+pub enum WheelSlotContent {
+    /// Prism facet
+    Facet(PrismFacet),
+    /// Animation system
+    AnimationSystem(AnimationSystem),
 }
 
 /// # Prism Facet
@@ -138,20 +143,24 @@ pub struct AnimationSystem {
     /// First Point of the Spline describing the path of animation system in the
     /// beam in relation to the middle of the Media File; Array of two floats;
     /// Separator of values is “,”; First Float is X-axis and second is Y-axis.
+    #[serde(rename = "P1")]
     pub p1: Point,
 
     /// Second Point of the Spline describing the path of animation system in
     /// the beam in relation to the middle of the Media File; Array of two
     /// floats; Separator of values is “,”; First Float is X-axis and second is
     /// Y-axis.
+    #[serde(rename = "P2")]
     pub p2: Point,
 
     /// Third Point of the Spline describing the path of animation system in the
     /// beam in relation to the middle of the Media File; Array of two floats;
     /// Separator of values is “,”; First Float is X-axis and second is Y-axis.
+    #[serde(rename = "P3")]
     pub p3: Point,
 
     /// Radius of the circle that defines the section of the animation system
     /// which will be shown in the beam
+    #[serde(rename = "Radius")]
     pub radius: f32,
 }

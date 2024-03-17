@@ -64,7 +64,8 @@ impl Workspace {
             match Show::from_file(Self::SHOW_FILE_PATH) {
                 Ok(loaded_show) => *show = loaded_show,
                 Err(e) => {
-                    log::error!("Failed to open show: {}", e);
+                    log::error!("{}", e);
+                    return;
                 }
             }
 
