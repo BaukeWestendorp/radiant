@@ -64,7 +64,10 @@ pub enum WindowKind {
 impl WindowKind {
     pub fn window_title(&self) -> &str {
         match self {
-            WindowKind::Pool(_) => "Pool Window",
+            WindowKind::Pool(kind) => match kind.kind {
+                PoolWindowKind::Color => "Color Pool",
+                PoolWindowKind::FixtureGroup => "Fixture Group Pool",
+            },
             WindowKind::ColorPicker => "Color Picker",
             WindowKind::FixtureSheet => "Fixture Sheet",
         }
@@ -88,18 +91,14 @@ pub struct PoolWindow {
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub enum PoolWindowKind {
     Color,
+    FixtureGroup,
 }
 
 impl PoolWindowKind {
-    pub fn window_title(&self) -> &str {
-        match &self {
-            PoolWindowKind::Color => "Color",
-        }
-    }
-
     pub fn color(&self) -> gpui::Rgba {
         match &self {
             PoolWindowKind::Color => gpui::rgb(0x27D0CD),
+            PoolWindowKind::FixtureGroup => gpui::rgb(0xFFA559),
         }
     }
 }

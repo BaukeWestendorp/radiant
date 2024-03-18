@@ -48,7 +48,8 @@ impl PoolWindow {
 
     pub fn render_header_cell(&mut self, cx: &mut WindowContext) -> impl IntoElement {
         let show_pool_window = show_pool_window(&self.show, self.window_id, cx);
-        let title = show_pool_window.kind.window_title().to_string();
+        let show_window = show_window(&self.show, self.window_id, cx);
+        let title = show_window.kind.window_title().to_string();
         let color = color::darken(show_pool_window.kind.color(), 0.1);
         let border_color = show_pool_window.kind.color();
 
@@ -72,7 +73,7 @@ impl PoolWindow {
 
     fn handle_scroll(&mut self, event: &ScrollWheelEvent, cx: &mut ViewContext<Self>) {
         let item_count = self.item_count(cx);
-        let show_window = show_window(&self.show, self.window_id, cx).clone();
+        let show_window = show_window(&self.show, self.window_id, cx);
         let show_pool_window = show_pool_window(&self.show, self.window_id, cx);
 
         let scroll_delta_y = event.delta.pixel_delta(px(Self::SCROLL_SENSITIVITY)).y;
@@ -92,7 +93,7 @@ impl PoolWindow {
                     log::error!("Failed to update pool window scroll offset. Pool window with id '{}' not found", self.window_id);
                 }
             }
-              
+
             cx.notify();
         })
     }
@@ -103,7 +104,7 @@ fn create_pool_items(
     show: &Model<Show>,
     cx: &mut WindowContext,
 ) -> Vec<View<PoolItem>> {
-    let show_window = show_window(show, window_id, cx).clone();
+    let show_window = show_window(show, window_id, cx);
     let show_pool_window = show_pool_window(show, window_id, cx).clone();
     let item_count = show_window.bounds.cell_count() - 1;
 

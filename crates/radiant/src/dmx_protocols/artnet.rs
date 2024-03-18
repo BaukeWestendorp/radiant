@@ -1,8 +1,7 @@
-use std::net::{ToSocketAddrs, UdpSocket};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-use artnet_protocol::*;
+use artnet::ArtnetSocket;
 
 use crate::dmx::DmxOutput;
 
@@ -10,78 +9,41 @@ use crate::dmx::DmxOutput;
 pub struct Artnet {
     pub name: String,
     pub destination_ip: String,
-    pub universe: u32,
+    pub local_universe: u32,
 
     #[serde(skip)]
-    socket: Option<Arc<Mutex<UdpSocket>>>,
-    #[serde(skip)]
-    broadcast_addr: Option<std::net::SocketAddr>,
+    socket: Option<Arc<Mutex<ArtnetSocket>>>,
 }
 
 impl Artnet {
     pub fn open(&mut self) {
-        self.socket = Some(Arc::new(Mutex::new(
-            UdpSocket::bind(("0.0.0.0", 6454)).unwrap(),
-        )));
-
-        self.broadcast_addr = Some(
-            (self.destination_ip.clone(), 6454)
-                .to_socket_addrs()
-                .unwrap()
-                .next()
-                .unwrap(),
+        log::info!(
+            "Opening Artnet connection to {} ({})",
+            self.name,
+            self.destination_ip
         );
 
-        self.socket
-            .as_ref()
-            .unwrap()
-            .lock()
-            .unwrap()
-            .set_broadcast(true)
-            .unwrap();
-    }
+        let socket = ArtnetSocket::new(&self.destination_ip).unwrap();
 
-    pub fn poll(&self) {
-        let buff = ArtCommand::Poll(Poll::default()).write_to_buffer().unwrap();
-        self.socket
-            .as_ref()
-            .unwrap()
-            .lock()
-            .unwrap()
-            .send_to(&buff, &self.broadcast_addr.unwrap())
-            .unwrap();
+        self.socket = Some(Arc::new(Mutex::new(socket)));
+
+        log::info!(
+            "Opened Artnet connection to {} ({})",
+            self.name,
+            self.destination_ip
+        );
     }
 
     pub fn send_dmx(&self, dmx_output: &DmxOutput) {
-        let socket = self.socket.clone();
+        let socket = self.socket.clone().unwrap();
         let data = dmx_output
-            .get_universe(self.universe)
+            .get_universe(self.local_universe)
             .unwrap()
             .get_channels()
             .to_vec();
-        let destination_ip = self.destination_ip.clone();
 
-        thread::spawn(move || {
-            let command = ArtCommand::Output(Output {
-                port_address: 0.into(),
-                data: PaddedData::from(data),
-
-                ..Output::default()
-            });
-            let bytes = command.write_to_buffer().unwrap();
-            let addr = (destination_ip, 56537)
-                .to_socket_addrs()
-                .unwrap()
-                .next()
-                .unwrap();
-            socket
-                .unwrap()
-                .lock()
-                .unwrap()
-                .send_to(&bytes, &addr)
-                .unwrap();
-        })
-        .join()
-        .unwrap();
+        thread::spawn(move || socket.lock().unwrap().send_dmx(data))
+            .join()
+            .unwrap();
     }
 }

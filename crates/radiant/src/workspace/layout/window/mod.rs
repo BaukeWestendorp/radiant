@@ -1,6 +1,6 @@
 use gpui::{
-    div, rgb, AnyView, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
-    VisualContext, WindowContext,
+    div, rgb, AnyView, AppContext, IntoElement, Model, ParentElement, Render, Styled, View,
+    ViewContext, VisualContext, WindowContext,
 };
 
 use crate::show::layout::WindowKind;
@@ -87,7 +87,7 @@ impl Render for Window {
 pub fn show_window<'a>(
     show: &Model<Show>,
     window_id: usize,
-    cx: &'a mut WindowContext,
+    cx: &'a AppContext,
 ) -> &'a show::Window {
     match show.read(cx).layout.window(window_id) {
         Some(window) => window,
@@ -104,7 +104,7 @@ pub fn show_window<'a>(
 pub fn show_pool_window<'a>(
     show: &Model<Show>,
     window_id: usize,
-    cx: &'a mut WindowContext,
+    cx: &'a AppContext,
 ) -> &'a show::PoolWindow {
     match show.read(cx).layout.pool_window(window_id) {
         Some(pool_window) => pool_window,

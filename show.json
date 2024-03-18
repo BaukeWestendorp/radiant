@@ -20,6 +20,18 @@
       }
     }
   },
+  "data_pools": {
+    "fixture_groups": {
+      "1": {
+        "label": "Even",
+        "fixtures": [1, 3]
+      },
+      "2": {
+        "label": "Odd",
+        "fixtures": [2, 4]
+      }
+    }
+  },
   "layout": {
     "windows": {
       "1": {
@@ -70,59 +82,59 @@
   },
   "patch_list": {
     "fixtures": [
-        {
-            "id": 0,
-            "name": "LEDForce 7 RGBW",
-            "gdtf_file_name": "ledforce_7_rgbw.gdtf",
-            "mode_index": 1,
-            "patch": {
-                "address": 1,
-                "universe": 1
-            },
-            "dmx_values": [255, 0, 255, 0, 255, 0]
+      {
+        "id": 1,
+        "name": "LEDForce 7 RGBW 1",
+        "gdtf_file_name": "ledforce_7_rgbw.gdtf",
+        "mode_index": 1,
+        "patch": {
+          "address": 1,
+          "universe": 1
         },
-        {
-            "id": 1,
-            "name": "LEDForce 7 RGBW",
-            "gdtf_file_name": "ledforce_7_rgbw.gdtf",
-            "mode_index": 1,
-            "patch": {
-                "address": 7,
-                "universe": 1
-            },
-            "dmx_values": [255, 0, 0, 0, 255, 0]
+        "dmx_values": [255, 0, 255, 0, 255, 0]
+      },
+      {
+        "id": 2,
+        "name": "LEDForce 7 RGBW 2",
+        "gdtf_file_name": "ledforce_7_rgbw.gdtf",
+        "mode_index": 1,
+        "patch": {
+          "address": 7,
+          "universe": 1
         },
-        {
-            "id": 2,
-            "name": "LEDForce 7 RGBW",
-            "gdtf_file_name": "ledforce_7_rgbw.gdtf",
-            "mode_index": 1,
-            "patch": {
-                "address": 13,
-                "universe": 1
-            },
-            "dmx_values": [0, 255, 255, 0, 255, 0]
+        "dmx_values": [255, 0, 0, 0, 255, 0]
+      },
+      {
+        "id": 3,
+        "name": "LEDForce 7 RGBW 3",
+        "gdtf_file_name": "ledforce_7_rgbw.gdtf",
+        "mode_index": 1,
+        "patch": {
+          "address": 13,
+          "universe": 1
         },
-        {
-            "id": 3,
-            "name": "LEDForce 7 RGBW",
-            "gdtf_file_name": "ledforce_7_rgbw.gdtf",
-            "mode_index": 1,
-            "patch": {
-                "address": 19,
-                "universe": 1
-            },
-            "dmx_values": [255, 255, 0, 0, 255, 0]
-        }
+        "dmx_values": [0, 255, 255, 0, 255, 0]
+      },
+      {
+        "id": 4,
+        "name": "LEDForce 7 RGBW 4",
+        "gdtf_file_name": "ledforce_7_rgbw.gdtf",
+        "mode_index": 1,
+        "patch": {
+          "address": 19,
+          "universe": 1
+        },
+        "dmx_values": [255, 255, 0, 0, 255, 0]
+      }
     ]
   },
   "dmx_protocols": {
     "artnet": [
-        {
-          "name": "GrandMA3",
-          "destination_ip": "192.168.178.159",
-          "universe": 1
-        }
-      ]
+      {
+        "name": "GrandMA3",
+        "destination_ip": "0.0.0.0",
+        "local_universe": 1
+      }
+    ]
   }
 }

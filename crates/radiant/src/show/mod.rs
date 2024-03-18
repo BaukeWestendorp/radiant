@@ -5,10 +5,12 @@ use gpui::SharedString;
 use crate::dmx::{DmxChannel, DmxOutput, DmxUniverse};
 use crate::dmx_protocols::DmxProtocols;
 
+use self::data_pools::DataPools;
 use self::layout::Layout;
 use self::patch::PatchList;
 use self::presets::Presets;
 
+pub mod data_pools;
 pub mod layout;
 pub mod patch;
 pub mod presets;
@@ -20,6 +22,7 @@ pub use layout::Window;
 pub struct Show {
     pub name: SharedString,
     pub presets: Presets,
+    pub data_pools: DataPools,
     pub layout: Layout,
     pub patch_list: PatchList,
 
@@ -48,6 +51,7 @@ impl Show {
 
     pub fn init(&mut self) {
         log::info!("Initializing show");
+
         self.init_dmx_protocols();
         self.init_dmx_output();
     }
@@ -55,11 +59,6 @@ impl Show {
     pub fn init_dmx_protocols(&mut self) {
         log::info!("Initializing DMX protocols");
         for artnet in self.dmx_protocols.artnet.iter_mut() {
-            log::info!(
-                "Opening Artnet ({}) connection to {}",
-                artnet.name,
-                artnet.destination_ip
-            );
             artnet.open();
         }
     }

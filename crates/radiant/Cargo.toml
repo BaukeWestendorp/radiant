@@ -4,19 +4,19 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 
-
 [dependencies]
-gdtf.workspace = true
+artnet.workspace = true
 assets.workspace = true
+gdtf.workspace = true
 
 anyhow.workspace = true
-artnet_protocol.workspace = true
 env_logger.workspace = true
-gpui_assets.workspace = true
 gpui.workspace = true
-itertools.workspace = true
 log.workspace = true
-rand.workspace = true
 serde_json.workspace = true
 serde.workspace = true
-smallvec.workspace = true
+
+gpui_assets = { package = "assets", git = "https://github.com/zed-industries/zed" }
+itertools = "0.12.1"
+rand = "0.8.5"
+smallvec = "1.6"

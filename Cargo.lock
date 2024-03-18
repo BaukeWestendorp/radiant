@@ -108,6 +108,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "96d30a06541fbafbc7f82ed10c06164cfbd2c401138f6addd8404629c4b16711"
 
 [[package]]
+name = "artnet"
+version = "0.1.0"
+dependencies = [
+ "artnet_protocol",
+]
+
+[[package]]
 name = "artnet_protocol"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3051,7 +3058,7 @@ name = "radiant"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "artnet_protocol",
+ "artnet",
  "assets 0.1.0",
  "assets 0.1.0 (git+https://github.com/zed-industries/zed)",
  "env_logger",
