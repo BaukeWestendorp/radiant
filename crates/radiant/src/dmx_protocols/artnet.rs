@@ -3,14 +3,14 @@ use std::thread;
 
 use artnet::ArtnetSocket;
 
-use crate::dmx::DmxUniverse;
+use crate::dmx::DmxOutput;
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct Artnet {
     pub name: String,
     pub target_ip: String,
-    pub target_universe: u32,
-    pub local_universe: u32,
+    pub target_universe: u16,
+    pub local_universe: u16,
 
     #[serde(skip)]
     socket: Option<Arc<Mutex<ArtnetSocket>>>,
@@ -35,10 +35,14 @@ impl Artnet {
         );
     }
 
-    pub fn send_dmx_universe(&self, dmx_universe: &DmxUniverse) {
+    pub fn send_dmx_universe(&self, dmx_output: &DmxOutput) {
         let socket = self.socket.clone().unwrap();
-        let data = dmx_universe.get_channels().to_vec();
-        let port_address = dmx_universe.id() - 1;
+        let data = dmx_output
+            .get_universe(self.local_universe)
+            .unwrap()
+            .get_channels()
+            .to_vec();
+        let port_address = self.target_universe - 1;
         thread::spawn(move || socket.lock().unwrap().send_dmx(port_address, data))
             .join()
             .unwrap();

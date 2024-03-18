@@ -56,14 +56,14 @@ impl Show {
         self.init_dmx_output();
     }
 
-    pub fn init_dmx_protocols(&mut self) {
+    fn init_dmx_protocols(&mut self) {
         log::info!("Initializing DMX protocols");
         for artnet in self.dmx_protocols.artnet.iter_mut() {
             artnet.open();
         }
     }
 
-    pub fn init_dmx_output(&mut self) {
+    fn init_dmx_output(&mut self) {
         log::info!("Initializing DMX output");
         self.dmx_output = DmxOutput::new();
         for fixture in self.patch_list.fixtures.iter() {
@@ -88,6 +88,12 @@ impl Show {
                 };
                 self.dmx_output.set_channel(channel, *value);
             }
+        }
+    }
+
+    pub fn send_output_over_active_protocols(&self) {
+        for artnet in self.dmx_protocols.artnet.iter() {
+            artnet.send_dmx_universe(&self.dmx_output);
         }
     }
 }

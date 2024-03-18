@@ -1,8 +1,9 @@
 use std::fmt::Display;
+use std::time::Duration;
 
 use gpui::{
     div, white, AppContext, FocusHandle, FocusableView, InteractiveElement, IntoElement, Model,
-    ParentElement, Render, Styled, View, ViewContext,
+    ParentElement, Render, Styled, Timer, View, ViewContext,
 };
 
 use crate::show::Show;
@@ -22,6 +23,8 @@ pub mod actions {
         actions!(workspace, [Store, Clear]);
     }
 }
+
+const DMX_OUTPUT_RATE: Duration = Duration::from_millis(1000 / 40);
 
 pub struct Workspace {
     show: Model<Show>,
@@ -43,12 +46,16 @@ impl Workspace {
 
         let focus_handle = cx.focus_handle();
 
-        Self {
+        let this = Self {
             show,
             screen,
             focus_handle,
             programmer_state: ProgrammerState::default(),
-        }
+        };
+
+        this.dmx_output_interval(cx);
+
+        this
     }
 
     pub fn programmer_state(&self) -> ProgrammerState {
@@ -94,6 +101,22 @@ impl Workspace {
 
     pub fn cmd_clear(&mut self, _action: &actions::cmd::Clear, cx: &mut ViewContext<Self>) {
         self.set_programmer_state(ProgrammerState::Normal, cx);
+    }
+
+    fn dmx_output_interval(&self, cx: &mut ViewContext<Self>) {
+        cx.spawn(|this, mut cx| async move {
+            Timer::after(DMX_OUTPUT_RATE).await;
+            this.update(&mut cx, |this, cx| {
+                log::trace!("Outputting DMX data...");
+                this.show.update(cx, |show, _cx| {
+                    show.update_dmx_output();
+                    show.send_output_over_active_protocols();
+                });
+                this.dmx_output_interval(cx);
+            })
+            .unwrap();
+        })
+        .detach();
     }
 }
 
