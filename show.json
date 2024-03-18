@@ -65,6 +65,24 @@
         },
         "kind": "ColorPicker"
       },
+      "3": {
+        "bounds": {
+          "origin": {
+            "x": 8,
+            "y": 0
+          },
+          "size": {
+            "cols": 4,
+            "rows": 4
+          }
+        },
+        "kind": {
+          "Pool": {
+            "kind": "FixtureGroup",
+            "scroll_offset": 0
+          }
+        }
+      },
       "2": {
         "bounds": {
           "origin": {
