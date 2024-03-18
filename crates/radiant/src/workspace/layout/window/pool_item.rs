@@ -5,7 +5,7 @@ use gpui::{
 };
 
 use crate::color;
-use crate::show::data_pools::{DataPool, FixtureGroupId};
+use crate::show::data_pools::{DataPool, FixtureGroup, FixtureGroupId};
 use crate::show::layout::PoolWindowKind;
 use crate::show::presets::{ColorPreset, ColorPresetId, Preset};
 use crate::show::Show;
@@ -52,6 +52,19 @@ impl PoolItem {
             .child(div().flex().justify_center().text_xs().child(label))
     }
 
+    fn render_fixture_group_pool_item(&self, fixture_group: &FixtureGroup) -> impl IntoElement {
+        let label = fixture_group.label().to_string();
+
+        div()
+            .bg(rgb(0x303030))
+            .size_full()
+            .flex()
+            .justify_center()
+            .items_center()
+            .text_xs()
+            .child(label)
+    }
+
     fn render_empty_pool_item(&self) -> impl IntoElement {
         div().size_full()
     }
@@ -89,9 +102,7 @@ impl Render for PoolItem {
                 match fixture_group {
                     Some(fixture_group) => {
                         has_content = true;
-                        div()
-                            .size_full()
-                            .child(format!("{}", fixture_group.label()))
+                        self.render_fixture_group_pool_item(fixture_group)
                             .into_any_element()
                     }
                     None => self.render_empty_pool_item().into_any_element(),
