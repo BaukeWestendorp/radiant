@@ -61,12 +61,14 @@ impl PoolWindow {
             .border()
             .border_color(border_color)
             .items_center()
+            .p_1()
             .child(
                 div()
                     .bg(rgba(0x00000040))
                     .px_1()
                     .rounded_sm()
                     .text_sm()
+                    .max_w_full()
                     .child(title),
             )
     }

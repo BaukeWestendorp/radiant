@@ -65,8 +65,8 @@ impl WindowKind {
     pub fn window_title(&self) -> &str {
         match self {
             WindowKind::Pool(kind) => match kind.kind {
-                PoolWindowKind::Color => "Color Pool",
-                PoolWindowKind::FixtureGroup => "Fixture Group Pool",
+                PoolWindowKind::Color => "Colors",
+                PoolWindowKind::FixtureGroup => "Groups",
             },
             WindowKind::ColorPicker => "Color Picker",
             WindowKind::FixtureSheet => "Fixture Sheet",
