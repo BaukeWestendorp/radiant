@@ -12,8 +12,8 @@ pub struct ArtnetSocket {
 }
 
 impl ArtnetSocket {
-    pub fn new(target_address: &str) -> io::Result<Self> {
-        let target_address = (target_address, ARTNET_PORT)
+    pub fn new(target_ip: &str) -> io::Result<Self> {
+        let target_address = (target_ip, ARTNET_PORT)
             .to_socket_addrs()
             .expect("Could not resolve address")
             .next()
@@ -29,10 +29,10 @@ impl ArtnetSocket {
         })
     }
 
-    pub fn send_dmx(&self, data: Vec<u8>) {
+    pub fn send_dmx(&self, port_address: u16, data: Vec<u8>) {
         let command = ArtCommand::Output(Output {
             data: data.into(),
-            port_address: 0.into(),
+            port_address: port_address.try_into().unwrap(),
             ..Output::default()
         });
         let bytes = command.write_to_buffer().unwrap();

@@ -35,11 +35,11 @@ impl DmxOutput {
         self.0.push(universe);
     }
 
-    pub fn get_universe(&self, id: u32) -> Option<&DmxUniverse> {
+    pub fn get_universe(&self, id: u16) -> Option<&DmxUniverse> {
         self.0.iter().find(|u| u.id == id)
     }
 
-    pub fn get_universe_mut(&mut self, id: u32) -> Option<&mut DmxUniverse> {
+    pub fn get_universe_mut(&mut self, id: u16) -> Option<&mut DmxUniverse> {
         self.0.iter_mut().find(|u| u.id == id)
     }
 
@@ -54,12 +54,12 @@ impl DmxOutput {
 
 #[derive(Debug, Clone)]
 pub struct DmxUniverse {
-    id: u32,
+    id: u16,
     channels: [u8; 512],
 }
 
 impl DmxUniverse {
-    pub fn new(id: u32) -> Result<Self, anyhow::Error> {
+    pub fn new(id: u16) -> Result<Self, anyhow::Error> {
         if id == 0 {
             return Err(anyhow::anyhow!("Universes must have an id greater than 0"));
         }
@@ -70,7 +70,7 @@ impl DmxUniverse {
         })
     }
 
-    pub fn id(&self) -> u32 {
+    pub fn id(&self) -> u16 {
         self.id
     }
 
@@ -107,12 +107,12 @@ impl DmxUniverse {
 
 #[derive(Debug, Clone)]
 pub struct DmxChannel {
-    pub universe: u32,
+    pub universe: u16,
     pub address: u16,
 }
 
 impl DmxChannel {
-    pub fn new(universe: u32, address: u16) -> Result<Self, anyhow::Error> {
+    pub fn new(universe: u16, address: u16) -> Result<Self, anyhow::Error> {
         if universe == 0 {
             return Err(anyhow::anyhow!("Universe must be greater than 0"));
         }
@@ -132,7 +132,7 @@ impl<'de> serde::Deserialize<'de> for DmxChannel {
     {
         #[derive(Debug, serde::Deserialize)]
         struct Intermediate {
-            universe: u32,
+            universe: u16,
             address: u16,
         }
 

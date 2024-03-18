@@ -39,7 +39,6 @@ fn main() {
             KeyBinding::new("cmd-o", workspace::actions::OpenShow, Some("Workspace")),
             KeyBinding::new("cmd-s", workspace::actions::SaveShow, Some("Workspace")),
             KeyBinding::new("s", workspace::actions::cmd::Store, Some("Workspace")),
-            KeyBinding::new("t", workspace::actions::cmd::Test, Some("Workspace")),
             KeyBinding::new("escape", workspace::actions::cmd::Clear, Some("Workspace")),
         ]);
 
