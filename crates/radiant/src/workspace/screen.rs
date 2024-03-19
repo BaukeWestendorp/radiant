@@ -39,7 +39,7 @@ impl Render for Screen {
         let command_list = div().flex().gap_2().child("> ").children(
             CommandList::commands(cx)
                 .iter()
-                .map(|command| div().child(format!("{:?}", command))),
+                .map(|command| div().child(format!("{}", command))),
         );
 
         let status_bar = div()
