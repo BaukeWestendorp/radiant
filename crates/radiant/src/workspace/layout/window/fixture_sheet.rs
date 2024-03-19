@@ -1,6 +1,6 @@
 use gpui::{
-    div, rgb, AnyElement, IntoElement, Model, ParentElement, Pixels, Render, Styled, View,
-    ViewContext, VisualContext,
+    div, rgb, AnyElement, IntoElement, Model, ParentElement, Pixels, Styled, View, ViewContext,
+    VisualContext, WindowContext,
 };
 use itertools::Itertools;
 
@@ -9,43 +9,45 @@ use crate::show::patch::Fixture;
 use crate::show::Show;
 use crate::ui::sheet::{Sheet, SheetDelegate};
 
-use super::Window;
+use super::{Window, WindowDelegate};
 
-pub struct FixtureSheetWindow {
-    sheet: View<Sheet<FixtureSheetWindowDelegate>>,
+pub struct FixtureSheetWindowDelegate {
+    sheet: View<Sheet<FixtureSheetDelegate>>,
 }
 
-impl FixtureSheetWindow {
-    pub fn build(show: Model<Show>, cx: &mut ViewContext<Window>) -> View<Self> {
-        cx.new_view(|cx| {
-            let fixtures = show.read(cx).clone().patch_list.fixtures;
-            let sheet_delegate = FixtureSheetWindowDelegate::new(show.clone(), fixtures);
-            let sheet = cx.new_view(|_cx| Sheet::new(sheet_delegate, "fixture_sheet"));
+impl FixtureSheetWindowDelegate {
+    pub fn new(show: Model<Show>, cx: &mut WindowContext) -> Self {
+        let fixtures = show.read(cx).clone().patch_list.fixtures;
+        let sheet_delegate = FixtureSheetDelegate::new(show.clone(), fixtures);
+        let sheet = cx.new_view(|_cx| Sheet::new(sheet_delegate, "fixture_sheet"));
 
-            Self { sheet }
-        })
+        Self { sheet }
     }
 }
 
-impl Render for FixtureSheetWindow {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+impl WindowDelegate for FixtureSheetWindowDelegate {
+    fn title(&self) -> String {
+        "Fixture Sheet".to_string()
+    }
+
+    fn render_content(&self, _cx: &mut ViewContext<Window<Self>>) -> impl IntoElement {
         div().size_full().child(self.sheet.clone())
     }
 }
 
-pub struct FixtureSheetWindowDelegate {
+pub struct FixtureSheetDelegate {
     show: Model<Show>,
 
     fixtures: Vec<Fixture>,
 }
 
-impl FixtureSheetWindowDelegate {
+impl FixtureSheetDelegate {
     pub fn new(show: Model<Show>, fixtures: Vec<Fixture>) -> Self {
         Self { show, fixtures }
     }
 }
 
-impl SheetDelegate for FixtureSheetWindowDelegate {
+impl SheetDelegate for FixtureSheetDelegate {
     type Data = Fixture;
     type ColumnId = FixtureSheetColumnId;
 

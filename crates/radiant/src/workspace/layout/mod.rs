@@ -1,19 +1,30 @@
 use gpui::{
-    div, rgb, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext, VisualContext,
+    div, rgb, AnyView, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
+    VisualContext, WindowContext,
 };
 
 pub mod window;
 
 use window::Window;
 
-use crate::show::Show;
+use crate::show::{
+    self,
+    layout::{PoolWindowKind, WindowKind},
+    Show,
+};
+
+use self::window::{
+    color_picker::ColorPickerWindowDelegate,
+    fixture_sheet::FixtureSheetWindowDelegate,
+    pool::{color::ColorPoolWindowDelegate, group::GroupPoolWindowDelegate},
+};
 
 use super::screen::Screen;
 
 pub const LAYOUT_CELL_SIZE: usize = 80;
 
 pub struct Layout {
-    windows: Vec<View<Window>>,
+    windows: Vec<AnyView>,
 }
 
 impl Layout {
@@ -23,10 +34,10 @@ impl Layout {
                 this.windows = show
                     .read(cx)
                     .layout
-                    .window_ids()
+                    .windows()
                     .clone()
-                    .iter()
-                    .map(|window_id| Window::build(*window_id, show.clone(), cx))
+                    .into_iter()
+                    .map(|(id, window)| build_window_view(id, window, show.clone(), cx))
                     .collect();
             })
             .detach();
@@ -35,6 +46,42 @@ impl Layout {
                 windows: Vec::new(),
             }
         })
+    }
+}
+
+pub fn build_window_view(
+    id: usize,
+    window: show::Window,
+    show: Model<Show>,
+    cx: &mut WindowContext,
+) -> AnyView {
+    match &window.kind {
+        WindowKind::Pool(pool_window) => match &pool_window.kind {
+            PoolWindowKind::Color => {
+                let delegate = ColorPoolWindowDelegate::new(
+                    pool_window.scroll_offset,
+                    window.bounds,
+                    show.clone(),
+                );
+                Window::build(delegate, id, show.clone(), cx).into()
+            }
+            PoolWindowKind::Group => {
+                let delegate = GroupPoolWindowDelegate::new(
+                    pool_window.scroll_offset,
+                    window.bounds,
+                    show.clone(),
+                );
+                Window::build(delegate, id, show.clone(), cx).into()
+            }
+        },
+        WindowKind::ColorPicker => {
+            let delegate = ColorPickerWindowDelegate::new(cx);
+            Window::build(delegate, id, show.clone(), cx).into()
+        }
+        WindowKind::FixtureSheet => {
+            let delegate = FixtureSheetWindowDelegate::new(show.clone(), cx);
+            Window::build(delegate, id, show.clone(), cx).into()
+        }
     }
 }
 

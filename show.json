@@ -78,7 +78,7 @@
         },
         "kind": {
           "Pool": {
-            "kind": "FixtureGroup",
+            "kind": "Group",
             "scroll_offset": 0
           }
         }

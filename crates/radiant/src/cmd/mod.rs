@@ -133,11 +133,10 @@ pub(super) fn execute_action(
 ) {
     match action {
         ast::Action::SelectDataPoolItem(data_pool_item) => {
-            show.update(cx, |show, cx| {
+            show.update(cx, |_show, _cx| {
                 log::info!("Selecting data pool item {:?}", data_pool_item);
                 // FIXME: Implement
             });
         }
-        ast::Action::NoOp => {}
     }
 }

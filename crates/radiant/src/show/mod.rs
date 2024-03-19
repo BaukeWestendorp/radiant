@@ -15,7 +15,6 @@ pub mod layout;
 pub mod patch;
 pub mod presets;
 
-pub use layout::PoolWindow;
 pub use layout::Window;
 
 #[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]

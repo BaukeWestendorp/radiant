@@ -1,13 +1,13 @@
 use gpui::{
-    div, rgb, Context, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
-    VisualContext,
+    div, rgb, Context, IntoElement, Model, ParentElement, Styled, View, ViewContext, VisualContext,
+    WindowContext,
 };
 
 use crate::ui::slider::{Slider, SliderDelegate};
 
-use super::Window;
+use super::{Window, WindowDelegate};
 
-pub struct ColorPickerWindow {
+pub struct ColorPickerWindowDelegate {
     red_slider: View<Slider<ColorComponentSliderDelegate>>,
     red: Model<f32>,
 
@@ -18,56 +18,58 @@ pub struct ColorPickerWindow {
     blue: Model<f32>,
 }
 
-impl ColorPickerWindow {
-    pub fn build(cx: &mut ViewContext<Window>) -> View<Self> {
-        cx.new_view(|cx| {
-            let red = cx.new_model(|_cx| 0.0);
-            let red_slider = cx.new_view(|_cx| {
-                Slider::new(
-                    "red_slider",
-                    ColorComponentSliderDelegate {
-                        component: ColorComponent::Red,
-                    },
-                    red.clone(),
-                )
-            });
+impl ColorPickerWindowDelegate {
+    pub fn new(cx: &mut WindowContext) -> Self {
+        let red = cx.new_model(|_cx| 0.0);
+        let red_slider = cx.new_view(|_cx| {
+            Slider::new(
+                "red_slider",
+                ColorComponentSliderDelegate {
+                    component: ColorComponent::Red,
+                },
+                red.clone(),
+            )
+        });
 
-            let green = cx.new_model(|_cx| 0.0);
-            let green_slider = cx.new_view(|_cx| {
-                Slider::new(
-                    "green_slider",
-                    ColorComponentSliderDelegate {
-                        component: ColorComponent::Green,
-                    },
-                    green.clone(),
-                )
-            });
+        let green = cx.new_model(|_cx| 0.0);
+        let green_slider = cx.new_view(|_cx| {
+            Slider::new(
+                "green_slider",
+                ColorComponentSliderDelegate {
+                    component: ColorComponent::Green,
+                },
+                green.clone(),
+            )
+        });
 
-            let blue = cx.new_model(|_cx| 0.0);
-            let blue_slider = cx.new_view(|_cx| {
-                Slider::new(
-                    "blue_slider",
-                    ColorComponentSliderDelegate {
-                        component: ColorComponent::Blue,
-                    },
-                    blue.clone(),
-                )
-            });
+        let blue = cx.new_model(|_cx| 0.0);
+        let blue_slider = cx.new_view(|_cx| {
+            Slider::new(
+                "blue_slider",
+                ColorComponentSliderDelegate {
+                    component: ColorComponent::Blue,
+                },
+                blue.clone(),
+            )
+        });
 
-            Self {
-                red_slider,
-                red,
-                green_slider,
-                green,
-                blue_slider,
-                blue,
-            }
-        })
+        Self {
+            red_slider,
+            red,
+            green_slider,
+            green,
+            blue_slider,
+            blue,
+        }
     }
 }
 
-impl Render for ColorPickerWindow {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+impl WindowDelegate for ColorPickerWindowDelegate {
+    fn title(&self) -> String {
+        "ColorPicker".to_string()
+    }
+
+    fn render_content(&self, cx: &mut ViewContext<Window<Self>>) -> impl IntoElement {
         div()
             .size_full()
             .p_4()
@@ -78,9 +80,9 @@ impl Render for ColorPickerWindow {
             .child(div().w_8().h_full().child(self.blue_slider.clone()))
             .child(format!(
                 "R: {:.2}, G: {:.2}, B: {:.2}",
-                self.red.read(_cx),
-                self.green.read(_cx),
-                self.blue.read(_cx)
+                self.red.read(cx),
+                self.green.read(cx),
+                self.blue.read(cx)
             ))
     }
 }

@@ -6,7 +6,6 @@ pub mod ast {
     #[derive(Debug, Clone, Copy)]
     pub enum Action {
         SelectDataPoolItem(DataPoolItem),
-        NoOp,
     }
 
     #[derive(Debug, Clone, Copy)]

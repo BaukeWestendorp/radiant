@@ -6,7 +6,7 @@ use crate::dmx::color::DmxColor;
 
 #[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct Presets {
-    colors: HashMap<ColorPresetId, ColorPreset>,
+    colors: HashMap<usize, ColorPreset>,
 }
 
 impl Presets {
@@ -16,31 +16,32 @@ impl Presets {
         }
     }
 
-    pub fn add_color_preset(&mut self, color_preset: ColorPreset) -> ColorPresetId {
+    pub fn add_color_preset(&mut self, color_preset: ColorPreset) -> usize {
         let id = self.get_new_color_id();
         self.colors.insert(id, color_preset);
         id
     }
 
-    pub fn set_color_preset(&mut self, id: ColorPresetId, color_preset: ColorPreset) {
+    pub fn set_color_preset(&mut self, id: usize, color_preset: ColorPreset) {
         self.colors.insert(id, color_preset);
     }
 
-    pub fn color_preset(&self, id: ColorPresetId) -> Option<&ColorPreset> {
+    pub fn color_preset(&self, id: usize) -> Option<&ColorPreset> {
         self.colors.get(&id)
     }
 
-    pub fn color_preset_mut(&mut self, id: ColorPresetId) -> Option<&mut ColorPreset> {
+    pub fn color_preset_mut(&mut self, id: usize) -> Option<&mut ColorPreset> {
         self.colors.get_mut(&id)
     }
 
-    pub fn color_presets(&self) -> impl Iterator<Item = (ColorPresetId, &ColorPreset)> {
+    pub fn color_presets(&self) -> impl Iterator<Item = (usize, &ColorPreset)> {
         self.colors.iter().map(|(id, preset)| (*id, preset))
     }
 
-    fn get_new_color_id(&self) -> ColorPresetId {
-        // TODO: This is not a good way to get a new id. This only works if you can't remove colors.
-        ColorPresetId(self.colors.len() as usize)
+    fn get_new_color_id(&self) -> usize {
+        // TODO: This is not a good way to get a new id. This only works if you can't
+        // remove colors.
+        self.colors.len()
     }
 }
 
@@ -74,6 +75,3 @@ impl Preset for ColorPreset {
         self.label = label.to_string().into();
     }
 }
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
-pub struct ColorPresetId(pub usize);
