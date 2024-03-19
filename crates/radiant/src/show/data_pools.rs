@@ -6,42 +6,42 @@ use super::patch::FixtureId;
 
 #[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct DataPools {
-    fixture_groups: HashMap<usize, FixtureGroup>,
+    groups: HashMap<usize, Group>,
 }
 
 impl DataPools {
     pub fn new() -> Self {
         Self {
-            fixture_groups: HashMap::new(),
+            groups: HashMap::new(),
         }
     }
 
-    pub fn add_fixture_group(&mut self, fixture_group: FixtureGroup) -> usize {
-        let id = self.get_new_fixture_group_id();
-        self.fixture_groups.insert(id, fixture_group);
+    pub fn add_group(&mut self, group: Group) -> usize {
+        let id = self.get_new_group_id();
+        self.groups.insert(id, group);
         id
     }
 
-    pub fn set_fixture_group(&mut self, id: usize, fixture_group: FixtureGroup) {
-        self.fixture_groups.insert(id, fixture_group);
+    pub fn set_group(&mut self, id: usize, group: Group) {
+        self.groups.insert(id, group);
     }
 
-    pub fn fixture_group(&self, id: usize) -> Option<&FixtureGroup> {
-        self.fixture_groups.get(&id)
+    pub fn group(&self, id: usize) -> Option<&Group> {
+        self.groups.get(&id)
     }
 
-    pub fn fixture_group_mut(&mut self, id: usize) -> Option<&mut FixtureGroup> {
-        self.fixture_groups.get_mut(&id)
+    pub fn group_mut(&mut self, id: usize) -> Option<&mut Group> {
+        self.groups.get_mut(&id)
     }
 
-    pub fn fixture_groups(&self) -> impl Iterator<Item = (usize, &FixtureGroup)> {
-        self.fixture_groups.iter().map(|(id, preset)| (*id, preset))
+    pub fn groups(&self) -> impl Iterator<Item = (usize, &Group)> {
+        self.groups.iter().map(|(id, preset)| (*id, preset))
     }
 
-    fn get_new_fixture_group_id(&self) -> usize {
+    fn get_new_group_id(&self) -> usize {
         // TODO: This is not a good way to get a new id. This only works if you can't
         // remove fixture groups.
-        self.fixture_groups.len() as usize
+        self.groups.len() as usize
     }
 }
 
@@ -52,12 +52,12 @@ pub trait DataPool {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct FixtureGroup {
+pub struct Group {
     label: SharedString,
     pub fixtures: Vec<FixtureId>,
 }
 
-impl FixtureGroup {
+impl Group {
     pub fn new(label: &str, fixtures: Vec<FixtureId>) -> Self {
         Self {
             label: label.to_string().into(),
@@ -66,7 +66,7 @@ impl FixtureGroup {
     }
 }
 
-impl DataPool for FixtureGroup {
+impl DataPool for Group {
     fn label(&self) -> &str {
         &self.label
     }

@@ -122,4 +122,13 @@ impl Programmer {
             self.select_fixture(fixture_id);
         }
     }
+
+    pub fn are_fixtures_selected(&self, fixture_ids: &Vec<FixtureId>) -> bool {
+        for fixture_id in fixture_ids {
+            if !self.selection.contains(&fixture_id) {
+                return false;
+            }
+        }
+        true
+    }
 }

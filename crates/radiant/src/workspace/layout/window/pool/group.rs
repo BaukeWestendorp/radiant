@@ -1,4 +1,6 @@
-use gpui::{div, rgb, IntoElement, Model, ParentElement, Styled, WindowContext};
+use gpui::{
+    div, prelude::FluentBuilder, rgb, IntoElement, Model, ParentElement, Styled, WindowContext,
+};
 
 use crate::{
     cmd::{Command, CommandList},
@@ -45,21 +47,30 @@ impl PoolWindowDelegate for GroupPoolWindowDelegate {
     }
 
     fn render_item_for_id(&self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement> {
-        let group = self.show.read(cx).data_pools.fixture_group(id);
+        let group = self.show.read(cx).data_pools.group(id);
 
         match group {
             Some(group) => {
                 let label = group.label().to_string();
+                let is_in_programmer_selection = self
+                    .show
+                    .read(cx)
+                    .programmer
+                    .are_fixtures_selected(&group.fixtures);
 
                 Some(
                     div()
                         .bg(rgb(0x303030))
                         .size_full()
                         .flex()
+                        .flex_col()
                         .justify_center()
                         .items_center()
                         .text_sm()
-                        .child(label),
+                        .child(label)
+                        .when(is_in_programmer_selection, |this| {
+                            this.child(div().w_full().h_3().bg(gpui::green()))
+                        }),
                 )
             }
             None => None,

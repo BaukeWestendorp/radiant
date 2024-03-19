@@ -135,7 +135,7 @@ pub(super) fn execute_action(
         ast::Action::SelectDataPoolItem(data_pool_item) => {
             show.update(cx, |show, _cx| match &data_pool_item {
                 DataPoolItem::Group(id) => {
-                    let Some(group) = show.data_pools.fixture_group(*id) else {
+                    let Some(group) = show.data_pools.group(*id) else {
                         log::error!("Group {} not found", id);
                         return;
                     };
