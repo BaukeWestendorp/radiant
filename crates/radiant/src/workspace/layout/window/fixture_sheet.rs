@@ -37,7 +37,6 @@ impl WindowDelegate for FixtureSheetWindowDelegate {
 
 pub struct FixtureSheetDelegate {
     show: Model<Show>,
-
     fixtures: Vec<Fixture>,
 }
 
@@ -76,6 +75,22 @@ impl SheetDelegate for FixtureSheetDelegate {
 
     fn values(&self, _cx: &mut ViewContext<Sheet<Self>>) -> &Vec<Self::Data> {
         &self.fixtures
+    }
+
+    fn selected_rows(&self, cx: &mut ViewContext<Sheet<Self>>) -> Vec<usize> {
+        let selected_fixture_ids = self.show.read(cx).programmer.selection.clone();
+        self.fixtures
+            .iter()
+            .enumerate()
+            .filter_map(|(i, f)| {
+                if let Some(fixture_id) = f.id {
+                    if selected_fixture_ids.contains(&fixture_id) {
+                        return Some(i);
+                    }
+                }
+                None
+            })
+            .collect()
     }
 
     fn column_width(
