@@ -1,5 +1,8 @@
 {
   "name": "Super mega show",
+  "programmer": {
+    "selection": []
+  },
   "presets": {
     "colors": {
       "5": {

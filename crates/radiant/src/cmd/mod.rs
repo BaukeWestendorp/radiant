@@ -2,7 +2,7 @@ use gpui::{actions, impl_actions, AppContext, Global, Model};
 
 use crate::{cmd::parser::CommandParser, show::Show};
 
-use self::parser::ast;
+use self::parser::ast::{self, DataPoolItem};
 
 mod parser;
 
@@ -133,9 +133,16 @@ pub(super) fn execute_action(
 ) {
     match action {
         ast::Action::SelectDataPoolItem(data_pool_item) => {
-            show.update(cx, |_show, _cx| {
-                log::info!("Selecting data pool item {:?}", data_pool_item);
-                // FIXME: Implement
+            show.update(cx, |show, _cx| match &data_pool_item {
+                DataPoolItem::Group(id) => {
+                    let Some(group) = show.data_pools.fixture_group(*id) else {
+                        log::error!("Group {} not found", id);
+                        return;
+                    };
+
+                    let ids = group.fixtures.clone();
+                    show.programmer.select_fixtures(ids);
+                }
             });
         }
     }

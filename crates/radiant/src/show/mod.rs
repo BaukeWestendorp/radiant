@@ -7,7 +7,7 @@ use crate::dmx_protocols::DmxProtocols;
 
 use self::data_pools::DataPools;
 use self::layout::Layout;
-use self::patch::PatchList;
+use self::patch::{FixtureId, PatchList};
 use self::presets::Presets;
 
 pub mod data_pools;
@@ -24,6 +24,8 @@ pub struct Show {
     pub data_pools: DataPools,
     pub layout: Layout,
     pub patch_list: PatchList,
+
+    pub programmer: Programmer,
 
     #[serde(skip)]
     pub dmx_output: DmxOutput,
@@ -93,6 +95,31 @@ impl Show {
     pub fn send_output_over_active_protocols(&self) {
         for artnet in self.dmx_protocols.artnet.iter() {
             artnet.send_dmx_universe(&self.dmx_output);
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
+pub struct Programmer {
+    pub selection: Vec<FixtureId>,
+}
+
+impl Programmer {
+    pub fn new() -> Self {
+        Self {
+            selection: Vec::new(),
+        }
+    }
+
+    pub fn select_fixture(&mut self, fixture_id: FixtureId) {
+        if !self.selection.contains(&fixture_id) {
+            self.selection.push(fixture_id);
+        }
+    }
+
+    pub fn select_fixtures(&mut self, fixture_ids: impl IntoIterator<Item = FixtureId>) {
+        for fixture_id in fixture_ids {
+            self.select_fixture(fixture_id);
         }
     }
 }
