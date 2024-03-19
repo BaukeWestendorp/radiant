@@ -34,6 +34,13 @@ impl CommandList {
         cx.global::<Self>()
     }
 
+    pub fn update_global<F, R>(cx: &mut AppContext, f: F) -> R
+    where
+        F: FnOnce(&mut Self, &mut AppContext) -> R,
+    {
+        cx.update_global(f)
+    }
+
     pub fn commands(cx: &AppContext) -> &[Command] {
         &Self::global(cx).commands
     }
@@ -54,9 +61,24 @@ impl CommandList {
         })
     }
 
+    pub fn last(cx: &AppContext) -> Option<&Command> {
+        Self::commands(cx).last()
+    }
+
     pub fn remove_last(cx: &mut AppContext) {
         cx.update_global::<Self, _>(|command_list, _cx| {
             command_list.commands.pop();
+        })
+    }
+
+    pub fn update_last<F>(f: F, cx: &mut AppContext)
+    where
+        F: FnOnce(&mut Command),
+    {
+        cx.update_global::<Self, _>(|command_list, _cx| {
+            if let Some(command) = command_list.commands.last_mut() {
+                f(command);
+            }
         })
     }
 
@@ -70,7 +92,21 @@ impl CommandList {
         match c {
             '0'..='9' => {
                 let digit = c.to_digit(10).unwrap() as usize;
-                Self::push(Command::Id(digit), cx);
+                match Self::last(cx) {
+                    Some(Command::Id(_)) => {
+                        Self::update_last(
+                            |command| {
+                                if let Command::Id(id) = command {
+                                    *id = *id * 10 + digit;
+                                }
+                            },
+                            cx,
+                        );
+                    }
+                    _ => {
+                        Self::push(Command::Id(digit), cx);
+                    }
+                }
             }
             _ => {}
         }
@@ -80,11 +116,11 @@ impl CommandList {
         let commands = Self::commands(cx).iter().cloned();
         let Ok(action) = CommandParser::new(commands).parse_action() else {
             log::error!("Failed to parse command list");
-            CommandList::clear(cx);
+            Self::clear(cx);
             return;
         };
         execute_action(action, show, cx);
-        CommandList::clear(cx);
+        Self::clear(cx);
     }
 }
 
