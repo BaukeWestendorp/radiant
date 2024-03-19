@@ -49,7 +49,7 @@ pub enum WindowKind {
 #[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]
 pub struct PoolWindow {
     pub kind: PoolWindowKind,
-    pub scroll_offset: usize,
+    pub scroll_offset: i32,
 }
 
 #[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]

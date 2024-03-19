@@ -39,6 +39,7 @@ impl Layout {
                     .into_iter()
                     .map(|(id, window)| build_window_view(id, window, show.clone(), cx))
                     .collect();
+                cx.notify();
             })
             .detach();
 
@@ -59,6 +60,7 @@ pub fn build_window_view(
         WindowKind::Pool(pool_window) => match &pool_window.kind {
             PoolWindowKind::Color => {
                 let delegate = ColorPoolWindowDelegate::new(
+                    id,
                     pool_window.scroll_offset,
                     window.bounds,
                     show.clone(),
@@ -67,6 +69,7 @@ pub fn build_window_view(
             }
             PoolWindowKind::Group => {
                 let delegate = GroupPoolWindowDelegate::new(
+                    id,
                     pool_window.scroll_offset,
                     window.bounds,
                     show.clone(),

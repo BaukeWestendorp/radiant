@@ -1,24 +1,32 @@
 use gpui::{div, rgb, IntoElement, Model, ParentElement, Styled, WindowContext};
 
 use crate::{
+    cmd::{Command, CommandList},
     show::{data_pools::DataPool, Show},
-    workspace::layout::LayoutBounds,
+    workspace::layout::{window::Window, LayoutBounds},
 };
 
 use super::PoolWindowDelegate;
 
 pub struct GroupPoolWindowDelegate {
-    scroll_offset: usize,
+    scroll_offset: i32,
     bounds: LayoutBounds,
     show: Model<Show>,
+    window_id: usize,
 }
 
 impl GroupPoolWindowDelegate {
-    pub fn new(scroll_offset: usize, bounds: LayoutBounds, show: Model<Show>) -> Self {
+    pub fn new(
+        window_id: usize,
+        scroll_offset: i32,
+        bounds: LayoutBounds,
+        show: Model<Show>,
+    ) -> Self {
         Self {
             scroll_offset,
             bounds,
             show,
+            window_id,
         }
     }
 }
@@ -28,11 +36,11 @@ impl PoolWindowDelegate for GroupPoolWindowDelegate {
         "Groups".to_string()
     }
 
-    fn bounds(&self, _cx: &mut WindowContext) -> &LayoutBounds {
+    fn bounds(&self) -> &LayoutBounds {
         &self.bounds
     }
 
-    fn scroll_offset(&self, _cx: &mut WindowContext) -> usize {
+    fn scroll_offset(&self) -> i32 {
         self.scroll_offset
     }
 
@@ -56,5 +64,17 @@ impl PoolWindowDelegate for GroupPoolWindowDelegate {
             }
             None => None,
         }
+    }
+
+    fn window_id(&self) -> usize {
+        self.window_id
+    }
+
+    fn handle_click_item(&mut self, id: usize, cx: &mut gpui::ViewContext<Window<Self>>)
+    where
+        Self: Sized,
+    {
+        CommandList::extend([Command::Group, Command::Id(id)], cx);
+        CommandList::execute(self.show.clone(), cx);
     }
 }

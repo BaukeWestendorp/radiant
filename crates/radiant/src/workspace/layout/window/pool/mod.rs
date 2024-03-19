@@ -1,27 +1,75 @@
 use gpui::{
-    div, prelude::FluentBuilder, px, rgb, AnyElement, IntoElement, ParentElement, RenderOnce,
-    Styled, ViewContext, WindowContext,
+    div, prelude::FluentBuilder, px, rgb, AnyElement, InteractiveElement, Interactivity,
+    IntoElement, Model, ParentElement, RenderOnce, ScrollWheelEvent, Styled, ViewContext,
+    WindowContext,
 };
 use smallvec::SmallVec;
 
-use crate::workspace::layout::{LayoutBounds, LAYOUT_CELL_SIZE};
+use crate::{
+    show::{
+        self,
+        layout::{PoolWindow, WindowKind},
+        Show,
+    },
+    workspace::layout::{LayoutBounds, LAYOUT_CELL_SIZE},
+};
 
 use super::{Window, WindowDelegate};
 
 pub mod color;
 pub mod group;
 
-pub trait PoolWindowDelegate {
+const ROW_SCROLL_OFFSET_MAX: i32 = 10000;
+const SCROLL_SENSITIVITY: f32 = 0.5;
+
+pub trait PoolWindowDelegate
+where
+    Self: 'static,
+{
     fn label(&self) -> String;
 
-    fn bounds(&self, _cx: &mut WindowContext) -> &LayoutBounds;
+    fn bounds(&self) -> &LayoutBounds;
 
-    fn scroll_offset(&self, _cx: &mut WindowContext) -> usize;
+    fn window_id(&self) -> usize;
+
+    fn scroll_offset(&self) -> i32;
 
     fn render_item_for_id(&self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement>;
+
+    fn handle_scroll(&mut self, event: &ScrollWheelEvent, show: Model<Show>, cx: &mut WindowContext)
+    where
+        Self: Sized + 'static,
+    {
+        let item_count = self.bounds().cell_count();
+        let cols = self.bounds().size.cols;
+
+        let scroll_delta_y = event.delta.pixel_delta(px(SCROLL_SENSITIVITY)).y;
+
+        let mut row_offset = self.scroll_offset();
+        row_offset += scroll_delta_y.0 as i32 * cols as i32;
+        row_offset = row_offset.clamp(0, ROW_SCROLL_OFFSET_MAX - item_count as i32);
+
+        let id = self.window_id();
+        show.update(cx, |show, cx| {
+            if let Some(show::Window {
+                kind: WindowKind::Pool(PoolWindow { scroll_offset, .. }),
+                ..
+            }) = show.layout.window_mut(id)
+            {
+                *scroll_offset = row_offset;
+                cx.notify();
+            }
+        });
+    }
+
+    fn handle_click_item(&mut self, _id: usize, _cx: &mut ViewContext<Window<Self>>)
+    where
+        Self: Sized,
+    {
+    }
 }
 
-impl<T: PoolWindowDelegate> WindowDelegate for T {
+impl<T: PoolWindowDelegate + 'static> WindowDelegate for T {
     fn title(&self) -> String {
         self.label()
     }
@@ -35,14 +83,28 @@ impl<T: PoolWindowDelegate> WindowDelegate for T {
         Self: Sized,
     {
         let mut grid = vec![];
-        for i in 0..self.bounds(cx).cell_count() {
-            let id = i + self.scroll_offset(cx);
+        for i in 0..self.bounds().cell_count() {
+            let id = i + self.scroll_offset() as usize;
             let content = self.render_item_for_id(id, cx);
-            let item = PoolCell::new(id).children(content);
+            let item = div()
+                .child(PoolCell::new(id).children(content))
+                .on_mouse_down(
+                    gpui::MouseButton::Left,
+                    cx.listener(move |this, _event, cx| {
+                        this.delegate.handle_click_item(id, cx);
+                    }),
+                );
             grid.push(item);
         }
 
-        div().size_full().flex().flex_wrap().children(grid)
+        div()
+            .size_full()
+            .flex()
+            .flex_wrap()
+            .children(grid)
+            .on_scroll_wheel(cx.listener(|this, event, cx| {
+                this.delegate.handle_scroll(event, this.show.clone(), cx)
+            }))
     }
 }
 
@@ -50,6 +112,7 @@ impl<T: PoolWindowDelegate> WindowDelegate for T {
 pub struct PoolCell {
     id: usize,
     children: SmallVec<[AnyElement; 1]>,
+    interactivity: Interactivity,
 }
 
 impl PoolCell {
@@ -57,6 +120,7 @@ impl PoolCell {
         Self {
             id,
             children: SmallVec::new(),
+            interactivity: Interactivity::default(),
         }
     }
 }
@@ -64,6 +128,12 @@ impl PoolCell {
 impl ParentElement for PoolCell {
     fn extend(&mut self, elements: impl Iterator<Item = AnyElement>) {
         self.children.extend(elements)
+    }
+}
+
+impl InteractiveElement for PoolCell {
+    fn interactivity(&mut self) -> &mut gpui::Interactivity {
+        &mut self.interactivity
     }
 }
 

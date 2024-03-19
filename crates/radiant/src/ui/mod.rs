@@ -4,7 +4,6 @@ use crate::workspace::layout::{LayoutPoint, LayoutSize, LAYOUT_CELL_SIZE};
 
 pub mod sheet;
 pub mod slider;
-pub mod uniform_grid;
 
 pub fn grid_div(size: LayoutSize, origin: Option<LayoutPoint>) -> Div {
     div()

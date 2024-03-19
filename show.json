@@ -79,7 +79,7 @@
         "kind": {
           "Pool": {
             "kind": "Group",
-            "scroll_offset": 0
+            "scroll_offset": 3
           }
         }
       },
