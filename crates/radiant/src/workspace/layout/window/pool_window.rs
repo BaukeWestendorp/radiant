@@ -3,6 +3,7 @@ use gpui::{
     Styled, View, ViewContext, VisualContext, WindowContext,
 };
 
+use crate::cmd::{Command, CommandList};
 use crate::color;
 use crate::show::Show;
 use crate::ui::{grid_div, uniform_grid::uniform_grid};
@@ -99,6 +100,11 @@ impl PoolWindow {
             cx.notify();
         })
     }
+
+    fn handle_click_pool_item(&mut self, id: usize, cx: &mut ViewContext<Self>) {
+        CommandList::extend([Command::Group, Command::Id(id)], cx);
+        CommandList::execute(self.show.clone(), cx);
+    }
 }
 
 fn create_pool_items(
@@ -138,7 +144,16 @@ impl Render for PoolWindow {
                     let mut cells = vec![div().child(header_cell)];
 
                     cells.extend(view.pool_items.iter().map(|pool_item| {
-                        grid_div(LayoutSize::new(1, 1), None).child(pool_item.clone())
+                        let id = pool_item.read(cx).id;
+
+                        grid_div(LayoutSize::new(1, 1), None)
+                            .child(pool_item.clone())
+                            .on_mouse_down(
+                                gpui::MouseButton::Left,
+                                cx.listener(move |view, _event, cx| {
+                                    view.handle_click_pool_item(id, cx)
+                                }),
+                            )
                     }));
 
                     cells

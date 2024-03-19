@@ -14,7 +14,7 @@ pub struct PoolItem {
     pool_window_kind: PoolWindowKind,
     show: Model<Show>,
 
-    id: usize,
+    pub id: usize,
 }
 
 impl PoolItem {

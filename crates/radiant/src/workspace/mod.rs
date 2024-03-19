@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use std::time::Duration;
 
 use gpui::{
@@ -6,7 +5,10 @@ use gpui::{
     ParentElement, Render, Styled, Timer, View, ViewContext,
 };
 
-use crate::show::Show;
+use crate::{
+    cmd::{Command, CommandList, ExecuteCommandList, RemoveCommand},
+    show::Show,
+};
 use screen::Screen;
 
 pub mod layout;
@@ -16,12 +18,6 @@ pub mod actions {
     use gpui::actions;
 
     actions!(workspace_actions, [OpenShow, SaveShow]);
-
-    pub mod cmd {
-        use gpui::actions;
-
-        actions!(workspace, [Store, Clear]);
-    }
 }
 
 const DMX_OUTPUT_RATE: Duration = Duration::from_millis(1000 / 40);
@@ -32,8 +28,6 @@ pub struct Workspace {
     pub screen: View<Screen>,
 
     focus_handle: FocusHandle,
-
-    programmer_state: ProgrammerState,
 }
 
 impl Workspace {
@@ -41,6 +35,15 @@ impl Workspace {
 
     pub fn new(show: Model<Show>, cx: &mut ViewContext<Self>) -> Self {
         cx.observe(&show, |_, _, cx| cx.notify()).detach();
+
+        cx.observe_keystrokes(|event, cx| match event.keystroke.key.as_str() {
+            n @ ("1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "0") => {
+                let char = n.chars().next().unwrap();
+                CommandList::handle_digit_key(char, cx);
+            }
+            _ => {}
+        })
+        .detach();
 
         let screen = Screen::build(show.clone(), cx);
 
@@ -50,21 +53,11 @@ impl Workspace {
             show,
             screen,
             focus_handle,
-            programmer_state: ProgrammerState::default(),
         };
 
         this.dmx_output_interval(cx);
 
         this
-    }
-
-    pub fn programmer_state(&self) -> ProgrammerState {
-        self.programmer_state
-    }
-
-    pub fn set_programmer_state(&mut self, state: ProgrammerState, cx: &mut ViewContext<Self>) {
-        self.programmer_state = state;
-        cx.notify();
     }
 
     pub fn open_show(&mut self, _action: &actions::OpenShow, cx: &mut ViewContext<Self>) {
@@ -95,12 +88,20 @@ impl Workspace {
         }
     }
 
-    pub fn cmd_store(&mut self, _action: &actions::cmd::Store, cx: &mut ViewContext<Self>) {
-        self.set_programmer_state(ProgrammerState::Store, cx);
+    pub fn handle_command(&mut self, command: &Command, cx: &mut ViewContext<Self>) {
+        CommandList::push(command.clone(), cx);
     }
 
-    pub fn cmd_clear(&mut self, _action: &actions::cmd::Clear, cx: &mut ViewContext<Self>) {
-        self.set_programmer_state(ProgrammerState::Normal, cx);
+    pub fn handle_remove_command(&mut self, _event: &RemoveCommand, cx: &mut ViewContext<Self>) {
+        CommandList::remove_last(cx);
+    }
+
+    pub fn handle_execute_command_list(
+        &mut self,
+        _action: &ExecuteCommandList,
+        cx: &mut ViewContext<Self>,
+    ) {
+        CommandList::execute(self.show.clone(), cx);
     }
 
     fn dmx_output_interval(&self, cx: &mut ViewContext<Self>) {
@@ -127,8 +128,9 @@ impl Render for Workspace {
             .key_context("Workspace")
             .on_action(cx.listener(Self::open_show))
             .on_action(cx.listener(Self::save_show))
-            .on_action(cx.listener(Self::cmd_store))
-            .on_action(cx.listener(Self::cmd_clear))
+            .on_action(cx.listener(Self::handle_command))
+            .on_action(cx.listener(Self::handle_remove_command))
+            .on_action(cx.listener(Self::handle_execute_command_list))
             .font("Zed Sans")
             .text_color(white())
             .size_full()
@@ -139,21 +141,5 @@ impl Render for Workspace {
 impl FocusableView for Workspace {
     fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
         self.focus_handle.clone()
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
-pub enum ProgrammerState {
-    #[default]
-    Normal,
-    Store,
-}
-
-impl Display for ProgrammerState {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Normal => write!(f, "Normal"),
-            Self::Store => write!(f, "Store"),
-        }
     }
 }

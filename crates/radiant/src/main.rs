@@ -6,8 +6,12 @@ use gpui::{
 
 use workspace::Workspace;
 
-use crate::show::Show;
+use crate::{
+    cmd::{Command, CommandList},
+    show::Show,
+};
 
+pub mod cmd;
 pub mod color;
 pub mod dmx;
 pub mod dmx_protocols;
@@ -22,6 +26,9 @@ fn main() {
     log::info!("Starting Radiant");
 
     App::new().run(|cx: &mut AppContext| {
+        let show = cx.new_model(|_cx| Show::default());
+        cx.set_global(CommandList::default());
+
         cx.text_system()
             .add_fonts(vec![
                 Assets.load("fonts/zed-sans/zed-sans-extended.ttf").unwrap(),
@@ -38,8 +45,9 @@ fn main() {
             KeyBinding::new("cmd-q", Quit, None),
             KeyBinding::new("cmd-o", workspace::actions::OpenShow, Some("Workspace")),
             KeyBinding::new("cmd-s", workspace::actions::SaveShow, Some("Workspace")),
-            KeyBinding::new("s", workspace::actions::cmd::Store, Some("Workspace")),
-            KeyBinding::new("escape", workspace::actions::cmd::Clear, Some("Workspace")),
+            KeyBinding::new("enter", cmd::ExecuteCommandList, Some("Workspace")),
+            KeyBinding::new("backspace", cmd::RemoveCommand, Some("Workspace")),
+            KeyBinding::new("g", Command::Group, Some("Workspace")),
         ]);
 
         cx.on_action(|_action: &Quit, cx: &mut AppContext| cx.quit());
@@ -58,14 +66,9 @@ fn main() {
             },
             Menu {
                 name: "Commands",
-                items: vec![
-                    MenuItem::action("Store", workspace::actions::cmd::Store),
-                    MenuItem::action("Clear", workspace::actions::cmd::Clear),
-                ],
+                items: vec![MenuItem::action("Group", Command::Group)],
             },
         ]);
-
-        let show = cx.new_model(|_cx| Show::default());
 
         cx.open_window(
             WindowOptions {
