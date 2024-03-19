@@ -1,11 +1,14 @@
 use std::iter::Peekable;
 
+use self::ast::{Action, DataPoolItem};
+
 use super::Command;
 
 pub mod ast {
     #[derive(Debug, Clone, Copy)]
     pub enum Action {
         SelectDataPoolItem(DataPoolItem),
+        ClearProgrammer,
     }
 
     #[derive(Debug, Clone, Copy)]
@@ -36,9 +39,12 @@ where
         }
     }
 
-    pub fn parse_action(&mut self) -> ParserResult<ast::Action> {
+    pub fn parse_action(&mut self) -> ParserResult<Action> {
         let action = if let Some(data_pool_item) = self.parse_data_pool_item()? {
-            Ok(ast::Action::SelectDataPoolItem(data_pool_item))
+            Ok(Action::SelectDataPoolItem(data_pool_item))
+        } else if self.peek()? == &Command::Clear {
+            self.consume(&Command::Clear)?;
+            Ok(Action::ClearProgrammer)
         } else {
             Err(ParserError)
         };
@@ -51,12 +57,12 @@ where
         }
     }
 
-    fn parse_data_pool_item(&mut self) -> ParserResult<Option<ast::DataPoolItem>> {
+    fn parse_data_pool_item(&mut self) -> ParserResult<Option<DataPoolItem>> {
         match self.peek()? {
             Command::Group => {
                 self.consume(&Command::Group)?;
                 let id = self.parse_data_pool_id()?;
-                Ok(Some(ast::DataPoolItem::Group(id)))
+                Ok(Some(DataPoolItem::Group(id)))
             }
             _ => Ok(None),
         }

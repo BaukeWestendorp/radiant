@@ -2,7 +2,7 @@ use gpui::{actions, impl_actions, AppContext, Global, Model};
 
 use crate::{cmd::parser::CommandParser, show::Show};
 
-use self::parser::ast::{self, DataPoolItem};
+use self::parser::ast::{Action, DataPoolItem};
 
 mod parser;
 
@@ -11,6 +11,7 @@ actions!(cmd, [RemoveCommand, ExecuteCommandList]);
 
 #[derive(Debug, Clone, serde::Deserialize, PartialEq)]
 pub enum Command {
+    Clear,
     Group,
     Id(usize),
 }
@@ -18,6 +19,7 @@ pub enum Command {
 impl std::fmt::Display for Command {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Clear => write!(f, "Clear"),
             Self::Group => write!(f, "Group"),
             Self::Id(id) => write!(f, "{}", id),
         }
@@ -112,6 +114,14 @@ impl CommandList {
         }
     }
 
+    pub fn is_complete(cx: &AppContext) -> bool {
+        if Self::commands(cx) == &[Command::Clear] {
+            return true;
+        }
+
+        return false;
+    }
+
     pub fn execute(show: Model<Show>, cx: &mut AppContext) {
         let commands = Self::commands(cx).iter().cloned();
         let Ok(action) = CommandParser::new(commands).parse_action() else {
@@ -126,13 +136,9 @@ impl CommandList {
 
 impl Global for CommandList {}
 
-pub(super) fn execute_action(
-    action: ast::Action,
-    show: gpui::Model<Show>,
-    cx: &mut gpui::AppContext,
-) {
+pub(super) fn execute_action(action: Action, show: gpui::Model<Show>, cx: &mut gpui::AppContext) {
     match action {
-        ast::Action::SelectDataPoolItem(data_pool_item) => {
+        Action::SelectDataPoolItem(data_pool_item) => {
             show.update(cx, |show, _cx| match &data_pool_item {
                 DataPoolItem::Group(id) => {
                     let Some(group) = show.data_pools.group(*id) else {
@@ -143,6 +149,11 @@ pub(super) fn execute_action(
                     let ids = group.fixtures.clone();
                     show.programmer.select_fixtures(ids);
                 }
+            });
+        }
+        Action::ClearProgrammer => {
+            show.update(cx, |show, _cx| {
+                show.programmer.clear();
             });
         }
     }

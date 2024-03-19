@@ -47,6 +47,7 @@ fn main() {
             KeyBinding::new("cmd-s", workspace::actions::SaveShow, Some("Workspace")),
             KeyBinding::new("enter", cmd::ExecuteCommandList, Some("Workspace")),
             KeyBinding::new("backspace", cmd::RemoveCommand, Some("Workspace")),
+            KeyBinding::new("escape", Command::Clear, Some("Workspace")),
             KeyBinding::new("g", Command::Group, Some("Workspace")),
         ]);
 

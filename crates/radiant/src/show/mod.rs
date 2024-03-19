@@ -111,6 +111,10 @@ impl Programmer {
         }
     }
 
+    pub fn clear(&mut self) {
+        self.selection.clear();
+    }
+
     pub fn select_fixture(&mut self, fixture_id: FixtureId) {
         if !self.selection.contains(&fixture_id) {
             self.selection.push(fixture_id);

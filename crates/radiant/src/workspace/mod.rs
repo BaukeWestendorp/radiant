@@ -90,6 +90,9 @@ impl Workspace {
 
     pub fn handle_command(&mut self, command: &Command, cx: &mut ViewContext<Self>) {
         CommandList::push(command.clone(), cx);
+        if CommandList::is_complete(cx) {
+            CommandList::execute(self.show.clone(), cx);
+        }
     }
 
     pub fn handle_remove_command(&mut self, _event: &RemoveCommand, cx: &mut ViewContext<Self>) {
