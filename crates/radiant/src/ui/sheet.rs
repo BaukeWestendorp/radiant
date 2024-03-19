@@ -63,6 +63,10 @@ pub trait SheetDelegate: Sized {
 
     fn values(&self, cx: &mut ViewContext<Sheet<Self>>) -> &Vec<Self::Data>;
 
+    fn selected_rows(&self, _cx: &mut ViewContext<Sheet<Self>>) -> Vec<usize> {
+        vec![]
+    }
+
     fn header_label(&self, column_id: &Self::ColumnId, cx: &mut ViewContext<Sheet<Self>>)
         -> String;
 
@@ -104,12 +108,15 @@ pub trait SheetDelegate: Sized {
         &self,
         ix: usize,
         children: impl IntoIterator<Item = impl IntoElement>,
-        _cx: &mut ViewContext<Sheet<Self>>,
+        cx: &mut ViewContext<Sheet<Self>>,
     ) -> AnyElement {
+        let is_selected = self.selected_rows(cx).contains(&ix);
+
         div()
             .flex()
             .flex_row()
             .when(ix % 2 == 0, |this| this.bg(rgb(0x343434)))
+            .when(is_selected, |this| this.bg(rgb(0x3333ff)))
             .children(children)
             .into_any_element()
     }
