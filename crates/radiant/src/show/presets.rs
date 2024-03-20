@@ -49,6 +49,13 @@ pub trait Preset {
     fn label(&self) -> &str;
 
     fn set_label(&mut self, label: &str);
+
+    fn affected_attributes(&self) -> AffectedAttributes;
+}
+
+pub enum AffectedAttributes {
+    All,
+    Specific(Vec<&'static str>),
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -73,5 +80,9 @@ impl Preset for ColorPreset {
 
     fn set_label(&mut self, label: &str) {
         self.label = label.to_string().into();
+    }
+
+    fn affected_attributes(&self) -> AffectedAttributes {
+        AffectedAttributes::Specific(vec!["ColorAdd_R", "ColorAdd_G", "ColorAdd_B"])
     }
 }
