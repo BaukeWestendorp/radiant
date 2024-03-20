@@ -115,18 +115,6 @@ impl Programmer {
         self.selection.clear();
     }
 
-    pub fn select_fixture(&mut self, fixture_id: FixtureId) {
-        if !self.selection.contains(&fixture_id) {
-            self.selection.push(fixture_id);
-        }
-    }
-
-    pub fn select_fixtures(&mut self, fixture_ids: impl IntoIterator<Item = FixtureId>) {
-        for fixture_id in fixture_ids {
-            self.select_fixture(fixture_id);
-        }
-    }
-
     pub fn are_fixtures_selected(&self, fixture_ids: &Vec<FixtureId>) -> bool {
         for fixture_id in fixture_ids {
             if !self.selection.contains(&fixture_id) {

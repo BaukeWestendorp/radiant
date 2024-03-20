@@ -2,10 +2,7 @@ use std::collections::HashMap;
 
 use anyhow::anyhow;
 use assets::{AssetSource, Assets};
-use gdtf::fixture_type::attribute_definitions::Attribute;
-
-use gdtf::fixture_type::FixtureType;
-use gdtf::GdtfDescription;
+use gdtf::{Attribute, FixtureType, GdtfDescription};
 use gpui::SharedString;
 
 use crate::dmx::DmxChannel;
@@ -17,6 +14,7 @@ pub type FixtureId = usize;
 pub struct PatchList {
     pub fixtures: Vec<Fixture>,
 
+    // FIXME: We should use the fixture id instead of the file name.
     gdtf_descriptions: HashMap<SharedString, GdtfDescription>,
 }
 
@@ -40,10 +38,9 @@ impl<'de> serde::Deserialize<'de> for PatchList {
                     gdtf_descriptions.insert(fixture.gdtf_file_name.clone(), gdtf_description);
                 }
                 Err(err) => {
-                    log::error!("{}", err);
                     return Err(serde::de::Error::custom(format!(
                         "Failed to load GDTF description for fixture: {}",
-                        fixture.gdtf_file_name
+                        err
                     )));
                 }
             }
@@ -74,11 +71,18 @@ impl serde::Serialize for PatchList {
 }
 
 impl PatchList {
-    pub fn all_used_attributes(&mut self) -> Vec<&Attribute> {
+    pub fn all_used_attributes(&self) -> Vec<&Attribute> {
         self.fixtures
             .iter()
-            .filter_map(|f| self.fixture_type(f).used_attributes_for_mode(f.mode_index))
-            .flatten()
+            .flat_map(|f| {
+                let fixture_type = self.fixture_type(f);
+                fixture_type
+                    .used_channels_for_mode(f.mode_index)
+                    .iter()
+                    .flat_map(|c| &c.logical_channels)
+                    .map(|lc| lc.attribute(&fixture_type.attribute_definitions.attributes))
+                    .collect::<Vec<_>>()
+            })
             .collect()
     }
 
@@ -88,6 +92,10 @@ impl PatchList {
             .get(&fixture.gdtf_file_name)
             .expect("Fixture type not found")
             .fixture_type
+    }
+
+    pub fn fixture(&self, id: usize) -> Option<&Fixture> {
+        self.fixtures.iter().find(|f| f.id == Some(id))
     }
 }
 

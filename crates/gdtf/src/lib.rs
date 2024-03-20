@@ -2,229 +2,75 @@
 //!
 //! [File Format Definition](https://gdtf.eu/gdtf/file-spec/file-format-definition/#file-format-definition)
 
-#![warn(missing_docs)]
-
-use std::fmt::Display;
-use std::fs::File;
-use std::io;
-use std::str::FromStr;
-
-use fixture_type::FixtureType;
-use once_cell::sync::Lazy;
-use regex::Regex;
+use std::{fs::File, io, str::FromStr};
 
 use error::Error;
 
-#[allow(missing_docs)]
+pub mod attr_defs;
+pub mod dmx_modes;
 pub mod error;
-
 pub mod fixture_type;
 
-/// # A GDTF archive file.
-pub struct GdtfArchive {
-    /// The GDTF file descriptor.
-    pub description: GdtfDescription,
+pub(crate) mod raw;
+
+pub use attr_defs::*;
+pub use dmx_modes::*;
+pub use fixture_type::*;
+
+pub(crate) fn parse_name(name: raw::RawName) -> Result<String, Error> {
+    // FIXME: Validate name with a regex.
+
+    Ok(name.to_string())
 }
 
-/// # A GDTF description.
-///
-/// [GDTF Node Attributes](https://gdtf.eu/gdtf/file-spec/file-format-definition/#table-2-gdtf-node-attributes)
-#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-pub struct GdtfDescription {
-    /// The DataVersion attribute defines the minimal version of compatibility.
-    /// The Version format is “Major.Minor”, where major and minor is Uint with
-    /// size 1 byte.
-    #[serde(rename = "DataVersion")]
-    pub data_version: String,
+pub type Node = Vec<String>;
 
-    /// The FixtureType node is the starting point of the description of the
-    /// fixture.
-    #[serde(rename = "FixtureType")]
-    pub fixture_type: FixtureType,
+pub(crate) fn parse_node(node: raw::RawNode) -> Result<Node, Error> {
+    let split = node.split('.').map(String::from).collect::<Vec<_>>();
+
+    if split.is_empty() {
+        return Err(Error::EmptyNode);
+    }
+
+    Ok(split)
 }
 
-impl GdtfDescription {
-    /// Create a new GDTF file from a .gdtf archive file.
-    pub fn from_archive_reader<R>(reader: R) -> Result<GdtfDescription, Error>
-    where
-        R: io::Read + io::Seek,
-    {
-        let mut archive =
-            zip::ZipArchive::new(reader).map_err(|e| Error::UnzipError(e.to_string()))?;
+pub type ColorCIE = [f32; 3];
 
-        let description = archive
-            .by_name("description.xml")
-            .expect("expected 'description.xml'");
-
-        let description_reader = io::BufReader::new(description);
-
-        let gdtf: GdtfDescription = serde_xml_rs::from_reader(description_reader)
-            .map_err(|e| Error::ParseError(format!("failed to parse GDTF description: {}", e)))?;
-
-        Ok(gdtf)
+pub(crate) fn parse_color_cie(color_cie: raw::RawColorCIE) -> Result<ColorCIE, Error> {
+    let parts: Vec<&str> = color_cie.split(",").collect();
+    if parts.len() != 3 {
+        return Err(Error::ParseError(format!(
+            "Invalid CIE color: '{}'. Expected 3 parts, but found {}",
+            color_cie.to_string(),
+            parts.len()
+        )));
     }
 
-    /// Create a new GDTF file from .gdtf archive bytes.
-    pub fn from_archive_bytes(bytes: &[u8]) -> Result<GdtfDescription, Error> {
-        let bytes = std::io::Cursor::new(bytes);
-        let reader = std::io::BufReader::new(bytes);
-        Self::from_archive_reader(reader)
-    }
+    let x = parts[0].parse().map_err(|_| {
+        Error::ParseError(format!(
+            "Failed to parse CIE color X: '{}'",
+            parts[0].to_string()
+        ))
+    })?;
 
-    /// Create a new GDTF file from a descriptor file.
-    pub fn from_file(file: &File) -> Result<GdtfDescription, Error> {
-        let file_reader = io::BufReader::new(file);
-        let gdtf: GdtfDescription = serde_xml_rs::from_reader(file_reader).unwrap();
+    let y = parts[1].parse().map_err(|_| {
+        Error::ParseError(format!(
+            "Failed to parse CIE color Y: '{}'",
+            parts[1].to_string()
+        ))
+    })?;
 
-        Ok(gdtf)
-    }
+    let large_y = parts[2].parse().map_err(|_| {
+        Error::ParseError(format!(
+            "Failed to parse CIE color large Y: '{}'",
+            parts[2].to_string()
+        ))
+    })?;
+
+    Ok([x, y, large_y])
 }
 
-// FIXME: This type could be replaced with a string and a custom deserializer.
-/// Unique object names; The allowed characters are listed in Annex C Default
-/// value: object type with an index in parent.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Name(String);
-
-impl Name {
-    /// Create a new name.
-    pub fn new(name: String) -> Result<Self, error::Error> {
-        static REGEX: Lazy<Regex> =
-            Lazy::new(|| Regex::new(r#"^[ "%%'()*+\-\/#0-9:;<=>@A-Z_a-z`]*$"#).unwrap());
-
-        match REGEX.is_match(&name) {
-            true => Ok(Self(name)),
-            false => Err(error::Error::ParseError("invalid name".to_string())),
-        }
-    }
-
-    /// Get the value of the name.
-    pub fn value(&self) -> &str {
-        &self.0
-    }
-}
-
-impl<'de> serde::Deserialize<'de> for Name {
-    fn deserialize<D>(deserializer: D) -> Result<Name, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s: String = serde::Deserialize::deserialize(deserializer)?;
-
-        match Name::new(s) {
-            Ok(name) => Ok(name),
-            Err(_) => Err(serde::de::Error::custom("invalid name")),
-        }
-    }
-}
-
-impl Display for Name {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-/// Link to an element: “Name” is the value of the attribute “Name” of a defined
-/// XML node. The starting point defines each attribute separately.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Node {
-    references: Vec<String>,
-}
-
-impl Node {
-    /// Create a new node.
-    pub fn new(references: Vec<String>) -> Self {
-        Self { references }
-    }
-
-    /// Get the references of the node.
-    pub fn references(&self) -> &Vec<String> {
-        &self.references
-    }
-}
-
-impl From<&str> for Node {
-    fn from(value: &str) -> Self {
-        let references = value.split('.').map(|s| s.to_string()).collect();
-        Self { references }
-    }
-}
-
-impl From<String> for Node {
-    fn from(value: String) -> Self {
-        value.as_str().into()
-    }
-}
-
-impl<'de> serde::Deserialize<'de> for Node {
-    fn deserialize<D>(deserializer: D) -> Result<Node, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s: String = serde::Deserialize::deserialize(deserializer)?;
-        let references = s.split('.').map(|s| s.to_string()).collect();
-        Ok(Node { references })
-    }
-}
-
-/// CIE color representation xyY 1931
-#[derive(Debug, Clone, PartialEq)]
-pub struct ColorCIE {
-    /// x value
-    pub x: f32,
-
-    /// y value
-    pub y: f32,
-
-    /// Y value
-    pub large_y: f32,
-}
-
-impl ColorCIE {
-    /// Create a new CIE color representation.
-    #[allow(non_snake_case)]
-    pub fn new(x: f32, y: f32, large_y: f32) -> Self {
-        Self { x, y, large_y }
-    }
-}
-
-impl<'de> serde::Deserialize<'de> for ColorCIE {
-    fn deserialize<D>(deserializer: D) -> Result<ColorCIE, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let values: Vec<f32> = deserialize_float_array(deserializer)?;
-
-        Ok(ColorCIE {
-            x: values[0],
-            y: values[1],
-            large_y: values[2],
-        })
-    }
-}
-
-/// Rotation matrix, consist of 3*3 floats. Stored as row-major matrix, i.e.
-/// each row of the matrix is stored as a 3-component vector. Mathematical
-/// definition of the matrix is column-major, i.e. the matrix rotation is stored
-/// in the three columns. Metric system, right-handed Cartesian coordinates XYZ:
-///
-/// X – from left (-X) to right (+X),
-///
-/// Y – from the outside of the monitor (-Y) to the inside of the monitor (+Y),
-///
-/// Z – from the bottom (-Z) to the top (+Z).
-/// TODO: Implement a matrix type.
-pub type Rotation = String;
-
-/// Special type to define DMX value where n is the byte count. The byte count
-/// can be individually specified without depending on the resolution of the DMX
-/// Channel.
-///
-/// By default byte mirroring is used for the conversion. So 255/1 in a 16 bit
-/// channel will result in 65535.
-///
-/// You can use the byte shifting operator to use byte shifting for the
-/// conversion. So 255/1s in a 16 bit channel will result in 65280.
 #[derive(Debug, Clone, PartialEq)]
 pub struct DmxValue {
     value: u64,
@@ -233,7 +79,6 @@ pub struct DmxValue {
 }
 
 impl DmxValue {
-    /// Create a new DMX value from a string.
     pub fn value(&self, channel_resolution: ChannelBitResolution) -> Result<u64, error::Error> {
         // Check if the ByteSpecifier is different to the ChannelResolution.
         let mut result = self.value;
@@ -347,29 +192,12 @@ impl FromStr for DmxValue {
     }
 }
 
-impl<'de> serde::Deserialize<'de> for DmxValue {
-    fn deserialize<D>(deserializer: D) -> Result<DmxValue, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s: String = serde::Deserialize::deserialize(deserializer)?;
-
-        DmxValue::from_str(s.as_str())
-            .map_err(|error: error::Error| serde::de::Error::custom(error.to_string()))
-    }
-}
-
-/// The resolution of the channel in bits.
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ChannelBitResolution {
-    /// 8 bit resolution.
     Bit8 = 1,
-    /// 16 bit resolution.
     Bit16 = 2,
-    /// 24 bit resolution.
     Bit24 = 3,
-    /// 32 bit resolution.
     Bit32 = 4,
 }
 
@@ -385,203 +213,147 @@ impl From<u8> for ChannelBitResolution {
     }
 }
 
-/// Unique ID corresponding to RFC 4122: X–1 digit in hexadecimal notation.
-///
-/// Example: “308EA87D-7164-42DE-8106-A6D273F57A51”.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Guid(String);
+pub type Guid = String;
 
-impl<'de> serde::Deserialize<'de> for Guid {
-    fn deserialize<D>(deserializer: D) -> Result<Guid, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s: String = serde::Deserialize::deserialize(deserializer)?;
+pub(crate) fn parse_guid(guid: raw::RawGuid) -> Result<String, Error> {
+    if guid.is_empty() {
+        return Err(Error::InvalidGuid(guid.to_string()));
+    }
 
-        Ok(Guid(s))
+    // FIXME: Validate GUID with a regex.
+
+    Ok(guid.to_string())
+}
+
+pub(crate) fn parse_optional_guid(guid: Option<raw::RawGuid>) -> Result<Option<String>, Error> {
+    match guid {
+        Some(guid) => match guid.is_empty() {
+            true => Ok(None),
+            false => Ok(Some(parse_guid(guid)?)),
+        },
+        None => Ok(None),
     }
 }
 
-/// File name of the resource file without extension and without subfolder.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Resource(String);
+pub type Resource = String;
 
-impl<'de> serde::Deserialize<'de> for Resource {
-    fn deserialize<D>(deserializer: D) -> Result<Resource, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s: String = serde::Deserialize::deserialize(deserializer)?;
+pub(crate) fn parse_int_array(value: &str) -> Result<Vec<i32>, Error> {
+    value
+        .split(',')
+        .map(|s| {
+            s.parse()
+                .map_err(|_| Error::ParseError(format!("Invalid integer: {}", s)))
+        })
+        .collect()
+}
 
-        Ok(Resource(s))
+pub(crate) fn parse_yes_no(value: &str) -> Result<bool, Error> {
+    match value {
+        "Yes" => Ok(true),
+        "No" => Ok(false),
+        _ => Err(Error::ParseError(format!(
+            "Invalid value for 'Yes'/'No': {}",
+            value
+        ))),
     }
 }
 
-/// A point in 2D space.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Point {
-    #[allow(missing_docs)]
-    pub x: f32,
-
-    #[allow(missing_docs)]
-    pub y: f32,
+/// # A GDTF archive file.
+pub struct GdtfArchive {
+    /// The GDTF file descriptor.
+    pub description: GdtfDescription,
 }
 
-impl<'de> serde::Deserialize<'de> for Point {
-    fn deserialize<D>(deserializer: D) -> Result<Point, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let values: Vec<f32> = deserialize_float_array(deserializer)?;
+#[derive(Debug, Clone, PartialEq)]
+pub struct GdtfDescription {
+    pub data_version: DataVersion,
 
-        Ok(Point {
-            x: values[0],
-            y: values[1],
+    pub fixture_type: FixtureType,
+}
+
+impl GdtfDescription {
+    /// Create a new GDTF file from a .gdtf archive file.
+    pub fn from_archive_reader<R>(reader: R) -> Result<GdtfDescription, Error>
+    where
+        R: io::Read + io::Seek,
+    {
+        let mut archive = zip::ZipArchive::new(reader).map_err(|_| Error::UnzipError)?;
+
+        let description = archive
+            .by_name("description.xml")
+            .map_err(|_| Error::MissingDescription)?;
+
+        let description_reader = io::BufReader::new(description);
+
+        let raw_gdtf: raw::RawGdtfDescription = serde_xml_rs::from_reader(description_reader)
+            .map_err(|e| Error::ParseError(format!("failed to parse GDTF description: {}", e)))?;
+        let gdtf: GdtfDescription = raw_gdtf.try_into()?;
+
+        Ok(gdtf)
+    }
+
+    /// Create a new GDTF file from .gdtf archive bytes.
+    pub fn from_archive_bytes(bytes: &[u8]) -> Result<GdtfDescription, Error> {
+        let bytes = std::io::Cursor::new(bytes);
+        let reader = std::io::BufReader::new(bytes);
+        Self::from_archive_reader(reader)
+    }
+
+    /// Create a new GDTF file from a descriptor file.
+    pub fn from_file(file: &File) -> Result<GdtfDescription, Error> {
+        let file_reader = io::BufReader::new(file);
+        let raw_gdtf: raw::RawGdtfDescription = serde_xml_rs::from_reader(file_reader)
+            .map_err(|e| Error::ParseError(format!("failed to parse GDTF description: {}", e)))?;
+        let gdtf: GdtfDescription = raw_gdtf.try_into()?;
+
+        Ok(gdtf)
+    }
+}
+
+impl TryFrom<raw::RawGdtfDescription> for GdtfDescription {
+    type Error = Error;
+
+    fn try_from(value: raw::RawGdtfDescription) -> Result<Self, Self::Error> {
+        Ok(GdtfDescription {
+            data_version: value.data_version.parse()?,
+            fixture_type: value.fixture_type.try_into()?,
         })
     }
 }
 
-pub(crate) fn deserialize_yes_no<'de, D>(deserializer: D) -> Result<bool, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let s: String = serde::Deserialize::deserialize(deserializer)?;
-
-    match s.as_str() {
-        "Yes" => Ok(true),
-        "No" => Ok(false),
-        _ => Err(serde::de::Error::custom("expected 'Yes' or 'No'")),
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct DataVersion {
+    pub major: u32,
+    pub minor: u32,
 }
 
-pub(crate) fn deserialize_float_array<'de, D>(deserializer: D) -> Result<Vec<f32>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let s: String = serde::Deserialize::deserialize(deserializer)?;
+impl FromStr for DataVersion {
+    type Err = Error;
 
-    let split = s.split(',');
-    let floats: Vec<f32> = split.map(|s| s.parse().unwrap()).collect();
-    Ok(floats)
-}
-
-pub(crate) fn deserialize_optional_u32_array<'de, D>(
-    deserializer: D,
-) -> Result<Option<Vec<u32>>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let s: String = serde::Deserialize::deserialize(deserializer)?;
-
-    if s.is_empty() {
-        return Ok(Some(Vec::new()));
-    }
-
-    match s.as_str() {
-        "None" => Ok(None),
-        _ => {
-            let split = s.split(',');
-            let ints: Vec<u32> = split.map(|s| s.parse().unwrap()).collect();
-            Ok(Some(ints))
-        }
-    }
-}
-
-pub(crate) fn deserialize_optional_dmx_value<'de, D>(
-    deserializer: D,
-) -> Result<Option<DmxValue>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let s: String = serde::Deserialize::deserialize(deserializer)?;
-    match s.as_str() {
-        "None" => Ok(None),
-        s => match DmxValue::from_str(s) {
-            Ok(v) => Ok(Some(v)),
-            Err(error) => Err(serde::de::Error::custom(format!(
-                "Invalid DmxValue value: {}",
-                error.to_string()
-            ))),
-        },
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn load_gdtf_file() {
-        let root = std::env::current_dir().unwrap();
-        let file = std::fs::File::open(root.join("tests/advanced_description.xml")).unwrap();
-        let gdtf = GdtfDescription::from_file(&file);
-
-        assert!(gdtf.is_ok())
-    }
-
-    #[test]
-    fn dmx_value_conversion() {
-        macro_rules! test_dmx_value {
-            ($value:expr, $resolution:expr, $expected:expr) => {
-                let dmx_value = DmxValue::from_str($value).unwrap();
-                assert_eq!(dmx_value.value($resolution).unwrap(), $expected);
-            };
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.split(".").collect();
+        if parts.len() != 2 {
+            return Err(Error::ParseError(format!(
+                "Invalid data version: '{}'. Expected 2 parts, but found {}",
+                s,
+                parts.len()
+            )));
         }
 
-        // --------------------------
-        // Byte Mirroring
-        test_dmx_value!("255/1", ChannelBitResolution::Bit8, 255);
-        test_dmx_value!("255/1", ChannelBitResolution::Bit16, 65535);
-        test_dmx_value!("255/1", ChannelBitResolution::Bit24, 16777215);
-        test_dmx_value!("255/1", ChannelBitResolution::Bit32, 4294967295);
+        let major = parts[0].parse().map_err(|_| {
+            Error::ParseError(format!(
+                "Failed to parse data version major: '{}'",
+                parts[0]
+            ))
+        })?;
 
-        test_dmx_value!("65535/2", ChannelBitResolution::Bit8, 255);
-        test_dmx_value!("65535/2", ChannelBitResolution::Bit16, 65535);
-        test_dmx_value!("65535/2", ChannelBitResolution::Bit24, 16777215);
-        test_dmx_value!("65535/2", ChannelBitResolution::Bit32, 4294967295);
+        let minor = parts[1].parse().map_err(|_| {
+            Error::ParseError(format!(
+                "Failed to parse data version minor: '{}'",
+                parts[1]
+            ))
+        })?;
 
-        test_dmx_value!("16777215/3", ChannelBitResolution::Bit8, 255);
-        test_dmx_value!("16777215/3", ChannelBitResolution::Bit16, 65535);
-        test_dmx_value!("16777215/3", ChannelBitResolution::Bit24, 16777215);
-        test_dmx_value!("16777215/3", ChannelBitResolution::Bit32, 4294967295);
-
-        test_dmx_value!("4294967295/4", ChannelBitResolution::Bit8, 255);
-        test_dmx_value!("4294967295/4", ChannelBitResolution::Bit16, 65535);
-        test_dmx_value!("4294967295/4", ChannelBitResolution::Bit24, 16777215);
-        test_dmx_value!("4294967295/4", ChannelBitResolution::Bit32, 4294967295);
-
-        // First Value
-        test_dmx_value!("1/1", ChannelBitResolution::Bit8, 1);
-        test_dmx_value!("1/1", ChannelBitResolution::Bit16, 257);
-        test_dmx_value!("1/1", ChannelBitResolution::Bit24, 65793);
-        test_dmx_value!("1/1", ChannelBitResolution::Bit32, 16843009);
-
-        // --------------------------
-        // Byte shifting
-        test_dmx_value!("255/1s", ChannelBitResolution::Bit8, 255);
-        test_dmx_value!("255/1s", ChannelBitResolution::Bit16, 65280);
-        test_dmx_value!("255/1s", ChannelBitResolution::Bit24, 16711680);
-        test_dmx_value!("255/1s", ChannelBitResolution::Bit32, 4278190080);
-
-        test_dmx_value!("65535/2s", ChannelBitResolution::Bit8, 255);
-        test_dmx_value!("65535/2s", ChannelBitResolution::Bit16, 65535);
-        test_dmx_value!("65535/2s", ChannelBitResolution::Bit24, 16776960);
-        test_dmx_value!("65535/2s", ChannelBitResolution::Bit32, 4294901760);
-
-        test_dmx_value!("16777215/3s", ChannelBitResolution::Bit8, 255);
-        test_dmx_value!("16777215/3s", ChannelBitResolution::Bit16, 65535);
-        test_dmx_value!("16777215/3s", ChannelBitResolution::Bit24, 16777215);
-        test_dmx_value!("16777215/3s", ChannelBitResolution::Bit32, 4294967040);
-
-        test_dmx_value!("4294967295/4s", ChannelBitResolution::Bit8, 255);
-        test_dmx_value!("4294967295/4s", ChannelBitResolution::Bit16, 65535);
-        test_dmx_value!("4294967295/4s", ChannelBitResolution::Bit24, 16777215);
-        test_dmx_value!("4294967295/4s", ChannelBitResolution::Bit32, 4294967295);
-
-        // First Value
-        test_dmx_value!("1/1s", ChannelBitResolution::Bit8, 1);
-        test_dmx_value!("1/1s", ChannelBitResolution::Bit16, 256);
-        test_dmx_value!("1/1s", ChannelBitResolution::Bit24, 65536);
-        test_dmx_value!("1/1s", ChannelBitResolution::Bit32, 16777216);
+        Ok(Self { major, minor })
     }
 }

@@ -58,15 +58,12 @@ impl SheetDelegate for FixtureSheetDelegate {
             FixtureSheetColumnId::Mode,
         ];
 
-        let mut attribute_labels = self.show.update(cx, |show, _cx| {
-            let all_used_attributes = show.patch_list.all_used_attributes();
-
-            all_used_attributes
-                .iter()
-                .map(|a| FixtureSheetColumnId::Attribute(a.name.value().to_string()))
-                .unique()
-                .collect::<Vec<_>>()
-        });
+        let all_used_attributes = self.show.read(cx).patch_list.all_used_attributes();
+        let mut attribute_labels = all_used_attributes
+            .iter()
+            .map(|a| FixtureSheetColumnId::Attribute(a.name.clone()))
+            .unique()
+            .collect::<Vec<_>>();
 
         labels.append(&mut attribute_labels);
 
@@ -133,42 +130,41 @@ impl SheetDelegate for FixtureSheetDelegate {
             FixtureSheetColumnId::Name => render_value(Some(fixture.name.clone())),
             FixtureSheetColumnId::Patch => render_value(fixture.patch.clone()),
             FixtureSheetColumnId::Mode => {
-                let name = self.show.update(cx, |show, _cx| {
-                    show.patch_list.fixture_type(fixture).dmx_modes.modes[fixture.mode_index]
-                        .name
-                        .clone()
-                });
+                let name = self
+                    .show
+                    .read(cx)
+                    .patch_list
+                    .fixture_type(fixture)
+                    .dmx_modes[fixture.mode_index]
+                    .name
+                    .clone();
+
                 render_value(Some(name))
             }
             FixtureSheetColumnId::Attribute(name) => {
-                let values = self.show.update(cx, |show, _cx| {
-                    show.patch_list
-                        .fixture_type(fixture)
-                        .used_dmx_channels_for_mode(fixture.mode_index)
-                        .unwrap()
-                        .iter()
-                        .find_map(|c| {
-                            let attribute = c
-                                .logical_channels
-                                .get(0)
-                                .unwrap()
-                                .attribute
-                                .references()
-                                .get(0)?;
+                let fixture_type = self.show.read(cx).patch_list.fixture_type(fixture);
+                let values = fixture_type
+                    .used_channels_for_mode(fixture.mode_index)
+                    .iter()
+                    .find_map(|c| {
+                        let attribute = c
+                            .logical_channels
+                            .get(0)
+                            .unwrap()
+                            .attribute(&fixture_type.attribute_definitions.attributes);
 
-                            let offsets = c.offset.as_ref()?;
+                        let offsets = c.offset.as_ref()?;
 
-                            if attribute == name {
-                                let values = offsets
-                                    .iter()
-                                    .map(|o| fixture.get_dmx_value_with_offset(*o as usize))
-                                    .collect::<Vec<_>>();
-                                Some(values)
-                            } else {
-                                None
-                            }
-                        })
-                });
+                        if attribute.name == *name {
+                            let values = offsets
+                                .iter()
+                                .map(|o| fixture.get_dmx_value_with_offset(*o as usize))
+                                .collect::<Vec<_>>();
+                            Some(values)
+                        } else {
+                            None
+                        }
+                    });
 
                 let values = match values {
                     Some(values) => values,

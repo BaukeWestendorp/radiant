@@ -78,7 +78,7 @@ pub fn build_window_view(
             }
         },
         WindowKind::ColorPicker => {
-            let delegate = ColorPickerWindowDelegate::new(cx);
+            let delegate = ColorPickerWindowDelegate::new(show.clone(), cx);
             Window::build(delegate, id, show.clone(), cx).into()
         }
         WindowKind::FixtureSheet => {

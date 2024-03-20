@@ -3,7 +3,10 @@ use gpui::{
     WindowContext,
 };
 
-use crate::ui::slider::{Slider, SliderDelegate};
+use crate::{
+    show::Show,
+    ui::slider::{Slider, SliderDelegate},
+};
 
 use super::{Window, WindowDelegate};
 
@@ -19,7 +22,19 @@ pub struct ColorPickerWindowDelegate {
 }
 
 impl ColorPickerWindowDelegate {
-    pub fn new(cx: &mut WindowContext) -> Self {
+    pub fn new(show: Model<Show>, cx: &mut WindowContext) -> Self {
+        cx.observe(&show, |show, cx| {
+            let Some(_last_selected_fixture_id) = show.read(cx).programmer.selection.last() else {
+                return;
+            };
+
+            // let patch_list = show.read(cx).patch_list;
+            // let fixture = patch_list.fixture(*last_selected_fixture_id).unwrap();
+            // let fixture_type = patch_list.fixture_type(fixture);
+            todo!();
+        })
+        .detach();
+
         let red = cx.new_model(|_cx| 0.0);
         let red_slider = cx.new_view(|_cx| {
             Slider::new(

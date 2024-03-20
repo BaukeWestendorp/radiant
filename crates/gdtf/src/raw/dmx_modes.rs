@@ -1,10 +1,6 @@
-//! # [DMX Mode Collect ](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/)
-//!
-//! This section is describes all DMX modes of the device.
-
 use serde_inline_default::serde_inline_default;
 
-use crate::{deserialize_optional_dmx_value, deserialize_optional_u32_array, DmxValue, Name, Node};
+use crate::raw::{RawDmxValue, RawEnum, RawName, RawNode};
 
 /// # [DMX Mode Collect](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#dmx-mode-collect)
 ///
@@ -13,12 +9,12 @@ use crate::{deserialize_optional_dmx_value, deserialize_optional_u32_array, DmxV
 /// mode. The DMX mode collect currently does not have any attributes (XML node
 /// `<DMXModes>`).
 ///
-/// As children the fixture type DMX mode collect has a list of a [DmxMode].
+/// As children the fixture type DMX mode collect has a list of a [RawDmxMode].
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-pub struct DmxModes {
+pub struct RawDmxModes {
     #[allow(missing_docs)]
     #[serde(rename = "$value")]
-    pub modes: Vec<DmxMode>,
+    pub modes: Vec<RawDmxMode>,
 }
 
 /// # [DMX Mode](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#dmx-mmode)
@@ -30,10 +26,10 @@ pub struct DmxModes {
 /// DMX mode children are specified in
 /// [table 57](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-57-dmx-mode-children).
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-pub struct DmxMode {
+pub struct RawDmxMode {
     /// The unique name of the DMX mode
     #[serde(rename = "Name")]
-    pub name: Name,
+    pub name: RawName,
 
     /// Description of the DMX mode
     #[serde(rename = "Description")]
@@ -42,19 +38,19 @@ pub struct DmxMode {
     /// Name of the first geometry in the device; Only top level geometries are
     /// allowed to be linked.
     #[serde(rename = "Geometry")]
-    pub geometry: Name,
+    pub geometry: RawName,
 
     /// Description of all DMX channels used in the mode
     #[serde(rename = "DMXChannels")]
-    pub dmx_channels: DmxChannels,
+    pub dmx_channels: RawDmxChannels,
 
     /// Description of relations between channels
     #[serde(rename = "Relations")]
-    pub relations: Option<Relations>,
+    pub relations: Option<RawRelations>,
 
     /// Is used to describe macros of the manufacturer.
     #[serde(rename = "FTMacros")]
-    pub ft_macros: Option<FtMacros>,
+    pub ft_macros: Option<RawFtMacros>,
 }
 
 /// # [DMX Channel Collect](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#dmx-channels)
@@ -62,12 +58,12 @@ pub struct DmxMode {
 /// This section defines the DMX footprint of the device. The DMX channel
 /// collect currently does not have any attributes (XML node `<DMXChannels>`).
 ///
-/// As children the DMX channel collect has a list of a [DmxChannel].
+/// As children the DMX channel collect has a list of a [RawDmxChannel].
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-pub struct DmxChannels {
+pub struct RawDmxChannels {
     #[allow(missing_docs)]
     #[serde(rename = "$value")]
-    pub channels: Vec<DmxChannel>,
+    pub channels: Vec<RawDmxChannel>,
 }
 
 /// # [DMX Channel](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-58-dmx-channel-attributes)
@@ -79,83 +75,47 @@ pub struct DmxChannels {
 /// attributes of the DMX channel are specified in
 /// [table 58](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-58)
 ///
-/// As children the DMX channel has a list of a [LogicalChannel].
+/// As children the DMX channel has a list of a [RawLogicalChannel].
 #[serde_inline_default]
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-pub struct DmxChannel {
+pub struct RawDmxChannel {
     /// Number of the DMXBreak; Default value: 1; Special value: "Overwrite" –
     /// means that this number will be overwritten by Geometry Reference; Size:
     /// 4 bytes
     #[serde(rename = "DMXBreak")]
-    #[serde_inline_default(DmxBreak::Value(1))]
-    pub dmx_break: DmxBreak,
+    #[serde_inline_default("1".to_string())]
+    pub dmx_break: RawEnum,
 
     /// Relative addresses of the current DMX channel from highest to least
     /// significant; Separator of values is ","; Special value: "None" – does
     /// not have any addresses; Default value: "None"; Size per int: 4 bytes
-    #[serde(rename = "Offset", deserialize_with = "deserialize_optional_u32_array")]
-    pub offset: Option<Vec<u32>>,
+    #[serde(rename = "Offset")]
+    pub offset: String,
 
     /// Link to the channel function that will be activated by default for this
     /// DMXChannel. Default value is the first channel function of the first
     /// logical function of this DMX channel.
-
     #[serde(rename = "InitialFunction")]
-    pub initial_function: Node,
+    pub initial_function: Option<RawNode>,
 
     /// Highlight value for current channel; Special value: "None". Default
     /// value: "None".
-    #[serde(
-        rename = "Highlight",
-        deserialize_with = "deserialize_optional_dmx_value"
-    )]
-    pub highlight: Option<DmxValue>,
+    pub highlight: Option<RawDmxValue>,
 
     /// Name of the geometry the current channel controls.
     ///
     /// The `Geometry` should be the place in the tree of geometries where the
-    /// function of the DMX Channel (as defined by [ChannelFunction]) is located
-    /// either physically or logically. If the DMX channel doesn’t have a
-    /// location, put it in the top level geometry of the geometry tree.
-    /// Attributes follow a trickle down principle, so they are inherited from
-    /// top down.
+    /// function of the DMX Channel (as defined by [RawChannelFunction]) is
+    /// located either physically or logically. If the DMX channel doesn’t
+    /// have a location, put it in the top level geometry of the geometry
+    /// tree. Attributes follow a trickle down principle, so they are
+    /// inherited from top down.
     #[serde(rename = "Geometry")]
-    pub geometry: Name,
+    pub geometry: RawName,
 
     #[allow(missing_docs)]
     #[serde(rename = "$value")]
-    pub logical_channels: Vec<LogicalChannel>,
-}
-
-/// Breaks are used if a fixture needs more than one start address. For example,
-/// a scroller is added to an existing conventional fixture and the fixture is
-/// connected to a dimmer. This dimmer is patched in one universe and the
-/// scroller is connected to a PSU that, on the other hand, is patched in
-/// another universe. Both, the conventional fixture and scroller, are treated
-/// as one combined fixture.
-#[derive(Debug, Clone, PartialEq)]
-pub enum DmxBreak {
-    /// Overwrite means that this number will be overwritten by Geometry
-    /// Reference
-    Overwrite,
-    /// Value
-    Value(i32),
-}
-
-impl<'de> serde::Deserialize<'de> for DmxBreak {
-    fn deserialize<D>(deserializer: D) -> Result<DmxBreak, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        match s.as_str() {
-            "Overwrite" => Ok(DmxBreak::Overwrite),
-            _ => match s.parse() {
-                Ok(v) => Ok(DmxBreak::Value(v)),
-                Err(_) => Err(serde::de::Error::custom("invalid DmxBreak value")),
-            },
-        }
-    }
+    pub logical_channels: Vec<RawLogicalChannel>,
 }
 
 /// # [Logical Channel](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-59-logical-channel-attributes)
@@ -170,26 +130,26 @@ impl<'de> serde::Deserialize<'de> for DmxBreak {
 /// channel are specified in
 /// [table 59](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-59).
 ///
-/// As a child the logical channel has a list of a [ChannelFunction].
+/// As a child the logical channel has a list of a [RawChannelFunction].
 #[serde_inline_default]
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-pub struct LogicalChannel {
+pub struct RawLogicalChannel {
     /// Link to the attribute; The starting point is the Attribute Collect (see
     /// [Annex A](https://gdtf.eu/gdtf/annex/annex-a/)).
     #[serde(rename = "Attribute")]
-    pub attribute: Node,
+    pub attribute: RawNode,
 
     /// If snap is enabled, the logical channel will not fade between values.
     /// Instead, it will jump directly to the new value. Value: “Yes”, “No”,
     /// “On”, “Off”. Default value: “No”
     #[serde(rename = "Snap")]
-    pub snap: Snap,
+    pub snap: RawEnum,
 
     /// Defines if all the subordinate channel functions react to a Group
     /// Control defined by the control system. Values: “None”, “Grand”, “Group”;
     /// Default value: “None”.
     #[serde(rename = "Master")]
-    pub master: Master,
+    pub master: RawEnum,
 
     /// Minimum fade time for moves in black action. MibFade is defined for the
     /// complete DMX range. Default value: 0; Unit: second
@@ -206,35 +166,7 @@ pub struct LogicalChannel {
 
     #[allow(missing_docs)]
     #[serde(rename = "$value")]
-    pub channel_functions: Vec<ChannelFunction>,
-}
-
-/// If snap is enabled, the logical channel will not fade between values.
-/// Instead, it will jump directly to the new value.
-#[derive(Debug, Clone, PartialEq, Default, serde::Deserialize)]
-pub enum Snap {
-    /// No
-    #[default]
-    No,
-    /// Yes
-    Yes,
-    /// Off
-    Off,
-    /// On
-    On,
-}
-
-/// Defines if all the subordinate channel functions react to a Group Control
-/// defined by the control system
-#[derive(Debug, Clone, PartialEq, Default, serde::Deserialize)]
-pub enum Master {
-    /// None
-    #[default]
-    None,
-    /// Grand
-    Grand,
-    /// Group
-    Group,
+    pub channel_functions: Vec<RawChannelFunction>,
 }
 
 /// # [Channel Function](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-60-channel-function-attributes)
@@ -262,21 +194,21 @@ pub enum Master {
 /// - `FLOAT_VALUE_PERCENT` is the percent value that the fixture should adopt.
 ///   The values can be between 0 and 100.
 ///
-/// As children the channel function has list of a [ChannelSet] and a
-/// [SubChannelSet].
+/// As children the channel function has list of a [RawChannelSet] and a
+/// [RawSubChannelSet].
 #[serde_inline_default]
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-pub struct ChannelFunction {
+pub struct RawChannelFunction {
     /// Unique name; Default value: Name of attribute and number of channel
     /// function.
     #[serde(rename = "Name")]
-    pub name: Name,
+    pub name: RawName,
 
     /// Link to attribute; Starting point is the attributes node. Default value:
     /// “NoFeature”.
     #[serde(rename = "Attribute")]
-    #[serde_inline_default(Node::from("NoFeature"))]
-    pub attribute: Node,
+    #[serde_inline_default(RawNode::from("NoFeature"))]
+    pub attribute: RawNode,
 
     /// The manufacturer’s original name of the attribute; Default: empty
     #[serde(rename = "OriginalAttribute")]
@@ -287,8 +219,8 @@ pub struct ChannelFunction {
     /// next channel function – 1 or the maximum value of the DMX channel.
     /// Default value: “0/1”.
     #[serde(rename = "DMXFrom")]
-    #[serde_inline_default("0/1".parse().unwrap())]
-    pub dmx_from: DmxValue,
+    #[serde_inline_default("0/1".to_string())]
+    pub dmx_from: RawDmxValue,
 
     /// Default DMX value of channel function when activated by the control
     /// system.
@@ -296,7 +228,7 @@ pub struct ChannelFunction {
     /// This value is output as long as it is not
     /// overwritten by a cue for instance.
     #[serde(rename = "Default")]
-    pub default: DmxValue,
+    pub default: RawDmxValue,
 
     /// Physical start value; Default value: 0
     #[serde(rename = "PhysicalFrom")]
@@ -322,86 +254,72 @@ pub struct ChannelFunction {
 
     /// Optional. Link to a wheel; Starting point: Wheel Collect
     #[serde(rename = "Wheel")]
-    pub wheel: Option<Node>,
+    pub wheel: Option<RawNode>,
 
     /// Optional. Link to an emitter in the physical description; Starting
     /// point: Emitter Collect
     #[serde(rename = "Emitter")]
-    pub emitter: Option<Node>,
+    pub emitter: Option<RawNode>,
 
     /// Optional. Link to a filter in the physical description; Starting point:
     /// Filter Collect
     #[serde(rename = "Filter")]
-    pub filter: Option<Node>,
+    pub filter: Option<RawNode>,
 
     /// Optional. Link to a color space in the physical description; Starting
     /// point: Physical Descriptions Collect
     #[serde(rename = "ColorSpace")]
-    pub color_space: Option<Node>,
+    pub color_space: Option<RawNode>,
 
     /// Optional. Link to a gamut in the physical description; Starting point:
     /// Gamut Collect
     #[serde(rename = "Gamut")]
-    pub gamut: Option<Node>,
+    pub gamut: Option<RawNode>,
 
     /// Optional. Link to DMX Channel or Channel Function; Starting point DMX
     /// mode.
     #[serde(rename = "ModeMaster")]
-    pub mode_master: Option<Node>,
+    pub mode_master: Option<RawNode>,
 
     /// Only used together with ModeMaster; DMX start value; Default value: 0/1
     #[serde(rename = "ModeFrom")]
-    #[serde_inline_default("0/1".parse().unwrap())]
-    pub mode_from: DmxValue,
+    #[serde_inline_default("0/1".to_string())]
+    pub mode_from: RawDmxValue,
 
     /// Only used together with ModeMaster; DMX end value; Default value: 0/1
     #[serde(rename = "ModeTo")]
-    #[serde_inline_default("0/1".parse().unwrap())]
-    pub mode_to: DmxValue,
+    #[serde_inline_default("0/1".to_string())]
+    pub mode_to: RawDmxValue,
 
     /// Optional link to DMX Profile; Starting point: DMX Profile Collect
     #[serde(rename = "DMXProfile")]
-    pub dmx_profile: Option<Node>,
+    pub dmx_profile: Option<RawNode>,
 
-    #[serde(rename = "Min")]
-    min: Option<f32>,
-
-    #[serde(rename = "Max")]
-    max: Option<f32>,
-
-    #[serde(rename = "CustomName")]
-    custom_name: Option<String>,
-
-    #[allow(missing_docs)]
-    #[serde(rename = "$value", default = "Vec::new")]
-    pub channel_sets: Vec<ChannelSet>,
-
-    #[allow(missing_docs)]
-    #[serde(rename = "$value", default = "Vec::new")]
-    pub subchannel_sets: Vec<SubchannelSet>,
-}
-
-impl ChannelFunction {
     /// Minimum Physical Value that will be used for the DMX Profile. Default:
     /// Value from PhysicalFrom
-    pub fn min(&self) -> f32 {
-        self.min.unwrap_or(self.physical_from)
-    }
+    #[serde(rename = "Min")]
+    pub min: Option<f32>,
 
     /// Maximum Physical Value that will be used for the DMX Profile. Default:
     /// Value from PhysicalTo
-    pub fn max(&self) -> f32 {
-        self.max.unwrap_or(self.physical_to)
-    }
+    #[serde(rename = "Max")]
+    pub max: Option<f32>,
 
     /// Custom Name that can he used do adress this channel function with other
     /// command based protocols like OSC. Default: Node Name of the Channel
     /// function
     ///
     /// Example: Head_Dimmer.Dimmer.Dimmer
-    pub fn custom_name(&self) -> String {
-        self.custom_name.clone().unwrap_or(self.name.0.clone())
-    }
+    #[serde(rename = "CustomName")]
+    pub custom_name: Option<String>,
+
+    #[allow(missing_docs)]
+    #[serde(rename = "$value", default = "Vec::new")]
+    pub channel_sets: Vec<RawChannelSet>,
+
+    #[allow(missing_docs)]
+    #[serde(rename = "$value", default = "Vec::new")]
+    pub subchannel_sets: Vec<RawSubchannelSet>,
 }
 
 /// # [Channel Set](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-61-channel-set-attributes)
@@ -411,24 +329,28 @@ impl ChannelFunction {
 /// [table 61](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-61).
 #[serde_inline_default]
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-pub struct ChannelSet {
+pub struct RawChannelSet {
     /// The name of the channel set. Default: Empty
     #[serde(rename = "Name")]
-    #[serde_inline_default(Name::new("".to_string()).unwrap())]
-    pub name: Name,
+    #[serde_inline_default("".to_string())]
+    pub name: RawName,
 
     /// Start DMX value; The end DMX value is calculated as a DMXFrom of the
     /// next channel set – 1 or the maximum value of the current channel
     /// function; Default value: 0/1
     #[serde(rename = "DMXFrom")]
-    #[serde_inline_default("0/1".parse().unwrap())]
-    pub dmx_from: DmxValue,
+    #[serde_inline_default("0/1".to_string())]
+    pub dmx_from: RawDmxValue,
 
+    /// Physical start value. Default value is the PhysicalFrom from the parent
+    /// channel function.
     #[serde(rename = "PhysicalFrom")]
-    physical_from: Option<f32>,
+    pub physical_from: Option<f32>,
 
+    /// Physical end value. Default value is the PhysicalTo from the parent
+    /// channel function.
     #[serde(rename = "PhysicalTo")]
-    physical_to: Option<f32>,
+    pub physical_to: Option<f32>,
 
     /// If the channel function has a link to a wheel, a corresponding slot
     /// index shall be specified. The wheel slot index results from the order of
@@ -436,20 +358,6 @@ pub struct ChannelSet {
     /// slot index is normalized to 1.
     #[serde(rename = "WheelSlotIndex")]
     pub wheel_slot_index: i32,
-}
-
-impl ChannelSet {
-    /// Physical start value. Default value is the PhysicalFrom from the parent
-    /// channel function.
-    pub fn physical_from(&self, channel_function: &ChannelFunction) -> f32 {
-        self.physical_from.unwrap_or(channel_function.physical_from)
-    }
-
-    /// Physical end value. Default value is the PhysicalTo from the parent
-    /// channel function.
-    pub fn physical_to(&self, channel_function: &ChannelFunction) -> f32 {
-        self.physical_to.unwrap_or(channel_function.physical_to)
-    }
 }
 
 /// # [Sub Channel Set](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-62)
@@ -461,11 +369,11 @@ impl ChannelSet {
 /// The sub channel set does not have any children.
 #[serde_inline_default]
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-pub struct SubchannelSet {
+pub struct RawSubchannelSet {
     /// The name of the sub channel set. Default: Empty
     #[serde(rename = "Name")]
-    #[serde_inline_default(Name::new("".to_string()).unwrap())]
-    pub name: Name,
+    #[serde_inline_default("".to_string())]
+    pub name: RawName,
 
     /// Physical start value
     #[serde(rename = "PhysicalFrom")]
@@ -477,11 +385,11 @@ pub struct SubchannelSet {
 
     /// Link to the sub physical unit; Starting Point: Attribute
     #[serde(rename = "SubPhysicalUnit")]
-    pub sub_physical_unit: Node,
+    pub sub_physical_unit: RawNode,
 
     /// Optional link to the DMX Profile; Starting Point: DMX Profile Collect
     #[serde(rename = "DMXProfile")]
-    pub dmx_profile: Option<Node>,
+    pub dmx_profile: Option<RawNode>,
 }
 
 /// # [Relations Collect](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#relation-collect)
@@ -490,12 +398,12 @@ pub struct SubchannelSet {
 /// functions, such as multiply and override. The relation collect currently
 /// does not have any XML attributes (XML node` <Relations>`).
 ///
-/// As children therelation collect has a list of a [Relation].
+/// As children therelation collect has a list of a [RawRelation].
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-pub struct Relations {
+pub struct RawRelations {
     #[allow(missing_docs)]
     #[serde(rename = "$value", default = "Vec::new")]
-    pub relations: Vec<Relation>,
+    pub relations: Vec<RawRelation>,
 }
 
 /// # [Relation](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-63-relation-attributes)
@@ -510,43 +418,34 @@ pub struct Relations {
 /// [Listing 1](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#listing-1)
 ///  shows an example of a simple DMX mode described in XML.
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-pub struct Relation {
+pub struct RawRelation {
     /// The unique name of the relation
     #[serde(rename = "Name")]
-    pub name: Name,
+    pub name: RawName,
 
     /// Link to the master DMX channel; Starting point: DMX mode
     #[serde(rename = "Master")]
-    pub master: Node,
+    pub master: RawNode,
 
     /// Link to the following channel function; Starting point: DMX mode
     #[serde(rename = "Follower")]
-    pub follower: Node,
+    pub follower: RawNode,
 
     /// Type of the relation; Values: “Multiply”, “Override”
     #[serde(rename = "Type")]
-    pub r#type: RelationType,
-}
-
-/// Type of the relation.
-#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize)]
-pub enum RelationType {
-    /// Multiply
-    Multiply,
-    /// Override
-    Override,
+    pub r#type: RawEnum,
 }
 
 /// # [Macro Collect](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#macro-collect)
 ///
 /// This section describes DMX sequences to be executed by the control system.
 /// The macro collect currently does not have any XML attributes (XML node
-/// `<FTMacros>`). As children the macro collect has a list of a [Macro].
+/// `<FTMacros>`). As children the macro collect has a list of a [RawMacro].
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-pub struct FtMacros {
+pub struct RawFtMacros {
     #[allow(missing_docs)]
     #[serde(rename = "$value", default = "Vec::new")]
-    pub macros: Vec<FtMacro>,
+    pub macros: Vec<RawFtMacro>,
 }
 
 /// # [Macro](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-64-macro-attributes)
@@ -558,29 +457,29 @@ pub struct FtMacros {
 /// Macro children are specified in
 /// [table 65](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-65)
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-pub struct FtMacro {
+pub struct RawFtMacro {
     /// The unique name of the macro.
     #[serde(rename = "Name")]
-    pub name: Name,
+    pub name: RawName,
 
     /// Optional. Link to channel function; Starting point DMX Mode
     #[serde(rename = "ChannelFunction")]
-    pub channel_function: Option<Node>,
+    pub channel_function: Option<RawNode>,
 
     /// This section defines a DMX sequence.
     #[serde(rename = "MacroDMX")]
-    pub macro_dmx: Option<MacroDmx>,
+    pub macro_dmx: Option<RawMacroDmx>,
 }
 
 /// This section defines the sequence of DMX values which are sent by a control
 /// system. (XML node `<MacroDMX>`).
 ///
-/// As children the macro DMX has a list of [MacroDMXStep].
+/// As children the macro DMX has a list of [RawMacroDMXStep].
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-pub struct MacroDmx {
+pub struct RawMacroDmx {
     #[allow(missing_docs)]
     #[serde(rename = "$value", default = "Vec::new")]
-    pub dmx_steps: Vec<MacroDmxStep>,
+    pub dmx_steps: Vec<RawMacroDmxStep>,
 }
 
 /// # [Macro DMX Step](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-66-macro-dmx-step-attributes)
@@ -588,10 +487,10 @@ pub struct MacroDmx {
 /// defined XML attributes of the macro DMX step are specified in
 /// [table 66](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-66).
 ///
-/// As children the macro DMX -Step has a list of a [MacroDmxValue].
+/// As children the macro DMX -Step has a list of a [RawMacroDmxValue].
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 #[serde_inline_default]
-pub struct MacroDmxStep {
+pub struct RawMacroDmxStep {
     /// Duration of a step; Default value: 1; Unit: seconds.
     #[serde(rename = "Duration")]
     #[serde_inline_default(1.0)]
@@ -599,7 +498,7 @@ pub struct MacroDmxStep {
 
     #[allow(missing_docs)]
     #[serde(rename = "$value", default = "Vec::new")]
-    pub dmx_values: Vec<MacroDmxValue>,
+    pub dmx_values: Vec<RawMacroDmxValue>,
 }
 
 /// # [DMX Value](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-67-dmx-value-attributes)
@@ -610,12 +509,12 @@ pub struct MacroDmxStep {
 ///
 /// The DMX value does not have any children.
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-pub struct MacroDmxValue {
+pub struct RawMacroDmxValue {
     /// Value of the DMX channel
     #[serde(rename = "Value")]
-    pub value: DmxValue,
+    pub value: RawDmxValue,
 
     /// Link to a DMX channel. Starting node DMX Channel collect.
     #[serde(rename = "DMXChannel")]
-    pub dmx_channel: Node,
+    pub dmx_channel: RawNode,
 }

@@ -146,8 +146,8 @@ pub(super) fn execute_action(action: Action, show: gpui::Model<Show>, cx: &mut g
                         return;
                     };
 
-                    let ids = group.fixtures.clone();
-                    show.programmer.select_fixtures(ids);
+                    let mut ids = group.fixtures.clone();
+                    show.programmer.selection.append(&mut ids);
                 }
             });
         }
