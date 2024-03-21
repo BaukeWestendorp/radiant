@@ -2,20 +2,18 @@ use std::collections::HashMap;
 
 use anyhow::anyhow;
 use assets::{AssetSource, Assets};
-use gdtf::{Attribute, FixtureType, GdtfDescription};
+use gdtf::{Attribute, FixtureType, GdtfDescription, Guid};
 use gpui::SharedString;
 
 use crate::dmx::DmxChannel;
 
-pub type FixtureTypeId = usize;
 pub type FixtureId = usize;
 
 #[derive(Debug, Clone, Default)]
 pub struct PatchList {
     pub fixtures: Vec<Fixture>,
 
-    // FIXME: We should use the fixture id instead of the file name.
-    gdtf_descriptions: HashMap<SharedString, GdtfDescription>,
+    gdtf_descriptions: HashMap<Guid, GdtfDescription>,
 }
 
 impl<'de> serde::Deserialize<'de> for PatchList {
@@ -24,18 +22,23 @@ impl<'de> serde::Deserialize<'de> for PatchList {
         D: serde::Deserializer<'de>,
     {
         #[derive(Debug, serde::Deserialize)]
-        struct Intermediate {
+        struct IntermediatePatchList {
             fixtures: Vec<Fixture>,
         }
+        let intermediate: IntermediatePatchList = serde::Deserialize::deserialize(deserializer)?;
 
-        let intermediate: Intermediate = serde::Deserialize::deserialize(deserializer)?;
-
-        let fixtures = intermediate.fixtures;
+        let mut fixtures = intermediate.fixtures;
         let mut gdtf_descriptions = HashMap::new();
-        for fixture in fixtures.iter() {
-            match load_gdtf_description(format!("fixtures/{}", fixture.gdtf_file_name).as_str()) {
+        for fixture in fixtures.iter_mut() {
+            let path = format!("fixtures/{}", fixture.gdtf_file_name);
+            match load_gdtf_description(path.as_str()) {
                 Ok(gdtf_description) => {
-                    gdtf_descriptions.insert(fixture.gdtf_file_name.clone(), gdtf_description);
+                    if fixture.channel_values.is_empty() {
+                        fixture.set_default_channel_values(&gdtf_description.fixture_type);
+                    }
+
+                    gdtf_descriptions
+                        .insert(gdtf_description.fixture_type.id.clone(), gdtf_description);
                 }
                 Err(err) => {
                     return Err(serde::de::Error::custom(format!(
@@ -75,9 +78,10 @@ impl PatchList {
         self.fixtures
             .iter()
             .flat_map(|f| {
-                let fixture_type = self.fixture_type(f);
-                fixture_type
-                    .used_channels_for_mode(f.mode_index)
+                let fixture_type = self.get_fixture_type(&f.fixture_type_id);
+                let used_channels = fixture_type.used_channels_for_mode(f.mode_index);
+
+                used_channels
                     .iter()
                     .flat_map(|c| &c.logical_channels)
                     .map(|lc| lc.attribute(&fixture_type.attribute_definitions.attributes))
@@ -86,12 +90,8 @@ impl PatchList {
             .collect()
     }
 
-    pub fn fixture_type(&self, fixture: &Fixture) -> &FixtureType {
-        &self
-            .gdtf_descriptions
-            .get(&fixture.gdtf_file_name)
-            .expect("Fixture type not found")
-            .fixture_type
+    pub fn get_fixture_type(&self, id: &Guid) -> &FixtureType {
+        &self.gdtf_descriptions.get(id).unwrap().fixture_type
     }
 
     pub fn fixture(&self, id: usize) -> Option<&Fixture> {
@@ -103,34 +103,81 @@ impl PatchList {
 pub struct Fixture {
     pub id: Option<FixtureId>,
     pub name: SharedString,
-    pub gdtf_file_name: SharedString,
+    pub fixture_type_id: Guid,
+    pub(self) gdtf_file_name: String,
     pub mode_index: usize,
-    pub patch: Option<DmxChannel>,
-    pub dmx_values: Vec<u8>,
+    pub channel: Option<DmxChannel>,
+    pub channel_values: HashMap<String, Vec<u8>>,
 }
 
 impl Fixture {
     pub fn new(
         name: SharedString,
-        gdtf_file_name: SharedString,
+        fixture_type_id: Guid,
+        gdtf_file_name: String,
         mode_index: usize,
-        patch: Option<DmxChannel>,
+        channel: Option<DmxChannel>,
     ) -> Self {
         Fixture {
             id: None,
             name,
+            fixture_type_id,
             gdtf_file_name,
             mode_index,
-            patch,
-            dmx_values: vec![0; 512],
+            channel,
+            channel_values: HashMap::new(),
         }
     }
 
-    pub fn get_dmx_value_with_offset(&self, offset: usize) -> u8 {
-        self.dmx_values[offset - 1]
+    pub fn dmx_values(&self, patch_list: &PatchList) -> Vec<u8> {
+        let attributes = patch_list
+            .get_fixture_type(&self.fixture_type_id)
+            .attribute_definitions
+            .attributes
+            .clone();
+
+        let mut values = vec![];
+        patch_list
+            .get_fixture_type(&self.fixture_type_id)
+            .used_channels_for_mode(self.mode_index)
+            .iter()
+            .for_each(|channel| {
+                let Some(offset) = channel.offset.clone() else {
+                    return;
+                };
+
+                if offset.is_empty() {
+                    return;
+                }
+
+                // Make sure we have enough space in the values vector
+                let last_offset = usize::try_from(*offset.last().unwrap()).unwrap_or(0);
+                if last_offset > values.len() {
+                    values.resize(last_offset, 0);
+                }
+
+                let attribute = channel
+                    .logical_channels
+                    .first()
+                    .unwrap()
+                    .attribute(&attributes)
+                    .clone();
+                let value = self.channel_value_for_attribute(&attribute.name).unwrap();
+
+                for (i, o) in offset.iter().enumerate() {
+                    values[*o as usize - 1] = value[i];
+                }
+            });
+        values
     }
 
-    pub fn set_dmx_value_with_offset(&mut self, offset: usize, value: u8) {
-        self.dmx_values[offset - 1] = value;
+    pub fn channel_value_for_attribute(&self, name: &str) -> Option<&Vec<u8>> {
+        self.channel_values.get(name)
+    }
+
+    pub fn set_default_channel_values(&mut self, fixture_type: &FixtureType) {
+        let default_channel_values =
+            fixture_type.dmx_modes[self.mode_index].default_channel_values();
+        self.channel_values = default_channel_values;
     }
 }

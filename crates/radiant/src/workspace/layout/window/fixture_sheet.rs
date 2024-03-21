@@ -128,13 +128,11 @@ impl SheetDelegate for FixtureSheetDelegate {
         match column_id {
             FixtureSheetColumnId::Id => render_value(fixture.id),
             FixtureSheetColumnId::Name => render_value(Some(fixture.name.clone())),
-            FixtureSheetColumnId::Patch => render_value(fixture.patch.clone()),
+            FixtureSheetColumnId::Patch => render_value(fixture.channel.clone()),
             FixtureSheetColumnId::Mode => {
-                let name = self
-                    .show
-                    .read(cx)
-                    .patch_list
-                    .fixture_type(fixture)
+                let patch_list = &self.show.read(cx).patch_list;
+                let name = patch_list
+                    .get_fixture_type(&fixture.fixture_type_id)
                     .dmx_modes[fixture.mode_index]
                     .name
                     .clone();
@@ -142,31 +140,7 @@ impl SheetDelegate for FixtureSheetDelegate {
                 render_value(Some(name))
             }
             FixtureSheetColumnId::Attribute(name) => {
-                let fixture_type = self.show.read(cx).patch_list.fixture_type(fixture);
-                let values = fixture_type
-                    .used_channels_for_mode(fixture.mode_index)
-                    .iter()
-                    .find_map(|c| {
-                        let attribute = c
-                            .logical_channels
-                            .get(0)
-                            .unwrap()
-                            .attribute(&fixture_type.attribute_definitions.attributes);
-
-                        let offsets = c.offset.as_ref()?;
-
-                        if attribute.name == *name {
-                            let values = offsets
-                                .iter()
-                                .map(|o| fixture.get_dmx_value_with_offset(*o as usize))
-                                .collect::<Vec<_>>();
-                            Some(values)
-                        } else {
-                            None
-                        }
-                    });
-
-                let values = match values {
+                let values = match fixture.channel_value_for_attribute(name) {
                     Some(values) => values,
                     None => return render_value::<String>(None),
                 };

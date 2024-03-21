@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 use crate::{
     error::Error,
@@ -36,6 +36,28 @@ impl DmxMode {
             .iter()
             .flat_map(|c| c.logical_channels.iter())
             .collect()
+    }
+
+    pub fn default_channel_values(&self) -> HashMap<String, Vec<u8>> {
+        let mut values = HashMap::new();
+        self.dmx_channels.iter().for_each(|c| {
+            c.logical_channels.iter().for_each(|lc| {
+                lc.channel_functions.iter().for_each(|cf| {
+                    let offset_len = c.offset.as_ref().map(|o| o.len()).unwrap_or(0);
+                    if offset_len == 0 {
+                        return;
+                    }
+
+                    let attribute_name = lc.attribute[0].clone();
+                    let value = cf
+                        .default
+                        .bytes(crate::ChannelBitResolution::from(offset_len as u8))
+                        .unwrap();
+                    values.insert(attribute_name, value);
+                })
+            })
+        });
+        values
     }
 }
 

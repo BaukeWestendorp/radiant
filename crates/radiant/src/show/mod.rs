@@ -68,7 +68,7 @@ impl Show {
         log::info!("Initializing DMX output");
         self.dmx_output = DmxOutput::new();
         for fixture in self.patch_list.fixtures.iter() {
-            if let Some(patch) = &fixture.patch {
+            if let Some(patch) = &fixture.channel {
                 let universe = DmxUniverse::new(patch.universe).unwrap();
                 self.dmx_output.add_universe_if_absent(universe);
             }
@@ -77,12 +77,12 @@ impl Show {
 
     pub fn update_dmx_output(&mut self) {
         for fixture in self.patch_list.fixtures.iter() {
-            let patch = match &fixture.patch {
+            let patch = match &fixture.channel {
                 Some(patch) => patch,
                 None => continue,
             };
 
-            for (offset, value) in fixture.dmx_values.iter().enumerate() {
+            for (offset, value) in fixture.dmx_values(&self.patch_list).iter().enumerate() {
                 let channel = DmxChannel {
                     universe: patch.universe,
                     address: patch.address + offset as u16,

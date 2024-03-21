@@ -107,45 +107,56 @@
         "id": 1,
         "name": "LEDForce 7 RGBW 1",
         "gdtf_file_name": "ledforce_7_rgbw.gdtf",
+        "fixture_type_id": "AE92BE76-BDDA-4432-BDAA-06AD46F01BF3",
         "mode_index": 1,
-        "patch": {
+        "channel": {
           "address": 1,
           "universe": 1
         },
-        "dmx_values": [255, 0, 255, 0, 255, 0]
+        "channel_values": {
+          "ColorAdd_R": [255],
+          "ColorAdd_G": [0],
+          "ColorAdd_B": [0],
+          "ColorAdd_W": [0],
+          "Dimmer": [255],
+          "Shutter1": [0]
+        }
       },
       {
         "id": 2,
         "name": "LEDForce 7 RGBW 2",
         "gdtf_file_name": "ledforce_7_rgbw.gdtf",
+        "fixture_type_id": "AE92BE76-BDDA-4432-BDAA-06AD46F01BF3",
         "mode_index": 1,
-        "patch": {
+        "channel": {
           "address": 7,
           "universe": 1
         },
-        "dmx_values": [255, 0, 0, 0, 255, 0]
+        "channel_values": {}
       },
       {
         "id": 3,
         "name": "LEDForce 7 RGBW 3",
         "gdtf_file_name": "ledforce_7_rgbw.gdtf",
+        "fixture_type_id": "AE92BE76-BDDA-4432-BDAA-06AD46F01BF3",
         "mode_index": 1,
-        "patch": {
+        "channel": {
           "address": 13,
           "universe": 1
         },
-        "dmx_values": [0, 255, 255, 0, 255, 0]
+        "channel_values": {}
       },
       {
         "id": 4,
         "name": "LEDForce 7 RGBW 4",
+        "fixture_type_id": "AE92BE76-BDDA-4432-BDAA-06AD46F01BF3",
         "gdtf_file_name": "ledforce_7_rgbw.gdtf",
         "mode_index": 1,
-        "patch": {
+        "channel": {
           "address": 19,
           "universe": 1
         },
-        "dmx_values": [255, 255, 0, 0, 255, 0]
+        "channel_values": {}
       }
     ]
   },
