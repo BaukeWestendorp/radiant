@@ -6,7 +6,7 @@ use gpui::{
 
 use workspace::Workspace;
 
-use crate::{command::Command, show::Show};
+use crate::show::Show;
 
 pub mod color;
 pub mod command;
@@ -40,10 +40,6 @@ fn main() {
             KeyBinding::new("cmd-q", Quit, None),
             KeyBinding::new("cmd-o", workspace::actions::OpenShow, Some("Workspace")),
             KeyBinding::new("cmd-s", workspace::actions::SaveShow, Some("Workspace")),
-            KeyBinding::new("enter", command::ExecuteCommandList, Some("Workspace")),
-            KeyBinding::new("backspace", command::RemoveCommand, Some("Workspace")),
-            KeyBinding::new("escape", Command::Clear, Some("Workspace")),
-            KeyBinding::new("g", Command::Group, Some("Workspace")),
         ]);
 
         cx.on_action(|_action: &Quit, cx: &mut AppContext| cx.quit());
@@ -59,10 +55,6 @@ fn main() {
                     MenuItem::action("Open", workspace::actions::OpenShow),
                     MenuItem::action("Save", workspace::actions::SaveShow),
                 ],
-            },
-            Menu {
-                name: "Commands",
-                items: vec![MenuItem::action("Group", Command::Group)],
             },
         ]);
 

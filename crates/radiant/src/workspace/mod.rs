@@ -5,10 +5,7 @@ use gpui::{
     ParentElement, Render, Styled, Timer, View, ViewContext,
 };
 
-use crate::{
-    command::{Command, ExecuteCommandList, RemoveCommand},
-    show::Show,
-};
+use crate::show::Show;
 use screen::Screen;
 
 pub mod layout;
@@ -35,21 +32,6 @@ impl Workspace {
 
     pub fn new(show: Model<Show>, cx: &mut ViewContext<Self>) -> Self {
         cx.observe(&show, |_, _, cx| cx.notify()).detach();
-
-        cx.observe_keystrokes({
-            let show = show.clone();
-            move |event, cx| match event.keystroke.key.as_str() {
-                n @ ("1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "0") => {
-                    let char = n.chars().next().unwrap();
-                    show.update(cx, |show, cx| {
-                        show.command_list.handle_digit_key(char);
-                        cx.notify();
-                    });
-                }
-                _ => {}
-            }
-        })
-        .detach();
 
         let screen = Screen::build(show.clone(), cx);
 
@@ -94,34 +76,6 @@ impl Workspace {
         }
     }
 
-    pub fn handle_command(&mut self, command: &Command, cx: &mut ViewContext<Self>) {
-        self.show.update(cx, |show, cx| {
-            show.command_list.push(command.clone());
-            if show.command_list.is_complete() {
-                show.execute_command_list();
-            }
-            cx.notify();
-        });
-    }
-
-    pub fn handle_remove_command(&mut self, _event: &RemoveCommand, cx: &mut ViewContext<Self>) {
-        self.show.update(cx, |show, cx| {
-            show.command_list.remove_last();
-            cx.notify();
-        });
-    }
-
-    pub fn handle_execute_command_list(
-        &mut self,
-        _action: &ExecuteCommandList,
-        cx: &mut ViewContext<Self>,
-    ) {
-        self.show.update(cx, |show, cx| {
-            show.execute_command_list();
-            cx.notify();
-        });
-    }
-
     fn dmx_output_interval(&self, cx: &mut ViewContext<Self>) {
         cx.spawn(|this, mut cx| async move {
             Timer::after(DMX_OUTPUT_RATE).await;
@@ -146,9 +100,6 @@ impl Render for Workspace {
             .key_context("Workspace")
             .on_action(cx.listener(Self::open_show))
             .on_action(cx.listener(Self::save_show))
-            .on_action(cx.listener(Self::handle_command))
-            .on_action(cx.listener(Self::handle_remove_command))
-            .on_action(cx.listener(Self::handle_execute_command_list))
             .font("Zed Sans")
             .text_color(white())
             .size_full()

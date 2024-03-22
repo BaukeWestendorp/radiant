@@ -2,7 +2,6 @@ use gpui::{
     div, prelude::FluentBuilder, rgb, IntoElement, Model, ParentElement, Styled, WindowContext,
 };
 
-use crate::command::Command;
 use crate::{
     show::{data_pools::DataPool, Show},
     workspace::layout::{window::Window, LayoutBounds},
@@ -85,8 +84,9 @@ impl PoolWindowDelegate for GroupPoolWindowDelegate {
     where
         Self: Sized,
     {
-        self.show.update(cx, |show, _cx| {
-            show.execute_commands([Command::Group, Command::Id(id)])
+        self.show.update(cx, |_show, cx| {
+            cx.notify();
+            todo!("Execute 'group {id}'");
         });
     }
 }
