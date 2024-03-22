@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 
 use gpui::SharedString;
 
+use crate::command::{CommandAction, CommandList, DataPoolItem};
 use crate::dmx::{DmxChannel, DmxOutput, DmxUniverse};
 use crate::dmx_protocols::DmxProtocols;
 
@@ -29,6 +30,8 @@ pub struct Show {
 
     #[serde(skip)]
     pub dmx_output: DmxOutput,
+    #[serde(skip)]
+    pub command_list: CommandList,
 
     pub dmx_protocols: DmxProtocols,
 }
@@ -71,6 +74,34 @@ impl Show {
             if let Some(patch) = &fixture.channel {
                 let universe = DmxUniverse::new(patch.universe).unwrap();
                 self.dmx_output.add_universe_if_absent(universe);
+            }
+        }
+    }
+
+    pub fn execute_command_list(&mut self) {
+        let action = self.command_list.parse();
+        if let Some(action) = action {
+            self.execute_command_action(action);
+        } else {
+            log::error!("Failed to parse command list");
+        }
+    }
+
+    pub fn execute_command_action(&mut self, action: CommandAction) {
+        match action {
+            CommandAction::SelectDataPoolItem(data_pool_item) => match &data_pool_item {
+                DataPoolItem::Group(id) => {
+                    let Some(group) = self.data_pools.group(*id) else {
+                        log::error!("Group {} not found", id);
+                        return;
+                    };
+
+                    let mut ids = group.fixtures.clone();
+                    self.programmer.selection.append(&mut ids);
+                }
+            },
+            CommandAction::ClearProgrammer => {
+                self.programmer.clear();
             }
         }
     }

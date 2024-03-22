@@ -6,7 +6,7 @@ use gpui::{
 };
 
 use crate::{
-    command::{Command, CommandList, ExecuteCommandList, RemoveCommand},
+    command::{Command, ExecuteCommandList, RemoveCommand},
     show::Show,
 };
 use screen::Screen;
@@ -36,12 +36,18 @@ impl Workspace {
     pub fn new(show: Model<Show>, cx: &mut ViewContext<Self>) -> Self {
         cx.observe(&show, |_, _, cx| cx.notify()).detach();
 
-        cx.observe_keystrokes(|event, cx| match event.keystroke.key.as_str() {
-            n @ ("1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "0") => {
-                let char = n.chars().next().unwrap();
-                CommandList::handle_digit_key(char, cx);
+        cx.observe_keystrokes({
+            let show = show.clone();
+            move |event, cx| match event.keystroke.key.as_str() {
+                n @ ("1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "0") => {
+                    let char = n.chars().next().unwrap();
+                    show.update(cx, |show, cx| {
+                        show.command_list.handle_digit_key(char);
+                        cx.notify();
+                    });
+                }
+                _ => {}
             }
-            _ => {}
         })
         .detach();
 
@@ -89,14 +95,20 @@ impl Workspace {
     }
 
     pub fn handle_command(&mut self, command: &Command, cx: &mut ViewContext<Self>) {
-        CommandList::push(command.clone(), cx);
-        if CommandList::is_complete(cx) {
-            CommandList::execute(self.show.clone(), cx);
-        }
+        self.show.update(cx, |show, cx| {
+            show.command_list.push(command.clone());
+            if show.command_list.is_complete() {
+                show.execute_command_list();
+            }
+            cx.notify();
+        });
     }
 
     pub fn handle_remove_command(&mut self, _event: &RemoveCommand, cx: &mut ViewContext<Self>) {
-        CommandList::remove_last(cx);
+        self.show.update(cx, |show, cx| {
+            show.command_list.remove_last();
+            cx.notify();
+        });
     }
 
     pub fn handle_execute_command_list(
@@ -104,7 +116,10 @@ impl Workspace {
         _action: &ExecuteCommandList,
         cx: &mut ViewContext<Self>,
     ) {
-        CommandList::execute(self.show.clone(), cx);
+        self.show.update(cx, |show, cx| {
+            show.execute_command_list();
+            cx.notify();
+        });
     }
 
     fn dmx_output_interval(&self, cx: &mut ViewContext<Self>) {

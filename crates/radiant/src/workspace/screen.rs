@@ -16,10 +16,10 @@ pub struct Screen {
 impl Screen {
     pub fn build(show: Model<Show>, cx: &mut ViewContext<Workspace>) -> View<Self> {
         cx.new_view(|cx| {
-            let layout = Layout::build(show, cx);
+            let layout = Layout::build(show.clone(), cx);
 
-            cx.observe_global::<CommandList>(|this: &mut Self, cx| {
-                this.command_list = CommandList::global(cx).clone();
+            cx.observe(&show, |this, show, cx| {
+                this.command_list = show.read(cx).command_list.clone();
                 cx.notify();
             })
             .detach();
@@ -33,11 +33,12 @@ impl Screen {
 }
 
 impl Render for Screen {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
         let content = self.layout.clone();
 
         let command_list = div().flex().gap_2().child("> ").children(
-            CommandList::commands(cx)
+            self.command_list
+                .commands()
                 .iter()
                 .map(|command| div().child(format!("{}", command))),
         );

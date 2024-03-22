@@ -6,10 +6,7 @@ use gpui::{
 
 use workspace::Workspace;
 
-use crate::{
-    command::{Command, CommandList},
-    show::Show,
-};
+use crate::{command::Command, show::Show};
 
 pub mod color;
 pub mod command;
@@ -27,8 +24,6 @@ fn main() {
 
     App::new().run(|cx: &mut AppContext| {
         let show = cx.new_model(|_cx| Show::default());
-        cx.set_global(CommandList::default());
-
         cx.text_system()
             .add_fonts(vec![
                 Assets.load("fonts/zed-sans/zed-sans-extended.ttf").unwrap(),
