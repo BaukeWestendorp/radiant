@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 
 use gpui::SharedString;
 
-use crate::command::{CommandAction, CommandList, DataPoolItem};
+use crate::command::{Command, CommandAction, CommandList, DataPoolItem};
 use crate::dmx::{DmxChannel, DmxOutput, DmxUniverse};
 use crate::dmx_protocols::DmxProtocols;
 
@@ -104,6 +104,10 @@ impl Show {
                 self.programmer.clear();
             }
         }
+    }
+
+    pub fn execute_commands(&mut self, commands: impl IntoIterator<Item = Command>) {
+        self.command_list.extend(commands)
     }
 
     pub fn update_dmx_output(&mut self) {

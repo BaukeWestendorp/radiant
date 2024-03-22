@@ -86,8 +86,7 @@ impl PoolWindowDelegate for GroupPoolWindowDelegate {
         Self: Sized,
     {
         self.show.update(cx, |show, _cx| {
-            show.command_list.extend([Command::Group, Command::Id(id)]);
-            show.execute_command_list();
+            show.execute_commands([Command::Group, Command::Id(id)])
         });
     }
 }
