@@ -3,7 +3,7 @@ use gpui::{
 };
 
 use crate::{
-    cmd::{Command, CommandList},
+    command::{Command, CommandList},
     show::{data_pools::DataPool, Show},
     workspace::layout::{window::Window, LayoutBounds},
 };

@@ -6,7 +6,7 @@ use gpui::{
 };
 
 use crate::{
-    cmd::{Command, CommandList, ExecuteCommandList, RemoveCommand},
+    command::{Command, CommandList, ExecuteCommandList, RemoveCommand},
     show::Show,
 };
 use screen::Screen;

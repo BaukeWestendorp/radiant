@@ -1,6 +1,6 @@
 use gpui::{actions, impl_actions, AppContext, Global, Model};
 
-use crate::{cmd::parser::CommandParser, show::Show};
+use crate::{command::parser::CommandParser, show::Show};
 
 use self::parser::ast::{Action, DataPoolItem};
 

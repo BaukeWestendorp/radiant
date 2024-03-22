@@ -7,12 +7,12 @@ use gpui::{
 use workspace::Workspace;
 
 use crate::{
-    cmd::{Command, CommandList},
+    command::{Command, CommandList},
     show::Show,
 };
 
-pub mod cmd;
 pub mod color;
+pub mod command;
 pub mod dmx;
 pub mod dmx_protocols;
 pub mod show;
@@ -45,8 +45,8 @@ fn main() {
             KeyBinding::new("cmd-q", Quit, None),
             KeyBinding::new("cmd-o", workspace::actions::OpenShow, Some("Workspace")),
             KeyBinding::new("cmd-s", workspace::actions::SaveShow, Some("Workspace")),
-            KeyBinding::new("enter", cmd::ExecuteCommandList, Some("Workspace")),
-            KeyBinding::new("backspace", cmd::RemoveCommand, Some("Workspace")),
+            KeyBinding::new("enter", command::ExecuteCommandList, Some("Workspace")),
+            KeyBinding::new("backspace", command::RemoveCommand, Some("Workspace")),
             KeyBinding::new("escape", Command::Clear, Some("Workspace")),
             KeyBinding::new("g", Command::Group, Some("Workspace")),
         ]);

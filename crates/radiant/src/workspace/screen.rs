@@ -2,7 +2,7 @@ use gpui::{
     div, rgb, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext, VisualContext,
 };
 
-use crate::cmd::CommandList;
+use crate::command::CommandList;
 use crate::show::Show;
 use crate::workspace::Workspace;
 
