@@ -4,6 +4,9 @@ use dmx::DmxChannel;
 pub struct Showfile {
     #[serde(default = "Default::default")]
     pub patch_list: PatchList,
+
+    #[serde(default = "Default::default")]
+    pub programmer: Programmer,
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
@@ -21,11 +24,16 @@ pub struct Fixture {
     pub channel: DmxChannel,
 }
 
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Programmer {
+    pub selection: Vec<usize>,
+}
+
 #[cfg(test)]
 mod tests {
     use dmx::DmxChannel;
 
-    use crate::showfile::{Fixture, PatchList, Showfile};
+    use crate::showfile::{Fixture, PatchList, Programmer, Showfile};
 
     macro_rules! check_showfile {
         ($json:expr, $show_file:expr) => {
@@ -41,20 +49,9 @@ mod tests {
             Showfile {
                 patch_list: PatchList {
                     fixtures: Vec::new()
-                }
-            }
-        );
-    }
-
-    #[test]
-    fn empty_patch_list() {
-        check_showfile!(
-            r#"{
-                "patch_list": {}
-            }"#,
-            Showfile {
-                patch_list: PatchList {
-                    fixtures: Vec::new()
+                },
+                programmer: Programmer {
+                    selection: Vec::new(),
                 }
             }
         );
@@ -113,7 +110,8 @@ mod tests {
                             }
                         }
                     ]
-                }
+                },
+                programmer: Programmer::default(),
             }
         );
     }

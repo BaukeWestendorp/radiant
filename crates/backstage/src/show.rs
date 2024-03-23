@@ -13,6 +13,9 @@ use crate::showfile::Showfile;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Show {
     patchlist: Patchlist,
+
+    programmer: Programmer,
+
     pub command_input: String,
 }
 
@@ -43,8 +46,13 @@ impl Show {
             patchlist.patch_fixture(fixture);
         }
 
+        let programmer = Programmer {
+            selection: showfile.programmer.selection,
+        };
+
         Self {
             patchlist,
+            programmer,
             command_input: "".to_string(),
         }
     }
@@ -61,11 +69,19 @@ impl Show {
             Some(instr) => match instr {
                 Instruction::Clear => {}
                 Instruction::Group(id) => todo!("Select Group {}", id),
-                Instruction::Fixture(id) => todo!("Select Fixture {}", id),
+                Instruction::Fixture(id) => {
+                    if !self.fixture_is_selected(*id) {
+                        self.programmer.selection.push(*id);
+                    }
+                }
             },
             None => {}
         }
         Ok(())
+    }
+
+    pub fn fixture_is_selected(&self, id: usize) -> bool {
+        self.programmer.selection.contains(&id)
     }
 }
 
@@ -109,6 +125,11 @@ pub struct Fixture {
     pub gdtf_description: Rc<GdtfDescription>,
     pub channel: DmxChannel,
     pub mode: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Programmer {
+    selection: Vec<usize>,
 }
 
 #[cfg(test)]
@@ -178,5 +199,49 @@ mod tests {
         );
 
         assert_eq!(show.patchlist.gdtf_descriptions.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_selecting_fixture_with_command() {
+        dotenv::dotenv().ok();
+        let user = env::var("GDTF_SHARE_API_USER").unwrap();
+        let password = env::var("GDTF_SHARE_API_PASSWORD").unwrap();
+
+        let showfile: Showfile = serde_json::from_str(
+            r#"{
+            "patch_list": {
+                "fixtures": [
+                    {
+                        "id": 420,
+                        "gdtf_share_revision_id": 60124,
+                        "label": "Front Wash 1",
+                        "mode": "Basic",
+                        "channel": {
+                            "address": 1,
+                            "universe": 2
+                        }
+                    },
+                    {
+                        "id": 12,
+                        "label": "Wash 2",
+                        "gdtf_share_revision_id": 60124,
+                        "mode": "Turned to 11",
+                        "channel": {
+                            "address": 5,
+                            "universe": 8
+                        }
+                    }
+                ]
+            }
+        }"#,
+        )
+        .unwrap();
+        let gdtf_share = GdtfShare::auth(user, password).await.unwrap();
+
+        let mut show = Show::new(showfile, gdtf_share).await;
+        show.command_input = "Fixture 420".to_string();
+        show.execute_command_input().unwrap();
+
+        assert_eq!(*show.programmer.selection.first().unwrap(), 420);
     }
 }
