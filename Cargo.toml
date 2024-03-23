@@ -3,7 +3,8 @@ members = [
     "crates/backstage",
     "crates/dmx",
     "crates/gdtf_share",
-    "crates/gdtf"
+    "crates/gdtf", 
+    "crates/radiant"
 ]
 resolver = "2"
 package.license = "MIT"

@@ -1,0 +1,15 @@
+[package]
+name = "radiant"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+dmx.workspace = true
+gdtf.workspace = true
+backstage.workspace = true
+
+env_logger.workspace = true
+gpui.workspace = true
+log.workspace = true
+thiserror.workspace = true
