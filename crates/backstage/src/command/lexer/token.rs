@@ -7,6 +7,7 @@ pub enum TokenKind {
 
     // Objects
     Group,
+    Fixture,
 
     Number,
 
@@ -19,8 +20,12 @@ impl std::fmt::Display for TokenKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
             Self::Clear => "Clear".to_string(),
+
             Self::Group => "Group".to_string(),
+            Self::Fixture => "Fixture".to_string(),
+
             Self::Number => "number".to_string(),
+
             Self::Whitespace => "whitespace".to_string(),
             Self::Invalid => "invalid".to_string(),
             Self::EndOfLine => "eol".to_string(),

@@ -1,20 +1,30 @@
 use std::fmt::Display;
 
-use self::parser::instructions::Instruction;
 use self::parser::{Parser, ParserResult};
 
 mod lexer;
 mod parser;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Span {
-    pub start: usize,
-    pub end: usize,
+pub enum Instruction {
+    Clear,
+    Group(usize),
+    Fixture(usize),
+}
+
+impl std::fmt::Display for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Instruction::Clear => write!(f, "Clear"),
+            Instruction::Group(id) => write!(f, "Group {}", id),
+            Instruction::Fixture(id) => write!(f, "Fixture {}", id),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Command {
-    instructions: Vec<Instruction>,
+    pub instructions: Vec<Instruction>,
 }
 
 impl Command {
@@ -38,6 +48,12 @@ impl Display for Command {
         }
         Ok(())
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Span {
+    pub start: usize,
+    pub end: usize,
 }
 
 #[cfg(test)]
@@ -67,6 +83,7 @@ mod tests {
     fn parse_string_to_instruction() {
         instructions!("Group 1", vec![Instruction::Group(1)]);
         instructions!("Group 42", vec![Instruction::Group(42)]);
+        instructions!("Fixture 42", vec![Instruction::Fixture(42)]);
 
         instructions!("Clear", vec![Instruction::Clear]);
     }

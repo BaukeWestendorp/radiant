@@ -1,44 +1,30 @@
 use crate::command::lexer::token::{Token, TokenKind};
+use crate::command::Instruction;
 
 use super::{Parser, ParserError, ParserErrorKind, ParserResult};
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Instruction {
-    Clear,
-    Group(usize),
-}
-
-impl std::fmt::Display for Instruction {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Instruction::Clear => write!(f, "Clear"),
-            Instruction::Group(id) => write!(f, "Group {}", id),
-        }
-    }
-}
 
 impl<'input, I> Parser<'input, I>
 where
     I: Iterator<Item = Token>,
 {
+    pub fn parse_instructions(&mut self) -> ParserResult<Vec<Instruction>> {
+        let mut instructions = vec![];
+        while self.peek() != TokenKind::EndOfLine {
+            let instruction = self.parse_instruction()?;
+            instructions.push(instruction)
+        }
+        Ok(instructions)
+    }
+
     pub fn parse_instruction(&mut self) -> ParserResult<Instruction> {
         match self.peek() {
             TokenKind::Clear => {
                 self.consume(TokenKind::Clear)?;
                 Ok(Instruction::Clear)
             }
-            TokenKind::Group => {
-                self.consume(TokenKind::Group)?;
-                let id = {
-                    let id_token = self.next().unwrap();
-                    let id_str = self.text(&id_token).to_string();
-                    id_str.parse().map_err(|_| ParserError {
-                        kind: ParserErrorKind::ExpectedId,
-                        token: Some(id_token),
-                    })
-                }?;
-
-                Ok(Instruction::Group(id))
+            TokenKind::Group | TokenKind::Fixture => {
+                let object = self.parse_object()?;
+                Ok(object)
             }
             TokenKind::Invalid => {
                 let invalid_token = self.consume(TokenKind::Invalid)?;
@@ -50,5 +36,34 @@ where
             }
             _ => unreachable!(),
         }
+    }
+
+    pub fn parse_object(&mut self) -> ParserResult<Instruction> {
+        let kind = self.peek();
+        let token = self.consume(kind)?;
+
+        let id = self.parse_id()?;
+
+        let instruction = match kind {
+            TokenKind::Group => Instruction::Group(id),
+            TokenKind::Fixture => Instruction::Fixture(id),
+            _ => {
+                return Err(ParserError {
+                    kind: ParserErrorKind::ExpectedObject,
+                    token: Some(token),
+                })
+            }
+        };
+
+        Ok(instruction)
+    }
+
+    pub fn parse_id(&mut self) -> ParserResult<usize> {
+        let id_token = self.next().unwrap();
+        let id_str = self.text(&id_token).to_string();
+        id_str.parse().map_err(|_| ParserError {
+            kind: ParserErrorKind::ExpectedId,
+            token: Some(id_token),
+        })
     }
 }

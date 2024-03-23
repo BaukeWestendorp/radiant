@@ -1,7 +1,5 @@
 use std::iter::Peekable;
 
-use self::instructions::Instruction;
-
 use super::lexer::token::{Token, TokenKind};
 use super::lexer::Lexer;
 
@@ -93,21 +91,28 @@ impl<'input> Parser<'input, TokenIter<'input>> {
             tokens: TokenIter::new(input).peekable(),
         }
     }
-
-    pub fn parse_instructions(&mut self) -> ParserResult<Vec<Instruction>> {
-        let mut instructions = vec![];
-        while self.peek() != TokenKind::EndOfLine {
-            let instruction = self.parse_instruction()?;
-            instructions.push(instruction)
-        }
-        Ok(instructions)
-    }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, thiserror::Error)]
 pub struct ParserError {
     pub kind: ParserErrorKind,
     pub token: Option<Token>,
+}
+
+impl std::fmt::Display for ParserError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let suffix = match &self.token {
+            Some(token) => format!(": {} (at char {})", token.kind, token.span.start),
+            None => "".to_string(),
+        };
+        match self.kind {
+            ParserErrorKind::UnexpectedToken => write!(f, "Unexpected token{}", suffix),
+            ParserErrorKind::UnexpectedEndOfLine => write!(f, "Unexpected end of line{}", suffix),
+            ParserErrorKind::ExpectedId => write!(f, "Expected id{}", suffix),
+            ParserErrorKind::ExpectedObject => write!(f, "Expected object{}", suffix),
+            ParserErrorKind::InvalidId => write!(f, "Invalid id{}", suffix),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -115,6 +120,7 @@ pub enum ParserErrorKind {
     UnexpectedToken,
     UnexpectedEndOfLine,
     ExpectedId,
+    ExpectedObject,
     InvalidId,
 }
 

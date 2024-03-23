@@ -44,8 +44,9 @@ pub fn get_rules() -> Vec<Rule> {
     }
 
     vec![
-        keyword!(TokenKind::Group),
         keyword!(TokenKind::Clear),
+        keyword!(TokenKind::Group),
+        keyword!(TokenKind::Fixture),
         regex!(TokenKind::Number, &INT_REGEX),
     ]
 }

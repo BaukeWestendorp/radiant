@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::rc::Rc;
@@ -6,11 +7,13 @@ use dmx::DmxChannel;
 use gdtf::GdtfDescription;
 use gdtf_share::GdtfShare;
 
+use crate::command::{Command, Instruction};
 use crate::showfile::Showfile;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Show {
     patchlist: Patchlist,
+    pub command_input: String,
 }
 
 impl Show {
@@ -22,7 +25,6 @@ impl Show {
             let gdtf_description = match patchlist.get_gdtf_description(rid) {
                 Some(description) => description,
                 None => {
-                    // FIXME: Make this async
                     let description_file = gdtf_share.download_file(rid).await.unwrap();
                     let reader = Cursor::new(description_file);
                     let description = GdtfDescription::from_archive_reader(reader).unwrap();
@@ -41,7 +43,29 @@ impl Show {
             patchlist.patch_fixture(fixture);
         }
 
-        Self { patchlist }
+        Self {
+            patchlist,
+            command_input: "".to_string(),
+        }
+    }
+
+    pub fn execute_command_input(&mut self) -> Result<()> {
+        let command = Command::parse(&self.command_input)?;
+        self.execute_command(command)?;
+        Ok(())
+    }
+
+    pub fn execute_command(&mut self, command: Command) -> Result<()> {
+        // FIXME: This command execution is quite ad-hoc for now.
+        match command.instructions.get(0) {
+            Some(instr) => match instr {
+                Instruction::Clear => {}
+                Instruction::Group(id) => todo!("Select Group {}", id),
+                Instruction::Fixture(id) => todo!("Select Fixture {}", id),
+            },
+            None => {}
+        }
+        Ok(())
     }
 }
 
