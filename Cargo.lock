@@ -27,23 +27,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "artnet"
-version = "0.1.0"
-dependencies = [
- "artnet_protocol",
-]
-
-[[package]]
-name = "artnet_protocol"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "536b2b9cae7ceb995cb11db1d5ec39b1eb305c557e36da01ea32de0c723920be"
-dependencies = [
- "bitflags 2.4.2",
- "byteorder",
-]
-
-[[package]]
 name = "autocfg"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

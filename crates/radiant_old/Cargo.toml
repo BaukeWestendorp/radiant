@@ -5,7 +5,6 @@ edition = "2021"
 license = "MIT"
 
 [dependencies]
-artnet.workspace = true
 dmx.workspace = true
 gdtf.workspace = true
 

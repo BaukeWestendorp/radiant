@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "crates/artnet",
     "crates/backstage",
     "crates/dmx",
     "crates/gdtf_share",
@@ -10,7 +9,6 @@ resolver = "2"
 package.license = "MIT"
 
 [workspace.dependencies]
-artnet = { path = "crates/artnet" }
 backstage = { path = "crates/backstage" }
 dmx = { path = "crates/dmx" }
 gdtf = { path = "crates/gdtf" }
