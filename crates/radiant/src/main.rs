@@ -5,7 +5,7 @@ use gpui::{actions, App, AppContext, KeyBinding, Menu, MenuItem};
 
 actions!(app, [Quit]);
 
-fn main() -> Result<()> {
+fn main() {
     env_logger::init();
     log::info!("Starting Radiant...");
 
@@ -24,8 +24,6 @@ fn main() -> Result<()> {
 
         log::info!("Radiant initialized");
     });
-
-    Ok(())
 }
 
 fn init_fonts(cx: &mut AppContext) -> Result<()> {
