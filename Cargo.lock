@@ -442,6 +442,8 @@ dependencies = [
  "dotenv",
  "gdtf",
  "gdtf_share",
+ "lazy_static",
+ "regex",
  "serde",
  "serde_json",
  "thiserror",
@@ -3363,7 +3365,9 @@ dependencies = [
  "env_logger 0.11.3",
  "gdtf",
  "gpui",
+ "lazy_static",
  "log",
+ "regex",
  "thiserror",
 ]
 

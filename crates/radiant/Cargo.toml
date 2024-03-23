@@ -13,3 +13,6 @@ env_logger.workspace = true
 gpui.workspace = true
 log.workspace = true
 thiserror.workspace = true
+regex.workspace = true
+
+lazy_static = "1.4.0"

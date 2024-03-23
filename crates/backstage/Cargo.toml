@@ -2,7 +2,7 @@
 name = "backstage"
 version = "0.1.0"
 edition = "2021"
-license.workspace = true
+license = "MIT"
 
 [dependencies]
 dmx.workspace = true
@@ -14,3 +14,6 @@ serde_json.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
+regex.workspace = true
+
+lazy_static = "1.4.0"
