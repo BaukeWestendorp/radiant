@@ -3,6 +3,10 @@ use assets::Assets;
 use gpui::AssetSource;
 use gpui::{actions, App, AppContext, KeyBinding, Menu, MenuItem};
 
+use crate::workspace::Workspace;
+
+pub mod workspace;
+
 actions!(app, [Quit]);
 
 fn main() {
@@ -21,6 +25,8 @@ fn main() {
         init_menu(cx);
 
         cx.on_action(quit);
+
+        Workspace::open_window(cx);
 
         log::info!("Radiant initialized");
     });
