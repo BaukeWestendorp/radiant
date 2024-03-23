@@ -15,8 +15,10 @@ gpui.workspace = true
 log.workspace = true
 serde_json.workspace = true
 serde.workspace = true
+regex.workspace = true
 
 gpui_assets = { package = "assets", git = "https://github.com/zed-industries/zed" }
 itertools = "0.12.1"
 rand = "0.8.5"
 smallvec = "1.6"
+lazy_static = "1.4.0"
