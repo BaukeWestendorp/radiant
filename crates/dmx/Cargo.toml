@@ -1,0 +1,10 @@
+[package]
+name = "dmx"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+
+[dependencies]
+log.workspace = true
+serde.workspace = true
+thiserror.workspace = true

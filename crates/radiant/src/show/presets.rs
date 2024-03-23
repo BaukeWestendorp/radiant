@@ -2,8 +2,6 @@ use std::collections::HashMap;
 
 use gpui::SharedString;
 
-use crate::dmx::color::DmxColor;
-
 #[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct Presets {
     colors: HashMap<usize, ColorPreset>,
@@ -61,11 +59,11 @@ pub enum AffectedAttributes {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ColorPreset {
     label: SharedString,
-    pub color: DmxColor,
+    pub color: u32,
 }
 
 impl ColorPreset {
-    pub fn new(label: &str, color: DmxColor) -> Self {
+    pub fn new(label: &str, color: u32) -> Self {
         Self {
             label: label.to_string().into(),
             color,

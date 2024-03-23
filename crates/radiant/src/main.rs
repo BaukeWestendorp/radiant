@@ -10,8 +10,6 @@ use crate::show::Show;
 
 pub mod color;
 pub mod command;
-pub mod dmx;
-pub mod dmx_protocols;
 pub mod show;
 pub mod ui;
 pub mod workspace;

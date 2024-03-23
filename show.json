@@ -7,19 +7,11 @@
     "colors": {
       "5": {
         "label": "Green",
-        "color": {
-          "red": 0,
-          "green": 255,
-          "blue": 0
-        }
+        "color": 65280
       },
       "4": {
         "label": "Yellow",
-        "color": {
-          "red": 255,
-          "green": 255,
-          "blue": 0
-        }
+        "color": 16776960
       }
     }
   },
@@ -157,16 +149,6 @@
           "universe": 1
         },
         "channel_values": {}
-      }
-    ]
-  },
-  "dmx_protocols": {
-    "artnet": [
-      {
-        "name": "GrandMA3",
-        "target_ip": "0.0.0.0",
-        "target_universe": 1,
-        "local_universe": 1
       }
     ]
   }

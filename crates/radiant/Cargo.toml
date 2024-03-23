@@ -8,6 +8,7 @@ license = "MIT"
 artnet.workspace = true
 assets.workspace = true
 gdtf.workspace = true
+dmx.workspace = true
 
 anyhow.workspace = true
 env_logger.workspace = true

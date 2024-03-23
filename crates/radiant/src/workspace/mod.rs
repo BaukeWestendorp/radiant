@@ -1,8 +1,6 @@
-use std::time::Duration;
-
 use gpui::{
     div, white, AppContext, FocusHandle, FocusableView, InteractiveElement, IntoElement, Model,
-    ParentElement, Render, Styled, Timer, View, ViewContext,
+    ParentElement, Render, Styled, View, ViewContext,
 };
 
 use crate::show::Show;
@@ -16,8 +14,6 @@ pub mod actions {
 
     actions!(workspace_actions, [OpenShow, SaveShow]);
 }
-
-const DMX_OUTPUT_RATE: Duration = Duration::from_millis(1000 / 40);
 
 pub struct Workspace {
     show: Model<Show>,
@@ -43,8 +39,6 @@ impl Workspace {
             focus_handle,
         };
 
-        this.dmx_output_interval(cx);
-
         this
     }
 
@@ -59,8 +53,6 @@ impl Workspace {
             }
             log::info!("Opened show file '{}'", Self::SHOW_FILE_PATH);
 
-            show.init();
-
             cx.notify();
         });
     }
@@ -74,22 +66,6 @@ impl Workspace {
                 log::error!("Failed to save show: {}", e);
             }
         }
-    }
-
-    fn dmx_output_interval(&self, cx: &mut ViewContext<Self>) {
-        cx.spawn(|this, mut cx| async move {
-            Timer::after(DMX_OUTPUT_RATE).await;
-            this.update(&mut cx, |this, cx| {
-                log::trace!("Outputting DMX data...");
-                this.show.update(cx, |show, _cx| {
-                    show.update_dmx_output();
-                    show.send_output_over_active_protocols();
-                });
-                this.dmx_output_interval(cx);
-            })
-            .unwrap();
-        })
-        .detach();
     }
 }
 

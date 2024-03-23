@@ -2,10 +2,9 @@ use std::collections::HashMap;
 
 use anyhow::anyhow;
 use assets::{AssetSource, Assets};
+use dmx::DmxChannel;
 use gdtf::{Attribute, FixtureType, GdtfDescription, Guid};
 use gpui::SharedString;
-
-use crate::dmx::DmxChannel;
 
 pub type FixtureId = usize;
 

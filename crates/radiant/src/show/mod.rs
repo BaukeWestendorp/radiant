@@ -2,9 +2,6 @@ use anyhow::{anyhow, Result};
 
 use gpui::SharedString;
 
-use crate::dmx::{DmxChannel, DmxOutput, DmxUniverse};
-use crate::dmx_protocols::DmxProtocols;
-
 use self::data_pools::DataPools;
 use self::layout::Layout;
 use self::patch::{FixtureId, PatchList};
@@ -24,12 +21,9 @@ pub struct Show {
     pub data_pools: DataPools,
     pub layout: Layout,
     pub patch_list: PatchList,
-    pub dmx_protocols: DmxProtocols,
 
     pub programmer: Programmer,
 
-    #[serde(skip)]
-    pub dmx_output: DmxOutput,
     #[serde(skip)]
     pub command_line: SharedString,
 }
@@ -49,54 +43,6 @@ impl Show {
         std::fs::write(path, show_json)
             .map_err(|e| anyhow!("Failed to write show file '{}': {}", path, e))?;
         Ok(())
-    }
-
-    pub fn init(&mut self) {
-        log::info!("Initializing show");
-
-        self.init_dmx_protocols();
-        self.init_dmx_output();
-    }
-
-    fn init_dmx_protocols(&mut self) {
-        log::info!("Initializing DMX protocols");
-        for artnet in self.dmx_protocols.artnet.iter_mut() {
-            artnet.open();
-        }
-    }
-
-    fn init_dmx_output(&mut self) {
-        log::info!("Initializing DMX output");
-        self.dmx_output = DmxOutput::new();
-        for fixture in self.patch_list.fixtures.iter() {
-            if let Some(patch) = &fixture.channel {
-                let universe = DmxUniverse::new(patch.universe).unwrap();
-                self.dmx_output.add_universe_if_absent(universe);
-            }
-        }
-    }
-
-    pub fn update_dmx_output(&mut self) {
-        for fixture in self.patch_list.fixtures.iter() {
-            let patch = match &fixture.channel {
-                Some(patch) => patch,
-                None => continue,
-            };
-
-            for (offset, value) in fixture.dmx_values(&self.patch_list).iter().enumerate() {
-                let channel = DmxChannel {
-                    universe: patch.universe,
-                    address: patch.address + offset as u16,
-                };
-                self.dmx_output.set_channel(channel, *value);
-            }
-        }
-    }
-
-    pub fn send_output_over_active_protocols(&self) {
-        for artnet in self.dmx_protocols.artnet.iter() {
-            artnet.send_dmx_universe(&self.dmx_output);
-        }
     }
 }
 

@@ -49,7 +49,7 @@ impl PoolWindowDelegate for ColorPoolWindowDelegate {
 
         match color {
             Some(color) => {
-                let rgba: Rgba = color.color.clone().into();
+                let rgba: Rgba = gpui::rgb(color.color);
                 let label = color.label().to_string();
 
                 Some(
