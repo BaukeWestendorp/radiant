@@ -1,5 +1,3 @@
-use anyhow::{anyhow, Result};
-
 use gpui::SharedString;
 
 use self::data_pools::DataPools;

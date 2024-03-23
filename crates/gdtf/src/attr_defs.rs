@@ -67,9 +67,10 @@ impl TryFrom<RawFeatureGroup> for FeatureGroup {
     type Error = Error;
 
     fn try_from(value: RawFeatureGroup) -> Result<Self, Self::Error> {
+        let name = parse_name(value.name)?;
         Ok(Self {
-            name: parse_name(value.name)?,
-            pretty_name: value.pretty,
+            name: name.clone(),
+            pretty_name: value.pretty.unwrap_or(name),
             features: value
                 .features
                 .into_iter()
@@ -133,9 +134,10 @@ impl TryFrom<RawAttribute> for Attribute {
     type Error = Error;
 
     fn try_from(value: RawAttribute) -> Result<Self, Self::Error> {
+        let name = parse_name(value.name).unwrap();
         Ok(Self {
-            name: parse_name(value.name).unwrap(),
-            pretty_name: value.pretty,
+            name: name.clone(),
+            pretty_name: value.pretty.unwrap_or(name),
             activation_group: value
                 .activation_group
                 .map(|ag| parse_node(ag))

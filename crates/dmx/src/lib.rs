@@ -54,7 +54,7 @@ impl DmxUniverse {
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct DmxChannel {
     pub universe: u16,
     pub address: u16,

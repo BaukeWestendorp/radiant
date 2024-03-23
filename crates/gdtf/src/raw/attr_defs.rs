@@ -108,7 +108,7 @@ pub struct RawFeatureGroup {
 
     /// The pretty name of the feature group.
     #[serde(rename = "Pretty")]
-    pub pretty: String,
+    pub pretty: Option<String>,
 
     #[serde(rename = "$value", default = "Vec::new")]
     pub features: Vec<RawFeature>,
@@ -155,7 +155,7 @@ pub struct RawAttribute {
 
     /// The pretty name of the attribute.
     #[serde(rename = "Pretty")]
-    pub pretty: String,
+    pub pretty: Option<String>,
 
     /// Optional link to the activation group. The starting point is the
     /// [ActivationGroups] node.

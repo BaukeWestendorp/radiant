@@ -26,12 +26,14 @@ pub struct RawDmxModes {
 /// DMX mode children are specified in
 /// [table 57](https://gdtf.eu/gdtf/file-spec/dmx-mode-collect/#table-57-dmx-mode-children).
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
+#[serde_inline_default]
 pub struct RawDmxMode {
     /// The unique name of the DMX mode
     #[serde(rename = "Name")]
     pub name: RawName,
 
     /// Description of the DMX mode
+    #[serde_inline_default("".to_string())]
     #[serde(rename = "Description")]
     pub description: String,
 
@@ -228,6 +230,7 @@ pub struct RawChannelFunction {
     /// This value is output as long as it is not
     /// overwritten by a cue for instance.
     #[serde(rename = "Default")]
+    #[serde_inline_default("0/1".to_string())]
     pub default: RawDmxValue,
 
     /// Physical start value; Default value: 0

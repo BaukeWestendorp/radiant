@@ -1,0 +1,16 @@
+[package]
+name = "backstage"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+
+[dependencies]
+dmx.workspace = true
+gdtf.workspace = true
+gdtf_share.workspace = true
+
+dotenv.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tokio.workspace = true

@@ -40,8 +40,8 @@ impl Display for Command {
     }
 }
 
-mod test {
-    #[cfg(test)]
+#[cfg(test)]
+mod tests {
     macro_rules! instructions {
         ($input:expr, $instructions:expr) => {{
             use crate::command::{Command, Instruction};
@@ -55,7 +55,6 @@ mod test {
         }};
     }
 
-    #[cfg(test)]
     macro_rules! error {
         ($input:expr, $error:expr) => {{
             use crate::command::Command;

@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use anyhow::anyhow;
 use assets::{AssetSource, Assets};
 use dmx::DmxChannel;
 use gdtf::{Attribute, FixtureType, GdtfDescription, Guid};

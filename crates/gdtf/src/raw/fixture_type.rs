@@ -31,6 +31,7 @@ pub struct RawFixtureType {
     pub manufacturer: String,
 
     /// Description of the fixture type.
+    #[serde_inline_default("".to_string())]
     #[serde(rename = "Description")]
     pub description: String,
 

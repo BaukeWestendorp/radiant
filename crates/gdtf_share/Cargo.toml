@@ -1,0 +1,15 @@
+[package]
+name = "gdtf_share"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+
+[dependencies]
+dotenv.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+
+reqwest = { version = "0.12", features = ["json", "cookies"] }
+bytes = "1.6.0"
