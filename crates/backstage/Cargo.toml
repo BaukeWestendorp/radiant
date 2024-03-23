@@ -9,6 +9,7 @@ dmx.workspace = true
 gdtf.workspace = true
 gdtf_share.workspace = true
 
+anyhow.workspace = true
 dotenv.workspace = true
 serde_json.workspace = true
 serde.workspace = true
@@ -17,4 +18,3 @@ tokio.workspace = true
 regex.workspace = true
 
 lazy_static = "1.4.0"
-anyhow = "1.0.81"

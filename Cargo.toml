@@ -15,6 +15,7 @@ dmx = { path = "crates/dmx" }
 gdtf = { path = "crates/gdtf" }
 gdtf_share = { path = "crates/gdtf_share"}
 
+anyhow = "1.0.81"
 dotenv = "0.15.0"
 env_logger = "0.11.3"
 gpui = { git = "https://github.com/zed-industries/zed" }

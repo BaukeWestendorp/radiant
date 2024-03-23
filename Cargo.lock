@@ -161,6 +161,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "assets"
+version = "0.1.0"
+source = "git+https://github.com/zed-industries/zed#7367350f41b98d575aebdfe2206c1723d154d8c9"
+dependencies = [
+ "anyhow",
+ "gpui",
+ "rust-embed",
+]
+
+[[package]]
 name = "async-broadcast"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3361,6 +3371,8 @@ dependencies = [
 name = "radiant"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "assets",
  "backstage",
  "dmx",
  "env_logger 0.11.3",
