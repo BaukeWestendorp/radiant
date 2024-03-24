@@ -8,16 +8,29 @@ mod parser;
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Instruction {
     Clear,
-    Group(usize),
-    Fixture(usize),
+    Select(Object),
 }
 
 impl std::fmt::Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             Instruction::Clear => write!(f, "Clear"),
-            Instruction::Group(id) => write!(f, "Group {}", id),
-            Instruction::Fixture(id) => write!(f, "Fixture {}", id),
+            Instruction::Select(object) => write!(f, "Group {object}"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Object {
+    Fixture(usize),
+    Group(usize),
+}
+
+impl std::fmt::Display for Object {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Object::Fixture(id) => write!(f, "Fixture {id}"),
+            Object::Group(id) => write!(f, "Group {id}"),
         }
     }
 }
@@ -58,6 +71,8 @@ pub struct Span {
 
 #[cfg(test)]
 mod tests {
+    use crate::command::Object;
+
     macro_rules! instructions {
         ($input:expr, $instructions:expr) => {{
             use crate::command::{Command, Instruction};
@@ -81,9 +96,18 @@ mod tests {
 
     #[test]
     fn parse_string_to_instruction() {
-        instructions!("Group 1", vec![Instruction::Group(1)]);
-        instructions!("Group 42", vec![Instruction::Group(42)]);
-        instructions!("Fixture 42", vec![Instruction::Fixture(42)]);
+        instructions!(
+            "Select Group 1",
+            vec![Instruction::Select(Object::Group(1))]
+        );
+        instructions!(
+            "Select Group 42",
+            vec![Instruction::Select(Object::Group(42))]
+        );
+        instructions!(
+            "Select Fixture 1",
+            vec![Instruction::Select(Object::Group(1))]
+        );
 
         instructions!("Clear", vec![Instruction::Clear]);
     }
@@ -95,7 +119,7 @@ mod tests {
         use crate::command::Span;
 
         error!(
-            "Group",
+            "Select Group",
             ParserError {
                 kind: ParserErrorKind::ExpectedId,
                 token: Some(Token {
@@ -106,7 +130,7 @@ mod tests {
         );
 
         error!(
-            "Group 1a",
+            "Select Group 1a",
             ParserError {
                 kind: ParserErrorKind::UnexpectedToken,
                 token: Some(Token {

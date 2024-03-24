@@ -1,5 +1,5 @@
 use crate::command::lexer::token::{Token, TokenKind};
-use crate::command::Instruction;
+use crate::command::{Instruction, Object};
 
 use super::{Parser, ParserError, ParserErrorKind, ParserResult};
 
@@ -22,9 +22,10 @@ where
                 self.consume(TokenKind::Clear)?;
                 Ok(Instruction::Clear)
             }
-            TokenKind::Group | TokenKind::Fixture => {
+            TokenKind::Select => {
+                self.consume(TokenKind::Select)?;
                 let object = self.parse_object()?;
-                Ok(object)
+                Ok(Instruction::Select(object))
             }
             TokenKind::Invalid => {
                 let invalid_token = self.consume(TokenKind::Invalid)?;
@@ -38,15 +39,15 @@ where
         }
     }
 
-    pub fn parse_object(&mut self) -> ParserResult<Instruction> {
+    pub fn parse_object(&mut self) -> ParserResult<Object> {
         let kind = self.peek();
         let token = self.consume(kind)?;
 
         let id = self.parse_id()?;
 
         let instruction = match kind {
-            TokenKind::Group => Instruction::Group(id),
-            TokenKind::Fixture => Instruction::Fixture(id),
+            TokenKind::Group => Object::Group(id),
+            TokenKind::Fixture => Object::Fixture(id),
             _ => {
                 return Err(ParserError {
                     kind: ParserErrorKind::ExpectedObject,
@@ -59,7 +60,7 @@ where
     }
 
     pub fn parse_id(&mut self) -> ParserResult<usize> {
-        let id_token = self.next().unwrap();
+        let id_token = self.next()?;
         let id_str = self.text(&id_token).to_string();
         id_str.parse().map_err(|_| ParserError {
             kind: ParserErrorKind::ExpectedId,

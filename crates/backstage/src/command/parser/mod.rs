@@ -56,22 +56,20 @@ where
     }
 
     /// Get the next token.
-    pub fn next(&mut self) -> Option<Token> {
-        self.tokens.next()
+    pub fn next(&mut self) -> ParserResult<Token> {
+        match self.tokens.next() {
+            Some(token) => Ok(token),
+            None => Err(ParserError {
+                kind: ParserErrorKind::UnexpectedEndOfLine,
+                token: None,
+            }),
+        }
     }
 
     /// Move forward one token in the input and check
     /// that we pass the kind of token we expect.
     pub fn consume(&mut self, expected: TokenKind) -> ParserResult<Token> {
-        let token = match self.next() {
-            Some(token) => token,
-            None => {
-                return Err(ParserError {
-                    kind: ParserErrorKind::UnexpectedEndOfLine,
-                    token: None,
-                })
-            }
-        };
+        let token = self.next()?;
 
         if token.kind != expected {
             return Err(ParserError {

@@ -4,6 +4,7 @@ use crate::command::Span;
 pub enum TokenKind {
     // Functions
     Clear,
+    Select,
 
     // Objects
     Group,
@@ -20,6 +21,7 @@ impl std::fmt::Display for TokenKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
             Self::Clear => "Clear".to_string(),
+            Self::Select => "Select".to_string(),
 
             Self::Group => "Group".to_string(),
             Self::Fixture => "Fixture".to_string(),

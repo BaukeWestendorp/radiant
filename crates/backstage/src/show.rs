@@ -7,7 +7,7 @@ use dmx::{DmxChannel, DmxOutput, DmxValue};
 use gdtf::GdtfDescription;
 use gdtf_share::GdtfShare;
 
-use crate::command::{Command, Instruction};
+use crate::command::{Command, Instruction, Object};
 use crate::playback_engine::PlaybackEngine;
 use crate::showfile::Showfile;
 
@@ -120,17 +120,19 @@ impl Show {
         match command.instructions.get(0) {
             Some(instr) => match instr {
                 Instruction::Clear => {}
-                Instruction::Group(id) => todo!("Select Group {}", id),
-                Instruction::Fixture(id) => {
-                    if !self.fixture_is_selected(*id) {
-                        if self.fixture_exists(*id) {
-                            self.programmer.selection.push(*id);
-                            log::info!("Selected Fixture {id}")
-                        } else {
-                            log::error!("Failed to select Fixture {id}: Fixture not found")
+                Instruction::Select(object) => match object {
+                    Object::Fixture(id) => {
+                        if !self.fixture_is_selected(*id) {
+                            if self.fixture_exists(*id) {
+                                self.programmer.selection.push(*id);
+                                log::info!("Selected Fixture {id}")
+                            } else {
+                                log::error!("Failed to select Fixture {id}: Fixture not found")
+                            }
                         }
                     }
-                }
+                    _ => todo!("Implement selecting other objects"),
+                },
             },
             None => {}
         }
