@@ -5,6 +5,7 @@ use gpui::{actions, App, AppContext, KeyBinding, Menu, MenuItem};
 
 use crate::workspace::Workspace;
 
+pub mod ui;
 pub mod workspace;
 
 actions!(app, [Quit]);
