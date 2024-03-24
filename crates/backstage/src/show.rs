@@ -68,7 +68,12 @@ impl Show {
                 Instruction::Group(id) => todo!("Select Group {}", id),
                 Instruction::Fixture(id) => {
                     if !self.fixture_is_selected(*id) {
-                        self.programmer.selection.push(*id);
+                        if self.fixture_exists(*id) {
+                            self.programmer.selection.push(*id);
+                            log::info!("Selected Fixture {id}")
+                        } else {
+                            log::error!("Failed to select Fixture {id}: Fixture not found")
+                        }
                     }
                 }
             },
@@ -79,6 +84,14 @@ impl Show {
 
     pub fn fixture_is_selected(&self, id: usize) -> bool {
         self.programmer.selection.contains(&id)
+    }
+
+    pub fn fixture_exists(&self, id: usize) -> bool {
+        self.get_fixture(id).is_some()
+    }
+
+    pub fn get_fixture(&self, id: usize) -> Option<&Fixture> {
+        self.patchlist.fixtures.iter().find(|f| f.id == id)
     }
 }
 

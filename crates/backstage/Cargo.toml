@@ -11,10 +11,11 @@ gdtf_share.workspace = true
 
 anyhow.workspace = true
 dotenv.workspace = true
+log.workspace = true
+regex.workspace = true
 serde_json.workspace = true
 serde.workspace = true
 thiserror.workspace = true
-regex.workspace = true
 
 lazy_static = "1.4.0"
 
