@@ -1,22 +1,20 @@
-use bytes::Bytes;
-
-use reqwest::{Client, StatusCode};
-
+use isahc::config::Configurable;
+use isahc::cookies::CookieJar;
+use isahc::http::StatusCode;
+use isahc::{AsyncReadResponseExt, HttpClient};
 const AUTH_URL: &'static str = "https://gdtf-share.com/apis/public/login.php";
 const GET_LIST_URL: &'static str = "https://gdtf-share.com/apis/public/getList.php";
 const DOWNLOAD_FILE_URL: &'static str = "https://gdtf-share.com/apis/public/downloadFile.php";
 
 #[derive(Debug, Clone)]
 pub struct GdtfShare {
-    client: Client,
+    client: HttpClient,
 }
 
 impl GdtfShare {
     pub async fn auth(user: String, password: String) -> Result<Self, Error> {
-        let client = reqwest::ClientBuilder::new()
-            .cookie_store(true)
-            .build()
-            .unwrap();
+        let jar = CookieJar::default();
+        let client = HttpClient::builder().cookie_jar(jar).build().unwrap();
 
         let response = send_auth_request(&client, user, password).await?;
         if !response.result {
@@ -42,21 +40,19 @@ impl GdtfShare {
         }
     }
 
-    pub async fn download_file(&self, rid: i32) -> Result<Bytes, Error> {
+    pub async fn download_file(&self, rid: i32) -> Result<Vec<u8>, Error> {
         send_download_file_request(&self.client, rid).await
     }
 }
 
 async fn send_auth_request(
-    client: &Client,
+    client: &HttpClient,
     user: String,
     password: String,
 ) -> Result<AuthResponse, Error> {
-    let params = [("user", user), ("password", password)];
+    let body = format!("user={user}&password={password}");
     client
-        .post(AUTH_URL)
-        .form(&params)
-        .send()
+        .post_async(AUTH_URL, body)
         .await
         .map_err(|e| Error::AuthFailed {
             message: e.to_string(),
@@ -68,10 +64,9 @@ async fn send_auth_request(
         })
 }
 
-async fn send_get_list_request(client: &Client) -> Result<ListResponse, Error> {
+async fn send_get_list_request(client: &HttpClient) -> Result<ListResponse, Error> {
     client
-        .get(GET_LIST_URL)
-        .send()
+        .get_async(GET_LIST_URL)
         .await
         .map_err(|_| Error::Unauthorized)?
         .json::<ListResponse>()
@@ -81,11 +76,9 @@ async fn send_get_list_request(client: &Client) -> Result<ListResponse, Error> {
         })
 }
 
-async fn send_download_file_request(client: &Client, rid: i32) -> Result<Bytes, Error> {
-    let response = client
-        .get(DOWNLOAD_FILE_URL)
-        .query(&[("rid", rid)])
-        .send()
+async fn send_download_file_request(client: &HttpClient, rid: i32) -> Result<Vec<u8>, Error> {
+    let mut response = client
+        .get_async(format!("{DOWNLOAD_FILE_URL}?rid={rid}"))
         .await
         .map_err(|_| Error::Unauthorized)?;
 
@@ -186,46 +179,45 @@ mod tests {
 
     use crate::{Error, GdtfShare};
 
-    #[tokio::test]
-    async fn test_auth_success() {
+    #[test]
+    fn test_auth_success() {
         dotenv::dotenv().ok();
         let user = env::var("TEST_GDTF_SHARE_API_USER").unwrap();
         let password = env::var("TEST_GDTF_SHARE_API_PASSWORD").unwrap();
 
-        let gdtf_share = GdtfShare::auth(user, password).await;
+        let gdtf_share = smol::block_on(GdtfShare::auth(user, password));
         assert!(gdtf_share.is_ok());
     }
 
-    #[tokio::test]
-    async fn test_auth_fail() {
+    #[test]
+    fn test_auth_fail() {
         dotenv::dotenv().ok();
         let user = "wrong_name".to_string();
         let password = "password123".to_string();
 
-        let gdtf_share = GdtfShare::auth(user, password).await;
+        let gdtf_share = smol::block_on(GdtfShare::auth(user, password));
         assert!(matches!(gdtf_share, Err(Error::AuthFailed { .. })));
     }
 
-    #[tokio::test]
-    async fn test_get_list_success() {
+    #[test]
+    fn test_get_list_success() {
         dotenv::dotenv().ok();
         let user = env::var("TEST_GDTF_SHARE_API_USER").unwrap();
         let password = env::var("TEST_GDTF_SHARE_API_PASSWORD").unwrap();
 
-        let gdtf_share = GdtfShare::auth(user, password).await.unwrap();
-        let list = gdtf_share.get_list().await;
+        let gdtf_share = smol::block_on(GdtfShare::auth(user, password)).unwrap();
+        let list = smol::block_on(gdtf_share.get_list());
         assert!(list.is_ok());
     }
 
-    #[tokio::test]
-    async fn test_download_file_success() {
+    #[test]
+    fn test_download_file_success() {
         dotenv::dotenv().ok();
         let user = env::var("TEST_GDTF_SHARE_API_USER").unwrap();
         let password = env::var("TEST_GDTF_SHARE_API_PASSWORD").unwrap();
 
-        let gdtf_share = GdtfShare::auth(user, password).await.unwrap();
-        let bytes = gdtf_share.download_file(347).await;
-        dbg!(&bytes);
+        let gdtf_share = smol::block_on(GdtfShare::auth(user, password)).unwrap();
+        let bytes = smol::block_on(gdtf_share.download_file(347));
         assert!(bytes.is_ok());
     }
 }
