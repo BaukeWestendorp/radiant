@@ -7,6 +7,7 @@ license = "MIT"
 [dependencies]
 dmx.workspace = true
 gdtf.workspace = true
+gdtf_share.workspace = true
 backstage.workspace = true
 
 anyhow.workspace = true
@@ -15,6 +16,7 @@ gpui.workspace = true
 log.workspace = true
 thiserror.workspace = true
 regex.workspace = true
+dotenv.workspace = true
 
 lazy_static = "1.4.0"
 assets = { package = "assets", git = "https://github.com/zed-industries/zed" }

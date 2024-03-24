@@ -1,47 +1,26 @@
 {
-  "patch_list": {
-    "fixtures": [
-      {
-        "id": 1,
-        "name": "LEDForce 7 RGBW 1",
-        "gdtf_revision_id": 36314,
-        
-        "mode_index": "Mode 1 RGBW + dim + strobe",
-        "channel": {
-          "address": 1,
-          "universe": 1
-        }
-      },
-      {
-        "id": 2,
-        "name": "LEDForce 7 RGBW 2",
-        "gdtf_revision_id": 36314,
-        "mode_index": "Mode 1 RGBW + dim + strobe",
-        "channel": {
-          "address": 7,
-          "universe": 1
-        }
-      },
-      {
-        "id": 3,
-        "name": "LEDForce 7 RGBW 3",
-        "gdtf_revision_id": 36314,
-        "mode_index": "Mode 1 RGBW + dim + strobe",
-        "channel": {
-          "address": 13,
-          "universe": 1
-        }
-      },
-      {
-        "id": 4,
-        "name": "LEDForce 7 RGBW 4",
-        "gdtf_revision_id": 36314,
-        "mode_index": "Mode 1 RGBW + dim + strobe",
-        "channel": {
-          "address": 19,
-          "universe": 1
-        }
-      }
-    ]
-  }
+    "patch_list": {
+        "fixtures": [
+            {
+                "id": 420,
+                "gdtf_share_revision_id": 60124,
+                "label": "Front Wash 1",
+                "mode": "Basic",
+                "channel": {
+                    "address": 1,
+                    "universe": 2
+                }
+            },
+            {
+                "id": 12,
+                "label": "Wash 2",
+                "gdtf_share_revision_id": 60124,
+                "mode": "Turned to 11",
+                "channel": {
+                    "address": 5,
+                    "universe": 8
+                }
+            }
+        ]
+    }
 }

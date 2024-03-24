@@ -15,8 +15,6 @@ pub struct Show {
     patchlist: Patchlist,
 
     programmer: Programmer,
-
-    pub command_input: String,
 }
 
 impl Show {
@@ -53,12 +51,11 @@ impl Show {
         Self {
             patchlist,
             programmer,
-            command_input: "".to_string(),
         }
     }
 
-    pub fn execute_command_input(&mut self) -> Result<()> {
-        let command = Command::parse(&self.command_input)?;
+    pub fn execute_command_str(&mut self, s: &str) -> Result<()> {
+        let command = Command::parse(s)?;
         self.execute_command(command)?;
         Ok(())
     }
@@ -239,8 +236,7 @@ mod tests {
         let gdtf_share = GdtfShare::auth(user, password).await.unwrap();
 
         let mut show = Show::new(showfile, gdtf_share).await;
-        show.command_input = "Fixture 420".to_string();
-        show.execute_command_input().unwrap();
+        show.execute_command_str("Fixture 420").unwrap();
 
         assert_eq!(*show.programmer.selection.first().unwrap(), 420);
     }

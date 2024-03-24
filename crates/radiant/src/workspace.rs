@@ -1,7 +1,15 @@
+use anyhow::Result;
+use backstage::show::Show;
+use backstage::showfile::Showfile;
+use gdtf_share::GdtfShare;
 use gpui::{
-    div, AppContext, FocusHandle, FocusableView, InteractiveElement, IntoElement, ParentElement,
-    Render, Styled, View, ViewContext, VisualContext, WindowContext, WindowHandle, WindowOptions,
+    div, AppContext, Context, FocusHandle, FocusableView, InteractiveElement, IntoElement, Model,
+    ParentElement, Render, Styled, Task, View, ViewContext, VisualContext, WindowContext,
+    WindowHandle, WindowOptions,
 };
+
+use std::env;
+use std::fs::File;
 
 use crate::ui::text_input::{self, TextInput};
 
@@ -12,16 +20,30 @@ pub struct Workspace {
 }
 
 impl Workspace {
-    pub fn open_window(cx: &mut AppContext) -> WindowHandle<Self> {
+    pub fn new(cx: &mut AppContext) -> Task<Result<WindowHandle<Self>>> {
         let window_options = WindowOptions::default();
 
-        cx.open_window(window_options, |cx| {
-            cx.new_view(|cx| Self {
-                command_line: CommandLine::build(cx),
-                focus_handle: cx.focus_handle(),
+        cx.spawn(move |mut cx| async move {
+            let show = get_show().await?;
+            let show_model = cx.new_model(|_cx| show)?;
+
+            cx.open_window(window_options, |cx| {
+                cx.new_view(|cx| Self {
+                    command_line: CommandLine::build(show_model, cx),
+                    focus_handle: cx.focus_handle(),
+                })
             })
         })
     }
+}
+
+async fn get_show() -> Result<Show> {
+    let file = File::open("show.json")?;
+    let showfile = Showfile::from_file(file)?;
+    let user = env::var("GDTF_SHARE_API_USER")?;
+    let password = env::var("GDTF_SHARE_API_PASSWORD")?;
+    let gdtf_share = GdtfShare::auth(user, password).await?;
+    Ok(Show::new(showfile, gdtf_share).await)
 }
 
 impl FocusableView for Workspace {
@@ -47,22 +69,29 @@ impl Render for Workspace {
 
 pub struct CommandLine {
     text_input: View<TextInput>,
+
+    show: Model<Show>,
 }
 
 impl CommandLine {
-    pub fn build(cx: &mut WindowContext) -> View<Self> {
+    pub fn build(show: Model<Show>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
             let text_input = cx.new_view(|cx| TextInput::new(None, "Command line", cx));
 
-            cx.subscribe(&text_input, |cmd_line, text_input, event, cx| match event {
-                text_input::Event::Submit(text) => text_input.update(cx, |text_input, cx| {
-                    text_input.clear(cx);
-                    dbg!("execute command {}", text);
-                }),
-            })
+            cx.subscribe(
+                &text_input,
+                |cmd_line: &mut CommandLine, text_input, event, cx| match event {
+                    text_input::Event::Submit(text) => text_input.update(cx, |text_input, cx| {
+                        text_input.clear(cx);
+                        cmd_line.show.update(cx, |show, _cx| {
+                            show.execute_command_str(text).unwrap();
+                        })
+                    }),
+                },
+            )
             .detach();
 
-            Self { text_input }
+            Self { text_input, show }
         })
     }
 }

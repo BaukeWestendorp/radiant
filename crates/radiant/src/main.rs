@@ -1,5 +1,6 @@
 use anyhow::Result;
 use assets::Assets;
+
 use gpui::AssetSource;
 use gpui::{actions, App, AppContext, KeyBinding, Menu, MenuItem};
 
@@ -13,6 +14,8 @@ actions!(app, [Quit]);
 
 fn main() {
     env_logger::init();
+    dotenv::dotenv().ok();
+
     log::info!("Starting Radiant...");
 
     App::new().run(|cx: &mut AppContext| {
@@ -28,7 +31,11 @@ fn main() {
 
         cx.on_action(quit);
 
-        Workspace::open_window(cx);
+        cx.spawn(move |cx| async move {
+            cx.update(|cx| Workspace::new(cx).detach_and_log_err(cx))
+                .ok();
+        })
+        .detach();
 
         log::info!("Radiant initialized");
     });
