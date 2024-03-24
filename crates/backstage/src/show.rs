@@ -105,6 +105,10 @@ impl Show {
         }
     }
 
+    pub fn executors(&self) -> &Vec<Executor> {
+        &self.executors
+    }
+
     pub fn execute_command_str(&mut self, s: &str) -> Result<()> {
         let command = Command::parse(s)?;
         self.execute_command(command)?;
@@ -133,6 +137,28 @@ impl Show {
         Ok(())
     }
 
+    pub fn get_fixture(&self, id: usize) -> Option<&Fixture> {
+        self.patchlist.fixtures.iter().find(|f| f.id == id)
+    }
+
+    pub fn get_fixtures_in_group(&self, id: usize) -> Vec<&Fixture> {
+        let Some(group) = self.get_group(id) else {
+            return Vec::new();
+        };
+
+        group
+            .fixtures
+            .iter()
+            .filter_map(|f| self.get_fixture(*f))
+            .collect()
+    }
+
+    pub fn get_fixtures_in_groups(&self, ids: impl IntoIterator<Item = usize>) -> Vec<&Fixture> {
+        ids.into_iter()
+            .flat_map(|id| self.get_fixtures_in_group(id))
+            .collect()
+    }
+
     pub fn fixture_is_selected(&self, id: usize) -> bool {
         self.programmer.selection.contains(&id)
     }
@@ -141,12 +167,16 @@ impl Show {
         self.get_fixture(id).is_some()
     }
 
-    pub fn get_fixture(&self, id: usize) -> Option<&Fixture> {
-        self.patchlist.fixtures.iter().find(|f| f.id == id)
+    pub fn get_group(&self, id: usize) -> Option<&Group> {
+        self.data.groups.iter().find(|g| g.id == id)
+    }
+
+    pub fn get_sequence(&self, id: usize) -> Option<&Sequence> {
+        self.data.sequences.iter().find(|s| s.id == id)
     }
 
     pub fn get_stage_output(&mut self) -> DmxOutput {
-        let playback = self.playback_engine.determine_dmx_output();
+        let playback = self.playback_engine.determine_dmx_output(self);
         playback
     }
 }
@@ -193,6 +223,67 @@ pub struct Fixture {
     pub mode: String,
 }
 
+impl Fixture {
+    pub fn attributes(&self) -> &Vec<gdtf::Attribute> {
+        &self
+            .gdtf_description
+            .fixture_type
+            .attribute_definitions
+            .attributes
+    }
+    pub fn attribute_offset(&self, attribute_name: &str) -> Option<Vec<i32>> {
+        self.get_dmx_channels_using_attribute(attribute_name)
+            .first()
+            .and_then(|channel| channel.offset.clone())
+    }
+
+    pub fn get_dmx_channels_using_attribute(&self, attribute_name: &str) -> Vec<&gdtf::DmxChannel> {
+        self.current_dmx_mode()
+            .dmx_channels
+            .iter()
+            .filter(|channel| {
+                channel
+                    .all_channel_functions()
+                    .iter()
+                    .any(|cf| cf.attribute(self.attributes()).name == attribute_name)
+            })
+            .collect()
+    }
+
+    pub fn get_channel_functions_using_attribute(
+        &self,
+        attribute_name: &str,
+    ) -> Vec<&gdtf::ChannelFunction> {
+        self.current_dmx_mode()
+            .all_channel_functions()
+            .iter()
+            .filter(|cf| cf.attribute(self.attributes()).name == attribute_name)
+            .map(|cf| *cf)
+            .collect()
+    }
+
+    pub fn current_dmx_mode(&self) -> &gdtf::DmxMode {
+        self.gdtf_description
+            .fixture_type
+            .dmx_modes
+            .iter()
+            .find(|mode| mode.name == self.mode)
+            .expect("fixture mode should always be set to a value in the GDTF file")
+    }
+
+    pub fn channel_resolution_for_attribute(&self, attribute_name: &str) -> Option<u8> {
+        let Some(offset) = self
+            .get_dmx_channels_using_attribute(attribute_name)
+            .first()
+            .and_then(|c| c.offset.clone())
+        else {
+            return None;
+        };
+
+        Some(offset.len().clamp(u8::MIN as usize, u8::MAX as usize) as u8)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Programmer {
     selection: Vec<usize>,
@@ -230,6 +321,12 @@ pub struct Executor {
     pub id: usize,
     pub sequence: Option<usize>,
     pub current_index: Option<usize>,
+}
+
+impl Executor {
+    pub fn is_running(&self) -> bool {
+        self.current_index.is_some()
+    }
 }
 
 #[cfg(test)]

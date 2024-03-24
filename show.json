@@ -5,20 +5,20 @@
                 "id": 1,
                 "gdtf_share_revision_id": 60124,
                 "label": "Front Wash 1",
-                "mode": "Basic",
+                "mode": "Standard mode",
                 "channel": {
-                    "address": 1,
-                    "universe": 2
+                    "address": 0,
+                    "universe": 0
                 }
             },
             {
                 "id": 2,
-                "label": "Wash 2",
+                "label": "Front Wash 2",
                 "gdtf_share_revision_id": 60124,
-                "mode": "Turned to 11",
+                "mode": "Standard mode",
                 "channel": {
-                    "address": 5,
-                    "universe": 8
+                    "address": 6,
+                    "universe": 0
                 }
             }
         ]
@@ -81,7 +81,7 @@
         {
             "id": 1,
             "sequence": 1,
-            "current_index": null
+            "current_index": 0
         }
     ]
 }

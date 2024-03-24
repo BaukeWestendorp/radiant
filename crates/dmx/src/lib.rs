@@ -148,6 +148,12 @@ impl DmxValue {
     pub fn new(value: u32) -> Self {
         Self(value)
     }
+
+    pub fn raw_values_for_channel_resolution(&self, channel_resolution: u8) -> Vec<u8> {
+        let mut bytes = self.0.to_le_bytes().to_vec();
+        bytes.truncate(channel_resolution as usize);
+        bytes
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
