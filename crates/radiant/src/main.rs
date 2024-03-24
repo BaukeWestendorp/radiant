@@ -3,6 +3,7 @@ use assets::Assets;
 use gpui::AssetSource;
 use gpui::{actions, App, AppContext, KeyBinding, Menu, MenuItem};
 
+use crate::ui::text_input;
 use crate::workspace::Workspace;
 
 pub mod ui;
@@ -44,7 +45,12 @@ fn init_fonts(cx: &mut AppContext) -> Result<()> {
 fn init_keybinds(cx: &mut AppContext) -> Result<()> {
     // FIXME: Get the keybindings from a keybinds file.
 
-    cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
+    cx.bind_keys([
+        KeyBinding::new("cmd-q", Quit, None),
+        KeyBinding::new("enter", text_input::Enter, Some("TextInput")),
+        KeyBinding::new("backspace", text_input::Backspace, Some("TextInput")),
+        KeyBinding::new("delete", text_input::Delete, Some("TextInput")),
+    ]);
 
     log::info!("Initialized keybindings");
 

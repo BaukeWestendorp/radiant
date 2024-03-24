@@ -3,7 +3,7 @@ use gpui::{
     Render, Styled, View, ViewContext, VisualContext, WindowContext, WindowHandle, WindowOptions,
 };
 
-use crate::ui::editor::TextInput;
+use crate::ui::text_input::{self, TextInput};
 
 pub struct Workspace {
     command_line: View<CommandLine>,
@@ -51,14 +51,24 @@ pub struct CommandLine {
 
 impl CommandLine {
     pub fn build(cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|cx| Self {
-            text_input: cx.new_view(|cx| TextInput::new(None, "Command line", cx)),
+        cx.new_view(|cx| {
+            let text_input = cx.new_view(|cx| TextInput::new(None, "Command line", cx));
+
+            cx.subscribe(&text_input, |cmd_line, text_input, event, cx| match event {
+                text_input::Event::Submit(text) => text_input.update(cx, |text_input, cx| {
+                    text_input.clear(cx);
+                    dbg!("execute command {}", text);
+                }),
+            })
+            .detach();
+
+            Self { text_input }
         })
     }
 }
 
 impl Render for CommandLine {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .size_full()
             .border_t()
