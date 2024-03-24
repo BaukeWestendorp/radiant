@@ -11,12 +11,20 @@ use gpui::{
 use std::env;
 use std::fs::File;
 
+pub mod action {
+    use gpui::actions;
+
+    actions!(workspace, [Debug]);
+}
+
 use crate::ui::text_input::{self, TextInput};
 
 pub struct Workspace {
     command_line: View<CommandLine>,
 
     focus_handle: FocusHandle,
+
+    show: Model<Show>,
 }
 
 impl Workspace {
@@ -29,10 +37,18 @@ impl Workspace {
 
             cx.open_window(window_options, |cx| {
                 cx.new_view(|cx| Self {
-                    command_line: CommandLine::build(show_model, cx),
+                    command_line: CommandLine::build(show_model.clone(), cx),
                     focus_handle: cx.focus_handle(),
+                    show: show_model,
                 })
             })
+        })
+    }
+
+    fn debug(&mut self, _: &action::Debug, cx: &mut ViewContext<Self>) {
+        self.show.update(cx, |show, _cx| {
+            let stage_output = show.get_stage_output();
+            log::debug!("{:?}", stage_output);
         })
     }
 }
@@ -53,11 +69,12 @@ impl FocusableView for Workspace {
 }
 
 impl Render for Workspace {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .track_focus(&self.focus_handle)
             .key_context("Workspace")
             .font("Zed Sans")
+            .on_action(cx.listener(Self::debug))
             .text_color(gpui::white())
             .size_full()
             .flex()

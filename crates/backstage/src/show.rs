@@ -3,11 +3,12 @@ use std::collections::HashMap;
 use std::io::Cursor;
 use std::rc::Rc;
 
-use dmx::DmxChannel;
+use dmx::{DmxChannel, DmxOutput};
 use gdtf::GdtfDescription;
 use gdtf_share::GdtfShare;
 
 use crate::command::{Command, Instruction};
+use crate::playback_engine::PlaybackEngine;
 use crate::showfile::Showfile;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -15,6 +16,8 @@ pub struct Show {
     patchlist: Patchlist,
 
     programmer: Programmer,
+
+    playback_engine: PlaybackEngine,
 }
 
 impl Show {
@@ -51,6 +54,7 @@ impl Show {
         Self {
             patchlist,
             programmer,
+            playback_engine: PlaybackEngine::new(),
         }
     }
 
@@ -92,6 +96,11 @@ impl Show {
 
     pub fn get_fixture(&self, id: usize) -> Option<&Fixture> {
         self.patchlist.fixtures.iter().find(|f| f.id == id)
+    }
+
+    pub fn get_stage_output(&mut self) -> DmxOutput {
+        let playback = self.playback_engine.determine_dmx_output();
+        playback
     }
 }
 

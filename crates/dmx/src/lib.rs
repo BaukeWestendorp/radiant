@@ -1,21 +1,55 @@
+use std::collections::HashMap;
 use std::fmt::Display;
 use std::str::FromStr;
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
+pub struct DmxOutput(HashMap<usize, DmxUniverse>);
+
+impl DmxOutput {
+    pub fn new() -> Self {
+        Self(HashMap::new())
+    }
+
+    /// Removes a universe from the output. `id` is zero-based.
+    pub fn remove_universe(&mut self, id: usize) {
+        self.0.remove(&id);
+    }
+
+    /// Sets the value at a channel. Universe and address are zero-based.
+    pub fn set_channel(&mut self, channel: &DmxChannel, value: u8) -> Result<(), Error> {
+        let universe = channel.universe as usize;
+
+        if !self.0.contains_key(&universe) {
+            self.0.insert(universe, DmxUniverse::new(channel.universe)?);
+        }
+
+        if let Some(channel_value) = self
+            .0
+            .get_mut(&universe)
+            .unwrap()
+            .channels
+            .get_mut(channel.address as usize)
+        {
+            *channel_value = value
+        } else {
+            return Err(Error::ChannelNotFound(*channel));
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct DmxUniverse {
     id: u16,
-    channels: Vec<u8>,
+    channels: [u8; 512],
 }
 
 impl DmxUniverse {
     pub fn new(id: u16) -> Result<Self, Error> {
-        if id == 0 {
-            return Err(Error::InvalidUniverseRange(id.into()));
-        }
-
         Ok(DmxUniverse {
             id,
-            channels: Vec::with_capacity(512),
+            channels: [0; 512],
         })
     }
 
@@ -49,7 +83,7 @@ impl DmxUniverse {
         Some(self.channels[channel as usize])
     }
 
-    pub fn get_channels(&self) -> &Vec<u8> {
+    pub fn get_channels(&self) -> &[u8; 512] {
         &self.channels
     }
 }
@@ -62,11 +96,7 @@ pub struct DmxChannel {
 
 impl DmxChannel {
     pub fn new(universe: u16, address: u16) -> Result<Self, Error> {
-        if universe == 0 {
-            return Err(Error::InvalidUniverseRange(universe.into()));
-        }
-
-        if address == 0 || address > 512 {
+        if address > 511 {
             return Err(Error::InvalidAddressRange(address.into()));
         }
 
@@ -104,6 +134,16 @@ impl Display for DmxChannel {
     }
 }
 
+#[macro_export]
+macro_rules! channel {
+    ($universe:expr, $address:expr) => {
+        dmx::DmxChannel::new($universe, $address)
+    };
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct DmxValue(u32);
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Invalid channel string: '{0}'")]
@@ -112,4 +152,6 @@ pub enum Error {
     InvalidUniverseRange(i64),
     #[error("Invalid address range: {0}. An address should be within 0 and 512.")]
     InvalidAddressRange(i64),
+    #[error("Channel not found: {0}")]
+    ChannelNotFound(DmxChannel),
 }
