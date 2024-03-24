@@ -80,18 +80,30 @@ impl CommandLine {
 
             cx.subscribe(
                 &text_input,
-                |cmd_line: &mut CommandLine, text_input, event, cx| match event {
-                    text_input::Event::Submit(text) => text_input.update(cx, |text_input, cx| {
-                        text_input.clear(cx);
-                        cmd_line.show.update(cx, |show, _cx| {
-                            show.execute_command_str(text).unwrap();
-                        })
-                    }),
+                |cmd_line: &mut CommandLine, _text_input, event, cx| match event {
+                    text_input::Event::Submit(input) => {
+                        cmd_line.handle_submit_command_input(input, cx)
+                    }
                 },
             )
             .detach();
 
             Self { text_input, show }
+        })
+    }
+
+    fn handle_submit_command_input(&mut self, input: &str, cx: &mut WindowContext) {
+        if input.is_empty() {
+            return;
+        }
+
+        self.text_input.update(cx, |text_input, cx| {
+            text_input.clear(cx);
+            self.show.update(cx, |show, _cx| {
+                if let Err(err) = show.execute_command_str(input) {
+                    log::error!("Failed to execute command: {}", err.to_string())
+                }
+            })
         })
     }
 }
