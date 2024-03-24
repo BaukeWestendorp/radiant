@@ -14,6 +14,9 @@ pub struct Showfile {
 
     #[serde(default = "Default::default")]
     pub data: Data,
+
+    #[serde(default = "Default::default")]
+    pub executors: Vec<Executor>,
 }
 
 impl Showfile {
@@ -71,13 +74,22 @@ pub struct Cue {
     pub attribute_values: HashMap<String, DmxValue>,
 }
 
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Executor {
+    pub id: usize,
+    pub sequence: Option<usize>,
+    pub current_index: Option<usize>,
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
 
     use dmx::{DmxChannel, DmxValue};
 
-    use crate::showfile::{Cue, Data, Fixture, Group, PatchList, Programmer, Sequence, Showfile};
+    use crate::showfile::{
+        Cue, Data, Executor, Fixture, Group, PatchList, Programmer, Sequence, Showfile,
+    };
 
     macro_rules! check_showfile {
         ($json:expr, $show_file:expr) => {
@@ -100,13 +112,14 @@ mod tests {
                 data: Data {
                     groups: Vec::new(),
                     sequences: Vec::new(),
-                }
+                },
+                executors: Vec::new()
             }
         );
     }
 
     #[test]
-    fn with_fixtures() {
+    fn filled() {
         check_showfile!(
             r#"{
                 "patch_list": {
@@ -186,7 +199,14 @@ mod tests {
                             ]
                         }
                     ]
-                }
+                },
+                "executors": [
+                    {
+                        "id": 1,
+                        "sequence": 1,
+                        "current_index": null
+                    }
+                ]
             }"#,
             Showfile {
                 patch_list: PatchList {
@@ -271,7 +291,12 @@ mod tests {
                             }
                         ]
                     },]
-                }
+                },
+                executors: vec![Executor {
+                    id: 1,
+                    sequence: Some(1),
+                    current_index: None
+                }]
             }
         );
     }

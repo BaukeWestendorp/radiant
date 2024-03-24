@@ -20,6 +20,8 @@ pub struct Show {
     playback_engine: PlaybackEngine,
 
     data: Data,
+
+    executors: Vec<Executor>,
 }
 
 impl Show {
@@ -84,11 +86,22 @@ impl Show {
                 .collect(),
         };
 
+        let executors = showfile
+            .executors
+            .into_iter()
+            .map(|executor| Executor {
+                id: executor.id,
+                sequence: executor.sequence,
+                current_index: executor.current_index,
+            })
+            .collect();
+
         Self {
             patchlist,
             programmer,
             playback_engine: PlaybackEngine::new(),
             data,
+            executors,
         }
     }
 
@@ -210,6 +223,13 @@ pub struct Cue {
     pub groups: Vec<usize>,
     pub label: String,
     pub attribute_values: HashMap<String, DmxValue>,
+}
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Executor {
+    pub id: usize,
+    pub sequence: Option<usize>,
+    pub current_index: Option<usize>,
 }
 
 #[cfg(test)]
