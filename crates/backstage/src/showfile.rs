@@ -1,7 +1,8 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufReader};
 
-use dmx::DmxChannel;
+use dmx::{DmxChannel, DmxValue};
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Showfile {
@@ -10,6 +11,9 @@ pub struct Showfile {
 
     #[serde(default = "Default::default")]
     pub programmer: Programmer,
+
+    #[serde(default = "Default::default")]
+    pub data: Data,
 }
 
 impl Showfile {
@@ -40,11 +44,40 @@ pub struct Programmer {
     pub selection: Vec<usize>,
 }
 
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Data {
+    pub groups: Vec<Group>,
+    pub sequences: Vec<Sequence>,
+}
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Group {
+    pub id: usize,
+    pub label: String,
+    pub fixtures: Vec<usize>,
+}
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Sequence {
+    pub id: usize,
+    pub label: String,
+    pub cues: Vec<Cue>,
+}
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Cue {
+    pub groups: Vec<usize>,
+    pub label: String,
+    pub attribute_values: HashMap<String, DmxValue>,
+}
+
 #[cfg(test)]
 mod tests {
-    use dmx::DmxChannel;
+    use std::collections::HashMap;
 
-    use crate::showfile::{Fixture, PatchList, Programmer, Showfile};
+    use dmx::{DmxChannel, DmxValue};
+
+    use crate::showfile::{Cue, Data, Fixture, Group, PatchList, Programmer, Sequence, Showfile};
 
     macro_rules! check_showfile {
         ($json:expr, $show_file:expr) => {
@@ -63,6 +96,10 @@ mod tests {
                 },
                 programmer: Programmer {
                     selection: Vec::new(),
+                },
+                data: Data {
+                    groups: Vec::new(),
+                    sequences: Vec::new(),
                 }
             }
         );
@@ -95,6 +132,60 @@ mod tests {
                             }
                         }
                     ]
+                },
+                "data": {
+                    "groups": [
+                        {
+                            "id": 1,
+                            "label": "Even",
+                            "fixtures": [1]
+                        },
+                        {
+                            "id": 2,
+                            "label": "Odd",
+                            "fixtures": [2]
+                        },
+                        {
+                            "id": 3,
+                            "label": "All",
+                            "fixtures": [1, 2]
+                        }
+                    ],
+                    "sequences": [
+                        {
+                            "id": 1,
+                            "label": "Switch",
+                            "cues": [
+                                {
+                                    "groups": [1],
+                                    "label": "Cue 1",
+                                    "attribute_values": {
+                                        "ColorAdd_R": 255,
+                                        "ColorAdd_G": 16,
+                                        "ColorAdd_B": 127
+                                    }
+                                },
+                                {
+                                    "groups": [2],
+                                    "label": "Cue 2",
+                                    "attribute_values": {
+                                        "ColorAdd_R": 32,
+                                        "ColorAdd_G": 255,
+                                        "ColorAdd_B": 16
+                                    }
+                                },
+                                {
+                                    "groups": [3],
+                                    "label": "Cue 3",
+                                    "attribute_values": {
+                                        "ColorAdd_R": 255,
+                                        "ColorAdd_G": 255,
+                                        "ColorAdd_B": 255
+                                    }
+                                }
+                            ]
+                        }
+                    ]
                 }
             }"#,
             Showfile {
@@ -123,6 +214,64 @@ mod tests {
                     ]
                 },
                 programmer: Programmer::default(),
+                data: Data {
+                    groups: vec![
+                        Group {
+                            id: 1,
+                            label: "Even".to_string(),
+                            fixtures: vec![1]
+                        },
+                        Group {
+                            id: 2,
+                            label: "Odd".to_string(),
+                            fixtures: vec![2]
+                        },
+                        Group {
+                            id: 3,
+                            label: "All".to_string(),
+                            fixtures: vec![1, 2]
+                        }
+                    ],
+                    sequences: vec![Sequence {
+                        id: 1,
+                        label: "Switch".to_string(),
+                        cues: vec![
+                            Cue {
+                                groups: vec![1],
+                                label: "Cue 1".to_string(),
+                                attribute_values: {
+                                    let mut map = HashMap::new();
+                                    map.insert("ColorAdd_R".to_string(), DmxValue::new(255));
+                                    map.insert("ColorAdd_G".to_string(), DmxValue::new(16));
+                                    map.insert("ColorAdd_B".to_string(), DmxValue::new(127));
+                                    map
+                                }
+                            },
+                            Cue {
+                                groups: vec![2],
+                                label: "Cue 2".to_string(),
+                                attribute_values: {
+                                    let mut map = HashMap::new();
+                                    map.insert("ColorAdd_R".to_string(), DmxValue::new(32));
+                                    map.insert("ColorAdd_G".to_string(), DmxValue::new(255));
+                                    map.insert("ColorAdd_B".to_string(), DmxValue::new(16));
+                                    map
+                                }
+                            },
+                            Cue {
+                                groups: vec![3],
+                                label: "Cue 3".to_string(),
+                                attribute_values: {
+                                    let mut map = HashMap::new();
+                                    map.insert("ColorAdd_R".to_string(), DmxValue::new(255));
+                                    map.insert("ColorAdd_G".to_string(), DmxValue::new(255));
+                                    map.insert("ColorAdd_B".to_string(), DmxValue::new(255));
+                                    map
+                                }
+                            }
+                        ]
+                    },]
+                }
             }
         );
     }

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::io::Cursor;
 use std::rc::Rc;
 
-use dmx::{DmxChannel, DmxOutput};
+use dmx::{DmxChannel, DmxOutput, DmxValue};
 use gdtf::GdtfDescription;
 use gdtf_share::GdtfShare;
 
@@ -18,6 +18,8 @@ pub struct Show {
     programmer: Programmer,
 
     playback_engine: PlaybackEngine,
+
+    data: Data,
 }
 
 impl Show {
@@ -51,10 +53,42 @@ impl Show {
             selection: showfile.programmer.selection,
         };
 
+        let data = Data {
+            groups: showfile
+                .data
+                .groups
+                .into_iter()
+                .map(|group| Group {
+                    id: group.id,
+                    label: group.label,
+                    fixtures: group.fixtures,
+                })
+                .collect(),
+            sequences: showfile
+                .data
+                .sequences
+                .into_iter()
+                .map(|sequence| Sequence {
+                    id: sequence.id,
+                    label: sequence.label,
+                    cues: sequence
+                        .cues
+                        .into_iter()
+                        .map(|cue| Cue {
+                            groups: cue.groups,
+                            label: cue.label,
+                            attribute_values: cue.attribute_values,
+                        })
+                        .collect(),
+                })
+                .collect(),
+        };
+
         Self {
             patchlist,
             programmer,
             playback_engine: PlaybackEngine::new(),
+            data,
         }
     }
 
@@ -149,6 +183,33 @@ pub struct Fixture {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Programmer {
     selection: Vec<usize>,
+}
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Data {
+    pub groups: Vec<Group>,
+    pub sequences: Vec<Sequence>,
+}
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Group {
+    pub id: usize,
+    pub label: String,
+    pub fixtures: Vec<usize>,
+}
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Sequence {
+    pub id: usize,
+    pub label: String,
+    pub cues: Vec<Cue>,
+}
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Cue {
+    pub groups: Vec<usize>,
+    pub label: String,
+    pub attribute_values: HashMap<String, DmxValue>,
 }
 
 #[cfg(test)]

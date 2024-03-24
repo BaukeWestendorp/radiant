@@ -38,7 +38,7 @@
             {
                 "id": 3,
                 "label": "All",
-                "fixtures": [3]
+                "fixtures": [1, 2]
             }
         ],
         "sequences": [
@@ -48,6 +48,7 @@
                 "cues": [
                     {
                         "groups": [1],
+                        "label": "Cue 1",
                         "attribute_values": {
                             "ColorAdd_R": 255,
                             "ColorAdd_G": 16,
@@ -56,6 +57,7 @@
                     },
                     {
                         "groups": [2],
+                        "label": "Cue 2",
                         "attribute_values": {
                             "ColorAdd_R": 32,
                             "ColorAdd_G": 255,
@@ -64,6 +66,7 @@
                     },
                     {
                         "groups": [1, 2],
+                        "label": "Cue 3",
                         "attribute_values": {
                             "ColorAdd_R": 255,
                             "ColorAdd_G": 255,

@@ -144,6 +144,12 @@ macro_rules! channel {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct DmxValue(u32);
 
+impl DmxValue {
+    pub fn new(value: u32) -> Self {
+        Self(value)
+    }
+}
+
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Invalid channel string: '{0}'")]
