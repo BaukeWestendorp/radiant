@@ -2,7 +2,7 @@
     "patch_list": {
         "fixtures": [
             {
-                "id": 420,
+                "id": 1,
                 "gdtf_share_revision_id": 60124,
                 "label": "Front Wash 1",
                 "mode": "Basic",
@@ -12,7 +12,7 @@
                 }
             },
             {
-                "id": 12,
+                "id": 2,
                 "label": "Wash 2",
                 "gdtf_share_revision_id": 60124,
                 "mode": "Turned to 11",
@@ -20,6 +20,57 @@
                     "address": 5,
                     "universe": 8
                 }
+            }
+        ]
+    },
+    "data": {
+        "groups": [
+            {
+                "id": 1,
+                "label": "Even",
+                "fixtures": [1]
+            },
+            {
+                "id": 2,
+                "label": "Odd",
+                "fixtures": [2]
+            },
+            {
+                "id": 3,
+                "label": "All",
+                "fixtures": [3]
+            }
+        ],
+        "sequences": [
+            {
+                "id": 1,
+                "label": "Switch",
+                "cues": [
+                    {
+                        "groups": [1],
+                        "attribute_values": {
+                            "ColorAdd_R": 255,
+                            "ColorAdd_G": 16,
+                            "ColorAdd_B": 127
+                        }
+                    },
+                    {
+                        "groups": [2],
+                        "attribute_values": {
+                            "ColorAdd_R": 32,
+                            "ColorAdd_G": 255,
+                            "ColorAdd_B": 16
+                        }
+                    },
+                    {
+                        "groups": [1, 2],
+                        "attribute_values": {
+                            "ColorAdd_R": 255,
+                            "ColorAdd_G": 255,
+                            "ColorAdd_B": 255
+                        }
+                    }
+                ]
             }
         ]
     }
