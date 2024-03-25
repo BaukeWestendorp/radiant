@@ -98,6 +98,7 @@ impl Show {
                 id: executor.id,
                 sequence: executor.sequence,
                 current_index: Cell::new(executor.current_index),
+                r#loop: executor.r#loop,
                 button_1: ExecutorButton {
                     action: match executor.button_1.action {
                         showfile::ExecutorButtonAction::Go => ExecutorButtonAction::Go,
@@ -411,6 +412,7 @@ pub struct Executor {
     pub id: usize,
     pub sequence: Option<usize>,
     pub current_index: Cell<Option<usize>>,
+    pub r#loop: bool,
     pub button_1: ExecutorButton,
     pub button_2: ExecutorButton,
     pub button_3: ExecutorButton,
@@ -443,7 +445,20 @@ impl Executor {
     pub fn go(&self, show: &Show) {
         match self.current_index.get() {
             None => self.go_to_cue(0, show),
-            Some(index) => self.go_to_cue(index + 1, show),
+            Some(index) => {
+                let Some(sequence) = self.sequence(show) else {
+                    log::error!("Sequence not found for Executor {}", self.id);
+                    return;
+                };
+
+                if index + 1 < sequence.cues.len() {
+                    self.current_index.set(Some(index + 1));
+                } else {
+                    if self.r#loop {
+                        self.current_index.set(Some(0))
+                    }
+                }
+            }
         }
     }
 

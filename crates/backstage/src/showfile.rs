@@ -82,6 +82,7 @@ pub struct Executor {
     pub id: usize,
     pub sequence: Option<usize>,
     pub current_index: Option<usize>,
+    pub r#loop: bool,
     pub button_1: ExecutorButton,
     pub button_2: ExecutorButton,
     pub button_3: ExecutorButton,
@@ -229,6 +230,7 @@ mod tests {
                         "id": 1,
                         "sequence": 1,
                         "current_index": null,
+                        "loop": true,
                         "button_1": {
                             "action": "Go"
                         },
@@ -334,6 +336,7 @@ mod tests {
                     id: 1,
                     sequence: Some(1),
                     current_index: None,
+                    r#loop: true,
                     button_1: ExecutorButton {
                         action: ExecutorButtonAction::Go,
                     },

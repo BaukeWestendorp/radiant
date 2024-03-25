@@ -70,7 +70,7 @@ impl PlaybackEngine {
                     return Some(current_cue);
                 } else {
                     log::error!(
-                        "Tried to get executor {}'s current cue, but the index {} is out of bounds",
+                        "Tried to get Executor {}'s current cue, but the index {} is out of bounds",
                         executor.id,
                         current_index
                     )
