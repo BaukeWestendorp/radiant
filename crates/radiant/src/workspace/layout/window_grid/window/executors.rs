@@ -268,12 +268,21 @@ impl ExecutorButtonView {
 
 impl Render for ExecutorButtonView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        let executor = self.show.read(cx).get_executor(self.executor_id);
+
         div()
             .w(px(GRID_CELL_SIZE as f32))
             .h(px(GRID_CELL_SIZE as f32 / 2.0))
-            .bg(cx.theme().colors().background)
+            .bg(cx.theme().colors().element_background)
             .border()
-            .border_color(cx.theme().colors().border)
+            .border_color(
+                match self.button.action == ExecutorButtonAction::Flash
+                    && executor.is_some_and(|e| e.flash)
+                {
+                    true => cx.theme().colors().element_selected,
+                    false => cx.theme().colors().border,
+                },
+            )
             .rounded_md()
             .flex()
             .justify_center()
