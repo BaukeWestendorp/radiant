@@ -4,9 +4,11 @@ use assets::Assets;
 use gpui::AssetSource;
 use gpui::{actions, App, AppContext, KeyBinding, Menu, MenuItem};
 
+use crate::theme::ThemeSettings;
 use crate::ui::text_input;
 use crate::workspace::Workspace;
 
+pub mod theme;
 pub mod ui;
 pub mod workspace;
 
@@ -19,6 +21,8 @@ fn main() {
     log::info!("Starting Radiant...");
 
     App::new().run(|cx: &mut AppContext| {
+        cx.set_global(ThemeSettings::default());
+
         if let Err(err) = init_fonts(cx) {
             log::error!("{}", err);
         }

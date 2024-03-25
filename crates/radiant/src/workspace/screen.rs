@@ -1,10 +1,11 @@
 use backstage::show::Show;
 use gpui::{
-    div, AppContext, FocusHandle, FocusableView, InteractiveElement, IntoElement, Model,
-    ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext, WindowHandle,
-    WindowOptions,
+    div, AppContext, FocusHandle, FocusableElement, FocusableView, InteractiveElement, IntoElement,
+    Model, ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext,
+    WindowHandle, WindowOptions,
 };
 
+use crate::theme::ActiveTheme;
 use crate::ui::text_input::{self, TextInput};
 
 pub struct Screen {
@@ -32,12 +33,13 @@ impl FocusableView for Screen {
 }
 
 impl Render for Screen {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .track_focus(&self.focus_handle)
             .key_context("Workspace")
             .font("Zed Sans")
-            .text_color(gpui::white())
+            .text_color(cx.theme().colors().text)
+            .bg(cx.theme().colors().background)
             .size_full()
             .flex()
             .flex_col()
@@ -49,13 +51,17 @@ impl Render for Screen {
 pub struct CommandLine {
     text_input: View<TextInput>,
 
+    focus_handle: FocusHandle,
+
     show: Model<Show>,
 }
 
 impl CommandLine {
     pub fn build(show: Model<Show>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
-            let text_input = cx.new_view(|cx| TextInput::new(None, "Command line", cx));
+            let focus_handle = cx.focus_handle();
+            let text_input =
+                cx.new_view(|cx| TextInput::new(None, "Command line", focus_handle.clone(), cx));
 
             cx.subscribe(
                 &text_input,
@@ -67,7 +73,11 @@ impl CommandLine {
             )
             .detach();
 
-            Self { text_input, show }
+            Self {
+                text_input,
+                focus_handle,
+                show,
+            }
         })
     }
 
@@ -87,16 +97,24 @@ impl CommandLine {
     }
 }
 
+impl FocusableView for CommandLine {
+    fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
+        self.focus_handle.clone()
+    }
+}
+
 impl Render for CommandLine {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .size_full()
             .border_t()
-            .border_color(gpui::white())
+            .border_color(cx.theme().colors().border)
+            .bg(cx.theme().colors().surface_background)
             .flex()
             .flex_shrink()
             .items_center()
             .px_3()
             .child(self.text_input.clone())
+            .track_focus(&self.focus_handle)
     }
 }

@@ -1,8 +1,10 @@
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    actions, div, EventEmitter, FocusHandle, FocusableView, InteractiveElement, KeyDownEvent,
-    ParentElement, Render, SharedString, Styled, ViewContext, WindowContext,
+    actions, div, EventEmitter, FocusHandle, InteractiveElement, KeyDownEvent, ParentElement,
+    Render, SharedString, Styled, ViewContext, WindowContext,
 };
+
+use crate::theme::ActiveTheme;
 
 actions!(text_input, [Enter, Backspace, Delete]);
 
@@ -18,11 +20,16 @@ pub struct TextInput {
 }
 
 impl TextInput {
-    pub fn new(text: Option<String>, placeholder: &str, cx: &mut WindowContext) -> Self {
+    pub fn new(
+        text: Option<String>,
+        placeholder: &str,
+        focus_handle: FocusHandle,
+        _cx: &mut WindowContext,
+    ) -> Self {
         Self {
             text: text.unwrap_or_default().into(),
             placeholder: placeholder.to_string().into(),
-            focus_handle: cx.focus_handle(),
+            focus_handle,
         }
     }
 
@@ -73,12 +80,6 @@ impl TextInput {
 
 impl EventEmitter<Event> for TextInput {}
 
-impl FocusableView for TextInput {
-    fn focus_handle(&self, _cx: &gpui::AppContext) -> FocusHandle {
-        self.focus_handle.clone()
-    }
-}
-
 impl Render for TextInput {
     fn render(&mut self, cx: &mut gpui::ViewContext<Self>) -> impl gpui::prelude::IntoElement {
         let text = match self.show_placeholder() {
@@ -97,7 +98,7 @@ impl Render for TextInput {
             .flex()
             .items_center()
             .when(self.show_placeholder(), |this| {
-                this.text_color(gpui::rgb(0x888888))
+                this.text_color(cx.theme().colors().text_placeholder)
             })
             .child(text)
     }
