@@ -27,7 +27,7 @@ impl Screen {
         let window_options = WindowOptions::default();
         cx.open_window(window_options, |cx| {
             cx.new_view(|cx| Self {
-                window_grid: WindowGridView::build(window_grid, cx),
+                window_grid: WindowGridView::build(window_grid, show.clone(), cx),
                 command_line: CommandLine::build(show.clone(), cx),
                 focus_handle: cx.focus_handle(),
             })

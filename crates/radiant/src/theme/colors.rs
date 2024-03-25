@@ -25,6 +25,8 @@ pub struct ThemeColors {
     /// Border color. Used for elevated surfaces, like a context menu, popup, or
     /// dialog.
     pub elevated_surface_background: Hsla,
+    /// Background Color. Used for elements that are selected.
+    pub background_selected: Hsla,
 
     /// Windoww Header Color. Used for the color of the headers of windows in
     /// the window grid.

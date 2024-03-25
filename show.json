@@ -81,7 +81,7 @@
         {
             "id": 1,
             "sequence": 1,
-            "current_index": null
+            "current_index": 0
         }
     ],
     "dmx_protocols": [

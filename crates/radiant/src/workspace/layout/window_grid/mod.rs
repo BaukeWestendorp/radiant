@@ -1,3 +1,4 @@
+use backstage::show::Show;
 use gpui::prelude::FluentBuilder;
 use gpui::{
     div, px, AnyView, Div, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
@@ -20,28 +21,39 @@ pub struct WindowGridView {
 }
 
 impl WindowGridView {
-    pub fn build(window_grid: Model<WindowGrid>, cx: &mut ViewContext<Screen>) -> View<Self> {
+    pub fn build(
+        window_grid: Model<WindowGrid>,
+        show: Model<Show>,
+        cx: &mut ViewContext<Screen>,
+    ) -> View<Self> {
         cx.new_view(|cx| {
-            cx.observe(&window_grid, move |this: &mut Self, window_grid, cx| {
-                this.windows = build_windows(window_grid, cx);
-                cx.notify();
+            cx.observe(&window_grid, {
+                let show = show.clone();
+                move |this: &mut Self, window_grid, cx| {
+                    this.windows = build_windows(window_grid, show.clone(), cx);
+                    cx.notify();
+                }
             })
             .detach();
 
             Self {
-                windows: build_windows(window_grid, cx),
+                windows: build_windows(window_grid, show.clone(), cx),
             }
         })
     }
 }
 
-fn build_windows(window_grid: Model<WindowGrid>, cx: &mut WindowContext) -> Vec<AnyView> {
+fn build_windows(
+    window_grid: Model<WindowGrid>,
+    show: Model<Show>,
+    cx: &mut WindowContext,
+) -> Vec<AnyView> {
     window_grid
         .read(cx)
         .windows()
         .clone()
         .into_iter()
-        .map(|(id, window)| build_window_view(id, window, window_grid.clone(), cx))
+        .map(|(id, window)| build_window_view(id, window, window_grid.clone(), show.clone(), cx))
         .collect()
 }
 
@@ -49,11 +61,12 @@ fn build_window_view(
     id: usize,
     window: Window,
     window_grid: Model<WindowGrid>,
+    show: Model<Show>,
     cx: &mut WindowContext,
 ) -> AnyView {
     match &window.kind {
         WindowKind::Executors => {
-            let delegate = ExecutorsWindowDelegate::new(cx);
+            let delegate = ExecutorsWindowDelegate::new(show, cx);
             WindowView::build(delegate, id, window_grid.clone(), cx).into()
         }
     }
