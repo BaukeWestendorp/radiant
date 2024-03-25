@@ -1,7 +1,7 @@
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, px, rgb, AnyView, Div, IntoElement, Model, ParentElement, Render, Styled, View,
-    ViewContext, VisualContext, WindowContext,
+    div, px, AnyView, Div, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
+    VisualContext, WindowContext,
 };
 
 pub mod window;
@@ -9,9 +9,9 @@ pub mod window;
 use window::WindowView;
 
 use self::window::executors::ExecutorsWindowDelegate;
-
 use super::screen::Screen;
 use super::{Window, WindowGrid, WindowKind};
+use crate::theme::ActiveTheme;
 
 pub const GRID_CELL_SIZE: usize = 80;
 
@@ -60,10 +60,10 @@ fn build_window_view(
 }
 
 impl Render for WindowGridView {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .size_full()
-            .bg(rgb(0x181818))
+            .bg(cx.theme().colors().background)
             .children(self.windows.clone())
     }
 }

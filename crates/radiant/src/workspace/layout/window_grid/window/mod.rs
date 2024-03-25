@@ -1,11 +1,11 @@
 use gpui::{
-    div, rgb, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext, VisualContext,
+    div, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext, VisualContext,
     WindowContext,
 };
 
-use crate::workspace::layout::WindowGrid;
-
 use super::{grid_div, GridBounds};
+use crate::theme::ActiveTheme;
+use crate::workspace::layout::WindowGrid;
 
 pub mod executors;
 
@@ -43,9 +43,12 @@ impl<D: WindowDelegate + 'static> Render for WindowView<D> {
         let bounds = self.bounds(cx);
 
         let content = div()
-            .bg(rgb(0x202020))
+            .bg(cx.theme().colors().surface_background)
             .size_full()
             .rounded_b_md()
+            .border()
+            .border_t_0()
+            .border_color(cx.theme().colors().border)
             .child(self.delegate.render_content(cx));
 
         grid_div(bounds.size, Some(bounds.origin))
@@ -59,7 +62,7 @@ impl<D: WindowDelegate + 'static> Render for WindowView<D> {
 pub trait WindowDelegate {
     fn title(&self) -> String;
 
-    fn render_header(&self, _cx: &mut ViewContext<WindowView<Self>>) -> Option<impl IntoElement>
+    fn render_header(&self, cx: &mut ViewContext<WindowView<Self>>) -> Option<impl IntoElement>
     where
         Self: Sized,
     {
@@ -68,8 +71,8 @@ pub trait WindowDelegate {
             .items_center()
             .px_3()
             .h_10()
-            .bg(rgb(0x222280))
-            .border_color(rgb(0x0000ff))
+            .bg(cx.theme().colors().window_header)
+            .border_color(cx.theme().colors().window_header_border)
             .border_1()
             .rounded_t_md()
             .child(self.title());

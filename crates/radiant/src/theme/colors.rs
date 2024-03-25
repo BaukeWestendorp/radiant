@@ -26,6 +26,13 @@ pub struct ThemeColors {
     /// dialog.
     pub elevated_surface_background: Hsla,
 
+    /// Windoww Header Color. Used for the color of the headers of windows in
+    /// the window grid.
+    pub window_header: Hsla,
+    /// Window Header Border Color. Used for the color of the borders of the
+    /// headers of windows in the window grid.
+    pub window_header_border: Hsla,
+
     /// Text Color. Default text color used for most text.
     pub text: Hsla,
     /// Text Color. Color of muted or deemphasized text. It is a subdued version

@@ -16,6 +16,8 @@ fn radiant_dark() -> Theme {
                 border_selected: gpui::rgb(0xff7931).into(),
                 border_disabled: gpui::rgb(0x111317).into(),
                 background: gpui::rgb(0x0d1017).into(),
+                window_header: gpui::rgb(0x141823).into(),
+                window_header_border: gpui::rgb(0x21283a).into(),
                 surface_background: gpui::rgb(0x0b0e14).into(),
                 elevated_surface_background: gpui::rgb(0x141823).into(),
                 text: gpui::rgb(0xffffff).into(),
