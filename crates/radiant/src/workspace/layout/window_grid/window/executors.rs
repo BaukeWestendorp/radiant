@@ -1,4 +1,4 @@
-use backstage::show::{Cue, Executor, Sequence, Show};
+use backstage::show::{Cue, Executor, ExecutorButton, Sequence, Show};
 use gpui::prelude::FluentBuilder;
 use gpui::{
     div, px, uniform_list, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
@@ -10,14 +10,16 @@ use crate::theme::ActiveTheme;
 use crate::workspace::layout::window_grid::{grid_div, GridSize, GRID_CELL_SIZE};
 
 pub struct ExecutorsWindowDelegate {
-    executors: Vec<Executor>,
+    executors_window: View<ExecutorsWindow>,
     show: Model<Show>,
 }
 
 impl ExecutorsWindowDelegate {
     pub fn new(show: Model<Show>, cx: &mut WindowContext) -> Self {
-        let executors = show.read(cx).executors().clone();
-        Self { executors, show }
+        Self {
+            executors_window: ExecutorsWindow::build(show.clone(), cx),
+            show,
+        }
     }
 }
 
@@ -26,31 +28,63 @@ impl WindowDelegate for ExecutorsWindowDelegate {
         "Executors".to_string()
     }
 
-    fn render_content(&self, cx: &mut ViewContext<WindowView<Self>>) -> impl IntoElement {
-        let executor_views = self
-            .executors
-            .iter()
-            .map(|executor| ExecutorView::build(executor.clone(), self.show.clone(), cx))
-            .collect::<Vec<_>>();
+    fn render_content(&self, _cx: &mut ViewContext<WindowView<Self>>) -> impl IntoElement {
+        div().size_full().child(self.executors_window.clone())
+    }
+}
 
-        div().size_full().flex().children(executor_views)
+pub struct ExecutorsWindow {
+    executor_views: Vec<View<ExecutorView>>,
+}
+
+impl ExecutorsWindow {
+    pub fn build(show: Model<Show>, cx: &mut WindowContext) -> View<Self> {
+        cx.new_view(|cx| {
+            cx.observe(&show, |this: &mut Self, show, cx| {
+                this.executor_views = get_executor_views(show, cx);
+                cx.notify();
+            })
+            .detach();
+
+            Self {
+                executor_views: get_executor_views(show.clone(), cx),
+            }
+        })
+    }
+}
+
+fn get_executor_views(show: Model<Show>, cx: &mut WindowContext) -> Vec<View<ExecutorView>> {
+    show.read(cx)
+        .executors()
+        .clone()
+        .iter()
+        .map(|executor| ExecutorView::build(executor.clone(), show.clone(), cx))
+        .collect::<Vec<_>>()
+}
+
+impl Render for ExecutorsWindow {
+    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+        div()
+            .size_full()
+            .flex()
+            .children(self.executor_views.clone())
     }
 }
 
 pub struct ExecutorView {
     info: View<ExecutorInfo>,
-    button_1: View<ExecutorButton>,
-    button_2: View<ExecutorButton>,
-    button_3: View<ExecutorButton>,
+    button_1: View<ExecutorButtonView>,
+    button_2: View<ExecutorButtonView>,
+    button_3: View<ExecutorButtonView>,
 }
 
 impl ExecutorView {
     pub fn build(executor: Executor, show: Model<Show>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| Self {
-            info: ExecutorInfo::build(executor, show, cx),
-            button_1: ExecutorButton::build(cx),
-            button_2: ExecutorButton::build(cx),
-            button_3: ExecutorButton::build(cx),
+            info: ExecutorInfo::build(executor.clone(), show, cx),
+            button_1: ExecutorButtonView::build(executor.button_1, cx),
+            button_2: ExecutorButtonView::build(executor.button_2, cx),
+            button_3: ExecutorButtonView::build(executor.button_3, cx),
         })
     }
 }
@@ -167,15 +201,17 @@ impl Render for ExecutorInfo {
     }
 }
 
-pub struct ExecutorButton {}
+pub struct ExecutorButtonView {
+    button: ExecutorButton,
+}
 
-impl ExecutorButton {
-    pub fn build(cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|_cx| Self {})
+impl ExecutorButtonView {
+    pub fn build(button: ExecutorButton, cx: &mut WindowContext) -> View<Self> {
+        cx.new_view(|_cx| Self { button })
     }
 }
 
-impl Render for ExecutorButton {
+impl Render for ExecutorButtonView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .w(px(GRID_CELL_SIZE as f32))
@@ -184,5 +220,9 @@ impl Render for ExecutorButton {
             .border()
             .border_color(cx.theme().colors().border)
             .rounded_md()
+            .flex()
+            .justify_center()
+            .items_center()
+            .child(self.button.action.to_string())
     }
 }

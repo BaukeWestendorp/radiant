@@ -82,6 +82,20 @@ pub struct Executor {
     pub id: usize,
     pub sequence: Option<usize>,
     pub current_index: Option<usize>,
+    pub button_1: ExecutorButton,
+    pub button_2: ExecutorButton,
+    pub button_3: ExecutorButton,
+}
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct ExecutorButton {
+    pub action: ExecutorButtonAction,
+}
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub enum ExecutorButtonAction {
+    #[default]
+    Go,
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
@@ -96,8 +110,8 @@ mod tests {
     use dmx::{DmxChannel, DmxValue};
 
     use crate::showfile::{
-        Cue, Data, DmxArtnetProtocol, Executor, Fixture, Group, PatchList, Programmer, Sequence,
-        Showfile,
+        Cue, Data, DmxArtnetProtocol, Executor, ExecutorButton, ExecutorButtonAction, Fixture,
+        Group, PatchList, Programmer, Sequence, Showfile,
     };
 
     macro_rules! check_showfile {
@@ -214,7 +228,16 @@ mod tests {
                     {
                         "id": 1,
                         "sequence": 1,
-                        "current_index": null
+                        "current_index": null,
+                        "button_1": {
+                            "action": "Go"
+                        },
+                        "button_2": {
+                            "action": "Go"
+                        },
+                        "button_3": {
+                            "action": "Go"
+                        }
                     }
                 ],
                 "dmx_protocols": [
@@ -310,7 +333,16 @@ mod tests {
                 executors: vec![Executor {
                     id: 1,
                     sequence: Some(1),
-                    current_index: None
+                    current_index: None,
+                    button_1: ExecutorButton {
+                        action: ExecutorButtonAction::Go,
+                    },
+                    button_2: ExecutorButton {
+                        action: ExecutorButtonAction::Go,
+                    },
+                    button_3: ExecutorButton {
+                        action: ExecutorButtonAction::Go,
+                    }
                 }],
                 dmx_protocols: vec![DmxArtnetProtocol {
                     target_ip: "0.0.0.0".to_string()

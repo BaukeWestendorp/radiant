@@ -37,10 +37,7 @@ fn main() {
 
         cx.spawn(move |mut cx| async move {
             let mut workspace = Workspace::new(&mut cx).await.unwrap();
-            cx.update(|cx| {
-                workspace.start_dmx_output_loop(cx);
-            })
-            .unwrap();
+            workspace.start_dmx_output_loop(&cx).await;
         })
         .detach();
 

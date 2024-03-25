@@ -97,9 +97,11 @@ impl CommandLine {
 
         self.text_input.update(cx, |text_input, cx| {
             text_input.clear(cx);
-            self.show.update(cx, |show, _cx| {
+            self.show.update(cx, |show, cx| {
                 if let Err(err) = show.execute_command_str(input) {
                     log::error!("Failed to execute command: {}", err.to_string())
+                } else {
+                    cx.notify();
                 }
             })
         })

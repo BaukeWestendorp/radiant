@@ -12,7 +12,7 @@ use gdtf_share::GdtfShare;
 use crate::command::{Command, Instruction, Object};
 use crate::dmx_protocols::ArtnetDmxProtocol;
 use crate::playback_engine::PlaybackEngine;
-use crate::showfile::Showfile;
+use crate::showfile::{self, Showfile};
 
 #[derive(Debug)]
 pub struct Show {
@@ -98,6 +98,21 @@ impl Show {
                 id: executor.id,
                 sequence: executor.sequence,
                 current_index: Cell::new(executor.current_index),
+                button_1: ExecutorButton {
+                    action: match executor.button_1.action {
+                        showfile::ExecutorButtonAction::Go => ExecutorButtonAction::Go,
+                    },
+                },
+                button_2: ExecutorButton {
+                    action: match executor.button_2.action {
+                        showfile::ExecutorButtonAction::Go => ExecutorButtonAction::Go,
+                    },
+                },
+                button_3: ExecutorButton {
+                    action: match executor.button_3.action {
+                        showfile::ExecutorButtonAction::Go => ExecutorButtonAction::Go,
+                    },
+                },
             })
             .collect();
 
@@ -396,6 +411,28 @@ pub struct Executor {
     pub id: usize,
     pub sequence: Option<usize>,
     pub current_index: Cell<Option<usize>>,
+    pub button_1: ExecutorButton,
+    pub button_2: ExecutorButton,
+    pub button_3: ExecutorButton,
+}
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct ExecutorButton {
+    pub action: ExecutorButtonAction,
+}
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub enum ExecutorButtonAction {
+    #[default]
+    Go,
+}
+
+impl std::fmt::Display for ExecutorButtonAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ExecutorButtonAction::Go => write!(f, "Go"),
+        }
+    }
 }
 
 impl Executor {
