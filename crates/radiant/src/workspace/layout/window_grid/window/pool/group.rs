@@ -1,3 +1,4 @@
+use backstage::command::{Command, Instruction, Object};
 use backstage::show::Show;
 use gpui::{
     div, prelude::FluentBuilder, rgb, IntoElement, Model, ParentElement, Styled, WindowContext,
@@ -80,9 +81,13 @@ impl PoolWindowDelegate for GroupPoolWindowDelegate {
     where
         Self: Sized,
     {
-        self.show.update(cx, |_show, cx| {
+        self.show.update(cx, |show, cx| {
             cx.notify();
-            todo!("Execute 'group {id}'");
+            if let Err(err) =
+                show.execute_command(Command::new([Instruction::Select(Object::Group(id))]))
+            {
+                log::error!("Failed to Select Group {id}: {}", err.to_string())
+            }
         });
     }
 }
