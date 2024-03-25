@@ -3,13 +3,15 @@ use backstage::show::Show;
 use backstage::showfile::Showfile;
 use gdtf_share::GdtfShare;
 use gpui::{
-    div, AppContext, Context, FocusHandle, FocusableView, InteractiveElement, IntoElement, Model,
-    ParentElement, Render, Styled, Task, View, ViewContext, VisualContext, WindowContext,
-    WindowHandle, WindowOptions,
+    div, AppContext, AsyncAppContext, Context, FocusHandle, FocusableView, InteractiveElement,
+    IntoElement, Model, ParentElement, Render, Styled, Task, Timer, View, ViewContext,
+    VisualContext, WindowContext, WindowHandle, WindowOptions,
 };
 
+use crate::ui::text_input::{self, TextInput};
 use std::env;
 use std::fs::File;
+use std::time::Duration;
 
 pub mod action {
     use gpui::actions;
@@ -17,7 +19,7 @@ pub mod action {
     actions!(workspace, [Debug]);
 }
 
-use crate::ui::text_input::{self, TextInput};
+const DMX_OUTPUT_RATE: Duration = Duration::from_millis(1000 / 40);
 
 pub struct Workspace {
     command_line: View<CommandLine>,
@@ -25,10 +27,12 @@ pub struct Workspace {
     focus_handle: FocusHandle,
 
     show: Model<Show>,
+
+    dmx_output_loop_task: Option<Task<()>>,
 }
 
 impl Workspace {
-    pub fn new(cx: &mut AppContext) -> Task<Result<WindowHandle<Self>>> {
+    pub fn new(cx: &mut AsyncAppContext) -> Task<Result<WindowHandle<Self>>> {
         let window_options = WindowOptions::default();
 
         cx.spawn(move |mut cx| async move {
@@ -40,9 +44,32 @@ impl Workspace {
                     command_line: CommandLine::build(show_model.clone(), cx),
                     focus_handle: cx.focus_handle(),
                     show: show_model,
+                    dmx_output_loop_task: None,
                 })
             })
         })
+    }
+
+    pub fn start_dmx_output_loop(&mut self, cx: &mut WindowContext) {
+        self.dmx_output_loop_task = Some(cx.spawn({
+            let show = self.show.clone();
+            |mut cx| async move {
+                loop {
+                    cx.update(|cx| {
+                        log::trace!("Outputting DMX data...");
+                        show.update(cx, |show, _cx| {
+                            show.send_stage_output_to_dmx_protocols();
+                        });
+                    })
+                    .unwrap();
+                    Timer::after(DMX_OUTPUT_RATE).await;
+                }
+            }
+        }))
+    }
+
+    pub fn stop_dmx_output_loop(&mut self) {
+        self.dmx_output_loop_task = None;
     }
 
     fn debug(&mut self, _: &action::Debug, cx: &mut ViewContext<Self>) {

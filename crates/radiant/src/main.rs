@@ -31,9 +31,11 @@ fn main() {
 
         cx.on_action(quit);
 
-        cx.spawn(move |cx| async move {
-            cx.update(|cx| Workspace::new(cx).detach_and_log_err(cx))
-                .ok();
+        cx.spawn(move |mut cx| async move {
+            let workspace = Workspace::new(&mut cx).await.unwrap();
+            workspace.update(&mut cx, |workspace, cx| {
+                workspace.start_dmx_output_loop(cx);
+            })
         })
         .detach();
 
