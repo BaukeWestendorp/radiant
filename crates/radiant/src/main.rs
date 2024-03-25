@@ -7,7 +7,6 @@ use gpui::{actions, App, AppContext, KeyBinding, Menu, MenuItem};
 use crate::ui::text_input;
 use crate::workspace::Workspace;
 
-pub mod screen;
 pub mod ui;
 pub mod workspace;
 

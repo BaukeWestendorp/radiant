@@ -4,10 +4,13 @@ use backstage::showfile::Showfile;
 use gdtf_share::GdtfShare;
 use gpui::{AppContext, AsyncAppContext, Context, Model, Task, Timer};
 
-use crate::screen::Screen;
 use std::env;
 use std::fs::File;
 use std::time::Duration;
+
+use screen::Screen;
+
+pub mod screen;
 
 pub mod action {
     use gpui::actions;
@@ -30,7 +33,6 @@ impl Workspace {
             let show_model = cx.new_model(|_cx| show)?;
 
             let _main_screen = cx.update(|cx| Screen::open_window(show_model.clone(), cx))?;
-            let _secondary_screen = cx.update(|cx| Screen::open_window(show_model.clone(), cx))?;
 
             Ok(Self {
                 show: show_model,
