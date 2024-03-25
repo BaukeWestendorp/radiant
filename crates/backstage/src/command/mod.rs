@@ -110,7 +110,7 @@ mod tests {
         );
         instructions!(
             "Select Fixture 1",
-            vec![Instruction::Select(Object::Group(1))]
+            vec![Instruction::Select(Object::Fixture(1))]
         );
 
         instructions!("Clear", vec![Instruction::Clear]);
@@ -128,7 +128,7 @@ mod tests {
                 kind: ParserErrorKind::ExpectedId,
                 token: Some(Token {
                     kind: TokenKind::EndOfLine,
-                    span: Span { start: 5, end: 5 },
+                    span: Span { start: 12, end: 12 },
                 })
             }
         );
@@ -139,7 +139,7 @@ mod tests {
                 kind: ParserErrorKind::UnexpectedToken,
                 token: Some(Token {
                     kind: TokenKind::Invalid,
-                    span: Span { start: 7, end: 8 },
+                    span: Span { start: 14, end: 15 },
                 })
             }
         );

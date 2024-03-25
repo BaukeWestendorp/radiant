@@ -102,7 +102,11 @@ impl Show {
             .collect();
 
         // FIXME: Get the dmx protocols from the showfile.
-        let dmx_protocols = vec![ArtnetDmxProtocol::new().unwrap()];
+        let dmx_protocols = showfile
+            .dmx_protocols
+            .into_iter()
+            .map(|protocol| ArtnetDmxProtocol::new(protocol.target_ip.as_str()).unwrap())
+            .collect();
 
         Self {
             patchlist,

@@ -17,6 +17,9 @@ pub struct Showfile {
 
     #[serde(default = "Default::default")]
     pub executors: Vec<Executor>,
+
+    #[serde(default = "Default::default")]
+    pub dmx_protocols: Vec<DmxArtnetProtocol>,
 }
 
 impl Showfile {
@@ -81,6 +84,11 @@ pub struct Executor {
     pub current_index: Option<usize>,
 }
 
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct DmxArtnetProtocol {
+    pub target_ip: String,
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
@@ -88,7 +96,8 @@ mod tests {
     use dmx::{DmxChannel, DmxValue};
 
     use crate::showfile::{
-        Cue, Data, Executor, Fixture, Group, PatchList, Programmer, Sequence, Showfile,
+        Cue, Data, DmxArtnetProtocol, Executor, Fixture, Group, PatchList, Programmer, Sequence,
+        Showfile,
     };
 
     macro_rules! check_showfile {
@@ -113,7 +122,8 @@ mod tests {
                     groups: Vec::new(),
                     sequences: Vec::new(),
                 },
-                executors: Vec::new()
+                executors: Vec::new(),
+                dmx_protocols: Vec::new(),
             }
         );
     }
@@ -206,6 +216,11 @@ mod tests {
                         "sequence": 1,
                         "current_index": null
                     }
+                ],
+                "dmx_protocols": [
+                    {
+                        "target_ip": "0.0.0.0"
+                    }
                 ]
             }"#,
             Showfile {
@@ -296,6 +311,9 @@ mod tests {
                     id: 1,
                     sequence: Some(1),
                     current_index: None
+                }],
+                dmx_protocols: vec![DmxArtnetProtocol {
+                    target_ip: "0.0.0.0".to_string()
                 }]
             }
         );

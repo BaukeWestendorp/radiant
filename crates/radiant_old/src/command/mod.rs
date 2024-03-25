@@ -65,8 +65,14 @@ mod tests {
 
     #[test]
     fn parse_string_to_instruction() {
-        instructions!("Group 1", vec![Instruction::Group(1)]);
-        instructions!("Group 42", vec![Instruction::Group(42)]);
+        instructions!(
+            "Select Group 1",
+            vec![Instruction::Select(Object::Group(1))]
+        );
+        instructions!(
+            "Select Group 42",
+            vec![Instruction::Select(Object::Group(42))]
+        );
 
         instructions!("Clear", vec![Instruction::Clear]);
     }
@@ -78,23 +84,23 @@ mod tests {
         use crate::command::Span;
 
         error!(
-            "Group",
+            "Select Group",
             ParserError {
                 kind: ParserErrorKind::ExpectedId,
                 token: Some(Token {
                     kind: TokenKind::EndOfLine,
-                    span: Span { start: 5, end: 5 },
+                    span: Span { start: 12, end: 12 },
                 })
             }
         );
 
         error!(
-            "Group 1a",
+            "Select Group 1a",
             ParserError {
                 kind: ParserErrorKind::UnexpectedToken,
                 token: Some(Token {
                     kind: TokenKind::Invalid,
-                    span: Span { start: 7, end: 8 },
+                    span: Span { start: 13, end: 14 },
                 })
             }
         );

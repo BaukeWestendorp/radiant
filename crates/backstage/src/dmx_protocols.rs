@@ -11,9 +11,9 @@ pub struct ArtnetDmxProtocol {
 }
 
 impl ArtnetDmxProtocol {
-    pub fn new() -> Result<Self> {
+    pub fn new(target_ip: &str) -> Result<Self> {
         Ok(Self {
-            socket: ArtnetSocket::new("0.0.0.0")?,
+            socket: ArtnetSocket::new(target_ip)?,
         })
     }
 

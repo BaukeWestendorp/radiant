@@ -83,5 +83,10 @@
             "sequence": 1,
             "current_index": null
         }
+    ],
+    "dmx_protocols": [
+        {
+            "target_ip": "0.0.0.0"
+        }
     ]
 }
