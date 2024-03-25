@@ -5,10 +5,12 @@ pub enum TokenKind {
     // Functions
     Clear,
     Select,
+    Go,
 
     // Objects
     Group,
     Fixture,
+    Executor,
 
     Number,
 
@@ -22,9 +24,11 @@ impl std::fmt::Display for TokenKind {
         let str = match self {
             Self::Clear => "Clear".to_string(),
             Self::Select => "Select".to_string(),
+            Self::Go => "Go".to_string(),
 
             Self::Group => "Group".to_string(),
             Self::Fixture => "Fixture".to_string(),
+            Self::Executor => "Executor".to_string(),
 
             Self::Number => "number".to_string(),
 

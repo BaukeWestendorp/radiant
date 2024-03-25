@@ -1,4 +1,5 @@
 use anyhow::Result;
+use std::cell::Cell;
 use std::collections::HashMap;
 use std::io::Cursor;
 use std::rc::Rc;
@@ -92,7 +93,7 @@ impl Show {
             .map(|executor| Executor {
                 id: executor.id,
                 sequence: executor.sequence,
-                current_index: executor.current_index,
+                current_index: Cell::new(executor.current_index),
             })
             .collect();
 
@@ -118,22 +119,54 @@ impl Show {
     pub fn execute_command(&mut self, command: Command) -> Result<()> {
         // FIXME: This command execution is quite ad-hoc for now.
         match command.instructions.get(0) {
-            Some(instr) => match instr {
-                Instruction::Clear => {}
-                Instruction::Select(object) => match object {
-                    Object::Fixture(id) => {
-                        if !self.fixture_is_selected(*id) {
-                            if self.fixture_exists(*id) {
-                                self.programmer.selection.push(*id);
-                                log::info!("Selected Fixture {id}")
-                            } else {
-                                log::error!("Failed to select Fixture {id}: Fixture not found")
+            Some(instr) => {
+                match instr {
+                    Instruction::Clear => {}
+                    Instruction::Select(object) => match object {
+                        Object::Fixture(id) => {
+                            if !self.fixture_is_selected(*id) {
+                                if self.fixture_exists(*id) {
+                                    self.programmer.selection.push(*id);
+                                    log::info!("Selected Fixture {id}");
+                                } else {
+                                    log::error!("Failed to select Fixture {id}: Fixture not found");
+                                    // FIXME: Return a useful error.
+                                }
                             }
                         }
+                        Object::Executor(id) => {
+                            let Some(next_instruction) = command.instructions.get(1) else {
+                                log::error!("Expected instruction after executor selection");
+                                // FIXME: Return a useful error.
+                                return Ok(());
+                            };
+
+                            match next_instruction {
+                                Instruction::Go => {
+                                    let Some(executor) = self.get_executor(*id) else {
+                                        log::error!("Failed to Go executor: Executor with id '{id}' not found.");
+                                        // FIXME: Return a useful error.
+                                        return Ok(());
+                                    };
+
+                                    executor.go(self);
+                                }
+                                instr => {
+                                    log::error!(
+                                        "Invalid instruction after executor selection: {instr}"
+                                    );
+                                }
+                            }
+                        }
+                        _ => {
+                            log::error!("Selecting other objects not implemented yet!");
+                        }
+                    },
+                    Instruction::Go => {
+                        log::error!("The Go command should be used after selecting a executor with 'Select Executor #'!");
                     }
-                    _ => todo!("Implement selecting other objects"),
-                },
-            },
+                }
+            }
             None => {}
         }
         Ok(())
@@ -175,6 +208,10 @@ impl Show {
 
     pub fn get_sequence(&self, id: usize) -> Option<&Sequence> {
         self.data.sequences.iter().find(|s| s.id == id)
+    }
+
+    pub fn get_executor(&self, id: usize) -> Option<&Executor> {
+        self.executors.iter().find(|e| e.id == id)
     }
 
     pub fn get_stage_output(&mut self) -> DmxOutput {
@@ -322,12 +359,37 @@ pub struct Cue {
 pub struct Executor {
     pub id: usize,
     pub sequence: Option<usize>,
-    pub current_index: Option<usize>,
+    pub current_index: Cell<Option<usize>>,
 }
 
 impl Executor {
     pub fn is_running(&self) -> bool {
-        self.current_index.is_some()
+        self.current_index.get().is_some()
+    }
+
+    pub fn go(&self, show: &Show) {
+        match self.current_index.get() {
+            None => self.go_to_cue(0, show),
+            Some(index) => self.go_to_cue(index + 1, show),
+        }
+    }
+
+    pub fn go_to_cue(&self, index: usize, show: &Show) {
+        let Some(sequence) = self.sequence(show) else {
+            log::error!("Sequence not found for Executor {}", self.id);
+            return;
+        };
+
+        if index < sequence.cues.len() {
+            self.current_index.set(Some(index));
+        }
+    }
+
+    fn sequence<'a>(&'a self, show: &'a Show) -> Option<&Sequence> {
+        let Some(id) = self.sequence else {
+            return None;
+        };
+        show.get_sequence(id)
     }
 }
 
@@ -438,7 +500,7 @@ mod tests {
         let gdtf_share = GdtfShare::auth(user, password).await.unwrap();
 
         let mut show = Show::new(showfile, gdtf_share).await;
-        show.execute_command_str("Fixture 420").unwrap();
+        show.execute_command_str("Select Fixture 420").unwrap();
 
         assert_eq!(*show.programmer.selection.first().unwrap(), 420);
     }

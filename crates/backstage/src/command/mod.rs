@@ -9,6 +9,7 @@ mod parser;
 pub enum Instruction {
     Clear,
     Select(Object),
+    Go,
 }
 
 impl std::fmt::Display for Instruction {
@@ -16,6 +17,7 @@ impl std::fmt::Display for Instruction {
         match self {
             Instruction::Clear => write!(f, "Clear"),
             Instruction::Select(object) => write!(f, "Group {object}"),
+            Instruction::Go => write!(f, "Go"),
         }
     }
 }
@@ -24,6 +26,7 @@ impl std::fmt::Display for Instruction {
 pub enum Object {
     Fixture(usize),
     Group(usize),
+    Executor(usize),
 }
 
 impl std::fmt::Display for Object {
@@ -31,6 +34,7 @@ impl std::fmt::Display for Object {
         match self {
             Object::Fixture(id) => write!(f, "Fixture {id}"),
             Object::Group(id) => write!(f, "Group {id}"),
+            Object::Executor(id) => write!(f, "Executor {id}"),
         }
     }
 }

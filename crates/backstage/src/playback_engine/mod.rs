@@ -65,7 +65,7 @@ impl PlaybackEngine {
         show: &'a Show,
     ) -> Option<&Cue> {
         if let Some(sequence) = executor.sequence.and_then(|id| show.get_sequence(id)) {
-            if let Some(current_index) = executor.current_index {
+            if let Some(current_index) = executor.current_index.get() {
                 if let Some(current_cue) = sequence.cues.get(current_index) {
                     return Some(current_cue);
                 } else {

@@ -27,6 +27,10 @@ where
                 let object = self.parse_object()?;
                 Ok(Instruction::Select(object))
             }
+            TokenKind::Go => {
+                self.consume(TokenKind::Go)?;
+                Ok(Instruction::Go)
+            }
             TokenKind::Invalid => {
                 let invalid_token = self.consume(TokenKind::Invalid)?;
 
@@ -48,6 +52,7 @@ where
         let instruction = match kind {
             TokenKind::Group => Object::Group(id),
             TokenKind::Fixture => Object::Fixture(id),
+            TokenKind::Executor => Object::Executor(id),
             _ => {
                 return Err(ParserError {
                     kind: ParserErrorKind::ExpectedObject,
