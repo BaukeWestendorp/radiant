@@ -12,14 +12,12 @@ use crate::workspace::layout::window_grid::{grid_div, GridSize, GRID_CELL_SIZE};
 
 pub struct ExecutorsWindowDelegate {
     executors_window: View<ExecutorsWindow>,
-    show: Model<Show>,
 }
 
 impl ExecutorsWindowDelegate {
     pub fn new(show: Model<Show>, cx: &mut WindowContext) -> Self {
         Self {
             executors_window: ExecutorsWindow::build(show.clone(), cx),
-            show,
         }
     }
 }
@@ -126,7 +124,7 @@ impl ExecutorInfo {
             .h_5()
             .border_b()
             .border_color(cx.theme().colors().border)
-            .bg(cx.theme().colors().elevated_surface_background)
+            .bg(cx.theme().colors().background_tertriary)
             .flex()
             .items_center()
             .px_1()
@@ -178,10 +176,9 @@ impl ExecutorInfo {
             .px_1()
             .when(!last, |this| this.border_b())
             .border_color(cx.theme().colors().border)
+            .rounded_md()
             .child(cue.label.clone())
-            .when(active, |this| {
-                this.bg(cx.theme().colors().background_selected)
-            })
+            .when(active, |this| this.bg(cx.theme().colors().element_selected))
     }
 }
 
@@ -250,6 +247,8 @@ impl Render for ExecutorButtonView {
             .flex()
             .justify_center()
             .items_center()
+            .hover(|this| this.bg(cx.theme().colors().element_hover))
+            .cursor_pointer()
             .child(self.button.action.to_string())
             .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_click))
     }

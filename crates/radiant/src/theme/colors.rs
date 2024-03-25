@@ -20,15 +20,48 @@ pub struct ThemeColors {
     /// Background Color. Used for the app background and blank panels or
     /// windows.
     pub background: Hsla,
-    /// Background Color. Used for grounded surfaces like a panel or tab.
-    pub surface_background: Hsla,
-    /// Border color. Used for elevated surfaces, like a context menu, popup, or
-    /// dialog.
-    pub elevated_surface_background: Hsla,
-    /// Background Color. Used for elements that are selected.
-    pub background_selected: Hsla,
+    /// Background Color. TODO: Docs
+    pub background_secondary: Hsla,
+    /// Background Color. TODO: Docs
+    pub background_tertriary: Hsla,
 
-    /// Windoww Header Color. Used for the color of the headers of windows in
+    /// Background Color. Used for the background of an element that should have
+    /// a different background than the surface it's on.
+    ///
+    /// Elements might include: Buttons, Inputs, Checkboxes, Radio Buttons...
+    ///
+    /// For an element that should have the same background as the surface it's
+    /// on, use `ghost_element_background`.
+    pub element_background: Hsla,
+    /// Background Color. Used for the hover state of an element that should
+    /// have a different background than the surface it's on.
+    ///
+    /// Hover states are triggered by the mouse entering an element, or a finger
+    /// touching an element on a touch screen.
+    pub element_hover: Hsla,
+    /// Background Color. Used for the active state of an element that should
+    /// have a different background than the surface it's on.
+    ///
+    /// Active states are triggered by the mouse button being pressed down on an
+    /// element, or the Return button or other activator being pressd.
+    pub element_active: Hsla,
+    /// Background Color. Used for the selected state of an element that should
+    /// have a different background than the surface it's on.
+    ///
+    /// Selected states are triggered by the element being selected (or
+    /// "activated") by the user.
+    ///
+    /// This could include a selected checkbox, a toggleable button that is
+    /// toggled on, etc.
+    pub element_selected: Hsla,
+    /// Background Color. Used for the disabled state of an element that should
+    /// have a different background than the surface it's on.
+    ///
+    /// Disabled states are shown when a user cannot interact with an element,
+    /// like a disabled button or input.
+    pub element_disabled: Hsla,
+
+    /// Window Header Color. Used for the color of the headers of windows in
     /// the window grid.
     pub window_header: Hsla,
     /// Window Header Border Color. Used for the color of the borders of the

@@ -43,7 +43,7 @@ impl<D: WindowDelegate + 'static> Render for WindowView<D> {
         let bounds = self.bounds(cx);
 
         let content = div()
-            .bg(cx.theme().colors().surface_background)
+            .bg(cx.theme().colors().background_secondary)
             .size_full()
             .rounded_b_md()
             .border()
