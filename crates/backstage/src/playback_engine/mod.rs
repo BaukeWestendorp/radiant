@@ -37,8 +37,17 @@ impl PlaybackEngine {
                             continue;
                         };
 
-                        let raw_dmx_values =
+                        let mut raw_dmx_values =
                             attribute_value.raw_values_for_channel_resolution(channel_resolution);
+
+                        // FIXME: We currently assume the executor fader controls the master.
+                        let master = match executor.flash {
+                            true => 1.0,
+                            false => executor.fader_value,
+                        };
+                        raw_dmx_values.iter_mut().for_each(|value| {
+                            *value = (*value as f32 * master) as u8;
+                        });
 
                         for (offset, value) in attribute_offset.iter().zip(raw_dmx_values) {
                             // Because the offset in the GDTF files starts at 1, we need to

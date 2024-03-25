@@ -83,6 +83,7 @@ pub struct Executor {
     pub sequence: Option<usize>,
     pub current_index: Option<usize>,
     pub r#loop: bool,
+    pub fader_value: f32,
     pub button_1: ExecutorButton,
     pub button_2: ExecutorButton,
     pub button_3: ExecutorButton,
@@ -233,6 +234,7 @@ mod tests {
                         "sequence": 1,
                         "current_index": null,
                         "loop": true,
+                        "fader_value": 0.2,
                         "button_1": {
                             "action": "Top"
                         },
@@ -339,6 +341,7 @@ mod tests {
                     sequence: Some(1),
                     current_index: None,
                     r#loop: true,
+                    fader_value: 0.2,
                     button_1: ExecutorButton {
                         action: ExecutorButtonAction::Top,
                     },

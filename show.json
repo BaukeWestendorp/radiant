@@ -83,6 +83,7 @@
             "sequence": 1,
             "current_index": 0,
             "loop": false,
+            "fader_value": 0.2,
             "button_1": {
                 "action": "Top"
             },

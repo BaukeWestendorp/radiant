@@ -100,6 +100,7 @@ impl Show {
                 current_index: Cell::new(executor.current_index),
                 r#loop: executor.r#loop,
                 flash: false,
+                fader_value: executor.fader_value,
                 button_1: ExecutorButton {
                     action: match executor.button_1.action {
                         showfile::ExecutorButtonAction::Go => ExecutorButtonAction::Go,
@@ -437,6 +438,7 @@ pub struct Executor {
     pub current_index: Cell<Option<usize>>,
     pub r#loop: bool,
     pub flash: bool,
+    pub fader_value: f32,
     pub button_1: ExecutorButton,
     pub button_2: ExecutorButton,
     pub button_3: ExecutorButton,
