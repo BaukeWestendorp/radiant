@@ -10,8 +10,10 @@ pub mod window;
 use window::WindowView;
 
 use self::window::executors::ExecutorsWindowDelegate;
+use self::window::pool::color::ColorPoolWindowDelegate;
+use self::window::pool::group::GroupPoolWindowDelegate;
 use super::screen::Screen;
-use super::{Window, WindowGrid, WindowKind};
+use super::{PoolWindowKind, Window, WindowGrid, WindowKind};
 use crate::theme::ActiveTheme;
 
 pub const GRID_CELL_SIZE: usize = 80;
@@ -65,6 +67,26 @@ fn build_window_view(
     cx: &mut WindowContext,
 ) -> AnyView {
     match &window.kind {
+        WindowKind::Pool(pool_window) => match &pool_window.kind {
+            PoolWindowKind::Color => {
+                let delegate = ColorPoolWindowDelegate::new(
+                    id,
+                    pool_window.scroll_offset,
+                    window.bounds,
+                    show.clone(),
+                );
+                WindowView::build(delegate, id, window_grid.clone(), cx).into()
+            }
+            PoolWindowKind::Group => {
+                let delegate = GroupPoolWindowDelegate::new(
+                    id,
+                    pool_window.scroll_offset,
+                    window.bounds,
+                    show.clone(),
+                );
+                WindowView::build(delegate, id, window_grid.clone(), cx).into()
+            }
+        },
         WindowKind::Executors => {
             let delegate = ExecutorsWindowDelegate::new(show, cx);
             WindowView::build(delegate, id, window_grid.clone(), cx).into()

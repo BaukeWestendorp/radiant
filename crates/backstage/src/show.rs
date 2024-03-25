@@ -246,6 +246,10 @@ impl Show {
         self.programmer.selection.contains(&id)
     }
 
+    pub fn fixtures_are_selected(&self, fixtures: &[usize]) -> bool {
+        !fixtures.iter().any(|id| !self.fixture_is_selected(*id))
+    }
+
     pub fn fixture_exists(&self, id: usize) -> bool {
         self.get_fixture(id).is_some()
     }

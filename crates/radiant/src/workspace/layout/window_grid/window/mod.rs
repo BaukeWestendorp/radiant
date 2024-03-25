@@ -8,6 +8,7 @@ use crate::theme::ActiveTheme;
 use crate::workspace::layout::WindowGrid;
 
 pub mod executors;
+pub mod pool;
 
 pub struct WindowView<D: WindowDelegate> {
     delegate: D,
@@ -46,8 +47,6 @@ impl<D: WindowDelegate + 'static> Render for WindowView<D> {
             .bg(cx.theme().colors().background_secondary)
             .size_full()
             .rounded_b_md()
-            .border()
-            .border_t_0()
             .border_color(cx.theme().colors().border)
             .child(self.delegate.render_content(cx));
 
@@ -73,7 +72,7 @@ pub trait WindowDelegate {
             .h_10()
             .bg(cx.theme().colors().window_header)
             .border_color(cx.theme().colors().window_header_border)
-            .border_1()
+            .border()
             .rounded_t_md()
             .child(self.title());
 

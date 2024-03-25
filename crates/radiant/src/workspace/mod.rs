@@ -10,7 +10,7 @@ use std::time::Duration;
 
 use self::layout::screen::Screen;
 use self::layout::window_grid::{GridBounds, GridPoint, GridSize};
-use self::layout::{Window, WindowGrid, WindowKind};
+use self::layout::{PoolWindow, Window, WindowGrid, WindowKind};
 
 pub mod layout;
 
@@ -37,6 +37,20 @@ impl Workspace {
                 window_grid.add_window(Window {
                     bounds: GridBounds::new(GridPoint::new(0, 0), GridSize::new(5, 5)),
                     kind: WindowKind::Executors,
+                });
+                window_grid.add_window(Window {
+                    bounds: GridBounds::new(GridPoint::new(5, 0), GridSize::new(5, 5)),
+                    kind: WindowKind::Pool(PoolWindow {
+                        kind: layout::PoolWindowKind::Group,
+                        scroll_offset: 0,
+                    }),
+                });
+                window_grid.add_window(Window {
+                    bounds: GridBounds::new(GridPoint::new(0, 5), GridSize::new(5, 5)),
+                    kind: WindowKind::Pool(PoolWindow {
+                        kind: layout::PoolWindowKind::Color,
+                        scroll_offset: 0,
+                    }),
                 });
                 window_grid
             })?;
