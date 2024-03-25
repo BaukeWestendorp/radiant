@@ -7,6 +7,7 @@ use gpui::{actions, App, AppContext, KeyBinding, Menu, MenuItem};
 use crate::ui::text_input;
 use crate::workspace::Workspace;
 
+pub mod screen;
 pub mod ui;
 pub mod workspace;
 
@@ -32,10 +33,11 @@ fn main() {
         cx.on_action(quit);
 
         cx.spawn(move |mut cx| async move {
-            let workspace = Workspace::new(&mut cx).await.unwrap();
-            workspace.update(&mut cx, |workspace, cx| {
+            let mut workspace = Workspace::new(&mut cx).await.unwrap();
+            cx.update(|cx| {
                 workspace.start_dmx_output_loop(cx);
             })
+            .unwrap();
         })
         .detach();
 

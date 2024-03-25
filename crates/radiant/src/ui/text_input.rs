@@ -93,7 +93,9 @@ impl Render for TextInput {
             .on_action(cx.listener(Self::backspace))
             .on_action(cx.listener(Self::delete))
             .track_focus(&self.focus_handle)
-            .w_full()
+            .size_full()
+            .flex()
+            .items_center()
             .when(self.show_placeholder(), |this| {
                 this.text_color(gpui::rgb(0x888888))
             })
