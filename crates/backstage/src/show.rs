@@ -1,4 +1,5 @@
 use anyhow::Result;
+use itertools::Itertools;
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::io::Cursor;
@@ -9,10 +10,11 @@ use gdtf::GdtfDescription;
 use gdtf_share::GdtfShare;
 
 use crate::command::{Command, Instruction, Object};
+use crate::dmx_protocols::ArtnetDmxProtocol;
 use crate::playback_engine::PlaybackEngine;
 use crate::showfile::Showfile;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug)]
 pub struct Show {
     patchlist: Patchlist,
 
@@ -23,6 +25,8 @@ pub struct Show {
     data: Data,
 
     executors: Vec<Executor>,
+
+    dmx_protocols: Vec<ArtnetDmxProtocol>,
 }
 
 impl Show {
@@ -97,12 +101,16 @@ impl Show {
             })
             .collect();
 
+        // FIXME: Get the dmx protocols from the showfile.
+        let dmx_protocols = vec![ArtnetDmxProtocol::new().unwrap()];
+
         Self {
             patchlist,
             programmer,
             playback_engine: PlaybackEngine::new(),
             data,
             executors,
+            dmx_protocols,
         }
     }
 
@@ -202,6 +210,15 @@ impl Show {
         self.get_fixture(id).is_some()
     }
 
+    pub fn used_universes(&self) -> Vec<u16> {
+        self.patchlist
+            .fixtures
+            .iter()
+            .map(|f| f.channel.universe)
+            .unique()
+            .collect()
+    }
+
     pub fn get_group(&self, id: usize) -> Option<&Group> {
         self.data.groups.iter().find(|g| g.id == id)
     }
@@ -215,8 +232,23 @@ impl Show {
     }
 
     pub fn get_stage_output(&mut self) -> DmxOutput {
-        let playback = self.playback_engine.determine_dmx_output(self);
+        let mut playback = self.playback_engine.determine_dmx_output(self);
+        for universe in self.used_universes().iter() {
+            if let Err(err) = playback.add_universe_if_absent(*universe) {
+                log::error!(
+                    "Failed to add universe with id '{universe}': {}",
+                    err.to_string()
+                )
+            }
+        }
         playback
+    }
+
+    pub fn send_stage_output_to_dmx_protocols(&mut self) {
+        let dmx_output = self.get_stage_output();
+        for dmx_protocol in self.dmx_protocols.iter() {
+            dmx_protocol.send_dmx_output(&dmx_output);
+        }
     }
 }
 

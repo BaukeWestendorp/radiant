@@ -47,8 +47,8 @@ impl Workspace {
 
     fn debug(&mut self, _: &action::Debug, cx: &mut ViewContext<Self>) {
         self.show.update(cx, |show, _cx| {
-            let stage_output = show.get_stage_output();
-            log::debug!("{:?}", stage_output);
+            show.send_stage_output_to_dmx_protocols();
+            log::debug!("Sending stage output to DMX Protocols");
         })
     }
 }

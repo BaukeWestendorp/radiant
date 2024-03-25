@@ -1,31 +1,43 @@
+use std::collections::hash_map::Values;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct DmxOutput(HashMap<usize, DmxUniverse>);
+pub struct DmxOutput(HashMap<u16, DmxUniverse>);
 
 impl DmxOutput {
     pub fn new() -> Self {
         Self(HashMap::new())
     }
 
+    pub fn universes(&self) -> Values<'_, u16, DmxUniverse> {
+        self.0.values()
+    }
+
+    pub fn add_universe_if_absent(&mut self, id: u16) -> Result<(), Error> {
+        if !self.0.contains_key(&id) {
+            self.0.insert(id, DmxUniverse::new(id)?);
+        }
+
+        Ok(())
+    }
+
     /// Removes a universe from the output. `id` is zero-based.
-    pub fn remove_universe(&mut self, id: usize) {
+    pub fn remove_universe(&mut self, id: u16) {
         self.0.remove(&id);
     }
 
     /// Sets the value at a channel. Universe and address are zero-based.
     pub fn set_channel(&mut self, channel: &DmxChannel, value: u8) -> Result<(), Error> {
-        let universe = channel.universe as usize;
-
-        if !self.0.contains_key(&universe) {
-            self.0.insert(universe, DmxUniverse::new(channel.universe)?);
+        if !self.0.contains_key(&channel.universe) {
+            self.0
+                .insert(channel.universe, DmxUniverse::new(channel.universe)?);
         }
 
         if let Some(channel_value) = self
             .0
-            .get_mut(&universe)
+            .get_mut(&channel.universe)
             .unwrap()
             .channels
             .get_mut(channel.address as usize)
