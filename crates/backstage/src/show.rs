@@ -456,6 +456,8 @@ impl Executor {
                 } else {
                     if self.r#loop {
                         self.current_index.set(Some(0))
+                    } else {
+                        self.current_index.set(None)
                     }
                 }
             }

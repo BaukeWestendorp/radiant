@@ -82,7 +82,7 @@
             "id": 1,
             "sequence": 1,
             "current_index": 0,
-            "loop": true,
+            "loop": false,
             "button_1": {
                 "action": "Go"
             },
