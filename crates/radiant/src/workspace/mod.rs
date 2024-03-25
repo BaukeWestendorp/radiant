@@ -8,9 +8,11 @@ use std::env;
 use std::fs::File;
 use std::time::Duration;
 
-use screen::Screen;
+use self::layout::screen::Screen;
+use self::layout::window_grid::{GridBounds, GridPoint, GridSize};
+use self::layout::{Window, WindowGrid, WindowKind};
 
-pub mod screen;
+pub mod layout;
 
 pub mod action {
     use gpui::actions;
@@ -32,7 +34,16 @@ impl Workspace {
             let show = get_show().await?;
             let show_model = cx.new_model(|_cx| show)?;
 
-            let _main_screen = cx.update(|cx| Screen::open_window(show_model.clone(), cx))?;
+            let window_grid = cx.new_model(|_cx| {
+                let mut window_grid = WindowGrid::new();
+                window_grid.add_window(Window {
+                    bounds: GridBounds::new(GridPoint::new(0, 0), GridSize::new(5, 5)),
+                    kind: WindowKind::Executors,
+                });
+                window_grid
+            })?;
+            let _main_screen =
+                cx.update(|cx| Screen::open_window(show_model.clone(), window_grid, cx))?;
 
             Ok(Self {
                 show: show_model,

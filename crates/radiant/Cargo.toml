@@ -17,6 +17,7 @@ log.workspace = true
 thiserror.workspace = true
 regex.workspace = true
 dotenv.workspace = true
+serde.workspace = true
 
 lazy_static = "1.4.0"
 assets = { package = "assets", git = "https://github.com/zed-industries/zed" }

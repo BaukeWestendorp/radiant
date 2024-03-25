@@ -1,24 +1,33 @@
 use backstage::show::Show;
 use gpui::{
-    div, AppContext, FocusHandle, FocusableElement, FocusableView, InteractiveElement, IntoElement,
-    Model, ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext,
-    WindowHandle, WindowOptions,
+    div, AppContext, FocusHandle, FocusableView, InteractiveElement, IntoElement, Model,
+    ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext, WindowHandle,
+    WindowOptions,
 };
 
 use crate::theme::ActiveTheme;
 use crate::ui::text_input::{self, TextInput};
 
+use super::window_grid::WindowGridView;
+use super::WindowGrid;
+
 pub struct Screen {
+    window_grid: View<WindowGridView>,
     command_line: View<CommandLine>,
 
     focus_handle: FocusHandle,
 }
 
 impl Screen {
-    pub fn open_window(show: Model<Show>, cx: &mut AppContext) -> WindowHandle<Self> {
+    pub fn open_window(
+        show: Model<Show>,
+        window_grid: Model<WindowGrid>,
+        cx: &mut AppContext,
+    ) -> WindowHandle<Self> {
         let window_options = WindowOptions::default();
         cx.open_window(window_options, |cx| {
             cx.new_view(|cx| Self {
+                window_grid: WindowGridView::build(window_grid, cx),
                 command_line: CommandLine::build(show.clone(), cx),
                 focus_handle: cx.focus_handle(),
             })
@@ -43,7 +52,7 @@ impl Render for Screen {
             .size_full()
             .flex()
             .flex_col()
-            .child(div().size_full())
+            .child(div().size_full().child(self.window_grid.clone()))
             .child(div().h_10().child(self.command_line.clone()))
     }
 }
