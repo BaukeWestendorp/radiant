@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use itertools::Itertools;
+
 use self::parser::{Parser, ParserResult};
 
 mod lexer;
@@ -45,6 +47,12 @@ pub struct Command {
 }
 
 impl Command {
+    pub fn new(instructions: impl IntoIterator<Item = Instruction>) -> Self {
+        Self {
+            instructions: instructions.into_iter().collect_vec(),
+        }
+    }
+
     pub fn parse(s: &str) -> ParserResult<Self> {
         let mut parser = Parser::new(s);
         Ok(Self {

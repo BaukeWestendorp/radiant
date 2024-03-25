@@ -1,8 +1,9 @@
-use backstage::show::{Cue, Executor, ExecutorButton, Sequence, Show};
+use backstage::command::{Command, Instruction, Object};
+use backstage::show::{Cue, Executor, ExecutorButton, ExecutorButtonAction, Sequence, Show};
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, px, uniform_list, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
-    VisualContext, WindowContext,
+    div, px, uniform_list, InteractiveElement, IntoElement, Model, MouseButton, MouseDownEvent,
+    ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 
 use super::{WindowDelegate, WindowView};
@@ -81,10 +82,10 @@ pub struct ExecutorView {
 impl ExecutorView {
     pub fn build(executor: Executor, show: Model<Show>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| Self {
-            info: ExecutorInfo::build(executor.clone(), show, cx),
-            button_1: ExecutorButtonView::build(executor.button_1, cx),
-            button_2: ExecutorButtonView::build(executor.button_2, cx),
-            button_3: ExecutorButtonView::build(executor.button_3, cx),
+            info: ExecutorInfo::build(executor.clone(), show.clone(), cx),
+            button_1: ExecutorButtonView::build(executor.id, executor.button_1, show.clone(), cx),
+            button_2: ExecutorButtonView::build(executor.id, executor.button_2, show.clone(), cx),
+            button_3: ExecutorButtonView::build(executor.id, executor.button_3, show.clone(), cx),
         })
     }
 }
@@ -202,12 +203,38 @@ impl Render for ExecutorInfo {
 }
 
 pub struct ExecutorButtonView {
+    executor_id: usize,
     button: ExecutorButton,
+
+    show: Model<Show>,
 }
 
 impl ExecutorButtonView {
-    pub fn build(button: ExecutorButton, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|_cx| Self { button })
+    pub fn build(
+        executor_id: usize,
+        button: ExecutorButton,
+        show: Model<Show>,
+        cx: &mut WindowContext,
+    ) -> View<Self> {
+        cx.new_view(|_cx| Self {
+            executor_id,
+            button,
+            show,
+        })
+    }
+
+    pub fn handle_click(&mut self, _event: &MouseDownEvent, cx: &mut ViewContext<Self>) {
+        match self.button.action {
+            ExecutorButtonAction::Go => self.show.update(cx, |show, cx| {
+                if let Err(err) = show.execute_command(Command::new([
+                    Instruction::Select(Object::Executor(self.executor_id)),
+                    Instruction::Go,
+                ])) {
+                    log::error!("Failed to execute Go command: {}", err.to_string());
+                }
+                cx.notify();
+            }),
+        }
     }
 }
 
@@ -224,5 +251,6 @@ impl Render for ExecutorButtonView {
             .justify_center()
             .items_center()
             .child(self.button.action.to_string())
+            .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_click))
     }
 }
