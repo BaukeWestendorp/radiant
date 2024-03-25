@@ -84,13 +84,13 @@
             "current_index": 0,
             "loop": false,
             "button_1": {
-                "action": "Go"
+                "action": "Top"
             },
             "button_2": {
                 "action": "Go"
             },
             "button_3": {
-                "action": "Go"
+                "action": "Flash"
             }
         }
     ],

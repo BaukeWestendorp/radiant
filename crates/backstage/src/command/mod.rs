@@ -12,6 +12,7 @@ pub enum Instruction {
     Clear,
     Select(Object),
     Go,
+    Top,
 }
 
 impl std::fmt::Display for Instruction {
@@ -20,6 +21,7 @@ impl std::fmt::Display for Instruction {
             Instruction::Clear => write!(f, "Clear"),
             Instruction::Select(object) => write!(f, "Group {object}"),
             Instruction::Go => write!(f, "Go"),
+            Instruction::Top => write!(f, "Go"),
         }
     }
 }

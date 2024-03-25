@@ -3,7 +3,7 @@ use backstage::show::{Cue, Executor, ExecutorButton, ExecutorButtonAction, Seque
 use gpui::prelude::FluentBuilder;
 use gpui::{
     div, px, uniform_list, InteractiveElement, IntoElement, Model, MouseButton, MouseDownEvent,
-    ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext,
+    MouseUpEvent, ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 
 use super::{WindowDelegate, WindowView};
@@ -231,6 +231,37 @@ impl ExecutorButtonView {
                 }
                 cx.notify();
             }),
+            ExecutorButtonAction::Top => self.show.update(cx, |show, cx| {
+                if let Err(err) = show.execute_command(Command::new([
+                    Instruction::Select(Object::Executor(self.executor_id)),
+                    Instruction::Top,
+                ])) {
+                    log::error!("Failed to execute Top command: {}", err.to_string());
+                }
+                cx.notify();
+            }),
+            ExecutorButtonAction::Flash => {
+                self.show.update(cx, |show, cx| {
+                    if let Some(executor) = show.get_executor_mut(self.executor_id) {
+                        executor.flash = true;
+                        cx.notify();
+                    }
+                });
+            }
+        }
+    }
+
+    pub fn handle_release(&mut self, _event: &MouseUpEvent, cx: &mut ViewContext<Self>) {
+        match self.button.action {
+            ExecutorButtonAction::Flash => {
+                self.show.update(cx, |show, cx| {
+                    if let Some(executor) = show.get_executor_mut(self.executor_id) {
+                        executor.flash = false;
+                        cx.notify();
+                    }
+                });
+            }
+            _ => {}
         }
     }
 }
@@ -251,5 +282,6 @@ impl Render for ExecutorButtonView {
             .cursor_pointer()
             .child(self.button.action.to_string())
             .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_click))
+            .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_release))
     }
 }

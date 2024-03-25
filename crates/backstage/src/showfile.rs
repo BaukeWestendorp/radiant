@@ -97,6 +97,8 @@ pub struct ExecutorButton {
 pub enum ExecutorButtonAction {
     #[default]
     Go,
+    Top,
+    Flash,
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
@@ -232,13 +234,13 @@ mod tests {
                         "current_index": null,
                         "loop": true,
                         "button_1": {
-                            "action": "Go"
+                            "action": "Top"
                         },
                         "button_2": {
                             "action": "Go"
                         },
                         "button_3": {
-                            "action": "Go"
+                            "action": "Flash"
                         }
                     }
                 ],
@@ -338,13 +340,13 @@ mod tests {
                     current_index: None,
                     r#loop: true,
                     button_1: ExecutorButton {
-                        action: ExecutorButtonAction::Go,
+                        action: ExecutorButtonAction::Top,
                     },
                     button_2: ExecutorButton {
                         action: ExecutorButtonAction::Go,
                     },
                     button_3: ExecutorButton {
-                        action: ExecutorButtonAction::Go,
+                        action: ExecutorButtonAction::Flash,
                     }
                 }],
                 dmx_protocols: vec![DmxArtnetProtocol {

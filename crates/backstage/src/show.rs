@@ -99,19 +99,26 @@ impl Show {
                 sequence: executor.sequence,
                 current_index: Cell::new(executor.current_index),
                 r#loop: executor.r#loop,
+                flash: false,
                 button_1: ExecutorButton {
                     action: match executor.button_1.action {
                         showfile::ExecutorButtonAction::Go => ExecutorButtonAction::Go,
+                        showfile::ExecutorButtonAction::Top => ExecutorButtonAction::Top,
+                        showfile::ExecutorButtonAction::Flash => ExecutorButtonAction::Flash,
                     },
                 },
                 button_2: ExecutorButton {
                     action: match executor.button_2.action {
                         showfile::ExecutorButtonAction::Go => ExecutorButtonAction::Go,
+                        showfile::ExecutorButtonAction::Top => ExecutorButtonAction::Top,
+                        showfile::ExecutorButtonAction::Flash => ExecutorButtonAction::Flash,
                     },
                 },
                 button_3: ExecutorButton {
                     action: match executor.button_3.action {
                         showfile::ExecutorButtonAction::Go => ExecutorButtonAction::Go,
+                        showfile::ExecutorButtonAction::Top => ExecutorButtonAction::Top,
+                        showfile::ExecutorButtonAction::Flash => ExecutorButtonAction::Flash,
                     },
                 },
             })
@@ -179,6 +186,15 @@ impl Show {
 
                                     executor.go(self);
                                 }
+                                Instruction::Top => {
+                                    let Some(executor) = self.get_executor(*id) else {
+                                        log::error!("Failed to Top executor: Executor with id '{id}' not found.");
+                                        // FIXME: Return a useful error.
+                                        return Ok(());
+                                    };
+
+                                    executor.top(self);
+                                }
                                 instr => {
                                     log::error!(
                                         "Invalid instruction after executor selection: {instr}"
@@ -192,6 +208,9 @@ impl Show {
                     },
                     Instruction::Go => {
                         log::error!("The Go command should be used after selecting a executor with 'Select Executor #'!");
+                    }
+                    Instruction::Top => {
+                        log::error!("The Top command should be used after selecting a executor with 'Select Executor #'!");
                     }
                 }
             }
@@ -249,6 +268,10 @@ impl Show {
 
     pub fn get_executor(&self, id: usize) -> Option<&Executor> {
         self.executors.iter().find(|e| e.id == id)
+    }
+
+    pub fn get_executor_mut(&mut self, id: usize) -> Option<&mut Executor> {
+        self.executors.iter_mut().find(|e| e.id == id)
     }
 
     pub fn get_stage_output(&mut self) -> DmxOutput {
@@ -413,6 +436,7 @@ pub struct Executor {
     pub sequence: Option<usize>,
     pub current_index: Cell<Option<usize>>,
     pub r#loop: bool,
+    pub flash: bool,
     pub button_1: ExecutorButton,
     pub button_2: ExecutorButton,
     pub button_3: ExecutorButton,
@@ -427,12 +451,16 @@ pub struct ExecutorButton {
 pub enum ExecutorButtonAction {
     #[default]
     Go,
+    Top,
+    Flash,
 }
 
 impl std::fmt::Display for ExecutorButtonAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ExecutorButtonAction::Go => write!(f, "Go"),
+            ExecutorButtonAction::Top => write!(f, "Top"),
+            ExecutorButtonAction::Flash => write!(f, "Flash"),
         }
     }
 }
@@ -462,6 +490,10 @@ impl Executor {
                 }
             }
         }
+    }
+
+    pub fn top(&self, show: &Show) {
+        self.go_to_cue(0, show);
     }
 
     pub fn go_to_cue(&self, index: usize, show: &Show) {

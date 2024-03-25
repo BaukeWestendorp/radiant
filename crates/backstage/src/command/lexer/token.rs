@@ -6,6 +6,7 @@ pub enum TokenKind {
     Clear,
     Select,
     Go,
+    Top,
 
     // Objects
     Group,
@@ -25,6 +26,7 @@ impl std::fmt::Display for TokenKind {
             Self::Clear => "Clear".to_string(),
             Self::Select => "Select".to_string(),
             Self::Go => "Go".to_string(),
+            Self::Top => "Top".to_string(),
 
             Self::Group => "Group".to_string(),
             Self::Fixture => "Fixture".to_string(),
