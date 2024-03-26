@@ -1,11 +1,11 @@
 use gpui::{
-    div, prelude::FluentBuilder, px, rgb, AnyElement, InteractiveElement, Interactivity,
-    IntoElement, Model, ParentElement, RenderOnce, ScrollWheelEvent, Styled, ViewContext,
-    WindowContext,
+    div, px, AnyElement, InteractiveElement, Interactivity, IntoElement, Model, ParentElement,
+    RenderOnce, ScrollWheelEvent, Styled, ViewContext, WindowContext,
 };
 use smallvec::SmallVec;
 
-use crate::workspace::layout::window_grid::{GridBounds, GRID_CELL_SIZE};
+use crate::theme::ActiveTheme;
+use crate::workspace::layout::window_grid::{grid_div, GridBounds, GridSize};
 use crate::workspace::layout::{PoolWindow, Window, WindowGrid, WindowKind};
 
 use super::{WindowDelegate, WindowView};
@@ -136,16 +136,14 @@ impl InteractiveElement for PoolCell {
 }
 
 impl RenderOnce for PoolCell {
-    fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
-        let has_content = self.children.is_empty();
+    fn render(self, cx: &mut WindowContext) -> impl IntoElement {
+        let has_content = !self.children.is_empty();
 
-        // FIXME: Can we clean this up with grid_div()?
-        div()
-            .bg(rgb(0x202020))
-            .border_color(rgb(0x404040))
+        grid_div(GridSize::new(1, 1), None)
+            .bg(cx.theme().colors().background_secondary)
+            .border_color(cx.theme().colors().border)
             .border_1()
             .rounded_md()
-            .size(px(GRID_CELL_SIZE as f32))
             .relative()
             .child(
                 div()
@@ -159,8 +157,10 @@ impl RenderOnce for PoolCell {
                     .absolute()
                     .size_full()
                     .text_sm()
-                    .text_color(rgb(0xffffff))
-                    .when(has_content, |this| this.text_color(rgb(0x808080)))
+                    .text_color(match has_content {
+                        true => cx.theme().colors().text,
+                        false => cx.theme().colors().text_muted,
+                    })
                     .pl(px(4.0))
                     .child(format!("{}", self.id)),
             )

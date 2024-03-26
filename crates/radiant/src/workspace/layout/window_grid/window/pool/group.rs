@@ -1,9 +1,8 @@
 use backstage::command::{Command, Instruction, Object};
 use backstage::show::Show;
-use gpui::{
-    div, prelude::FluentBuilder, rgb, IntoElement, Model, ParentElement, Styled, WindowContext,
-};
+use gpui::{div, prelude::FluentBuilder, IntoElement, Model, ParentElement, Styled, WindowContext};
 
+use crate::theme::ActiveTheme;
 use crate::workspace::layout::window_grid::window::WindowView;
 use crate::workspace::layout::window_grid::GridBounds;
 
@@ -56,7 +55,7 @@ impl PoolWindowDelegate for GroupPoolWindowDelegate {
 
                 Some(
                     div()
-                        .bg(rgb(0x303030))
+                        .bg(cx.theme().colors().background_tertriary)
                         .size_full()
                         .flex()
                         .flex_col()
