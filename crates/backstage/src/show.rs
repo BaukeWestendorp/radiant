@@ -200,6 +200,9 @@ impl Show {
                                 }
                             }
                         }
+                        Object::PresetColor(id) => {
+                            log::info!("Select preset color {id}");
+                        }
                         Object::Executor(id) => {
                             let Some(next_instruction) = command.instructions.get(1) else {
                                 log::error!("Expected instruction after executor selection");

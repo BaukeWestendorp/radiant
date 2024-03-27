@@ -10,6 +10,7 @@ pub enum TokenKind {
 
     // Objects
     Group,
+    PresetColor,
     Fixture,
     Executor,
 
@@ -29,6 +30,7 @@ impl std::fmt::Display for TokenKind {
             Self::Top => "Top".to_string(),
 
             Self::Group => "Group".to_string(),
+            Self::PresetColor => "Preset::Color".to_string(),
             Self::Fixture => "Fixture".to_string(),
             Self::Executor => "Executor".to_string(),
 

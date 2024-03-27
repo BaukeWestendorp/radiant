@@ -49,6 +49,7 @@ pub fn get_rules() -> Vec<Rule> {
         keyword!(TokenKind::Go),
         keyword!(TokenKind::Top),
         keyword!(TokenKind::Group),
+        keyword!(TokenKind::PresetColor),
         keyword!(TokenKind::Fixture),
         keyword!(TokenKind::Executor),
         regex!(TokenKind::Number, &INT_REGEX),

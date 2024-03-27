@@ -51,6 +51,7 @@ where
 
         let instruction = match kind {
             TokenKind::Group => Object::Group(id),
+            TokenKind::PresetColor => Object::PresetColor(id),
             TokenKind::Fixture => Object::Fixture(id),
             TokenKind::Executor => Object::Executor(id),
             _ => {

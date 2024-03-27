@@ -30,6 +30,7 @@ impl std::fmt::Display for Instruction {
 pub enum Object {
     Fixture(usize),
     Group(usize),
+    PresetColor(usize),
     Executor(usize),
 }
 
@@ -38,6 +39,7 @@ impl std::fmt::Display for Object {
         match self {
             Object::Fixture(id) => write!(f, "Fixture {id}"),
             Object::Group(id) => write!(f, "Group {id}"),
+            Object::PresetColor(id) => write!(f, "Preset::Color {id}"),
             Object::Executor(id) => write!(f, "Executor {id}"),
         }
     }
