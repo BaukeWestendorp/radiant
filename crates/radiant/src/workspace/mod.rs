@@ -1,6 +1,5 @@
 use anyhow::Result;
 use backstage::show::Show;
-use backstage::showfile::Showfile;
 use gdtf_share::GdtfShare;
 use gpui::{AsyncAppContext, Context, Model, Task, Timer};
 
@@ -91,9 +90,8 @@ impl Workspace {
 
 async fn get_show() -> Result<Show> {
     let file = File::open("show.json")?;
-    let showfile = Showfile::from_file(file)?;
     let user = env::var("GDTF_SHARE_API_USER")?;
     let password = env::var("GDTF_SHARE_API_PASSWORD")?;
     let gdtf_share = GdtfShare::auth(user, password).await?;
-    Ok(Show::new(showfile, gdtf_share).await)
+    Ok(Show::from_file(file, gdtf_share).await?)
 }

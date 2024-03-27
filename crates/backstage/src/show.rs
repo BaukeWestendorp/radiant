@@ -2,7 +2,7 @@ use anyhow::Result;
 use itertools::Itertools;
 use std::cell::Cell;
 use std::collections::HashMap;
-use std::io::Cursor;
+use std::fs::File;
 use std::rc::Rc;
 
 use dmx::{DmxChannel, DmxOutput, DmxValue};
@@ -32,7 +32,13 @@ pub struct Show {
 }
 
 impl Show {
-    pub async fn new(showfile: Showfile, gdtf_share: GdtfShare) -> Self {
+    pub async fn from_file(file: File, gdtf_share: GdtfShare) -> std::io::Result<Self> {
+        let reader = std::io::BufReader::new(file);
+        let showfile: Showfile = serde_json::from_reader(reader)?;
+        Ok(Self::from_showfile(showfile, gdtf_share).await)
+    }
+
+    pub(crate) async fn from_showfile(showfile: Showfile, gdtf_share: GdtfShare) -> Self {
         let mut patchlist = Patchlist::new();
 
         for f in showfile.patch_list.fixtures.into_iter() {
@@ -41,7 +47,7 @@ impl Show {
                 Some(description) => description,
                 None => {
                     let description_file = gdtf_share.download_file(rid).await.unwrap();
-                    let reader = Cursor::new(description_file);
+                    let reader = std::io::Cursor::new(description_file);
                     let description = GdtfDescription::from_archive_reader(reader).unwrap();
                     patchlist.register_gdtf_description(rid, description)
                 }
@@ -822,7 +828,7 @@ mod tests {
         let showfile: Showfile = serde_json::from_str(r#"{}"#).unwrap();
         let gdtf_share = GdtfShare::auth(user, password).await.unwrap();
 
-        Show::new(showfile, gdtf_share).await;
+        Show::from_showfile(showfile, gdtf_share).await;
     }
 
     #[tokio::test]
@@ -862,7 +868,7 @@ mod tests {
         .unwrap();
         let gdtf_share = GdtfShare::auth(user, password).await.unwrap();
 
-        let show = Show::new(showfile, gdtf_share).await;
+        let show = Show::from_showfile(showfile, gdtf_share).await;
 
         assert_eq!(
             show.patchlist.fixtures[0].description.fixture_type.id,
@@ -909,7 +915,7 @@ mod tests {
         .unwrap();
         let gdtf_share = GdtfShare::auth(user, password).await.unwrap();
 
-        let mut show = Show::new(showfile, gdtf_share).await;
+        let mut show = Show::from_showfile(showfile, gdtf_share).await;
         show.execute_command_str("Select Fixture 420").unwrap();
 
         assert_eq!(*show.programmer.selection.first().unwrap(), 420);

@@ -1,6 +1,4 @@
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::{self, BufReader};
 
 use dmx::{DmxChannel, DmxValue};
 
@@ -25,14 +23,6 @@ pub struct Showfile {
 
     #[serde(default = "Default::default")]
     pub dmx_protocols: Vec<DmxArtnetProtocol>,
-}
-
-impl Showfile {
-    pub fn from_file(file: File) -> io::Result<Self> {
-        let reader = BufReader::new(file);
-        let showfile: Showfile = serde_json::from_reader(reader)?;
-        Ok(showfile)
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
@@ -260,7 +250,7 @@ mod tests {
                             }
                         }
                     ]
-                }
+                },
                 "executors": [
                     {
                         "id": 1,
