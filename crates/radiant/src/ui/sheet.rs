@@ -1,3 +1,4 @@
+use crate::theme::ActiveTheme;
 use gpui::prelude::FluentBuilder;
 use gpui::{
     div, rgb, uniform_list, AnyElement, IntoElement, ParentElement, Pixels, Render, SharedString,
@@ -100,7 +101,7 @@ pub trait SheetDelegate: Sized {
             .flex_row()
             .children(header_cells)
             .border_b()
-            .border_color(rgb(0x666666))
+            .border_color(cx.theme().colors().border)
             .into_any_element()
     }
 
@@ -115,8 +116,9 @@ pub trait SheetDelegate: Sized {
         div()
             .flex()
             .flex_row()
-            .when(ix % 2 == 0, |this| this.bg(rgb(0x343434)))
-            .when(is_selected, |this| this.bg(rgb(0x3333ff)))
+            .when(is_selected, |this| {
+                this.bg(cx.theme().colors().element_selected)
+            })
             .children(children)
             .into_any_element()
     }
@@ -133,7 +135,7 @@ pub trait SheetDelegate: Sized {
             .whitespace_nowrap()
             .overflow_hidden()
             .border_r()
-            .border_color(rgb(0x666666))
+            .border_color(cx.theme().colors().border)
             .child(content)
             .into_any_element()
     }
