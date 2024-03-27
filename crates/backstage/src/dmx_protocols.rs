@@ -20,7 +20,7 @@ impl ArtnetDmxProtocol {
     pub fn send_dmx_output(&self, dmx_output: &DmxOutput) {
         for universe in dmx_output.universes() {
             self.socket
-                .send_dmx(universe.id(), universe.get_channels().to_vec());
+                .send_dmx(universe.id(), universe.get_addresses().to_vec());
         }
     }
 }

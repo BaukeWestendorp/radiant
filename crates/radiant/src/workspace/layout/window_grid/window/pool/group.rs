@@ -45,13 +45,13 @@ impl PoolWindowDelegate for GroupPoolWindowDelegate {
     }
 
     fn render_item_for_id(&self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement> {
-        let group = self.show.read(cx).get_group(id);
+        let group = self.show.read(cx).group(id);
 
         match group {
             Some(group) => {
                 let label = group.label.to_string();
                 let is_in_programmer_selection =
-                    self.show.read(cx).fixtures_are_selected(&group.fixtures);
+                    self.show.read(cx).are_fixtures_selected(&group.fixtures);
 
                 Some(
                     div()

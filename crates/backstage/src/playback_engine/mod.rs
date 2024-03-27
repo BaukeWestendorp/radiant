@@ -22,11 +22,11 @@ impl PlaybackEngine {
                     "Using values for Cue '{}' to determine dmx output",
                     current_cue.label
                 );
-                let fixtures = show.get_fixtures_in_groups(current_cue.groups.clone());
+                let fixtures = show.fixtures_in_groups(&current_cue.groups);
 
                 for fixture in fixtures.iter() {
                     for (attribute_name, attribute_value) in current_cue.attribute_values.iter() {
-                        let Some(attribute_offset) = fixture.attribute_offset(attribute_name)
+                        let Some(dmx_channels) = fixture.dmx_channels_for_attribute(attribute_name)
                         else {
                             continue;
                         };
@@ -49,14 +49,8 @@ impl PlaybackEngine {
                             *value = (*value as f32 * master) as u8;
                         });
 
-                        for (offset, value) in attribute_offset.iter().zip(raw_dmx_values) {
-                            // Because the offset in the GDTF files starts at 1, we need to
-                            // compensate for our zero-based array.
-                            let offset = offset.saturating_sub(1);
-
-                            let mut channel = fixture.channel;
-                            channel.address += offset as u16;
-                            if let Err(err) = output.set_channel(&channel, value) {
+                        for (channel, value) in dmx_channels.iter().zip(raw_dmx_values) {
+                            if let Err(err) = output.set_channel(channel, value) {
                                 log::error!("Failed to set channel output: {}", err.to_string())
                             }
                         }
@@ -73,7 +67,7 @@ impl PlaybackEngine {
         executor: &Executor,
         show: &'a Show,
     ) -> Option<&Cue> {
-        if let Some(sequence) = executor.sequence.and_then(|id| show.get_sequence(id)) {
+        if let Some(sequence) = executor.sequence.and_then(|id| show.sequence(id)) {
             if let Some(current_index) = executor.current_index.get() {
                 if let Some(current_cue) = sequence.cues.get(current_index) {
                     return Some(current_cue);

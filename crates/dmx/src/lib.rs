@@ -39,7 +39,7 @@ impl DmxOutput {
             .0
             .get_mut(&channel.universe)
             .unwrap()
-            .channels
+            .addresses
             .get_mut(channel.address as usize)
         {
             *channel_value = value
@@ -49,19 +49,23 @@ impl DmxOutput {
 
         Ok(())
     }
+
+    pub fn get_channel(&self, channel: DmxChannel) -> Option<u8> {
+        self.0.get(&channel.universe)?.get_address(channel.address)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DmxUniverse {
     id: u16,
-    channels: [u8; 512],
+    addresses: [u8; 512],
 }
 
 impl DmxUniverse {
     pub fn new(id: u16) -> Result<Self, Error> {
         Ok(DmxUniverse {
             id,
-            channels: [0; 512],
+            addresses: [0; 512],
         })
     }
 
@@ -69,34 +73,34 @@ impl DmxUniverse {
         self.id
     }
 
-    pub fn set_channel(&mut self, channel: u16, value: u8) {
-        if (0..512).contains(&channel) {
+    pub fn set_address(&mut self, address: u16, value: u8) {
+        if !(0..512).contains(&address) {
             log::warn!(
-                "Tried to set channel {} in universe {} but it is out of range",
-                channel,
+                "Tried to set address {} in universe {} but it is out of range",
+                address,
                 self.id
             );
             return;
         }
 
-        self.channels[channel as usize] = value;
+        self.addresses[address as usize] = value;
     }
 
-    pub fn get_channel(&self, channel: u16) -> Option<u8> {
-        if (0..512).contains(&channel) {
+    pub fn get_address(&self, address: u16) -> Option<u8> {
+        if !(0..512).contains(&address) {
             log::warn!(
-                "Tried to get channel {} in universe {} but it is out of range",
-                channel,
+                "Tried to get address {} in universe {} but it is out of range",
+                address,
                 self.id
             );
             return None;
         }
 
-        Some(self.channels[channel as usize])
+        Some(self.addresses[address as usize])
     }
 
-    pub fn get_channels(&self) -> &[u8; 512] {
-        &self.channels
+    pub fn get_addresses(&self) -> &[u8; 512] {
+        &self.addresses
     }
 }
 

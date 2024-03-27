@@ -187,7 +187,7 @@ impl Render for ExecutorInfo {
         let sequence = self
             .executor
             .sequence
-            .and_then(|id| self.show.read(cx).get_sequence(id).cloned());
+            .and_then(|id| self.show.read(cx).sequence(id).cloned());
 
         grid_div(GridSize::new(1, 1), None)
             .bg(cx.theme().colors().background)
@@ -242,7 +242,7 @@ impl ExecutorButtonView {
             }),
             ExecutorButtonAction::Flash => {
                 self.show.update(cx, |show, cx| {
-                    if let Some(executor) = show.get_executor_mut(self.executor_id) {
+                    if let Some(executor) = show.executor_mut(self.executor_id) {
                         executor.flash = true;
                         cx.notify();
                     }
@@ -255,7 +255,7 @@ impl ExecutorButtonView {
         match self.button.action {
             ExecutorButtonAction::Flash => {
                 self.show.update(cx, |show, cx| {
-                    if let Some(executor) = show.get_executor_mut(self.executor_id) {
+                    if let Some(executor) = show.executor_mut(self.executor_id) {
                         executor.flash = false;
                         cx.notify();
                     }
@@ -268,7 +268,7 @@ impl ExecutorButtonView {
 
 impl Render for ExecutorButtonView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let executor = self.show.read(cx).get_executor(self.executor_id);
+        let executor = self.show.read(cx).executor(self.executor_id);
 
         div()
             .w(px(GRID_CELL_SIZE as f32))

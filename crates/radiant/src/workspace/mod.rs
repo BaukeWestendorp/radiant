@@ -46,11 +46,8 @@ impl Workspace {
                     }),
                 });
                 window_grid.add_window(Window {
-                    bounds: GridBounds::new(GridPoint::new(0, 5), GridSize::new(5, 5)),
-                    kind: WindowKind::Pool(PoolWindow {
-                        kind: layout::PoolWindowKind::Color,
-                        scroll_offset: 0,
-                    }),
+                    bounds: GridBounds::new(GridPoint::new(0, 5), GridSize::new(25, 5)),
+                    kind: WindowKind::FixtureSheet,
                 });
                 window_grid
             })?;

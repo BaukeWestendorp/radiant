@@ -3,9 +3,9 @@
         "fixtures": [
             {
                 "id": 1,
-                "gdtf_share_revision_id": 60124,
-                "label": "Front Wash 1",
-                "mode": "Standard mode",
+                "gdtf_share_revision_id": 36314,
+                "label": "LEDForce 7 RGBW 1",
+                "mode": "Mode 2 RGBW + dim + strobe",
                 "channel": {
                     "address": 0,
                     "universe": 0
@@ -13,9 +13,9 @@
             },
             {
                 "id": 2,
-                "label": "Front Wash 2",
-                "gdtf_share_revision_id": 60124,
-                "mode": "Standard mode",
+                "label": "LEDForce 7 RGBW 2",
+                "gdtf_share_revision_id": 36314,
+                "mode": "Mode 2 RGBW + dim + strobe",
                 "channel": {
                     "address": 6,
                     "universe": 0

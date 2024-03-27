@@ -6,7 +6,7 @@ use std::io::Cursor;
 use std::rc::Rc;
 
 use dmx::{DmxChannel, DmxOutput, DmxValue};
-use gdtf::GdtfDescription;
+use gdtf::{ActivationGroup, Attribute, FeatureGroup, FixtureType, GdtfDescription};
 use gdtf_share::GdtfShare;
 
 use crate::command::{Command, Instruction, Object};
@@ -48,7 +48,7 @@ impl Show {
             let fixture = Fixture {
                 id: f.id,
                 label: f.label,
-                gdtf_description,
+                description: gdtf_description,
                 channel: f.channel,
                 mode: f.mode,
             };
@@ -142,10 +142,6 @@ impl Show {
         }
     }
 
-    pub fn executors(&self) -> &Vec<Executor> {
-        &self.executors
-    }
-
     pub fn execute_command_str(&mut self, s: &str) -> Result<()> {
         let command = Command::parse(s)?;
         self.execute_command(command)?;
@@ -160,7 +156,7 @@ impl Show {
                     Instruction::Clear => {}
                     Instruction::Select(object) => match object {
                         Object::Fixture(id) => {
-                            if !self.fixture_is_selected(*id) {
+                            if !self.is_fixture_selected(*id) {
                                 if self.fixture_exists(*id) {
                                     self.programmer.selection.push(*id);
                                     log::info!("Selected Fixture {id}");
@@ -179,7 +175,7 @@ impl Show {
 
                             match next_instruction {
                                 Instruction::Go => {
-                                    let Some(executor) = self.get_executor(*id) else {
+                                    let Some(executor) = self.executor(*id) else {
                                         log::error!("Failed to Go executor: Executor with id '{id}' not found.");
                                         // FIXME: Return a useful error.
                                         return Ok(());
@@ -188,7 +184,7 @@ impl Show {
                                     executor.go(self);
                                 }
                                 Instruction::Top => {
-                                    let Some(executor) = self.get_executor(*id) else {
+                                    let Some(executor) = self.executor(*id) else {
                                         log::error!("Failed to Top executor: Executor with id '{id}' not found.");
                                         // FIXME: Return a useful error.
                                         return Ok(());
@@ -220,38 +216,71 @@ impl Show {
         Ok(())
     }
 
-    pub fn get_fixture(&self, id: usize) -> Option<&Fixture> {
-        self.patchlist.fixtures.iter().find(|f| f.id == id)
+    pub fn fixture(&self, fixture_id: usize) -> Option<&Fixture> {
+        self.patchlist.fixtures.iter().find(|f| f.id == fixture_id)
     }
 
-    pub fn get_fixtures_in_group(&self, id: usize) -> Vec<&Fixture> {
-        let Some(group) = self.get_group(id) else {
+    pub fn fixture_mut(&mut self, fixture_id: usize) -> Option<&mut Fixture> {
+        self.patchlist
+            .fixtures
+            .iter_mut()
+            .find(|e| e.id == fixture_id)
+    }
+    pub fn fixtures(&self) -> &Vec<Fixture> {
+        &self.patchlist.fixtures
+    }
+
+    pub fn selected_fixtures(&self) -> Vec<&Fixture> {
+        self.programmer
+            .selection
+            .iter()
+            .filter_map(|id| self.fixture(*id))
+            .collect()
+    }
+
+    pub fn fixtures_in_group(&self, group_id: usize) -> Vec<&Fixture> {
+        let Some(group) = self.group(group_id) else {
             return Vec::new();
         };
 
         group
             .fixtures
             .iter()
-            .filter_map(|f| self.get_fixture(*f))
+            .filter_map(|f| self.fixture(*f))
             .collect()
     }
 
-    pub fn get_fixtures_in_groups(&self, ids: impl IntoIterator<Item = usize>) -> Vec<&Fixture> {
-        ids.into_iter()
-            .flat_map(|id| self.get_fixtures_in_group(id))
+    pub fn fixtures_in_groups(&self, group_ids: &[usize]) -> Vec<&Fixture> {
+        group_ids
+            .into_iter()
+            .flat_map(|id| self.fixtures_in_group(*id))
             .collect()
     }
 
-    pub fn fixture_is_selected(&self, id: usize) -> bool {
+    pub fn is_fixture_selected(&self, id: usize) -> bool {
         self.programmer.selection.contains(&id)
     }
 
-    pub fn fixtures_are_selected(&self, fixtures: &[usize]) -> bool {
-        !fixtures.iter().any(|id| !self.fixture_is_selected(*id))
+    pub fn are_fixtures_selected(&self, fixtures: &[usize]) -> bool {
+        !fixtures
+            .into_iter()
+            .any(|id| !self.is_fixture_selected(*id))
     }
 
     pub fn fixture_exists(&self, id: usize) -> bool {
-        self.get_fixture(id).is_some()
+        self.fixture(id).is_some()
+    }
+
+    pub fn executor(&self, id: usize) -> Option<&Executor> {
+        self.executors.iter().find(|e| e.id == id)
+    }
+
+    pub fn executor_mut(&mut self, id: usize) -> Option<&mut Executor> {
+        self.executors.iter_mut().find(|e| e.id == id)
+    }
+
+    pub fn executors(&self) -> &Vec<Executor> {
+        &self.executors
     }
 
     pub fn used_universes(&self) -> Vec<u16> {
@@ -263,23 +292,47 @@ impl Show {
             .collect()
     }
 
-    pub fn get_group(&self, id: usize) -> Option<&Group> {
-        self.data.groups.iter().find(|g| g.id == id)
+    pub fn all_attributes(&self) -> Vec<&Attribute> {
+        self.patchlist
+            .fixtures
+            .iter()
+            .flat_map(|f| f.attributes())
+            .collect()
     }
 
-    pub fn get_sequence(&self, id: usize) -> Option<&Sequence> {
-        self.data.sequences.iter().find(|s| s.id == id)
+    pub fn attributes_with_channel(&self) -> Vec<&Attribute> {
+        self.patchlist
+            .fixtures
+            .iter()
+            .flat_map(|f| f.attributes_with_channels())
+            .collect()
     }
 
-    pub fn get_executor(&self, id: usize) -> Option<&Executor> {
-        self.executors.iter().find(|e| e.id == id)
+    pub fn group(&self, group_id: usize) -> Option<&Group> {
+        self.data.groups.iter().find(|g| g.id == group_id)
     }
 
-    pub fn get_executor_mut(&mut self, id: usize) -> Option<&mut Executor> {
-        self.executors.iter_mut().find(|e| e.id == id)
+    pub fn group_mut(&mut self, group_id: usize) -> Option<&mut Group> {
+        self.data.groups.iter_mut().find(|g| g.id == group_id)
     }
 
-    pub fn get_stage_output(&mut self) -> DmxOutput {
+    pub fn groups(&self) -> &Vec<Group> {
+        &self.data.groups
+    }
+
+    pub fn sequence(&self, sequence_id: usize) -> Option<&Sequence> {
+        self.data.sequences.iter().find(|s| s.id == sequence_id)
+    }
+
+    pub fn sequence_mut(&mut self, sequence_id: usize) -> Option<&mut Sequence> {
+        self.data.sequences.iter_mut().find(|s| s.id == sequence_id)
+    }
+
+    pub fn sequences(&self) -> &Vec<Sequence> {
+        &self.data.sequences
+    }
+
+    pub fn stage_output(&mut self) -> DmxOutput {
         let mut playback = self.playback_engine.determine_dmx_output(self);
         for universe in self.used_universes().iter() {
             if let Err(err) = playback.add_universe_if_absent(*universe) {
@@ -292,8 +345,13 @@ impl Show {
         playback
     }
 
+    pub fn stage_output_dmx_value_for_channel(&mut self, channel: DmxChannel) -> Option<u8> {
+        // FIXME: We should cache the current stage output.
+        self.stage_output().get_channel(channel)
+    }
+
     pub fn send_stage_output_to_dmx_protocols(&mut self) {
-        let dmx_output = self.get_stage_output();
+        let dmx_output = self.stage_output();
         for dmx_protocol in self.dmx_protocols.iter() {
             dmx_protocol.send_dmx_output(&dmx_output);
         }
@@ -337,20 +395,29 @@ impl Patchlist {
 pub struct Fixture {
     pub id: usize,
     pub label: String,
-    pub gdtf_description: Rc<GdtfDescription>,
+    pub description: Rc<GdtfDescription>,
     pub channel: DmxChannel,
     pub mode: String,
 }
 
 impl Fixture {
-    pub fn attributes(&self) -> &Vec<gdtf::Attribute> {
-        &self
-            .gdtf_description
-            .fixture_type
-            .attribute_definitions
-            .attributes
+    pub fn r#type(&self) -> &FixtureType {
+        &self.description.fixture_type
     }
-    pub fn attribute_offset(&self, attribute_name: &str) -> Option<Vec<i32>> {
+
+    pub fn activation_groups(&self) -> &Vec<ActivationGroup> {
+        &self.r#type().attribute_definitions.activation_groups
+    }
+
+    pub fn feature_groups(&self) -> &Vec<FeatureGroup> {
+        &self.r#type().attribute_definitions.feature_groups
+    }
+
+    pub fn attributes(&self) -> &Vec<gdtf::Attribute> {
+        &self.r#type().attribute_definitions.attributes
+    }
+
+    pub fn attribute_offset_for_current_mode(&self, attribute_name: &str) -> Option<Vec<i32>> {
         self.get_dmx_channels_using_attribute(attribute_name)
             .first()
             .and_then(|channel| channel.offset.clone())
@@ -382,8 +449,7 @@ impl Fixture {
     }
 
     pub fn current_dmx_mode(&self) -> &gdtf::DmxMode {
-        self.gdtf_description
-            .fixture_type
+        self.r#type()
             .dmx_modes
             .iter()
             .find(|mode| mode.name == self.mode)
@@ -400,6 +466,45 @@ impl Fixture {
         };
 
         Some(offset.len().clamp(u8::MIN as usize, u8::MAX as usize) as u8)
+    }
+
+    fn attributes_with_channels(&self) -> Vec<&Attribute> {
+        self.current_dmx_mode()
+            .dmx_channels
+            .iter()
+            .flat_map(|channel| {
+                if channel.offset.as_ref().is_some_and(|o| !o.is_empty()) {
+                    Some(
+                        channel
+                            .logical_channels
+                            .get(0)
+                            .unwrap()
+                            .attribute(self.attributes()),
+                    )
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
+    pub fn dmx_channels_for_attribute(&self, attribute_name: &str) -> Option<Vec<DmxChannel>> {
+        let offset = self.attribute_offset_for_current_mode(attribute_name)?;
+
+        let mut channels = vec![];
+        for o in offset.iter() {
+            // Because the offset in the GDTF files starts at 1, we need to
+            // compensate for our zero-based array.
+            let offset = o.saturating_sub(1);
+            let address = self.channel.address + offset as u16;
+
+            if let Ok(channel) = DmxChannel::new(self.channel.universe, address) {
+                channels.push(channel);
+            } else {
+                return None;
+            }
+        }
+        Some(channels)
     }
 }
 
@@ -517,7 +622,7 @@ impl Executor {
         let Some(id) = self.sequence else {
             return None;
         };
-        show.get_sequence(id)
+        show.sequence(id)
     }
 }
 
@@ -583,7 +688,7 @@ mod tests {
         let show = Show::new(showfile, gdtf_share).await;
 
         assert_eq!(
-            show.patchlist.fixtures[0].gdtf_description.fixture_type.id,
+            show.patchlist.fixtures[0].description.fixture_type.id,
             "DB42C9F0-3236-4251-8436-D9CBE92F4021".to_string()
         );
 

@@ -55,6 +55,7 @@ pub struct Window {
 pub enum WindowKind {
     Pool(PoolWindow),
     Executors,
+    FixtureSheet,
 }
 
 #[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]

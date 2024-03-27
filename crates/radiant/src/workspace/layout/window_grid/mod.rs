@@ -10,6 +10,7 @@ pub mod window;
 use window::WindowView;
 
 use self::window::executors::ExecutorsWindowDelegate;
+use self::window::fixture_sheet::FixtureSheetWindowDelegate;
 use self::window::pool::color::ColorPoolWindowDelegate;
 use self::window::pool::group::GroupPoolWindowDelegate;
 use super::screen::Screen;
@@ -89,6 +90,10 @@ fn build_window_view(
         },
         WindowKind::Executors => {
             let delegate = ExecutorsWindowDelegate::new(show, cx);
+            WindowView::build(delegate, id, window_grid.clone(), cx).into()
+        }
+        WindowKind::FixtureSheet => {
+            let delegate = FixtureSheetWindowDelegate::new(show, cx);
             WindowView::build(delegate, id, window_grid.clone(), cx).into()
         }
     }

@@ -3171,6 +3171,7 @@ dependencies = [
  "gdtf",
  "gdtf_share",
  "gpui",
+ "itertools 0.12.1",
  "lazy_static",
  "log",
  "regex",

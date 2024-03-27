@@ -8,6 +8,7 @@ use crate::theme::ActiveTheme;
 use crate::workspace::layout::WindowGrid;
 
 pub mod executors;
+pub mod fixture_sheet;
 pub mod pool;
 
 pub struct WindowView<D: WindowDelegate> {
