@@ -7,7 +7,7 @@ use self::parser::{Parser, ParserResult};
 mod lexer;
 mod parser;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize)]
 pub enum Instruction {
     Clear,
     Select(Object),
@@ -26,7 +26,7 @@ impl std::fmt::Display for Instruction {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize)]
 pub enum Object {
     Fixture(usize),
     Group(usize),
@@ -45,7 +45,7 @@ impl std::fmt::Display for Object {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 pub struct Command {
     pub instructions: Vec<Instruction>,
 }

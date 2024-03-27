@@ -15,9 +15,12 @@ use self::layout::{PoolWindow, Window, WindowGrid, WindowKind};
 pub mod layout;
 
 pub mod action {
-    use gpui::actions;
+    use gpui::impl_actions;
 
-    actions!(workspace, [Debug]);
+    impl_actions!(workspace, [Command]);
+
+    #[derive(Clone, PartialEq, serde::Deserialize)]
+    pub struct Command(pub backstage::command::Command);
 }
 
 const DMX_OUTPUT_RATE: Duration = Duration::from_millis(1000 / 40);
@@ -58,6 +61,7 @@ impl Workspace {
                 });
                 window_grid
             })?;
+
             let _main_screen =
                 cx.update(|cx| Screen::open_window(show_model.clone(), window_grid, cx))?;
 

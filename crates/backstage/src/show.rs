@@ -161,11 +161,11 @@ impl Show {
 
     pub fn execute_command_str(&mut self, s: &str) -> Result<()> {
         let command = Command::parse(s)?;
-        self.execute_command(command)?;
+        self.execute_command(&command)?;
         Ok(())
     }
 
-    pub fn execute_command(&mut self, command: Command) -> Result<()> {
+    pub fn execute_command(&mut self, command: &Command) -> Result<()> {
         // FIXME: This command execution is quite ad-hoc for now.
         match command.instructions.get(0) {
             Some(instr) => {
@@ -196,7 +196,7 @@ impl Show {
                                 .collect_vec()
                             {
                                 if let Err(err) =
-                                    self.execute_command(Command::new([Instruction::Select(
+                                    self.execute_command(&Command::new([Instruction::Select(
                                         Object::Fixture(fixture_id),
                                     )]))
                                 {

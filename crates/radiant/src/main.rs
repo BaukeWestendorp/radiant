@@ -1,6 +1,7 @@
 use anyhow::Result;
 use assets::Assets;
 
+use backstage::command::{Command, Instruction};
 use gpui::AssetSource;
 use gpui::{actions, App, AppContext, KeyBinding, Menu, MenuItem};
 
@@ -58,7 +59,11 @@ fn init_keybinds(cx: &mut AppContext) -> Result<()> {
 
     cx.bind_keys([
         KeyBinding::new("cmd-q", Quit, None),
-        KeyBinding::new("f10", workspace::action::Debug, Some("Workspace")),
+        KeyBinding::new(
+            "escape",
+            workspace::action::Command(Command::new([Instruction::Clear])),
+            Some("Screen"),
+        ),
         KeyBinding::new("enter", text_input::Enter, Some("TextInput")),
         KeyBinding::new("backspace", text_input::Backspace, Some("TextInput")),
         KeyBinding::new("delete", text_input::Delete, Some("TextInput")),

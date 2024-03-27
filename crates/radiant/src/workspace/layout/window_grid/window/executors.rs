@@ -223,7 +223,7 @@ impl ExecutorButtonView {
     pub fn handle_click(&mut self, _event: &MouseDownEvent, cx: &mut ViewContext<Self>) {
         match self.button.action {
             ExecutorButtonAction::Go => self.show.update(cx, |show, cx| {
-                if let Err(err) = show.execute_command(Command::new([
+                if let Err(err) = show.execute_command(&Command::new([
                     Instruction::Select(Object::Executor(self.executor_id)),
                     Instruction::Go,
                 ])) {
@@ -232,7 +232,7 @@ impl ExecutorButtonView {
                 cx.notify();
             }),
             ExecutorButtonAction::Top => self.show.update(cx, |show, cx| {
-                if let Err(err) = show.execute_command(Command::new([
+                if let Err(err) = show.execute_command(&Command::new([
                     Instruction::Select(Object::Executor(self.executor_id)),
                     Instruction::Top,
                 ])) {

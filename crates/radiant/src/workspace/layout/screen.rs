@@ -7,6 +7,7 @@ use gpui::{
 
 use crate::theme::ActiveTheme;
 use crate::ui::text_input::{self, TextInput};
+use crate::workspace;
 
 use super::window_grid::WindowGridView;
 use super::WindowGrid;
@@ -16,6 +17,8 @@ pub struct Screen {
     command_line: View<CommandLine>,
 
     focus_handle: FocusHandle,
+
+    show: Model<Show>,
 }
 
 impl Screen {
@@ -30,7 +33,17 @@ impl Screen {
                 window_grid: WindowGridView::build(window_grid, show.clone(), cx),
                 command_line: CommandLine::build(show.clone(), cx),
                 focus_handle: cx.focus_handle(),
+                show,
             })
+        })
+    }
+
+    fn cmd_clear(&mut self, command: &workspace::action::Command, cx: &mut ViewContext<Self>) {
+        self.show.update(cx, |show, cx| {
+            if let Err(err) = show.execute_command(&command.0) {
+                log::error!("Failed to execute Clear command: {err}");
+            }
+            cx.notify();
         })
     }
 }
@@ -45,7 +58,8 @@ impl Render for Screen {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .track_focus(&self.focus_handle)
-            .key_context("Workspace")
+            .key_context("Screen")
+            .on_action(cx.listener(Self::cmd_clear))
             .font("Zed Sans")
             .text_color(cx.theme().colors().text)
             .bg(cx.theme().colors().background)
