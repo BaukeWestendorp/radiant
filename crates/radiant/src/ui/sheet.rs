@@ -1,7 +1,7 @@
 use crate::theme::ActiveTheme;
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, rgb, uniform_list, AnyElement, IntoElement, ParentElement, Pixels, Render, SharedString,
+    div, uniform_list, AnyElement, IntoElement, ParentElement, Pixels, Render, SharedString,
     Styled, ViewContext,
 };
 

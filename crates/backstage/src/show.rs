@@ -166,6 +166,24 @@ impl Show {
                                 }
                             }
                         }
+                        Object::Group(id) => {
+                            for fixture_id in self
+                                .fixtures_in_group(*id)
+                                .iter()
+                                .map(|f| f.id)
+                                .collect_vec()
+                            {
+                                if let Err(err) =
+                                    self.execute_command(Command::new([Instruction::Select(
+                                        Object::Fixture(fixture_id),
+                                    )]))
+                                {
+                                    log::error!("Failed to Select Group {id}: {err}");
+                                    // FIXME: Return a useful error.
+                                    return Ok(());
+                                }
+                            }
+                        }
                         Object::Executor(id) => {
                             let Some(next_instruction) = command.instructions.get(1) else {
                                 log::error!("Expected instruction after executor selection");
@@ -199,9 +217,6 @@ impl Show {
                                 }
                             }
                         }
-                        _ => {
-                            log::error!("Selecting other objects not implemented yet!");
-                        }
                     },
                     Instruction::Go => {
                         log::error!("The Go command should be used after selecting a executor with 'Select Executor #'!");
@@ -226,6 +241,7 @@ impl Show {
             .iter_mut()
             .find(|e| e.id == fixture_id)
     }
+
     pub fn fixtures(&self) -> &Vec<Fixture> {
         &self.patchlist.fixtures
     }
@@ -336,10 +352,7 @@ impl Show {
         let mut playback = self.playback_engine.determine_dmx_output(self);
         for universe in self.used_universes().iter() {
             if let Err(err) = playback.add_universe_if_absent(*universe) {
-                log::error!(
-                    "Failed to add universe with id '{universe}': {}",
-                    err.to_string()
-                )
+                log::error!("Failed to add universe with id '{universe}': {err}",)
             }
         }
         playback
