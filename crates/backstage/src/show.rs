@@ -60,7 +60,7 @@ impl Show {
 
         let programmer = Programmer {
             selection: showfile.programmer.selection,
-            output: DmxOutput::new(),
+            changes: showfile.programmer.changes,
         };
 
         let data = Data {
@@ -218,6 +218,8 @@ impl Show {
                                     &fixture,
                                     color_preset.attribute_values(),
                                 );
+
+                                dbg!(&self.programmer.changes);
                             }
                         }
                         Object::Executor(id) => {
@@ -568,10 +570,10 @@ impl Fixture {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Programmer {
     selection: Vec<usize>,
-    output: DmxOutput,
+    changes: HashMap<DmxChannel, u8>,
 }
 
 impl Programmer {
@@ -580,9 +582,6 @@ impl Programmer {
         fixture: &Fixture,
         attribute_values: &AttributeValues,
     ) {
-        // FIXME: This thing is almost the same as in the playback engine. Can we create
-        // a general API for this? Maybe move the `dmx` crate into the `backstage`
-        // crate, create a helper for this on DmxOutput?
         for (attribute_name, attribute_value) in attribute_values.iter() {
             let Some(dmx_channels) = fixture.dmx_channels_for_attribute(attribute_name) else {
                 continue;
@@ -597,9 +596,7 @@ impl Programmer {
                 attribute_value.raw_values_for_channel_resolution(channel_resolution);
 
             for (channel, value) in dmx_channels.iter().zip(raw_dmx_values) {
-                if let Err(err) = self.output.set_channel(channel, value) {
-                    log::error!("Failed to set channel output: {}", err.to_string())
-                }
+                self.changes.insert(channel.clone(), value);
             }
         }
     }

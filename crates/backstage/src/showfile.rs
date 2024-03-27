@@ -53,6 +53,7 @@ pub struct Fixture {
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Programmer {
     pub selection: Vec<usize>,
+    pub changes: HashMap<DmxChannel, u8>,
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
@@ -152,6 +153,7 @@ mod tests {
                 },
                 programmer: Programmer {
                     selection: Vec::new(),
+                    changes: HashMap::new(),
                 },
                 data: Data {
                     groups: Vec::new(),
