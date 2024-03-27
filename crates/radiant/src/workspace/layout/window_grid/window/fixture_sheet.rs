@@ -82,7 +82,7 @@ impl SheetDelegate for FixtureSheetDelegate {
             .iter()
             .enumerate()
             .filter_map(|(i, f)| {
-                if selected_fixtures.iter().any(|selected| selected.id == f.id) {
+                if selected_fixtures.iter().any(|id| *id == f.id) {
                     return Some(i);
                 }
                 None

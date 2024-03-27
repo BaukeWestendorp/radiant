@@ -60,6 +60,7 @@ impl Show {
 
         let programmer = Programmer {
             selection: showfile.programmer.selection,
+            output: DmxOutput::new(),
         };
 
         let data = Data {
@@ -101,7 +102,7 @@ impl Show {
                 .map(|color| ColorPreset {
                     id: color.id,
                     label: color.label,
-                    color: color.color,
+                    attribute_values: color.attribute_values,
                 })
                 .collect(),
         };
@@ -201,7 +202,23 @@ impl Show {
                             }
                         }
                         Object::PresetColor(id) => {
-                            log::info!("Select preset color {id}");
+                            let Some(color_preset) = self.color_preset(*id).cloned() else {
+                                log::error!(
+                                    "Failed to Select Preset::Color
+                            {id}: Executor with id '{id}' not found."
+                                );
+                                // FIXME: Return a useful error.
+                                return Ok(());
+                            };
+
+                            for fixture_id in self.selected_fixtures().clone() {
+                                let fixture = self.fixture(fixture_id).unwrap().clone();
+
+                                self.programmer.apply_attribute_values_for_fixture(
+                                    &fixture,
+                                    color_preset.attribute_values(),
+                                );
+                            }
                         }
                         Object::Executor(id) => {
                             let Some(next_instruction) = command.instructions.get(1) else {
@@ -265,12 +282,8 @@ impl Show {
         &self.patchlist.fixtures
     }
 
-    pub fn selected_fixtures(&self) -> Vec<&Fixture> {
-        self.programmer
-            .selection
-            .iter()
-            .filter_map(|id| self.fixture(*id))
-            .collect()
+    pub fn selected_fixtures(&self) -> &Vec<usize> {
+        &self.programmer.selection
     }
 
     pub fn fixtures_in_group(&self, group_id: usize) -> Vec<&Fixture> {
@@ -558,6 +571,38 @@ impl Fixture {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Programmer {
     selection: Vec<usize>,
+    output: DmxOutput,
+}
+
+impl Programmer {
+    pub fn apply_attribute_values_for_fixture(
+        &mut self,
+        fixture: &Fixture,
+        attribute_values: &AttributeValues,
+    ) {
+        // FIXME: This thing is almost the same as in the playback engine. Can we create
+        // a general API for this? Maybe move the `dmx` crate into the `backstage`
+        // crate, create a helper for this on DmxOutput?
+        for (attribute_name, attribute_value) in attribute_values.iter() {
+            let Some(dmx_channels) = fixture.dmx_channels_for_attribute(attribute_name) else {
+                continue;
+            };
+
+            let Some(channel_resolution) = fixture.channel_resolution_for_attribute(attribute_name)
+            else {
+                continue;
+            };
+
+            let raw_dmx_values =
+                attribute_value.raw_values_for_channel_resolution(channel_resolution);
+
+            for (channel, value) in dmx_channels.iter().zip(raw_dmx_values) {
+                if let Err(err) = self.output.set_channel(channel, value) {
+                    log::error!("Failed to set channel output: {}", err.to_string())
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
@@ -584,8 +629,10 @@ pub struct Sequence {
 pub struct Cue {
     pub groups: Vec<usize>,
     pub label: String,
-    pub attribute_values: HashMap<String, DmxValue>,
+    pub attribute_values: AttributeValues,
 }
+
+pub type AttributeValues = HashMap<String, DmxValue>;
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Presets {
@@ -606,6 +653,8 @@ pub trait Preset {
     fn set_label(&mut self, label: &str);
 
     fn affected_attributes(&self) -> AffectedAttributes;
+
+    fn attribute_values(&self) -> &AttributeValues;
 }
 
 pub enum AffectedAttributes {
@@ -617,15 +666,15 @@ pub enum AffectedAttributes {
 pub struct ColorPreset {
     id: usize,
     label: String,
-    pub color: u32,
+    attribute_values: AttributeValues,
 }
 
 impl ColorPreset {
-    pub fn new(id: usize, label: &str, color: u32) -> Self {
+    pub fn new(id: usize, label: &str) -> Self {
         Self {
             id,
             label: label.to_string().into(),
-            color,
+            attribute_values: HashMap::new(),
         }
     }
 }
@@ -645,6 +694,10 @@ impl Preset for ColorPreset {
 
     fn affected_attributes(&self) -> AffectedAttributes {
         AffectedAttributes::Specific(vec!["ColorAdd_R", "ColorAdd_G", "ColorAdd_B"])
+    }
+
+    fn attribute_values(&self) -> &AttributeValues {
+        &self.attribute_values
     }
 }
 

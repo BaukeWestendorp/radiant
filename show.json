@@ -82,7 +82,11 @@
             {
                 "id": 1,
                 "label": "Red",
-                "color": 16711680
+                "attribute_values": {
+                    "ColorAdd_R": 255,
+                    "ColorAdd_G": 0,
+                    "ColorAdd_B": 0
+                }
             }
         ]
     },

@@ -4,6 +4,8 @@ use std::io::{self, BufReader};
 
 use dmx::{DmxChannel, DmxValue};
 
+use crate::show::AttributeValues;
+
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Showfile {
     #[serde(default = "Default::default")]
@@ -89,7 +91,7 @@ pub struct Presets {
 pub struct ColorPreset {
     pub id: usize,
     pub label: String,
-    pub color: u32,
+    pub attribute_values: AttributeValues,
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
@@ -249,7 +251,11 @@ mod tests {
                         {
                             "id": 1,
                             "label": "Red",
-                            "color": 1671168
+                            "attribute_values": {
+                                "ColorAdd_R": 255,
+                                "ColorAdd_G": 0,
+                                "ColorAdd_B": 0
+                            }
                         }
                     ]
                 }
@@ -365,7 +371,13 @@ mod tests {
                     colors: vec![ColorPreset {
                         id: 1,
                         label: "Red".to_string(),
-                        color: 0xff0000
+                        attribute_values: {
+                            let mut map = HashMap::new();
+                            map.insert("ColorAdd_R".to_string(), DmxValue::new(255));
+                            map.insert("ColorAdd_G".to_string(), DmxValue::new(0));
+                            map.insert("ColorAdd_B".to_string(), DmxValue::new(0));
+                            map
+                        }
                     }],
                 },
                 executors: vec![Executor {
