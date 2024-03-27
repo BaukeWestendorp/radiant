@@ -76,17 +76,14 @@ impl PoolWindowDelegate for GroupPoolWindowDelegate {
         self.window_id
     }
 
-    fn handle_click_item(&mut self, id: usize, cx: &mut gpui::ViewContext<WindowView<Self>>)
-    where
-        Self: Sized,
-    {
+    fn handle_click_item(&mut self, id: usize, cx: &mut gpui::ViewContext<WindowView<Self>>) {
         self.show.update(cx, |show, cx| {
-            cx.notify();
             if let Err(err) =
                 show.execute_command(Command::new([Instruction::Select(Object::Group(id))]))
             {
                 log::error!("Failed to Select Group {id}: {}", err.to_string())
             }
+            cx.notify();
         });
     }
 }

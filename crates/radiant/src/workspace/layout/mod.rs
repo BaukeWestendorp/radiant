@@ -66,6 +66,6 @@ pub struct PoolWindow {
 
 #[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]
 pub enum PoolWindowKind {
-    Color,
+    ColorPreset,
     Group,
 }

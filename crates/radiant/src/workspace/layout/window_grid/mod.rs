@@ -69,7 +69,7 @@ fn build_window_view(
 ) -> AnyView {
     match &window.kind {
         WindowKind::Pool(pool_window) => match &pool_window.kind {
-            PoolWindowKind::Color => {
+            PoolWindowKind::ColorPreset => {
                 let delegate = ColorPoolWindowDelegate::new(
                     id,
                     pool_window.scroll_offset,

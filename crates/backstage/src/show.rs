@@ -24,6 +24,8 @@ pub struct Show {
 
     data: Data,
 
+    presets: Presets,
+
     executors: Vec<Executor>,
 
     dmx_protocols: Vec<ArtnetDmxProtocol>,
@@ -91,6 +93,19 @@ impl Show {
                 .collect(),
         };
 
+        let presets = Presets {
+            colors: showfile
+                .presets
+                .colors
+                .into_iter()
+                .map(|color| ColorPreset {
+                    id: color.id,
+                    label: color.label,
+                    color: color.color,
+                })
+                .collect(),
+        };
+
         let executors = showfile
             .executors
             .into_iter()
@@ -137,6 +152,7 @@ impl Show {
             programmer,
             playback_engine: PlaybackEngine::new(),
             data,
+            presets,
             executors,
             dmx_protocols,
         }
@@ -287,6 +303,45 @@ impl Show {
         self.fixture(id).is_some()
     }
 
+    pub fn group(&self, group_id: usize) -> Option<&Group> {
+        self.data.groups.iter().find(|g| g.id == group_id)
+    }
+
+    pub fn group_mut(&mut self, group_id: usize) -> Option<&mut Group> {
+        self.data.groups.iter_mut().find(|g| g.id == group_id)
+    }
+
+    pub fn groups(&self) -> &Vec<Group> {
+        &self.data.groups
+    }
+
+    pub fn sequence(&self, sequence_id: usize) -> Option<&Sequence> {
+        self.data.sequences.iter().find(|s| s.id == sequence_id)
+    }
+
+    pub fn sequence_mut(&mut self, sequence_id: usize) -> Option<&mut Sequence> {
+        self.data.sequences.iter_mut().find(|s| s.id == sequence_id)
+    }
+
+    pub fn sequences(&self) -> &Vec<Sequence> {
+        &self.data.sequences
+    }
+
+    pub fn color_preset(&self, color_preset_id: usize) -> Option<&ColorPreset> {
+        self.presets.colors.iter().find(|c| c.id == color_preset_id)
+    }
+
+    pub fn color_preset_mut(&mut self, color_preset_id: usize) -> Option<&mut ColorPreset> {
+        self.presets
+            .colors
+            .iter_mut()
+            .find(|c| c.id == color_preset_id)
+    }
+
+    pub fn color_presets(&self) -> &Vec<ColorPreset> {
+        &self.presets.colors
+    }
+
     pub fn executor(&self, id: usize) -> Option<&Executor> {
         self.executors.iter().find(|e| e.id == id)
     }
@@ -322,30 +377,6 @@ impl Show {
             .iter()
             .flat_map(|f| f.attributes_with_channels())
             .collect()
-    }
-
-    pub fn group(&self, group_id: usize) -> Option<&Group> {
-        self.data.groups.iter().find(|g| g.id == group_id)
-    }
-
-    pub fn group_mut(&mut self, group_id: usize) -> Option<&mut Group> {
-        self.data.groups.iter_mut().find(|g| g.id == group_id)
-    }
-
-    pub fn groups(&self) -> &Vec<Group> {
-        &self.data.groups
-    }
-
-    pub fn sequence(&self, sequence_id: usize) -> Option<&Sequence> {
-        self.data.sequences.iter().find(|s| s.id == sequence_id)
-    }
-
-    pub fn sequence_mut(&mut self, sequence_id: usize) -> Option<&mut Sequence> {
-        self.data.sequences.iter_mut().find(|s| s.id == sequence_id)
-    }
-
-    pub fn sequences(&self) -> &Vec<Sequence> {
-        &self.data.sequences
     }
 
     pub fn stage_output(&mut self) -> DmxOutput {
@@ -551,6 +582,67 @@ pub struct Cue {
     pub groups: Vec<usize>,
     pub label: String,
     pub attribute_values: HashMap<String, DmxValue>,
+}
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Presets {
+    colors: Vec<ColorPreset>,
+}
+
+impl Presets {
+    pub fn new() -> Self {
+        Self { colors: Vec::new() }
+    }
+}
+
+pub trait Preset {
+    fn id(&self) -> usize;
+
+    fn label(&self) -> &str;
+
+    fn set_label(&mut self, label: &str);
+
+    fn affected_attributes(&self) -> AffectedAttributes;
+}
+
+pub enum AffectedAttributes {
+    All,
+    Specific(Vec<&'static str>),
+}
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct ColorPreset {
+    id: usize,
+    label: String,
+    pub color: u32,
+}
+
+impl ColorPreset {
+    pub fn new(id: usize, label: &str, color: u32) -> Self {
+        Self {
+            id,
+            label: label.to_string().into(),
+            color,
+        }
+    }
+}
+
+impl Preset for ColorPreset {
+    fn id(&self) -> usize {
+        self.id
+    }
+
+    fn label(&self) -> &str {
+        &self.label
+    }
+
+    fn set_label(&mut self, label: &str) {
+        self.label = label.to_string().into();
+    }
+
+    fn affected_attributes(&self) -> AffectedAttributes {
+        AffectedAttributes::Specific(vec!["ColorAdd_R", "ColorAdd_G", "ColorAdd_B"])
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]

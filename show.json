@@ -77,6 +77,15 @@
             }
         ]
     },
+    "presets": {
+        "colors": [
+            {
+                "id": 1,
+                "label": "Red",
+                "color": 16711680
+            }
+        ]
+    },
     "executors": [
         {
             "id": 1,

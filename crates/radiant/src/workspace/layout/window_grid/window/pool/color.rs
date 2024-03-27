@@ -1,6 +1,9 @@
-use backstage::show::Show;
-use gpui::{Empty, IntoElement, Model, WindowContext};
+use backstage::command::{Command, Instruction, Object};
+use backstage::show::{Preset, Show};
+use gpui::{div, IntoElement, Model, ParentElement, Styled, WindowContext};
 
+use crate::theme::ActiveTheme;
+use crate::workspace::layout::window_grid::window::WindowView;
 use crate::workspace::layout::window_grid::GridBounds;
 
 use super::PoolWindowDelegate;
@@ -41,12 +44,42 @@ impl PoolWindowDelegate for ColorPoolWindowDelegate {
         self.scroll_offset
     }
 
-    fn render_item_for_id(&self, _id: usize, _cx: &mut WindowContext) -> Option<impl IntoElement> {
-        // FIXME: Render color pool item.
-        Option::<Empty>::None
+    fn render_item_for_id(&self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement> {
+        let color_preset = self.show.read(cx).color_preset(id);
+
+        match color_preset {
+            Some(color_preset) => {
+                let label = color_preset.label().to_string();
+
+                Some(
+                    div()
+                        .bg(cx.theme().colors().background_tertriary)
+                        .size_full()
+                        .flex()
+                        .flex_col()
+                        .justify_center()
+                        .items_center()
+                        .text_sm()
+                        .child(label),
+                )
+            }
+            None => None,
+        }
     }
 
     fn window_id(&self) -> usize {
         self.window_id
+    }
+
+    fn handle_click_item(&mut self, id: usize, cx: &mut gpui::ViewContext<WindowView<Self>>) {
+        self.show.update(cx, |show, cx| {
+            // FIXME: Implement selecting color preset
+            // if let Err(err) =
+            //     show.execute_command(Command::new([Instruction::Select(Object::Preset(id))]))
+            // {
+            //     log::error!("Failed to Select Group {id}: {}", err.to_string())
+            // }
+            cx.notify();
+        });
     }
 }

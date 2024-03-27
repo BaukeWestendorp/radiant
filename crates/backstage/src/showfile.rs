@@ -16,6 +16,9 @@ pub struct Showfile {
     pub data: Data,
 
     #[serde(default = "Default::default")]
+    pub presets: Presets,
+
+    #[serde(default = "Default::default")]
     pub executors: Vec<Executor>,
 
     #[serde(default = "Default::default")]
@@ -78,6 +81,18 @@ pub struct Cue {
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Presets {
+    pub colors: Vec<ColorPreset>,
+}
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct ColorPreset {
+    pub id: usize,
+    pub label: String,
+    pub color: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Executor {
     pub id: usize,
     pub sequence: Option<usize>,
@@ -114,8 +129,8 @@ mod tests {
     use dmx::{DmxChannel, DmxValue};
 
     use crate::showfile::{
-        Cue, Data, DmxArtnetProtocol, Executor, ExecutorButton, ExecutorButtonAction, Fixture,
-        Group, PatchList, Programmer, Sequence, Showfile,
+        ColorPreset, Cue, Data, DmxArtnetProtocol, Executor, ExecutorButton, ExecutorButtonAction,
+        Fixture, Group, PatchList, Presets, Programmer, Sequence, Showfile,
     };
 
     macro_rules! check_showfile {
@@ -140,6 +155,7 @@ mod tests {
                     groups: Vec::new(),
                     sequences: Vec::new(),
                 },
+                presets: Presets { colors: Vec::new() },
                 executors: Vec::new(),
                 dmx_protocols: Vec::new(),
             }
@@ -228,6 +244,15 @@ mod tests {
                         }
                     ]
                 },
+                "presets": {
+                    "colors": [
+                        {
+                            "id": 1,
+                            "label": "Red",
+                            "color": 1671168
+                        }
+                    ]
+                }
                 "executors": [
                     {
                         "id": 1,
@@ -335,6 +360,13 @@ mod tests {
                             }
                         ]
                     },]
+                },
+                presets: Presets {
+                    colors: vec![ColorPreset {
+                        id: 1,
+                        label: "Red".to_string(),
+                        color: 0xff0000
+                    }],
                 },
                 executors: vec![Executor {
                     id: 1,

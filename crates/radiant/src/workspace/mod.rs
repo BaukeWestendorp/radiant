@@ -39,9 +39,16 @@ impl Workspace {
                     kind: WindowKind::Executors,
                 });
                 window_grid.add_window(Window {
-                    bounds: GridBounds::new(GridPoint::new(5, 0), GridSize::new(5, 5)),
+                    bounds: GridBounds::new(GridPoint::new(5, 0), GridSize::new(3, 3)),
                     kind: WindowKind::Pool(PoolWindow {
                         kind: layout::PoolWindowKind::Group,
+                        scroll_offset: 0,
+                    }),
+                });
+                window_grid.add_window(Window {
+                    bounds: GridBounds::new(GridPoint::new(8, 0), GridSize::new(3, 3)),
+                    kind: WindowKind::Pool(PoolWindow {
+                        kind: layout::PoolWindowKind::ColorPreset,
                         scroll_offset: 0,
                     }),
                 });
