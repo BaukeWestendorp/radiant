@@ -218,8 +218,6 @@ impl Show {
                                     &fixture,
                                     color_preset.attribute_values(),
                                 );
-
-                                dbg!(&self.programmer.changes);
                             }
                         }
                         Object::Executor(id) => {
@@ -398,13 +396,17 @@ impl Show {
     }
 
     pub fn stage_output(&mut self) -> DmxOutput {
-        let mut playback = self.playback_engine.determine_dmx_output(self);
+        let mut stage_output = self.playback_engine.determine_dmx_output(self);
         for universe in self.used_universes().iter() {
-            if let Err(err) = playback.add_universe_if_absent(*universe) {
+            if let Err(err) = stage_output.add_universe_if_absent(*universe) {
                 log::error!("Failed to add universe with id '{universe}': {err}",)
             }
         }
-        playback
+        // Show the changes in the programmer.
+        stage_output
+            .apply_changes(&self.programmer.changes)
+            .unwrap();
+        stage_output
     }
 
     pub fn stage_output_dmx_value_for_channel(&mut self, channel: DmxChannel) -> Option<u8> {

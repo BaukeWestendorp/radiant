@@ -53,6 +53,14 @@ impl DmxOutput {
     pub fn get_channel(&self, channel: DmxChannel) -> Option<u8> {
         self.0.get(&channel.universe)?.get_address(channel.address)
     }
+
+    pub fn apply_changes(&mut self, changes: &HashMap<DmxChannel, u8>) -> Result<(), Error> {
+        for (channel, value) in changes.iter() {
+            self.set_channel(channel, *value)?
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
