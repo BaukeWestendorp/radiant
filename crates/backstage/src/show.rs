@@ -170,13 +170,18 @@ impl Show {
         match command.instructions.get(0) {
             Some(instr) => {
                 match instr {
-                    Instruction::Clear => {}
+                    Instruction::Clear => {
+                        if self.programmer.has_changes() {
+                            self.programmer.clear_changes();
+                        } else {
+                            self.programmer.clear_selection();
+                        }
+                    }
                     Instruction::Select(object) => match object {
                         Object::Fixture(id) => {
                             if !self.is_fixture_selected(*id) {
                                 if self.fixture_exists(*id) {
                                     self.programmer.selection.push(*id);
-                                    log::info!("Selected Fixture {id}");
                                 } else {
                                     log::error!("Failed to select Fixture {id}: Fixture not found");
                                     // FIXME: Return a useful error.
@@ -601,6 +606,18 @@ impl Programmer {
                 self.changes.insert(channel.clone(), value);
             }
         }
+    }
+
+    pub fn has_changes(&self) -> bool {
+        !self.changes.is_empty()
+    }
+
+    pub fn clear_changes(&mut self) {
+        self.changes.clear();
+    }
+
+    pub fn clear_selection(&mut self) {
+        self.selection.clear();
     }
 }
 
