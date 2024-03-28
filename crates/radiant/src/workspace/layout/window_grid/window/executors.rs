@@ -124,7 +124,7 @@ impl ExecutorInfo {
             .h_5()
             .border_b()
             .border_color(cx.theme().colors().border)
-            .bg(cx.theme().colors().background_tertriary)
+            .bg(cx.theme().colors().element_background)
             .flex()
             .items_center()
             .px_1()
@@ -176,9 +176,10 @@ impl ExecutorInfo {
             .px_1()
             .when(!last, |this| this.border_b())
             .border_color(cx.theme().colors().border)
-            .rounded_md()
             .child(cue.label.clone())
-            .when(active, |this| this.bg(cx.theme().colors().element_selected))
+            .when(active, |this| {
+                this.bg(cx.theme().colors().element_background_selected)
+            })
     }
 }
 
@@ -279,7 +280,7 @@ impl Render for ExecutorButtonView {
                 match self.button.action == ExecutorButtonAction::Flash
                     && executor.is_some_and(|e| e.flash)
                 {
-                    true => cx.theme().colors().element_selected,
+                    true => cx.theme().colors().border_focused,
                     false => cx.theme().colors().border,
                 },
             )
@@ -287,7 +288,7 @@ impl Render for ExecutorButtonView {
             .flex()
             .justify_center()
             .items_center()
-            .hover(|this| this.bg(cx.theme().colors().element_hover))
+            .hover(|this| this.bg(cx.theme().colors().element_background_hover))
             .cursor_pointer()
             .child(self.button.action.to_string())
             .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_click))

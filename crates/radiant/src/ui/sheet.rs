@@ -101,7 +101,7 @@ pub trait SheetDelegate: Sized {
             .flex_row()
             .children(header_cells)
             .border_b()
-            .border_color(cx.theme().colors().border)
+            .border_color(cx.theme().colors().border_variant)
             .into_any_element()
     }
 
@@ -116,8 +116,9 @@ pub trait SheetDelegate: Sized {
         div()
             .flex()
             .flex_row()
-            .when(is_selected, |this| {
-                this.bg(cx.theme().colors().element_selected)
+            .bg(match is_selected {
+                true => cx.theme().colors().element_background_selected,
+                false => cx.theme().colors().element_background,
             })
             .children(children)
             .into_any_element()
@@ -134,7 +135,7 @@ pub trait SheetDelegate: Sized {
             .whitespace_nowrap()
             .overflow_hidden()
             .border_r()
-            .border_color(cx.theme().colors().border)
+            .border_color(cx.theme().colors().border_variant)
             .child(content)
             .into_any_element()
     }

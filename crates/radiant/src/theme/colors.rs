@@ -20,10 +20,6 @@ pub struct ThemeColors {
     /// Background Color. Used for the app background and blank panels or
     /// windows.
     pub background: Hsla,
-    /// Background Color. TODO: Docs
-    pub background_secondary: Hsla,
-    /// Background Color. TODO: Docs
-    pub background_tertriary: Hsla,
 
     /// Background Color. Used for the background of an element that should have
     /// a different background than the surface it's on.
@@ -38,13 +34,13 @@ pub struct ThemeColors {
     ///
     /// Hover states are triggered by the mouse entering an element, or a finger
     /// touching an element on a touch screen.
-    pub element_hover: Hsla,
+    pub element_background_hover: Hsla,
     /// Background Color. Used for the active state of an element that should
     /// have a different background than the surface it's on.
     ///
     /// Active states are triggered by the mouse button being pressed down on an
     /// element, or the Return button or other activator being pressd.
-    pub element_active: Hsla,
+    pub element_background_active: Hsla,
     /// Background Color. Used for the selected state of an element that should
     /// have a different background than the surface it's on.
     ///
@@ -53,13 +49,13 @@ pub struct ThemeColors {
     ///
     /// This could include a selected checkbox, a toggleable button that is
     /// toggled on, etc.
-    pub element_selected: Hsla,
+    pub element_background_selected: Hsla,
     /// Background Color. Used for the disabled state of an element that should
     /// have a different background than the surface it's on.
     ///
     /// Disabled states are shown when a user cannot interact with an element,
     /// like a disabled button or input.
-    pub element_disabled: Hsla,
+    pub element_background_disabled: Hsla,
 
     /// Window Header Color. Used for the color of the headers of windows in
     /// the window grid.
@@ -67,6 +63,9 @@ pub struct ThemeColors {
     /// Window Header Border Color. Used for the color of the borders of the
     /// headers of windows in the window grid.
     pub window_header_border: Hsla,
+    /// Window Background Color. Used for the color of the background of
+    /// windows.
+    pub window_background: Hsla,
 
     /// Text Color. Default text color used for most text.
     pub text: Hsla,

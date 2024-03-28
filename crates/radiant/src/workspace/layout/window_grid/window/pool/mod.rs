@@ -140,8 +140,7 @@ impl RenderOnce for PoolCell {
         let has_content = !self.children.is_empty();
 
         grid_div(GridSize::new(1, 1), None)
-            .bg(cx.theme().colors().background_secondary)
-            .border_color(cx.theme().colors().border)
+            .border_color(cx.theme().colors().border_variant)
             .border_1()
             .rounded_md()
             .relative()

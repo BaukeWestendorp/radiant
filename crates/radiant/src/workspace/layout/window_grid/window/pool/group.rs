@@ -1,5 +1,6 @@
 use backstage::command::{Command, Instruction, Object};
 use backstage::show::Show;
+use gpui::InteractiveElement;
 use gpui::{div, prelude::FluentBuilder, IntoElement, Model, ParentElement, Styled, WindowContext};
 
 use crate::theme::ActiveTheme;
@@ -55,7 +56,9 @@ impl PoolWindowDelegate for GroupPoolWindowDelegate {
 
                 Some(
                     div()
-                        .bg(cx.theme().colors().background_tertriary)
+                        .bg(cx.theme().colors().background)
+                        .cursor_pointer()
+                        .hover(|this| this.bg(cx.theme().colors().element_background_hover))
                         .size_full()
                         .flex()
                         .flex_col()

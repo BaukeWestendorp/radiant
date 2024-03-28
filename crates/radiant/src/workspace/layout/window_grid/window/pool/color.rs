@@ -1,6 +1,6 @@
 use backstage::command::{Command, Instruction, Object};
 use backstage::show::{Preset, Show};
-use gpui::{div, IntoElement, Model, ParentElement, Styled, WindowContext};
+use gpui::{div, InteractiveElement, IntoElement, Model, ParentElement, Styled, WindowContext};
 
 use crate::theme::ActiveTheme;
 use crate::workspace::layout::window_grid::window::WindowView;
@@ -53,7 +53,9 @@ impl PoolWindowDelegate for ColorPoolWindowDelegate {
 
                 Some(
                     div()
-                        .bg(cx.theme().colors().background_tertriary)
+                        .bg(cx.theme().colors().background)
+                        .cursor_pointer()
+                        .hover(|this| this.bg(cx.theme().colors().element_background_hover))
                         .size_full()
                         .flex()
                         .flex_col()

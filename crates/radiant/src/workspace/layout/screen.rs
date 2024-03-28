@@ -134,7 +134,7 @@ impl Render for CommandLine {
             .size_full()
             .border_t()
             .border_color(cx.theme().colors().border)
-            .bg(cx.theme().colors().background_tertriary)
+            .bg(cx.theme().colors().element_background)
             .flex()
             .flex_shrink()
             .items_center()
