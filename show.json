@@ -1,116 +1,132 @@
 {
-    "patchlist": {
-        "fixtures": [
-            {
-                "id": 1,
-                "gdtf_share_revision_id": 36314,
-                "label": "LEDForce 7 RGBW 1",
-                "mode": "Mode 2 RGBW + dim + strobe",
-                "channel": {
-                    "address": 0,
-                    "universe": 0
-                }
-            },
-            {
-                "id": 2,
-                "label": "LEDForce 7 RGBW 2",
-                "gdtf_share_revision_id": 36314,
-                "mode": "Mode 2 RGBW + dim + strobe",
-                "channel": {
-                    "address": 6,
-                    "universe": 0
-                }
-            }
-        ]
-    },
-    "data": {
-        "groups": [
-            {
-                "id": 1,
-                "label": "Even",
-                "fixtures": [1]
-            },
-            {
-                "id": 2,
-                "label": "Odd",
-                "fixtures": [2]
-            },
-            {
-                "id": 3,
-                "label": "All",
-                "fixtures": [1, 2]
-            }
-        ],
-        "sequences": [
-            {
-                "id": 1,
-                "label": "Switch",
-                "cues": [
-                    {
-                        "groups": [1],
-                        "label": "Cue 1",
-                        "attribute_values": {
-                            "ColorAdd_R": 255,
-                            "ColorAdd_G": 16,
-                            "ColorAdd_B": 127
-                        }
-                    },
-                    {
-                        "groups": [2],
-                        "label": "Cue 2",
-                        "attribute_values": {
-                            "ColorAdd_R": 32,
-                            "ColorAdd_G": 255,
-                            "ColorAdd_B": 16
-                        }
-                    },
-                    {
-                        "groups": [1, 2],
-                        "label": "Cue 3",
-                        "attribute_values": {
-                            "ColorAdd_R": 255,
-                            "ColorAdd_G": 255,
-                            "ColorAdd_B": 255
-                        }
-                    }
-                ]
-            }
-        ]
-    },
-    "presets": {
-        "colors": [
-            {
-                "id": 1,
-                "label": "Red",
-                "attribute_values": {
-                    "ColorAdd_R": 255,
-                    "ColorAdd_G": 0,
-                    "ColorAdd_B": 0
-                }
-            }
-        ]
-    },
-    "executors": [
-        {
-            "id": 1,
-            "sequence": 1,
-            "current_index": 0,
-            "loop": false,
-            "fader_value": 0.2,
-            "button_1": {
-                "action": "Top"
-            },
-            "button_2": {
-                "action": "Go"
-            },
-            "button_3": {
-                "action": "Flash"
-            }
+  "patchlist": {
+    "fixtures": [
+      {
+        "id": 1,
+        "gdtf_share_revision_id": 36314,
+        "label": "LEDForce 7 RGBW 1",
+        "mode": "Mode 2 RGBW + dim + strobe",
+        "channel": {
+          "address": 0,
+          "universe": 0
         }
-    ],
-    "dmx_protocols": [
-        {
-            "target_ip": "0.0.0.0"
+      },
+      {
+        "id": 2,
+        "label": "LEDForce 7 RGBW 2",
+        "gdtf_share_revision_id": 36314,
+        "mode": "Mode 2 RGBW + dim + strobe",
+        "channel": {
+          "address": 6,
+          "universe": 0
         }
+      }
     ]
+  },
+  "data": {
+    "groups": [
+      {
+        "id": 1,
+        "label": "Even",
+        "fixtures": [1]
+      },
+      {
+        "id": 2,
+        "label": "Odd",
+        "fixtures": [2]
+      },
+      {
+        "id": 3,
+        "label": "All",
+        "fixtures": [1, 2]
+      }
+    ],
+    "sequences": [
+      {
+        "id": 1,
+        "label": "Switcheroo long title",
+        "cues": [
+          {
+            "groups": [1],
+            "label": "Cue 1",
+            "attribute_values": {
+              "ColorAdd_R": 255,
+              "ColorAdd_G": 16,
+              "ColorAdd_B": 127
+            }
+          },
+          {
+            "groups": [2],
+            "label": "Cue 2",
+            "attribute_values": {
+              "ColorAdd_R": 32,
+              "ColorAdd_G": 255,
+              "ColorAdd_B": 16
+            }
+          },
+          {
+            "groups": [1, 2],
+            "label": "Cue 3",
+            "attribute_values": {
+              "ColorAdd_R": 255,
+              "ColorAdd_G": 255,
+              "ColorAdd_B": 255
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "presets": {
+    "colors": [
+      {
+        "id": 1,
+        "label": "Red",
+        "attribute_values": {
+          "ColorAdd_R": 255,
+          "ColorAdd_G": 0,
+          "ColorAdd_B": 0
+        }
+      }
+    ]
+  },
+  "executors": [
+    {
+      "id": 1,
+      "sequence": 1,
+      "current_index": 0,
+      "loop": false,
+      "fader_value": 0.2,
+      "button_1": {
+        "action": "Top"
+      },
+      "button_2": {
+        "action": "Go"
+      },
+      "button_3": {
+        "action": "Flash"
+      }
+    },
+    {
+      "id": 3,
+      "sequence": 1,
+      "current_index": 0,
+      "loop": false,
+      "fader_value": 1.0,
+      "button_1": {
+        "action": "Top"
+      },
+      "button_2": {
+        "action": "Go"
+      },
+      "button_3": {
+        "action": "Flash"
+      }
+    }
+  ],
+  "dmx_protocols": [
+    {
+      "target_ip": "0.0.0.0"
+    }
+  ]
 }

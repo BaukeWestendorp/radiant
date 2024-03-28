@@ -2,12 +2,13 @@ use backstage::command::{Command, Instruction, Object};
 use backstage::show::{Cue, Executor, ExecutorButton, ExecutorButtonAction, Sequence, Show};
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, px, uniform_list, InteractiveElement, IntoElement, Model, MouseButton, MouseDownEvent,
-    MouseUpEvent, ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext,
+    div, px, uniform_list, IntoElement, Model, MouseDownEvent, MouseUpEvent, ParentElement, Render,
+    Styled, View, ViewContext, VisualContext, WindowContext,
 };
+use ui::container::Container;
 
 use super::{WindowDelegate, WindowView};
-use crate::workspace::layout::window_grid::{grid_div, GridSize, GRID_CELL_SIZE};
+use crate::workspace::layout::window_grid::GRID_CELL_SIZE;
 use theme::ActiveTheme;
 
 pub struct ExecutorsWindowDelegate {
@@ -97,6 +98,9 @@ impl Render for ExecutorView {
             .child(self.info.clone())
             .child(
                 div()
+                    .flex()
+                    .flex_col()
+                    .gap_1()
                     .child(self.button_1.clone())
                     .child(self.button_2.clone())
                     .child(self.button_3.clone()),
@@ -120,23 +124,20 @@ impl ExecutorInfo {
         cx: &mut WindowContext,
     ) -> impl IntoElement {
         div()
-            .w_full()
+            .bg(cx.theme().colors().element_background_raised)
             .h_5()
+            .overflow_hidden()
             .border_b()
             .border_color(cx.theme().colors().border)
-            .bg(cx.theme().colors().element_background)
-            .flex()
-            .items_center()
             .px_1()
-            .text_xs()
+            .when(sequence.is_none(), |this| {
+                this.text_color(cx.theme().colors().text_disabled)
+            })
             .child(
                 sequence
                     .map(|s| s.label.clone())
                     .unwrap_or("Empty".to_string()),
             )
-            .when(sequence.is_none(), |this| {
-                this.text_color(cx.theme().colors().text_disabled)
-            })
     }
 
     fn render_cues(
@@ -150,36 +151,27 @@ impl ExecutorInfo {
             "cues",
             cues.len(),
             move |this, range, cx| {
-                let end = range.end;
                 cues[range]
                     .iter()
                     .enumerate()
                     .map(|(ix, cue)| {
                         let active = this.executor.current_index.get() == Some(ix);
-                        let last = end - 1 == ix;
-                        this.render_cue(cue, active, last, cx)
+                        this.render_cue(cue, active, cx)
                     })
                     .collect()
             },
         )
     }
 
-    fn render_cue(
-        &self,
-        cue: &Cue,
-        active: bool,
-        last: bool,
-        cx: &mut WindowContext,
-    ) -> impl IntoElement {
+    fn render_cue(&self, cue: &Cue, active: bool, cx: &mut WindowContext) -> impl IntoElement {
         div()
-            .text_xs()
             .px_1()
-            .when(!last, |this| this.border_b())
+            .border_b()
             .border_color(cx.theme().colors().border)
-            .child(cue.label.clone())
             .when(active, |this| {
                 this.bg(cx.theme().colors().element_background_selected)
             })
+            .child(cue.label.clone())
     }
 }
 
@@ -190,11 +182,9 @@ impl Render for ExecutorInfo {
             .sequence
             .and_then(|id| self.show.read(cx).sequence(id).cloned());
 
-        grid_div(GridSize::new(1, 1), None)
-            .bg(cx.theme().colors().background)
-            .border()
-            .border_color(cx.theme().colors().border)
-            .rounded_md()
+        Container::new()
+            .size(px(GRID_CELL_SIZE as f32))
+            .text_xs()
             .child(self.render_header(sequence.as_ref(), cx))
             .child(self.render_cues(sequence.as_ref(), cx))
     }
@@ -269,29 +259,14 @@ impl ExecutorButtonView {
 
 impl Render for ExecutorButtonView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let executor = self.show.read(cx).executor(self.executor_id);
-
-        div()
+        Container::new()
             .w(px(GRID_CELL_SIZE as f32))
             .h(px(GRID_CELL_SIZE as f32 / 2.0))
-            .bg(cx.theme().colors().element_background)
-            .border()
-            .border_color(
-                match self.button.action == ExecutorButtonAction::Flash
-                    && executor.is_some_and(|e| e.flash)
-                {
-                    true => cx.theme().colors().border_focused,
-                    false => cx.theme().colors().border,
-                },
-            )
-            .rounded_md()
             .flex()
             .justify_center()
             .items_center()
-            .hover(|this| this.bg(cx.theme().colors().element_background_hover))
-            .cursor_pointer()
             .child(self.button.action.to_string())
-            .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_click))
-            .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_release))
+            .on_click_down(cx.listener(Self::handle_click))
+            .on_click_up(cx.listener(Self::handle_release))
     }
 }
