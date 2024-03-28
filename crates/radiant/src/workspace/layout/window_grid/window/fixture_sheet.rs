@@ -1,10 +1,11 @@
 use backstage::show::{Fixture, Show};
 use gpui::{
-    div, rgb, AnyElement, IntoElement, Model, ParentElement, Pixels, Styled, View, ViewContext,
-    VisualContext, WindowContext,
+    div, prelude::FluentBuilder, rgb, AnyElement, IntoElement, Model, ParentElement, Pixels,
+    Styled, View, ViewContext, VisualContext, WindowContext,
 };
 use itertools::Itertools;
 
+use crate::theme::ActiveTheme;
 use crate::ui::sheet::{Sheet, SheetDelegate};
 
 use super::{WindowDelegate, WindowView};
@@ -161,7 +162,19 @@ impl SheetDelegate for FixtureSheetDelegate {
                         .join(", ")
                 });
 
-                div().child(values_string).into_any_element()
+                let value_in_programmer = channels.iter().any(|channel| {
+                    self.show
+                        .read(cx)
+                        .programmer_changes()
+                        .contains_key(&channel)
+                });
+                div()
+                    .px_2()
+                    .when(value_in_programmer, |this| {
+                        this.bg(cx.theme().colors().programmer_change)
+                    })
+                    .child(values_string)
+                    .into_any_element()
             }
         }
         .into_any_element()

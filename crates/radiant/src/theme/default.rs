@@ -30,6 +30,7 @@ fn radiant_dark() -> Theme {
                 element_active: gpui::rgb(0x1a212f).into(),
                 element_selected: gpui::rgb(0x642b0b).into(),
                 element_disabled: gpui::rgb(0x070709).into(),
+                programmer_change: gpui::rgb(0xc90000).into(),
             },
         },
     }

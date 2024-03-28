@@ -82,4 +82,7 @@ pub struct ThemeColors {
     /// Text Color. Color used for emphasis or highlighting certain text, like
     /// an active filter or a matched character in a search.
     pub text_accent: Hsla,
+
+    /// The indicator color for when a value changed in the programmer.
+    pub programmer_change: Hsla,
 }

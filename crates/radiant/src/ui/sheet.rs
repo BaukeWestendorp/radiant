@@ -131,7 +131,6 @@ pub trait SheetDelegate: Sized {
     ) -> AnyElement {
         div()
             .w(self.column_width(column_id, cx))
-            .px_2()
             .whitespace_nowrap()
             .overflow_hidden()
             .border_r()

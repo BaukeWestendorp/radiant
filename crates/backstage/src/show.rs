@@ -174,6 +174,10 @@ impl Show {
         &self.programmer.selection
     }
 
+    pub fn programmer_changes(&self) -> &HashMap<DmxChannel, u8> {
+        &self.programmer.changes
+    }
+
     pub fn fixtures_in_group(&self, group_id: usize) -> Vec<&Fixture> {
         let Some(group) = self.group(group_id) else {
             return Vec::new();
