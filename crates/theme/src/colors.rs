@@ -10,6 +10,8 @@ pub struct ThemeColors {
     /// Border color. Used for focused elements, like keyboard focused list
     /// item.
     pub border_focused: Hsla,
+    /// Border color. Used for active elements.
+    pub border_active: Hsla,
     /// Border color. Used for selected elements, like an active search filter
     /// or selected checkbox.
     pub border_selected: Hsla,

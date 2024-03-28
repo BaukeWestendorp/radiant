@@ -10,9 +10,10 @@ fn radiant_dark() -> Theme {
     Theme {
         styles: ThemeStyles {
             colors: ThemeColors {
-                border: gpui::rgb(0xa77c00).into(),
+                border: gpui::rgb(0xe9ad00).into(),
                 border_variant: gpui::rgb(0x404040).into(),
-                border_focused: gpui::rgb(0xffffff).into(),
+                border_focused: gpui::rgb(0xaaaaaa).into(),
+                border_active: gpui::rgb(0xffffff).into(),
                 border_selected: gpui::rgb(0x00ff00).into(),
                 border_disabled: gpui::rgb(0x404040).into(),
                 window_header: gpui::rgb(0x1010b0).into(),
@@ -26,7 +27,7 @@ fn radiant_dark() -> Theme {
                 text_accent: gpui::rgb(0xff7931).into(),
                 element_background: gpui::rgb(0x000000).into(),
                 element_background_hover: gpui::rgb(0x202020).into(),
-                element_background_active: gpui::rgb(0x1a212f).into(),
+                element_background_active: gpui::rgb(0x0a0a0a).into(),
                 element_background_selected: gpui::rgb(0x000080).into(),
                 element_background_disabled: gpui::rgb(0x070709).into(),
                 programmer_change: gpui::rgb(0xc90000).into(),

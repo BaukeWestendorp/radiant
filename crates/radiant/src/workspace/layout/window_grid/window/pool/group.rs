@@ -1,7 +1,7 @@
 use backstage::command::{Command, Instruction, Object};
 use backstage::show::Show;
-use gpui::InteractiveElement;
-use gpui::{div, prelude::FluentBuilder, IntoElement, Model, ParentElement, Styled, WindowContext};
+use gpui::prelude::FluentBuilder;
+use gpui::{div, InteractiveElement, IntoElement, Model, ParentElement, Styled, WindowContext};
 
 use crate::workspace::layout::window_grid::window::WindowView;
 use crate::workspace::layout::window_grid::GridBounds;
@@ -59,16 +59,16 @@ impl PoolWindowDelegate for GroupPoolWindowDelegate {
                         .bg(cx.theme().colors().background)
                         .cursor_pointer()
                         .hover(|this| this.bg(cx.theme().colors().element_background_hover))
+                        .when(is_in_programmer_selection, |this| {
+                            this.border().border_color(gpui::green()).rounded_md()
+                        })
                         .size_full()
                         .flex()
                         .flex_col()
                         .justify_center()
                         .items_center()
                         .text_sm()
-                        .child(label)
-                        .when(is_in_programmer_selection, |this| {
-                            this.child(div().w_full().h_3().bg(gpui::green()))
-                        }),
+                        .child(label),
                 )
             }
             None => None,

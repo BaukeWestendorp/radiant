@@ -9,3 +9,4 @@ license = "MIT"
 theme.workspace = true
 
 gpui.workspace = true
+smallvec.workspace = true
