@@ -100,10 +100,30 @@ fn build_window_view(
 
 impl Render for WindowGridView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        let mut grid_dots = vec![];
+        for y in 0..20 {
+            for x in 0..20 {
+                let dot = div()
+                    .absolute()
+                    .size(px(2.0))
+                    .rounded_full()
+                    .bg(cx.theme().colors().border)
+                    .top(px(GRID_CELL_SIZE as f32 * y as f32 - 1.0))
+                    .left(px(GRID_CELL_SIZE as f32 * x as f32 - 1.0));
+
+                grid_dots.push(dot);
+            }
+        }
+
+        let grid = div().size_full().absolute().children(grid_dots);
+        let windows = div().size_full().absolute().children(self.windows.clone());
+
         div()
             .size_full()
+            .relative()
             .bg(cx.theme().colors().background)
-            .children(self.windows.clone())
+            .child(grid)
+            .child(windows)
     }
 }
 
