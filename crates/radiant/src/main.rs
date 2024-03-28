@@ -5,11 +5,10 @@ use backstage::command::{Command, Instruction};
 use gpui::AssetSource;
 use gpui::{actions, App, AppContext, KeyBinding, Menu, MenuItem};
 
-use crate::ui::text_input;
 use crate::workspace::Workspace;
 use theme::ThemeSettings;
+use ui::text_input;
 
-pub mod ui;
 pub mod workspace;
 
 actions!(app, [Quit]);

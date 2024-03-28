@@ -10,6 +10,7 @@ gdtf.workspace = true
 gdtf_share.workspace = true
 backstage.workspace = true
 theme.workspace = true
+ui.workspace = true
 
 anyhow.workspace = true
 env_logger.workspace = true

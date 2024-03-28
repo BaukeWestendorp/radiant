@@ -6,6 +6,7 @@ members = [
     "crates/gdtf",
     "crates/radiant",
     "crates/theme",
+    "crates/ui",
 ]
 resolver = "2"
 package.license = "MIT"
@@ -16,6 +17,7 @@ dmx = { path = "crates/dmx" }
 gdtf = { path = "crates/gdtf" }
 gdtf_share = { path = "crates/gdtf_share" }
 theme = { path = "crates/theme" }
+ui = { path = "crates/ui" }
 
 anyhow = "1.0.81"
 dotenv = "0.15.0"

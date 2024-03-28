@@ -5,8 +5,8 @@ use gpui::{
 };
 use itertools::Itertools;
 
-use crate::ui::sheet::{Sheet, SheetDelegate};
 use theme::ActiveTheme;
+use ui::sheet::{Sheet, SheetDelegate};
 
 use super::{WindowDelegate, WindowView};
 
