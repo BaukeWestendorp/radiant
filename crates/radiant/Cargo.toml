@@ -9,6 +9,7 @@ dmx.workspace = true
 gdtf.workspace = true
 gdtf_share.workspace = true
 backstage.workspace = true
+theme.workspace = true
 
 anyhow.workspace = true
 env_logger.workspace = true

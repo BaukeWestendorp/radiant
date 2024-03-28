@@ -5,9 +5,9 @@ use gpui::{
     WindowOptions,
 };
 
-use crate::theme::ActiveTheme;
 use crate::ui::text_input::{self, TextInput};
 use crate::workspace;
+use theme::ActiveTheme;
 
 use super::window_grid::WindowGridView;
 use super::WindowGrid;

@@ -3,8 +3,9 @@ members = [
     "crates/backstage",
     "crates/dmx",
     "crates/gdtf_share",
-    "crates/gdtf", 
-    "crates/radiant"
+    "crates/gdtf",
+    "crates/radiant",
+    "crates/theme",
 ]
 resolver = "2"
 package.license = "MIT"
@@ -13,7 +14,8 @@ package.license = "MIT"
 backstage = { path = "crates/backstage" }
 dmx = { path = "crates/dmx" }
 gdtf = { path = "crates/gdtf" }
-gdtf_share = { path = "crates/gdtf_share"}
+gdtf_share = { path = "crates/gdtf_share" }
+theme = { path = "crates/theme" }
 
 anyhow = "1.0.81"
 dotenv = "0.15.0"

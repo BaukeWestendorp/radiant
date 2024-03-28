@@ -4,8 +4,8 @@ use gpui::{
 };
 
 use super::{grid_div, GridBounds};
-use crate::theme::ActiveTheme;
 use crate::workspace::layout::WindowGrid;
+use theme::ActiveTheme;
 
 pub mod executors;
 pub mod fixture_sheet;

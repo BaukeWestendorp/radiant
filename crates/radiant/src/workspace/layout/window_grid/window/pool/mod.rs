@@ -4,9 +4,9 @@ use gpui::{
 };
 use smallvec::SmallVec;
 
-use crate::theme::ActiveTheme;
 use crate::workspace::layout::window_grid::{grid_div, GridBounds, GridSize};
 use crate::workspace::layout::{PoolWindow, Window, WindowGrid, WindowKind};
+use theme::ActiveTheme;
 
 use super::{WindowDelegate, WindowView};
 

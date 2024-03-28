@@ -4,8 +4,7 @@ use gpui::{
     Render, SharedString, Styled, ViewContext, WindowContext,
 };
 
-use crate::theme::ActiveTheme;
-
+use theme::ActiveTheme;
 actions!(text_input, [Enter, Backspace, Delete]);
 
 pub enum Event {

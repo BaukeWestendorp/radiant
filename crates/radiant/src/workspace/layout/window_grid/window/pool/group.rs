@@ -3,9 +3,9 @@ use backstage::show::Show;
 use gpui::InteractiveElement;
 use gpui::{div, prelude::FluentBuilder, IntoElement, Model, ParentElement, Styled, WindowContext};
 
-use crate::theme::ActiveTheme;
 use crate::workspace::layout::window_grid::window::WindowView;
 use crate::workspace::layout::window_grid::GridBounds;
+use theme::ActiveTheme;
 
 use super::PoolWindowDelegate;
 

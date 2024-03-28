@@ -7,8 +7,8 @@ use gpui::{
 };
 
 use super::{WindowDelegate, WindowView};
-use crate::theme::ActiveTheme;
 use crate::workspace::layout::window_grid::{grid_div, GridSize, GRID_CELL_SIZE};
+use theme::ActiveTheme;
 
 pub struct ExecutorsWindowDelegate {
     executors_window: View<ExecutorsWindow>,

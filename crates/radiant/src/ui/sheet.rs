@@ -1,9 +1,8 @@
-use crate::theme::ActiveTheme;
-use gpui::prelude::FluentBuilder;
 use gpui::{
     div, uniform_list, AnyElement, IntoElement, ParentElement, Pixels, Render, SharedString,
     Styled, ViewContext,
 };
+use theme::ActiveTheme;
 
 pub struct Sheet<D: SheetDelegate> {
     pub delegate: D,

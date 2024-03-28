@@ -15,8 +15,7 @@ use self::window::pool::color::ColorPoolWindowDelegate;
 use self::window::pool::group::GroupPoolWindowDelegate;
 use super::screen::Screen;
 use super::{PoolWindowKind, Window, WindowGrid, WindowKind};
-use crate::theme::ActiveTheme;
-
+use theme::ActiveTheme;
 pub const GRID_CELL_SIZE: usize = 80;
 
 pub struct WindowGridView {
