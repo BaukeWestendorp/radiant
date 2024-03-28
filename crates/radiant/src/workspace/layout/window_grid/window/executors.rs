@@ -182,7 +182,7 @@ impl Render for ExecutorInfo {
             .sequence
             .and_then(|id| self.show.read(cx).sequence(id).cloned());
 
-        Container::new()
+        Container::new(cx)
             .size(px(GRID_CELL_SIZE as f32))
             .text_xs()
             .child(self.render_header(sequence.as_ref(), cx))
@@ -259,7 +259,7 @@ impl ExecutorButtonView {
 
 impl Render for ExecutorButtonView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        Container::new()
+        Container::new(cx)
             .w(px(GRID_CELL_SIZE as f32))
             .h(px(GRID_CELL_SIZE as f32 / 2.0))
             .flex()

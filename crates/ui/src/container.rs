@@ -1,9 +1,15 @@
 use gpui::{
-    div, prelude::FluentBuilder, AnyElement, Div, InteractiveElement, IntoElement, MouseDownEvent,
-    MouseUpEvent, ParentElement, RenderOnce, StyleRefinement, Styled, WindowContext,
+    div, prelude::FluentBuilder, AnyElement, AppContext, Div, Hsla, InteractiveElement,
+    IntoElement, MouseDownEvent, MouseUpEvent, ParentElement, RenderOnce, StyleRefinement, Styled,
+    WindowContext,
 };
 use smallvec::SmallVec;
 use theme::ActiveTheme;
+
+pub struct ContainerStyle {
+    pub background: Hsla,
+    pub border: Hsla,
+}
 
 #[derive(IntoElement)]
 pub struct Container {
@@ -11,15 +17,20 @@ pub struct Container {
     children: SmallVec<[AnyElement; 2]>,
     mouse_down_listener: Option<Box<dyn Fn(&MouseDownEvent, &mut WindowContext) + 'static>>,
     mouse_up_listener: Option<Box<dyn Fn(&MouseUpEvent, &mut WindowContext) + 'static>>,
+    style: ContainerStyle,
 }
 
 impl Container {
-    pub fn new() -> Self {
+    pub fn new(cx: &AppContext) -> Self {
         Self {
             base: div(),
             children: SmallVec::new(),
             mouse_down_listener: None,
             mouse_up_listener: None,
+            style: ContainerStyle {
+                background: cx.theme().colors().element_background,
+                border: cx.theme().colors().border,
+            },
         }
     }
 
@@ -36,6 +47,11 @@ impl Container {
         listener: impl Fn(&MouseUpEvent, &mut WindowContext) + 'static,
     ) -> Self {
         self.mouse_up_listener = Some(Box::new(listener));
+        self
+    }
+
+    pub fn container_style(mut self, style: ContainerStyle) -> Self {
+        self.style = style;
         self
     }
 
@@ -61,9 +77,9 @@ impl RenderOnce for Container {
         let is_clickable = self.is_clickable();
 
         self.base
-            .bg(cx.theme().colors().element_background)
+            .bg(self.style.background)
             .border()
-            .border_color(cx.theme().colors().border)
+            .border_color(self.style.border)
             .rounded_md()
             .overflow_hidden()
             .when(is_clickable, |this| {

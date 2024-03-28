@@ -3,8 +3,9 @@ use gpui::{
     RenderOnce, ScrollWheelEvent, Styled, ViewContext, WindowContext,
 };
 use smallvec::SmallVec;
+use ui::container::{Container, ContainerStyle};
 
-use crate::workspace::layout::window_grid::{grid_div, GridBounds, GridSize};
+use crate::workspace::layout::window_grid::{grid_div, GridBounds, GridSize, GRID_CELL_SIZE};
 use crate::workspace::layout::{PoolWindow, Window, WindowGrid, WindowKind};
 use theme::ActiveTheme;
 
@@ -29,6 +30,20 @@ where
     fn scroll_offset(&self) -> i32;
 
     fn render_item_for_id(&self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement>;
+
+    fn render_header_cell(&self, cx: &mut WindowContext) -> AnyElement {
+        Container::new(cx)
+            .size(px(GRID_CELL_SIZE as f32))
+            .container_style(ContainerStyle {
+                background: cx.theme().colors().window_header,
+                border: cx.theme().colors().window_header_border,
+            })
+            .flex()
+            .justify_center()
+            .items_center()
+            .child(self.label())
+            .into_any_element()
+    }
 
     fn handle_scroll(
         &mut self,
@@ -81,6 +96,11 @@ impl<T: PoolWindowDelegate + 'static> WindowDelegate for T {
     {
         let mut grid = vec![];
         for i in 0..self.bounds().cell_count() {
+            if i == 0 {
+                let header_cell = self.render_header_cell(cx);
+                grid.push(header_cell);
+                continue;
+            }
             let id = i + self.scroll_offset() as usize;
             let content = self.render_item_for_id(id, cx);
             let item = div()
@@ -90,7 +110,8 @@ impl<T: PoolWindowDelegate + 'static> WindowDelegate for T {
                     cx.listener(move |this, _event, cx| {
                         this.delegate.handle_click_item(id, cx);
                     }),
-                );
+                )
+                .into_any_element();
             grid.push(item);
         }
 

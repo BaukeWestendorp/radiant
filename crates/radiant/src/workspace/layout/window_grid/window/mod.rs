@@ -74,7 +74,7 @@ pub trait WindowDelegate {
             .bg(cx.theme().colors().window_header)
             .border_color(cx.theme().colors().window_header_border)
             .border()
-            .rounded_t_md()
+            .rounded_md()
             .child(self.title());
 
         Some(header)
