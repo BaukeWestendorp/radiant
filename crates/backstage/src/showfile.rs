@@ -1,13 +1,19 @@
+use std::cell::Cell;
 use std::collections::HashMap;
 
+use anyhow::Error;
 use dmx::{DmxChannel, DmxValue};
+use gdtf::GdtfDescription;
+use gdtf_share::GdtfShare;
 
-use crate::show::AttributeValues;
+use crate::dmx_protocols;
+use crate::playback_engine::PlaybackEngine;
+use crate::show::{self, AttributeValues, Show};
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Showfile {
     #[serde(default = "Default::default")]
-    pub patch_list: PatchList,
+    pub patchlist: Patchlist,
 
     #[serde(default = "Default::default")]
     pub programmer: Programmer,
@@ -22,13 +28,52 @@ pub struct Showfile {
     pub executors: Vec<Executor>,
 
     #[serde(default = "Default::default")]
-    pub dmx_protocols: Vec<DmxArtnetProtocol>,
+    pub dmx_protocols: Vec<ArtnetDmxProtocol>,
+}
+
+impl Showfile {
+    pub async fn try_into_show(self, gdtf_share: GdtfShare) -> Result<Show, Error> {
+        Ok(Show {
+            patchlist: self.patchlist.try_into_show_patchlist(gdtf_share).await?,
+            programmer: self.programmer.into_show_programmer(),
+            playback_engine: PlaybackEngine::new(),
+            data: self.data.into(),
+            presets: self.presets.into(),
+            executors: self
+                .executors
+                .into_iter()
+                .map(|executor| executor.into())
+                .collect(),
+            dmx_protocols: self
+                .dmx_protocols
+                .into_iter()
+                .map(|dmx_protocol| dmx_protocol.into())
+                .collect(),
+        })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
-pub struct PatchList {
+pub struct Patchlist {
     #[serde(default = "Default::default")]
     pub fixtures: Vec<Fixture>,
+}
+
+impl Patchlist {
+    pub async fn try_into_show_patchlist(
+        self,
+        gdtf_share: GdtfShare,
+    ) -> Result<show::Patchlist, Error> {
+        let mut patchlist = show::Patchlist::new();
+
+        for fixture in self.fixtures {
+            // FIXME: This should be done in parallel.
+            let f = fixture.into_show_fixture(&mut patchlist, &gdtf_share).await;
+            patchlist.patch_fixture(f);
+        }
+
+        Ok(patchlist)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -40,10 +85,45 @@ pub struct Fixture {
     pub channel: DmxChannel,
 }
 
+impl Fixture {
+    pub async fn into_show_fixture(
+        self,
+        patchlist: &mut show::Patchlist,
+        gdtf_share: &GdtfShare,
+    ) -> show::Fixture {
+        let rid = self.gdtf_share_revision_id;
+        let gdtf_description = match patchlist.get_gdtf_description(rid) {
+            Some(description) => description,
+            None => {
+                let description_file = gdtf_share.download_file(rid).await.unwrap();
+                let reader = std::io::Cursor::new(description_file);
+                let description = GdtfDescription::from_archive_reader(reader).unwrap();
+                patchlist.register_gdtf_description(rid, description)
+            }
+        };
+
+        show::Fixture {
+            id: self.id,
+            label: self.label,
+            description: gdtf_description,
+            channel: self.channel,
+            mode: self.mode,
+        }
+    }
+}
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Programmer {
     pub selection: Vec<usize>,
     pub changes: HashMap<DmxChannel, u8>,
+}
+
+impl Programmer {
+    pub fn into_show_programmer(self) -> show::Programmer {
+        show::Programmer {
+            selection: self.selection,
+            changes: self.changes,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
@@ -52,11 +132,33 @@ pub struct Data {
     pub sequences: Vec<Sequence>,
 }
 
+impl Into<show::Data> for Data {
+    fn into(self) -> show::Data {
+        show::Data {
+            groups: self.groups.into_iter().map(|group| group.into()).collect(),
+            sequences: self
+                .sequences
+                .into_iter()
+                .map(|sequence| sequence.into())
+                .collect(),
+        }
+    }
+}
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Group {
     pub id: usize,
     pub label: String,
     pub fixtures: Vec<usize>,
+}
+
+impl Into<show::Group> for Group {
+    fn into(self) -> show::Group {
+        show::Group {
+            id: self.id,
+            label: self.label,
+            fixtures: self.fixtures,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
@@ -66,6 +168,16 @@ pub struct Sequence {
     pub cues: Vec<Cue>,
 }
 
+impl Into<show::Sequence> for Sequence {
+    fn into(self) -> show::Sequence {
+        show::Sequence {
+            id: self.id,
+            label: self.label,
+            cues: self.cues.into_iter().map(|cue| cue.into()).collect(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Cue {
     pub groups: Vec<usize>,
@@ -73,16 +185,48 @@ pub struct Cue {
     pub attribute_values: HashMap<String, DmxValue>,
 }
 
-#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
-pub struct Presets {
-    pub colors: Vec<ColorPreset>,
+impl Into<show::Cue> for Cue {
+    fn into(self) -> show::Cue {
+        show::Cue {
+            groups: self.groups,
+            label: self.label,
+            attribute_values: self.attribute_values,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
-pub struct ColorPreset {
+pub struct Presets {
+    pub colors: Vec<Preset>,
+}
+
+impl Into<show::Presets> for Presets {
+    fn into(self) -> show::Presets {
+        show::Presets {
+            colors: self
+                .colors
+                .into_iter()
+                .map(|preset| preset.into())
+                .collect(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Preset {
     pub id: usize,
     pub label: String,
     pub attribute_values: AttributeValues,
+}
+
+impl Into<show::ColorPreset> for Preset {
+    fn into(self) -> show::ColorPreset {
+        show::ColorPreset {
+            id: self.id,
+            label: self.label,
+            attribute_values: self.attribute_values,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
@@ -97,9 +241,33 @@ pub struct Executor {
     pub button_3: ExecutorButton,
 }
 
+impl Into<show::Executor> for Executor {
+    fn into(self) -> show::Executor {
+        show::Executor {
+            id: self.id,
+            sequence: self.sequence,
+            current_index: Cell::new(self.current_index),
+            r#loop: self.r#loop,
+            fader_value: self.fader_value,
+            button_1: self.button_1.into(),
+            button_2: self.button_2.into(),
+            button_3: self.button_3.into(),
+            flash: false,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct ExecutorButton {
     pub action: ExecutorButtonAction,
+}
+
+impl Into<show::ExecutorButton> for ExecutorButton {
+    fn into(self) -> show::ExecutorButton {
+        show::ExecutorButton {
+            action: self.action.into(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
@@ -110,9 +278,25 @@ pub enum ExecutorButtonAction {
     Flash,
 }
 
+impl Into<show::ExecutorButtonAction> for ExecutorButtonAction {
+    fn into(self) -> show::ExecutorButtonAction {
+        match self {
+            ExecutorButtonAction::Go => show::ExecutorButtonAction::Go,
+            ExecutorButtonAction::Top => show::ExecutorButtonAction::Top,
+            ExecutorButtonAction::Flash => show::ExecutorButtonAction::Flash,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
-pub struct DmxArtnetProtocol {
+pub struct ArtnetDmxProtocol {
     pub target_ip: String,
+}
+
+impl Into<dmx_protocols::ArtnetDmxProtocol> for ArtnetDmxProtocol {
+    fn into(self) -> dmx_protocols::ArtnetDmxProtocol {
+        dmx_protocols::ArtnetDmxProtocol::new(self.target_ip.as_str()).unwrap()
+    }
 }
 
 #[cfg(test)]
@@ -122,8 +306,8 @@ mod tests {
     use dmx::{DmxChannel, DmxValue};
 
     use crate::showfile::{
-        ColorPreset, Cue, Data, DmxArtnetProtocol, Executor, ExecutorButton, ExecutorButtonAction,
-        Fixture, Group, PatchList, Presets, Programmer, Sequence, Showfile,
+        ArtnetDmxProtocol, Cue, Data, Executor, ExecutorButton, ExecutorButtonAction, Fixture,
+        Group, Patchlist, Preset, Presets, Programmer, Sequence, Showfile,
     };
 
     macro_rules! check_showfile {
@@ -138,7 +322,7 @@ mod tests {
         check_showfile!(
             r#"{}"#,
             Showfile {
-                patch_list: PatchList {
+                patchlist: Patchlist {
                     fixtures: Vec::new()
                 },
                 programmer: Programmer {
@@ -160,7 +344,7 @@ mod tests {
     fn filled() {
         check_showfile!(
             r#"{
-                "patch_list": {
+                "patchlist": {
                     "fixtures": [
                         {
                             "id": 420,
@@ -276,7 +460,7 @@ mod tests {
                 ]
             }"#,
             Showfile {
-                patch_list: PatchList {
+                patchlist: Patchlist {
                     fixtures: vec![
                         Fixture {
                             id: 420,
@@ -360,7 +544,7 @@ mod tests {
                     },]
                 },
                 presets: Presets {
-                    colors: vec![ColorPreset {
+                    colors: vec![Preset {
                         id: 1,
                         label: "Red".to_string(),
                         attribute_values: {
@@ -388,7 +572,7 @@ mod tests {
                         action: ExecutorButtonAction::Flash,
                     }
                 }],
-                dmx_protocols: vec![DmxArtnetProtocol {
+                dmx_protocols: vec![ArtnetDmxProtocol {
                     target_ip: "0.0.0.0".to_string()
                 }]
             }

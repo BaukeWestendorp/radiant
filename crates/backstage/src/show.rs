@@ -12,157 +12,34 @@ use gdtf_share::GdtfShare;
 use crate::command::{Command, Instruction, Object};
 use crate::dmx_protocols::ArtnetDmxProtocol;
 use crate::playback_engine::PlaybackEngine;
-use crate::showfile::{self, Showfile};
+use crate::showfile::Showfile;
 
 #[derive(Debug)]
 pub struct Show {
-    patchlist: Patchlist,
+    pub(crate) patchlist: Patchlist,
 
-    programmer: Programmer,
+    pub(crate) programmer: Programmer,
 
-    playback_engine: PlaybackEngine,
+    pub(crate) playback_engine: PlaybackEngine,
 
-    data: Data,
+    pub(crate) data: Data,
 
-    presets: Presets,
+    pub(crate) presets: Presets,
 
-    executors: Vec<Executor>,
+    pub(crate) executors: Vec<Executor>,
 
-    dmx_protocols: Vec<ArtnetDmxProtocol>,
+    pub(crate) dmx_protocols: Vec<ArtnetDmxProtocol>,
 }
 
 impl Show {
-    pub async fn from_file(file: File, gdtf_share: GdtfShare) -> std::io::Result<Self> {
+    pub async fn from_file(file: File, gdtf_share: GdtfShare) -> Result<Self> {
         let reader = std::io::BufReader::new(file);
         let showfile: Showfile = serde_json::from_reader(reader)?;
-        Ok(Self::from_showfile(showfile, gdtf_share).await)
+        Self::from_showfile(showfile, gdtf_share).await
     }
 
-    pub(crate) async fn from_showfile(showfile: Showfile, gdtf_share: GdtfShare) -> Self {
-        let mut patchlist = Patchlist::new();
-
-        for f in showfile.patch_list.fixtures.into_iter() {
-            let rid = f.gdtf_share_revision_id;
-            let gdtf_description = match patchlist.get_gdtf_description(rid) {
-                Some(description) => description,
-                None => {
-                    let description_file = gdtf_share.download_file(rid).await.unwrap();
-                    let reader = std::io::Cursor::new(description_file);
-                    let description = GdtfDescription::from_archive_reader(reader).unwrap();
-                    patchlist.register_gdtf_description(rid, description)
-                }
-            };
-
-            let fixture = Fixture {
-                id: f.id,
-                label: f.label,
-                description: gdtf_description,
-                channel: f.channel,
-                mode: f.mode,
-            };
-
-            patchlist.patch_fixture(fixture);
-        }
-
-        let programmer = Programmer {
-            selection: showfile.programmer.selection,
-            changes: showfile.programmer.changes,
-        };
-
-        let data = Data {
-            groups: showfile
-                .data
-                .groups
-                .into_iter()
-                .map(|group| Group {
-                    id: group.id,
-                    label: group.label,
-                    fixtures: group.fixtures,
-                })
-                .collect(),
-            sequences: showfile
-                .data
-                .sequences
-                .into_iter()
-                .map(|sequence| Sequence {
-                    id: sequence.id,
-                    label: sequence.label,
-                    cues: sequence
-                        .cues
-                        .into_iter()
-                        .map(|cue| Cue {
-                            groups: cue.groups,
-                            label: cue.label,
-                            attribute_values: cue.attribute_values,
-                        })
-                        .collect(),
-                })
-                .collect(),
-        };
-
-        let presets = Presets {
-            colors: showfile
-                .presets
-                .colors
-                .into_iter()
-                .map(|color| ColorPreset {
-                    id: color.id,
-                    label: color.label,
-                    attribute_values: color.attribute_values,
-                })
-                .collect(),
-        };
-
-        let executors = showfile
-            .executors
-            .into_iter()
-            .map(|executor| Executor {
-                id: executor.id,
-                sequence: executor.sequence,
-                current_index: Cell::new(executor.current_index),
-                r#loop: executor.r#loop,
-                flash: false,
-                fader_value: executor.fader_value,
-                button_1: ExecutorButton {
-                    action: match executor.button_1.action {
-                        showfile::ExecutorButtonAction::Go => ExecutorButtonAction::Go,
-                        showfile::ExecutorButtonAction::Top => ExecutorButtonAction::Top,
-                        showfile::ExecutorButtonAction::Flash => ExecutorButtonAction::Flash,
-                    },
-                },
-                button_2: ExecutorButton {
-                    action: match executor.button_2.action {
-                        showfile::ExecutorButtonAction::Go => ExecutorButtonAction::Go,
-                        showfile::ExecutorButtonAction::Top => ExecutorButtonAction::Top,
-                        showfile::ExecutorButtonAction::Flash => ExecutorButtonAction::Flash,
-                    },
-                },
-                button_3: ExecutorButton {
-                    action: match executor.button_3.action {
-                        showfile::ExecutorButtonAction::Go => ExecutorButtonAction::Go,
-                        showfile::ExecutorButtonAction::Top => ExecutorButtonAction::Top,
-                        showfile::ExecutorButtonAction::Flash => ExecutorButtonAction::Flash,
-                    },
-                },
-            })
-            .collect();
-
-        // FIXME: Get the dmx protocols from the showfile.
-        let dmx_protocols = showfile
-            .dmx_protocols
-            .into_iter()
-            .map(|protocol| ArtnetDmxProtocol::new(protocol.target_ip.as_str()).unwrap())
-            .collect();
-
-        Self {
-            patchlist,
-            programmer,
-            playback_engine: PlaybackEngine::new(),
-            data,
-            presets,
-            executors,
-            dmx_protocols,
-        }
+    pub(crate) async fn from_showfile(showfile: Showfile, gdtf_share: GdtfShare) -> Result<Self> {
+        showfile.try_into_show(gdtf_share).await
     }
 
     pub fn execute_command_str(&mut self, s: &str) -> Result<()> {
@@ -585,8 +462,8 @@ impl Fixture {
 
 #[derive(Debug, Clone)]
 pub struct Programmer {
-    selection: Vec<usize>,
-    changes: HashMap<DmxChannel, u8>,
+    pub(crate) selection: Vec<usize>,
+    pub(crate) changes: HashMap<DmxChannel, u8>,
 }
 
 impl Programmer {
@@ -658,7 +535,7 @@ pub type AttributeValues = HashMap<String, DmxValue>;
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Presets {
-    colors: Vec<ColorPreset>,
+    pub colors: Vec<ColorPreset>,
 }
 
 impl Presets {
@@ -686,9 +563,9 @@ pub enum AffectedAttributes {
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct ColorPreset {
-    id: usize,
-    label: String,
-    attribute_values: AttributeValues,
+    pub(crate) id: usize,
+    pub(crate) label: String,
+    pub attribute_values: AttributeValues,
 }
 
 impl ColorPreset {
@@ -828,7 +705,7 @@ mod tests {
         let showfile: Showfile = serde_json::from_str(r#"{}"#).unwrap();
         let gdtf_share = GdtfShare::auth(user, password).await.unwrap();
 
-        Show::from_showfile(showfile, gdtf_share).await;
+        Show::from_showfile(showfile, gdtf_share).await.unwrap();
     }
 
     #[tokio::test]
@@ -839,7 +716,7 @@ mod tests {
 
         let showfile: Showfile = serde_json::from_str(
             r#"{
-            "patch_list": {
+            "patchlist": {
                 "fixtures": [
                     {
                         "id": 420,
@@ -868,7 +745,7 @@ mod tests {
         .unwrap();
         let gdtf_share = GdtfShare::auth(user, password).await.unwrap();
 
-        let show = Show::from_showfile(showfile, gdtf_share).await;
+        let show = Show::from_showfile(showfile, gdtf_share).await.unwrap();
 
         assert_eq!(
             show.patchlist.fixtures[0].description.fixture_type.id,
@@ -886,7 +763,7 @@ mod tests {
 
         let showfile: Showfile = serde_json::from_str(
             r#"{
-            "patch_list": {
+            "patchlist": {
                 "fixtures": [
                     {
                         "id": 420,
@@ -915,7 +792,7 @@ mod tests {
         .unwrap();
         let gdtf_share = GdtfShare::auth(user, password).await.unwrap();
 
-        let mut show = Show::from_showfile(showfile, gdtf_share).await;
+        let mut show = Show::from_showfile(showfile, gdtf_share).await.unwrap();
         show.execute_command_str("Select Fixture 420").unwrap();
 
         assert_eq!(*show.programmer.selection.first().unwrap(), 420);
