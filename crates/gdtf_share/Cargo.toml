@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 
+[lib]
+doctest = false
+
 [dependencies]
 dotenv.workspace = true
 serde_json.workspace = true
@@ -11,9 +14,7 @@ serde.workspace = true
 thiserror.workspace = true
 
 bytes = "1.6.0"
-isahc = { version = "1.7.2", features = ["cookies", "json"]}
+isahc = { version = "1.7.2", features = ["cookies", "json"] }
 
 [dev-dependencies]
 smol = "2.0.0"
-
-

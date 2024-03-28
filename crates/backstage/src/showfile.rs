@@ -399,24 +399,6 @@ mod tests {
                                         "ColorAdd_G": 16,
                                         "ColorAdd_B": 127
                                     }
-                                },
-                                {
-                                    "groups": [2],
-                                    "label": "Cue 2",
-                                    "attribute_values": {
-                                        "ColorAdd_R": 32,
-                                        "ColorAdd_G": 255,
-                                        "ColorAdd_B": 16
-                                    }
-                                },
-                                {
-                                    "groups": [3],
-                                    "label": "Cue 3",
-                                    "attribute_values": {
-                                        "ColorAdd_R": 255,
-                                        "ColorAdd_G": 255,
-                                        "ColorAdd_B": 255
-                                    }
                                 }
                             ]
                         }
@@ -506,41 +488,17 @@ mod tests {
                     sequences: vec![Sequence {
                         id: 1,
                         label: "Switch".to_string(),
-                        cues: vec![
-                            Cue {
-                                groups: vec![1],
-                                label: "Cue 1".to_string(),
-                                attribute_values: {
-                                    let mut map = HashMap::new();
-                                    map.insert("ColorAdd_R".to_string(), DmxValue::new(255));
-                                    map.insert("ColorAdd_G".to_string(), DmxValue::new(16));
-                                    map.insert("ColorAdd_B".to_string(), DmxValue::new(127));
-                                    map
-                                }
-                            },
-                            Cue {
-                                groups: vec![2],
-                                label: "Cue 2".to_string(),
-                                attribute_values: {
-                                    let mut map = HashMap::new();
-                                    map.insert("ColorAdd_R".to_string(), DmxValue::new(32));
-                                    map.insert("ColorAdd_G".to_string(), DmxValue::new(255));
-                                    map.insert("ColorAdd_B".to_string(), DmxValue::new(16));
-                                    map
-                                }
-                            },
-                            Cue {
-                                groups: vec![3],
-                                label: "Cue 3".to_string(),
-                                attribute_values: {
-                                    let mut map = HashMap::new();
-                                    map.insert("ColorAdd_R".to_string(), DmxValue::new(255));
-                                    map.insert("ColorAdd_G".to_string(), DmxValue::new(255));
-                                    map.insert("ColorAdd_B".to_string(), DmxValue::new(255));
-                                    map
-                                }
+                        cues: vec![Cue {
+                            groups: vec![1],
+                            label: "Cue 1".to_string(),
+                            attribute_values: {
+                                let mut map = HashMap::new();
+                                map.insert("ColorAdd_R".to_string(), DmxValue::new(255));
+                                map.insert("ColorAdd_G".to_string(), DmxValue::new(16));
+                                map.insert("ColorAdd_B".to_string(), DmxValue::new(127));
+                                map
                             }
-                        ]
+                        }]
                     },]
                 },
                 presets: Presets {

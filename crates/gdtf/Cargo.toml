@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 
+[lib]
+doctest = false
+
 [dependencies]
 serde-inline-default.workspace = true
 serde.workspace = true
