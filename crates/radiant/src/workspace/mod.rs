@@ -55,7 +55,7 @@ impl Workspace {
                     }),
                 });
                 window_grid.add_window(Window {
-                    bounds: GridBounds::new(GridPoint::new(0, 5), GridSize::new(25, 5)),
+                    bounds: GridBounds::new(GridPoint::new(0, 5), GridSize::new(10, 3)),
                     kind: WindowKind::FixtureSheet,
                 });
                 window_grid

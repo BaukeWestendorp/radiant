@@ -44,16 +44,29 @@ impl<D: WindowDelegate + 'static> Render for WindowView<D> {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let bounds = self.bounds(cx);
 
+        let background = div()
+            .absolute()
+            .size_full()
+            .rounded_md()
+            .border()
+            .border_color(cx.theme().colors().border_variant);
+
+        let foreground = div()
+            .absolute()
+            .size_full()
+            .child(self.delegate.render_content(cx));
+
         let content = div()
             .bg(cx.theme().colors().window_background)
             .size_full()
-            .rounded_b_md()
-            .border_color(cx.theme().colors().border)
-            .child(self.delegate.render_content(cx));
+            .relative()
+            .child(background)
+            .child(foreground);
 
         grid_div(bounds.size, Some(bounds.origin))
             .flex()
             .flex_col()
+            .shadow_lg()
             .children(self.delegate.render_header(cx))
             .child(content)
     }
