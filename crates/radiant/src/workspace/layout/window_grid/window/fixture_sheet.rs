@@ -1,7 +1,10 @@
-use backstage::show::{Fixture, Show};
+use backstage::{
+    command::{Command, Instruction, Object},
+    show::{Fixture, Show},
+};
 use gpui::{
-    div, prelude::FluentBuilder, rgb, AnyElement, IntoElement, Model, ParentElement, Pixels,
-    Styled, View, ViewContext, VisualContext, WindowContext,
+    div, prelude::FluentBuilder, rgb, AnyElement, InteractiveElement, IntoElement, Model,
+    MouseButton, ParentElement, Pixels, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 use itertools::Itertools;
 
@@ -128,7 +131,7 @@ impl SheetDelegate for FixtureSheetDelegate {
         fixture: &Self::Data,
         cx: &mut ViewContext<Sheet<Self>>,
     ) -> AnyElement {
-        match column_id {
+        let cell = match column_id {
             FixtureSheetColumnId::Id => render_value(Some(fixture.id)),
             FixtureSheetColumnId::Name => render_value(Some(fixture.label.clone())),
             FixtureSheetColumnId::Patch => render_value(Some(fixture.channel.clone())),
@@ -177,7 +180,25 @@ impl SheetDelegate for FixtureSheetDelegate {
                     .into_any_element()
             }
         }
-        .into_any_element()
+        .into_any_element();
+
+        div()
+            .child(cell)
+            .on_mouse_down(
+                MouseButton::Left,
+                cx.listener({
+                    let fixture_id = fixture.id;
+                    move |this, _event, cx| {
+                        this.delegate.show.update(cx, |show, _cx| {
+                            show.execute_command(&Command::new([Instruction::Select(
+                                Object::Fixture(fixture_id),
+                            )]))
+                            .unwrap();
+                        })
+                    }
+                }),
+            )
+            .into_any_element()
     }
 }
 
