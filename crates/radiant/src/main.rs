@@ -35,8 +35,16 @@ fn main() {
         cx.on_action(quit);
 
         cx.spawn(move |mut cx| async move {
-            let mut workspace = Workspace::new(&mut cx).await.unwrap();
-            workspace.start_dmx_output_loop(&cx).await;
+            match Workspace::new(&mut cx).await {
+                Err(err) => {
+                    log::error!("Failed to open workspace: {err}");
+                    cx.update(|cx| cx.quit()).unwrap();
+                    return;
+                }
+                Ok(mut workspace) => {
+                    workspace.start_dmx_output_loop(&cx).await;
+                }
+            }
         })
         .detach();
 

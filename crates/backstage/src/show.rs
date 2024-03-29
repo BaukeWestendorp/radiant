@@ -32,13 +32,16 @@ pub struct Show {
 }
 
 impl Show {
-    pub async fn from_file(file: File, gdtf_share: GdtfShare) -> Result<Self> {
+    pub async fn from_file(file: File, gdtf_share: Option<GdtfShare>) -> Result<Self> {
         let reader = std::io::BufReader::new(file);
         let showfile: Showfile = serde_json::from_reader(reader)?;
         Self::from_showfile(showfile, gdtf_share).await
     }
 
-    pub(crate) async fn from_showfile(showfile: Showfile, gdtf_share: GdtfShare) -> Result<Self> {
+    pub(crate) async fn from_showfile(
+        showfile: Showfile,
+        gdtf_share: Option<GdtfShare>,
+    ) -> Result<Self> {
         showfile.try_into_show(gdtf_share).await
     }
 

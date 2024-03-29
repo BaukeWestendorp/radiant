@@ -92,6 +92,12 @@ async fn get_show() -> Result<Show> {
     let file = File::open("show.json")?;
     let user = env::var("GDTF_SHARE_API_USER")?;
     let password = env::var("GDTF_SHARE_API_PASSWORD")?;
-    let gdtf_share = GdtfShare::auth(user, password).await?;
+    let gdtf_share = match GdtfShare::auth(user, password).await {
+        Ok(gdtf_share) => Some(gdtf_share),
+        Err(_) => {
+            log::warn!("Failed to authenticate with GDTF Share. Trying to load showfile without a connection...");
+            None
+        }
+    };
     Ok(Show::from_file(file, gdtf_share).await?)
 }
