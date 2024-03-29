@@ -1,9 +1,7 @@
 use anyhow::Result;
 use backstage::show::Show;
-use gdtf_share::GdtfShare;
 use gpui::{AsyncAppContext, Context, Model, Task, Timer};
 
-use std::env;
 use std::fs::File;
 use std::time::Duration;
 
@@ -90,14 +88,5 @@ impl Workspace {
 
 async fn get_show() -> Result<Show> {
     let file = File::open("show.json")?;
-    let user = env::var("GDTF_SHARE_API_USER")?;
-    let password = env::var("GDTF_SHARE_API_PASSWORD")?;
-    let gdtf_share = match GdtfShare::auth(user, password).await {
-        Ok(gdtf_share) => Some(gdtf_share),
-        Err(_) => {
-            log::warn!("Failed to authenticate with GDTF Share. Trying to load showfile without a connection...");
-            None
-        }
-    };
-    Ok(Show::from_file(file, gdtf_share).await?)
+    Ok(Show::from_file(file).await?)
 }

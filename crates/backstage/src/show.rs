@@ -7,7 +7,6 @@ use std::rc::Rc;
 
 use dmx::{DmxChannel, DmxOutput, DmxValue};
 use gdtf::{ActivationGroup, Attribute, FeatureGroup, FixtureType, GdtfDescription};
-use gdtf_share::GdtfShare;
 
 use crate::command::{Command, Instruction, Object};
 use crate::dmx_protocols::ArtnetDmxProtocol;
@@ -32,17 +31,14 @@ pub struct Show {
 }
 
 impl Show {
-    pub async fn from_file(file: File, gdtf_share: Option<GdtfShare>) -> Result<Self> {
+    pub async fn from_file(file: File) -> Result<Self> {
         let reader = std::io::BufReader::new(file);
         let showfile: Showfile = serde_json::from_reader(reader)?;
-        Self::from_showfile(showfile, gdtf_share).await
+        Self::from_showfile(showfile).await
     }
 
-    pub(crate) async fn from_showfile(
-        showfile: Showfile,
-        gdtf_share: Option<GdtfShare>,
-    ) -> Result<Self> {
-        showfile.try_into_show(gdtf_share).await
+    pub(crate) async fn from_showfile(showfile: Showfile) -> Result<Self> {
+        showfile.try_into_show().await
     }
 
     pub fn execute_command_str(&mut self, s: &str) -> Result<()> {
@@ -695,9 +691,6 @@ impl Executor {
 
 #[cfg(test)]
 mod tests {
-    use std::env;
-
-    use gdtf_share::GdtfShare;
 
     use crate::showfile::Showfile;
 
@@ -706,21 +699,12 @@ mod tests {
     #[tokio::test]
     async fn from_empty_showfile() {
         dotenv::dotenv().ok();
-        let user = env::var("GDTF_SHARE_API_USER").unwrap();
-        let password = env::var("GDTF_SHARE_API_PASSWORD").unwrap();
-
         let showfile: Showfile = serde_json::from_str(r#"{}"#).unwrap();
-        let gdtf_share = GdtfShare::auth(user, password).await.unwrap();
-
-        Show::from_showfile(showfile, gdtf_share).await.unwrap();
+        Show::from_showfile(showfile).await.unwrap();
     }
 
     #[tokio::test]
     async fn from_showfile_with_fixture() {
-        dotenv::dotenv().ok();
-        let user = env::var("GDTF_SHARE_API_USER").unwrap();
-        let password = env::var("GDTF_SHARE_API_PASSWORD").unwrap();
-
         let showfile: Showfile = serde_json::from_str(
             r#"{
             "patchlist": {
@@ -750,9 +734,7 @@ mod tests {
         }"#,
         )
         .unwrap();
-        let gdtf_share = GdtfShare::auth(user, password).await.unwrap();
-
-        let show = Show::from_showfile(showfile, gdtf_share).await.unwrap();
+        let show = Show::from_showfile(showfile).await.unwrap();
 
         assert_eq!(
             show.patchlist.fixtures[0].description.fixture_type.id,
@@ -764,10 +746,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_selecting_fixture_with_command() {
-        dotenv::dotenv().ok();
-        let user = env::var("GDTF_SHARE_API_USER").unwrap();
-        let password = env::var("GDTF_SHARE_API_PASSWORD").unwrap();
-
         let showfile: Showfile = serde_json::from_str(
             r#"{
             "patchlist": {
@@ -797,9 +775,8 @@ mod tests {
         }"#,
         )
         .unwrap();
-        let gdtf_share = GdtfShare::auth(user, password).await.unwrap();
 
-        let mut show = Show::from_showfile(showfile, gdtf_share).await.unwrap();
+        let mut show = Show::from_showfile(showfile).await.unwrap();
         show.execute_command_str("Select Fixture 420").unwrap();
 
         assert_eq!(*show.programmer.selection.first().unwrap(), 420);

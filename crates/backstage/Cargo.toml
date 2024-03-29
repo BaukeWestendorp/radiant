@@ -24,6 +24,7 @@ lazy_static.workspace = true
 
 artnet_protocol = "0.4.2"
 xdg = "2.5.2"
+futures-lite = "2.3.0"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt"] }

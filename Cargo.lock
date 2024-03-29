@@ -462,6 +462,7 @@ dependencies = [
  "artnet_protocol",
  "dmx",
  "dotenv",
+ "futures-lite 2.3.0",
  "gdtf",
  "gdtf_share",
  "itertools 0.12.1",

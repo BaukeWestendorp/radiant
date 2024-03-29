@@ -1,10 +1,11 @@
 use std::cell::Cell;
 use std::collections::HashMap;
+use std::env;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 
-use anyhow::Error;
+use anyhow::{anyhow, Error};
 use dmx::{DmxChannel, DmxValue};
 use gdtf::GdtfDescription;
 use gdtf_share::GdtfShare;
@@ -14,8 +15,23 @@ use crate::dmx_protocols;
 use crate::playback_engine::PlaybackEngine;
 use crate::show::{self, AttributeValues, Show};
 
+const FIXTURE_CACHE_PATH: &str = "radiant/fixtures";
+
 lazy_static! {
     static ref BASE_DIRS: xdg::BaseDirectories = xdg::BaseDirectories::new().unwrap();
+    static ref GDTF_SHARE: Result<GdtfShare, Error> = {
+        let user = env::var("GDTF_SHARE_API_USER")?;
+        let password = env::var("GDTF_SHARE_API_PASSWORD")?;
+        match futures_lite::future::block_on(GdtfShare::auth(user, password)) {
+            Ok(gdtf_share) => {
+                log::info!("Authenticated with GDTF Share API");
+                Ok(gdtf_share)
+            }
+            Err(_) => {
+                Err(anyhow!("Failed to authenticate with GDTF Share. Trying to load showfile without a connection..."))
+            }
+        }
+    };
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
@@ -40,9 +56,9 @@ pub struct Showfile {
 }
 
 impl Showfile {
-    pub async fn try_into_show(self, gdtf_share: Option<GdtfShare>) -> Result<Show, Error> {
+    pub async fn try_into_show(self) -> Result<Show, Error> {
         Ok(Show {
-            patchlist: self.patchlist.try_into_show_patchlist(gdtf_share).await?,
+            patchlist: self.patchlist.try_into_show_patchlist().await?,
             programmer: self.programmer.into_show_programmer(),
             playback_engine: PlaybackEngine::new(),
             data: self.data.into(),
@@ -68,17 +84,12 @@ pub struct Patchlist {
 }
 
 impl Patchlist {
-    pub async fn try_into_show_patchlist(
-        self,
-        gdtf_share: Option<GdtfShare>,
-    ) -> Result<show::Patchlist, Error> {
+    pub async fn try_into_show_patchlist(self) -> Result<show::Patchlist, Error> {
         let mut patchlist = show::Patchlist::new();
 
         for fixture in self.fixtures {
             // FIXME: This should be done in parallel.
-            let f = fixture
-                .into_show_fixture(&mut patchlist, gdtf_share.as_ref())
-                .await;
+            let f = fixture.into_show_fixture(&mut patchlist).await?;
             patchlist.patch_fixture(f);
         }
 
@@ -99,46 +110,45 @@ impl Fixture {
     pub async fn into_show_fixture(
         self,
         patchlist: &mut show::Patchlist,
-        gdtf_share: Option<&GdtfShare>,
-    ) -> show::Fixture {
+    ) -> Result<show::Fixture, Error> {
         let rid = self.gdtf_share_revision_id;
         let gdtf_description = match patchlist.get_gdtf_description(rid) {
             Some(description) => description,
             None => {
                 let cached_file_path = BASE_DIRS
-                    .place_cache_file(Path::new(&format!("radiant/fixtures/{rid}.gdtf")))
+                    .place_cache_file(Path::new(FIXTURE_CACHE_PATH).join(format!("{rid}.gdtf")))
                     .unwrap();
+
                 if let Ok(cached_file) = std::fs::read(cached_file_path.clone()) {
                     let cached_description =
                         GdtfDescription::from_archive_bytes(&cached_file).unwrap();
-                    log::debug!("Using cached GDTF file '{rid}.gdtf'");
+                    log::info!("Using cached GDTF file '{}'", cached_file_path.display());
                     patchlist.register_gdtf_description(rid, cached_description)
                 } else {
-                    let Some(gdtf_share) = gdtf_share else {
-                        log::error!("Could not download uncached GDTF file.");
-                        todo!();
+                    let Ok(gdtf_share) = GDTF_SHARE.as_ref() else {
+                        return Err(anyhow!("Could not download uncached GDTF file."));
                     };
 
                     let description_file = gdtf_share.download_file(rid).await.unwrap();
                     let reader = std::io::Cursor::new(description_file.clone());
                     let description = GdtfDescription::from_archive_reader(reader).unwrap();
 
-                    let mut file = File::create_new(cached_file_path).unwrap();
+                    let mut file = File::create_new(cached_file_path.clone()).unwrap();
                     file.write_all(&description_file).unwrap();
-                    log::debug!("Cached GDTF file '{rid}.gdtf'");
+                    log::info!("Cached GDTF file '{}'", cached_file_path.display());
 
                     patchlist.register_gdtf_description(rid, description)
                 }
             }
         };
 
-        show::Fixture {
+        Ok(show::Fixture {
             id: self.id,
             label: self.label,
             description: gdtf_description,
             channel: self.channel,
             mode: self.mode,
-        }
+        })
     }
 }
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
