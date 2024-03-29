@@ -20,6 +20,146 @@
           "address": 6,
           "universe": 0
         }
+      },
+      {
+        "id": 3,
+        "label": "LEDForce 7 RGBW 3",
+        "gdtf_share_revision_id": 36314,
+        "mode": "Mode 2 RGBW + dim + strobe",
+        "channel": {
+          "address": 12,
+          "universe": 0
+        }
+      },
+      {
+        "id": 4,
+        "label": "LEDForce 7 RGBW 4",
+        "gdtf_share_revision_id": 36314,
+        "mode": "Mode 2 RGBW + dim + strobe",
+        "channel": {
+          "address": 18,
+          "universe": 0
+        }
+      },
+      {
+        "id": 5,
+        "label": "LEDForce 7 RGBW 5",
+        "gdtf_share_revision_id": 36314,
+        "mode": "Mode 2 RGBW + dim + strobe",
+        "channel": {
+          "address": 24,
+          "universe": 0
+        }
+      },
+      {
+        "id": 6,
+        "label": "LEDForce 7 RGBW 6",
+        "gdtf_share_revision_id": 36314,
+        "mode": "Mode 2 RGBW + dim + strobe",
+        "channel": {
+          "address": 30,
+          "universe": 0
+        }
+      },
+      {
+        "id": 7,
+        "label": "LEDForce 7 RGBW 7",
+        "gdtf_share_revision_id": 36314,
+        "mode": "Mode 2 RGBW + dim + strobe",
+        "channel": {
+          "address": 36,
+          "universe": 0
+        }
+      },
+      {
+        "id": 8,
+        "label": "LEDForce 7 RGBW 8",
+        "gdtf_share_revision_id": 36314,
+        "mode": "Mode 2 RGBW + dim + strobe",
+        "channel": {
+          "address": 42,
+          "universe": 0
+        }
+      },
+      {
+        "id": 9,
+        "gdtf_share_revision_id": 36314,
+        "label": "LEDForce 7 RGBW 9",
+        "mode": "Mode 2 RGBW + dim + strobe",
+        "channel": {
+          "address": 48,
+          "universe": 0
+        }
+      },
+      {
+        "id": 10,
+        "label": "LEDForce 7 RGBW 10",
+        "gdtf_share_revision_id": 36314,
+        "mode": "Mode 2 RGBW + dim + strobe",
+        "channel": {
+          "address": 54,
+          "universe": 0
+        }
+      },
+      {
+        "id": 11,
+        "label": "LEDForce 7 RGBW 11",
+        "gdtf_share_revision_id": 36314,
+        "mode": "Mode 2 RGBW + dim + strobe",
+        "channel": {
+          "address": 60,
+          "universe": 0
+        }
+      },
+      {
+        "id": 12,
+        "label": "LEDForce 7 RGBW 12",
+        "gdtf_share_revision_id": 36314,
+        "mode": "Mode 2 RGBW + dim + strobe",
+        "channel": {
+          "address": 66,
+          "universe": 0
+        }
+      },
+      {
+        "id": 13,
+        "label": "LEDForce 7 RGBW 13",
+        "gdtf_share_revision_id": 36314,
+        "mode": "Mode 2 RGBW + dim + strobe",
+        "channel": {
+          "address": 72,
+          "universe": 0
+        }
+      },
+      {
+        "id": 14,
+        "label": "LEDForce 7 RGBW 14",
+        "gdtf_share_revision_id": 36314,
+        "mode": "Mode 2 RGBW + dim + strobe",
+        "channel": {
+          "address": 78,
+          "universe": 0
+        }
+      },
+      {
+        "id": 15,
+        "label": "LEDForce 7 RGBW 15",
+        "gdtf_share_revision_id": 36314,
+        "mode": "Mode 2 RGBW + dim + strobe",
+        "channel": {
+          "address": 84,
+          "universe": 0
+        }
+      },
+      {
+        "id": 16,
+        "label": "LEDForce 7 RGBW 16",
+        "gdtf_share_revision_id": 36314,
+        "mode": "Mode 2 RGBW + dim + strobe",
+        "channel": {
+          "address": 90,
+          "universe": 0
+        }
       }
     ]
   },
