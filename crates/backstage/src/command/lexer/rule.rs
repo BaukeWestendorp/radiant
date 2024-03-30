@@ -45,6 +45,7 @@ pub fn get_rules() -> Vec<Rule> {
 
     vec![
         keyword!(TokenKind::Clear),
+        keyword!(TokenKind::Store),
         keyword!(TokenKind::Select),
         keyword!(TokenKind::Go),
         keyword!(TokenKind::Top),

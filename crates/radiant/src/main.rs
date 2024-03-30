@@ -67,7 +67,7 @@ fn init_keybinds(cx: &mut AppContext) -> Result<()> {
         KeyBinding::new("cmd-q", Quit, None),
         KeyBinding::new(
             "escape",
-            workspace::action::Command(Command::new([Instruction::Clear])),
+            workspace::action::ExecuteCommand(Command::new([Instruction::Clear])),
             Some("Screen"),
         ),
         KeyBinding::new("enter", text_input::Enter, Some("TextInput")),

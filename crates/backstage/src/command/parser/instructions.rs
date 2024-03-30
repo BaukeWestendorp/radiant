@@ -22,6 +22,11 @@ where
                 self.consume(TokenKind::Clear)?;
                 Ok(Instruction::Clear)
             }
+            TokenKind::Store => {
+                self.consume(TokenKind::Store)?;
+                let destination = self.parse_object()?.into();
+                Ok(Instruction::Store(destination))
+            }
             TokenKind::Select => {
                 self.consume(TokenKind::Select)?;
                 let object = self.parse_object()?;

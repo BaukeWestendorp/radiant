@@ -10,18 +10,42 @@ mod parser;
 #[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize)]
 pub enum Instruction {
     Clear,
+    Store(StoreDestination),
     Select(Object),
     Go,
     Top,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize)]
+pub enum StoreDestination {
+    Group(usize),
+}
+
+impl From<Object> for StoreDestination {
+    fn from(value: Object) -> Self {
+        match value {
+            Object::Group(id) => Self::Group(id),
+            _ => todo!("Implement storing to other objects"),
+        }
+    }
+}
+
+impl std::fmt::Display for StoreDestination {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Group(id) => write!(f, "Group {id}"),
+        }
+    }
+}
+
 impl std::fmt::Display for Instruction {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Instruction::Clear => write!(f, "Clear"),
-            Instruction::Select(object) => write!(f, "Group {object}"),
-            Instruction::Go => write!(f, "Go"),
-            Instruction::Top => write!(f, "Go"),
+            Self::Clear => write!(f, "Clear"),
+            Self::Store(destination) => write!(f, "Store > {destination}"),
+            Self::Select(object) => write!(f, "Select {object}"),
+            Self::Go => write!(f, "Go"),
+            Self::Top => write!(f, "Go"),
         }
     }
 }

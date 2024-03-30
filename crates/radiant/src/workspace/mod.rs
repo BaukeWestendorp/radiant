@@ -14,10 +14,10 @@ pub mod layout;
 pub mod action {
     use gpui::impl_actions;
 
-    impl_actions!(workspace, [Command]);
+    impl_actions!(workspace, [ExecuteCommand]);
 
     #[derive(Clone, PartialEq, serde::Deserialize)]
-    pub struct Command(pub backstage::command::Command);
+    pub struct ExecuteCommand(pub backstage::command::Command);
 }
 
 const DMX_OUTPUT_RATE: Duration = Duration::from_millis(1000 / 40);

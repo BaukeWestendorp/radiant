@@ -8,7 +8,7 @@ use std::rc::Rc;
 use dmx::{DmxChannel, DmxOutput, DmxValue};
 use gdtf::{ActivationGroup, Attribute, FeatureGroup, FixtureType, GdtfDescription};
 
-use crate::command::{Command, Instruction, Object};
+use crate::command::{Command, Instruction, Object, StoreDestination};
 use crate::dmx_protocols::ArtnetDmxProtocol;
 use crate::playback_engine::PlaybackEngine;
 use crate::showfile::Showfile;
@@ -57,6 +57,20 @@ impl Show {
                             self.programmer.clear_changes();
                         } else {
                             self.programmer.clear_selection();
+                        }
+                    }
+                    Instruction::Store(destination) => {
+                        match destination {
+                            StoreDestination::Group(id) => {
+                                let selected_fixtures = self.selected_fixtures();
+                                let group = Group {
+                                    id: *id,
+                                    label: "New Group".to_string(),
+                                    fixtures: selected_fixtures.clone(),
+                                };
+                                // FIXME: Should we make a function for doing this?
+                                self.data.groups.push(group);
+                            }
                         }
                     }
                     Instruction::Select(object) => match object {

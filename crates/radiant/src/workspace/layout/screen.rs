@@ -38,7 +38,11 @@ impl Screen {
         })
     }
 
-    fn cmd_clear(&mut self, command: &workspace::action::Command, cx: &mut ViewContext<Self>) {
+    fn cmd_clear(
+        &mut self,
+        command: &workspace::action::ExecuteCommand,
+        cx: &mut ViewContext<Self>,
+    ) {
         self.show.update(cx, |show, cx| {
             if let Err(err) = show.execute_command(&command.0) {
                 log::error!("Failed to execute Clear command: {err}");

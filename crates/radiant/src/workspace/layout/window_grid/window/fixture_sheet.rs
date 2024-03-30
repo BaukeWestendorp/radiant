@@ -105,7 +105,7 @@ impl SheetDelegate for FixtureSheetDelegate {
             FixtureSheetColumnId::Patch => 80.0,
             FixtureSheetColumnId::FixtureType => 50.0,
             FixtureSheetColumnId::Mode => 50.0,
-            FixtureSheetColumnId::Attribute(_) => 50.0,
+            FixtureSheetColumnId::Attribute(_) => 75.0,
         }
         .into()
     }
