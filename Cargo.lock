@@ -3317,6 +3317,7 @@ dependencies = [
  "log",
  "regex",
  "serde",
+ "serde_json",
  "smallvec",
  "theme",
  "thiserror",

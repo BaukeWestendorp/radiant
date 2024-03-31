@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::io::BufReader;
 use std::time::Duration;
 
 use anyhow::Result;
@@ -6,8 +7,7 @@ use backstage::show::Show;
 use gpui::{AsyncAppContext, Context, Model, Task, Timer};
 
 use crate::layout::screen::Screen;
-use crate::layout::window_grid::{GridBounds, GridPoint, GridSize};
-use crate::layout::{PoolWindow, PoolWindowKind, Window, WindowGrid, WindowKind};
+use crate::layout::Layout;
 
 pub mod action {
     use backstage::command::Command;
@@ -32,34 +32,10 @@ impl Workspace {
     pub fn new(cx: &AsyncAppContext) -> Task<Result<Self>> {
         cx.spawn(move |mut cx| async move {
             let show = get_show().await?;
+            let layout = get_layout()?;
             let show_model = cx.new_model(|_cx| show)?;
 
-            let window_grid = cx.new_model(|_cx| {
-                let mut window_grid = WindowGrid::new();
-                window_grid.add_window(Window {
-                    bounds: GridBounds::new(GridPoint::new(0, 0), GridSize::new(5, 5)),
-                    kind: WindowKind::Executors,
-                });
-                window_grid.add_window(Window {
-                    bounds: GridBounds::new(GridPoint::new(5, 0), GridSize::new(3, 3)),
-                    kind: WindowKind::Pool(PoolWindow {
-                        kind: PoolWindowKind::Group,
-                        scroll_offset: 0,
-                    }),
-                });
-                window_grid.add_window(Window {
-                    bounds: GridBounds::new(GridPoint::new(8, 0), GridSize::new(3, 3)),
-                    kind: WindowKind::Pool(PoolWindow {
-                        kind: PoolWindowKind::ColorPreset,
-                        scroll_offset: 0,
-                    }),
-                });
-                window_grid.add_window(Window {
-                    bounds: GridBounds::new(GridPoint::new(0, 5), GridSize::new(10, 3)),
-                    kind: WindowKind::FixtureSheet,
-                });
-                window_grid
-            })?;
+            let window_grid = cx.new_model(|_cx| layout.window_grid(1).unwrap().clone())?;
 
             cx.update(|cx| {
                 Screen::open_window(show_model.clone(), window_grid, cx);
@@ -91,6 +67,12 @@ impl Workspace {
 }
 
 async fn get_show() -> Result<Show> {
-    let file = File::open("show.json")?;
+    let file = File::open("example_show/show.json")?;
     Show::from_file(file).await
+}
+
+fn get_layout() -> Result<Layout> {
+    let file = File::open("example_show/layout.json")?;
+    let reader = BufReader::new(file);
+    serde_json::from_reader(reader).map_err(Into::into)
 }

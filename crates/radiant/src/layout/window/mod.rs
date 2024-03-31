@@ -14,6 +14,31 @@ pub use executors::*;
 pub use fixture_sheet::*;
 pub use pool::*;
 
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+pub struct Window {
+    pub bounds: GridBounds,
+    pub kind: WindowKind,
+}
+
+#[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]
+pub enum WindowKind {
+    Pool(PoolWindow),
+    Executors,
+    FixtureSheet,
+}
+
+#[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]
+pub struct PoolWindow {
+    pub kind: PoolWindowKind,
+    pub scroll_offset: i32,
+}
+
+#[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]
+pub enum PoolWindowKind {
+    ColorPreset,
+    Group,
+}
+
 pub struct WindowView<D: WindowDelegate> {
     delegate: D,
     window_id: usize,

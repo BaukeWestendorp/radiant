@@ -19,9 +19,10 @@ log.workspace = true
 thiserror.workspace = true
 regex.workspace = true
 dotenv.workspace = true
-serde.workspace = true
 itertools.workspace = true
 lazy_static.workspace = true
 smallvec.workspace = true
+serde_json.workspace = true
+serde.workspace = true
 
 assets = { package = "assets", git = "https://github.com/zed-industries/zed" }

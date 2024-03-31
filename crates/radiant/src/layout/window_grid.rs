@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use backstage::show::Show;
 use gpui::prelude::FluentBuilder;
 use gpui::{
@@ -8,10 +10,50 @@ use theme::ActiveTheme;
 
 use super::{
     ColorPoolWindowDelegate, ExecutorsWindowDelegate, FixtureSheetWindowDelegate,
-    GroupPoolWindowDelegate, PoolWindowKind, Screen, Window, WindowGrid, WindowKind, WindowView,
+    GroupPoolWindowDelegate, PoolWindowKind, Screen, Window, WindowKind, WindowView,
 };
 
 pub const GRID_CELL_SIZE: usize = 80;
+
+#[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
+pub struct WindowGrid {
+    id: usize,
+    windows: HashMap<usize, Window>,
+}
+
+impl WindowGrid {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn id(&self) -> usize {
+        self.id
+    }
+
+    pub fn windows(&self) -> &HashMap<usize, Window> {
+        &self.windows
+    }
+
+    pub fn window(&self, id: usize) -> Option<&Window> {
+        self.windows.get(&id)
+    }
+
+    pub fn window_mut(&mut self, id: usize) -> Option<&mut Window> {
+        self.windows.get_mut(&id)
+    }
+
+    pub fn add_window(&mut self, window: Window) -> usize {
+        let id = self.new_window_id();
+        self.windows.insert(id, window);
+        id
+    }
+
+    fn new_window_id(&self) -> usize {
+        // TODO: This is not a good way to get a new id. This only works if you can't
+        // remove colors.
+        self.windows.len()
+    }
+}
 
 pub struct WindowGridView {
     windows: Vec<AnyView>,
