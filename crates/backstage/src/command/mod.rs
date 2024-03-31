@@ -18,10 +18,10 @@ pub enum Object {
 impl std::fmt::Display for Object {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Object::Fixture(id) => write!(f, "Fixture {}", id),
-            Object::Group(id) => write!(f, "Group {}", id),
-            Object::PresetColor(id) => write!(f, "Preset:Color {}", id),
-            Object::Executor(id) => write!(f, "Executor {}", id),
+            Object::Fixture(id) => write!(f, "fixture {}", id),
+            Object::Group(id) => write!(f, "group {}", id),
+            Object::PresetColor(id) => write!(f, "preset:Color {}", id),
+            Object::Executor(id) => write!(f, "executor {}", id),
         }
     }
 }
@@ -41,9 +41,9 @@ impl Command {
         let mut lexer = Lexer::new(input.as_ref());
 
         macro_rules! confirm_end_of_command {
-            ($token_type:literal) => {
+            ($token:expr) => {
                 if lexer.next_token()?.is_some() {
-                    return Err(anyhow!("Unexpected token after {} command", $token_type));
+                    return Err(anyhow!("Unexpected token after {} command", $token));
                 }
             };
         }
@@ -51,22 +51,22 @@ impl Command {
         let command = match lexer.next_token()? {
             Some((token, _start, _end)) => match token {
                 Token::Clear => {
-                    confirm_end_of_command!("Clear");
+                    confirm_end_of_command!(token);
                     Command::Clear
                 }
                 Token::Select => {
                     let object = parse_object(&mut lexer)?;
-                    confirm_end_of_command!("Select");
+                    confirm_end_of_command!(token);
                     Command::Select(Some(object))
                 }
                 Token::Store => {
                     let object = parse_object(&mut lexer)?;
-                    confirm_end_of_command!("Store");
+                    confirm_end_of_command!(token);
                     Command::Store(Some(object))
                 }
                 Token::Go => match parse_object(&mut lexer)? {
                     object @ Object::Executor(_) => {
-                        confirm_end_of_command!("Go");
+                        confirm_end_of_command!(token);
                         Command::Go(Some(object))
                     }
                     object => {
@@ -75,7 +75,7 @@ impl Command {
                 },
                 Token::Top => {
                     let object = parse_object(&mut lexer)?;
-                    confirm_end_of_command!("Top");
+                    confirm_end_of_command!(token);
                     Command::Top(Some(object))
                 }
                 other => return Err(anyhow!("Unexpected token: {:?}", other)),
@@ -149,15 +149,15 @@ fn consume(lexer: &mut Lexer, expected: Token) -> Result<()> {
 impl std::fmt::Display for Command {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Command::Clear => write!(f, "Clear"),
-            Command::Select(Some(object)) => write!(f, "Select {}", object),
-            Command::Select(None) => write!(f, "Select"),
-            Command::Store(Some(object)) => write!(f, "Store {}", object),
-            Command::Store(None) => write!(f, "Store"),
-            Command::Go(Some(object)) => write!(f, "Go {}", object),
-            Command::Go(None) => write!(f, "Go"),
-            Command::Top(Some(object)) => write!(f, "Top {}", object),
-            Command::Top(None) => write!(f, "Top"),
+            Command::Clear => write!(f, "clear"),
+            Command::Select(Some(object)) => write!(f, "select {}", object),
+            Command::Select(None) => write!(f, "select"),
+            Command::Store(Some(object)) => write!(f, "store {}", object),
+            Command::Store(None) => write!(f, "store"),
+            Command::Go(Some(object)) => write!(f, "go {}", object),
+            Command::Go(None) => write!(f, "go"),
+            Command::Top(Some(object)) => write!(f, "top {}", object),
+            Command::Top(None) => write!(f, "top"),
         }
     }
 }

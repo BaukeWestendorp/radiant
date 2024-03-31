@@ -22,6 +22,25 @@ pub enum Token {
     Number(usize),
 }
 
+impl std::fmt::Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Token::Clear => write!(f, "clear"),
+            Token::Select => write!(f, "select"),
+            Token::Store => write!(f, "store"),
+            Token::Go => write!(f, "go"),
+            Token::Top => write!(f, "top"),
+            Token::Fixture => write!(f, "fixture"),
+            Token::Group => write!(f, "group"),
+            Token::Executor => write!(f, "executor"),
+            Token::Preset => write!(f, "preset"),
+            Token::Color => write!(f, "color"),
+            Token::Seperator => write!(f, "seperator"),
+            Token::Number(n) => write!(f, "{}", n),
+        }
+    }
+}
+
 pub struct Lexer {
     ix: usize,
     remaining: String,

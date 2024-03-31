@@ -92,7 +92,7 @@ impl PoolWindowDelegate for GroupPoolWindowDelegate {
                     if let Err(err) =
                         show.execute_command(&Command::Select(Some(Object::Group(id))))
                     {
-                        log::error!("Failed to Select Group {id}: {}", err.to_string())
+                        log::error!("Failed to select group {id}: {}", err.to_string())
                     }
                 }
             }

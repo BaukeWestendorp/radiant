@@ -84,7 +84,7 @@ impl Show {
                 Some(Object::PresetColor(id)) => {
                     let color_preset = self
                         .color_preset(*id)
-                        .ok_or_else(|| anyhow!("Preset color with id '{id}' not found"))?
+                        .ok_or_else(|| anyhow!("Preset:color with id '{id}' not found"))?
                         .clone();
 
                     for fixture_id in self.selected_fixtures().clone() {
@@ -112,7 +112,7 @@ impl Show {
                     }
                     self.data.groups.push(group);
                 }
-                Some(object) => return Err(anyhow!("Storing '{object}' is not supported")),
+                Some(object) => return Err(anyhow!("'{object}' can not be stored")),
                 None => return Err(anyhow!("Store requires a destination object")),
             },
             Command::Go(object) => match object {
@@ -392,7 +392,7 @@ impl Fixture {
             .dmx_modes
             .iter()
             .find(|mode| mode.name == self.mode)
-            .expect("fixture mode should always be set to a value in the GDTF file")
+            .expect("Fixture mode should always be set to a value in the GDTF file")
     }
 
     pub fn channel_resolution_for_attribute(&self, attribute_name: &str) -> Option<u8> {
@@ -633,7 +633,7 @@ impl Executor {
             None => self.go_to_cue(0, show),
             Some(index) => {
                 let Some(sequence) = self.sequence(show) else {
-                    log::error!("Sequence not found for Executor {}", self.id);
+                    log::error!("Sequence not found for executor {}", self.id);
                     return;
                 };
 
@@ -656,7 +656,7 @@ impl Executor {
 
     pub fn go_to_cue(&self, index: usize, show: &Show) {
         let Some(sequence) = self.sequence(show) else {
-            log::error!("Sequence not found for Executor {}", self.id);
+            log::error!("Sequence not found for executor {}", self.id);
             return;
         };
 

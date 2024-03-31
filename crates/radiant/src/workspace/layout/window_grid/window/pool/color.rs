@@ -77,7 +77,7 @@ impl PoolWindowDelegate for ColorPoolWindowDelegate {
         self.show.update(cx, |show, cx| {
             if let Err(err) = show.execute_command(&Command::Select(Some(Object::PresetColor(id))))
             {
-                log::error!("Failed to Select Group {id}: {}", err.to_string())
+                log::error!("Failed to select preset:color {id}: {}", err.to_string())
             }
             cx.notify();
         });
