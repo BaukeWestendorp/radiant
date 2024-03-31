@@ -3,7 +3,8 @@ use gpui::{
     WindowContext,
 };
 
-use super::{grid_div, GridBounds};
+use super::window_grid::grid_div;
+use super::GridBounds;
 use crate::layout::WindowGrid;
 use theme::ActiveTheme;
 

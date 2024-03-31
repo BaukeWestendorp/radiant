@@ -5,15 +5,12 @@ use gpui::{
     VisualContext, WindowContext,
 };
 
-pub mod window;
-
-use window::WindowView;
-
-use self::window::executors::ExecutorsWindowDelegate;
-use self::window::fixture_sheet::FixtureSheetWindowDelegate;
-use self::window::pool::color::ColorPoolWindowDelegate;
-use self::window::pool::group::GroupPoolWindowDelegate;
 use super::screen::Screen;
+use super::window::executors::ExecutorsWindowDelegate;
+use super::window::fixture_sheet::FixtureSheetWindowDelegate;
+use super::window::pool::color::ColorPoolWindowDelegate;
+use super::window::pool::group::GroupPoolWindowDelegate;
+use super::window::WindowView;
 use super::{PoolWindowKind, Window, WindowGrid, WindowKind};
 use theme::ActiveTheme;
 pub const GRID_CELL_SIZE: usize = 80;
