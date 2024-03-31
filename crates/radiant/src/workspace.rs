@@ -5,11 +5,9 @@ use gpui::{AsyncAppContext, Context, Model, Task, Timer};
 use std::fs::File;
 use std::time::Duration;
 
-use self::layout::screen::Screen;
-use self::layout::window_grid::{GridBounds, GridPoint, GridSize};
-use self::layout::{PoolWindow, Window, WindowGrid, WindowKind};
-
-pub mod layout;
+use crate::layout::screen::Screen;
+use crate::layout::window_grid::{GridBounds, GridPoint, GridSize};
+use crate::layout::{PoolWindow, PoolWindowKind, Window, WindowGrid, WindowKind};
 
 pub mod action {
     use backstage::command::Command;
@@ -45,14 +43,14 @@ impl Workspace {
                 window_grid.add_window(Window {
                     bounds: GridBounds::new(GridPoint::new(5, 0), GridSize::new(3, 3)),
                     kind: WindowKind::Pool(PoolWindow {
-                        kind: layout::PoolWindowKind::Group,
+                        kind: PoolWindowKind::Group,
                         scroll_offset: 0,
                     }),
                 });
                 window_grid.add_window(Window {
                     bounds: GridBounds::new(GridPoint::new(8, 0), GridSize::new(3, 3)),
                     kind: WindowKind::Pool(PoolWindow {
-                        kind: layout::PoolWindowKind::ColorPreset,
+                        kind: PoolWindowKind::ColorPreset,
                         scroll_offset: 0,
                     }),
                 });

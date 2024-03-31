@@ -10,6 +10,7 @@ use crate::workspace::Workspace;
 use theme::ThemeSettings;
 use ui::text_input;
 
+pub mod layout;
 pub mod workspace;
 
 actions!(app, [Quit]);

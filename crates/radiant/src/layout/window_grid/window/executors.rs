@@ -8,7 +8,7 @@ use gpui::{
 use ui::container::Container;
 
 use super::{WindowDelegate, WindowView};
-use crate::workspace::layout::window_grid::GRID_CELL_SIZE;
+use crate::layout::window_grid::GRID_CELL_SIZE;
 use theme::ActiveTheme;
 
 pub struct ExecutorsWindowDelegate {
