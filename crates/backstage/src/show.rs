@@ -681,7 +681,7 @@ mod tests {
 
     use super::Show;
 
-    const TEST_SHOWFILE: &'static str = r#"{
+    const TEST_SHOWFILE: &str = r#"{
         "patchlist": {
             "fixtures": [
                 {

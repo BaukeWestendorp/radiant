@@ -26,7 +26,7 @@ impl TextInput {
         _cx: &mut WindowContext,
     ) -> Self {
         Self {
-            text: text.unwrap_or_default().into(),
+            text: text.unwrap_or_default(),
             placeholder: placeholder.to_string().into(),
             focus_handle,
         }
@@ -71,7 +71,7 @@ impl TextInput {
         cx.prevent_default();
 
         // FIXME: Very ad-hoc. We should implement a cursor.
-        if self.text.len() > 0 {
+        if !self.text.is_empty() {
             self.text.pop();
             cx.notify();
         }

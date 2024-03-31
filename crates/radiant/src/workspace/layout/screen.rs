@@ -59,7 +59,7 @@ impl Screen {
         cx: &mut ViewContext<Self>,
     ) {
         self.show.update(cx, |show, cx| {
-            show.current_command = command.0.clone();
+            show.current_command = command.0;
             cx.notify();
         })
     }

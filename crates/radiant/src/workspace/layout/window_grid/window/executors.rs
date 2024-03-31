@@ -243,16 +243,13 @@ impl ExecutorButtonView {
     }
 
     pub fn handle_release(&mut self, _event: &MouseUpEvent, cx: &mut ViewContext<Self>) {
-        match self.button.action {
-            ExecutorButtonAction::Flash => {
-                self.show.update(cx, |show, cx| {
-                    if let Some(executor) = show.executor_mut(self.executor_id) {
-                        executor.flash = false;
-                        cx.notify();
-                    }
-                });
-            }
-            _ => {}
+        if self.button.action == ExecutorButtonAction::Flash {
+            self.show.update(cx, |show, cx| {
+                if let Some(executor) = show.executor_mut(self.executor_id) {
+                    executor.flash = false;
+                    cx.notify();
+                }
+            })
         }
     }
 }

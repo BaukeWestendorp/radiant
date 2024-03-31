@@ -63,7 +63,7 @@ impl Workspace {
                 window_grid
             })?;
 
-            let _main_screen = cx.update(|cx| {
+            cx.update(|cx| {
                 Screen::open_window(show_model.clone(), window_grid, cx);
             })?;
 
@@ -94,5 +94,5 @@ impl Workspace {
 
 async fn get_show() -> Result<Show> {
     let file = File::open("show.json")?;
-    Ok(Show::from_file(file).await?)
+    Show::from_file(file).await
 }

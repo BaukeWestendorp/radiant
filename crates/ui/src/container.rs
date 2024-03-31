@@ -11,6 +11,7 @@ pub struct ContainerStyle {
     pub border: Hsla,
 }
 
+#[allow(clippy::type_complexity)]
 #[derive(IntoElement)]
 pub struct Container {
     base: Div,

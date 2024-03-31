@@ -134,7 +134,7 @@ impl SheetDelegate for FixtureSheetDelegate {
         let cell = match column_id {
             FixtureSheetColumnId::Id => render_value(Some(fixture.id)),
             FixtureSheetColumnId::Name => render_value(Some(fixture.label.clone())),
-            FixtureSheetColumnId::Patch => render_value(Some(fixture.channel.clone())),
+            FixtureSheetColumnId::Patch => render_value(Some(fixture.channel)),
             FixtureSheetColumnId::FixtureType => {
                 render_value(Some(fixture.description.fixture_type.name.clone()))
             }
@@ -167,7 +167,7 @@ impl SheetDelegate for FixtureSheetDelegate {
                     self.show
                         .read(cx)
                         .programmer_changes()
-                        .contains_key(&channel)
+                        .contains_key(channel)
                 });
                 div()
                     .px_2()
