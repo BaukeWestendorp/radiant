@@ -23,6 +23,7 @@ pub struct Show {
     pub(crate) executors: Vec<Executor>,
     pub(crate) dmx_protocols: Vec<ArtnetDmxProtocol>,
     pub current_command: Option<Command>,
+    pub(crate) stage_output: DmxOutput,
 }
 
 impl Show {
@@ -271,7 +272,11 @@ impl Show {
             .collect()
     }
 
-    pub fn stage_output(&mut self) -> DmxOutput {
+    pub fn stage_output(&self) -> &DmxOutput {
+        &self.stage_output
+    }
+
+    pub fn recalculate_stage_output(&mut self) {
         let mut stage_output = self.playback_engine.determine_dmx_output(self);
         for universe in self.used_universes().iter() {
             if let Err(err) = stage_output.add_universe_if_absent(*universe) {
@@ -281,18 +286,16 @@ impl Show {
         stage_output
             .apply_changes(&self.programmer.changes)
             .unwrap();
-        stage_output
+        self.stage_output = stage_output
     }
 
     pub fn stage_output_dmx_value_for_channel(&mut self, channel: DmxChannel) -> Option<u8> {
-        // FIXME: We should cache the current stage output.
         self.stage_output().get_channel(channel)
     }
 
     pub fn send_stage_output_to_dmx_protocols(&mut self) {
-        let dmx_output = self.stage_output();
         for dmx_protocol in self.dmx_protocols.iter() {
-            dmx_protocol.send_dmx_output(&dmx_output);
+            dmx_protocol.send_dmx_output(&self.stage_output());
         }
     }
 }

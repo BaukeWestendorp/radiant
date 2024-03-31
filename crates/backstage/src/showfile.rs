@@ -6,7 +6,7 @@ use std::io::Write;
 use std::path::Path;
 
 use anyhow::{anyhow, Error};
-use dmx::{DmxChannel, DmxValue};
+use dmx::{DmxChannel, DmxOutput, DmxValue};
 use gdtf::GdtfDescription;
 use gdtf_share::GdtfShare;
 use lazy_static::lazy_static;
@@ -74,6 +74,7 @@ impl Showfile {
                 .map(|dmx_protocol| dmx_protocol.into())
                 .collect(),
             current_command: None,
+            stage_output: DmxOutput::new(),
         })
     }
 }

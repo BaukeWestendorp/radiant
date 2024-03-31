@@ -150,12 +150,10 @@ impl SheetDelegate for FixtureSheetDelegate {
                 let values_string = self.show.update(cx, |show, _cx| {
                     let values = channels
                         .iter()
-                        .map(
-                            |channel| match show.stage_output_dmx_value_for_channel(*channel) {
-                                Some(values) => values,
-                                None => todo!(),
-                            },
-                        )
+                        .map(|channel| {
+                            show.stage_output_dmx_value_for_channel(*channel)
+                                .unwrap_or(0)
+                        })
                         .collect::<Vec<_>>();
 
                     values

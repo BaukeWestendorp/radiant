@@ -79,6 +79,7 @@ impl Workspace {
                     cx.update(|cx| {
                         log::trace!("Outputting DMX data...");
                         show.update(cx, |show, _cx| {
+                            show.recalculate_stage_output();
                             show.send_stage_output_to_dmx_protocols();
                         });
                     })
