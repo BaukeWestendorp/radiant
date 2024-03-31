@@ -1,4 +1,4 @@
-use backstage::command::{Command, Instruction, Object};
+use backstage::command::{Command, Object};
 use backstage::show::Show;
 use gpui::prelude::FluentBuilder;
 use gpui::{div, InteractiveElement, IntoElement, Model, ParentElement, Styled, WindowContext};
@@ -81,9 +81,7 @@ impl PoolWindowDelegate for GroupPoolWindowDelegate {
 
     fn handle_click_item(&mut self, id: usize, cx: &mut gpui::ViewContext<WindowView<Self>>) {
         self.show.update(cx, |show, cx| {
-            if let Err(err) =
-                show.execute_command(&Command::new([Instruction::Select(Object::Group(id))]))
-            {
+            if let Err(err) = show.execute_command(&Command::Select(Object::Group(id))) {
                 log::error!("Failed to Select Group {id}: {}", err.to_string())
             }
             cx.notify();

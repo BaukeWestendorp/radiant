@@ -1,55 +1,12 @@
-use std::fmt::Display;
+use anyhow::{anyhow, Result};
 
-use itertools::Itertools;
+use crate::command::lexer::Lexer;
 
-use self::parser::{Parser, ParserResult};
+use self::lexer::Token;
 
 mod lexer;
-mod parser;
 
-#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize)]
-pub enum Instruction {
-    Clear,
-    Store(StoreDestination),
-    Select(Object),
-    Go,
-    Top,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize)]
-pub enum StoreDestination {
-    Group(usize),
-}
-
-impl From<Object> for StoreDestination {
-    fn from(value: Object) -> Self {
-        match value {
-            Object::Group(id) => Self::Group(id),
-            _ => todo!("Implement storing to other objects"),
-        }
-    }
-}
-
-impl std::fmt::Display for StoreDestination {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::Group(id) => write!(f, "Group {id}"),
-        }
-    }
-}
-
-impl std::fmt::Display for Instruction {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::Clear => write!(f, "Clear"),
-            Self::Store(destination) => write!(f, "Store > {destination}"),
-            Self::Select(object) => write!(f, "Select {object}"),
-            Self::Go => write!(f, "Go"),
-            Self::Top => write!(f, "Go"),
-        }
-    }
-}
-
+// FIXME: We should deserialize this from a string by parsing.
 #[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize)]
 pub enum Object {
     Fixture(usize),
@@ -61,123 +18,195 @@ pub enum Object {
 impl std::fmt::Display for Object {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Object::Fixture(id) => write!(f, "Fixture {id}"),
-            Object::Group(id) => write!(f, "Group {id}"),
-            Object::PresetColor(id) => write!(f, "Preset::Color {id}"),
-            Object::Executor(id) => write!(f, "Executor {id}"),
+            Object::Fixture(id) => write!(f, "Fixture {}", id),
+            Object::Group(id) => write!(f, "Group {}", id),
+            Object::PresetColor(id) => write!(f, "Preset:Color {}", id),
+            Object::Executor(id) => write!(f, "Executor {}", id),
         }
     }
 }
 
-#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
-pub struct Command {
-    pub instructions: Vec<Instruction>,
+// FIXME: We should deserialize this from a string by parsing.
+#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize)]
+pub enum Command {
+    Clear,
+    Select(Object),
+    Store(Object),
+    Go(Object),
+    Top(Object),
 }
 
 impl Command {
-    pub fn new(instructions: impl IntoIterator<Item = Instruction>) -> Self {
-        Self {
-            instructions: instructions.into_iter().collect_vec(),
-        }
-    }
+    pub fn parse(input: impl AsRef<str>) -> Result<Command> {
+        let mut lexer = Lexer::new(input.as_ref());
 
-    pub fn parse(s: &str) -> ParserResult<Self> {
-        let mut parser = Parser::new(s);
-        Ok(Self {
-            instructions: parser.parse_instructions()?,
-        })
-    }
-}
-
-impl Display for Command {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for (i, instruction) in self.instructions.iter().enumerate() {
-            let end = if i == self.instructions.len() - 1 {
-                ""
-            } else {
-                " "
+        macro_rules! confirm_end_of_command {
+            ($token_type:literal) => {
+                if lexer.next_token()?.is_some() {
+                    return Err(anyhow!("Unexpected token after {} command", $token_type));
+                }
             };
-            write!(f, "{}{}", instruction, end)?;
         }
-        Ok(())
+
+        let command = match lexer.next_token()? {
+            Some((token, _start, _end)) => match token {
+                Token::Clear => {
+                    confirm_end_of_command!("Clear");
+                    Command::Clear
+                }
+                Token::Select => {
+                    let object = parse_object(&mut lexer)?;
+                    confirm_end_of_command!("Select");
+                    Command::Select(object)
+                }
+                Token::Store => {
+                    let object = parse_object(&mut lexer)?;
+                    confirm_end_of_command!("Store");
+                    Command::Store(object)
+                }
+                Token::Go => match parse_object(&mut lexer)? {
+                    object @ Object::Executor(_) => {
+                        confirm_end_of_command!("Go");
+                        Command::Go(object)
+                    }
+                    object => {
+                        return Err(anyhow!("Go command expects an executor, got {:?}", object))
+                    }
+                },
+                Token::Top => {
+                    let object = parse_object(&mut lexer)?;
+                    confirm_end_of_command!("Top");
+                    Command::Top(object)
+                }
+                other => return Err(anyhow!("Unexpected token: {:?}", other)),
+            },
+            None => return Err(anyhow!("Unexpected end of input")),
+        };
+        Ok(command)
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Span {
-    pub start: usize,
-    pub end: usize,
+fn parse_object(lexer: &mut Lexer) -> Result<Object> {
+    let object = match lexer.next_token()? {
+        Some((Token::Fixture, _start, _end)) => {
+            let (number_token, _start, _end) = lexer
+                .next_token()?
+                .ok_or_else(|| anyhow!("Expected number"))?;
+            match number_token {
+                Token::Number(number) => Object::Fixture(number),
+                _ => return Err(anyhow!("Expected number")),
+            }
+        }
+        Some((Token::Group, _start, _end)) => {
+            let (number_token, _start, _end) = lexer
+                .next_token()?
+                .ok_or_else(|| anyhow!("Expected number"))?;
+            match number_token {
+                Token::Number(number) => Object::Group(number),
+                _ => return Err(anyhow!("Expected number")),
+            }
+        }
+        Some((Token::Preset, _start, _end)) => {
+            consume(lexer, Token::Seperator)?;
+            let (type_token, _start, _end) = lexer
+                .next_token()?
+                .ok_or_else(|| anyhow!("Expected color or executor"))?;
+            let (number_token, _start, _end) = lexer
+                .next_token()?
+                .ok_or_else(|| anyhow!("Expected number"))?;
+            match number_token {
+                Token::Number(number) => match type_token {
+                    Token::Color => Object::PresetColor(number),
+                    _ => return Err(anyhow!("Expected color or executor")),
+                },
+                _ => return Err(anyhow!("Expected number")),
+            }
+        }
+        Some((Token::Executor, _start, _end)) => {
+            let (number_token, _start, _end) = lexer
+                .next_token()?
+                .ok_or_else(|| anyhow!("Expected number"))?;
+            match number_token {
+                Token::Number(number) => Object::Executor(number),
+                _ => return Err(anyhow!("Expected number")),
+            }
+        }
+        _ => return Err(anyhow!("Unexpected token")),
+    };
+    Ok(object)
+}
+
+fn consume(lexer: &mut Lexer, expected: Token) -> Result<()> {
+    let (token, _start, _end) = lexer
+        .next_token()?
+        .ok_or_else(|| anyhow!("Expected {:?}", expected))?;
+    if token != expected {
+        return Err(anyhow!("Expected {:?}", expected));
+    }
+    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::command::Object;
+    use crate::command::{Command, Object};
 
-    macro_rules! instructions {
-        ($input:expr, $instructions:expr) => {{
-            use crate::command::{Command, Instruction};
-            let command = Command::parse($input).unwrap();
-            assert_eq!(
-                command,
-                Command {
-                    instructions: $instructions
-                }
-            );
-        }};
-    }
+    #[test]
+    fn test_parse_case_insensitivity() {
+        let expected = Command::Clear;
 
-    macro_rules! error {
-        ($input:expr, $error:expr) => {{
-            use crate::command::Command;
-            let result = Command::parse($input);
-            assert_eq!(result, Err($error));
-        }};
+        assert_eq!(Command::parse("clear").unwrap(), expected);
+        assert_eq!(Command::parse("Clear").unwrap(), expected);
+        assert_eq!(Command::parse("CLEAR").unwrap(), expected);
     }
 
     #[test]
-    fn parse_string_to_instruction() {
-        instructions!(
-            "Select Group 1",
-            vec![Instruction::Select(Object::Group(1))]
-        );
-        instructions!(
-            "Select Group 42",
-            vec![Instruction::Select(Object::Group(42))]
-        );
-        instructions!(
-            "Select Fixture 1",
-            vec![Instruction::Select(Object::Fixture(1))]
-        );
+    fn test_parse_clear() {
+        let expected = Command::Clear;
 
-        instructions!("Clear", vec![Instruction::Clear]);
+        assert_eq!(Command::parse("clear").unwrap(), expected);
+        assert!(Command::parse("clear foobar").is_err());
+        assert!(Command::parse("clear   foobar").is_err());
     }
 
     #[test]
-    fn parse_string_error() {
-        use crate::command::lexer::token::{Token, TokenKind};
-        use crate::command::parser::{ParserError, ParserErrorKind};
-        use crate::command::Span;
+    fn test_parse_select() {
+        let expected = Command::Select(Object::Group(42));
 
-        error!(
-            "Select Group",
-            ParserError {
-                kind: ParserErrorKind::ExpectedId,
-                token: Some(Token {
-                    kind: TokenKind::EndOfLine,
-                    span: Span { start: 12, end: 12 },
-                })
-            }
-        );
+        assert_eq!(Command::parse("select group 42").unwrap(), expected);
+        assert!(Command::parse("select group 42  foobar").is_err());
+        assert!(Command::parse("select foobar group 42").is_err());
+        assert!(Command::parse("select group foobar 42").is_err());
+    }
 
-        error!(
-            "Select Group 1a",
-            ParserError {
-                kind: ParserErrorKind::UnexpectedToken,
-                token: Some(Token {
-                    kind: TokenKind::Invalid,
-                    span: Span { start: 14, end: 15 },
-                })
-            }
-        );
+    #[test]
+    fn test_parse_store() {
+        let expected = Command::Store(Object::Group(42));
+
+        assert_eq!(Command::parse("store group 42").unwrap(), expected);
+        assert!(Command::parse("store group 42  foobar").is_err());
+        assert!(Command::parse("store foobar group 42").is_err());
+        assert!(Command::parse("store group foobar 42").is_err());
+    }
+
+    #[test]
+    fn test_parse_preset() {
+        let expected = Command::Select(Object::PresetColor(42));
+
+        assert_eq!(Command::parse("select preset:color 42").unwrap(), expected);
+        assert!(Command::parse("select preset:color 42 foobar").is_err());
+        assert!(Command::parse("select preset::color 42").is_err());
+        assert!(Command::parse("select foobar preset:color 42").is_err());
+        assert!(Command::parse("select preset:color foobar 42").is_err());
+    }
+
+    #[test]
+    fn test_parse_go() {
+        let expected = Command::Go(Object::Executor(42));
+
+        assert_eq!(Command::parse("go executor 42").unwrap(), expected);
+        assert!(Command::parse("go executor 42  foobar").is_err());
+        assert!(Command::parse("go foobar 42").is_err());
+        assert!(Command::parse("go group 42").is_err());
+        assert!(Command::parse("go executor foobar 42").is_err());
     }
 }

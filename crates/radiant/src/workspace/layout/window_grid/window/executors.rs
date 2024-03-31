@@ -1,4 +1,4 @@
-use backstage::command::{Command, Instruction, Object};
+use backstage::command::{Command, Object};
 use backstage::show::{Cue, Executor, ExecutorButton, ExecutorButtonAction, Sequence, Show};
 use gpui::prelude::FluentBuilder;
 use gpui::{
@@ -214,21 +214,21 @@ impl ExecutorButtonView {
     pub fn handle_click(&mut self, _event: &MouseDownEvent, cx: &mut ViewContext<Self>) {
         match self.button.action {
             ExecutorButtonAction::Go => self.show.update(cx, |show, cx| {
-                if let Err(err) = show.execute_command(&Command::new([
-                    Instruction::Select(Object::Executor(self.executor_id)),
-                    Instruction::Go,
-                ])) {
+                if let Err(err) =
+                    show.execute_command(&Command::Go(Object::Executor(self.executor_id)))
+                {
                     log::error!("Failed to execute Go command: {}", err.to_string());
                 }
+
                 cx.notify();
             }),
             ExecutorButtonAction::Top => self.show.update(cx, |show, cx| {
-                if let Err(err) = show.execute_command(&Command::new([
-                    Instruction::Select(Object::Executor(self.executor_id)),
-                    Instruction::Top,
-                ])) {
+                if let Err(err) =
+                    show.execute_command(&Command::Top(Object::Executor(self.executor_id)))
+                {
                     log::error!("Failed to execute Top command: {}", err.to_string());
                 }
+
                 cx.notify();
             }),
             ExecutorButtonAction::Flash => {

@@ -1,5 +1,5 @@
 use backstage::{
-    command::{Command, Instruction, Object},
+    command::{Command, Object},
     show::{Fixture, Show},
 };
 use gpui::{
@@ -190,10 +190,11 @@ impl SheetDelegate for FixtureSheetDelegate {
                     let fixture_id = fixture.id;
                     move |this, _event, cx| {
                         this.delegate.show.update(cx, |show, _cx| {
-                            show.execute_command(&Command::new([Instruction::Select(
-                                Object::Fixture(fixture_id),
-                            )]))
-                            .unwrap();
+                            if let Err(err) =
+                                show.execute_command(&Command::Select(Object::Fixture(fixture_id)))
+                            {
+                                log::error!("Failed to select fixture: {:?}", err);
+                            }
                         })
                     }
                 }),

@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use itertools::Itertools;
 use std::cell::Cell;
 use std::collections::HashMap;
@@ -8,7 +8,7 @@ use std::rc::Rc;
 use dmx::{DmxChannel, DmxOutput, DmxValue};
 use gdtf::{ActivationGroup, Attribute, FeatureGroup, FixtureType, GdtfDescription};
 
-use crate::command::{Command, Instruction, Object, StoreDestination};
+use crate::command::{Command, Object};
 use crate::dmx_protocols::ArtnetDmxProtocol;
 use crate::playback_engine::PlaybackEngine;
 use crate::showfile::Showfile;
@@ -16,17 +16,11 @@ use crate::showfile::Showfile;
 #[derive(Debug)]
 pub struct Show {
     pub(crate) patchlist: Patchlist,
-
     pub(crate) programmer: Programmer,
-
     pub(crate) playback_engine: PlaybackEngine,
-
     pub(crate) data: Data,
-
     pub(crate) presets: Presets,
-
     pub(crate) executors: Vec<Executor>,
-
     pub(crate) dmx_protocols: Vec<ArtnetDmxProtocol>,
 }
 
@@ -48,122 +42,84 @@ impl Show {
     }
 
     pub fn execute_command(&mut self, command: &Command) -> Result<()> {
-        // FIXME: This command execution is quite ad-hoc for now.
-        match command.instructions.get(0) {
-            Some(instr) => {
-                match instr {
-                    Instruction::Clear => {
-                        if self.programmer.has_changes() {
-                            self.programmer.clear_changes();
-                        } else {
-                            self.programmer.clear_selection();
-                        }
-                    }
-                    Instruction::Store(destination) => {
-                        match destination {
-                            StoreDestination::Group(id) => {
-                                let selected_fixtures = self.selected_fixtures();
-                                let group = Group {
-                                    id: *id,
-                                    label: "New Group".to_string(),
-                                    fixtures: selected_fixtures.clone(),
-                                };
-                                // FIXME: Should we make a function for doing this?
-                                self.data.groups.push(group);
-                            }
-                        }
-                    }
-                    Instruction::Select(object) => match object {
-                        Object::Fixture(id) => {
-                            if !self.is_fixture_selected(*id) {
-                                if self.fixture_exists(*id) {
-                                    self.programmer.selection.push(*id);
-                                } else {
-                                    log::error!("Failed to select Fixture {id}: Fixture not found");
-                                    // FIXME: Return a useful error.
-                                }
-                            }
-                        }
-                        Object::Group(id) => {
-                            for fixture_id in self
-                                .fixtures_in_group(*id)
-                                .iter()
-                                .map(|f| f.id)
-                                .collect_vec()
-                            {
-                                if let Err(err) =
-                                    self.execute_command(&Command::new([Instruction::Select(
-                                        Object::Fixture(fixture_id),
-                                    )]))
-                                {
-                                    log::error!("Failed to Select Group {id}: {err}");
-                                    // FIXME: Return a useful error.
-                                    return Ok(());
-                                }
-                            }
-                        }
-                        Object::PresetColor(id) => {
-                            let Some(color_preset) = self.color_preset(*id).cloned() else {
-                                log::error!(
-                                    "Failed to Select Preset::Color
-                            {id}: Executor with id '{id}' not found."
-                                );
-                                // FIXME: Return a useful error.
-                                return Ok(());
-                            };
-
-                            for fixture_id in self.selected_fixtures().clone() {
-                                let fixture = self.fixture(fixture_id).unwrap().clone();
-
-                                self.programmer.apply_attribute_values_for_fixture(
-                                    &fixture,
-                                    color_preset.attribute_values(),
-                                );
-                            }
-                        }
-                        Object::Executor(id) => {
-                            let Some(next_instruction) = command.instructions.get(1) else {
-                                log::error!("Expected instruction after executor selection");
-                                // FIXME: Return a useful error.
-                                return Ok(());
-                            };
-
-                            match next_instruction {
-                                Instruction::Go => {
-                                    let Some(executor) = self.executor(*id) else {
-                                        log::error!("Failed to Go executor: Executor with id '{id}' not found.");
-                                        // FIXME: Return a useful error.
-                                        return Ok(());
-                                    };
-
-                                    executor.go(self);
-                                }
-                                Instruction::Top => {
-                                    let Some(executor) = self.executor(*id) else {
-                                        log::error!("Failed to Top executor: Executor with id '{id}' not found.");
-                                        // FIXME: Return a useful error.
-                                        return Ok(());
-                                    };
-
-                                    executor.top(self);
-                                }
-                                instr => {
-                                    log::error!(
-                                        "Invalid instruction after executor selection: {instr}"
-                                    );
-                                }
-                            }
-                        }
-                    },
-                    Instruction::Go => {
-                        log::error!("The Go command should be used after selecting a executor with 'Select Executor #'!");
-                    }
-                    Instruction::Top => {
-                        log::error!("The Top command should be used after selecting a executor with 'Select Executor #'!");
-                    }
+        match command {
+            Command::Clear => {
+                if self.programmer.selection.is_empty() {
+                    self.programmer.changes.clear();
+                } else {
+                    self.programmer.selection.clear();
                 }
             }
-            None => {}
+            Command::Select(object) => match object {
+                Object::Fixture(id) => {
+                    if !self.fixture_exists(*id) {
+                        return Err(anyhow!("Fixture with id '{id}' not found"));
+                    }
+
+                    if !self.programmer.selection.contains(id) {
+                        self.programmer.selection.push(*id);
+                    } else {
+                        log::debug!("Fixture with id '{id}' already selected");
+                    }
+                }
+                Object::Group(id) => {
+                    let group = self
+                        .group(*id)
+                        .ok_or_else(|| anyhow!("Group with id '{id}' not found"))?
+                        .clone();
+                    for fixture_id in group.fixtures.iter() {
+                        self.execute_command(&Command::Select(Object::Fixture(*fixture_id)))?;
+                    }
+                }
+                Object::PresetColor(id) => {
+                    let color_preset = self
+                        .color_preset(*id)
+                        .ok_or_else(|| anyhow!("Preset color with id '{id}' not found"))?
+                        .clone();
+
+                    for fixture_id in self.selected_fixtures().clone() {
+                        let fixture = self.fixture(fixture_id).unwrap().clone();
+
+                        self.programmer.apply_attribute_values_for_fixture(
+                            &fixture,
+                            color_preset.attribute_values(),
+                        );
+                    }
+                }
+                object => return Err(anyhow!("Selecting '{object}' is not supported")),
+            },
+            Command::Store(object) => match object {
+                Object::Group(id) => {
+                    let selected_fixtures = self.selected_fixtures();
+                    let group = Group {
+                        id: *id,
+                        label: "New Group".to_string(),
+                        fixtures: selected_fixtures.clone(),
+                    };
+                    self.data.groups.push(group);
+                }
+                object => return Err(anyhow!("Storing '{object}' is not supported")),
+            },
+            Command::Go(object) => {
+                if let Object::Executor(id) = object {
+                    let executor = self
+                        .executor(*id)
+                        .ok_or_else(|| anyhow!("Executor with id '{id}' not found"))?;
+                    executor.go(self)
+                } else {
+                    return Err(anyhow!("Go can only be used with executors"));
+                }
+            }
+            Command::Top(object) => {
+                if let Object::Executor(id) = object {
+                    let executor = self
+                        .executor(*id)
+                        .ok_or_else(|| anyhow!("Executor with id '{id}' not found"))?;
+                    executor.top(self)
+                } else {
+                    return Err(anyhow!("Top can only be used with executors"));
+                }
+            }
         }
         Ok(())
     }
@@ -307,7 +263,6 @@ impl Show {
                 log::error!("Failed to add universe with id '{universe}': {err}",)
             }
         }
-        // Show the changes in the programmer.
         stage_output
             .apply_changes(&self.programmer.changes)
             .unwrap();
@@ -705,10 +660,122 @@ impl Executor {
 
 #[cfg(test)]
 mod tests {
+    use dmx::DmxChannel;
 
     use crate::showfile::Showfile;
 
     use super::Show;
+
+    const TEST_SHOWFILE: &'static str = r#"{
+        "patchlist": {
+            "fixtures": [
+                {
+                    "id": 1,
+                    "gdtf_share_revision_id": 60124,
+                    "label": "Front Wash 1",
+                    "mode": "Standard mode",
+                    "channel": {
+                        "address": 0,
+                        "universe": 0
+                    }
+                },
+                {
+                    "id": 2,
+                    "label": "Wash 2",
+                    "gdtf_share_revision_id": 60124,
+                    "mode": "Standard mode",
+                    "channel": {
+                        "address": 10,
+                        "universe": 10
+                    }
+                }
+            ]
+        },
+        "presets": {
+          "colors": [
+            {
+              "id": 1,
+              "label": "Red",
+              "attribute_values": {
+                "ColorAdd_R": 255,
+                "ColorAdd_G": 0,
+                "ColorAdd_B": 0
+              }
+            }
+          ]
+        },
+        "data": {
+          "groups": [
+            {
+              "id": 1,
+              "label": "Group 1",
+              "fixtures": [1]
+            }
+          ],
+          "sequences": [
+            {
+              "id": 1,
+              "label": "Sequence 1",
+              "cues": [
+                {
+                  "groups": [1],
+                  "label": "Cue 1",
+                  "attribute_values": {
+                    "ColorAdd_R": 255,
+                    "ColorAdd_G": 16,
+                    "ColorAdd_B": 127,
+                    "Dimmer": 255
+                  }
+                },
+                {
+                  "groups": [1],
+                  "label": "Cue 2",
+                  "attribute_values": {
+                    "ColorAdd_R": 32,
+                    "ColorAdd_G": 255,
+                    "ColorAdd_B": 16,
+                    "Dimmer": 255
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "executors": [
+          {
+            "id": 1,
+            "sequence": 1,
+            "current_index": null,
+            "loop": false,
+            "fader_value": 1.0,
+            "button_1": {
+              "action": "Top"
+            },
+            "button_2": {
+              "action": "Go"
+            },
+            "button_3": {
+              "action": "Flash"
+            }
+          },
+          {
+            "id": 2,
+            "sequence": 1,
+            "current_index": 1,
+            "loop": true,
+            "fader_value": 1.0,
+            "button_1": {
+              "action": "Top"
+            },
+            "button_2": {
+              "action": "Go"
+            },
+            "button_3": {
+              "action": "Flash"
+            }
+          }
+        ]
+    }"#;
 
     #[tokio::test]
     async fn from_empty_showfile() {
@@ -719,35 +786,7 @@ mod tests {
 
     #[tokio::test]
     async fn from_showfile_with_fixture() {
-        let showfile: Showfile = serde_json::from_str(
-            r#"{
-            "patchlist": {
-                "fixtures": [
-                    {
-                        "id": 420,
-                        "gdtf_share_revision_id": 60124,
-                        "label": "Front Wash 1",
-                        "mode": "Basic",
-                        "channel": {
-                            "address": 1,
-                            "universe": 2
-                        }
-                    },
-                    {
-                        "id": 12,
-                        "label": "Wash 2",
-                        "gdtf_share_revision_id": 60124,
-                        "mode": "Turned to 11",
-                        "channel": {
-                            "address": 5,
-                            "universe": 8
-                        }
-                    }
-                ]
-            }
-        }"#,
-        )
-        .unwrap();
+        let showfile: Showfile = serde_json::from_str(TEST_SHOWFILE).unwrap();
         let show = Show::from_showfile(showfile).await.unwrap();
 
         assert_eq!(
@@ -759,40 +798,64 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_selecting_fixture_with_command() {
-        let showfile: Showfile = serde_json::from_str(
-            r#"{
-            "patchlist": {
-                "fixtures": [
-                    {
-                        "id": 420,
-                        "gdtf_share_revision_id": 60124,
-                        "label": "Front Wash 1",
-                        "mode": "Basic",
-                        "channel": {
-                            "address": 1,
-                            "universe": 2
-                        }
-                    },
-                    {
-                        "id": 12,
-                        "label": "Wash 2",
-                        "gdtf_share_revision_id": 60124,
-                        "mode": "Turned to 11",
-                        "channel": {
-                            "address": 5,
-                            "universe": 8
-                        }
-                    }
-                ]
-            }
-        }"#,
-        )
-        .unwrap();
-
+    async fn test_select_fixture_command() {
+        let showfile: Showfile = serde_json::from_str(TEST_SHOWFILE).unwrap();
         let mut show = Show::from_showfile(showfile).await.unwrap();
-        show.execute_command_str("Select Fixture 420").unwrap();
 
-        assert_eq!(*show.programmer.selection.first().unwrap(), 420);
+        show.execute_command_str("select fixture 1").unwrap();
+        assert_eq!(*show.programmer.selection.first().unwrap(), 1);
+    }
+
+    #[tokio::test]
+    async fn test_clear_command() {
+        let showfile: Showfile = serde_json::from_str(TEST_SHOWFILE).unwrap();
+        let mut show = Show::from_showfile(showfile).await.unwrap();
+
+        show.execute_command_str("select fixture 1").unwrap();
+        assert_eq!(*show.programmer.selection.first().unwrap(), 1);
+        show.execute_command_str("select preset:color 1").unwrap();
+        assert_eq!(
+            show.programmer
+                .changes
+                .get(&DmxChannel::new(0, 0).unwrap())
+                .unwrap(),
+            &255
+        );
+        show.execute_command_str("clear").unwrap();
+        assert!(show.programmer.selection.is_empty());
+        assert!(!show.programmer.changes.is_empty());
+        show.execute_command_str("clear").unwrap();
+        assert!(show.programmer.changes.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_store_command() {
+        let showfile: Showfile = serde_json::from_str(TEST_SHOWFILE).unwrap();
+        let mut show = Show::from_showfile(showfile).await.unwrap();
+
+        assert!(show.group(100).is_none());
+        show.execute_command_str("select fixture 1").unwrap();
+        show.execute_command_str("store group 100").unwrap();
+        assert_eq!(show.group(100).unwrap().fixtures, vec![1]);
+    }
+
+    #[tokio::test]
+    async fn test_go_command() {
+        let showfile: Showfile = serde_json::from_str(TEST_SHOWFILE).unwrap();
+        let mut show = Show::from_showfile(showfile).await.unwrap();
+
+        assert_eq!(show.executor(1).unwrap().current_index.get(), None);
+        show.execute_command_str("go executor 1").unwrap();
+        assert_eq!(show.executor(1).unwrap().current_index.get(), Some(0));
+        show.execute_command_str("go executor 1").unwrap();
+        assert_eq!(show.executor(1).unwrap().current_index.get(), Some(1));
+        show.execute_command_str("go executor 1").unwrap();
+        assert_eq!(show.executor(1).unwrap().current_index.get(), None);
+
+        assert_eq!(show.executor(2).unwrap().current_index.get(), Some(1));
+        show.execute_command_str("go executor 2").unwrap();
+        assert_eq!(show.executor(2).unwrap().current_index.get(), Some(0));
+        show.execute_command_str("go executor 2").unwrap();
+        assert_eq!(show.executor(2).unwrap().current_index.get(), Some(1));
     }
 }

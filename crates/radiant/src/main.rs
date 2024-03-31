@@ -1,7 +1,7 @@
 use anyhow::Result;
 use assets::Assets;
 
-use backstage::command::{Command, Instruction};
+use backstage::command::Command;
 use gpui::AssetSource;
 use gpui::{actions, App, AppContext, KeyBinding, Menu, MenuItem};
 
@@ -67,9 +67,10 @@ fn init_keybinds(cx: &mut AppContext) -> Result<()> {
         KeyBinding::new("cmd-q", Quit, None),
         KeyBinding::new(
             "escape",
-            workspace::action::ExecuteCommand(Command::new([Instruction::Clear])),
+            workspace::action::ExecuteCommand(Command::Clear),
             Some("Screen"),
         ),
+        // FIXME: This should be moved to the ui crate.
         KeyBinding::new("enter", text_input::Enter, Some("TextInput")),
         KeyBinding::new("backspace", text_input::Backspace, Some("TextInput")),
         KeyBinding::new("delete", text_input::Delete, Some("TextInput")),
