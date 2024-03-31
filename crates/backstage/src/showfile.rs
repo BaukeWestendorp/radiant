@@ -73,6 +73,7 @@ impl Showfile {
                 .into_iter()
                 .map(|dmx_protocol| dmx_protocol.into())
                 .collect(),
+            current_command: None,
         })
     }
 }

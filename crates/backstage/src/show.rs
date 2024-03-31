@@ -22,6 +22,7 @@ pub struct Show {
     pub(crate) presets: Presets,
     pub(crate) executors: Vec<Executor>,
     pub(crate) dmx_protocols: Vec<ArtnetDmxProtocol>,
+    pub current_command: Option<Command>,
 }
 
 impl Show {
@@ -33,6 +34,15 @@ impl Show {
 
     pub(crate) async fn from_showfile(showfile: Showfile) -> Result<Self> {
         showfile.try_into_show().await
+    }
+
+    pub fn execute_current_command(&mut self) -> Result<()> {
+        if let Some(command) = self.current_command.as_ref().cloned() {
+            self.current_command = None;
+            self.execute_command(&command)
+        } else {
+            Err(anyhow!("No current command to execute"))
+        }
     }
 
     pub fn execute_command_str(&mut self, s: &str) -> Result<()> {
@@ -51,7 +61,7 @@ impl Show {
                 }
             }
             Command::Select(object) => match object {
-                Object::Fixture(id) => {
+                Some(Object::Fixture(id)) => {
                     if !self.fixture_exists(*id) {
                         return Err(anyhow!("Fixture with id '{id}' not found"));
                     }
@@ -62,16 +72,16 @@ impl Show {
                         log::debug!("Fixture with id '{id}' already selected");
                     }
                 }
-                Object::Group(id) => {
+                Some(Object::Group(id)) => {
                     let group = self
                         .group(*id)
                         .ok_or_else(|| anyhow!("Group with id '{id}' not found"))?
                         .clone();
                     for fixture_id in group.fixtures.iter() {
-                        self.execute_command(&Command::Select(Object::Fixture(*fixture_id)))?;
+                        self.execute_command(&Command::Select(Some(Object::Fixture(*fixture_id))))?;
                     }
                 }
-                Object::PresetColor(id) => {
+                Some(Object::PresetColor(id)) => {
                     let color_preset = self
                         .color_preset(*id)
                         .ok_or_else(|| anyhow!("Preset color with id '{id}' not found"))?
@@ -86,40 +96,45 @@ impl Show {
                         );
                     }
                 }
-                object => return Err(anyhow!("Selecting '{object}' is not supported")),
+                Some(object) => return Err(anyhow!("Selecting '{object}' is not supported")),
+                None => return Err(anyhow!("Select requires a target object")),
             },
             Command::Store(object) => match object {
-                Object::Group(id) => {
+                Some(Object::Group(id)) => {
                     let selected_fixtures = self.selected_fixtures();
                     let group = Group {
                         id: *id,
                         label: "New Group".to_string(),
                         fixtures: selected_fixtures.clone(),
                     };
+                    if group.fixtures.is_empty() {
+                        return Err(anyhow!("No fixtures selected"));
+                    }
                     self.data.groups.push(group);
                 }
-                object => return Err(anyhow!("Storing '{object}' is not supported")),
+                Some(object) => return Err(anyhow!("Storing '{object}' is not supported")),
+                None => return Err(anyhow!("Store requires a destination object")),
             },
-            Command::Go(object) => {
-                if let Object::Executor(id) = object {
+            Command::Go(object) => match object {
+                Some(Object::Executor(id)) => {
                     let executor = self
                         .executor(*id)
                         .ok_or_else(|| anyhow!("Executor with id '{id}' not found"))?;
                     executor.go(self)
-                } else {
-                    return Err(anyhow!("Go can only be used with executors"));
                 }
-            }
-            Command::Top(object) => {
-                if let Object::Executor(id) = object {
+                Some(_) => return Err(anyhow!("Go can only be used with executors")),
+                None => return Err(anyhow!("Go requires an executor")),
+            },
+            Command::Top(object) => match object {
+                Some(Object::Executor(id)) => {
                     let executor = self
                         .executor(*id)
                         .ok_or_else(|| anyhow!("Executor with id '{id}' not found"))?;
                     executor.top(self)
-                } else {
-                    return Err(anyhow!("Top can only be used with executors"));
                 }
-            }
+                Some(_) => return Err(anyhow!("Top can only be used with executors")),
+                None => return Err(anyhow!("Top requires an executor")),
+            },
         }
         Ok(())
     }

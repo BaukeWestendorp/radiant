@@ -32,6 +32,14 @@ impl TextInput {
         }
     }
 
+    pub fn text(&self) -> &String {
+        &self.text
+    }
+
+    pub fn text_mut(&mut self) -> &mut String {
+        &mut self.text
+    }
+
     pub fn clear(&mut self, cx: &mut ViewContext<Self>) {
         self.text.clear();
         cx.notify();

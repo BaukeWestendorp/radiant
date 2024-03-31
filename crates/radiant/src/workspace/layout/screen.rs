@@ -29,24 +29,37 @@ impl Screen {
     ) -> WindowHandle<Self> {
         let window_options = WindowOptions::default();
         cx.open_window(window_options, |cx| {
-            cx.new_view(|cx| Self {
+            let view = cx.new_view(|cx| Self {
                 window_grid: WindowGridView::build(window_grid, show.clone(), cx),
                 command_line: CommandLine::build(show.clone(), cx),
                 focus_handle: cx.focus_handle(),
                 show,
-            })
+            });
+            cx.focus_view(&view);
+            view
         })
     }
 
-    fn cmd_clear(
+    fn handle_execute_command(
         &mut self,
         command: &workspace::action::ExecuteCommand,
         cx: &mut ViewContext<Self>,
     ) {
         self.show.update(cx, |show, cx| {
             if let Err(err) = show.execute_command(&command.0) {
-                log::error!("Failed to execute Clear command: {err}");
+                log::error!("Failed to execute command: {err}");
             }
+            cx.notify();
+        })
+    }
+
+    fn handle_set_current_command(
+        &mut self,
+        command: &workspace::action::SetCurrentCommand,
+        cx: &mut ViewContext<Self>,
+    ) {
+        self.show.update(cx, |show, cx| {
+            show.current_command = command.0.clone();
             cx.notify();
         })
     }
@@ -63,7 +76,8 @@ impl Render for Screen {
         div()
             .track_focus(&self.focus_handle)
             .key_context("Screen")
-            .on_action(cx.listener(Self::cmd_clear))
+            .on_action(cx.listener(Self::handle_execute_command))
+            .on_action(cx.listener(Self::handle_set_current_command))
             .font("Zed Sans")
             .text_color(cx.theme().colors().text)
             .bg(cx.theme().colors().background)
@@ -89,6 +103,19 @@ impl CommandLine {
             let focus_handle = cx.focus_handle();
             let text_input =
                 cx.new_view(|cx| TextInput::new(None, "Command line", focus_handle.clone(), cx));
+
+            // Update the command input when the current command changes.
+            cx.observe(&show, |this: &mut Self, show, cx| {
+                this.text_input.update(cx, |text_input, cx| {
+                    *text_input.text_mut() = show
+                        .read(cx)
+                        .current_command
+                        .map(|cmd| cmd.to_string())
+                        .unwrap_or_default();
+                    cx.notify();
+                });
+            })
+            .detach();
 
             cx.subscribe(
                 &text_input,

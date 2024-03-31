@@ -215,7 +215,7 @@ impl ExecutorButtonView {
         match self.button.action {
             ExecutorButtonAction::Go => self.show.update(cx, |show, cx| {
                 if let Err(err) =
-                    show.execute_command(&Command::Go(Object::Executor(self.executor_id)))
+                    show.execute_command(&Command::Go(Some(Object::Executor(self.executor_id))))
                 {
                     log::error!("Failed to execute Go command: {}", err.to_string());
                 }
@@ -224,7 +224,7 @@ impl ExecutorButtonView {
             }),
             ExecutorButtonAction::Top => self.show.update(cx, |show, cx| {
                 if let Err(err) =
-                    show.execute_command(&Command::Top(Object::Executor(self.executor_id)))
+                    show.execute_command(&Command::Top(Some(Object::Executor(self.executor_id))))
                 {
                     log::error!("Failed to execute Top command: {}", err.to_string());
                 }

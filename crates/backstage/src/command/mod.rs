@@ -30,10 +30,10 @@ impl std::fmt::Display for Object {
 #[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize)]
 pub enum Command {
     Clear,
-    Select(Object),
-    Store(Object),
-    Go(Object),
-    Top(Object),
+    Select(Option<Object>),
+    Store(Option<Object>),
+    Go(Option<Object>),
+    Top(Option<Object>),
 }
 
 impl Command {
@@ -57,17 +57,17 @@ impl Command {
                 Token::Select => {
                     let object = parse_object(&mut lexer)?;
                     confirm_end_of_command!("Select");
-                    Command::Select(object)
+                    Command::Select(Some(object))
                 }
                 Token::Store => {
                     let object = parse_object(&mut lexer)?;
                     confirm_end_of_command!("Store");
-                    Command::Store(object)
+                    Command::Store(Some(object))
                 }
                 Token::Go => match parse_object(&mut lexer)? {
                     object @ Object::Executor(_) => {
                         confirm_end_of_command!("Go");
-                        Command::Go(object)
+                        Command::Go(Some(object))
                     }
                     object => {
                         return Err(anyhow!("Go command expects an executor, got {:?}", object))
@@ -76,7 +76,7 @@ impl Command {
                 Token::Top => {
                     let object = parse_object(&mut lexer)?;
                     confirm_end_of_command!("Top");
-                    Command::Top(object)
+                    Command::Top(Some(object))
                 }
                 other => return Err(anyhow!("Unexpected token: {:?}", other)),
             },
@@ -146,6 +146,22 @@ fn consume(lexer: &mut Lexer, expected: Token) -> Result<()> {
     Ok(())
 }
 
+impl std::fmt::Display for Command {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Command::Clear => write!(f, "Clear"),
+            Command::Select(Some(object)) => write!(f, "Select {}", object),
+            Command::Select(None) => write!(f, "Select"),
+            Command::Store(Some(object)) => write!(f, "Store {}", object),
+            Command::Store(None) => write!(f, "Store"),
+            Command::Go(Some(object)) => write!(f, "Go {}", object),
+            Command::Go(None) => write!(f, "Go"),
+            Command::Top(Some(object)) => write!(f, "Top {}", object),
+            Command::Top(None) => write!(f, "Top"),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::command::{Command, Object};
@@ -170,7 +186,7 @@ mod tests {
 
     #[test]
     fn test_parse_select() {
-        let expected = Command::Select(Object::Group(42));
+        let expected = Command::Select(Some(Object::Group(42)));
 
         assert_eq!(Command::parse("select group 42").unwrap(), expected);
         assert!(Command::parse("select group 42  foobar").is_err());
@@ -180,7 +196,7 @@ mod tests {
 
     #[test]
     fn test_parse_store() {
-        let expected = Command::Store(Object::Group(42));
+        let expected = Command::Store(Some(Object::Group(42)));
 
         assert_eq!(Command::parse("store group 42").unwrap(), expected);
         assert!(Command::parse("store group 42  foobar").is_err());
@@ -190,7 +206,7 @@ mod tests {
 
     #[test]
     fn test_parse_preset() {
-        let expected = Command::Select(Object::PresetColor(42));
+        let expected = Command::Select(Some(Object::PresetColor(42)));
 
         assert_eq!(Command::parse("select preset:color 42").unwrap(), expected);
         assert!(Command::parse("select preset:color 42 foobar").is_err());
@@ -201,7 +217,7 @@ mod tests {
 
     #[test]
     fn test_parse_go() {
-        let expected = Command::Go(Object::Executor(42));
+        let expected = Command::Go(Some(Object::Executor(42)));
 
         assert_eq!(Command::parse("go executor 42").unwrap(), expected);
         assert!(Command::parse("go executor 42  foobar").is_err());

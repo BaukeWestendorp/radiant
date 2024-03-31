@@ -75,7 +75,8 @@ impl PoolWindowDelegate for ColorPoolWindowDelegate {
 
     fn handle_click_item(&mut self, id: usize, cx: &mut gpui::ViewContext<WindowView<Self>>) {
         self.show.update(cx, |show, cx| {
-            if let Err(err) = show.execute_command(&Command::Select(Object::PresetColor(id))) {
+            if let Err(err) = show.execute_command(&Command::Select(Some(Object::PresetColor(id))))
+            {
                 log::error!("Failed to Select Group {id}: {}", err.to_string())
             }
             cx.notify();

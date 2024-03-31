@@ -190,9 +190,9 @@ impl SheetDelegate for FixtureSheetDelegate {
                     let fixture_id = fixture.id;
                     move |this, _event, cx| {
                         this.delegate.show.update(cx, |show, _cx| {
-                            if let Err(err) =
-                                show.execute_command(&Command::Select(Object::Fixture(fixture_id)))
-                            {
+                            if let Err(err) = show.execute_command(&Command::Select(Some(
+                                Object::Fixture(fixture_id),
+                            ))) {
                                 log::error!("Failed to select fixture: {:?}", err);
                             }
                         })

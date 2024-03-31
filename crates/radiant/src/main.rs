@@ -5,6 +5,7 @@ use backstage::command::Command;
 use gpui::AssetSource;
 use gpui::{actions, App, AppContext, KeyBinding, Menu, MenuItem};
 
+use crate::workspace::action::{ExecuteCommand, SetCurrentCommand};
 use crate::workspace::Workspace;
 use theme::ThemeSettings;
 use ui::text_input;
@@ -65,11 +66,8 @@ fn init_keybinds(cx: &mut AppContext) -> Result<()> {
 
     cx.bind_keys([
         KeyBinding::new("cmd-q", Quit, None),
-        KeyBinding::new(
-            "escape",
-            workspace::action::ExecuteCommand(Command::Clear),
-            Some("Screen"),
-        ),
+        KeyBinding::new("escape", ExecuteCommand(Command::Clear), None),
+        KeyBinding::new("s", SetCurrentCommand(Some(Command::Store(None))), None),
         // FIXME: This should be moved to the ui crate.
         KeyBinding::new("enter", text_input::Enter, Some("TextInput")),
         KeyBinding::new("backspace", text_input::Backspace, Some("TextInput")),

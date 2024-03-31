@@ -81,9 +81,22 @@ impl PoolWindowDelegate for GroupPoolWindowDelegate {
 
     fn handle_click_item(&mut self, id: usize, cx: &mut gpui::ViewContext<WindowView<Self>>) {
         self.show.update(cx, |show, cx| {
-            if let Err(err) = show.execute_command(&Command::Select(Object::Group(id))) {
-                log::error!("Failed to Select Group {id}: {}", err.to_string())
+            match &mut show.current_command {
+                Some(Command::Store(object)) | Some(Command::Select(object)) => {
+                    *object = Some(Object::Group(id));
+                    if let Err(err) = show.execute_current_command() {
+                        log::error!("Failed to execute current command: {}", err.to_string())
+                    }
+                }
+                _ => {
+                    if let Err(err) =
+                        show.execute_command(&Command::Select(Some(Object::Group(id))))
+                    {
+                        log::error!("Failed to Select Group {id}: {}", err.to_string())
+                    }
+                }
             }
+
             cx.notify();
         });
     }
