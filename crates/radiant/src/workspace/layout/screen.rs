@@ -1,8 +1,8 @@
 use backstage::show::Show;
 use gpui::{
-    div, AppContext, FocusHandle, FocusableView, InteractiveElement, IntoElement, Model,
-    ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext, WindowHandle,
-    WindowOptions,
+    div, AppContext, BorrowAppContext, FocusHandle, FocusableView, InteractiveElement, IntoElement,
+    Model, ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext,
+    WindowHandle, WindowOptions,
 };
 
 use crate::{workspace, AppState};

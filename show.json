@@ -230,6 +230,24 @@
           "ColorAdd_G": 0,
           "ColorAdd_B": 0
         }
+      },
+      {
+        "id": 2,
+        "label": "Yellow",
+        "attribute_values": {
+          "ColorAdd_R": 255,
+          "ColorAdd_G": 255,
+          "ColorAdd_B": 0
+        }
+      },
+      {
+        "id": 3,
+        "label": "Magenta",
+        "attribute_values": {
+          "ColorAdd_R": 255,
+          "ColorAdd_G": 0,
+          "ColorAdd_B": 255
+        }
       }
     ]
   },
