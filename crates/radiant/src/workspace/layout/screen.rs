@@ -5,7 +5,7 @@ use gpui::{
     WindowOptions,
 };
 
-use crate::workspace;
+use crate::{workspace, AppState};
 use theme::ActiveTheme;
 use ui::text_input::{self, TextInput};
 
@@ -125,6 +125,22 @@ impl CommandLine {
                     }
                 },
             )
+            .detach();
+
+            cx.on_focus_in(&focus_handle, |_focus_handle, cx| {
+                cx.update_global(|state: &mut AppState, _cx| {
+                    log::debug!("Command line focused");
+                    state.use_command_shortcuts = false;
+                });
+            })
+            .detach();
+
+            cx.on_blur(&focus_handle, |_focus_handle, cx| {
+                cx.update_global(|state: &mut AppState, _cx| {
+                    log::debug!("Command line unfocused");
+                    state.use_command_shortcuts = true;
+                });
+            })
             .detach();
 
             Self {
