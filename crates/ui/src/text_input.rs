@@ -3,7 +3,6 @@ use gpui::{
     actions, div, EventEmitter, FocusHandle, InteractiveElement, KeyDownEvent, ParentElement,
     Render, SharedString, Styled, ViewContext, WindowContext,
 };
-
 use theme::ActiveTheme;
 actions!(text_input, [Enter, Backspace, Delete]);
 

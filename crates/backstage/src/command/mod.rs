@@ -1,8 +1,7 @@
 use anyhow::{anyhow, Result};
 
-use crate::command::lexer::Lexer;
-
 use self::lexer::Token;
+use crate::command::lexer::Lexer;
 
 mod lexer;
 

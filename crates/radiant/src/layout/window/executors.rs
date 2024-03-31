@@ -5,11 +5,11 @@ use gpui::{
     div, px, uniform_list, IntoElement, Model, MouseDownEvent, MouseUpEvent, ParentElement, Render,
     Styled, View, ViewContext, VisualContext, WindowContext,
 };
+use theme::ActiveTheme;
 use ui::container::Container;
 
 use super::{WindowDelegate, WindowView};
-use crate::layout::window_grid::GRID_CELL_SIZE;
-use theme::ActiveTheme;
+use crate::layout::GRID_CELL_SIZE;
 
 pub struct ExecutorsWindowDelegate {
     executors_window: View<ExecutorsWindow>,

@@ -3,16 +3,19 @@ use gpui::{
     RenderOnce, ScrollWheelEvent, Styled, ViewContext, WindowContext,
 };
 use smallvec::SmallVec;
-use ui::container::{Container, ContainerStyle};
-
-use crate::layout::window_grid::{grid_div, GridBounds, GridSize, GRID_CELL_SIZE};
-use crate::layout::{PoolWindow, Window, WindowGrid, WindowKind};
 use theme::ActiveTheme;
-
-use super::{WindowDelegate, WindowView};
+use ui::container::{Container, ContainerStyle};
 
 pub mod color;
 pub mod group;
+
+pub use color::*;
+pub use group::*;
+
+use crate::layout::{
+    grid_div, GridBounds, GridSize, PoolWindow, Window, WindowDelegate, WindowGrid, WindowKind,
+    WindowView, GRID_CELL_SIZE,
+};
 
 const ROW_SCROLL_OFFSET_MAX: i32 = 10000;
 const SCROLL_SENSITIVITY: f32 = 0.5;

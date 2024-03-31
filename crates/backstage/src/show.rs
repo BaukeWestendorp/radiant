@@ -1,12 +1,12 @@
-use anyhow::{anyhow, Result};
-use itertools::Itertools;
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::fs::File;
 use std::rc::Rc;
 
+use anyhow::{anyhow, Result};
 use dmx::{DmxChannel, DmxOutput, DmxValue};
 use gdtf::{ActivationGroup, Attribute, FeatureGroup, FixtureType, GdtfDescription};
+use itertools::Itertools;
 
 use crate::command::{Command, Object};
 use crate::dmx_protocols::ArtnetDmxProtocol;
@@ -677,9 +677,8 @@ impl Executor {
 mod tests {
     use dmx::DmxChannel;
 
-    use crate::showfile::Showfile;
-
     use super::Show;
+    use crate::showfile::Showfile;
 
     const TEST_SHOWFILE: &str = r#"{
         "patchlist": {

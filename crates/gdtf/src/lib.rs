@@ -2,7 +2,9 @@
 //!
 //! [File Format Definition](https://gdtf.eu/gdtf/file-spec/file-format-definition/#file-format-definition)
 
-use std::{fs::File, io, str::FromStr};
+use std::fs::File;
+use std::io;
+use std::str::FromStr;
 
 use error::Error;
 

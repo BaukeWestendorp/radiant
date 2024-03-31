@@ -1,7 +1,8 @@
+use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
+
 use anyhow::Result;
 use artnet_protocol::{ArtCommand, Output};
 use dmx::DmxOutput;
-use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
 
 const ARTNET_PORT: u16 = 6454;
 

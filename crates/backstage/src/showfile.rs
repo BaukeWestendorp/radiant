@@ -245,11 +245,7 @@ pub struct Presets {
 impl From<Presets> for show::Presets {
     fn from(val: Presets) -> Self {
         show::Presets {
-            colors: val
-                .colors
-                .into_iter()
-                .map(|preset| preset.into())
-                .collect(),
+            colors: val.colors.into_iter().map(|preset| preset.into()).collect(),
         }
     }
 }

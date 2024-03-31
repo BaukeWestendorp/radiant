@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 
-use self::window_grid::GridBounds;
-
 pub mod screen;
 pub mod window;
 pub mod window_grid;
+
+pub use screen::*;
+pub use window::*;
+pub use window_grid::*;
 
 #[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
 pub struct Layout {

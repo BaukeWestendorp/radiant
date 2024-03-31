@@ -1,9 +1,9 @@
+use std::fs::File;
+use std::time::Duration;
+
 use anyhow::Result;
 use backstage::show::Show;
 use gpui::{AsyncAppContext, Context, Model, Task, Timer};
-
-use std::fs::File;
-use std::time::Duration;
 
 use crate::layout::screen::Screen;
 use crate::layout::window_grid::{GridBounds, GridPoint, GridSize};

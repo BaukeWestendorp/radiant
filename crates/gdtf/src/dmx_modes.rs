@@ -1,14 +1,12 @@
-use std::{collections::HashMap, str::FromStr};
+use std::collections::HashMap;
+use std::str::FromStr;
 
-use crate::{
-    error::Error,
-    parse_int_array, parse_name, parse_node,
-    raw::{
-        RawChannelFunction, RawChannelSet, RawDmxChannel, RawDmxMode, RawLogicalChannel,
-        RawSubchannelSet,
-    },
-    Attribute, DmxValue, Node,
+use crate::error::Error;
+use crate::raw::{
+    RawChannelFunction, RawChannelSet, RawDmxChannel, RawDmxMode, RawLogicalChannel,
+    RawSubchannelSet,
 };
+use crate::{parse_int_array, parse_name, parse_node, Attribute, DmxValue, Node};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DmxMode {

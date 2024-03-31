@@ -41,7 +41,7 @@ impl<D: SheetDelegate + 'static> Render for Sheet<D> {
                         .iter()
                         .map(|column_id| {
                             let content = view.delegate.render_cell_content(column_id, &data, cx);
-                            
+
                             view.delegate.render_cell(column_id, content, cx)
                         })
                         .collect::<Vec<_>>();

@@ -2,12 +2,9 @@ use backstage::command::{Command, Object};
 use backstage::show::Show;
 use gpui::prelude::FluentBuilder;
 use gpui::{div, InteractiveElement, IntoElement, Model, ParentElement, Styled, WindowContext};
-
-use crate::layout::window::WindowView;
-use crate::layout::window_grid::GridBounds;
 use theme::ActiveTheme;
 
-use super::PoolWindowDelegate;
+use crate::layout::{GridBounds, PoolWindowDelegate, WindowView};
 
 pub struct GroupPoolWindowDelegate {
     scroll_offset: i32,

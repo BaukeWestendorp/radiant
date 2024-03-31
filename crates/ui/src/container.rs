@@ -1,7 +1,7 @@
+use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, prelude::FluentBuilder, AnyElement, AppContext, Div, Hsla, InteractiveElement,
-    IntoElement, MouseDownEvent, MouseUpEvent, ParentElement, RenderOnce, StyleRefinement, Styled,
-    WindowContext,
+    div, AnyElement, AppContext, Div, Hsla, InteractiveElement, IntoElement, MouseDownEvent,
+    MouseUpEvent, ParentElement, RenderOnce, StyleRefinement, Styled, WindowContext,
 };
 use smallvec::SmallVec;
 use theme::ActiveTheme;

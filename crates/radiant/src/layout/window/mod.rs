@@ -2,15 +2,17 @@ use gpui::{
     div, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext, VisualContext,
     WindowContext,
 };
-
-use super::window_grid::grid_div;
-use super::GridBounds;
-use crate::layout::WindowGrid;
 use theme::ActiveTheme;
+
+use super::{grid_div, GridBounds, WindowGrid};
 
 pub mod executors;
 pub mod fixture_sheet;
 pub mod pool;
+
+pub use executors::*;
+pub use fixture_sheet::*;
+pub use pool::*;
 
 pub struct WindowView<D: WindowDelegate> {
     delegate: D,

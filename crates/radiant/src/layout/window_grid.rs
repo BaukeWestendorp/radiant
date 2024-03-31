@@ -4,15 +4,13 @@ use gpui::{
     div, px, AnyView, Div, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
     VisualContext, WindowContext,
 };
-
-use super::screen::Screen;
-use super::window::executors::ExecutorsWindowDelegate;
-use super::window::fixture_sheet::FixtureSheetWindowDelegate;
-use super::window::pool::color::ColorPoolWindowDelegate;
-use super::window::pool::group::GroupPoolWindowDelegate;
-use super::window::WindowView;
-use super::{PoolWindowKind, Window, WindowGrid, WindowKind};
 use theme::ActiveTheme;
+
+use super::{
+    ColorPoolWindowDelegate, ExecutorsWindowDelegate, FixtureSheetWindowDelegate,
+    GroupPoolWindowDelegate, PoolWindowKind, Screen, Window, WindowGrid, WindowKind, WindowView,
+};
+
 pub const GRID_CELL_SIZE: usize = 80;
 
 pub struct WindowGridView {

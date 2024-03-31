@@ -1,13 +1,11 @@
-use backstage::{
-    command::{Command, Object},
-    show::{Fixture, Show},
-};
+use backstage::command::{Command, Object};
+use backstage::show::{Fixture, Show};
+use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, prelude::FluentBuilder, rgb, AnyElement, InteractiveElement, IntoElement, Model,
-    MouseButton, ParentElement, Pixels, Styled, View, ViewContext, VisualContext, WindowContext,
+    div, rgb, AnyElement, InteractiveElement, IntoElement, Model, MouseButton, ParentElement,
+    Pixels, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 use itertools::Itertools;
-
 use theme::ActiveTheme;
 use ui::sheet::{Sheet, SheetDelegate};
 

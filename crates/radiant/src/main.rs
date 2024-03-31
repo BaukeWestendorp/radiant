@@ -1,14 +1,12 @@
 use anyhow::Result;
 use assets::Assets;
-
 use backstage::command::Command;
-use gpui::{actions, App, AppContext, KeyBinding, Menu, MenuItem};
-use gpui::{AssetSource, Global};
+use gpui::{actions, App, AppContext, AssetSource, Global, KeyBinding, Menu, MenuItem};
+use theme::ThemeSettings;
+use ui::text_input;
 
 use crate::workspace::action::{ExecuteCommand, SetCurrentCommand};
 use crate::workspace::Workspace;
-use theme::ThemeSettings;
-use ui::text_input;
 
 pub mod layout;
 pub mod workspace;

@@ -4,13 +4,11 @@ use gpui::{
     Model, ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext,
     WindowHandle, WindowOptions,
 };
-
-use crate::{workspace, AppState};
 use theme::ActiveTheme;
 use ui::text_input::{self, TextInput};
 
-use super::window_grid::WindowGridView;
-use super::WindowGrid;
+use super::{WindowGrid, WindowGridView};
+use crate::{workspace, AppState};
 
 pub struct Screen {
     window_grid: View<WindowGridView>,
