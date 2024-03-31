@@ -116,7 +116,7 @@ fn lex_single_token(input: &str) -> Result<(Token, usize)> {
 
 fn lex_keyword(input: &str) -> Result<(Token, usize)> {
     match input.chars().next() {
-        Some(char) if char.is_digit(10) => {
+        Some(char) if char.is_ascii_digit() => {
             return Err(anyhow!("Keywords cannot start with a number."))
         }
         None => return Err(anyhow!("Unexpected EOF")),
@@ -143,7 +143,7 @@ fn lex_keyword(input: &str) -> Result<(Token, usize)> {
 }
 
 fn tokenize_number(input: &str) -> Result<(Token, usize)> {
-    let (number, bytes_read) = take_while(input, |char| char.is_digit(10))?;
+    let (number, bytes_read) = take_while(input, |char| char.is_ascii_digit())?;
     let n: usize = number.parse()?;
     Ok((Token::Number(n), bytes_read))
 }

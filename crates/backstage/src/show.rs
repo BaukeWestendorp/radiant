@@ -177,7 +177,7 @@ impl Show {
 
     pub fn fixtures_in_groups(&self, group_ids: &[usize]) -> Vec<&Fixture> {
         group_ids
-            .into_iter()
+            .iter()
             .flat_map(|id| self.fixtures_in_group(*id))
             .collect()
     }
@@ -187,9 +187,7 @@ impl Show {
     }
 
     pub fn are_fixtures_selected(&self, fixtures: &[usize]) -> bool {
-        !fixtures
-            .into_iter()
-            .any(|id| !self.is_fixture_selected(*id))
+        !fixtures.iter().any(|id| !self.is_fixture_selected(*id))
     }
 
     pub fn fixture_exists(&self, id: usize) -> bool {
@@ -295,7 +293,7 @@ impl Show {
 
     pub fn send_stage_output_to_dmx_protocols(&mut self) {
         for dmx_protocol in self.dmx_protocols.iter() {
-            dmx_protocol.send_dmx_output(&self.stage_output());
+            dmx_protocol.send_dmx_output(self.stage_output());
         }
     }
 }
@@ -304,6 +302,12 @@ impl Show {
 pub struct Patchlist {
     fixtures: Vec<Fixture>,
     gdtf_descriptions: HashMap<i32, Rc<GdtfDescription>>,
+}
+
+impl Default for Patchlist {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Patchlist {
@@ -386,7 +390,7 @@ impl Fixture {
             .all_channel_functions()
             .iter()
             .filter(|cf| cf.attribute(self.attributes()).name == attribute_name)
-            .map(|cf| *cf)
+            .copied()
             .collect()
     }
 
@@ -399,13 +403,10 @@ impl Fixture {
     }
 
     pub fn channel_resolution_for_attribute(&self, attribute_name: &str) -> Option<u8> {
-        let Some(offset) = self
+        let offset = self
             .get_dmx_channels_using_attribute(attribute_name)
             .first()
-            .and_then(|c| c.offset.clone())
-        else {
-            return None;
-        };
+            .and_then(|c| c.offset.clone())?;
 
         Some(offset.len().clamp(u8::MIN as usize, u8::MAX as usize) as u8)
     }
@@ -419,7 +420,7 @@ impl Fixture {
                     Some(
                         channel
                             .logical_channels
-                            .get(0)
+                            .first()
                             .unwrap()
                             .attribute(self.attributes()),
                     )
@@ -476,7 +477,7 @@ impl Programmer {
                 attribute_value.raw_values_for_channel_resolution(channel_resolution);
 
             for (channel, value) in dmx_channels.iter().zip(raw_dmx_values) {
-                self.changes.insert(channel.clone(), value);
+                self.changes.insert(*channel, value);
             }
         }
     }
@@ -562,7 +563,7 @@ impl ColorPreset {
     pub fn new(id: usize, label: &str) -> Self {
         Self {
             id,
-            label: label.to_string().into(),
+            label: label.to_string(),
             attribute_values: HashMap::new(),
         }
     }
@@ -578,7 +579,7 @@ impl Preset for ColorPreset {
     }
 
     fn set_label(&mut self, label: &str) {
-        self.label = label.to_string().into();
+        self.label = label.to_string();
     }
 
     fn affected_attributes(&self) -> AffectedAttributes {
@@ -642,12 +643,10 @@ impl Executor {
 
                 if index + 1 < sequence.cues.len() {
                     self.current_index.set(Some(index + 1));
+                } else if self.r#loop {
+                    self.current_index.set(Some(0))
                 } else {
-                    if self.r#loop {
-                        self.current_index.set(Some(0))
-                    } else {
-                        self.current_index.set(None)
-                    }
+                    self.current_index.set(None)
                 }
             }
         }
@@ -669,9 +668,7 @@ impl Executor {
     }
 
     fn sequence<'a>(&'a self, show: &'a Show) -> Option<&Sequence> {
-        let Some(id) = self.sequence else {
-            return None;
-        };
+        let id = self.sequence?;
         show.sequence(id)
     }
 }

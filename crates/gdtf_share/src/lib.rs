@@ -2,9 +2,9 @@ use isahc::config::Configurable;
 use isahc::cookies::CookieJar;
 use isahc::http::StatusCode;
 use isahc::{AsyncReadResponseExt, HttpClient};
-const AUTH_URL: &'static str = "https://gdtf-share.com/apis/public/login.php";
-const GET_LIST_URL: &'static str = "https://gdtf-share.com/apis/public/getList.php";
-const DOWNLOAD_FILE_URL: &'static str = "https://gdtf-share.com/apis/public/downloadFile.php";
+const AUTH_URL: &str = "https://gdtf-share.com/apis/public/login.php";
+const GET_LIST_URL: &str = "https://gdtf-share.com/apis/public/getList.php";
+const DOWNLOAD_FILE_URL: &str = "https://gdtf-share.com/apis/public/downloadFile.php";
 
 #[derive(Debug, Clone)]
 pub struct GdtfShare {
@@ -85,11 +85,9 @@ async fn send_download_file_request(client: &HttpClient, rid: i32) -> Result<Vec
     match response.status() {
         StatusCode::OK => match response.bytes().await {
             Ok(bytes) => Ok(bytes),
-            Err(e) => {
-                return Err(Error::DownloadFailed {
-                    message: e.to_string(),
-                });
-            }
+            Err(e) => Err(Error::DownloadFailed {
+                message: e.to_string(),
+            }),
         },
         _ => {
             let response = match response.json::<DownloadFileResponse>().await {

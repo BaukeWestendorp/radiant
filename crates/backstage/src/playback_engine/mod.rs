@@ -5,6 +5,12 @@ use crate::show::{Cue, Executor, Show};
 #[derive(Debug, Clone, PartialEq)]
 pub struct PlaybackEngine {}
 
+impl Default for PlaybackEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PlaybackEngine {
     pub fn new() -> Self {
         Self {}

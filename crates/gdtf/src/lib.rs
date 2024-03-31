@@ -38,34 +38,25 @@ pub(crate) fn parse_node(node: raw::RawNode) -> Result<Node, Error> {
 pub type ColorCIE = [f32; 3];
 
 pub(crate) fn parse_color_cie(color_cie: raw::RawColorCIE) -> Result<ColorCIE, Error> {
-    let parts: Vec<&str> = color_cie.split(",").collect();
+    let parts: Vec<&str> = color_cie.split(',').collect();
     if parts.len() != 3 {
         return Err(Error::ParseError(format!(
             "Invalid CIE color: '{}'. Expected 3 parts, but found {}",
-            color_cie.to_string(),
+            color_cie,
             parts.len()
         )));
     }
 
-    let x = parts[0].parse().map_err(|_| {
-        Error::ParseError(format!(
-            "Failed to parse CIE color X: '{}'",
-            parts[0].to_string()
-        ))
-    })?;
+    let x = parts[0]
+        .parse()
+        .map_err(|_| Error::ParseError(format!("Failed to parse CIE color X: '{}'", parts[0])))?;
 
-    let y = parts[1].parse().map_err(|_| {
-        Error::ParseError(format!(
-            "Failed to parse CIE color Y: '{}'",
-            parts[1].to_string()
-        ))
-    })?;
+    let y = parts[1]
+        .parse()
+        .map_err(|_| Error::ParseError(format!("Failed to parse CIE color Y: '{}'", parts[1])))?;
 
     let large_y = parts[2].parse().map_err(|_| {
-        Error::ParseError(format!(
-            "Failed to parse CIE color large Y: '{}'",
-            parts[2].to_string()
-        ))
+        Error::ParseError(format!("Failed to parse CIE color large Y: '{}'", parts[2]))
     })?;
 
     Ok([x, y, large_y])
@@ -95,19 +86,17 @@ impl DmxValue {
                 // another BitResolution.
                 result = self.value;
             }
+        } else if self.byte_specifier != channel_resolution as u8 {
+            let max_resolution = get_channel_max_dmx(self.byte_specifier.into());
+            let max_channel_unit = get_channel_max_dmx(channel_resolution);
+
+            let percentage = self.value as f64 / max_resolution as f64;
+
+            result = (percentage * max_channel_unit as f64) as u64;
         } else {
-            if self.byte_specifier != channel_resolution as u8 {
-                let max_resolution = get_channel_max_dmx((self.byte_specifier as u8).into());
-                let max_channel_unit = get_channel_max_dmx(channel_resolution);
-
-                let percentage = self.value as f64 / max_resolution as f64;
-
-                result = (percentage * max_channel_unit as f64) as u64;
-            } else {
-                // We can take the value as it is defined in the document without scaling it to
-                // another BitResolution.
-                result = self.value;
-            }
+            // We can take the value as it is defined in the document without scaling it to
+            // another BitResolution.
+            result = self.value;
         }
 
         if get_channel_max_dmx(channel_resolution) < result {
@@ -359,7 +348,7 @@ impl FromStr for DataVersion {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<&str> = s.split(".").collect();
+        let parts: Vec<&str> = s.split('.').collect();
         if parts.len() != 2 {
             return Err(Error::ParseError(format!(
                 "Invalid data version: '{}'. Expected 2 parts, but found {}",

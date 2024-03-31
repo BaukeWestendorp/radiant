@@ -91,10 +91,10 @@ pub struct DmxChannel {
 }
 
 impl DmxChannel {
-    pub fn initial_function<'a>(&'a self) -> Option<&ChannelFunction> {
+    pub fn initial_function(&self) -> Option<&ChannelFunction> {
         match &self.initial_function {
             Some(node) => {
-                let first = node[0].split("_").collect::<Vec<_>>();
+                let first = node[0].split('_').collect::<Vec<_>>();
                 let [_geometry, logical_channel] = [first[0], first[1]];
                 let channel_function = &node[1];
                 self.logical_channels
@@ -161,7 +161,7 @@ pub struct LogicalChannel {
 }
 
 impl LogicalChannel {
-    pub fn attribute<'a>(&'a self, attributes: &'a Vec<Attribute>) -> &Attribute {
+    pub fn attribute<'a>(&'a self, attributes: &'a [Attribute]) -> &Attribute {
         attributes
             .iter()
             .find(|a| a.name == self.attribute[0])
@@ -268,7 +268,7 @@ pub struct ChannelFunction {
 }
 
 impl ChannelFunction {
-    pub fn attribute<'a>(&'a self, attributes: &'a Vec<Attribute>) -> &Attribute {
+    pub fn attribute<'a>(&'a self, attributes: &'a [Attribute]) -> &Attribute {
         attributes
             .iter()
             .find(|a| a.name == self.attribute[0])

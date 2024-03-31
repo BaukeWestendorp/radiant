@@ -174,11 +174,11 @@ pub struct Data {
     pub sequences: Vec<Sequence>,
 }
 
-impl Into<show::Data> for Data {
-    fn into(self) -> show::Data {
+impl From<Data> for show::Data {
+    fn from(val: Data) -> Self {
         show::Data {
-            groups: self.groups.into_iter().map(|group| group.into()).collect(),
-            sequences: self
+            groups: val.groups.into_iter().map(|group| group.into()).collect(),
+            sequences: val
                 .sequences
                 .into_iter()
                 .map(|sequence| sequence.into())
@@ -193,12 +193,12 @@ pub struct Group {
     pub fixtures: Vec<usize>,
 }
 
-impl Into<show::Group> for Group {
-    fn into(self) -> show::Group {
+impl From<Group> for show::Group {
+    fn from(val: Group) -> Self {
         show::Group {
-            id: self.id,
-            label: self.label,
-            fixtures: self.fixtures,
+            id: val.id,
+            label: val.label,
+            fixtures: val.fixtures,
         }
     }
 }
@@ -210,12 +210,12 @@ pub struct Sequence {
     pub cues: Vec<Cue>,
 }
 
-impl Into<show::Sequence> for Sequence {
-    fn into(self) -> show::Sequence {
+impl From<Sequence> for show::Sequence {
+    fn from(val: Sequence) -> Self {
         show::Sequence {
-            id: self.id,
-            label: self.label,
-            cues: self.cues.into_iter().map(|cue| cue.into()).collect(),
+            id: val.id,
+            label: val.label,
+            cues: val.cues.into_iter().map(|cue| cue.into()).collect(),
         }
     }
 }
@@ -227,12 +227,12 @@ pub struct Cue {
     pub attribute_values: HashMap<String, DmxValue>,
 }
 
-impl Into<show::Cue> for Cue {
-    fn into(self) -> show::Cue {
+impl From<Cue> for show::Cue {
+    fn from(val: Cue) -> Self {
         show::Cue {
-            groups: self.groups,
-            label: self.label,
-            attribute_values: self.attribute_values,
+            groups: val.groups,
+            label: val.label,
+            attribute_values: val.attribute_values,
         }
     }
 }
@@ -242,10 +242,10 @@ pub struct Presets {
     pub colors: Vec<Preset>,
 }
 
-impl Into<show::Presets> for Presets {
-    fn into(self) -> show::Presets {
+impl From<Presets> for show::Presets {
+    fn from(val: Presets) -> Self {
         show::Presets {
-            colors: self
+            colors: val
                 .colors
                 .into_iter()
                 .map(|preset| preset.into())
@@ -261,12 +261,12 @@ pub struct Preset {
     pub attribute_values: AttributeValues,
 }
 
-impl Into<show::ColorPreset> for Preset {
-    fn into(self) -> show::ColorPreset {
+impl From<Preset> for show::ColorPreset {
+    fn from(val: Preset) -> Self {
         show::ColorPreset {
-            id: self.id,
-            label: self.label,
-            attribute_values: self.attribute_values,
+            id: val.id,
+            label: val.label,
+            attribute_values: val.attribute_values,
         }
     }
 }
@@ -283,17 +283,17 @@ pub struct Executor {
     pub button_3: ExecutorButton,
 }
 
-impl Into<show::Executor> for Executor {
-    fn into(self) -> show::Executor {
+impl From<Executor> for show::Executor {
+    fn from(val: Executor) -> Self {
         show::Executor {
-            id: self.id,
-            sequence: self.sequence,
-            current_index: Cell::new(self.current_index),
-            r#loop: self.r#loop,
-            fader_value: self.fader_value,
-            button_1: self.button_1.into(),
-            button_2: self.button_2.into(),
-            button_3: self.button_3.into(),
+            id: val.id,
+            sequence: val.sequence,
+            current_index: Cell::new(val.current_index),
+            r#loop: val.r#loop,
+            fader_value: val.fader_value,
+            button_1: val.button_1.into(),
+            button_2: val.button_2.into(),
+            button_3: val.button_3.into(),
             flash: false,
         }
     }
@@ -304,10 +304,10 @@ pub struct ExecutorButton {
     pub action: ExecutorButtonAction,
 }
 
-impl Into<show::ExecutorButton> for ExecutorButton {
-    fn into(self) -> show::ExecutorButton {
+impl From<ExecutorButton> for show::ExecutorButton {
+    fn from(val: ExecutorButton) -> Self {
         show::ExecutorButton {
-            action: self.action.into(),
+            action: val.action.into(),
         }
     }
 }
@@ -320,9 +320,9 @@ pub enum ExecutorButtonAction {
     Flash,
 }
 
-impl Into<show::ExecutorButtonAction> for ExecutorButtonAction {
-    fn into(self) -> show::ExecutorButtonAction {
-        match self {
+impl From<ExecutorButtonAction> for show::ExecutorButtonAction {
+    fn from(val: ExecutorButtonAction) -> Self {
+        match val {
             ExecutorButtonAction::Go => show::ExecutorButtonAction::Go,
             ExecutorButtonAction::Top => show::ExecutorButtonAction::Top,
             ExecutorButtonAction::Flash => show::ExecutorButtonAction::Flash,
@@ -335,9 +335,9 @@ pub struct ArtnetDmxProtocol {
     pub target_ip: String,
 }
 
-impl Into<dmx_protocols::ArtnetDmxProtocol> for ArtnetDmxProtocol {
-    fn into(self) -> dmx_protocols::ArtnetDmxProtocol {
-        dmx_protocols::ArtnetDmxProtocol::new(self.target_ip.as_str()).unwrap()
+impl From<ArtnetDmxProtocol> for dmx_protocols::ArtnetDmxProtocol {
+    fn from(val: ArtnetDmxProtocol) -> Self {
+        dmx_protocols::ArtnetDmxProtocol::new(val.target_ip.as_str()).unwrap()
     }
 }
 

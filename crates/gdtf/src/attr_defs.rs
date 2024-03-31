@@ -21,7 +21,7 @@ impl TryFrom<RawAttributeDefinitions> for AttributeDefinitions {
             activation_groups: value
                 .activation_groups
                 .map(|ag| ag.groups)
-                .unwrap_or(Vec::new())
+                .unwrap_or_default()
                 .into_iter()
                 .map(TryInto::try_into)
                 .collect::<Result<_, _>>()?,
@@ -109,21 +109,21 @@ pub struct Attribute {
 impl Attribute {
     pub fn activation_group<'a>(
         &'a self,
-        activation_groups: &'a Vec<ActivationGroup>,
+        activation_groups: &'a [ActivationGroup],
     ) -> Option<&ActivationGroup> {
         self.activation_group
             .as_ref()
             .and_then(|node| activation_groups.iter().find(|ag| ag.name == node[0]))
     }
 
-    pub fn feature<'a>(&'a self, feature_groups: &'a Vec<FeatureGroup>) -> Option<&Feature> {
+    pub fn feature<'a>(&'a self, feature_groups: &'a [FeatureGroup]) -> Option<&Feature> {
         feature_groups
             .iter()
             .find(|fg| fg.name == self.feature[0])
             .and_then(|fg| fg.features.iter().find(|f| f.name == self.feature[1]))
     }
 
-    pub fn main_attribute<'a>(&'a self, attributes: &'a Vec<Attribute>) -> Option<&Attribute> {
+    pub fn main_attribute<'a>(&'a self, attributes: &'a [Attribute]) -> Option<&Attribute> {
         self.main_attribute
             .as_ref()
             .and_then(|node| attributes.iter().find(|a| a.name == node[0]))
@@ -138,14 +138,11 @@ impl TryFrom<RawAttribute> for Attribute {
         Ok(Self {
             name: name.clone(),
             pretty_name: value.pretty.unwrap_or(name),
-            activation_group: value
-                .activation_group
-                .map(|ag| parse_node(ag))
-                .transpose()?,
+            activation_group: value.activation_group.map(parse_node).transpose()?,
             feature: parse_node(value.feature)?,
-            main_attribute: value.main_attribute.map(|ma| parse_node(ma)).transpose()?,
+            main_attribute: value.main_attribute.map(parse_node).transpose()?,
             physical_unit: value.physical_unit.parse()?,
-            color: value.color.map(|c| parse_color_cie(c)).transpose()?,
+            color: value.color.map(parse_color_cie).transpose()?,
         })
     }
 }
