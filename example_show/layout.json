@@ -2,8 +2,9 @@
   "window_grids": [
     {
       "id": 1,
-      "windows": {
-        "1": {
+      "windows": [
+        {
+          "id": 1,
           "bounds": {
             "origin": {
               "x": 5,
@@ -21,7 +22,8 @@
             }
           }
         },
-        "2": {
+        {
+          "id": 2,
           "bounds": {
             "origin": {
               "x": 8,
@@ -39,7 +41,8 @@
             }
           }
         },
-        "3": {
+        {
+          "id": 3,
           "bounds": {
             "origin": {
               "x": 0,
@@ -52,7 +55,8 @@
           },
           "kind": "FixtureSheet"
         },
-        "0": {
+        {
+          "id": 4,
           "bounds": {
             "origin": {
               "x": 0,
@@ -65,7 +69,7 @@
           },
           "kind": "Executors"
         }
-      }
+      ]
     }
   ]
 }

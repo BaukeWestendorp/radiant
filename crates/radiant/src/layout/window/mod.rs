@@ -16,8 +16,15 @@ pub use pool::*;
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct Window {
+    id: usize,
     pub bounds: GridBounds,
     pub kind: WindowKind,
+}
+
+impl Window {
+    pub fn id(&self) -> usize {
+        self.id
+    }
 }
 
 #[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]

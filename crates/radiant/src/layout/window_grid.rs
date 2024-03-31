@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use backstage::show::Show;
 use gpui::prelude::FluentBuilder;
 use gpui::{
@@ -18,7 +16,7 @@ pub const GRID_CELL_SIZE: usize = 80;
 #[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
 pub struct WindowGrid {
     id: usize,
-    windows: HashMap<usize, Window>,
+    windows: Vec<Window>,
 }
 
 impl WindowGrid {
@@ -30,28 +28,16 @@ impl WindowGrid {
         self.id
     }
 
-    pub fn windows(&self) -> &HashMap<usize, Window> {
+    pub fn windows(&self) -> &[Window] {
         &self.windows
     }
 
     pub fn window(&self, id: usize) -> Option<&Window> {
-        self.windows.get(&id)
+        self.windows.iter().find(|w| w.id() == id)
     }
 
     pub fn window_mut(&mut self, id: usize) -> Option<&mut Window> {
-        self.windows.get_mut(&id)
-    }
-
-    pub fn add_window(&mut self, window: Window) -> usize {
-        let id = self.new_window_id();
-        self.windows.insert(id, window);
-        id
-    }
-
-    fn new_window_id(&self) -> usize {
-        // TODO: This is not a good way to get a new id. This only works if you can't
-        // remove colors.
-        self.windows.len()
+        self.windows.iter_mut().find(|w| w.id() == id)
     }
 }
 
@@ -90,9 +76,9 @@ fn build_windows(
     window_grid
         .read(cx)
         .windows()
-        .clone()
+        .to_vec()
         .into_iter()
-        .map(|(id, window)| build_window_view(id, window, window_grid.clone(), show.clone(), cx))
+        .map(|window| build_window_view(window.id(), window, window_grid.clone(), show.clone(), cx))
         .collect()
 }
 
