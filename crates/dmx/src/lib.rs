@@ -1,9 +1,9 @@
-use std::collections::hash_map::Values;
+use std::collections::hash_map::{Entry, Values};
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::str::FromStr;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct DmxOutput(HashMap<u16, DmxUniverse>);
 
 impl DmxOutput {
@@ -16,10 +16,9 @@ impl DmxOutput {
     }
 
     pub fn add_universe_if_absent(&mut self, id: u16) -> Result<(), Error> {
-        if !self.0.contains_key(&id) {
-            self.0.insert(id, DmxUniverse::new(id)?);
+        if let Entry::Vacant(e) = self.0.entry(id) {
+            e.insert(DmxUniverse::new(id)?);
         }
-
         Ok(())
     }
 
@@ -30,9 +29,8 @@ impl DmxOutput {
 
     /// Sets the value at a channel. Universe and address are zero-based.
     pub fn set_channel(&mut self, channel: &DmxChannel, value: u8) -> Result<(), Error> {
-        if !self.0.contains_key(&channel.universe) {
-            self.0
-                .insert(channel.universe, DmxUniverse::new(channel.universe)?);
+        if let Entry::Vacant(e) = self.0.entry(channel.universe) {
+            e.insert(DmxUniverse::new(channel.universe)?);
         }
 
         if let Some(channel_value) = self
