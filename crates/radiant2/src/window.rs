@@ -20,14 +20,14 @@ impl<D: WindowDelegate + 'static> Window<D> {
                 border: gpui::rgb(0x0000ff).into(),
             })
             .size_full();
-        let close_button = Container::new(cx).w_10().h_full();
 
         div()
             .w_full()
             .h_10()
             .flex()
             .gap_1()
-            .children([main, close_button])
+            .child(main)
+            .children(self.delegate.header_items(cx))
     }
 
     pub fn render_content(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
@@ -65,4 +65,11 @@ pub trait WindowDelegate {
     fn render_content(&mut self, cx: &mut ViewContext<Window<Self>>) -> impl IntoElement
     where
         Self: Sized;
+
+    fn header_items(&mut self, _cx: &mut ViewContext<Window<Self>>) -> Vec<impl IntoElement>
+    where
+        Self: Sized,
+    {
+        Vec::<gpui::Empty>::new()
+    }
 }

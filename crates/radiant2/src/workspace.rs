@@ -2,6 +2,7 @@ use gpui::{
     div, IntoElement, ParentElement, Render, Styled, View, ViewContext, VisualContext,
     WindowContext,
 };
+use ui::container::Container;
 
 use crate::window::{Window, WindowDelegate};
 
@@ -28,5 +29,15 @@ impl WindowDelegate for TestWindowDelegate {
         Self: Sized,
     {
         div().text_color(gpui::red()).child("helo world")
+    }
+
+    fn header_items(&mut self, cx: &mut ViewContext<Window<Self>>) -> Vec<impl IntoElement>
+    where
+        Self: Sized,
+    {
+        let close_button = Container::new(cx).w_10().h_full();
+        let close_button2 = Container::new(cx).w_10().h_full();
+
+        vec![close_button, close_button2]
     }
 }
