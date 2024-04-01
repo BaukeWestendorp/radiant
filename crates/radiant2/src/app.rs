@@ -1,6 +1,6 @@
 use assets::Assets;
 use dmx::{DmxChannel, DmxOutput};
-use gpui::{AppContext, WindowOptions};
+use gpui::{AppContext, VisualContext, WindowOptions};
 use theme::ThemeSettings;
 
 use crate::output::{ArtnetDmxProtocol, DmxOutputManager};
@@ -20,7 +20,9 @@ pub fn run_app(app: gpui::App) {
                 .unwrap();
             DmxOutputManager::set_dmx_output(dmx_output, cx);
 
-            Workspace::build(cx)
+            let view = Workspace::build(cx);
+            cx.focus_view(&view);
+            view
         });
     });
 }

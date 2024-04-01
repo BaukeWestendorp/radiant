@@ -1,23 +1,41 @@
 use gpui::{
-    div, IntoElement, ParentElement, Render, Styled, View, ViewContext, VisualContext,
-    WindowContext,
+    div, AppContext, FocusHandle, FocusableView, IntoElement, ParentElement, Render, Styled, View,
+    ViewContext, VisualContext, WindowContext,
 };
-use ui::container::Container;
+use theme::ActiveTheme;
+use ui::button::Button;
 
 use crate::window::{Window, WindowDelegate};
 
-pub struct Workspace {}
+pub struct Workspace {
+    window: View<Window<TestWindowDelegate>>,
+    focus_handle: FocusHandle,
+}
 
 impl Workspace {
     pub fn build(cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|_cx| Self {})
+        cx.new_view(|cx| Self {
+            window: {
+                let delegate = TestWindowDelegate {};
+                Window::build(delegate, cx)
+            },
+            focus_handle: cx.focus_handle(),
+        })
+    }
+}
+
+impl FocusableView for Workspace {
+    fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
+        self.focus_handle.clone()
     }
 }
 
 impl Render for Workspace {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let delegate = TestWindowDelegate {};
-        Window::build(delegate, cx)
+        div()
+            .size_full()
+            .text_color(cx.theme().colors().text)
+            .child(self.window.clone())
     }
 }
 
@@ -35,9 +53,12 @@ impl WindowDelegate for TestWindowDelegate {
     where
         Self: Sized,
     {
-        let close_button = Container::new(cx).w_10().h_full();
-        let close_button2 = Container::new(cx).w_10().h_full();
+        let close_button = Button::new("close_button")
+            .on_click(cx.listener(|this, _event, _cx| {
+                this.close();
+            }))
+            .child("Close");
 
-        vec![close_button, close_button2]
+        vec![close_button]
     }
 }

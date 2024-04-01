@@ -1,5 +1,5 @@
 use gpui::{
-    div, AnyElement, AppContext, Div, Hsla, IntoElement, MouseDownEvent, MouseUpEvent,
+    div, AnyElement, AppContext, Div, Hsla, InteractiveElement, Interactivity, IntoElement,
     ParentElement, RenderOnce, StyleRefinement, Styled, WindowContext,
 };
 use smallvec::SmallVec;
@@ -10,13 +10,11 @@ pub struct ContainerStyle {
     pub border: Hsla,
 }
 
-#[allow(clippy::type_complexity)]
 #[derive(IntoElement)]
 pub struct Container {
     base: Div,
     children: SmallVec<[AnyElement; 2]>,
-    mouse_down_listener: Option<Box<dyn Fn(&MouseDownEvent, &mut WindowContext) + 'static>>,
-    mouse_up_listener: Option<Box<dyn Fn(&MouseUpEvent, &mut WindowContext) + 'static>>,
+    interactivity: Interactivity,
     style: ContainerStyle,
 }
 
@@ -25,29 +23,12 @@ impl Container {
         Self {
             base: div(),
             children: SmallVec::new(),
-            mouse_down_listener: None,
-            mouse_up_listener: None,
+            interactivity: Interactivity::default(),
             style: ContainerStyle {
                 background: cx.theme().colors().element_background,
                 border: cx.theme().colors().border,
             },
         }
-    }
-
-    pub fn on_click_down(
-        mut self,
-        listener: impl Fn(&MouseDownEvent, &mut WindowContext) + 'static,
-    ) -> Self {
-        self.mouse_down_listener = Some(Box::new(listener));
-        self
-    }
-
-    pub fn on_click_up(
-        mut self,
-        listener: impl Fn(&MouseUpEvent, &mut WindowContext) + 'static,
-    ) -> Self {
-        self.mouse_up_listener = Some(Box::new(listener));
-        self
     }
 
     pub fn container_style(mut self, style: ContainerStyle) -> Self {
@@ -65,6 +46,12 @@ impl ParentElement for Container {
 impl Styled for Container {
     fn style(&mut self) -> &mut StyleRefinement {
         self.base.style()
+    }
+}
+
+impl InteractiveElement for Container {
+    fn interactivity(&mut self) -> &mut Interactivity {
+        &mut self.interactivity
     }
 }
 

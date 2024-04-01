@@ -13,7 +13,11 @@ impl<D: WindowDelegate + 'static> Window<D> {
         cx.new_view(|_cx| Self { delegate })
     }
 
-    pub fn render_header(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    pub fn close(&self) {
+        todo!("Close window");
+    }
+
+    fn render_header(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let main = Container::new(cx)
             .container_style(ContainerStyle {
                 background: gpui::rgb(0x0000a0).into(),
@@ -30,7 +34,7 @@ impl<D: WindowDelegate + 'static> Window<D> {
             .children(self.delegate.header_items(cx))
     }
 
-    pub fn render_content(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render_content(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let background = Container::new(cx).size_full();
 
         div()
