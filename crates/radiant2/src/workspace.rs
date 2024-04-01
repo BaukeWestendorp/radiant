@@ -57,7 +57,11 @@ impl WindowDelegate for TestWindowDelegate {
             .on_click(cx.listener(|this, _event, _cx| {
                 this.close();
             }))
-            .child("Close");
+            .flex()
+            .justify_center()
+            .items_center()
+            .w_10()
+            .child("X");
 
         vec![close_button]
     }

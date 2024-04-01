@@ -63,7 +63,7 @@ impl Styled for Button {
 
 impl RenderOnce for Button {
     fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        div()
+        self.base
             .id(self.id.clone())
             .bg(gpui::red())
             .border()
