@@ -10,4 +10,4 @@ doctest = false
 [dependencies]
 log.workspace = true
 serde.workspace = true
-thiserror.workspace = true
+anyhow.workspace = true

@@ -1277,9 +1277,9 @@ dependencies = [
 name = "dmx"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "log",
  "serde",
- "thiserror",
 ]
 
 [[package]]
@@ -3300,28 +3300,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "radiant"
+name = "radiant2"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "artnet_protocol",
  "assets",
- "backstage",
  "dmx",
- "dotenv",
  "env_logger 0.11.3",
- "gdtf",
- "gdtf_share",
  "gpui",
- "itertools 0.12.1",
  "lazy_static",
  "log",
- "regex",
  "serde",
  "serde_json",
  "smallvec",
- "theme",
- "thiserror",
- "ui",
 ]
 
 [[package]]

@@ -4,12 +4,14 @@ members = [
     "crates/dmx",
     "crates/gdtf_share",
     "crates/gdtf",
-    "crates/radiant",
     "crates/theme",
     "crates/ui",
+    "crates/radiant2",
 ]
+
 resolver = "2"
 package.license = "MIT"
+
 
 [workspace.dependencies]
 backstage = { path = "crates/backstage" }

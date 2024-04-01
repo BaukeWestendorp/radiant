@@ -1,58 +1,70 @@
-use std::collections::hash_map::{Entry, Values};
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::str::FromStr;
 
+use anyhow::anyhow;
+
 #[derive(Debug, Clone, PartialEq, Default)]
-pub struct DmxOutput(HashMap<u16, DmxUniverse>);
+pub struct DmxOutput {
+    universes: Vec<DmxUniverse>,
+}
 
 impl DmxOutput {
     pub fn new() -> Self {
-        Self(HashMap::new())
-    }
-
-    pub fn universes(&self) -> Values<'_, u16, DmxUniverse> {
-        self.0.values()
-    }
-
-    pub fn add_universe_if_absent(&mut self, id: u16) -> Result<(), Error> {
-        if let Entry::Vacant(e) = self.0.entry(id) {
-            e.insert(DmxUniverse::new(id)?);
+        Self {
+            universes: Vec::new(),
         }
-        Ok(())
+    }
+
+    /// Gets all universes that are being outputted.
+    pub fn universes(&self) -> &[DmxUniverse] {
+        &self.universes
+    }
+
+    /// Gets a reference to a specific universe. `id` is zero-based.
+    pub fn universe(&self, id: u16) -> Option<&DmxUniverse> {
+        self.universes.iter().find(|u| u.id() == id)
+    }
+
+    /// Gets a mutable reference to a specific universe. `id` is zero-based.
+    pub fn universe_mut(&mut self, id: u16) -> Option<&mut DmxUniverse> {
+        self.universes.iter_mut().find(|u| u.id() == id)
+    }
+
+    /// Adds a universe if it does not exist. `id` id zero-based.
+    ///
+    /// Fails if the id of the universe is invalid.
+    pub fn add_universe_if_absent(&mut self, id: u16) {
+        self.universes.push(DmxUniverse::new(id))
     }
 
     /// Removes a universe from the output. `id` is zero-based.
     pub fn remove_universe(&mut self, id: u16) {
-        self.0.remove(&id);
+        self.universes.retain(|u| u.id != id);
     }
 
-    /// Sets the value at a channel. Universe and address are zero-based.
-    pub fn set_channel(&mut self, channel: &DmxChannel, value: u8) -> Result<(), Error> {
-        if let Entry::Vacant(e) = self.0.entry(channel.universe) {
-            e.insert(DmxUniverse::new(channel.universe)?);
-        }
+    /// Gets the value of a channel. Universe and address are zero-based.
+    pub fn channel(&self, channel: DmxChannel) -> anyhow::Result<u8> {
+        let Some(universe) = self.universe(channel.universe) else {
+            return Err(anyhow!(
+                "Failed to get universe with id {} when getting channel",
+                channel.universe
+            ));
+        };
 
-        if let Some(channel_value) = self
-            .0
-            .get_mut(&channel.universe)
-            .unwrap()
-            .addresses
-            .get_mut(channel.address as usize)
-        {
-            *channel_value = value
-        } else {
-            return Err(Error::ChannelNotFound(*channel));
-        }
+        universe.get_address(channel.address)
+    }
 
+    /// Sets the value of a channel. Universe and address are zero-based.
+    pub fn set_channel(&mut self, channel: &DmxChannel, value: u8) -> anyhow::Result<()> {
+        self.add_universe_if_absent(channel.universe);
+        let universe = self.universe_mut(channel.universe).unwrap();
+
+        universe.set_address(channel.address, value)?;
         Ok(())
     }
 
-    pub fn get_channel(&self, channel: DmxChannel) -> Option<u8> {
-        self.0.get(&channel.universe)?.get_address(channel.address)
-    }
-
-    pub fn apply_changes(&mut self, changes: &HashMap<DmxChannel, u8>) -> Result<(), Error> {
+    pub fn apply_changes(&mut self, changes: &HashMap<DmxChannel, u8>) -> anyhow::Result<()> {
         for (channel, value) in changes.iter() {
             self.set_channel(channel, *value)?
         }
@@ -68,41 +80,41 @@ pub struct DmxUniverse {
 }
 
 impl DmxUniverse {
-    pub fn new(id: u16) -> Result<Self, Error> {
-        Ok(DmxUniverse {
+    pub fn new(id: u16) -> Self {
+        DmxUniverse {
             id,
             addresses: [0; 512],
-        })
+        }
     }
 
     pub fn id(&self) -> u16 {
         self.id
     }
 
-    pub fn set_address(&mut self, address: u16, value: u8) {
+    pub fn set_address(&mut self, address: u16, value: u8) -> anyhow::Result<()> {
         if !(0..512).contains(&address) {
-            log::warn!(
+            return Err(anyhow!(
                 "Tried to set address {} in universe {} but it is out of range",
                 address,
                 self.id
-            );
-            return;
+            ));
         }
 
         self.addresses[address as usize] = value;
+
+        Ok(())
     }
 
-    pub fn get_address(&self, address: u16) -> Option<u8> {
+    pub fn get_address(&self, address: u16) -> anyhow::Result<u8> {
         if !(0..512).contains(&address) {
-            log::warn!(
+            return Err(anyhow!(
                 "Tried to get address {} in universe {} but it is out of range",
                 address,
                 self.id
-            );
-            return None;
+            ));
         }
 
-        Some(self.addresses[address as usize])
+        Ok(self.addresses[address as usize])
     }
 
     pub fn get_addresses(&self) -> &[u8; 512] {
@@ -117,9 +129,11 @@ pub struct DmxChannel {
 }
 
 impl DmxChannel {
-    pub fn new(universe: u16, address: u16) -> Result<Self, Error> {
+    pub fn new(universe: u16, address: u16) -> anyhow::Result<Self> {
         if address > 511 {
-            return Err(Error::InvalidAddressRange(address.into()));
+            return Err(anyhow!(
+                "Invalid DMX address: {address}. Should be in range 0..=511"
+            ));
         }
 
         Ok(DmxChannel { universe, address })
@@ -127,21 +141,21 @@ impl DmxChannel {
 }
 
 impl FromStr for DmxChannel {
-    type Err = Error;
+    type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts: Vec<&str> = s.split('.').collect();
 
         if parts.len() != 2 {
-            return Err(Error::InvalidDmxChannelString(s.to_string()));
+            return Err(anyhow!("Failed to parse DMX string '{s}'"));
         }
 
         let universe = parts[0]
             .parse()
-            .map_err(|_| Error::InvalidDmxChannelString(s.to_string()))?;
+            .map_err(|_| anyhow!("Failed to parse DMX string '{s}'"))?;
         let channel = parts[1]
             .parse()
-            .map_err(|_| Error::InvalidDmxChannelString(s.to_string()))?;
+            .map_err(|_| anyhow!("Failed to parse DMX string '{s}'"))?;
 
         Ok(DmxChannel {
             universe,
@@ -176,16 +190,4 @@ impl DmxValue {
         bytes.truncate(channel_resolution as usize);
         bytes
     }
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum Error {
-    #[error("Invalid channel string: '{0}'")]
-    InvalidDmxChannelString(String),
-    #[error("Invalid universe range: {0}. A universe id should be more than 0.")]
-    InvalidUniverseRange(i64),
-    #[error("Invalid address range: {0}. An address should be within 0 and 512.")]
-    InvalidAddressRange(i64),
-    #[error("Channel not found: {0}")]
-    ChannelNotFound(DmxChannel),
 }

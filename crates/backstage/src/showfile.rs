@@ -50,9 +50,6 @@ pub struct Showfile {
 
     #[serde(default = "Default::default")]
     pub executors: Vec<Executor>,
-
-    #[serde(default = "Default::default")]
-    pub dmx_protocols: Vec<ArtnetDmxProtocol>,
 }
 
 impl Showfile {
@@ -67,11 +64,6 @@ impl Showfile {
                 .executors
                 .into_iter()
                 .map(|executor| executor.into())
-                .collect(),
-            dmx_protocols: self
-                .dmx_protocols
-                .into_iter()
-                .map(|dmx_protocol| dmx_protocol.into())
                 .collect(),
             current_command: None,
             stage_output: DmxOutput::new(),
@@ -368,7 +360,6 @@ mod tests {
                 },
                 presets: Presets { colors: Vec::new() },
                 executors: Vec::new(),
-                dmx_protocols: Vec::new(),
             }
         );
     }

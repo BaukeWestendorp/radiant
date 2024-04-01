@@ -9,7 +9,6 @@ use gdtf::{ActivationGroup, Attribute, FeatureGroup, FixtureType, GdtfDescriptio
 use itertools::Itertools;
 
 use crate::command::{Command, Object};
-use crate::dmx_protocols::ArtnetDmxProtocol;
 use crate::playback_engine::PlaybackEngine;
 use crate::showfile::Showfile;
 
@@ -21,7 +20,6 @@ pub struct Show {
     pub(crate) data: Data,
     pub(crate) presets: Presets,
     pub(crate) executors: Vec<Executor>,
-    pub(crate) dmx_protocols: Vec<ArtnetDmxProtocol>,
     pub current_command: Option<Command>,
     pub(crate) stage_output: DmxOutput,
 }
@@ -277,24 +275,12 @@ impl Show {
     pub fn recalculate_stage_output(&mut self) {
         let mut stage_output = self.playback_engine.determine_dmx_output(self);
         for universe in self.used_universes().iter() {
-            if let Err(err) = stage_output.add_universe_if_absent(*universe) {
-                log::error!("Failed to add universe with id '{universe}': {err}",)
-            }
+            stage_output.add_universe_if_absent(*universe);
         }
         stage_output
             .apply_changes(&self.programmer.changes)
             .unwrap();
         self.stage_output = stage_output
-    }
-
-    pub fn stage_output_dmx_value_for_channel(&mut self, channel: DmxChannel) -> Option<u8> {
-        self.stage_output().get_channel(channel)
-    }
-
-    pub fn send_stage_output_to_dmx_protocols(&mut self) {
-        for dmx_protocol in self.dmx_protocols.iter() {
-            dmx_protocol.send_dmx_output(self.stage_output());
-        }
     }
 }
 

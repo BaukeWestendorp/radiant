@@ -284,10 +284,5 @@
         "action": "Flash"
       }
     }
-  ],
-  "dmx_protocols": [
-    {
-      "target_ip": "0.0.0.0"
-    }
   ]
 }
