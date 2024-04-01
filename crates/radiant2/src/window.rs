@@ -1,6 +1,7 @@
+use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, IntoElement, ParentElement, Render, Styled, View, ViewContext, VisualContext,
-    WindowContext,
+    div, IntoElement, ParentElement, Render, SharedString, Styled, View, ViewContext,
+    VisualContext, WindowContext,
 };
 use ui::container::{Container, ContainerStyle};
 
@@ -23,7 +24,11 @@ impl<D: WindowDelegate + 'static> Window<D> {
                 background: gpui::rgb(0x0000a0).into(),
                 border: gpui::rgb(0x0000ff).into(),
             })
-            .size_full();
+            .size_full()
+            .flex()
+            .items_center()
+            .px_2()
+            .children(self.delegate.title(cx));
 
         div()
             .w_full()
@@ -66,6 +71,10 @@ impl<D: WindowDelegate + 'static> Render for Window<D> {
 }
 
 pub trait WindowDelegate {
+    fn title(&self, cx: &mut ViewContext<Window<Self>>) -> Option<SharedString>
+    where
+        Self: Sized;
+
     fn render_content(&mut self, cx: &mut ViewContext<Window<Self>>) -> impl IntoElement
     where
         Self: Sized;

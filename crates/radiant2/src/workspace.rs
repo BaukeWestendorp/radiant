@@ -1,6 +1,6 @@
 use gpui::{
-    div, AppContext, FocusHandle, FocusableView, IntoElement, ParentElement, Render, Styled, View,
-    ViewContext, VisualContext, WindowContext,
+    div, AppContext, FocusHandle, FocusableView, IntoElement, ParentElement, Render, SharedString,
+    Styled, View, ViewContext, VisualContext, WindowContext,
 };
 use theme::ActiveTheme;
 use ui::button::Button;
@@ -42,6 +42,10 @@ impl Render for Workspace {
 struct TestWindowDelegate {}
 
 impl WindowDelegate for TestWindowDelegate {
+    fn title(&self, _cx: &mut ViewContext<Window<Self>>) -> Option<SharedString> {
+        Some("Test Window".into())
+    }
+
     fn render_content(&mut self, _cx: &mut ViewContext<Window<Self>>) -> impl IntoElement
     where
         Self: Sized,
