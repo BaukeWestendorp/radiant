@@ -3311,6 +3311,7 @@ dependencies = [
  "gpui",
  "lazy_static",
  "log",
+ "rust-embed",
  "serde",
  "serde_json",
  "smallvec",

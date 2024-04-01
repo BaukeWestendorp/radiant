@@ -1,4 +1,3 @@
-use gpui::prelude::FluentBuilder;
 use gpui::{
     div, IntoElement, ParentElement, Render, SharedString, Styled, View, ViewContext,
     VisualContext, WindowContext,

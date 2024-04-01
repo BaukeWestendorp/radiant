@@ -35,6 +35,7 @@ impl Render for Workspace {
         div()
             .size_full()
             .text_color(cx.theme().colors().text)
+            .font("Zed Sans")
             .child(self.window.clone())
     }
 }
