@@ -1,7 +1,6 @@
-use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, AnyElement, AppContext, Div, Hsla, InteractiveElement, IntoElement, MouseDownEvent,
-    MouseUpEvent, ParentElement, RenderOnce, StyleRefinement, Styled, WindowContext,
+    div, AnyElement, AppContext, Div, Hsla, IntoElement, MouseDownEvent, MouseUpEvent,
+    ParentElement, RenderOnce, StyleRefinement, Styled, WindowContext,
 };
 use smallvec::SmallVec;
 use theme::ActiveTheme;
@@ -55,10 +54,6 @@ impl Container {
         self.style = style;
         self
     }
-
-    fn is_clickable(&self) -> bool {
-        self.mouse_down_listener.is_some()
-    }
 }
 
 impl ParentElement for Container {
@@ -74,25 +69,13 @@ impl Styled for Container {
 }
 
 impl RenderOnce for Container {
-    fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let is_clickable = self.is_clickable();
-
+    fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
         self.base
             .bg(self.style.background)
             .border()
             .border_color(self.style.border)
             .rounded_md()
             .overflow_hidden()
-            .when(is_clickable, |this| {
-                this.hover(|this| this.bg(cx.theme().colors().element_background_hover))
-                    .cursor_pointer()
-            })
-            .when_some(self.mouse_down_listener, |this, mouse_down_listener| {
-                this.on_mouse_down(gpui::MouseButton::Left, mouse_down_listener)
-            })
-            .when_some(self.mouse_up_listener, |this, mouse_up_listener| {
-                this.on_mouse_up(gpui::MouseButton::Left, mouse_up_listener)
-            })
             .children(self.children)
     }
 }

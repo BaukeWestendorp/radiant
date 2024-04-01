@@ -33,6 +33,12 @@ pub struct ThemeSettings {
     pub active_theme: Arc<Theme>,
 }
 
+impl ThemeSettings {
+    pub fn init(cx: &mut AppContext) {
+        cx.set_global(Self::default());
+    }
+}
+
 impl Default for ThemeSettings {
     fn default() -> Self {
         Self {

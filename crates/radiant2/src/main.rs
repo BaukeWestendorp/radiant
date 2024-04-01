@@ -3,6 +3,7 @@ use gpui::App;
 
 mod app;
 mod output;
+mod window;
 mod workspace;
 
 fn main() {

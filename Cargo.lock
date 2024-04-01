@@ -3314,6 +3314,8 @@ dependencies = [
  "serde",
  "serde_json",
  "smallvec",
+ "theme",
+ "ui",
 ]
 
 [[package]]
