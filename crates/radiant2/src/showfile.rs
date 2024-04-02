@@ -6,7 +6,7 @@ use backstage::show::Show;
 
 use crate::layout::Layout;
 
-const LAYOUT_PATH: &str = "layout.json";
+const LAYOUT_PATH: &str = "layouts.json";
 const SHOW_PATH: &str = "show.json";
 
 #[derive(Debug, Clone)]

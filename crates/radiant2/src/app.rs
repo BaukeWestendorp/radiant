@@ -8,12 +8,12 @@ use crate::output::DmxOutputManager;
 use crate::showfile::Showfile;
 use crate::workspace::Workspace;
 
-pub fn run_app(app: gpui::App, showfile_path: Option<&str>) {
+pub fn run_app(app: gpui::App, showfile_path: Option<String>) {
     let Some(showfile_path) = showfile_path else {
         todo!("Allow for starting Radiant without a file to load");
     };
+    let showfile_path = Path::new(&showfile_path);
 
-    let showfile_path = Path::new(showfile_path);
     let showfile = match Showfile::from_dir(showfile_path) {
         Ok(showfile) => showfile,
         Err(error) => {

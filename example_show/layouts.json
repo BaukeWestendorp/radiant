@@ -4,8 +4,8 @@
       "id": 1,
       "label": "Layout 1",
       "size": {
-        "cols": 4,
-        "rows": 3
+        "width": 4,
+        "height": 3
       },
       "windows": [
         {
@@ -16,8 +16,8 @@
               "y": 0
             },
             "size": {
-              "cols": 3,
-              "rows": 3
+              "width": 3,
+              "height": 3
             }
           },
           "kind": {
@@ -35,8 +35,8 @@
               "y": 0
             },
             "size": {
-              "cols": 3,
-              "rows": 3
+              "width": 3,
+              "height": 3
             }
           },
           "kind": {
@@ -54,8 +54,8 @@
               "y": 5
             },
             "size": {
-              "cols": 10,
-              "rows": 3
+              "width": 10,
+              "height": 3
             }
           },
           "kind": "FixtureSheet"
@@ -68,8 +68,8 @@
               "y": 0
             },
             "size": {
-              "cols": 5,
-              "rows": 5
+              "width": 5,
+              "height": 5
             }
           },
           "kind": "Executors"
