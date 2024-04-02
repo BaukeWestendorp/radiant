@@ -12,7 +12,7 @@ use crate::command::{Command, Object};
 use crate::playback_engine::PlaybackEngine;
 use crate::showfile::Showfile;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Show {
     pub(crate) patchlist: Patchlist,
     pub(crate) programmer: Programmer,

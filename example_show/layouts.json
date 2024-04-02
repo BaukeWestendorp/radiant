@@ -1,7 +1,12 @@
 {
-  "window_grids": [
+  "layouts": [
     {
       "id": 1,
+      "label": "Layout 1",
+      "size": {
+        "cols": 4,
+        "rows": 3
+      },
       "windows": [
         {
           "id": 1,
