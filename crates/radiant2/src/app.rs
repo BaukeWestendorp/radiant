@@ -1,5 +1,5 @@
 use dmx::{DmxChannel, DmxOutput};
-use gpui::{AppContext, AssetSource, VisualContext, WindowOptions};
+use gpui::{AppContext, VisualContext, WindowOptions};
 use theme::ThemeSettings;
 
 use crate::assets::Assets;
@@ -8,18 +8,6 @@ use crate::workspace::Workspace;
 
 pub fn run_app(app: gpui::App) {
     app.with_assets(Assets).run(move |cx: &mut AppContext| {
-        cx.text_system()
-            .add_fonts(vec![
-                Assets.load("fonts/zed-sans/zed-sans-extended.ttf").unwrap(),
-                Assets
-                    .load("fonts/zed-sans/zed-sans-extendedbold.ttf")
-                    .unwrap(),
-                Assets
-                    .load("fonts/zed-sans/zed-sans-extendeditalic.ttf")
-                    .unwrap(),
-            ])
-            .unwrap();
-
         cx.open_window(WindowOptions::default(), |cx| {
             ThemeSettings::init(cx);
             DmxOutputManager::init(cx);
