@@ -64,7 +64,7 @@ pub struct Screen {
 impl Screen {
     pub fn build(layouts: Model<Vec<Layout>>, cx: &mut WindowContext) -> View<Self> {
         // FIXME: Store this in `layout.json`.
-        let selected_layout_id = 3;
+        let selected_layout_id = 5;
 
         let current_layout_model = cx.new_model(|cx| {
             // FIXME: Handle nonexistent layout (this should not be possible, but lets

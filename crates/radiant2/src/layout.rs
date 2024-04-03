@@ -4,7 +4,9 @@ use gpui::{
 };
 use theme::ActiveTheme;
 
-use crate::showfile::Layout;
+use crate::showfile::{self, Layout, PoolWindowKind, WindowKind};
+use crate::window::group_pool::GroupPoolWindowViewDelegate;
+use crate::window::{WindowView, WindowViewDelegate};
 
 pub const GRID_SIZE: gpui::Pixels = px(80.0);
 
@@ -41,8 +43,29 @@ impl LayoutView {
     }
 
     fn render_content(&self, cx: &mut WindowContext) -> impl IntoElement {
-        div().child("Layout content")
+        let windows = self.layout.read(cx).windows.clone();
+        let window_views = windows
+            .into_iter()
+            .map(|window| get_window_view(window, cx));
+
+        div().size_full().absolute().children(window_views)
     }
+}
+
+fn get_window_view(
+    window: showfile::Window,
+    cx: &mut WindowContext,
+) -> View<WindowView<impl WindowViewDelegate>> {
+    let delegate = match window.kind {
+        WindowKind::Pool(pool_window) => match pool_window.kind {
+            PoolWindowKind::ColorPreset => todo!(),
+            PoolWindowKind::Group => GroupPoolWindowViewDelegate::new(),
+        },
+        WindowKind::Executors => todo!(),
+        WindowKind::FixtureSheet => todo!(),
+    };
+
+    WindowView::build(delegate, cx)
 }
 
 impl Render for LayoutView {

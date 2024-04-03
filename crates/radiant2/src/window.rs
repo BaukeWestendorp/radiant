@@ -4,11 +4,13 @@ use gpui::{
 };
 use ui::container::{Container, ContainerStyle};
 
-pub struct Window<D: WindowDelegate> {
+pub mod group_pool;
+
+pub struct WindowView<D: WindowViewDelegate> {
     delegate: D,
 }
 
-impl<D: WindowDelegate + 'static> Window<D> {
+impl<D: WindowViewDelegate + 'static> WindowView<D> {
     pub fn build(delegate: D, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|_cx| Self { delegate })
     }
@@ -54,7 +56,7 @@ impl<D: WindowDelegate + 'static> Window<D> {
     }
 }
 
-impl<D: WindowDelegate + 'static> Render for Window<D> {
+impl<D: WindowViewDelegate + 'static> Render for WindowView<D> {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let header = self.render_header(cx);
         let content = self.render_content(cx);
@@ -69,16 +71,16 @@ impl<D: WindowDelegate + 'static> Render for Window<D> {
     }
 }
 
-pub trait WindowDelegate {
-    fn title(&self, cx: &mut ViewContext<Window<Self>>) -> Option<SharedString>
+pub trait WindowViewDelegate {
+    fn title(&self, cx: &mut ViewContext<WindowView<Self>>) -> Option<SharedString>
     where
         Self: Sized;
 
-    fn render_content(&mut self, cx: &mut ViewContext<Window<Self>>) -> impl IntoElement
+    fn render_content(&mut self, cx: &mut ViewContext<WindowView<Self>>) -> impl IntoElement
     where
         Self: Sized;
 
-    fn header_items(&mut self, _cx: &mut ViewContext<Window<Self>>) -> Vec<impl IntoElement>
+    fn header_items(&mut self, _cx: &mut ViewContext<WindowView<Self>>) -> Vec<impl IntoElement>
     where
         Self: Sized,
     {
