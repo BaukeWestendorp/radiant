@@ -43,12 +43,18 @@ impl LayoutView {
     }
 
     fn render_content(&self, cx: &mut WindowContext) -> impl IntoElement {
-        let windows = self.layout.read(cx).windows.clone();
-        let window_views = windows
-            .into_iter()
-            .map(|window| get_window_view(window, cx));
+        let layout_windows = self.layout.read(cx).windows.clone();
+        let windows = layout_windows.into_iter().map(|window| {
+            div()
+                .absolute()
+                .top(window.bounds.origin.y as f32 * GRID_SIZE)
+                .left(window.bounds.origin.x as f32 * GRID_SIZE)
+                .w(window.bounds.size.width as f32 * GRID_SIZE)
+                .h(window.bounds.size.height as f32 * GRID_SIZE)
+                .child(get_window_view(window, cx))
+        });
 
-        div().size_full().absolute().children(window_views)
+        div().size_full().relative().children(windows)
     }
 }
 
