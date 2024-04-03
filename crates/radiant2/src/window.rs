@@ -19,27 +19,6 @@ impl<D: WindowViewDelegate + 'static> WindowView<D> {
         todo!("Close window");
     }
 
-    fn render_header(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let main = Container::new(cx)
-            .container_style(ContainerStyle {
-                background: gpui::rgb(0x0000a0).into(),
-                border: gpui::rgb(0x0000ff).into(),
-            })
-            .size_full()
-            .flex()
-            .items_center()
-            .px_2()
-            .children(self.delegate.title(cx));
-
-        div()
-            .w_full()
-            .h_10()
-            .flex()
-            .gap_1()
-            .child(main)
-            .children(self.delegate.header_items(cx))
-    }
-
     fn render_content(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let background = Container::new(cx).size_full();
 
@@ -58,15 +37,15 @@ impl<D: WindowViewDelegate + 'static> WindowView<D> {
 
 impl<D: WindowViewDelegate + 'static> Render for WindowView<D> {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let header = self.render_header(cx);
         let content = self.render_content(cx);
+        let header = self.delegate.render_header(cx);
 
         div()
             .size_full()
             .flex()
             .flex_col()
             .gap_1()
-            .child(header)
+            .children(header)
             .child(content)
     }
 }
@@ -85,5 +64,31 @@ pub trait WindowViewDelegate {
         Self: Sized,
     {
         Vec::<gpui::Empty>::new()
+    }
+
+    fn render_header(&mut self, cx: &mut ViewContext<WindowView<Self>>) -> Option<impl IntoElement>
+    where
+        Self: Sized,
+    {
+        let main = Container::new(cx)
+            .container_style(ContainerStyle {
+                background: gpui::rgb(0x0000a0).into(),
+                border: gpui::rgb(0x0000ff).into(),
+            })
+            .size_full()
+            .flex()
+            .items_center()
+            .px_2()
+            .children(self.title(cx));
+
+        Some(
+            div()
+                .w_full()
+                .h_10()
+                .flex()
+                .gap_1()
+                .child(main)
+                .children(self.header_items(cx)),
+        )
     }
 }

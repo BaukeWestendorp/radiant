@@ -1,7 +1,7 @@
 use gpui::prelude::*;
 use gpui::{div, SharedString, ViewContext};
 
-use super::WindowViewDelegate;
+use super::{WindowView, WindowViewDelegate};
 
 pub struct GroupPoolWindowViewDelegate {}
 
@@ -12,14 +12,18 @@ impl GroupPoolWindowViewDelegate {
 }
 
 impl WindowViewDelegate for GroupPoolWindowViewDelegate {
-    fn title(&self, cx: &mut ViewContext<super::WindowView<Self>>) -> Option<SharedString> {
+    fn title(&self, _cx: &mut ViewContext<WindowView<Self>>) -> Option<SharedString> {
         Some("Groups".into())
     }
 
-    fn render_content(
-        &mut self,
-        _cx: &mut ViewContext<super::WindowView<Self>>,
-    ) -> impl IntoElement {
+    fn render_content(&mut self, _cx: &mut ViewContext<WindowView<Self>>) -> impl IntoElement {
         div().child("FIXME: This is a group pool")
+    }
+
+    fn render_header(
+        &mut self,
+        _cx: &mut ViewContext<WindowView<Self>>,
+    ) -> Option<impl IntoElement> {
+        Option::<gpui::Empty>::None
     }
 }
