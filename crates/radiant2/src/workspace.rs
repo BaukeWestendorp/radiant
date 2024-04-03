@@ -1,16 +1,14 @@
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, px, AppContext, Context, FocusHandle, FocusableView, IntoElement, Model, ParentElement,
-    Pixels, Render, Styled, View, ViewContext, VisualContext, WindowContext,
+    div, AppContext, Context, FocusHandle, FocusableView, IntoElement, Model, ParentElement,
+    Render, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 use theme::ActiveTheme;
 use ui::button::Button;
 use ui::selectable::Selectable;
 
-use crate::layout::Layout;
-use crate::showfile::Showfile;
-
-pub const GRID_SIZE: Pixels = px(80.0);
+use crate::layout::{LayoutView, GRID_SIZE};
+use crate::showfile::{Layout, Showfile};
 
 pub struct Workspace {
     focus_handle: FocusHandle,
@@ -169,48 +167,5 @@ impl Render for Screen {
             .flex()
             .child(content)
             .child(self.render_sidebar(cx))
-    }
-}
-
-pub struct LayoutView {
-    layout: Model<Layout>,
-}
-
-impl LayoutView {
-    pub fn build(layout: Model<Layout>, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|_cx| Self { layout })
-    }
-
-    fn render_grid(&self, cx: &mut WindowContext) -> impl IntoElement {
-        let grid_size = self.layout.read(cx).size;
-        let dot_size = 2.0;
-
-        let mut dots = vec![];
-        for x in 0..grid_size.width + 1 {
-            for y in 0..grid_size.height + 1 {
-                let dot = div()
-                    .absolute()
-                    .size(px(dot_size))
-                    .bg(cx.theme().colors().accent)
-                    .top(y as f32 * GRID_SIZE - px(dot_size / 2.0))
-                    .left(x as f32 * GRID_SIZE - px(dot_size / 2.0));
-                dots.push(dot);
-            }
-        }
-
-        div()
-            .w(grid_size.width as f32 * GRID_SIZE)
-            .h(grid_size.height as f32 * GRID_SIZE)
-            .children(dots)
-    }
-}
-
-impl Render for LayoutView {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        div()
-            .size_full()
-            .relative()
-            .child(div().absolute().inset_0().child(self.render_grid(cx)))
-            .child(div().child("HELLO I AM A LAYOUT WOOOHOOO"))
     }
 }

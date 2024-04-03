@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use gpui::{point, px, size, AppContext, Bounds, Context, Point, VisualContext, WindowOptions};
+use gpui::{point, size, AppContext, Bounds, Context, VisualContext, WindowOptions};
 use theme::ThemeSettings;
 
 use crate::assets::Assets;
