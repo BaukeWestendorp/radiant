@@ -5,6 +5,7 @@ use gpui::{
 use smallvec::SmallVec;
 use theme::ActiveTheme;
 
+#[derive(Debug, Clone)]
 pub struct ContainerStyle {
     pub background: Hsla,
     pub border: Hsla,

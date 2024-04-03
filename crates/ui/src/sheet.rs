@@ -100,7 +100,7 @@ pub trait SheetDelegate: Sized {
             .flex_row()
             .children(header_cells)
             .border_b()
-            .border_color(cx.theme().colors().border_variant)
+            .border_color(cx.theme().colors().border)
             .into_any_element()
     }
 
@@ -134,7 +134,7 @@ pub trait SheetDelegate: Sized {
             .whitespace_nowrap()
             .overflow_hidden()
             .border_r()
-            .border_color(cx.theme().colors().border_variant)
+            .border_color(cx.theme().colors().border)
             .child(content)
             .into_any_element()
     }

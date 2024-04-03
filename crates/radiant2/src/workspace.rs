@@ -1,8 +1,11 @@
+use gpui::prelude::FluentBuilder;
 use gpui::{
     div, AppContext, Context, FocusHandle, FocusableView, IntoElement, Model, ParentElement,
     Render, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 use theme::ActiveTheme;
+use ui::button::Button;
+use ui::selectable::Selectable;
 
 use crate::layout::Layout;
 use crate::showfile::Showfile;
@@ -53,19 +56,95 @@ impl Render for Workspace {
 
 pub struct Screen {
     layouts: Model<Vec<Layout>>,
+    selected_layout: usize,
 }
 
 impl Screen {
     pub fn build(layouts: Model<Vec<Layout>>, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|_cx| Self { layouts })
+        cx.new_view(|_cx| Self {
+            layouts,
+            selected_layout: 3,
+        })
+    }
+
+    fn render_sidebar(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        let layouts = self.layouts.read(cx).clone();
+
+        // FIXME: For now we are showing 10 layouts, but this should be a
+        // inplace-scrollable, just like the pool windows.
+        let items = (1..=10).map(|id| {
+            let layout = layouts.iter().find(|layout| layout.id == id);
+            self.render_layout_item(layout, id, cx).into_any_element()
+        });
+
+        div().w_32().children(items)
+    }
+
+    fn render_layout_item(
+        &mut self,
+        layout: Option<&Layout>,
+        id: usize,
+        cx: &mut ViewContext<Self>,
+    ) -> impl IntoElement {
+        let border_color = match self.selected_layout == id {
+            true => cx.theme().colors().border_selected,
+            false => match layout.is_some() {
+                true => cx.theme().colors().border,
+                false => cx.theme().colors().border_disabled,
+            },
+        };
+
+        Button::new(id, cx)
+            .selected(self.selected_layout == id)
+            .border_color(border_color)
+            .w_full()
+            .h_20()
+            .text_sm()
+            .on_click(cx.listener({
+                let layout = layout.cloned();
+                move |screen, _event, cx| {
+                    if let Some(layout) = &layout {
+                        screen.selected_layout = layout.id;
+                        cx.notify();
+                    }
+                }
+            }))
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .h_full()
+                    .child(
+                        div()
+                            .size_full()
+                            .flex()
+                            .justify_center()
+                            .items_center()
+                            .border_b()
+                            .border_color(border_color)
+                            .children(layout.map(|l| l.label.clone())),
+                    )
+                    .child(
+                        div()
+                            .h_5()
+                            .px_1()
+                            .when(layout.is_none(), |this| {
+                                this.text_color(cx.theme().colors().text_muted)
+                            })
+                            .child(id.to_string()),
+                    ),
+            )
     }
 }
 
 impl Render for Screen {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let content = div().size_full().bg(gpui::red());
-        let sidebar = div().w_20().h_full().bg(gpui::green());
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        let content = div().size_full();
 
-        div().size_full().flex().child(content).child(sidebar)
+        div()
+            .size_full()
+            .flex()
+            .child(content)
+            .child(self.render_sidebar(cx))
     }
 }

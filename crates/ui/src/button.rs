@@ -1,11 +1,14 @@
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, AnyElement, AnyView, ClickEvent, Div, ElementId, InteractiveElement, IntoElement,
+    div, AnyElement, AppContext, ClickEvent, Div, ElementId, InteractiveElement, IntoElement,
     MouseButton, ParentElement, RenderOnce, StatefulInteractiveElement, StyleRefinement, Styled,
     WindowContext,
 };
 use smallvec::SmallVec;
 use theme::ActiveTheme;
+
+use crate::disableable::Disableable;
+use crate::selectable::Selectable;
 
 #[allow(clippy::type_complexity)]
 #[derive(IntoElement)]
@@ -14,25 +17,26 @@ pub struct Button {
     id: ElementId,
     children: SmallVec<[AnyElement; 2]>,
     on_click: Option<Box<dyn Fn(&ClickEvent, &mut WindowContext) + 'static>>,
-    tooltip: Option<Box<dyn Fn(&mut WindowContext) -> AnyView>>,
     disabled: bool,
+    selected: bool,
 }
 
 impl Button {
-    pub fn new(id: impl Into<ElementId>) -> Self {
+    pub fn new(id: impl Into<ElementId>, cx: &AppContext) -> Self {
+        let base = div()
+            .border()
+            .border_color(cx.theme().colors().border)
+            .rounded_md()
+            .bg(cx.theme().colors().element_background);
+
         Self {
-            base: div(),
+            base,
             id: id.into(),
             children: SmallVec::new(),
-            tooltip: None,
             on_click: None,
             disabled: false,
+            selected: false,
         }
-    }
-
-    pub fn tooltip(mut self, tooltip: impl Fn(&mut WindowContext) -> AnyView + 'static) -> Self {
-        self.tooltip = Some(Box::new(tooltip));
-        self
     }
 
     pub fn on_click(
@@ -42,9 +46,18 @@ impl Button {
         self.on_click = Some(Box::new(listener));
         self
     }
+}
 
-    pub fn disabled(mut self, disabled: bool) -> Self {
+impl Disableable for Button {
+    fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
+        self
+    }
+}
+
+impl Selectable for Button {
+    fn selected(mut self, selected: bool) -> Self {
+        self.selected = selected;
         self
     }
 }
@@ -65,14 +78,12 @@ impl RenderOnce for Button {
     fn render(self, cx: &mut WindowContext) -> impl IntoElement {
         self.base
             .id(self.id.clone())
-            .bg(gpui::red())
-            .border()
-            .border_color(cx.theme().colors().border)
-            .rounded_md()
-            .bg(cx.theme().colors().element_background)
+            .when(self.selected, |this| {
+                this.border_color(cx.theme().colors().border_selected)
+            })
             .when(self.disabled, |this| {
                 this.cursor_not_allowed()
-                    .border_color(cx.theme().colors().border_variant)
+                    .border_color(cx.theme().colors().border)
             })
             .when(!self.disabled, |this| {
                 this.cursor_pointer()
@@ -89,9 +100,6 @@ impl RenderOnce for Button {
                         })
                 },
             )
-            .when_some(self.tooltip, |this, tooltip| {
-                this.tooltip(move |cx| tooltip(cx))
-            })
             .children(self.children)
     }
 }

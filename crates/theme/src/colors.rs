@@ -5,11 +5,11 @@ pub struct ThemeColors {
     pub background: Hsla,
 
     pub border: Hsla,
-    pub border_variant: Hsla,
+    pub border_disabled: Hsla,
     pub border_selected: Hsla,
 
     pub element_background: Hsla,
-    pub element_background_raised: Hsla,
+    pub element_background_secondary: Hsla,
     pub element_background_hover: Hsla,
     pub element_background_selected: Hsla,
     pub element_background_active: Hsla,
