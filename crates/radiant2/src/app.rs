@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use gpui::{AppContext, VisualContext, WindowOptions};
+use gpui::{AppContext, Context, VisualContext, WindowOptions};
 use theme::ThemeSettings;
 
 use crate::assets::Assets;
@@ -25,14 +25,15 @@ pub fn run_app(app: gpui::App, showfile_path: Option<String>) {
             todo!("Show a window displaying this error.");
         }
     };
-    dbg!(showfile);
 
     app.with_assets(Assets).run(move |cx: &mut AppContext| {
+        let showfile_model = cx.new_model(|_cx| showfile);
+
         cx.open_window(WindowOptions::default(), |cx| {
             ThemeSettings::init(cx);
             DmxOutputManager::init(cx);
 
-            let view = Workspace::build(cx);
+            let view = Workspace::build(showfile_model, cx);
             cx.focus_view(&view);
             view
         });
