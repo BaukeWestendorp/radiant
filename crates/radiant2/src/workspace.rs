@@ -1,7 +1,7 @@
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, AppContext, Context, FocusHandle, FocusableView, IntoElement, Model, ParentElement,
-    Render, Styled, View, ViewContext, VisualContext, WindowContext,
+    div, px, AppContext, Context, FocusHandle, FocusableView, IntoElement, Model, ParentElement,
+    Pixels, Render, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 use theme::ActiveTheme;
 use ui::button::Button;
@@ -9,6 +9,8 @@ use ui::selectable::Selectable;
 
 use crate::layout::Layout;
 use crate::showfile::Showfile;
+
+pub const GRID_SIZE: Pixels = px(80.0);
 
 pub struct Workspace {
     focus_handle: FocusHandle,
@@ -56,18 +58,36 @@ impl Render for Workspace {
 
 pub struct Screen {
     layouts: Model<Vec<Layout>>,
-    selected_layout: usize,
+    selected_layout_id: usize,
+
+    current_layout_view: View<LayoutView>,
 }
 
 impl Screen {
     pub fn build(layouts: Model<Vec<Layout>>, cx: &mut WindowContext) -> View<Self> {
+        // FIXME: Store this in `layout.json`.
+        let selected_layout_id = 3;
+
+        let current_layout_model = cx.new_model(|cx| {
+            // FIXME: Handle nonexistent layout (this should not be possible, but lets
+            // softerror on this to be sure).
+            layouts
+                .read(cx)
+                .iter()
+                .find(|layout| layout.id == selected_layout_id)
+                .unwrap()
+                .clone()
+        });
+        let current_layout_view = LayoutView::build(current_layout_model, cx);
+
         cx.new_view(|_cx| Self {
             layouts,
-            selected_layout: 3,
+            selected_layout_id,
+            current_layout_view,
         })
     }
 
-    fn render_sidebar(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render_sidebar(&self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let layouts = self.layouts.read(cx).clone();
 
         // FIXME: For now we are showing 10 layouts, but this should be a
@@ -81,12 +101,12 @@ impl Screen {
     }
 
     fn render_layout_item(
-        &mut self,
+        &self,
         layout: Option<&Layout>,
         id: usize,
         cx: &mut ViewContext<Self>,
     ) -> impl IntoElement {
-        let border_color = match self.selected_layout == id {
+        let border_color = match self.selected_layout_id == id {
             true => cx.theme().colors().border_selected,
             false => match layout.is_some() {
                 true => cx.theme().colors().border,
@@ -95,16 +115,16 @@ impl Screen {
         };
 
         Button::new(id, cx)
-            .selected(self.selected_layout == id)
+            .selected(self.selected_layout_id == id)
             .border_color(border_color)
             .w_full()
-            .h_20()
+            .h(GRID_SIZE)
             .text_sm()
             .on_click(cx.listener({
                 let layout = layout.cloned();
                 move |screen, _event, cx| {
                     if let Some(layout) = &layout {
-                        screen.selected_layout = layout.id;
+                        screen.selected_layout_id = layout.id;
                         cx.notify();
                     }
                 }
@@ -139,12 +159,58 @@ impl Screen {
 
 impl Render for Screen {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let content = div().size_full();
+        let content = div()
+            .size_full()
+            .overflow_hidden()
+            .child(self.current_layout_view.clone());
 
         div()
             .size_full()
             .flex()
             .child(content)
             .child(self.render_sidebar(cx))
+    }
+}
+
+pub struct LayoutView {
+    layout: Model<Layout>,
+}
+
+impl LayoutView {
+    pub fn build(layout: Model<Layout>, cx: &mut WindowContext) -> View<Self> {
+        cx.new_view(|_cx| Self { layout })
+    }
+
+    fn render_grid(&self, cx: &mut WindowContext) -> impl IntoElement {
+        let grid_size = self.layout.read(cx).size;
+        let dot_size = 2.0;
+
+        let mut dots = vec![];
+        for x in 0..grid_size.width + 1 {
+            for y in 0..grid_size.height + 1 {
+                let dot = div()
+                    .absolute()
+                    .size(px(dot_size))
+                    .bg(cx.theme().colors().accent)
+                    .top(y as f32 * GRID_SIZE - px(dot_size / 2.0))
+                    .left(x as f32 * GRID_SIZE - px(dot_size / 2.0));
+                dots.push(dot);
+            }
+        }
+
+        div()
+            .w(grid_size.width as f32 * GRID_SIZE)
+            .h(grid_size.height as f32 * GRID_SIZE)
+            .children(dots)
+    }
+}
+
+impl Render for LayoutView {
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        div()
+            .size_full()
+            .relative()
+            .child(div().absolute().inset_0().child(self.render_grid(cx)))
+            .child(div().child("HELLO I AM A LAYOUT WOOOHOOO"))
     }
 }

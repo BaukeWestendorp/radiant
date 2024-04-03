@@ -10,6 +10,8 @@ fn radiant_dark() -> Theme {
     Theme {
         styles: ThemeStyles {
             colors: ThemeColors {
+                accent: gpui::rgb(0xe9ad00).into(),
+
                 background: gpui::rgb(0x242424).into(),
 
                 border: gpui::rgb(0x404040).into(),

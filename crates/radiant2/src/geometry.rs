@@ -8,12 +8,12 @@ pub struct Bounds {
 
 #[derive(Debug, Clone, Copy, Default, serde::Deserialize, serde::Serialize)]
 pub struct Size {
-    width: usize,
-    height: usize,
+    pub width: usize,
+    pub height: usize,
 }
 
 #[derive(Debug, Clone, Copy, Default, serde::Deserialize, serde::Serialize)]
 pub struct Point {
-    x: usize,
-    y: usize,
+    pub x: usize,
+    pub y: usize,
 }

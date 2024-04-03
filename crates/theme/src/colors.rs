@@ -2,6 +2,8 @@ use gpui::Hsla;
 
 #[derive(Debug, Clone)]
 pub struct ThemeColors {
+    pub accent: Hsla,
+
     pub background: Hsla,
 
     pub border: Hsla,
