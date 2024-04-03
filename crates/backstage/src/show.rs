@@ -14,13 +14,14 @@ use crate::showfile::Showfile;
 
 #[derive(Debug, Clone)]
 pub struct Show {
+    pub current_command: Option<Command>,
+
     pub(crate) patchlist: Patchlist,
     pub(crate) programmer: Programmer,
     pub(crate) playback_engine: PlaybackEngine,
     pub(crate) data: Data,
     pub(crate) presets: Presets,
     pub(crate) executors: Vec<Executor>,
-    pub current_command: Option<Command>,
     pub(crate) stage_output: DmxOutput,
 }
 

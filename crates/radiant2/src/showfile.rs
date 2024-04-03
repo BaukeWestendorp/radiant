@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 
-use backstage::show::Show;
+use backstage::Show;
 use gpui::SharedString;
 
 use crate::geometry::{Bounds, Size};
