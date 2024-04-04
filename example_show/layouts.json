@@ -102,6 +102,25 @@
               "scroll_offset": 0
             }
           }
+        },
+        {
+          "id": 2,
+          "bounds": {
+            "origin": {
+              "x": 10,
+              "y": 0
+            },
+            "size": {
+              "width": 3,
+              "height": 4
+            }
+          },
+          "kind": {
+            "Pool": {
+              "kind": "Group",
+              "scroll_offset": 0
+            }
+          }
         }
       ]
     }

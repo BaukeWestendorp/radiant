@@ -6,6 +6,12 @@ pub struct Bounds {
     pub origin: Point,
 }
 
+impl Bounds {
+    pub(crate) fn area(&self) -> usize {
+        self.size.width * self.size.height
+    }
+}
+
 #[derive(Debug, Clone, Copy, Default, serde::Deserialize, serde::Serialize)]
 pub struct Size {
     pub width: usize,

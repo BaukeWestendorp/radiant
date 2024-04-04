@@ -45,6 +45,12 @@ pub struct Layout {
     pub windows: Vec<Window>,
 }
 
+impl Layout {
+    pub fn window(&self, id: usize) -> Option<&Window> {
+        self.windows.iter().find(|w| w.id == id)
+    }
+}
+
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct Window {
     pub id: usize,

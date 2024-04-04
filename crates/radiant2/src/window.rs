@@ -1,22 +1,22 @@
 use gpui::{
-    div, IntoElement, ParentElement, Render, SharedString, Styled, View, ViewContext,
+    div, IntoElement, Model, ParentElement, Render, SharedString, Styled, View, ViewContext,
     VisualContext, WindowContext,
 };
 use ui::container::{Container, ContainerStyle};
 
-pub mod group_pool;
+use crate::showfile::Window;
 
-pub struct WindowView<D: WindowViewDelegate> {
+pub mod group_pool;
+pub mod pool;
+
+pub struct WindowView<D: WindowDelegate> {
+    window: Model<Window>,
     delegate: D,
 }
 
-impl<D: WindowViewDelegate + 'static> WindowView<D> {
-    pub fn build(delegate: D, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|_cx| Self { delegate })
-    }
-
-    pub fn close(&self) {
-        todo!("Close window");
+impl<D: WindowDelegate + 'static> WindowView<D> {
+    pub fn build(window: Model<Window>, delegate: D, cx: &mut WindowContext) -> View<Self> {
+        cx.new_view(|_cx| Self { window, delegate })
     }
 
     fn render_content(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
@@ -35,7 +35,7 @@ impl<D: WindowViewDelegate + 'static> WindowView<D> {
     }
 }
 
-impl<D: WindowViewDelegate + 'static> Render for WindowView<D> {
+impl<D: WindowDelegate + 'static> Render for WindowView<D> {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let content = self.render_content(cx);
         let header = self.delegate.render_header(cx);
@@ -50,8 +50,8 @@ impl<D: WindowViewDelegate + 'static> Render for WindowView<D> {
     }
 }
 
-pub trait WindowViewDelegate {
-    fn title(&self, cx: &mut ViewContext<WindowView<Self>>) -> Option<SharedString>
+pub trait WindowDelegate {
+    fn title(&mut self, cx: &mut ViewContext<WindowView<Self>>) -> Option<SharedString>
     where
         Self: Sized;
 

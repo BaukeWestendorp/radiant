@@ -1,29 +1,33 @@
-use gpui::prelude::*;
-use gpui::{div, SharedString, ViewContext};
+use gpui::{IntoElement, Model, WindowContext};
 
-use super::{WindowView, WindowViewDelegate};
+use super::pool::PoolWindowDelegate;
+use super::WindowView;
+use crate::showfile::Window;
 
-pub struct GroupPoolWindowViewDelegate {}
+pub struct GroupPoolWindowDelegate {
+    window: Model<Window>,
+}
 
-impl GroupPoolWindowViewDelegate {
-    pub fn new() -> Self {
-        Self {}
+impl GroupPoolWindowDelegate {
+    pub fn new(window: Model<Window>) -> Self {
+        Self { window }
     }
 }
 
-impl WindowViewDelegate for GroupPoolWindowViewDelegate {
-    fn title(&self, _cx: &mut ViewContext<WindowView<Self>>) -> Option<SharedString> {
-        Some("Groups".into())
+impl PoolWindowDelegate for GroupPoolWindowDelegate {
+    fn label(&self) -> String {
+        "Groups".to_string()
     }
 
-    fn render_content(&mut self, _cx: &mut ViewContext<WindowView<Self>>) -> impl IntoElement {
-        div().child("FIXME: This is a group pool")
+    fn window(&self) -> &Model<Window> {
+        &self.window
     }
 
-    fn render_header(
-        &mut self,
-        _cx: &mut ViewContext<WindowView<Self>>,
-    ) -> Option<impl IntoElement> {
+    fn render_item_for_id(&self, _id: usize, _cx: &mut WindowContext) -> Option<impl IntoElement> {
         Option::<gpui::Empty>::None
+    }
+
+    fn handle_click_item(&mut self, _id: usize, _cx: &mut gpui::ViewContext<WindowView<Self>>) {
+        todo!("Handle clicking group pool item");
     }
 }
