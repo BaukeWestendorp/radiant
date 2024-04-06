@@ -8,7 +8,7 @@ use ui::button::Button;
 use ui::selectable::Selectable;
 
 use crate::layout::{LayoutView, GRID_SIZE};
-use crate::showfile::{Layout, Showfile};
+use crate::showfile::{Layout, ShowfileManager};
 
 pub struct Workspace {
     focus_handle: FocusHandle,
@@ -16,14 +16,14 @@ pub struct Workspace {
 }
 
 impl Workspace {
-    pub fn build(showfile: Model<Showfile>, cx: &mut WindowContext) -> View<Self> {
+    pub fn build(cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
-            let layouts = cx.new_model(|cx| showfile.read(cx).layouts.clone());
-            cx.observe(&showfile, {
+            let layouts = cx.new_model(|cx| ShowfileManager::layouts(cx).to_vec());
+            cx.observe_global::<ShowfileManager>({
                 let layouts = layouts.clone();
-                move |_workspace, showfile, cx| {
+                move |_workspace, cx| {
                     layouts.update(cx, |layouts, cx| {
-                        *layouts = showfile.read(cx).layouts.clone()
+                        *layouts = ShowfileManager::layouts(cx).to_vec()
                     });
                     cx.notify();
                 }

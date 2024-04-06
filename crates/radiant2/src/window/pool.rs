@@ -1,8 +1,8 @@
+use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, px, AnyElement, AppContext, InteractiveElement, Interactivity, IntoElement, Model,
-    ParentElement, RenderOnce, ScrollWheelEvent, SharedString, Styled, ViewContext, WindowContext,
+    div, px, AnyElement, AppContext, InteractiveElement, IntoElement, Model, ParentElement,
+    ScrollWheelEvent, SharedString, Styled, ViewContext, WindowContext,
 };
-use smallvec::SmallVec;
 use theme::ActiveTheme;
 use ui::container::{Container, ContainerStyle};
 
@@ -84,6 +84,60 @@ where
         Self: Sized,
     {
     }
+
+    fn render_pool_cell(
+        cx: &mut ViewContext<WindowView<Self>>,
+        id: usize,
+        item_content: Option<AnyElement>,
+        row: usize,
+        col: usize,
+    ) -> AnyElement
+    where
+        Self: Sized,
+    {
+        let has_content = item_content.is_some();
+
+        let background = Container::new(cx)
+            .container_style(ContainerStyle {
+                background: cx.theme().colors().element_background,
+                border: cx.theme().colors().border_disabled,
+            })
+            .size_full();
+
+        let id_element = div()
+            .size_full()
+            .absolute()
+            .text_sm()
+            .text_color(match has_content {
+                true => cx.theme().colors().text,
+                false => cx.theme().colors().text_muted,
+            })
+            .pl(px(4.0))
+            .child(format!("{}", id));
+
+        let content = div()
+            .size_full()
+            .relative()
+            .when_some(item_content, |this, item_content| {
+                this.child(div().size_full().absolute().inset_0().child(item_content))
+            })
+            .child(id_element);
+
+        div()
+            .size(GRID_SIZE)
+            .absolute()
+            .top(row as f32 * GRID_SIZE)
+            .left(col as f32 * GRID_SIZE)
+            .on_mouse_down(
+                gpui::MouseButton::Left,
+                cx.listener(move |this, _event, cx| {
+                    this.delegate.handle_click_item(id, cx);
+                }),
+            )
+            .child(div().absolute().inset_0().child(background))
+            .child(div().absolute().inset_0().child(content))
+            .into_any_element()
+    }
 }
 
 impl<T: PoolWindowDelegate + 'static> WindowDelegate for T {
@@ -106,30 +160,26 @@ impl<T: PoolWindowDelegate + 'static> WindowDelegate for T {
         let scroll_offset = scroll_offset(self.window(), cx);
 
         let mut grid = vec![];
-        for i in 0..bounds.area() {
-            if i == 0 {
-                let header_cell = self.render_header_cell(cx);
-                grid.push(header_cell);
-                continue;
+        for x in 0..bounds.size.width {
+            for y in 0..bounds.size.height {
+                let i = y * bounds.size.width + x;
+                if i == 0 {
+                    let header_cell = self.render_header_cell(cx);
+                    grid.push(header_cell);
+                    continue;
+                }
+                let id = i + scroll_offset as usize;
+                let content = self
+                    .render_item_for_id(id, cx)
+                    .map(|c| c.into_any_element());
+                let item = Self::render_pool_cell(cx, id, content, y, x);
+                grid.push(item);
             }
-            let id = i + scroll_offset as usize;
-            let content = self.render_item_for_id(id, cx);
-            let item = div()
-                .child(PoolCell::new(id).children(content))
-                .on_mouse_down(
-                    gpui::MouseButton::Left,
-                    cx.listener(move |this, _event, cx| {
-                        this.delegate.handle_click_item(id, cx);
-                    }),
-                )
-                .into_any_element();
-            grid.push(item);
         }
 
         div()
             .size_full()
-            .flex()
-            .flex_wrap()
+            .relative()
             .children(grid)
             .on_scroll_wheel(cx.listener(|this, event, cx| {
                 this.delegate.handle_scroll(event, this.window.clone(), cx)
@@ -145,63 +195,5 @@ fn scroll_offset(window: &Model<Window>, cx: &AppContext) -> i32 {
     match window.read(cx).kind {
         WindowKind::Pool(pool_window) => pool_window.scroll_offset,
         _ => panic!("PoolWindowDelegate expects to have a WindowKind::Pool"),
-    }
-}
-
-#[derive(IntoElement)]
-pub struct PoolCell {
-    id: usize,
-    children: SmallVec<[AnyElement; 1]>,
-    interactivity: Interactivity,
-}
-
-impl PoolCell {
-    pub fn new(id: usize) -> Self {
-        Self {
-            id,
-            children: SmallVec::new(),
-            interactivity: Interactivity::default(),
-        }
-    }
-}
-
-impl ParentElement for PoolCell {
-    fn extend(&mut self, elements: impl Iterator<Item = AnyElement>) {
-        self.children.extend(elements)
-    }
-}
-
-impl InteractiveElement for PoolCell {
-    fn interactivity(&mut self) -> &mut gpui::Interactivity {
-        &mut self.interactivity
-    }
-}
-
-impl RenderOnce for PoolCell {
-    fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let has_content = !self.children.is_empty();
-
-        Container::new(cx)
-            .size(GRID_SIZE)
-            .relative()
-            .child(
-                div()
-                    .size_full()
-                    .absolute()
-                    .inset_0()
-                    .children(self.children),
-            )
-            .child(
-                div()
-                    .absolute()
-                    .size_full()
-                    .text_sm()
-                    .text_color(match has_content {
-                        true => cx.theme().colors().text,
-                        false => cx.theme().colors().text_muted,
-                    })
-                    .pl(px(4.0))
-                    .child(format!("{}", self.id)),
-            )
     }
 }

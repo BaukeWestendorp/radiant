@@ -3,14 +3,56 @@ use std::io::BufReader;
 use std::path::Path;
 
 use backstage::Show;
-use gpui::SharedString;
+use gpui::{AppContext, BorrowAppContext, Global, SharedString};
 
 use crate::geometry::{Bounds, Size};
 
 const LAYOUT_PATH: &str = "layouts.json";
 const SHOW_PATH: &str = "show.json";
 
-#[derive(Debug, Clone)]
+pub struct ShowfileManager {
+    showfile: Showfile,
+}
+
+impl ShowfileManager {
+    pub fn init(showfile_path: Option<String>, cx: &mut AppContext) {
+        let showfile = match showfile_path {
+            Some(showfile_path) => {
+                let showfile_path = Path::new(&showfile_path);
+                match Showfile::from_dir(showfile_path) {
+                    Ok(showfile) => showfile,
+                    Err(error) => {
+                        log::error!(
+                            "Failed to load showfile at '{}': {error}. Loading empty show instead",
+                            showfile_path.display()
+                        );
+                        // FIXME: Show error popup.
+                        Showfile::default()
+                    }
+                }
+            }
+            None => Showfile::default(),
+        };
+
+        cx.set_global(ShowfileManager { showfile });
+    }
+
+    pub fn show(cx: &AppContext) -> &Show {
+        &cx.global::<Self>().showfile.show
+    }
+
+    pub fn update<R>(cx: &mut AppContext, f: impl FnOnce(&mut Self, &mut AppContext) -> R) -> R {
+        cx.update_global::<Self, R>(f)
+    }
+
+    pub fn layouts(cx: &AppContext) -> &[Layout] {
+        &cx.global::<Self>().showfile.layouts
+    }
+}
+
+impl Global for ShowfileManager {}
+
+#[derive(Debug, Clone, Default)]
 pub struct Showfile {
     pub layouts: Vec<Layout>,
     pub show: Show,

@@ -12,7 +12,7 @@ use crate::command::{Command, Object};
 use crate::playback_engine::PlaybackEngine;
 use crate::showfile::Showfile;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Show {
     pub current_command: Option<Command>,
 
@@ -438,7 +438,7 @@ impl Fixture {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Programmer {
     pub(crate) selection: Vec<usize>,
     pub(crate) changes: HashMap<DmxChannel, u8>,

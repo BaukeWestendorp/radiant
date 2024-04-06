@@ -3,7 +3,7 @@ use std::time::Duration;
 use anyhow::Result;
 pub use artnet::*;
 use dmx::DmxOutput;
-use gpui::{AppContext, BorrowAppContext, Global, WindowContext};
+use gpui::{AppContext, BorrowAppContext, Global};
 
 const DMX_OUTPUT_RATE: Duration = Duration::from_millis(1000 / 40);
 
@@ -13,7 +13,7 @@ pub struct DmxOutputManager {
 }
 
 impl DmxOutputManager {
-    pub fn init(cx: &mut WindowContext) {
+    pub fn init(cx: &mut AppContext) {
         cx.set_global::<Self>(Self {
             dmx_output: DmxOutput::default(),
             protocols: Vec::new(),
