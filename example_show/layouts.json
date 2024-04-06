@@ -1,4 +1,5 @@
 {
+  "selected_layout_id": 5,
   "layouts": [
     {
       "id": 3,
@@ -26,53 +27,6 @@
               "scroll_offset": 0
             }
           }
-        },
-        {
-          "id": 2,
-          "bounds": {
-            "origin": {
-              "x": 8,
-              "y": 0
-            },
-            "size": {
-              "width": 3,
-              "height": 3
-            }
-          },
-          "kind": {
-            "Pool": {
-              "kind": "ColorPreset",
-              "scroll_offset": 0
-            }
-          }
-        },
-        {
-          "id": 3,
-          "bounds": {
-            "origin": {
-              "x": 0,
-              "y": 5
-            },
-            "size": {
-              "width": 10,
-              "height": 3
-            }
-          },
-          "kind": "FixtureSheet"
-        },
-        {
-          "id": 4,
-          "bounds": {
-            "origin": {
-              "x": 0,
-              "y": 0
-            },
-            "size": {
-              "width": 5,
-              "height": 5
-            }
-          },
-          "kind": "Executors"
         }
       ]
     },

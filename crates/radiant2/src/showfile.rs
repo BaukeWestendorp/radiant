@@ -45,7 +45,7 @@ impl ShowfileManager {
         cx.update_global::<Self, R>(f)
     }
 
-    pub fn layouts(cx: &AppContext) -> &[Layout] {
+    pub fn layouts(cx: &AppContext) -> &Layouts {
         &cx.global::<Self>().showfile.layouts
     }
 }
@@ -54,7 +54,7 @@ impl Global for ShowfileManager {}
 
 #[derive(Debug, Clone, Default)]
 pub struct Showfile {
-    pub layouts: Vec<Layout>,
+    pub layouts: Layouts,
     pub show: Show,
 }
 
@@ -62,20 +62,18 @@ impl Showfile {
     pub fn from_dir(path: &Path) -> anyhow::Result<Self> {
         let layout_file = File::open(path.join(LAYOUT_PATH))?;
         let layout_reader = BufReader::new(layout_file);
-        let layouts: LayoutsFile = serde_json::from_reader(layout_reader)?;
+        let layouts: Layouts = serde_json::from_reader(layout_reader)?;
 
         let show_file = File::open(path.join(SHOW_PATH))?;
         let show = futures_lite::future::block_on(Show::from_file(show_file))?;
 
-        Ok(Showfile {
-            layouts: layouts.layouts,
-            show,
-        })
+        Ok(Showfile { layouts, show })
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-struct LayoutsFile {
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct Layouts {
+    pub selected_layout_id: usize,
     pub layouts: Vec<Layout>,
 }
 
