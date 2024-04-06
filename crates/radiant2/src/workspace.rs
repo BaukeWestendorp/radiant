@@ -4,7 +4,7 @@ use gpui::{
     Render, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 use theme::ActiveTheme;
-use ui::button::Button;
+use ui::button::{Button, ButtonStyle};
 use ui::selectable::Selectable;
 
 use crate::layout::{LayoutView, GRID_SIZE};
@@ -128,7 +128,7 @@ impl Screen {
             .child(display)
             .child(id_element);
 
-        Button::new(id, cx)
+        Button::new(ButtonStyle::Primary, id, cx)
             .selected(self.layouts.read(cx).selected_layout_id == id)
             .border_color(border_color)
             .w_full()

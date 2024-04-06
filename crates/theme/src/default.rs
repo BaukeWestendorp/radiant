@@ -21,6 +21,7 @@ fn radiant_dark() -> Theme {
                 element_background: gpui::rgb(0x000000).into(),
                 element_background_secondary: gpui::rgb(0x242424).into(),
                 element_background_hover: gpui::rgb(0x101010).into(),
+                element_background_hover_secondary: gpui::rgb(0x303030).into(),
                 element_background_selected: gpui::rgb(0x000080).into(),
                 element_background_active: gpui::rgb(0x181818).into(),
 

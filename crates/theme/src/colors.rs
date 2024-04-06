@@ -13,6 +13,7 @@ pub struct ThemeColors {
     pub element_background: Hsla,
     pub element_background_secondary: Hsla,
     pub element_background_hover: Hsla,
+    pub element_background_hover_secondary: Hsla,
     pub element_background_selected: Hsla,
     pub element_background_active: Hsla,
 

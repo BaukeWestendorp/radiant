@@ -1,6 +1,6 @@
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, AnyElement, AppContext, ClickEvent, Div, ElementId, InteractiveElement, IntoElement,
+    div, AnyElement, AppContext, ClickEvent, Div, ElementId, Hsla, InteractiveElement, IntoElement,
     MouseButton, ParentElement, RenderOnce, StatefulInteractiveElement, StyleRefinement, Styled,
     WindowContext,
 };
@@ -9,6 +9,57 @@ use theme::ActiveTheme;
 
 use crate::disableable::Disableable;
 use crate::selectable::Selectable;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ButtonStyle {
+    #[default]
+    Primary,
+    Secondary,
+}
+
+impl ButtonStyle {
+    pub fn border(&self, cx: &AppContext) -> Hsla {
+        match self {
+            ButtonStyle::Primary => cx.theme().colors().border,
+            ButtonStyle::Secondary => cx.theme().colors().border,
+        }
+    }
+
+    pub fn border_selected(&self, cx: &AppContext) -> Hsla {
+        match self {
+            ButtonStyle::Primary => cx.theme().colors().border_selected,
+            ButtonStyle::Secondary => cx.theme().colors().border_selected,
+        }
+    }
+
+    pub fn border_disabled(&self, cx: &AppContext) -> Hsla {
+        match self {
+            ButtonStyle::Primary => cx.theme().colors().border,
+            ButtonStyle::Secondary => cx.theme().colors().border,
+        }
+    }
+
+    pub fn background(&self, cx: &AppContext) -> Hsla {
+        match self {
+            ButtonStyle::Primary => cx.theme().colors().element_background,
+            ButtonStyle::Secondary => cx.theme().colors().element_background_secondary,
+        }
+    }
+
+    pub fn background_hover(&self, cx: &AppContext) -> Hsla {
+        match self {
+            ButtonStyle::Primary => cx.theme().colors().element_background_hover,
+            ButtonStyle::Secondary => cx.theme().colors().element_background_hover_secondary,
+        }
+    }
+
+    pub fn background_active(&self, cx: &AppContext) -> Hsla {
+        match self {
+            ButtonStyle::Primary => cx.theme().colors().element_background_active,
+            ButtonStyle::Secondary => cx.theme().colors().element_background_active,
+        }
+    }
+}
 
 #[allow(clippy::type_complexity)]
 #[derive(IntoElement)]
@@ -19,15 +70,16 @@ pub struct Button {
     on_click: Option<Box<dyn Fn(&ClickEvent, &mut WindowContext) + 'static>>,
     disabled: bool,
     selected: bool,
+    style: ButtonStyle,
 }
 
 impl Button {
-    pub fn new(id: impl Into<ElementId>, cx: &AppContext) -> Self {
+    pub fn new(style: ButtonStyle, id: impl Into<ElementId>, cx: &AppContext) -> Self {
         let base = div()
             .border()
-            .border_color(cx.theme().colors().border)
+            .border_color(style.border(cx))
             .rounded_md()
-            .bg(cx.theme().colors().element_background);
+            .bg(style.background(cx));
 
         Self {
             base,
@@ -36,6 +88,7 @@ impl Button {
             on_click: None,
             disabled: false,
             selected: false,
+            style,
         }
     }
 
@@ -79,16 +132,16 @@ impl RenderOnce for Button {
         self.base
             .id(self.id.clone())
             .when(self.selected, |this| {
-                this.border_color(cx.theme().colors().border_selected)
+                this.border_color(self.style.border_selected(cx))
             })
             .when(self.disabled, |this| {
                 this.cursor_not_allowed()
-                    .border_color(cx.theme().colors().border)
+                    .border_color(self.style.border_disabled(cx))
             })
             .when(!self.disabled, |this| {
                 this.cursor_pointer()
-                    .hover(|hover| hover.bg(cx.theme().colors().element_background_hover))
-                    .active(|active| active.bg(cx.theme().colors().element_background_active))
+                    .hover(|hover| hover.bg(self.style.background_hover(cx)))
+                    .active(|active| active.bg(self.style.background_active(cx)))
             })
             .when_some(
                 self.on_click.filter(|_| !self.disabled),

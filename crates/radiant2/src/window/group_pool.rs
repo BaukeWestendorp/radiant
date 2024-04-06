@@ -1,6 +1,5 @@
 use gpui::{IntoElement, Model, ParentElement, Styled, WindowContext};
-use theme::ActiveTheme;
-use ui::container::{Container, ContainerStyle};
+use ui::button::{Button, ButtonStyle};
 
 use super::pool::PoolWindowDelegate;
 use super::WindowView;
@@ -28,11 +27,7 @@ impl PoolWindowDelegate for GroupPoolWindowDelegate {
     fn render_item_for_id(&self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement> {
         if let Some(group) = ShowfileManager::show(cx).group(id) {
             Some(
-                Container::new(cx)
-                    .container_style(ContainerStyle {
-                        background: cx.theme().colors().element_background_secondary,
-                        border: cx.theme().colors().border,
-                    })
+                Button::new(ButtonStyle::Secondary, id, cx)
                     .size_full()
                     .flex()
                     .justify_center()
