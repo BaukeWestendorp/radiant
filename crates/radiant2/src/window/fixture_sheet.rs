@@ -143,18 +143,21 @@ impl SheetDelegate for FixtureSheetDelegate {
                     return div().into_any_element();
                 };
 
-                let values_string = ShowfileManager::update(cx, |showfile, _cx| {
-                    let values = channels
-                        .iter()
-                        .map(|channel| showfile.show.stage_output().channel(*channel).unwrap_or(0))
-                        .collect::<Vec<_>>();
+                let values = channels
+                    .iter()
+                    .map(|channel| {
+                        ShowfileManager::show(cx)
+                            .stage_output()
+                            .channel(*channel)
+                            .unwrap_or(0)
+                    })
+                    .collect::<Vec<_>>();
 
-                    values
-                        .iter()
-                        .map(|v| v.to_string())
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                });
+                let values_string = values
+                    .iter()
+                    .map(|v| v.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ");
 
                 let value_in_programmer = channels.iter().any(|channel| {
                     ShowfileManager::show(cx)

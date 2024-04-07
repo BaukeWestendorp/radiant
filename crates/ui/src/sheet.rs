@@ -1,4 +1,3 @@
-use gpui::prelude::FluentBuilder;
 use gpui::{
     div, uniform_list, AnyElement, IntoElement, ParentElement, Pixels, Render, SharedString,
     Styled, ViewContext,
@@ -25,6 +24,8 @@ impl<D: SheetDelegate + 'static> Render for Sheet<D> {
         let header_row = self.delegate.render_header_row(cx).into_any_element();
 
         div()
+            .flex()
+            .flex_col()
             .border()
             .border_color(cx.theme().colors().border)
             .rounded_md()
