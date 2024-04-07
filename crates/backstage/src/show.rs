@@ -12,6 +12,8 @@ use crate::command::{Command, Object};
 use crate::playback_engine::PlaybackEngine;
 use crate::showfile::Showfile;
 
+type OnStageOutputChange = Box<dyn Fn(&DmxOutput)>;
+
 #[derive(Default)]
 pub struct Show {
     pub current_command: Option<Command>,
@@ -24,7 +26,7 @@ pub struct Show {
     pub(crate) executors: Vec<Executor>,
     pub(crate) stage_output: DmxOutput,
 
-    pub(crate) on_stage_output_change: Option<Box<dyn Fn(&DmxOutput)>>,
+    pub(crate) on_stage_output_change: Option<OnStageOutputChange>,
 }
 
 impl Show {

@@ -26,18 +26,12 @@ impl PoolWindowDelegate for ColorPoolWindowDelegate {
     }
 
     fn render_item_for_id(&self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement> {
-        if let Some(color) = ShowfileManager::show(cx).color_preset(id) {
-            Some(
-                Button::new(ButtonStyle::Secondary, id, cx)
+        ShowfileManager::show(cx).color_preset(id).map(|color| Button::new(ButtonStyle::Secondary, id, cx)
                     .size_full()
                     .flex()
                     .justify_center()
                     .items_center()
-                    .child(color.label().to_string()),
-            )
-        } else {
-            None
-        }
+                    .child(color.label().to_string()))
     }
 
     fn handle_click_item(&mut self, id: usize, cx: &mut ViewContext<WindowView<Self>>) {

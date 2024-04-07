@@ -89,7 +89,7 @@ fn get_window_models(
                     if let Some((_id, window)) =
                         layout.window_views.iter_mut().find(|w| w.0 == window_id)
                     {
-                        *window = get_window_view(window_model.clone(), cx).into();
+                        *window = get_window_view(window_model.clone(), cx);
                         cx.notify();
                     } else {
                         // FIXME: Debug assertion
@@ -114,7 +114,7 @@ fn get_window_views(
         .zip(window_models)
         .map(|(window, window_model)| {
             let window_id = window.id;
-            (window_id, get_window_view(window_model, cx).into())
+            (window_id, get_window_view(window_model, cx))
         })
         .collect()
 }
