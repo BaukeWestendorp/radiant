@@ -1,34 +1,36 @@
 use backstage::command::{Command, Object};
-use backstage::show::{Cue, Executor, ExecutorButton, ExecutorButtonAction, Sequence, Show};
+use backstage::show::{Cue, Executor, ExecutorButton, ExecutorButtonAction, Sequence};
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, px, uniform_list, IntoElement, Model, MouseDownEvent, MouseUpEvent, ParentElement, Render,
-    Styled, View, ViewContext, VisualContext, WindowContext,
+    div, uniform_list, IntoElement, MouseDownEvent, MouseUpEvent, ParentElement, Render,
+    SharedString, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 use theme::ActiveTheme;
+use ui::button::{Button, ButtonStyle};
 use ui::container::Container;
 
 use super::{WindowDelegate, WindowView};
-use crate::layout::GRID_CELL_SIZE;
+use crate::layout::GRID_SIZE;
+use crate::showfile::ShowfileManager;
 
 pub struct ExecutorsWindowDelegate {
     executors_window: View<ExecutorsWindow>,
 }
 
 impl ExecutorsWindowDelegate {
-    pub fn new(show: Model<Show>, cx: &mut WindowContext) -> Self {
+    pub fn new(cx: &mut WindowContext) -> Self {
         Self {
-            executors_window: ExecutorsWindow::build(show.clone(), cx),
+            executors_window: ExecutorsWindow::build(cx),
         }
     }
 }
 
 impl WindowDelegate for ExecutorsWindowDelegate {
-    fn title(&self) -> String {
-        "Executors".to_string()
+    fn title(&mut self, _cx: &mut ViewContext<WindowView<Self>>) -> Option<SharedString> {
+        Some("Executors".into())
     }
 
-    fn render_content(&self, _cx: &mut ViewContext<WindowView<Self>>) -> impl IntoElement {
+    fn render_content(&mut self, _cx: &mut ViewContext<WindowView<Self>>) -> impl IntoElement {
         div().size_full().child(self.executors_window.clone())
     }
 }
@@ -38,27 +40,27 @@ pub struct ExecutorsWindow {
 }
 
 impl ExecutorsWindow {
-    pub fn build(show: Model<Show>, cx: &mut WindowContext) -> View<Self> {
+    pub fn build(cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
-            cx.observe(&show, |this: &mut Self, show, cx| {
-                this.executor_views = get_executor_views(show, cx);
+            cx.observe_global::<ShowfileManager>(|this: &mut Self, cx| {
+                this.executor_views = get_executor_views(cx);
                 cx.notify();
             })
             .detach();
 
             Self {
-                executor_views: get_executor_views(show.clone(), cx),
+                executor_views: get_executor_views(cx),
             }
         })
     }
 }
 
-fn get_executor_views(show: Model<Show>, cx: &mut WindowContext) -> Vec<View<ExecutorView>> {
-    show.read(cx)
+fn get_executor_views(cx: &mut WindowContext) -> Vec<View<ExecutorView>> {
+    ShowfileManager::show(cx)
         .executors()
         .clone()
         .iter()
-        .map(|executor| ExecutorView::build(executor.clone(), show.clone(), cx))
+        .map(|executor| ExecutorView::build(executor.clone(), cx))
         .collect::<Vec<_>>()
 }
 
@@ -79,12 +81,12 @@ pub struct ExecutorView {
 }
 
 impl ExecutorView {
-    pub fn build(executor: Executor, show: Model<Show>, cx: &mut WindowContext) -> View<Self> {
+    pub fn build(executor: Executor, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| Self {
-            info: ExecutorInfo::build(executor.clone(), show.clone(), cx),
-            button_1: ExecutorButtonView::build(executor.id, executor.button_1, show.clone(), cx),
-            button_2: ExecutorButtonView::build(executor.id, executor.button_2, show.clone(), cx),
-            button_3: ExecutorButtonView::build(executor.id, executor.button_3, show.clone(), cx),
+            info: ExecutorInfo::build(executor.clone(), cx),
+            button_1: ExecutorButtonView::build(executor.id, executor.button_1, cx),
+            button_2: ExecutorButtonView::build(executor.id, executor.button_2, cx),
+            button_3: ExecutorButtonView::build(executor.id, executor.button_3, cx),
         })
     }
 }
@@ -110,12 +112,11 @@ impl Render for ExecutorView {
 
 pub struct ExecutorInfo {
     executor: Executor,
-    show: Model<Show>,
 }
 
 impl ExecutorInfo {
-    pub fn build(executor: Executor, show: Model<Show>, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|_cx| Self { executor, show })
+    pub fn build(executor: Executor, cx: &mut WindowContext) -> View<Self> {
+        cx.new_view(|_cx| Self { executor })
     }
 
     fn render_header(
@@ -124,7 +125,7 @@ impl ExecutorInfo {
         cx: &mut WindowContext,
     ) -> impl IntoElement {
         div()
-            .bg(cx.theme().colors().element_background_raised)
+            .bg(cx.theme().colors().element_background_secondary)
             .h_5()
             .overflow_hidden()
             .border_b()
@@ -180,10 +181,10 @@ impl Render for ExecutorInfo {
         let sequence = self
             .executor
             .sequence
-            .and_then(|id| self.show.read(cx).sequence(id).cloned());
+            .and_then(|id| ShowfileManager::show(cx).sequence(id).cloned());
 
         Container::new(cx)
-            .size(px(GRID_CELL_SIZE as f32))
+            .size(GRID_SIZE)
             .text_xs()
             .child(self.render_header(sequence.as_ref(), cx))
             .child(self.render_cues(sequence.as_ref(), cx))
@@ -193,77 +194,76 @@ impl Render for ExecutorInfo {
 pub struct ExecutorButtonView {
     executor_id: usize,
     button: ExecutorButton,
-
-    show: Model<Show>,
 }
 
 impl ExecutorButtonView {
-    pub fn build(
-        executor_id: usize,
-        button: ExecutorButton,
-        show: Model<Show>,
-        cx: &mut WindowContext,
-    ) -> View<Self> {
+    pub fn build(executor_id: usize, button: ExecutorButton, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|_cx| Self {
             executor_id,
             button,
-            show,
         })
     }
 
-    pub fn handle_click(&mut self, _event: &MouseDownEvent, cx: &mut ViewContext<Self>) {
+    pub fn handle_press(&mut self, _event: &MouseDownEvent, cx: &mut ViewContext<Self>) {
         match self.button.action {
-            ExecutorButtonAction::Go => self.show.update(cx, |show, cx| {
-                if let Err(err) =
-                    show.execute_command(&Command::Go(Some(Object::Executor(self.executor_id))))
-                {
-                    log::error!("Failed to execute Go command: {}", err.to_string());
-                }
-
-                cx.notify();
-            }),
-            ExecutorButtonAction::Top => self.show.update(cx, |show, cx| {
-                if let Err(err) =
-                    show.execute_command(&Command::Top(Some(Object::Executor(self.executor_id))))
-                {
-                    log::error!("Failed to execute Top command: {}", err.to_string());
-                }
-
-                cx.notify();
-            }),
-            ExecutorButtonAction::Flash => {
-                self.show.update(cx, |show, cx| {
-                    if let Some(executor) = show.executor_mut(self.executor_id) {
-                        executor.flash = true;
-                        cx.notify();
+            ExecutorButtonAction::Go => {
+                ShowfileManager::update(cx, |showfile, _cx| {
+                    if let Err(err) = showfile
+                        .show
+                        .execute_command(&Command::Go(Some(Object::Executor(self.executor_id))))
+                    {
+                        log::error!("Failed to execute 'go' command: {}", err.to_string());
                     }
                 });
+
+                cx.notify();
+            }
+            ExecutorButtonAction::Top => {
+                ShowfileManager::update(cx, |showfile, _cx| {
+                    if let Err(err) = showfile
+                        .show
+                        .execute_command(&Command::Top(Some(Object::Executor(self.executor_id))))
+                    {
+                        log::error!("Failed to execute 'top' command: {}", err.to_string());
+                    }
+                });
+
+                cx.notify();
+            }
+            ExecutorButtonAction::Flash => {
+                ShowfileManager::update(cx, |showfile, _cx| {
+                    if let Some(executor) = showfile.show.executor_mut(self.executor_id) {
+                        executor.flash = true;
+                    }
+                });
+
+                cx.notify();
             }
         }
     }
 
     pub fn handle_release(&mut self, _event: &MouseUpEvent, cx: &mut ViewContext<Self>) {
         if self.button.action == ExecutorButtonAction::Flash {
-            self.show.update(cx, |show, cx| {
-                if let Some(executor) = show.executor_mut(self.executor_id) {
+            ShowfileManager::update(cx, |showfile, _cx| {
+                if let Some(executor) = showfile.show.executor_mut(self.executor_id) {
                     executor.flash = false;
-                    cx.notify();
                 }
-            })
+            });
+            cx.notify();
         }
     }
 }
 
 impl Render for ExecutorButtonView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        Container::new(cx)
-            .w(px(GRID_CELL_SIZE as f32))
-            .h(px(GRID_CELL_SIZE as f32 / 2.0))
+        Button::new(ButtonStyle::Primary, self.executor_id, cx)
+            .w(GRID_SIZE)
+            .h(GRID_SIZE / 2.0)
             .flex()
             .justify_center()
             .items_center()
             .child(self.button.action.to_string())
-            .on_click_down(cx.listener(Self::handle_click))
-            .on_click_up(cx.listener(Self::handle_release))
+            .on_press(cx.listener(Self::handle_press))
+            .on_release(cx.listener(Self::handle_release))
     }
 }

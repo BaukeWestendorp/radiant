@@ -1,24 +1,25 @@
 use backstage::command::{Command, Object};
-use backstage::show::{Fixture, Show};
+use backstage::show::Fixture;
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, rgb, AnyElement, InteractiveElement, IntoElement, Model, MouseButton, ParentElement,
-    Pixels, Styled, View, ViewContext, VisualContext, WindowContext,
+    div, rgb, AnyElement, InteractiveElement, IntoElement, MouseButton, ParentElement, Pixels,
+    SharedString, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 use itertools::Itertools;
 use theme::ActiveTheme;
 use ui::sheet::{Sheet, SheetDelegate};
 
 use super::{WindowDelegate, WindowView};
+use crate::showfile::ShowfileManager;
 
 pub struct FixtureSheetWindowDelegate {
     sheet: View<Sheet<FixtureSheetDelegate>>,
 }
 
 impl FixtureSheetWindowDelegate {
-    pub fn new(show: Model<Show>, cx: &mut WindowContext) -> Self {
-        let fixtures = show.read(cx).fixtures();
-        let sheet_delegate = FixtureSheetDelegate::new(show.clone(), fixtures.clone());
+    pub fn new(cx: &mut WindowContext) -> Self {
+        let fixtures = ShowfileManager::show(cx).fixtures();
+        let sheet_delegate = FixtureSheetDelegate::new(fixtures.clone());
         let sheet = cx.new_view(|_cx| Sheet::new(sheet_delegate, "fixture_sheet"));
 
         Self { sheet }
@@ -26,23 +27,22 @@ impl FixtureSheetWindowDelegate {
 }
 
 impl WindowDelegate for FixtureSheetWindowDelegate {
-    fn title(&self) -> String {
-        "Fixture Sheet".to_string()
+    fn title(&mut self, _cx: &mut ViewContext<WindowView<Self>>) -> Option<SharedString> {
+        Some("Fixture Sheet".into())
     }
 
-    fn render_content(&self, _cx: &mut ViewContext<WindowView<Self>>) -> impl IntoElement {
+    fn render_content(&mut self, _cx: &mut ViewContext<WindowView<Self>>) -> impl IntoElement {
         div().size_full().child(self.sheet.clone())
     }
 }
 
 pub struct FixtureSheetDelegate {
-    show: Model<Show>,
     fixtures: Vec<Fixture>,
 }
 
 impl FixtureSheetDelegate {
-    pub fn new(show: Model<Show>, fixtures: Vec<Fixture>) -> Self {
-        Self { show, fixtures }
+    pub fn new(fixtures: Vec<Fixture>) -> Self {
+        Self { fixtures }
     }
 }
 
@@ -60,9 +60,7 @@ impl SheetDelegate for FixtureSheetDelegate {
         ];
 
         // FIXME: We probably should only show useful attributes.
-        let mut attribute_labels = self
-            .show
-            .read(cx)
+        let mut attribute_labels = ShowfileManager::show(cx)
             .all_attributes()
             .iter()
             .map(|a| FixtureSheetColumnId::Attribute(a.name.clone()))
@@ -79,7 +77,7 @@ impl SheetDelegate for FixtureSheetDelegate {
     }
 
     fn selected_rows(&self, cx: &mut ViewContext<Sheet<Self>>) -> Vec<usize> {
-        let selected_fixtures = self.show.read(cx).selected_fixtures();
+        let selected_fixtures = ShowfileManager::show(cx).selected_fixtures();
         self.fixtures
             .iter()
             .enumerate()
@@ -101,8 +99,8 @@ impl SheetDelegate for FixtureSheetDelegate {
             FixtureSheetColumnId::Id => 50.0,
             FixtureSheetColumnId::Name => 100.0,
             FixtureSheetColumnId::Patch => 80.0,
-            FixtureSheetColumnId::FixtureType => 50.0,
-            FixtureSheetColumnId::Mode => 50.0,
+            FixtureSheetColumnId::FixtureType => 150.0,
+            FixtureSheetColumnId::Mode => 150.0,
             FixtureSheetColumnId::Attribute(_) => 75.0,
         }
         .into()
@@ -123,12 +121,26 @@ impl SheetDelegate for FixtureSheetDelegate {
         }
     }
 
+    fn render_header_cell(
+        &self,
+        column_id: &Self::ColumnId,
+        cx: &mut ViewContext<Sheet<Self>>,
+    ) -> AnyElement {
+        self.render_cell(
+            column_id,
+            div().px_1().child(self.header_label(column_id, cx)),
+            cx,
+        )
+    }
+
     fn render_cell_content(
         &self,
         column_id: &Self::ColumnId,
         fixture: &Self::Data,
         cx: &mut ViewContext<Sheet<Self>>,
     ) -> AnyElement {
+        let mut background_color = None;
+
         let cell = match column_id {
             FixtureSheetColumnId::Id => render_value(Some(fixture.id)),
             FixtureSheetColumnId::Name => render_value(Some(fixture.label.clone())),
@@ -145,56 +157,52 @@ impl SheetDelegate for FixtureSheetDelegate {
                     return div().into_any_element();
                 };
 
-                let values_string = self.show.update(cx, |show, _cx| {
-                    let values = channels
-                        .iter()
-                        .map(|channel| {
-                            show.stage_output_dmx_value_for_channel(*channel)
-                                .unwrap_or(0)
-                        })
-                        .collect::<Vec<_>>();
+                let values = channels
+                    .iter()
+                    .map(|channel| {
+                        ShowfileManager::show(cx)
+                            .stage_output()
+                            .channel(*channel)
+                            .unwrap_or(0)
+                    })
+                    .collect::<Vec<_>>();
 
-                    values
-                        .iter()
-                        .map(|v| v.to_string())
-                        .collect::<Vec<_>>()
-                        .join(", ")
-                });
+                let values_string = values
+                    .iter()
+                    .map(|v| v.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ");
 
                 let value_in_programmer = channels.iter().any(|channel| {
-                    self.show
-                        .read(cx)
+                    ShowfileManager::show(cx)
                         .programmer_changes()
                         .contains_key(channel)
                 });
-                div()
-                    .px_2()
-                    .when(value_in_programmer, |this| {
-                        this.bg(cx.theme().colors().programmer_change)
-                    })
-                    .child(values_string)
-                    .into_any_element()
+
+                if value_in_programmer {
+                    background_color = Some(cx.theme().colors().programmer_change);
+                }
+
+                div().child(values_string).into_any_element()
             }
         }
         .into_any_element();
 
+        let fixture_id = fixture.id;
         div()
+            .when_some(background_color, |this, bg| this.bg(bg))
+            .px_1()
             .child(cell)
-            .on_mouse_down(
-                MouseButton::Left,
-                cx.listener({
-                    let fixture_id = fixture.id;
-                    move |this, _event, cx| {
-                        this.delegate.show.update(cx, |show, _cx| {
-                            if let Err(err) = show.execute_command(&Command::Select(Some(
-                                Object::Fixture(fixture_id),
-                            ))) {
-                                log::error!("Failed to select fixture: {:?}", err);
-                            }
-                        })
+            .on_mouse_down(MouseButton::Left, move |_event, cx| {
+                ShowfileManager::update(cx, |showfile, _cx| {
+                    if let Err(err) = showfile
+                        .show
+                        .execute_command(&Command::Select(Some(Object::Fixture(fixture_id))))
+                    {
+                        log::error!("Failed to select fixture: {:?}", err);
                     }
-                }),
-            )
+                })
+            })
             .into_any_element()
     }
 }

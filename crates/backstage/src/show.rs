@@ -9,21 +9,24 @@ use gdtf::{ActivationGroup, Attribute, FeatureGroup, FixtureType, GdtfDescriptio
 use itertools::Itertools;
 
 use crate::command::{Command, Object};
-use crate::dmx_protocols::ArtnetDmxProtocol;
 use crate::playback_engine::PlaybackEngine;
 use crate::showfile::Showfile;
 
-#[derive(Debug)]
+type OnStageOutputChange = Box<dyn Fn(&DmxOutput)>;
+
+#[derive(Default)]
 pub struct Show {
+    pub current_command: Option<Command>,
+
     pub(crate) patchlist: Patchlist,
     pub(crate) programmer: Programmer,
     pub(crate) playback_engine: PlaybackEngine,
     pub(crate) data: Data,
     pub(crate) presets: Presets,
     pub(crate) executors: Vec<Executor>,
-    pub(crate) dmx_protocols: Vec<ArtnetDmxProtocol>,
-    pub current_command: Option<Command>,
     pub(crate) stage_output: DmxOutput,
+
+    pub(crate) on_stage_output_change: Option<OnStageOutputChange>,
 }
 
 impl Show {
@@ -137,6 +140,9 @@ impl Show {
                 None => return Err(anyhow!("Top requires an executor")),
             },
         }
+
+        self.recalculate_stage_output();
+
         Ok(())
     }
 
@@ -277,24 +283,23 @@ impl Show {
     pub fn recalculate_stage_output(&mut self) {
         let mut stage_output = self.playback_engine.determine_dmx_output(self);
         for universe in self.used_universes().iter() {
-            if let Err(err) = stage_output.add_universe_if_absent(*universe) {
-                log::error!("Failed to add universe with id '{universe}': {err}",)
-            }
+            stage_output.add_universe_if_absent(*universe);
         }
         stage_output
             .apply_changes(&self.programmer.changes)
             .unwrap();
-        self.stage_output = stage_output
-    }
+        self.stage_output = stage_output;
 
-    pub fn stage_output_dmx_value_for_channel(&mut self, channel: DmxChannel) -> Option<u8> {
-        self.stage_output().get_channel(channel)
-    }
-
-    pub fn send_stage_output_to_dmx_protocols(&mut self) {
-        for dmx_protocol in self.dmx_protocols.iter() {
-            dmx_protocol.send_dmx_output(self.stage_output());
+        if let Some(f) = &self.on_stage_output_change {
+            f(&self.stage_output);
         }
+    }
+
+    pub fn on_stage_output_changed<F>(&mut self, f: F)
+    where
+        F: Fn(&DmxOutput) + 'static,
+    {
+        self.on_stage_output_change = Some(Box::new(f));
     }
 }
 
@@ -364,12 +369,12 @@ impl Fixture {
     }
 
     pub fn attribute_offset_for_current_mode(&self, attribute_name: &str) -> Option<Vec<i32>> {
-        self.get_dmx_channels_using_attribute(attribute_name)
+        self.dmx_channels_using_attribute(attribute_name)
             .first()
             .and_then(|channel| channel.offset.clone())
     }
 
-    pub fn get_dmx_channels_using_attribute(&self, attribute_name: &str) -> Vec<&gdtf::DmxChannel> {
+    pub fn dmx_channels_using_attribute(&self, attribute_name: &str) -> Vec<&gdtf::DmxChannel> {
         self.current_dmx_mode()
             .dmx_channels
             .iter()
@@ -382,7 +387,7 @@ impl Fixture {
             .collect()
     }
 
-    pub fn get_channel_functions_using_attribute(
+    pub fn channel_functions_using_attribute(
         &self,
         attribute_name: &str,
     ) -> Vec<&gdtf::ChannelFunction> {
@@ -404,7 +409,7 @@ impl Fixture {
 
     pub fn channel_resolution_for_attribute(&self, attribute_name: &str) -> Option<u8> {
         let offset = self
-            .get_dmx_channels_using_attribute(attribute_name)
+            .dmx_channels_using_attribute(attribute_name)
             .first()
             .and_then(|c| c.offset.clone())?;
 
@@ -436,12 +441,7 @@ impl Fixture {
 
         let mut channels = vec![];
         for o in offset.iter() {
-            // Because the offset in the GDTF files starts at 1, we need to
-            // compensate for our zero-based array.
-            let offset = o.saturating_sub(1);
-            let address = self.channel.address + offset as u16;
-
-            if let Ok(channel) = DmxChannel::new(self.channel.universe, address) {
+            if let Ok(channel) = self.dmx_channel_from_offset(*o) {
                 channels.push(channel);
             } else {
                 return None;
@@ -449,9 +449,18 @@ impl Fixture {
         }
         Some(channels)
     }
+
+    fn dmx_channel_from_offset(&self, offset: i32) -> Result<DmxChannel> {
+        // Because the offset in the GDTF files starts at 1, we need to
+        // compensate for our zero-based array.
+        let offset = offset.saturating_sub(1);
+        let address = self.channel.address + offset as u16;
+
+        DmxChannel::new(self.channel.universe, address)
+    }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Programmer {
     pub(crate) selection: Vec<usize>,
     pub(crate) changes: HashMap<DmxChannel, u8>,

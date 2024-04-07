@@ -1,23 +1,21 @@
-use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, AnyElement, AppContext, Div, Hsla, InteractiveElement, IntoElement, MouseDownEvent,
-    MouseUpEvent, ParentElement, RenderOnce, StyleRefinement, Styled, WindowContext,
+    div, AnyElement, AppContext, Div, Hsla, InteractiveElement, Interactivity, IntoElement,
+    ParentElement, RenderOnce, StyleRefinement, Styled, WindowContext,
 };
 use smallvec::SmallVec;
 use theme::ActiveTheme;
 
+#[derive(Debug, Clone)]
 pub struct ContainerStyle {
     pub background: Hsla,
     pub border: Hsla,
 }
 
-#[allow(clippy::type_complexity)]
 #[derive(IntoElement)]
 pub struct Container {
     base: Div,
     children: SmallVec<[AnyElement; 2]>,
-    mouse_down_listener: Option<Box<dyn Fn(&MouseDownEvent, &mut WindowContext) + 'static>>,
-    mouse_up_listener: Option<Box<dyn Fn(&MouseUpEvent, &mut WindowContext) + 'static>>,
+    interactivity: Interactivity,
     style: ContainerStyle,
 }
 
@@ -26,8 +24,7 @@ impl Container {
         Self {
             base: div(),
             children: SmallVec::new(),
-            mouse_down_listener: None,
-            mouse_up_listener: None,
+            interactivity: Interactivity::default(),
             style: ContainerStyle {
                 background: cx.theme().colors().element_background,
                 border: cx.theme().colors().border,
@@ -35,29 +32,9 @@ impl Container {
         }
     }
 
-    pub fn on_click_down(
-        mut self,
-        listener: impl Fn(&MouseDownEvent, &mut WindowContext) + 'static,
-    ) -> Self {
-        self.mouse_down_listener = Some(Box::new(listener));
-        self
-    }
-
-    pub fn on_click_up(
-        mut self,
-        listener: impl Fn(&MouseUpEvent, &mut WindowContext) + 'static,
-    ) -> Self {
-        self.mouse_up_listener = Some(Box::new(listener));
-        self
-    }
-
     pub fn container_style(mut self, style: ContainerStyle) -> Self {
         self.style = style;
         self
-    }
-
-    fn is_clickable(&self) -> bool {
-        self.mouse_down_listener.is_some()
     }
 }
 
@@ -73,26 +50,20 @@ impl Styled for Container {
     }
 }
 
-impl RenderOnce for Container {
-    fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let is_clickable = self.is_clickable();
+impl InteractiveElement for Container {
+    fn interactivity(&mut self) -> &mut Interactivity {
+        &mut self.interactivity
+    }
+}
 
+impl RenderOnce for Container {
+    fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
         self.base
             .bg(self.style.background)
             .border()
             .border_color(self.style.border)
             .rounded_md()
             .overflow_hidden()
-            .when(is_clickable, |this| {
-                this.hover(|this| this.bg(cx.theme().colors().element_background_hover))
-                    .cursor_pointer()
-            })
-            .when_some(self.mouse_down_listener, |this, mouse_down_listener| {
-                this.on_mouse_down(gpui::MouseButton::Left, mouse_down_listener)
-            })
-            .when_some(self.mouse_up_listener, |this, mouse_up_listener| {
-                this.on_mouse_up(gpui::MouseButton::Left, mouse_up_listener)
-            })
             .children(self.children)
     }
 }

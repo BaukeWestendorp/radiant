@@ -2,16 +2,24 @@ use gpui::Hsla;
 
 #[derive(Debug, Clone)]
 pub struct ThemeColors {
+    pub accent: Hsla,
+
     pub background: Hsla,
 
     pub border: Hsla,
-    pub border_variant: Hsla,
+    pub border_disabled: Hsla,
     pub border_selected: Hsla,
 
     pub element_background: Hsla,
-    pub element_background_raised: Hsla,
+    pub element_background_secondary: Hsla,
     pub element_background_hover: Hsla,
+    pub element_background_hover_secondary: Hsla,
     pub element_background_selected: Hsla,
+    pub element_background_active: Hsla,
+    pub element_background_active_secondary: Hsla,
+
+    pub table_row_background_even: Hsla,
+    pub table_row_background_odd: Hsla,
 
     pub window_header: Hsla,
     pub window_header_border: Hsla,
@@ -24,4 +32,6 @@ pub struct ThemeColors {
     pub text_accent: Hsla,
 
     pub programmer_change: Hsla,
+
+    pub pool_item_all_selected: Hsla,
 }

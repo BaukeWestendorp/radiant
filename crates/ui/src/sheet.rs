@@ -21,37 +21,46 @@ impl<D: SheetDelegate> Sheet<D> {
 
 impl<D: SheetDelegate + 'static> Render for Sheet<D> {
     fn render(&mut self, cx: &mut gpui::ViewContext<Self>) -> impl IntoElement {
-        uniform_list(
-            cx.view().clone(),
-            self.id.clone(),
-            self.delegate.values(cx).len() + 1,
-            move |view, mut visible_range, cx| {
-                visible_range.end -= 1;
+        let header_row = self.delegate.render_header_row(cx).into_any_element();
 
-                let mut rows = vec![];
+        div()
+            .flex()
+            .flex_col()
+            .border()
+            .border_color(cx.theme().colors().border)
+            .rounded_md()
+            .child(header_row)
+            .child(
+                uniform_list(
+                    cx.view().clone(),
+                    self.id.clone(),
+                    self.delegate.values(cx).len(),
+                    move |view, visible_range, cx| {
+                        let mut rows = vec![];
 
-                let header_row = view.delegate.render_header_row(cx).into_any_element();
-                rows.push(header_row);
+                        for ix in visible_range {
+                            let data = view.delegate.values(cx)[ix].clone();
+                            let cells = view
+                                .delegate
+                                .columns(cx)
+                                .iter()
+                                .map(|column_id| {
+                                    let content =
+                                        view.delegate.render_cell_content(column_id, &data, cx);
 
-                for ix in visible_range {
-                    let data = view.delegate.values(cx)[ix].clone();
-                    let cells = view
-                        .delegate
-                        .columns(cx)
-                        .iter()
-                        .map(|column_id| {
-                            let content = view.delegate.render_cell_content(column_id, &data, cx);
+                                    view.delegate.render_cell(column_id, content, cx)
+                                })
+                                .collect::<Vec<_>>();
+                            let row = view.delegate.render_row(ix, cells, cx).into_any_element();
+                            rows.push(row);
+                        }
 
-                            view.delegate.render_cell(column_id, content, cx)
-                        })
-                        .collect::<Vec<_>>();
-                    let row = view.delegate.render_row(ix, cells, cx).into_any_element();
-                    rows.push(row);
-                }
-
-                rows
-            },
-        )
+                        rows
+                    },
+                )
+                .size_full(),
+            )
+            .size_full()
     }
 }
 
@@ -98,9 +107,10 @@ pub trait SheetDelegate: Sized {
         div()
             .flex()
             .flex_row()
-            .children(header_cells)
+            .bg(cx.theme().colors().element_background_secondary)
             .border_b()
-            .border_color(cx.theme().colors().border_variant)
+            .border_color(cx.theme().colors().border)
+            .children(header_cells)
             .into_any_element()
     }
 
@@ -117,7 +127,10 @@ pub trait SheetDelegate: Sized {
             .flex_row()
             .bg(match is_selected {
                 true => cx.theme().colors().element_background_selected,
-                false => cx.theme().colors().element_background,
+                false => match ix % 2 == 0 {
+                    true => cx.theme().colors().table_row_background_even,
+                    false => cx.theme().colors().table_row_background_odd,
+                },
             })
             .children(children)
             .into_any_element()
@@ -134,7 +147,7 @@ pub trait SheetDelegate: Sized {
             .whitespace_nowrap()
             .overflow_hidden()
             .border_r()
-            .border_color(cx.theme().colors().border_variant)
+            .border_color(cx.theme().colors().border)
             .child(content)
             .into_any_element()
     }

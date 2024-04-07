@@ -141,6 +141,10 @@ impl DmxValue {
 
         Ok(bytes)
     }
+
+    pub fn byte_specifier(&self) -> u8 {
+        self.byte_specifier
+    }
 }
 
 fn get_channel_max_dmx(channel_resolution: ChannelBitResolution) -> u64 {

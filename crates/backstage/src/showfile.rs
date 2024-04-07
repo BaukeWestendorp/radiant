@@ -50,14 +50,11 @@ pub struct Showfile {
 
     #[serde(default = "Default::default")]
     pub executors: Vec<Executor>,
-
-    #[serde(default = "Default::default")]
-    pub dmx_protocols: Vec<ArtnetDmxProtocol>,
 }
 
 impl Showfile {
     pub async fn try_into_show(self) -> Result<Show, Error> {
-        Ok(Show {
+        let mut show = Show {
             patchlist: self.patchlist.try_into_show_patchlist().await?,
             programmer: self.programmer.into_show_programmer(),
             playback_engine: PlaybackEngine::new(),
@@ -68,14 +65,14 @@ impl Showfile {
                 .into_iter()
                 .map(|executor| executor.into())
                 .collect(),
-            dmx_protocols: self
-                .dmx_protocols
-                .into_iter()
-                .map(|dmx_protocol| dmx_protocol.into())
-                .collect(),
             current_command: None,
-            stage_output: DmxOutput::new(),
-        })
+            stage_output: DmxOutput::default(),
+            on_stage_output_change: None,
+        };
+
+        show.recalculate_stage_output();
+
+        Ok(show)
     }
 }
 
@@ -368,7 +365,6 @@ mod tests {
                 },
                 presets: Presets { colors: Vec::new() },
                 executors: Vec::new(),
-                dmx_protocols: Vec::new(),
             }
         );
     }

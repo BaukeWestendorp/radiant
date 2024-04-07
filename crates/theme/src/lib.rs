@@ -33,6 +33,26 @@ pub struct ThemeSettings {
     pub active_theme: Arc<Theme>,
 }
 
+impl ThemeSettings {
+    pub fn init(cx: &mut AppContext) {
+        load_fonts(cx).expect("Failed to load fonts");
+        cx.set_global(Self::default());
+    }
+}
+
+fn load_fonts(cx: &mut AppContext) -> gpui::Result<()> {
+    let font_paths = cx.asset_source().list("fonts")?;
+    let mut embedded_fonts = Vec::new();
+    for font_path in font_paths {
+        if font_path.ends_with(".ttf") {
+            let font_bytes = cx.asset_source().load(&font_path)?;
+            embedded_fonts.push(font_bytes);
+        }
+    }
+
+    cx.text_system().add_fonts(embedded_fonts)
+}
+
 impl Default for ThemeSettings {
     fn default() -> Self {
         Self {
