@@ -1,8 +1,8 @@
 use gpui::prelude::FluentBuilder;
 use gpui::{
     div, AnyElement, AppContext, ClickEvent, Div, ElementId, Hsla, InteractiveElement, IntoElement,
-    MouseButton, ParentElement, RenderOnce, StatefulInteractiveElement, StyleRefinement, Styled,
-    WindowContext,
+    MouseButton, MouseDownEvent, MouseUpEvent, ParentElement, RenderOnce,
+    StatefulInteractiveElement, StyleRefinement, Styled, WindowContext,
 };
 use smallvec::SmallVec;
 use theme::ActiveTheme;
@@ -68,6 +68,8 @@ pub struct Button {
     id: ElementId,
     children: SmallVec<[AnyElement; 2]>,
     on_click: Option<Box<dyn Fn(&ClickEvent, &mut WindowContext) + 'static>>,
+    on_press: Option<Box<dyn Fn(&MouseDownEvent, &mut WindowContext) + 'static>>,
+    on_release: Option<Box<dyn Fn(&MouseUpEvent, &mut WindowContext) + 'static>>,
     disabled: bool,
     selected: bool,
     style: ButtonStyle,
@@ -86,6 +88,8 @@ impl Button {
             id: id.into(),
             children: SmallVec::new(),
             on_click: None,
+            on_press: None,
+            on_release: None,
             disabled: false,
             selected: false,
             style,
@@ -97,6 +101,22 @@ impl Button {
         listener: impl Fn(&ClickEvent, &mut WindowContext) + 'static,
     ) -> Self {
         self.on_click = Some(Box::new(listener));
+        self
+    }
+
+    pub fn on_press(
+        mut self,
+        listener: impl Fn(&MouseDownEvent, &mut WindowContext) + 'static,
+    ) -> Self {
+        self.on_press = Some(Box::new(listener));
+        self
+    }
+
+    pub fn on_release(
+        mut self,
+        listener: impl Fn(&MouseUpEvent, &mut WindowContext) + 'static,
+    ) -> Self {
+        self.on_release = Some(Box::new(listener));
         self
     }
 }
@@ -151,6 +171,26 @@ impl RenderOnce for Button {
                             cx.stop_propagation();
                             (on_click)(event, cx)
                         })
+                },
+            )
+            .when_some(
+                self.on_press.filter(|_| !self.disabled),
+                |this, on_press| {
+                    this.on_mouse_down(MouseButton::Left, move |event, cx| {
+                        cx.prevent_default();
+                        cx.stop_propagation();
+                        (on_press)(event, cx)
+                    })
+                },
+            )
+            .when_some(
+                self.on_release.filter(|_| !self.disabled),
+                |this, on_release| {
+                    this.on_mouse_up(MouseButton::Left, move |event, cx| {
+                        cx.prevent_default();
+                        cx.stop_propagation();
+                        (on_release)(event, cx)
+                    })
                 },
             )
             .children(self.children)

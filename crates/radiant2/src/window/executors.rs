@@ -41,8 +41,16 @@ pub struct ExecutorsWindow {
 
 impl ExecutorsWindow {
     pub fn build(cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|cx| Self {
-            executor_views: get_executor_views(cx),
+        cx.new_view(|cx| {
+            cx.observe_global::<ShowfileManager>(|this: &mut Self, cx| {
+                this.executor_views = get_executor_views(cx);
+                cx.notify();
+            })
+            .detach();
+
+            Self {
+                executor_views: get_executor_views(cx),
+            }
         })
     }
 }
@@ -255,7 +263,7 @@ impl Render for ExecutorButtonView {
             .justify_center()
             .items_center()
             .child(self.button.action.to_string())
-        // .on_click_down(cx.listener(Self::handle_click))
-        // .on_click_up(cx.listener(Self::handle_release))
+            .on_press(cx.listener(Self::handle_press))
+            .on_release(cx.listener(Self::handle_release))
     }
 }
