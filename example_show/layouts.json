@@ -42,12 +42,31 @@
           "id": 1,
           "bounds": {
             "origin": {
-              "x": 5,
+              "x": 0,
               "y": 0
             },
             "size": {
-              "width": 3,
-              "height": 3
+              "width": 20,
+              "height": 2
+            }
+          },
+          "kind": {
+            "Pool": {
+              "kind": "Group",
+              "scroll_offset": 0
+            }
+          }
+        },
+        {
+          "id": 2,
+          "bounds": {
+            "origin": {
+              "x": 0,
+              "y": 1
+            },
+            "size": {
+              "width": 20,
+              "height": 2
             }
           },
           "kind": {
@@ -58,23 +77,18 @@
           }
         },
         {
-          "id": 2,
+          "id": 3,
           "bounds": {
             "origin": {
-              "x": 10,
-              "y": 0
+              "x": 0,
+              "y": 8
             },
             "size": {
-              "width": 3,
+              "width": 4,
               "height": 4
             }
           },
-          "kind": {
-            "Pool": {
-              "kind": "Group",
-              "scroll_offset": 0
-            }
-          }
+          "kind": "Executors"
         }
       ]
     }
