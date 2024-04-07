@@ -56,7 +56,7 @@ impl ButtonStyle {
     pub fn background_active(&self, cx: &AppContext) -> Hsla {
         match self {
             ButtonStyle::Primary => cx.theme().colors().element_background_active,
-            ButtonStyle::Secondary => cx.theme().colors().element_background_active,
+            ButtonStyle::Secondary => cx.theme().colors().element_background_active_secondary,
         }
     }
 }

@@ -24,6 +24,7 @@ fn radiant_dark() -> Theme {
                 element_background_hover_secondary: gpui::rgb(0x303030).into(),
                 element_background_selected: gpui::rgb(0x000080).into(),
                 element_background_active: gpui::rgb(0x181818).into(),
+                element_background_active_secondary: gpui::rgb(0x343434).into(),
 
                 window_header: gpui::rgb(0x1010b0).into(),
                 window_header_border: gpui::rgb(0x0000ff).into(),
@@ -36,6 +37,8 @@ fn radiant_dark() -> Theme {
                 text_accent: gpui::rgb(0xff7931).into(),
 
                 programmer_change: gpui::rgb(0xc90000).into(),
+
+                pool_item_all_selected: gpui::rgb(0x68ff00).into(),
             },
         },
     }

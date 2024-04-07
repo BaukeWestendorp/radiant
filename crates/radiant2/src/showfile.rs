@@ -41,8 +41,11 @@ impl ShowfileManager {
         &cx.global::<Self>().showfile.show
     }
 
-    pub fn update<R>(cx: &mut AppContext, f: impl FnOnce(&mut Self, &mut AppContext) -> R) -> R {
-        cx.update_global::<Self, R>(f)
+    pub fn update<R>(
+        cx: &mut AppContext,
+        f: impl FnOnce(&mut Showfile, &mut AppContext) -> R,
+    ) -> R {
+        cx.update_global::<Self, R>(|this, cx| f(&mut this.showfile, cx))
     }
 
     pub fn layouts(cx: &AppContext) -> &Layouts {
