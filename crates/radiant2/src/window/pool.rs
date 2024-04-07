@@ -46,6 +46,8 @@ where
     ) where
         Self: Sized + 'static,
     {
+        cx.stop_propagation();
+
         let bounds = bounds(self.window(), cx);
         let scroll_offset = scroll_offset(self.window(), cx);
 
