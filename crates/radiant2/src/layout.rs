@@ -7,6 +7,7 @@ use theme::ActiveTheme;
 use crate::showfile::{Layout, PoolWindowKind, Window, WindowKind};
 use crate::window::color_pool::ColorPoolWindowDelegate;
 use crate::window::executors::ExecutorsWindowDelegate;
+use crate::window::fixture_sheet::FixtureSheetWindowDelegate;
 use crate::window::group_pool::GroupPoolWindowDelegate;
 use crate::window::WindowView;
 
@@ -134,7 +135,10 @@ fn get_window_view(window: Model<Window>, cx: &mut WindowContext) -> AnyView {
             let delegate = ExecutorsWindowDelegate::new(cx);
             WindowView::build(window, delegate, cx).into()
         }
-        WindowKind::FixtureSheet => todo!(),
+        WindowKind::FixtureSheet => {
+            let delegate = FixtureSheetWindowDelegate::new(cx);
+            WindowView::build(window, delegate, cx).into()
+        }
     }
 }
 

@@ -19,6 +19,7 @@ smallvec.workspace = true
 serde_json.workspace = true
 serde.workspace = true
 futures-lite.workspace = true
+itertools.workspace = true
 
 assets = { package = "assets", git = "https://github.com/zed-industries/zed" }
 artnet_protocol = "0.4.2"

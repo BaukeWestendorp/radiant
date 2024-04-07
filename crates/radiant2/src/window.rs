@@ -8,6 +8,7 @@ use crate::showfile::Window;
 
 pub mod color_pool;
 pub mod executors;
+pub mod fixture_sheet;
 pub mod group_pool;
 pub mod pool;
 

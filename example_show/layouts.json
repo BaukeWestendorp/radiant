@@ -89,6 +89,20 @@
             }
           },
           "kind": "Executors"
+        },
+        {
+          "id": 4,
+          "bounds": {
+            "origin": {
+              "x": 4,
+              "y": 8
+            },
+            "size": {
+              "width": 160,
+              "height": 4
+            }
+          },
+          "kind": "FixtureSheet"
         }
       ]
     }
