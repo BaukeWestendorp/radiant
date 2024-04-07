@@ -1,7 +1,6 @@
 use std::time::Duration;
 
 use anyhow::Result;
-pub use artnet::*;
 use dmx::DmxOutput;
 use gpui::{AppContext, BorrowAppContext, Global};
 
@@ -52,7 +51,7 @@ pub trait DmxProtocol {
     fn send_dmx_output(&mut self, output: &DmxOutput) -> Result<()>;
 }
 
-mod artnet {
+pub mod artnet {
     use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
 
     use anyhow::anyhow;

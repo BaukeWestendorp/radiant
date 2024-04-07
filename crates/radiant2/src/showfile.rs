@@ -9,6 +9,7 @@ use crate::geometry::{Bounds, Size};
 
 const LAYOUT_PATH: &str = "layouts.json";
 const SHOW_PATH: &str = "show.json";
+const IO_PATH: &str = "io.json";
 
 pub struct ShowfileManager {
     showfile: Showfile,
@@ -37,10 +38,6 @@ impl ShowfileManager {
         cx.set_global(ShowfileManager { showfile });
     }
 
-    pub fn show(cx: &AppContext) -> &Show {
-        &cx.global::<Self>().showfile.show
-    }
-
     pub fn update<R>(
         cx: &mut AppContext,
         f: impl FnOnce(&mut Showfile, &mut AppContext) -> R,
@@ -48,8 +45,16 @@ impl ShowfileManager {
         cx.update_global::<Self, R>(|this, cx| f(&mut this.showfile, cx))
     }
 
+    pub fn show(cx: &AppContext) -> &Show {
+        &cx.global::<Self>().showfile.show
+    }
+
     pub fn layouts(cx: &AppContext) -> &Layouts {
         &cx.global::<Self>().showfile.layouts
+    }
+
+    pub fn io(cx: &AppContext) -> &Io {
+        &cx.global::<Self>().showfile.io
     }
 }
 
@@ -59,6 +64,7 @@ impl Global for ShowfileManager {}
 pub struct Showfile {
     pub layouts: Layouts,
     pub show: Show,
+    pub io: Io,
 }
 
 impl Showfile {
@@ -70,7 +76,11 @@ impl Showfile {
         let show_file = File::open(path.join(SHOW_PATH))?;
         let show = futures_lite::future::block_on(Show::from_file(show_file))?;
 
-        Ok(Showfile { layouts, show })
+        let io_file = File::open(path.join(IO_PATH))?;
+        let io_reader = BufReader::new(io_file);
+        let io: Io = serde_json::from_reader(io_reader)?;
+
+        Ok(Showfile { layouts, show, io })
     }
 }
 
@@ -118,4 +128,14 @@ pub struct PoolWindow {
 pub enum PoolWindowKind {
     ColorPreset,
     Group,
+}
+
+#[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
+pub struct Io {
+    pub artnet: Vec<ArtnetProtocol>,
+}
+
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+pub struct ArtnetProtocol {
+    pub target_ip: String,
 }

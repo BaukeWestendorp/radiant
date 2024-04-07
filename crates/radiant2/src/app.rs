@@ -6,7 +6,7 @@ use gpui::{
 use theme::ThemeSettings;
 
 use crate::assets::Assets;
-use crate::output::DmxOutputManager;
+use crate::output::{artnet, DmxOutputManager};
 use crate::showfile::ShowfileManager;
 use crate::workspace::Workspace;
 
@@ -44,14 +44,26 @@ pub fn run_app(app: gpui::App, showfile_path: Option<String>) {
 
         cx.open_window(window_options, |cx| {
             ThemeSettings::init(cx);
-            DmxOutputManager::init(cx);
             ShowfileManager::init(showfile_path, cx);
+            DmxOutputManager::init(cx);
+
+            register_io_protocols_from_showfile(cx);
 
             let view = Workspace::build(cx);
             cx.focus_view(&view);
             view
         });
     });
+}
+
+fn register_io_protocols_from_showfile(cx: &mut AppContext) {
+    let io = ShowfileManager::io(cx).clone();
+    for protocol in io.artnet.into_iter() {
+        match artnet::ArtnetDmxProtocol::new(protocol.target_ip.as_str()) {
+            Ok(protocol) => DmxOutputManager::register_protocol(protocol, cx),
+            Err(err) => log::error!("Failed to initialize protocol: {err}"),
+        }
+    }
 }
 
 fn init_keybinds(cx: &mut AppContext) {
@@ -62,10 +74,16 @@ fn init_keybinds(cx: &mut AppContext) {
 }
 
 fn init_menu(cx: &mut AppContext) {
-    cx.set_menus(vec![Menu {
-        name: "Radiant",
-        items: vec![MenuItem::action("Quit", Quit)],
-    }]);
+    cx.set_menus(vec![
+        Menu {
+            name: "Radiant",
+            items: vec![MenuItem::action("Quit", Quit)],
+        },
+        Menu {
+            name: "Programmer",
+            items: vec![MenuItem::action("Clear", ExecuteCommand(Command::Clear))],
+        },
+    ]);
 
     log::info!("Initialized menu");
 }
