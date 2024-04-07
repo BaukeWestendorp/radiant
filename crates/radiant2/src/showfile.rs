@@ -38,9 +38,9 @@ impl ShowfileManager {
         cx.set_global(ShowfileManager { showfile });
     }
 
-    pub fn update<R>(
-        cx: &mut AppContext,
-        f: impl FnOnce(&mut Showfile, &mut AppContext) -> R,
+    pub fn update<C: BorrowAppContext, R>(
+        cx: &mut C,
+        f: impl FnOnce(&mut Showfile, &mut C) -> R,
     ) -> R {
         cx.update_global::<Self, R>(|this, cx| f(&mut this.showfile, cx))
     }

@@ -1,38 +1,9 @@
 {
-  "selected_layout_id": 5,
+  "selected_layout_id": 1,
   "layouts": [
     {
-      "id": 3,
-      "label": "Layout 1",
-      "size": {
-        "width": 20,
-        "height": 12
-      },
-      "windows": [
-        {
-          "id": 1,
-          "bounds": {
-            "origin": {
-              "x": 5,
-              "y": 0
-            },
-            "size": {
-              "width": 3,
-              "height": 3
-            }
-          },
-          "kind": {
-            "Pool": {
-              "kind": "Group",
-              "scroll_offset": 0
-            }
-          }
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "label": "Layout 2",
+      "id": 1,
+      "label": "Main",
       "size": {
         "width": 20,
         "height": 12
@@ -103,6 +74,35 @@
             }
           },
           "kind": "FixtureSheet"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "label": "Testing",
+      "size": {
+        "width": 20,
+        "height": 12
+      },
+      "windows": [
+        {
+          "id": 1,
+          "bounds": {
+            "origin": {
+              "x": 0,
+              "y": 0
+            },
+            "size": {
+              "width": 5,
+              "height": 5
+            }
+          },
+          "kind": {
+            "Pool": {
+              "kind": "Group",
+              "scroll_offset": 0
+            }
+          }
         }
       ]
     }

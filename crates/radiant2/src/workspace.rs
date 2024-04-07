@@ -1,15 +1,30 @@
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, AppContext, Context, FocusHandle, FocusableView, InteractiveElement, IntoElement,
+    div, AppContext, Context, FocusHandle, FocusableView, Global, InteractiveElement, IntoElement,
     ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 use theme::ActiveTheme;
 use ui::button::{Button, ButtonStyle};
 use ui::selectable::Selectable;
+use ui::text_input::{self, TextInput};
 
-use crate::app::ExecuteCommand;
+use crate::app::AppState;
 use crate::layout::{LayoutView, GRID_SIZE};
 use crate::showfile::{Layout, ShowfileManager};
+
+pub mod actions {
+
+    use backstage::Command;
+    use gpui::impl_actions;
+
+    impl_actions!(app, [ExecuteCommand, SetCurrentCommand]);
+
+    #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
+    pub struct ExecuteCommand(pub Command);
+
+    #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
+    pub struct SetCurrentCommand(pub Option<Command>);
+}
 
 pub struct Workspace {
     focus_handle: FocusHandle,
@@ -24,13 +39,28 @@ impl Workspace {
         })
     }
 
-    fn handle_cmd(&mut self, cmd: &ExecuteCommand, cx: &mut ViewContext<Self>) {
+    fn handle_execute_command(
+        &mut self,
+        cmd: &actions::ExecuteCommand,
+        cx: &mut ViewContext<Self>,
+    ) {
         if let Err(err) =
             ShowfileManager::update(cx, |showfile, _cx| showfile.show.execute_command(&cmd.0))
         {
             log::error!("Failed to execute command '{}': {err}", cmd.0);
         }
         cx.notify();
+    }
+
+    fn handle_set_current_command(
+        &mut self,
+        action: &actions::SetCurrentCommand,
+        cx: &mut ViewContext<Self>,
+    ) {
+        ShowfileManager::update(cx, |showfile, cx| {
+            showfile.show.current_command = action.0.clone();
+            cx.notify();
+        });
     }
 }
 
@@ -47,7 +77,8 @@ impl Render for Workspace {
             .size_full()
             .text_color(cx.theme().colors().text)
             .font("Zed Sans")
-            .on_action(cx.listener(Self::handle_cmd))
+            .on_action(cx.listener(Self::handle_execute_command))
+            .on_action(cx.listener(Self::handle_set_current_command))
             .track_focus(&self.focus_handle)
             .child(self.screen.clone())
     }
@@ -55,6 +86,7 @@ impl Render for Workspace {
 
 pub struct Screen {
     current_layout_view: View<LayoutView>,
+    command_line: View<CommandLine>,
 }
 
 impl Screen {
@@ -72,6 +104,7 @@ impl Screen {
 
             Self {
                 current_layout_view,
+                command_line: CommandLine::build(cx),
             }
         })
     }
@@ -158,8 +191,15 @@ impl Render for Screen {
         div()
             .size_full()
             .flex()
-            .child(content)
-            .child(self.render_sidebar(cx))
+            .flex_col()
+            .child(
+                div()
+                    .size_full()
+                    .flex()
+                    .child(content)
+                    .child(self.render_sidebar(cx)),
+            )
+            .child(div().w_full().h_10().child(self.command_line.clone()))
     }
 }
 
@@ -176,4 +216,96 @@ fn get_current_layout_view(cx: &mut WindowContext) -> View<LayoutView> {
     });
 
     LayoutView::build(current_layout_model, cx)
+}
+
+pub struct CommandLine {
+    text_input: View<TextInput>,
+
+    focus_handle: FocusHandle,
+}
+
+impl CommandLine {
+    pub fn build(cx: &mut WindowContext) -> View<Self> {
+        cx.new_view(|cx| {
+            let focus_handle = cx.focus_handle();
+            let text_input =
+                cx.new_view(|cx| TextInput::new(None, "Command line", focus_handle.clone(), cx));
+
+            // Update the command input when the current command changes.
+            cx.observe_global::<ShowfileManager>(|command_line: &mut Self, cx| {
+                command_line.text_input.update(cx, |text_input, cx| {
+                    *text_input.text_mut() = ShowfileManager::show(cx)
+                        .current_command
+                        .map(|cmd| cmd.to_string())
+                        .unwrap_or_default();
+                    cx.notify();
+                });
+            })
+            .detach();
+
+            cx.subscribe(
+                &text_input,
+                |cmd_line: &mut CommandLine, _text_input, event, cx| match event {
+                    text_input::Event::Submit(input) => {
+                        cmd_line.handle_submit_command_input(input, cx)
+                    }
+                },
+            )
+            .detach();
+
+            cx.on_focus_in(&focus_handle, |_focus_handle, cx| {
+                AppState::update(cx, |app_state, _cx| app_state.use_command_shortcuts = false)
+            })
+            .detach();
+
+            cx.on_blur(&focus_handle, |_focus_handle, cx| {
+                AppState::update(cx, |app_state, _cx| app_state.use_command_shortcuts = true)
+            })
+            .detach();
+
+            Self {
+                text_input,
+                focus_handle,
+            }
+        })
+    }
+
+    fn handle_submit_command_input(&mut self, input: &str, cx: &mut WindowContext) {
+        if input.is_empty() {
+            return;
+        }
+
+        self.text_input.update(cx, |text_input, cx| {
+            text_input.clear(cx);
+            ShowfileManager::update(cx, |showfile, cx| {
+                if let Err(err) = showfile.show.execute_command_str(input) {
+                    log::error!("Failed to execute command: {}", err.to_string())
+                } else {
+                    cx.notify();
+                }
+            })
+        })
+    }
+}
+
+impl FocusableView for CommandLine {
+    fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
+        self.focus_handle.clone()
+    }
+}
+
+impl Render for CommandLine {
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        div()
+            .size_full()
+            .border_t()
+            .border_color(cx.theme().colors().border)
+            .bg(cx.theme().colors().element_background)
+            .flex()
+            .flex_shrink()
+            .items_center()
+            .px_3()
+            .child(self.text_input.clone())
+            .track_focus(&self.focus_handle)
+    }
 }
