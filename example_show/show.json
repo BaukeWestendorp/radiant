@@ -255,9 +255,9 @@
     {
       "id": 1,
       "sequence": 1,
-      "current_index": 0,
+      "current_index": null,
       "loop": false,
-      "fader_value": 0.2,
+      "fader_value": 0.5,
       "button_1": {
         "action": "Top"
       },
@@ -271,7 +271,7 @@
     {
       "id": 3,
       "sequence": 1,
-      "current_index": 0,
+      "current_index": null,
       "loop": false,
       "fader_value": 1.0,
       "button_1": {

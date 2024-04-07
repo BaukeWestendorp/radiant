@@ -1,6 +1,6 @@
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, AppContext, Context, FocusHandle, FocusableView, InteractiveElement, IntoElement, Model,
+    div, AppContext, Context, FocusHandle, FocusableView, InteractiveElement, IntoElement,
     ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 use theme::ActiveTheme;
@@ -9,7 +9,7 @@ use ui::selectable::Selectable;
 
 use crate::app::ExecuteCommand;
 use crate::layout::{LayoutView, GRID_SIZE};
-use crate::showfile::{Layout, Layouts, ShowfileManager};
+use crate::showfile::{Layout, ShowfileManager};
 
 pub struct Workspace {
     focus_handle: FocusHandle,
@@ -18,23 +18,9 @@ pub struct Workspace {
 
 impl Workspace {
     pub fn build(cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|cx| {
-            let layouts = cx.new_model(|cx| ShowfileManager::layouts(cx).clone());
-            cx.observe_global::<ShowfileManager>({
-                let layouts = layouts.clone();
-                move |_workspace, cx| {
-                    layouts.update(cx, |layouts, cx| {
-                        *layouts = ShowfileManager::layouts(cx).clone()
-                    });
-                    cx.notify();
-                }
-            })
-            .detach();
-
-            Self {
-                focus_handle: cx.focus_handle(),
-                screen: Screen::build(layouts, cx),
-            }
+        cx.new_view(|cx| Self {
+            focus_handle: cx.focus_handle(),
+            screen: Screen::build(cx),
         })
     }
 
@@ -68,30 +54,30 @@ impl Render for Workspace {
 }
 
 pub struct Screen {
-    layouts: Model<Layouts>,
-
     current_layout_view: View<LayoutView>,
 }
 
 impl Screen {
-    pub fn build(layouts: Model<Layouts>, cx: &mut WindowContext) -> View<Self> {
-        let current_layout_view = get_current_layout_view(layouts.clone(), cx);
+    pub fn build(cx: &mut WindowContext) -> View<Self> {
+        let current_layout_view = get_current_layout_view(cx);
 
         cx.new_view(|cx| {
-            cx.observe(&layouts, |this: &mut Self, layouts, cx| {
-                this.current_layout_view = get_current_layout_view(layouts, cx);
+            cx.observe_global::<ShowfileManager>({
+                move |screen: &mut Screen, cx| {
+                    screen.current_layout_view = get_current_layout_view(cx);
+                    cx.notify();
+                }
             })
             .detach();
 
             Self {
-                layouts,
                 current_layout_view,
             }
         })
     }
 
     fn render_sidebar(&self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let layouts = self.layouts.read(cx).clone();
+        let layouts = ShowfileManager::layouts(cx).clone();
 
         // FIXME: For now we are showing 10 layouts, but this should be a
         // inplace-scrollable, just like the pool windows.
@@ -109,7 +95,7 @@ impl Screen {
         id: usize,
         cx: &mut ViewContext<Self>,
     ) -> impl IntoElement {
-        let border_color = match self.layouts.read(cx).selected_layout_id == id {
+        let border_color = match ShowfileManager::layouts(cx).selected_layout_id == id {
             true => cx.theme().colors().border_selected,
             false => match layout.is_some() {
                 true => cx.theme().colors().border,
@@ -142,19 +128,19 @@ impl Screen {
             .child(id_element);
 
         Button::new(ButtonStyle::Primary, id, cx)
-            .selected(self.layouts.read(cx).selected_layout_id == id)
+            .selected(ShowfileManager::layouts(cx).selected_layout_id == id)
             .border_color(border_color)
             .w_full()
             .h(GRID_SIZE)
             .text_sm()
             .on_click(cx.listener({
                 let layout = layout.cloned();
-                move |screen, _event, cx| {
+                move |_screen, _event, cx| {
                     if let Some(layout) = &layout {
-                        screen.layouts.update(cx, |layouts, cx| {
-                            layouts.selected_layout_id = layout.id;
-                            cx.notify();
+                        ShowfileManager::update(cx, |showfile, _cx| {
+                            showfile.layouts.selected_layout_id = layout.id;
                         });
+                        cx.notify();
                     }
                 }
             }))
@@ -177,15 +163,14 @@ impl Render for Screen {
     }
 }
 
-fn get_current_layout_view(layouts: Model<Layouts>, cx: &mut WindowContext) -> View<LayoutView> {
+fn get_current_layout_view(cx: &mut WindowContext) -> View<LayoutView> {
     let current_layout_model = cx.new_model(|cx| {
         // FIXME: Handle nonexistent layout (this should not be possible, but lets
         // softerror on this to be sure).
-        layouts
-            .read(cx)
+        ShowfileManager::layouts(cx)
             .layouts
             .iter()
-            .find(|layout| layout.id == layouts.read(cx).selected_layout_id)
+            .find(|layout| layout.id == ShowfileManager::layouts(cx).selected_layout_id)
             .unwrap()
             .clone()
     });
