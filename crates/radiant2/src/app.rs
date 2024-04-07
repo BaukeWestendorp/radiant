@@ -1,10 +1,15 @@
-use gpui::{point, size, AppContext, Bounds, VisualContext, WindowOptions};
+use gpui::{
+    actions, point, size, AppContext, Bounds, KeyBinding, Menu, MenuItem, VisualContext,
+    WindowOptions,
+};
 use theme::ThemeSettings;
 
 use crate::assets::Assets;
 use crate::output::DmxOutputManager;
 use crate::showfile::ShowfileManager;
 use crate::workspace::Workspace;
+
+actions!(app, [Quit]);
 
 pub fn run_app(app: gpui::App, showfile_path: Option<String>) {
     app.with_assets(Assets).run(move |cx: &mut AppContext| {
@@ -23,6 +28,15 @@ pub fn run_app(app: gpui::App, showfile_path: Option<String>) {
             ..Default::default()
         };
 
+        init_keybinds(cx);
+
+        init_menu(cx);
+
+        cx.on_action(|_action: &Quit, cx| {
+            log::info!("Quitting Radiant...");
+            cx.quit();
+        });
+
         cx.open_window(window_options, |cx| {
             ThemeSettings::init(cx);
             DmxOutputManager::init(cx);
@@ -33,4 +47,17 @@ pub fn run_app(app: gpui::App, showfile_path: Option<String>) {
             view
         });
     });
+}
+
+fn init_keybinds(cx: &mut AppContext) {
+    cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
+}
+
+fn init_menu(cx: &mut AppContext) {
+    cx.set_menus(vec![Menu {
+        name: "Radiant",
+        items: vec![MenuItem::action("Quit", Quit)],
+    }]);
+
+    log::info!("Initialized menu");
 }
