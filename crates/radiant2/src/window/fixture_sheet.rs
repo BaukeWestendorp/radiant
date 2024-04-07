@@ -121,12 +121,26 @@ impl SheetDelegate for FixtureSheetDelegate {
         }
     }
 
+    fn render_header_cell(
+        &self,
+        column_id: &Self::ColumnId,
+        cx: &mut ViewContext<Sheet<Self>>,
+    ) -> AnyElement {
+        self.render_cell(
+            column_id,
+            div().px_1().child(self.header_label(column_id, cx)),
+            cx,
+        )
+    }
+
     fn render_cell_content(
         &self,
         column_id: &Self::ColumnId,
         fixture: &Self::Data,
         cx: &mut ViewContext<Sheet<Self>>,
     ) -> AnyElement {
+        let mut background_color = None;
+
         let cell = match column_id {
             FixtureSheetColumnId::Id => render_value(Some(fixture.id)),
             FixtureSheetColumnId::Name => render_value(Some(fixture.label.clone())),
@@ -164,19 +178,20 @@ impl SheetDelegate for FixtureSheetDelegate {
                         .programmer_changes()
                         .contains_key(channel)
                 });
-                div()
-                    .px_1()
-                    .when(value_in_programmer, |this| {
-                        this.bg(cx.theme().colors().programmer_change)
-                    })
-                    .child(values_string)
-                    .into_any_element()
+
+                if value_in_programmer {
+                    background_color = Some(cx.theme().colors().programmer_change);
+                }
+
+                div().child(values_string).into_any_element()
             }
         }
         .into_any_element();
 
         let fixture_id = fixture.id;
         div()
+            .when_some(background_color, |this, bg| this.bg(bg))
+            .px_1()
             .child(cell)
             .on_mouse_down(MouseButton::Left, move |_event, cx| {
                 ShowfileManager::update(cx, |showfile, _cx| {

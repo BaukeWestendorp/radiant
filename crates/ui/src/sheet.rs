@@ -143,7 +143,6 @@ pub trait SheetDelegate: Sized {
         cx: &mut ViewContext<Sheet<Self>>,
     ) -> AnyElement {
         div()
-            .px_1()
             .w(self.column_width(column_id, cx))
             .whitespace_nowrap()
             .overflow_hidden()
