@@ -6,7 +6,7 @@ members = [
     "crates/gdtf",
     "crates/theme",
     "crates/ui",
-    "crates/radiant2",
+    "crates/radiant",
 ]
 
 resolver = "2"

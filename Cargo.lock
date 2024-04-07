@@ -3174,7 +3174,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "radiant2"
+name = "radiant"
 version = "0.1.0"
 dependencies = [
  "anyhow",
