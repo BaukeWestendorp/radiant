@@ -1,3 +1,4 @@
+use gpui::prelude::FluentBuilder;
 use gpui::{
     div, uniform_list, AnyElement, IntoElement, ParentElement, Pixels, Render, SharedString,
     Styled, ViewContext,
@@ -24,6 +25,9 @@ impl<D: SheetDelegate + 'static> Render for Sheet<D> {
         let header_row = self.delegate.render_header_row(cx).into_any_element();
 
         div()
+            .border()
+            .border_color(cx.theme().colors().border)
+            .rounded_md()
             .child(header_row)
             .child(
                 uniform_list(
@@ -102,9 +106,10 @@ pub trait SheetDelegate: Sized {
         div()
             .flex()
             .flex_row()
-            .children(header_cells)
+            .bg(cx.theme().colors().element_background_secondary)
             .border_b()
             .border_color(cx.theme().colors().border)
+            .children(header_cells)
             .into_any_element()
     }
 
@@ -121,7 +126,10 @@ pub trait SheetDelegate: Sized {
             .flex_row()
             .bg(match is_selected {
                 true => cx.theme().colors().element_background_selected,
-                false => cx.theme().colors().element_background,
+                false => match ix % 2 == 0 {
+                    true => cx.theme().colors().table_row_background_even,
+                    false => cx.theme().colors().table_row_background_odd,
+                },
             })
             .children(children)
             .into_any_element()
@@ -134,6 +142,7 @@ pub trait SheetDelegate: Sized {
         cx: &mut ViewContext<Sheet<Self>>,
     ) -> AnyElement {
         div()
+            .px_1()
             .w(self.column_width(column_id, cx))
             .whitespace_nowrap()
             .overflow_hidden()

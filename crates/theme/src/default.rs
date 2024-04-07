@@ -26,6 +26,9 @@ fn radiant_dark() -> Theme {
                 element_background_active: gpui::rgb(0x181818).into(),
                 element_background_active_secondary: gpui::rgb(0x343434).into(),
 
+                table_row_background_even: gpui::rgb(0x000000).into(),
+                table_row_background_odd: gpui::rgb(0x181818).into(),
+
                 window_header: gpui::rgb(0x1010b0).into(),
                 window_header_border: gpui::rgb(0x0000ff).into(),
                 window_background: gpui::rgb(0x101010).into(),

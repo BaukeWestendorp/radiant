@@ -162,7 +162,7 @@ impl SheetDelegate for FixtureSheetDelegate {
                         .contains_key(channel)
                 });
                 div()
-                    .px_2()
+                    .px_1()
                     .when(value_in_programmer, |this| {
                         this.bg(cx.theme().colors().programmer_change)
                     })

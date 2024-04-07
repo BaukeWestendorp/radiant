@@ -18,6 +18,9 @@ pub struct ThemeColors {
     pub element_background_active: Hsla,
     pub element_background_active_secondary: Hsla,
 
+    pub table_row_background_even: Hsla,
+    pub table_row_background_odd: Hsla,
+
     pub window_header: Hsla,
     pub window_header_border: Hsla,
     pub window_background: Hsla,
