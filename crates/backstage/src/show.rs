@@ -12,7 +12,7 @@ use crate::command::{Command, Object};
 use crate::playback_engine::PlaybackEngine;
 use crate::showfile::Showfile;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Default)]
 pub struct Show {
     pub current_command: Option<Command>,
 
@@ -23,6 +23,8 @@ pub struct Show {
     pub(crate) presets: Presets,
     pub(crate) executors: Vec<Executor>,
     pub(crate) stage_output: DmxOutput,
+
+    pub(crate) on_stage_output_change: Option<Box<dyn Fn(&DmxOutput)>>,
 }
 
 impl Show {
@@ -136,6 +138,9 @@ impl Show {
                 None => return Err(anyhow!("Top requires an executor")),
             },
         }
+
+        self.recalculate_stage_output();
+
         Ok(())
     }
 
@@ -281,7 +286,18 @@ impl Show {
         stage_output
             .apply_changes(&self.programmer.changes)
             .unwrap();
-        self.stage_output = stage_output
+        self.stage_output = stage_output;
+
+        if let Some(f) = &self.on_stage_output_change {
+            f(&self.stage_output);
+        }
+    }
+
+    pub fn on_stage_output_changed<F>(&mut self, f: F)
+    where
+        F: Fn(&DmxOutput) + 'static,
+    {
+        self.on_stage_output_change = Some(Box::new(f));
     }
 }
 
@@ -351,12 +367,12 @@ impl Fixture {
     }
 
     pub fn attribute_offset_for_current_mode(&self, attribute_name: &str) -> Option<Vec<i32>> {
-        self.get_dmx_channels_using_attribute(attribute_name)
+        self.dmx_channels_using_attribute(attribute_name)
             .first()
             .and_then(|channel| channel.offset.clone())
     }
 
-    pub fn get_dmx_channels_using_attribute(&self, attribute_name: &str) -> Vec<&gdtf::DmxChannel> {
+    pub fn dmx_channels_using_attribute(&self, attribute_name: &str) -> Vec<&gdtf::DmxChannel> {
         self.current_dmx_mode()
             .dmx_channels
             .iter()
@@ -369,7 +385,7 @@ impl Fixture {
             .collect()
     }
 
-    pub fn get_channel_functions_using_attribute(
+    pub fn channel_functions_using_attribute(
         &self,
         attribute_name: &str,
     ) -> Vec<&gdtf::ChannelFunction> {
@@ -391,7 +407,7 @@ impl Fixture {
 
     pub fn channel_resolution_for_attribute(&self, attribute_name: &str) -> Option<u8> {
         let offset = self
-            .get_dmx_channels_using_attribute(attribute_name)
+            .dmx_channels_using_attribute(attribute_name)
             .first()
             .and_then(|c| c.offset.clone())?;
 
@@ -423,18 +439,22 @@ impl Fixture {
 
         let mut channels = vec![];
         for o in offset.iter() {
-            // Because the offset in the GDTF files starts at 1, we need to
-            // compensate for our zero-based array.
-            let offset = o.saturating_sub(1);
-            let address = self.channel.address + offset as u16;
-
-            if let Ok(channel) = DmxChannel::new(self.channel.universe, address) {
+            if let Ok(channel) = self.dmx_channel_from_offset(*o) {
                 channels.push(channel);
             } else {
                 return None;
             }
         }
         Some(channels)
+    }
+
+    fn dmx_channel_from_offset(&self, offset: i32) -> Result<DmxChannel> {
+        // Because the offset in the GDTF files starts at 1, we need to
+        // compensate for our zero-based array.
+        let offset = offset.saturating_sub(1);
+        let address = self.channel.address + offset as u16;
+
+        DmxChannel::new(self.channel.universe, address)
     }
 }
 

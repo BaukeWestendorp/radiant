@@ -18,6 +18,8 @@ pub struct ExecuteCommand(pub Command);
 
 pub fn run_app(app: gpui::App, showfile_path: Option<String>) {
     app.with_assets(Assets).run(move |cx: &mut AppContext| {
+        cx.activate(false);
+
         let window_size = size(1719.into(), 960.into());
         let window_options = WindowOptions {
             bounds: Some(Bounds {

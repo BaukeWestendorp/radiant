@@ -60,7 +60,7 @@ impl ShowfileManager {
 
 impl Global for ShowfileManager {}
 
-#[derive(Debug, Clone, Default)]
+#[derive(Default)]
 pub struct Showfile {
     pub layouts: Layouts,
     pub show: Show,

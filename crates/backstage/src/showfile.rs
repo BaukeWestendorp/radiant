@@ -54,7 +54,7 @@ pub struct Showfile {
 
 impl Showfile {
     pub async fn try_into_show(self) -> Result<Show, Error> {
-        Ok(Show {
+        let mut show = Show {
             patchlist: self.patchlist.try_into_show_patchlist().await?,
             programmer: self.programmer.into_show_programmer(),
             playback_engine: PlaybackEngine::new(),
@@ -66,8 +66,13 @@ impl Showfile {
                 .map(|executor| executor.into())
                 .collect(),
             current_command: None,
-            stage_output: DmxOutput::new(),
-        })
+            stage_output: DmxOutput::default(),
+            on_stage_output_change: None,
+        };
+
+        show.recalculate_stage_output();
+
+        Ok(show)
     }
 }
 

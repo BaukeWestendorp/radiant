@@ -4,6 +4,8 @@ use anyhow::Result;
 use dmx::DmxOutput;
 use gpui::{AppContext, BorrowAppContext, Global};
 
+use crate::showfile::ShowfileManager;
+
 const DMX_OUTPUT_RATE: Duration = Duration::from_millis(1000 / 40);
 
 pub struct DmxOutputManager {
@@ -18,16 +20,41 @@ impl DmxOutputManager {
             protocols: Vec::new(),
         });
 
+        let (tx, rx) = std::sync::mpsc::channel();
+
+        ShowfileManager::update(cx, |showfile, _cx| {
+            showfile.show.on_stage_output_changed(move |stage_output| {
+                tx.send(stage_output.clone()).unwrap();
+            });
+        });
+
         cx.spawn(|mut cx| async move {
             loop {
-                cx.update_global(|this: &mut Self, _cx| {
+                if let Ok(stage_output) = rx.try_recv() {
+                    cx.update_global(|this: &mut Self, _cx| {
+                        this.dmx_output = stage_output.clone();
+                    })
+                    .ok();
+                }
+
+                cx.background_executor().timer(DMX_OUTPUT_RATE).await;
+            }
+        })
+        .detach();
+
+        cx.spawn(|mut cx| async move {
+            loop {
+                cx.update_global(|this: &mut Self, cx| {
+                    let stage_output = ShowfileManager::show(cx).stage_output().clone();
+
                     for protocol in this.protocols.iter_mut() {
-                        if let Err(error) = protocol.send_dmx_output(&this.dmx_output) {
+                        if let Err(error) = protocol.send_dmx_output(&stage_output) {
                             log::error!("Failed to send DMX output: {error}");
                         }
                     }
                 })
                 .ok();
+
                 cx.background_executor().timer(DMX_OUTPUT_RATE).await;
             }
         })
@@ -38,10 +65,6 @@ impl DmxOutputManager {
         cx.update_global::<Self, _>(|this, _cx| {
             this.protocols.push(Box::new(protocol));
         });
-    }
-
-    pub fn set_dmx_output(dmx_output: DmxOutput, cx: &mut AppContext) {
-        cx.update_global(|this: &mut Self, _cx| this.dmx_output = dmx_output);
     }
 }
 
@@ -54,7 +77,6 @@ pub trait DmxProtocol {
 pub mod artnet {
     use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
 
-    use anyhow::anyhow;
     use artnet_protocol::{ArtCommand, Output};
     use dmx::DmxOutput;
 
@@ -92,10 +114,11 @@ pub mod artnet {
     impl DmxProtocol for ArtnetDmxProtocol {
         fn send_dmx_output(&mut self, output: &DmxOutput) -> anyhow::Result<()> {
             let Some(universe) = output.universe(self.local_universe) else {
-                return Err(anyhow!(
+                log::trace!(
                     "Failed to get universe with id {} while trying to output DMX",
                     self.local_universe
-                ));
+                );
+                return Ok(());
             };
             let data = universe.get_addresses().to_vec();
 
