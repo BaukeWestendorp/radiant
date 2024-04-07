@@ -1,6 +1,7 @@
+use backstage::Command;
 use gpui::{
-    actions, point, size, AppContext, Bounds, KeyBinding, Menu, MenuItem, VisualContext,
-    WindowOptions,
+    actions, impl_actions, point, size, AppContext, Bounds, KeyBinding, Menu, MenuItem,
+    VisualContext, WindowOptions,
 };
 use theme::ThemeSettings;
 
@@ -10,6 +11,10 @@ use crate::showfile::ShowfileManager;
 use crate::workspace::Workspace;
 
 actions!(app, [Quit]);
+impl_actions!(app, [ExecuteCommand]);
+
+#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
+pub struct ExecuteCommand(pub Command);
 
 pub fn run_app(app: gpui::App, showfile_path: Option<String>) {
     app.with_assets(Assets).run(move |cx: &mut AppContext| {
@@ -29,12 +34,12 @@ pub fn run_app(app: gpui::App, showfile_path: Option<String>) {
         };
 
         init_keybinds(cx);
-
         init_menu(cx);
 
         cx.on_action(|_action: &Quit, cx| {
             log::info!("Quitting Radiant...");
             cx.quit();
+            log::info!("Quit Radiant");
         });
 
         cx.open_window(window_options, |cx| {
@@ -50,7 +55,10 @@ pub fn run_app(app: gpui::App, showfile_path: Option<String>) {
 }
 
 fn init_keybinds(cx: &mut AppContext) {
-    cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
+    cx.bind_keys([
+        KeyBinding::new("cmd-q", Quit, None),
+        KeyBinding::new("escape", ExecuteCommand(Command::Clear), None),
+    ]);
 }
 
 fn init_menu(cx: &mut AppContext) {

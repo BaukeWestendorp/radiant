@@ -1,12 +1,13 @@
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, AppContext, Context, FocusHandle, FocusableView, IntoElement, Model, ParentElement,
-    Render, Styled, View, ViewContext, VisualContext, WindowContext,
+    div, AppContext, Context, FocusHandle, FocusableView, InteractiveElement, IntoElement, Model,
+    ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 use theme::ActiveTheme;
 use ui::button::{Button, ButtonStyle};
 use ui::selectable::Selectable;
 
+use crate::app::ExecuteCommand;
 use crate::layout::{LayoutView, GRID_SIZE};
 use crate::showfile::{Layout, Layouts, ShowfileManager};
 
@@ -36,6 +37,15 @@ impl Workspace {
             }
         })
     }
+
+    fn handle_cmd(&mut self, cmd: &ExecuteCommand, cx: &mut ViewContext<Self>) {
+        if let Err(err) =
+            ShowfileManager::update(cx, |showfile, _cx| showfile.show.execute_command(&cmd.0))
+        {
+            log::error!("Failed to execute command '{}': {err}", cmd.0);
+        }
+        cx.notify();
+    }
 }
 
 impl FocusableView for Workspace {
@@ -47,9 +57,12 @@ impl FocusableView for Workspace {
 impl Render for Workspace {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
+            .key_context("Workspace")
             .size_full()
             .text_color(cx.theme().colors().text)
             .font("Zed Sans")
+            .on_action(cx.listener(Self::handle_cmd))
+            .track_focus(&self.focus_handle)
             .child(self.screen.clone())
     }
 }
