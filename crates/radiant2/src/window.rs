@@ -6,6 +6,7 @@ use ui::container::{Container, ContainerStyle};
 
 use crate::showfile::Window;
 
+pub mod color_pool;
 pub mod group_pool;
 pub mod pool;
 

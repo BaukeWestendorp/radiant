@@ -52,7 +52,7 @@
           },
           "kind": {
             "Pool": {
-              "kind": "Group",
+              "kind": "ColorPreset",
               "scroll_offset": 0
             }
           }

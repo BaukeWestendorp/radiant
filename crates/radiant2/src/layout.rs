@@ -5,8 +5,9 @@ use gpui::{
 use theme::ActiveTheme;
 
 use crate::showfile::{Layout, PoolWindowKind, Window, WindowKind};
+use crate::window::color_pool::ColorPoolWindowDelegate;
 use crate::window::group_pool::GroupPoolWindowDelegate;
-use crate::window::{WindowDelegate, WindowView};
+use crate::window::WindowView;
 
 pub const GRID_SIZE: gpui::Pixels = px(80.0);
 
@@ -116,20 +117,21 @@ fn get_window_views(
         .collect()
 }
 
-fn get_window_view(
-    window: Model<Window>,
-    cx: &mut WindowContext,
-) -> View<WindowView<impl WindowDelegate>> {
-    let delegate = match window.read(cx).kind {
+fn get_window_view(window: Model<Window>, cx: &mut WindowContext) -> AnyView {
+    match window.read(cx).kind {
         WindowKind::Pool(pool_window) => match pool_window.kind {
-            PoolWindowKind::ColorPreset => todo!(),
-            PoolWindowKind::Group => GroupPoolWindowDelegate::new(window.clone()),
+            PoolWindowKind::ColorPreset => {
+                let delegate = ColorPoolWindowDelegate::new(window.clone());
+                WindowView::build(window, delegate, cx).into()
+            }
+            PoolWindowKind::Group => {
+                let delegate = GroupPoolWindowDelegate::new(window.clone());
+                WindowView::build(window, delegate, cx).into()
+            }
         },
         WindowKind::Executors => todo!(),
         WindowKind::FixtureSheet => todo!(),
-    };
-
-    WindowView::build(window, delegate, cx)
+    }
 }
 
 impl Render for LayoutView {
