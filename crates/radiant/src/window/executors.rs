@@ -231,25 +231,26 @@ impl ExecutorButtonView {
                 cx.notify();
             }
             ExecutorButtonAction::Flash => {
-                ShowfileManager::update(cx, |showfile, _cx| {
+                ShowfileManager::update(cx, |showfile, cx| {
                     if let Some(executor) = showfile.show.executor_mut(self.executor_id) {
                         executor.flash = true;
+                        showfile.show.recalculate_stage_output();
+                        cx.notify();
                     }
                 });
-
-                cx.notify();
             }
         }
     }
 
     pub fn handle_release(&mut self, _event: &MouseUpEvent, cx: &mut ViewContext<Self>) {
         if self.button.action == ExecutorButtonAction::Flash {
-            ShowfileManager::update(cx, |showfile, _cx| {
+            ShowfileManager::update(cx, |showfile, cx| {
                 if let Some(executor) = showfile.show.executor_mut(self.executor_id) {
                     executor.flash = false;
+                    showfile.show.recalculate_stage_output();
+                    cx.notify();
                 }
             });
-            cx.notify();
         }
     }
 }

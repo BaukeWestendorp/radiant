@@ -15,9 +15,11 @@ use crate::showfile::{Layout, ShowfileManager};
 pub mod actions {
 
     use backstage::Command;
-    use gpui::impl_actions;
+    use gpui::{actions, impl_actions};
 
-    impl_actions!(app, [ExecuteCommand, SetCurrentCommand]);
+    actions!(workspace, [ExecuteCurrentCommand]);
+
+    impl_actions!(workspace, [ExecuteCommand, SetCurrentCommand]);
 
     #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
     pub struct ExecuteCommand(pub Command);
@@ -62,6 +64,25 @@ impl Workspace {
             cx.notify();
         });
     }
+
+    fn handle_execute_current_command(
+        &mut self,
+        _action: &actions::ExecuteCurrentCommand,
+        cx: &mut ViewContext<Self>,
+    ) {
+        if let Err(err) = ShowfileManager::update(cx, |showfile, cx| {
+            let result = showfile.show.execute_current_command();
+            cx.notify();
+            result
+        }) {
+            log::error!(
+                "Failed to execute command '{}': {err}",
+                ShowfileManager::show(cx)
+                    .current_command
+                    .map_or("".to_string(), |cmd| cmd.to_string())
+            );
+        }
+    }
 }
 
 impl FocusableView for Workspace {
@@ -79,6 +100,7 @@ impl Render for Workspace {
             .font("Zed Sans")
             .on_action(cx.listener(Self::handle_execute_command))
             .on_action(cx.listener(Self::handle_set_current_command))
+            .on_action(cx.listener(Self::handle_execute_current_command))
             .track_focus(&self.focus_handle)
             .child(self.screen.clone())
     }

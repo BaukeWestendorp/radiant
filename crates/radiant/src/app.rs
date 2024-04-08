@@ -9,7 +9,7 @@ use ui::text_input;
 use crate::assets::Assets;
 use crate::output::{artnet, DmxOutputManager};
 use crate::showfile::ShowfileManager;
-use crate::workspace::actions::{ExecuteCommand, SetCurrentCommand};
+use crate::workspace::actions::{ExecuteCommand, ExecuteCurrentCommand, SetCurrentCommand};
 use crate::workspace::Workspace;
 
 actions!(app, [Quit]);
@@ -106,6 +106,7 @@ fn set_command_shortcuts(cx: &mut AppContext) {
     cx.bind_keys([
         KeyBinding::new("s", SetCurrentCommand(Some(Command::Store(None))), None),
         KeyBinding::new("S", SetCurrentCommand(Some(Command::Select(None))), None),
+        KeyBinding::new("enter", ExecuteCurrentCommand, None),
         KeyBinding::new("backspace", SetCurrentCommand(None), None),
     ]);
 
