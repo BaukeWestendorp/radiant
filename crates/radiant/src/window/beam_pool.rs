@@ -6,19 +6,19 @@ use super::pool::PoolWindowDelegate;
 use super::WindowView;
 use crate::showfile::{ShowfileManager, Window};
 
-pub struct ColorPoolWindowDelegate {
+pub struct BeamPoolWindowDelegate {
     window: Model<Window>,
 }
 
-impl ColorPoolWindowDelegate {
+impl BeamPoolWindowDelegate {
     pub fn new(window: Model<Window>) -> Self {
         Self { window }
     }
 }
 
-impl PoolWindowDelegate for ColorPoolWindowDelegate {
+impl PoolWindowDelegate for BeamPoolWindowDelegate {
     fn label(&self) -> String {
-        "Color".to_string()
+        "Beam".to_string()
     }
 
     fn window(&self) -> &Model<Window> {
@@ -26,13 +26,13 @@ impl PoolWindowDelegate for ColorPoolWindowDelegate {
     }
 
     fn render_item_for_id(&self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement> {
-        ShowfileManager::show(cx).color_preset(id).map(|color| {
+        ShowfileManager::show(cx).beam_preset(id).map(|beam| {
             Button::new(ButtonStyle::Secondary, id, cx)
                 .size_full()
                 .flex()
                 .justify_center()
                 .items_center()
-                .child(color.label().to_string())
+                .child(beam.label().to_string())
         })
     }
 
@@ -40,9 +40,9 @@ impl PoolWindowDelegate for ColorPoolWindowDelegate {
         ShowfileManager::update(cx, |showfile, _cx| {
             if let Err(err) = showfile
                 .show
-                .execute_command(&Command::Select(Some(Object::PresetColor(id))))
+                .execute_command(&Command::Select(Some(Object::PresetBeam(id))))
             {
-                log::error!("Failed to select color preset {id}: {err}");
+                log::error!("Failed to select beam preset {id}: {err}");
             }
         });
         cx.notify();

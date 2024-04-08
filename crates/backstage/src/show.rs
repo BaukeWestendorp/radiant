@@ -8,9 +8,10 @@ use dmx::{DmxChannel, DmxOutput, DmxValue};
 use gdtf::{ActivationGroup, Attribute, FeatureGroup, FixtureType, GdtfDescription};
 use itertools::Itertools;
 
-use crate::command::{Command, Object};
+use crate::command::Command;
 use crate::playback_engine::PlaybackEngine;
 use crate::showfile::Showfile;
+use crate::{Preset, Presets};
 
 type OnStageOutputChange = Box<dyn Fn(&DmxOutput)>;
 
@@ -55,93 +56,13 @@ impl Show {
         Ok(())
     }
 
-    pub fn execute_command(&mut self, command: &Command) -> Result<()> {
-        match command {
-            Command::Clear => {
-                if self.programmer.selection.is_empty() {
-                    self.programmer.changes.clear();
-                } else {
-                    self.programmer.selection.clear();
-                }
-            }
-            Command::Select(object) => match object {
-                Some(Object::Fixture(id)) => {
-                    if !self.fixture_exists(*id) {
-                        return Err(anyhow!("Fixture with id '{id}' not found"));
-                    }
+    pub fn apply_preset(&mut self, preset: &impl Preset) -> Result<()> {
+        for fixture_id in self.selected_fixtures().clone() {
+            let fixture = self.fixture(fixture_id).unwrap().clone();
 
-                    if !self.programmer.selection.contains(id) {
-                        self.programmer.selection.push(*id);
-                    } else {
-                        log::debug!("Fixture with id '{id}' already selected");
-                    }
-                }
-                Some(Object::Group(id)) => {
-                    let group = self
-                        .group(*id)
-                        .ok_or_else(|| anyhow!("Group with id '{id}' not found"))?
-                        .clone();
-                    for fixture_id in group.fixtures.iter() {
-                        self.execute_command(&Command::Select(Some(Object::Fixture(*fixture_id))))?;
-                    }
-                }
-                Some(Object::PresetColor(id)) => {
-                    let color_preset = self
-                        .color_preset(*id)
-                        .ok_or_else(|| anyhow!("Preset:color with id '{id}' not found"))?
-                        .clone();
-
-                    for fixture_id in self.selected_fixtures().clone() {
-                        let fixture = self.fixture(fixture_id).unwrap().clone();
-
-                        self.programmer.apply_attribute_values_for_fixture(
-                            &fixture,
-                            color_preset.attribute_values(),
-                        );
-                    }
-                }
-                Some(object) => return Err(anyhow!("Selecting '{object}' is not supported")),
-                None => return Err(anyhow!("Select requires a target object")),
-            },
-            Command::Store(object) => match object {
-                Some(Object::Group(id)) => {
-                    let selected_fixtures = self.selected_fixtures();
-                    let group = Group {
-                        id: *id,
-                        label: "New Group".to_string(),
-                        fixtures: selected_fixtures.clone(),
-                    };
-                    if group.fixtures.is_empty() {
-                        return Err(anyhow!("No fixtures selected"));
-                    }
-                    self.data.groups.push(group);
-                }
-                Some(object) => return Err(anyhow!("'{object}' can not be stored")),
-                None => return Err(anyhow!("Store requires a destination object")),
-            },
-            Command::Go(object) => match object {
-                Some(Object::Executor(id)) => {
-                    let executor = self
-                        .executor(*id)
-                        .ok_or_else(|| anyhow!("Executor with id '{id}' not found"))?;
-                    executor.go(self)
-                }
-                Some(_) => return Err(anyhow!("Go can only be used with executors")),
-                None => return Err(anyhow!("Go requires an executor")),
-            },
-            Command::Top(object) => match object {
-                Some(Object::Executor(id)) => {
-                    let executor = self
-                        .executor(*id)
-                        .ok_or_else(|| anyhow!("Executor with id '{id}' not found"))?;
-                    executor.top(self)
-                }
-                Some(_) => return Err(anyhow!("Top can only be used with executors")),
-                None => return Err(anyhow!("Top requires an executor")),
-            },
+            self.programmer
+                .apply_attribute_values_for_fixture(&fixture, preset.attribute_values());
         }
-
-        self.recalculate_stage_output();
 
         Ok(())
     }
@@ -222,21 +143,6 @@ impl Show {
 
     pub fn sequences(&self) -> &Vec<Sequence> {
         &self.data.sequences
-    }
-
-    pub fn color_preset(&self, color_preset_id: usize) -> Option<&ColorPreset> {
-        self.presets.colors.iter().find(|c| c.id == color_preset_id)
-    }
-
-    pub fn color_preset_mut(&mut self, color_preset_id: usize) -> Option<&mut ColorPreset> {
-        self.presets
-            .colors
-            .iter_mut()
-            .find(|c| c.id == color_preset_id)
-    }
-
-    pub fn color_presets(&self) -> &Vec<ColorPreset> {
-        &self.presets.colors
     }
 
     pub fn executor(&self, id: usize) -> Option<&Executor> {
@@ -532,73 +438,6 @@ pub struct Cue {
 }
 
 pub type AttributeValues = HashMap<String, DmxValue>;
-
-#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
-pub struct Presets {
-    pub colors: Vec<ColorPreset>,
-}
-
-impl Presets {
-    pub fn new() -> Self {
-        Self { colors: Vec::new() }
-    }
-}
-
-pub trait Preset {
-    fn id(&self) -> usize;
-
-    fn label(&self) -> &str;
-
-    fn set_label(&mut self, label: &str);
-
-    fn affected_attributes(&self) -> AffectedAttributes;
-
-    fn attribute_values(&self) -> &AttributeValues;
-}
-
-pub enum AffectedAttributes {
-    All,
-    Specific(Vec<&'static str>),
-}
-
-#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
-pub struct ColorPreset {
-    pub(crate) id: usize,
-    pub(crate) label: String,
-    pub attribute_values: AttributeValues,
-}
-
-impl ColorPreset {
-    pub fn new(id: usize, label: &str) -> Self {
-        Self {
-            id,
-            label: label.to_string(),
-            attribute_values: HashMap::new(),
-        }
-    }
-}
-
-impl Preset for ColorPreset {
-    fn id(&self) -> usize {
-        self.id
-    }
-
-    fn label(&self) -> &str {
-        &self.label
-    }
-
-    fn set_label(&mut self, label: &str) {
-        self.label = label.to_string();
-    }
-
-    fn affected_attributes(&self) -> AffectedAttributes {
-        AffectedAttributes::Specific(vec!["ColorAdd_R", "ColorAdd_G", "ColorAdd_B"])
-    }
-
-    fn attribute_values(&self) -> &AttributeValues {
-        &self.attribute_values
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Executor {

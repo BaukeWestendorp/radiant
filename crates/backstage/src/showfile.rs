@@ -11,9 +11,9 @@ use gdtf::GdtfDescription;
 use gdtf_share::GdtfShare;
 use lazy_static::lazy_static;
 
-use crate::dmx_protocols;
 use crate::playback_engine::PlaybackEngine;
 use crate::show::{self, AttributeValues, Show};
+use crate::{dmx_protocols, preset};
 
 const FIXTURE_CACHE_PATH: &str = "radiant/fixtures";
 
@@ -236,13 +236,36 @@ impl From<Cue> for show::Cue {
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Presets {
-    pub colors: Vec<Preset>,
+    #[serde(default)]
+    pub beam: Vec<Preset>,
+    #[serde(default)]
+    pub color: Vec<Preset>,
+    #[serde(default)]
+    pub dimmer: Vec<Preset>,
+    #[serde(default)]
+    pub focus: Vec<Preset>,
+    #[serde(default)]
+    pub gobo: Vec<Preset>,
+    #[serde(default)]
+    pub position: Vec<Preset>,
+    #[serde(default)]
+    pub all: Vec<Preset>,
 }
 
-impl From<Presets> for show::Presets {
+impl From<Presets> for preset::Presets {
     fn from(val: Presets) -> Self {
-        show::Presets {
-            colors: val.colors.into_iter().map(|preset| preset.into()).collect(),
+        preset::Presets {
+            beam: val.beam.into_iter().map(|preset| preset.into()).collect(),
+            color: val.color.into_iter().map(|preset| preset.into()).collect(),
+            dimmer: val.dimmer.into_iter().map(|preset| preset.into()).collect(),
+            focus: val.focus.into_iter().map(|preset| preset.into()).collect(),
+            gobo: val.gobo.into_iter().map(|preset| preset.into()).collect(),
+            position: val
+                .position
+                .into_iter()
+                .map(|preset| preset.into())
+                .collect(),
+            all: val.all.into_iter().map(|preset| preset.into()).collect(),
         }
     }
 }
@@ -252,16 +275,6 @@ pub struct Preset {
     pub id: usize,
     pub label: String,
     pub attribute_values: AttributeValues,
-}
-
-impl From<Preset> for show::ColorPreset {
-    fn from(val: Preset) -> Self {
-        show::ColorPreset {
-            id: val.id,
-            label: val.label,
-            attribute_values: val.attribute_values,
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
@@ -363,7 +376,15 @@ mod tests {
                     groups: Vec::new(),
                     sequences: Vec::new(),
                 },
-                presets: Presets { colors: Vec::new() },
+                presets: Presets {
+                    beam: Vec::new(),
+                    color: Vec::new(),
+                    dimmer: Vec::new(),
+                    focus: Vec::new(),
+                    gobo: Vec::new(),
+                    position: Vec::new(),
+                    all: Vec::new()
+                },
                 executors: Vec::new(),
             }
         );

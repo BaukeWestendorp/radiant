@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 
 use self::lexer::Token;
 use crate::command::lexer::Lexer;
+use crate::{Group, Show};
 
 mod lexer;
 
@@ -10,7 +11,13 @@ mod lexer;
 pub enum Object {
     Fixture(usize),
     Group(usize),
+    PresetBeam(usize),
     PresetColor(usize),
+    PresetDimmer(usize),
+    PresetFocus(usize),
+    PresetGobo(usize),
+    PresetPosition(usize),
+    PresetAll(usize),
     Executor(usize),
 }
 
@@ -19,7 +26,13 @@ impl std::fmt::Display for Object {
         match self {
             Object::Fixture(id) => write!(f, "fixture {}", id),
             Object::Group(id) => write!(f, "group {}", id),
-            Object::PresetColor(id) => write!(f, "preset:Color {}", id),
+            Object::PresetBeam(id) => write!(f, "preset:beam {}", id),
+            Object::PresetColor(id) => write!(f, "preset:color {}", id),
+            Object::PresetDimmer(id) => write!(f, "preset:dimmer {}", id),
+            Object::PresetFocus(id) => write!(f, "preset:focus {}", id),
+            Object::PresetGobo(id) => write!(f, "preset:gobo {}", id),
+            Object::PresetPosition(id) => write!(f, "preset:position {}", id),
+            Object::PresetAll(id) => write!(f, "preset:all {}", id),
             Object::Executor(id) => write!(f, "executor {}", id),
         }
     }
@@ -158,6 +171,133 @@ impl std::fmt::Display for Command {
             Command::Top(Some(object)) => write!(f, "top {}", object),
             Command::Top(None) => write!(f, "top"),
         }
+    }
+}
+
+impl Show {
+    pub fn execute_command(&mut self, command: &Command) -> Result<()> {
+        match command {
+            Command::Clear => {
+                if self.programmer.selection.is_empty() {
+                    self.programmer.changes.clear();
+                } else {
+                    self.programmer.selection.clear();
+                }
+            }
+            Command::Select(object) => match object {
+                Some(Object::Fixture(id)) => {
+                    if !self.fixture_exists(*id) {
+                        return Err(anyhow!("Fixture with id '{id}' not found"));
+                    }
+
+                    if !self.programmer.selection.contains(id) {
+                        self.programmer.selection.push(*id);
+                    } else {
+                        log::debug!("Fixture with id '{id}' already selected");
+                    }
+                }
+                Some(Object::Group(id)) => {
+                    let group = self
+                        .group(*id)
+                        .ok_or_else(|| anyhow!("Group with id '{id}' not found"))?
+                        .clone();
+                    for fixture_id in group.fixtures.iter() {
+                        self.execute_command(&Command::Select(Some(Object::Fixture(*fixture_id))))?;
+                    }
+                }
+                Some(Object::PresetBeam(id)) => {
+                    let beam = self
+                        .beam_preset(*id)
+                        .ok_or_else(|| anyhow!("Beam preset with id '{id}' not found"))?
+                        .clone();
+                    self.apply_preset(&beam)?;
+                }
+                Some(Object::PresetColor(id)) => {
+                    let color_preset = self
+                        .color_preset(*id)
+                        .ok_or_else(|| anyhow!("Color preset with id '{id}' not found"))?
+                        .clone();
+                    self.apply_preset(&color_preset)?;
+                }
+                Some(Object::PresetDimmer(id)) => {
+                    let dimmer_preset = self
+                        .dimmer_preset(*id)
+                        .ok_or_else(|| anyhow!("Dimmer preset with id '{id}' not found"))?
+                        .clone();
+                    self.apply_preset(&dimmer_preset)?;
+                }
+                Some(Object::PresetFocus(id)) => {
+                    let focus_preset = self
+                        .focus_preset(*id)
+                        .ok_or_else(|| anyhow!("Focus preset with id '{id}' not found"))?
+                        .clone();
+                    self.apply_preset(&focus_preset)?;
+                }
+                Some(Object::PresetGobo(id)) => {
+                    let gobo_preset = self
+                        .gobo_preset(*id)
+                        .ok_or_else(|| anyhow!("Gobo preset with id '{id}' not found"))?
+                        .clone();
+                    self.apply_preset(&gobo_preset)?;
+                }
+                Some(Object::PresetPosition(id)) => {
+                    let position_preset = self
+                        .position_preset(*id)
+                        .ok_or_else(|| anyhow!("Position preset with id '{id}' not found"))?
+                        .clone();
+                    self.apply_preset(&position_preset)?;
+                }
+                Some(Object::PresetAll(id)) => {
+                    let all_preset = self
+                        .all_preset(*id)
+                        .ok_or_else(|| anyhow!("All preset with id '{id}' not found"))?
+                        .clone();
+                    self.apply_preset(&all_preset)?;
+                }
+                Some(other) => return Err(anyhow!("'{other}' can not be selected")),
+                None => return Err(anyhow!("Select requires a target object")),
+            },
+            Command::Store(object) => match object {
+                Some(Object::Group(id)) => {
+                    let selected_fixtures = self.selected_fixtures();
+                    let group = Group {
+                        id: *id,
+                        label: "New Group".to_string(),
+                        fixtures: selected_fixtures.clone(),
+                    };
+                    if group.fixtures.is_empty() {
+                        return Err(anyhow!("No fixtures selected"));
+                    }
+                    self.data.groups.push(group);
+                }
+                Some(object) => return Err(anyhow!("'{object}' can not be stored")),
+                None => return Err(anyhow!("Store requires a destination object")),
+            },
+            Command::Go(object) => match object {
+                Some(Object::Executor(id)) => {
+                    let executor = self
+                        .executor(*id)
+                        .ok_or_else(|| anyhow!("Executor with id '{id}' not found"))?;
+                    executor.go(self)
+                }
+                Some(_) => return Err(anyhow!("Go can only be used with executors")),
+                None => return Err(anyhow!("Go requires an executor")),
+            },
+            Command::Top(object) => match object {
+                Some(Object::Executor(id)) => {
+                    let executor = self
+                        .executor(*id)
+                        .ok_or_else(|| anyhow!("Executor with id '{id}' not found"))?;
+                    executor.top(self)
+                }
+                Some(_) => return Err(anyhow!("Top can only be used with executors")),
+                None => return Err(anyhow!("Top requires an executor")),
+            },
+        }
+
+        self.recalculate_stage_output();
+
+        Ok(())
     }
 }
 

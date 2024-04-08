@@ -5,10 +5,16 @@ use gpui::{
 use theme::ActiveTheme;
 
 use crate::showfile::{Layout, PoolWindowKind, Window, WindowKind};
+use crate::window::all_pool::AllPoolWindowDelegate;
+use crate::window::beam_pool::BeamPoolWindowDelegate;
 use crate::window::color_pool::ColorPoolWindowDelegate;
+use crate::window::dimmer_pool::DimmerPoolWindowDelegate;
 use crate::window::executors::ExecutorsWindowDelegate;
 use crate::window::fixture_sheet::FixtureSheetWindowDelegate;
+use crate::window::focus_pool::FocusPoolWindowDelegate;
+use crate::window::gobo_pool::GoboPoolWindowDelegate;
 use crate::window::group_pool::GroupPoolWindowDelegate;
+use crate::window::position_pool::PositionPoolWindowDelegate;
 use crate::window::WindowView;
 
 pub const GRID_SIZE: gpui::Pixels = px(80.0);
@@ -122,8 +128,32 @@ fn get_window_views(
 fn get_window_view(window: Model<Window>, cx: &mut WindowContext) -> AnyView {
     match window.read(cx).kind {
         WindowKind::Pool(pool_window) => match pool_window.kind {
+            PoolWindowKind::BeamPreset => {
+                let delegate = BeamPoolWindowDelegate::new(window.clone());
+                WindowView::build(window, delegate, cx).into()
+            }
             PoolWindowKind::ColorPreset => {
                 let delegate = ColorPoolWindowDelegate::new(window.clone());
+                WindowView::build(window, delegate, cx).into()
+            }
+            PoolWindowKind::DimmerPreset => {
+                let delegate = DimmerPoolWindowDelegate::new(window.clone());
+                WindowView::build(window, delegate, cx).into()
+            }
+            PoolWindowKind::FocusPreset => {
+                let delegate = FocusPoolWindowDelegate::new(window.clone());
+                WindowView::build(window, delegate, cx).into()
+            }
+            PoolWindowKind::GoboPreset => {
+                let delegate = GoboPoolWindowDelegate::new(window.clone());
+                WindowView::build(window, delegate, cx).into()
+            }
+            PoolWindowKind::PositionPreset => {
+                let delegate = PositionPoolWindowDelegate::new(window.clone());
+                WindowView::build(window, delegate, cx).into()
+            }
+            PoolWindowKind::AllPreset => {
+                let delegate = AllPoolWindowDelegate::new(window.clone());
                 WindowView::build(window, delegate, cx).into()
             }
             PoolWindowKind::Group => {

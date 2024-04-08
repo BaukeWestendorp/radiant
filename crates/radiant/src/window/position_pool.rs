@@ -1,26 +1,24 @@
-use backstage::{Command, Object};
-use gpui::prelude::FluentBuilder;
+use backstage::{Command, Object, Preset};
 use gpui::{IntoElement, Model, ParentElement, Styled, ViewContext, WindowContext};
-use theme::ActiveTheme;
 use ui::button::{Button, ButtonStyle};
 
 use super::pool::PoolWindowDelegate;
 use super::WindowView;
 use crate::showfile::{ShowfileManager, Window};
 
-pub struct GroupPoolWindowDelegate {
+pub struct PositionPoolWindowDelegate {
     window: Model<Window>,
 }
 
-impl GroupPoolWindowDelegate {
+impl PositionPoolWindowDelegate {
     pub fn new(window: Model<Window>) -> Self {
         Self { window }
     }
 }
 
-impl PoolWindowDelegate for GroupPoolWindowDelegate {
+impl PoolWindowDelegate for PositionPoolWindowDelegate {
     fn label(&self) -> String {
-        "Group".to_string()
+        "Position".to_string()
     }
 
     fn window(&self) -> &Model<Window> {
@@ -28,32 +26,25 @@ impl PoolWindowDelegate for GroupPoolWindowDelegate {
     }
 
     fn render_item_for_id(&self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement> {
-        if let Some(group) = ShowfileManager::show(cx).group(id) {
-            let is_selected = ShowfileManager::show(cx).are_fixtures_selected(&group.fixtures);
-
-            Some(
+        ShowfileManager::show(cx)
+            .position_preset(id)
+            .map(|position| {
                 Button::new(ButtonStyle::Secondary, id, cx)
-                    .when(is_selected, |this| {
-                        this.border_color(cx.theme().colors().pool_item_all_selected)
-                    })
                     .size_full()
                     .flex()
                     .justify_center()
                     .items_center()
-                    .child(group.label.clone()),
-            )
-        } else {
-            None
-        }
+                    .child(position.label().to_string())
+            })
     }
 
     fn handle_click_item(&mut self, id: usize, cx: &mut ViewContext<WindowView<Self>>) {
         ShowfileManager::update(cx, |showfile, _cx| {
             if let Err(err) = showfile
                 .show
-                .execute_command(&Command::Select(Some(Object::Group(id))))
+                .execute_command(&Command::Select(Some(Object::PresetPosition(id))))
             {
-                log::error!("Failed to select group {id}: {err}");
+                log::error!("Failed to select position preset {id}: {err}");
             }
         });
         cx.notify();

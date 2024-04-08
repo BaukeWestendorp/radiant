@@ -221,7 +221,7 @@
     ]
   },
   "presets": {
-    "colors": [
+    "color": [
       {
         "id": 1,
         "label": "Red",
@@ -247,6 +247,29 @@
           "ColorAdd_R": 255,
           "ColorAdd_G": 0,
           "ColorAdd_B": 255
+        }
+      }
+    ],
+    "dimmer": [
+      {
+        "id": 1,
+        "label": "Full",
+        "attribute_values": {
+          "Dimmer": 255
+        }
+      },
+      {
+        "id": 2,
+        "label": "Half",
+        "attribute_values": {
+          "Dimmer": 127
+        }
+      },
+      {
+        "id": 3,
+        "label": "Zero",
+        "attribute_values": {
+          "Dimmer": 0
         }
       }
     ]

@@ -126,7 +126,13 @@ pub struct PoolWindow {
 
 #[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]
 pub enum PoolWindowKind {
+    BeamPreset,
     ColorPreset,
+    DimmerPreset,
+    FocusPreset,
+    GoboPreset,
+    PositionPreset,
+    AllPreset,
     Group,
 }
 

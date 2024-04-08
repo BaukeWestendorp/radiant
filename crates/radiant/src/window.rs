@@ -6,11 +6,18 @@ use ui::container::{Container, ContainerStyle};
 
 use crate::showfile::Window;
 
-pub mod color_pool;
 pub mod executors;
 pub mod fixture_sheet;
+
+pub mod all_pool;
+pub mod beam_pool;
+pub mod color_pool;
+pub mod dimmer_pool;
+pub mod focus_pool;
+pub mod gobo_pool;
 pub mod group_pool;
 pub mod pool;
+pub mod position_pool;
 
 pub struct WindowView<D: WindowDelegate> {
     window: Model<Window>,
