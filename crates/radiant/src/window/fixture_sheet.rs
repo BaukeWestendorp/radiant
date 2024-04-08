@@ -162,6 +162,7 @@ impl SheetDelegate for FixtureSheetDelegate {
                     .map(|channel| {
                         ShowfileManager::show(cx)
                             .stage_output()
+                            .borrow()
                             .channel(*channel)
                             .unwrap_or(0)
                     })

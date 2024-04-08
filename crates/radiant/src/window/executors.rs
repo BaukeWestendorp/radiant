@@ -257,7 +257,6 @@ impl ExecutorButtonView {
                 ShowfileManager::update(cx, |showfile, cx| {
                     if let Some(executor) = showfile.show.executor_mut(executor_id) {
                         executor.flash = true;
-                        showfile.show.recalculate_stage_output();
                         cx.notify();
                     }
                 });
@@ -278,7 +277,6 @@ impl ExecutorButtonView {
             ShowfileManager::update(cx, |showfile, cx| {
                 if let Some(executor) = showfile.show.executor_mut(executor_id) {
                     executor.flash = false;
-                    showfile.show.recalculate_stage_output();
                     cx.notify();
                 }
             });

@@ -1,4 +1,4 @@
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::fs::File;
 use std::rc::Rc;
@@ -13,8 +13,6 @@ use crate::playback_engine::PlaybackEngine;
 use crate::showfile::Showfile;
 use crate::{Preset, Presets};
 
-type OnStageOutputChange = Box<dyn Fn(&DmxOutput)>;
-
 #[derive(Default)]
 pub struct Show {
     pub current_command: Option<Command>,
@@ -25,9 +23,7 @@ pub struct Show {
     pub(crate) data: Data,
     pub(crate) presets: Presets,
     pub(crate) executors: Vec<Executor>,
-    pub(crate) stage_output: DmxOutput,
-
-    pub(crate) on_stage_output_change: Option<OnStageOutputChange>,
+    pub(crate) stage_output: Rc<RefCell<DmxOutput>>,
 }
 
 impl Show {
@@ -182,11 +178,11 @@ impl Show {
             .collect()
     }
 
-    pub fn stage_output(&self) -> &DmxOutput {
-        &self.stage_output
+    pub fn stage_output(&self) -> Rc<RefCell<DmxOutput>> {
+        self.stage_output.clone()
     }
 
-    pub fn recalculate_stage_output(&mut self) {
+    pub fn recalculate_stage_output(&self) {
         let mut stage_output = self.playback_engine.determine_dmx_output(self);
         for universe in self.used_universes().iter() {
             stage_output.add_universe_if_absent(*universe);
@@ -194,18 +190,7 @@ impl Show {
         stage_output
             .apply_changes(&self.programmer.changes)
             .unwrap();
-        self.stage_output = stage_output;
-
-        if let Some(f) = &self.on_stage_output_change {
-            f(&self.stage_output);
-        }
-    }
-
-    pub fn on_stage_output_changed<F>(&mut self, f: F)
-    where
-        F: Fn(&DmxOutput) + 'static,
-    {
-        self.on_stage_output_change = Some(Box::new(f));
+        *self.stage_output.borrow_mut() = stage_output;
     }
 }
 

@@ -9,43 +9,20 @@ use crate::showfile::ShowfileManager;
 const DMX_OUTPUT_RATE: Duration = Duration::from_millis(1000 / 40);
 
 pub struct DmxOutputManager {
-    dmx_output: DmxOutput,
     protocols: Vec<Box<dyn DmxProtocol>>,
 }
 
 impl DmxOutputManager {
     pub fn init(cx: &mut AppContext) {
         cx.set_global::<Self>(Self {
-            dmx_output: DmxOutput::default(),
             protocols: Vec::new(),
         });
-
-        let (tx, rx) = std::sync::mpsc::channel();
-
-        ShowfileManager::update(cx, |showfile, _cx| {
-            showfile.show.on_stage_output_changed(move |stage_output| {
-                tx.send(stage_output.clone()).unwrap();
-            });
-        });
-
-        cx.spawn(|mut cx| async move {
-            loop {
-                if let Ok(stage_output) = rx.try_recv() {
-                    cx.update_global(|this: &mut Self, _cx| {
-                        this.dmx_output = stage_output.clone();
-                    })
-                    .ok();
-                }
-
-                cx.background_executor().timer(DMX_OUTPUT_RATE).await;
-            }
-        })
-        .detach();
 
         cx.spawn(|mut cx| async move {
             loop {
                 cx.update_global(|this: &mut Self, cx| {
-                    let stage_output = ShowfileManager::show(cx).stage_output().clone();
+                    ShowfileManager::show(cx).recalculate_stage_output();
+                    let stage_output = ShowfileManager::show(cx).stage_output().borrow().clone();
 
                     for protocol in this.protocols.iter_mut() {
                         if let Err(error) = protocol.send_dmx_output(&stage_output) {

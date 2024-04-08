@@ -1,9 +1,10 @@
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::env;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
+use std::rc::Rc;
 
 use anyhow::{anyhow, Error};
 use dmx::{DmxChannel, DmxOutput, DmxValue};
@@ -54,7 +55,7 @@ pub struct Showfile {
 
 impl Showfile {
     pub async fn try_into_show(self) -> Result<Show, Error> {
-        let mut show = Show {
+        Ok(Show {
             patchlist: self.patchlist.try_into_show_patchlist().await?,
             programmer: self.programmer.into_show_programmer(),
             playback_engine: PlaybackEngine::new(),
@@ -66,13 +67,8 @@ impl Showfile {
                 .map(|executor| executor.into())
                 .collect(),
             current_command: None,
-            stage_output: DmxOutput::default(),
-            on_stage_output_change: None,
-        };
-
-        show.recalculate_stage_output();
-
-        Ok(show)
+            stage_output: Rc::new(RefCell::new(DmxOutput::default())),
+        })
     }
 }
 
