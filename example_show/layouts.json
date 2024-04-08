@@ -3,7 +3,7 @@
   "layouts": [
     {
       "id": 1,
-      "label": "Main",
+      "label": "Programming",
       "size": {
         "width": 20,
         "height": 12
@@ -169,31 +169,17 @@
               "y": 8
             },
             "size": {
-              "width": 4,
+              "width": 20,
               "height": 4
             }
           },
           "kind": "Executors"
-        },
-        {
-          "id": 4,
-          "bounds": {
-            "origin": {
-              "x": 4,
-              "y": 8
-            },
-            "size": {
-              "width": 16,
-              "height": 4
-            }
-          },
-          "kind": "FixtureSheet"
         }
       ]
     },
     {
       "id": 2,
-      "label": "Testing",
+      "label": "Fixtures",
       "size": {
         "width": 20,
         "height": 12
@@ -207,16 +193,25 @@
               "y": 0
             },
             "size": {
-              "width": 5,
-              "height": 5
+              "width": 20,
+              "height": 8
             }
           },
-          "kind": {
-            "Pool": {
-              "kind": "Group",
-              "scroll_offset": 0
+          "kind": "FixtureSheet"
+        },
+        {
+          "id": 2,
+          "bounds": {
+            "origin": {
+              "x": 0,
+              "y": 8
+            },
+            "size": {
+              "width": 20,
+              "height": 4
             }
-          }
+          },
+          "kind": "Executors"
         }
       ]
     }

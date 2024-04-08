@@ -224,6 +224,15 @@
     "color": [
       {
         "id": 1,
+        "label": "White",
+        "attribute_values": {
+          "ColorAdd_R": 255,
+          "ColorAdd_G": 255,
+          "ColorAdd_B": 255
+        }
+      },
+      {
+        "id": 2,
         "label": "Red",
         "attribute_values": {
           "ColorAdd_R": 255,
@@ -232,7 +241,16 @@
         }
       },
       {
-        "id": 2,
+        "id": 3,
+        "label": "Orange",
+        "attribute_values": {
+          "ColorAdd_R": 255,
+          "ColorAdd_G": 127,
+          "ColorAdd_B": 0
+        }
+      },
+      {
+        "id": 4,
         "label": "Yellow",
         "attribute_values": {
           "ColorAdd_R": 255,
@@ -241,12 +259,84 @@
         }
       },
       {
-        "id": 3,
+        "id": 5,
+        "label": "Lime",
+        "attribute_values": {
+          "ColorAdd_R": 127,
+          "ColorAdd_G": 255,
+          "ColorAdd_B": 0
+        }
+      },
+      {
+        "id": 6,
+        "label": "Green",
+        "attribute_values": {
+          "ColorAdd_R": 0,
+          "ColorAdd_G": 255,
+          "ColorAdd_B": 0
+        }
+      },
+      {
+        "id": 7,
+        "label": "Teal",
+        "attribute_values": {
+          "ColorAdd_R": 0,
+          "ColorAdd_G": 255,
+          "ColorAdd_B": 127
+        }
+      },
+      {
+        "id": 8,
+        "label": "Cyan",
+        "attribute_values": {
+          "ColorAdd_R": 0,
+          "ColorAdd_G": 255,
+          "ColorAdd_B": 255
+        }
+      },
+      {
+        "id": 9,
+        "label": "Indigo",
+        "attribute_values": {
+          "ColorAdd_R": 0,
+          "ColorAdd_G": 127,
+          "ColorAdd_B": 255
+        }
+      },
+      {
+        "id": 10,
+        "label": "Blue",
+        "attribute_values": {
+          "ColorAdd_R": 0,
+          "ColorAdd_G": 0,
+          "ColorAdd_B": 255
+        }
+      },
+      {
+        "id": 11,
+        "label": "Violet",
+        "attribute_values": {
+          "ColorAdd_R": 127,
+          "ColorAdd_G": 0,
+          "ColorAdd_B": 255
+        }
+      },
+      {
+        "id": 12,
         "label": "Magenta",
         "attribute_values": {
           "ColorAdd_R": 255,
           "ColorAdd_G": 0,
           "ColorAdd_B": 255
+        }
+      },
+      {
+        "id": 13,
+        "label": "Pink",
+        "attribute_values": {
+          "ColorAdd_R": 255,
+          "ColorAdd_G": 0,
+          "ColorAdd_B": 127
         }
       }
     ],
