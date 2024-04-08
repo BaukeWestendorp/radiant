@@ -8,6 +8,7 @@ use gpui::{
 use theme::ActiveTheme;
 use ui::button::{Button, ButtonStyle};
 use ui::container::Container;
+use ui::disableable::Disableable;
 
 use super::{WindowDelegate, WindowView};
 use crate::layout::GRID_SIZE;
@@ -56,11 +57,13 @@ impl ExecutorsWindow {
 }
 
 fn get_executor_views(cx: &mut WindowContext) -> Vec<View<ExecutorView>> {
-    ShowfileManager::show(cx)
-        .executors()
-        .clone()
-        .iter()
-        .map(|executor| ExecutorView::build(executor.clone(), cx))
+    // FIXME: For now we just show 20 executors, but this amount should be
+    // calculated based on the width.
+    (1..=20)
+        .map(|id| {
+            let executor = ShowfileManager::show(cx).executor(id);
+            ExecutorView::build(executor.cloned(), cx)
+        })
         .collect::<Vec<_>>()
 }
 
@@ -81,12 +84,12 @@ pub struct ExecutorView {
 }
 
 impl ExecutorView {
-    pub fn build(executor: Executor, cx: &mut WindowContext) -> View<Self> {
+    pub fn build(executor: Option<Executor>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| Self {
             info: ExecutorInfo::build(executor.clone(), cx),
-            button_1: ExecutorButtonView::build(executor.id, executor.button_1, cx),
-            button_2: ExecutorButtonView::build(executor.id, executor.button_2, cx),
-            button_3: ExecutorButtonView::build(executor.id, executor.button_3, cx),
+            button_1: ExecutorButtonView::build(executor.clone(), ExecutorButtonKind::First, cx),
+            button_2: ExecutorButtonView::build(executor.clone(), ExecutorButtonKind::Second, cx),
+            button_3: ExecutorButtonView::build(executor.clone(), ExecutorButtonKind::Third, cx),
         })
     }
 }
@@ -111,11 +114,11 @@ impl Render for ExecutorView {
 }
 
 pub struct ExecutorInfo {
-    executor: Executor,
+    executor: Option<Executor>,
 }
 
 impl ExecutorInfo {
-    pub fn build(executor: Executor, cx: &mut WindowContext) -> View<Self> {
+    pub fn build(executor: Option<Executor>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|_cx| Self { executor })
     }
 
@@ -152,11 +155,15 @@ impl ExecutorInfo {
             "cues",
             cues.len(),
             move |this, range, cx| {
+                let Some(executor) = this.executor.clone() else {
+                    return vec![];
+                };
+
                 cues[range]
                     .iter()
                     .enumerate()
                     .map(|(ix, cue)| {
-                        let active = this.executor.current_index.get() == Some(ix);
+                        let active = executor.current_index.get() == Some(ix);
                         this.render_cue(cue, active, cx)
                     })
                     .collect()
@@ -180,7 +187,8 @@ impl Render for ExecutorInfo {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let sequence = self
             .executor
-            .sequence
+            .as_ref()
+            .and_then(|e| e.sequence)
             .and_then(|id| ShowfileManager::show(cx).sequence(id).cloned());
 
         Container::new(cx)
@@ -192,25 +200,40 @@ impl Render for ExecutorInfo {
 }
 
 pub struct ExecutorButtonView {
-    executor_id: usize,
-    button: ExecutorButton,
+    executor: Option<Executor>,
+    button: Option<ExecutorButton>,
 }
 
 impl ExecutorButtonView {
-    pub fn build(executor_id: usize, button: ExecutorButton, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|_cx| Self {
-            executor_id,
-            button,
-        })
+    pub fn build(
+        executor: Option<Executor>,
+        kind: ExecutorButtonKind,
+        cx: &mut WindowContext,
+    ) -> View<Self> {
+        let button = executor.as_ref().map(|e| match kind {
+            ExecutorButtonKind::First => e.button_1.clone(),
+            ExecutorButtonKind::Second => e.button_2.clone(),
+            ExecutorButtonKind::Third => e.button_3.clone(),
+        });
+
+        cx.new_view(|_cx| Self { executor, button })
     }
 
     pub fn handle_press(&mut self, _event: &MouseDownEvent, cx: &mut ViewContext<Self>) {
-        match self.button.action {
+        let Some(button) = self.button.clone() else {
+            return;
+        };
+
+        let Some(executor_id) = self.executor.as_ref().map(|e| e.id) else {
+            return;
+        };
+
+        match button.action {
             ExecutorButtonAction::Go => {
                 ShowfileManager::update(cx, |showfile, _cx| {
                     if let Err(err) = showfile
                         .show
-                        .execute_command(&Command::Go(Some(Object::Executor(self.executor_id))))
+                        .execute_command(&Command::Go(Some(Object::Executor(executor_id))))
                     {
                         log::error!("Failed to execute 'go' command: {}", err.to_string());
                     }
@@ -222,7 +245,7 @@ impl ExecutorButtonView {
                 ShowfileManager::update(cx, |showfile, _cx| {
                     if let Err(err) = showfile
                         .show
-                        .execute_command(&Command::Top(Some(Object::Executor(self.executor_id))))
+                        .execute_command(&Command::Top(Some(Object::Executor(executor_id))))
                     {
                         log::error!("Failed to execute 'top' command: {}", err.to_string());
                     }
@@ -232,7 +255,7 @@ impl ExecutorButtonView {
             }
             ExecutorButtonAction::Flash => {
                 ShowfileManager::update(cx, |showfile, cx| {
-                    if let Some(executor) = showfile.show.executor_mut(self.executor_id) {
+                    if let Some(executor) = showfile.show.executor_mut(executor_id) {
                         executor.flash = true;
                         showfile.show.recalculate_stage_output();
                         cx.notify();
@@ -243,9 +266,17 @@ impl ExecutorButtonView {
     }
 
     pub fn handle_release(&mut self, _event: &MouseUpEvent, cx: &mut ViewContext<Self>) {
-        if self.button.action == ExecutorButtonAction::Flash {
+        let Some(button) = self.button.clone() else {
+            return;
+        };
+
+        let Some(executor_id) = self.executor.as_ref().map(|e| e.id) else {
+            return;
+        };
+
+        if button.action == ExecutorButtonAction::Flash {
             ShowfileManager::update(cx, |showfile, cx| {
-                if let Some(executor) = showfile.show.executor_mut(self.executor_id) {
+                if let Some(executor) = showfile.show.executor_mut(executor_id) {
                     executor.flash = false;
                     showfile.show.recalculate_stage_output();
                     cx.notify();
@@ -257,14 +288,23 @@ impl ExecutorButtonView {
 
 impl Render for ExecutorButtonView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        Button::new(ButtonStyle::Primary, self.executor_id, cx)
+        Button::new(ButtonStyle::Primary, "executor_button", cx)
             .w(GRID_SIZE)
             .h(GRID_SIZE / 2.0)
             .flex()
             .justify_center()
             .items_center()
-            .child(self.button.action.to_string())
+            .disabled(self.executor.is_none())
+            .when_some(self.button.clone(), |this, button| {
+                this.child(button.action.to_string())
+            })
             .on_press(cx.listener(Self::handle_press))
             .on_release(cx.listener(Self::handle_release))
     }
+}
+
+pub enum ExecutorButtonKind {
+    First,
+    Second,
+    Third,
 }

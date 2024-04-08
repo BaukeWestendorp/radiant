@@ -34,8 +34,8 @@ impl ButtonStyle {
 
     pub fn border_disabled(&self, cx: &AppContext) -> Hsla {
         match self {
-            ButtonStyle::Primary => cx.theme().colors().border,
-            ButtonStyle::Secondary => cx.theme().colors().border,
+            ButtonStyle::Primary => cx.theme().colors().border_disabled,
+            ButtonStyle::Secondary => cx.theme().colors().border_disabled,
         }
     }
 
