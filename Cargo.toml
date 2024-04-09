@@ -3,11 +3,10 @@ members = [
     "crates/backstage",
     "crates/dmx",
     "crates/gdtf_share",
-    "crates/gdtf",
     "crates/theme",
     "crates/ui",
     "crates/radiant",
-    "crates/gdtf2",
+    "crates/gdtf",
 ]
 
 resolver = "2"

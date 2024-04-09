@@ -263,7 +263,7 @@ impl Show {
                     let group = Group {
                         id: *id,
                         label: "New Group".to_string(),
-                        fixtures: selected_fixtures.clone(),
+                        fixtures: selected_fixtures.to_vec(),
                     };
                     if group.fixtures.is_empty() {
                         return Err(anyhow!("No fixtures selected"));

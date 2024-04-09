@@ -19,7 +19,7 @@ pub struct FixtureSheetWindowDelegate {
 impl FixtureSheetWindowDelegate {
     pub fn new(cx: &mut WindowContext) -> Self {
         let fixtures = ShowfileManager::show(cx).fixtures();
-        let sheet_delegate = FixtureSheetDelegate::new(fixtures.clone());
+        let sheet_delegate = FixtureSheetDelegate::new(fixtures.to_vec());
         let sheet = cx.new_view(|_cx| Sheet::new(sheet_delegate, "fixture_sheet"));
 
         Self { sheet }
@@ -72,7 +72,7 @@ impl SheetDelegate for FixtureSheetDelegate {
         labels
     }
 
-    fn values(&self, _cx: &mut ViewContext<Sheet<Self>>) -> &Vec<Self::Data> {
+    fn values(&self, _cx: &mut ViewContext<Sheet<Self>>) -> &[Self::Data] {
         &self.fixtures
     }
 

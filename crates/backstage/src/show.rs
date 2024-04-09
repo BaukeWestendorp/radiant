@@ -5,9 +5,7 @@ use std::rc::Rc;
 
 use anyhow::{anyhow, Result};
 use dmx::{DmxChannel, DmxOutput, DmxValue};
-use gdtf::{
-    ActivationGroup, Attribute, FeatureGroup, FeatureGroupType, FixtureType, GdtfDescription,
-};
+use gdtf::{Attribute, FixtureType, GdtfDescription};
 use itertools::Itertools;
 
 use crate::command::Command;
@@ -55,12 +53,14 @@ impl Show {
     }
 
     pub fn apply_preset(&mut self, preset: &impl Preset) -> Result<()> {
-        for fixture_id in self.selected_fixtures().clone() {
+        for fixture_id in self.selected_fixtures().to_vec() {
             let fixture = self.fixture(fixture_id).unwrap().clone();
-            let attribute_values = preset
+            let attributes = preset
                 .feature_groups()
                 .iter()
-                .flat_map(|fg| fixture.attributes_for_feature_group(fg));
+                .flat_map(|fg| fixture.attributes_for_feature_group(fg))
+                .collect::<Vec<_>>();
+            dbg!(&attributes);
             self.programmer
                 .apply_attribute_values_for_fixture(&fixture, preset.attribute_values());
         }
@@ -79,11 +79,11 @@ impl Show {
             .find(|e| e.id == fixture_id)
     }
 
-    pub fn fixtures(&self) -> &Vec<Fixture> {
+    pub fn fixtures(&self) -> &[Fixture] {
         &self.patchlist.fixtures
     }
 
-    pub fn selected_fixtures(&self) -> &Vec<usize> {
+    pub fn selected_fixtures(&self) -> &[usize] {
         &self.programmer.selection
     }
 
@@ -130,7 +130,7 @@ impl Show {
         self.data.groups.iter_mut().find(|g| g.id == group_id)
     }
 
-    pub fn groups(&self) -> &Vec<Group> {
+    pub fn groups(&self) -> &[Group] {
         &self.data.groups
     }
 
@@ -142,7 +142,7 @@ impl Show {
         self.data.sequences.iter_mut().find(|s| s.id == sequence_id)
     }
 
-    pub fn sequences(&self) -> &Vec<Sequence> {
+    pub fn sequences(&self) -> &[Sequence] {
         &self.data.sequences
     }
 
@@ -154,7 +154,7 @@ impl Show {
         self.executors.iter_mut().find(|e| e.id == id)
     }
 
-    pub fn executors(&self) -> &Vec<Executor> {
+    pub fn executors(&self) -> &[Executor] {
         &self.executors
     }
 
@@ -167,19 +167,11 @@ impl Show {
             .collect()
     }
 
-    pub fn all_attributes(&self) -> Vec<&Attribute> {
+    pub fn all_attributes(&self) -> Vec<&Rc<Attribute>> {
         self.patchlist
             .fixtures
             .iter()
             .flat_map(|f| f.attributes())
-            .collect()
-    }
-
-    pub fn attributes_with_channel(&self) -> Vec<&Attribute> {
-        self.patchlist
-            .fixtures
-            .iter()
-            .flat_map(|f| f.attributes_with_channels())
             .collect()
     }
 
@@ -252,36 +244,31 @@ impl Fixture {
         &self.description.fixture_type
     }
 
-    pub fn activation_groups(&self) -> &[ActivationGroup] {
-        &self.r#type().attribute_definitions.activation_groups
-    }
-
-    pub fn feature_groups(&self) -> &[FeatureGroup] {
-        &self.r#type().attribute_definitions.feature_groups
-    }
-
-    pub fn attributes(&self) -> &[gdtf::Attribute] {
+    pub fn attributes(&self) -> &[Rc<gdtf::Attribute>] {
         &self.r#type().attribute_definitions.attributes
-    }
-
-    pub fn attributes_for_activation_group(
-        &self,
-        activation_group: &ActivationGroup,
-    ) -> Vec<&gdtf::Attribute> {
-        self.attributes()
-            .iter()
-            .filter(|attribute| attribute.activation_group.as_ref() == Some(activation_group))
-            .collect()
     }
 
     pub fn attributes_for_feature_group(
         &self,
-        feature_group: &FeatureGroupType,
-    ) -> Vec<&gdtf::Attribute> {
+        feature_group_name: &str,
+    ) -> Vec<&Rc<gdtf::Attribute>> {
+        let Some(feature_group) = self
+            .r#type()
+            .attribute_definitions
+            .feature_groups
+            .iter()
+            .find(|fg| fg.name == feature_group_name)
+        else {
+            return vec![];
+        };
+
         self.attributes()
             .iter()
             .filter(|attribute| {
-                attribute.feature(self.feature_groups()).map(|f| f.name) == Some(feature_group)
+                feature_group
+                    .features
+                    .iter()
+                    .any(|f| *f == attribute.feature)
             })
             .collect()
     }
@@ -298,22 +285,12 @@ impl Fixture {
             .iter()
             .filter(|channel| {
                 channel
-                    .all_channel_functions()
-                    .iter()
-                    .any(|cf| cf.attribute(self.attributes()).name == attribute_name)
+                    .initial_function
+                    .attribute
+                    .as_ref()
+                    .map(|f| f.name.as_str())
+                    == Some(attribute_name)
             })
-            .collect()
-    }
-
-    pub fn channel_functions_using_attribute(
-        &self,
-        attribute_name: &str,
-    ) -> Vec<&gdtf::ChannelFunction> {
-        self.current_dmx_mode()
-            .all_channel_functions()
-            .iter()
-            .filter(|cf| cf.attribute(self.attributes()).name == attribute_name)
-            .copied()
             .collect()
     }
 
@@ -332,26 +309,6 @@ impl Fixture {
             .and_then(|c| c.offset.clone())?;
 
         Some(offset.len().clamp(u8::MIN as usize, u8::MAX as usize) as u8)
-    }
-
-    fn attributes_with_channels(&self) -> Vec<&Attribute> {
-        self.current_dmx_mode()
-            .dmx_channels
-            .iter()
-            .flat_map(|channel| {
-                if channel.offset.as_ref().is_some_and(|o| !o.is_empty()) {
-                    Some(
-                        channel
-                            .logical_channels
-                            .first()
-                            .unwrap()
-                            .attribute(self.attributes()),
-                    )
-                } else {
-                    None
-                }
-            })
-            .collect()
     }
 
     pub fn dmx_channels_for_attribute(&self, attribute_name: &str) -> Option<Vec<DmxChannel>> {
@@ -664,8 +621,8 @@ mod tests {
         let show = Show::from_showfile(showfile).await.unwrap();
 
         assert_eq!(
-            show.patchlist.fixtures[0].description.fixture_type.id,
-            "DB42C9F0-3236-4251-8436-D9CBE92F4021".to_string()
+            show.patchlist.fixtures[0].description.fixture_type.ref_ft,
+            Some("DB42C9F0-3236-4251-8436-D9CBE92F4021".to_string())
         );
 
         assert_eq!(show.patchlist.gdtf_descriptions.len(), 1);

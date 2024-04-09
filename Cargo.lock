@@ -1784,18 +1784,6 @@ dependencies = [
 name = "gdtf"
 version = "0.1.0"
 dependencies = [
- "once_cell",
- "regex",
- "serde",
- "serde-inline-default",
- "serde-xml-rs",
- "zip",
-]
-
-[[package]]
-name = "gdtf2"
-version = "0.1.0"
-dependencies = [
  "anyhow",
  "once_cell",
  "regex",

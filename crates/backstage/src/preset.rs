@@ -1,5 +1,3 @@
-use gdtf::FeatureGroupType;
-
 use crate::{AttributeValues, Show};
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
@@ -34,7 +32,7 @@ pub trait Preset {
 
     fn set_label(&mut self, label: &str);
 
-    fn feature_groups(&self) -> &[FeatureGroupType];
+    fn feature_groups(&self) -> &[&str];
 
     fn attribute_values(&self) -> &AttributeValues;
 }
@@ -82,7 +80,7 @@ macro_rules! preset {
                 self.label = label.to_string();
             }
 
-            fn feature_groups(&self) -> &[FeatureGroupType] {
+            fn feature_groups(&self) -> &[&str] {
                 $activation_groups
             }
 
@@ -100,7 +98,7 @@ macro_rules! preset {
                 self.presets.$field.iter_mut().find(|c| c.id == preset_id)
             }
 
-            pub fn $getter_all(&self) -> &Vec<$name> {
+            pub fn $getter_all(&self) -> &[$name] {
                 &self.presets.$field
             }
         }
@@ -123,7 +121,7 @@ preset!(
     beam_preset,
     beam_preset_mut,
     beam_presets,
-    &[FeatureGroupType::Beam]
+    &["Beam"]
 );
 
 preset!(
@@ -132,7 +130,7 @@ preset!(
     color_preset,
     color_preset_mut,
     color_presets,
-    &[FeatureGroupType::Color]
+    &["Color"]
 );
 
 preset!(
@@ -141,7 +139,7 @@ preset!(
     dimmer_preset,
     dimmer_preset_mut,
     dimmer_presets,
-    &[FeatureGroupType::Dimmer]
+    &["Dimmer"]
 );
 
 preset!(
@@ -150,7 +148,7 @@ preset!(
     focus_preset,
     focus_preset_mut,
     focus_presets,
-    &[FeatureGroupType::Focus]
+    &["Focus"]
 );
 
 preset!(
@@ -159,7 +157,7 @@ preset!(
     gobo_preset,
     gobo_preset_mut,
     gobo_presets,
-    &[FeatureGroupType::Gobo]
+    &["Gobo"]
 );
 
 preset!(
@@ -168,7 +166,7 @@ preset!(
     position_preset,
     position_preset_mut,
     position_presets,
-    &[FeatureGroupType::Position]
+    &["Position"]
 );
 
 preset!(
@@ -177,12 +175,5 @@ preset!(
     all_preset,
     all_preset_mut,
     all_presets,
-    &[
-        FeatureGroupType::Beam,
-        FeatureGroupType::Color,
-        FeatureGroupType::Dimmer,
-        FeatureGroupType::Focus,
-        FeatureGroupType::Gobo,
-        FeatureGroupType::Position
-    ]
+    &["Beam", "Color", "Dimmer", "Focus", "Gobo", "Position"]
 );

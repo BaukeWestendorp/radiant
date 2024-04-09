@@ -70,7 +70,7 @@ pub trait SheetDelegate: Sized {
 
     fn columns(&self, cx: &mut ViewContext<Sheet<Self>>) -> Vec<Self::ColumnId>;
 
-    fn values(&self, cx: &mut ViewContext<Sheet<Self>>) -> &Vec<Self::Data>;
+    fn values(&self, cx: &mut ViewContext<Sheet<Self>>) -> &[Self::Data];
 
     fn selected_rows(&self, _cx: &mut ViewContext<Sheet<Self>>) -> Vec<usize> {
         vec![]

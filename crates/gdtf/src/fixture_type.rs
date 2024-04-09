@@ -1,9 +1,9 @@
-use crate::error::Error;
+use anyhow::Result;
+
+use crate::attribute_definitions::AttributeDefinitions;
+use crate::dmx_mode::DmxMode;
 use crate::raw::RawFixtureType;
-use crate::{
-    parse_guid, parse_name, parse_optional_guid, parse_yes_no, AttributeDefinitions, DmxChannel,
-    DmxMode, Guid, Resource,
-};
+use crate::{parse_guid, parse_name, parse_yes_no};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FixtureType {
@@ -12,49 +12,52 @@ pub struct FixtureType {
     pub long_name: String,
     pub manufacturer: String,
     pub description: String,
-    pub id: Guid,
-    pub thumbnail: Option<Resource>,
+    pub fixture_type_id: String,
+    pub thumbnail: Option<String>,
     pub thumbnail_offset_x: i32,
     pub thumbnail_offset_y: i32,
-    pub ref_ft: Option<Guid>,
+    pub ref_ft: Option<String>,
     pub can_have_children: bool,
+
     pub attribute_definitions: AttributeDefinitions,
+    // FIXME: pub wheels: Vec<Wheel>,
+    // FIXME: pub physical_descriptions: Vec<PhysicalDescription>,
+    // FIXME: pub models: Vec<Model>,
+    // FIXME: pub geometries: Vec<Geometry>,
     pub dmx_modes: Vec<DmxMode>,
+    // FIXME: pub revisions: Vec<Revision>,
+    // FIXME: pub ft_presets: Vec<FtPreset>,
+    // FIXME: pub protocols: Vec<Protocol>,
 }
 
 impl FixtureType {
-    pub fn used_channels_for_mode(&self, mode_index: usize) -> Vec<&DmxChannel> {
-        self.dmx_modes[mode_index]
-            .dmx_channels
-            .iter()
-            .filter(|c| c.offset.is_some())
-            .collect()
-    }
-}
+    pub(crate) fn from_raw(raw: RawFixtureType) -> Result<Self> {
+        let attribute_definitions = AttributeDefinitions::from_raw(raw.attribute_definitions)?;
 
-impl TryFrom<RawFixtureType> for FixtureType {
-    type Error = Error;
+        let dmx_modes = raw
+            .dmx_modes
+            .modes
+            .into_iter()
+            .map(|channel| DmxMode::from_raw(channel, attribute_definitions.attributes.as_slice()))
+            .collect::<Result<_>>()?;
 
-    fn try_from(value: RawFixtureType) -> Result<Self, Self::Error> {
         Ok(Self {
-            name: parse_name(value.name)?,
-            short_name: value.short_name,
-            long_name: value.long_name,
-            manufacturer: value.manufacturer,
-            description: value.description,
-            id: parse_guid(value.fixture_type_id)?,
-            thumbnail: value.thumbnail,
-            thumbnail_offset_x: value.thumbnail_offset_x,
-            thumbnail_offset_y: value.thumbnail_offset_y,
-            ref_ft: parse_optional_guid(value.ref_ft)?,
-            can_have_children: parse_yes_no(&value.can_have_children)?,
-            attribute_definitions: value.attribute_definitions.try_into()?,
-            dmx_modes: value
-                .dmx_modes
-                .modes
-                .into_iter()
-                .map(TryInto::try_into)
-                .collect::<Result<_, _>>()?,
+            name: parse_name(raw.name)?,
+            short_name: raw.short_name,
+            long_name: raw.long_name,
+            manufacturer: raw.manufacturer,
+            description: raw.description,
+            fixture_type_id: parse_guid(raw.fixture_type_id)?,
+            thumbnail: raw.thumbnail,
+            thumbnail_offset_x: raw.thumbnail_offset_x,
+            thumbnail_offset_y: raw.thumbnail_offset_y,
+            ref_ft: raw.ref_ft.and_then(|ref_ft| match ref_ft.is_empty() {
+                true => None,
+                false => Some(ref_ft),
+            }),
+            can_have_children: parse_yes_no(raw.can_have_children)?,
+            attribute_definitions,
+            dmx_modes,
         })
     }
 }

@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
-use gdtf2::dmx_mode::DmxBreak;
-use gdtf2::{DataVersion, DmxValue, GdtfDescription};
+use gdtf::{DataVersion, DmxBreak, DmxValue, GdtfDescription};
 
 #[test]
 fn parse_full_gdtf_description() {

@@ -2,12 +2,13 @@
 name = "gdtf"
 version = "0.1.0"
 edition = "2021"
-license = "MIT"
+license.workspace = true
 
 [lib]
 doctest = false
 
 [dependencies]
+anyhow.workspace = true
 serde-inline-default.workspace = true
 serde.workspace = true
 regex.workspace = true

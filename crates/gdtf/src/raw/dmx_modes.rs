@@ -102,7 +102,9 @@ pub struct RawDmxChannel {
 
     /// Highlight value for current channel; Special value: "None". Default
     /// value: "None".
-    pub highlight: Option<RawDmxValue>,
+    #[serde(rename = "Highlight")]
+    #[serde_inline_default("None".to_string())]
+    pub highlight: RawDmxValue,
 
     /// Name of the geometry the current channel controls.
     ///

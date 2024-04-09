@@ -1,67 +1,116 @@
-//! # GDTF
-//!
-//! [File Format Definition](https://gdtf.eu/gdtf/file-spec/file-format-definition/#file-format-definition)
+pub mod attribute_definitions;
+pub mod dmx_mode;
+pub mod fixture_type;
+mod raw;
 
-use std::fs::File;
-use std::io;
 use std::str::FromStr;
 
-use error::Error;
-
-pub mod attr_defs;
-pub mod dmx_modes;
-pub mod error;
-pub mod fixture_type;
-
-pub(crate) mod raw;
-
-pub use attr_defs::*;
-pub use dmx_modes::*;
+use anyhow::{anyhow, Error, Result};
+pub use attribute_definitions::*;
+pub use dmx_mode::*;
 pub use fixture_type::*;
 
-pub(crate) fn parse_name(name: raw::RawName) -> Result<String, Error> {
-    // FIXME: Validate name with a regex.
-
-    Ok(name.to_string())
+/// # A GDTF archive file.
+pub struct GdtfArchive {
+    /// The GDTF file descriptor.
+    pub description: GdtfDescription,
 }
 
-pub type Node = Vec<String>;
-
-pub(crate) fn parse_node(node: raw::RawNode) -> Result<Node, Error> {
-    let split = node.split('.').map(String::from).collect::<Vec<_>>();
-
-    if split.is_empty() {
-        return Err(Error::EmptyNode);
-    }
-
-    Ok(split)
+#[derive(Debug, Clone, PartialEq)]
+pub struct GdtfDescription {
+    pub data_version: DataVersion,
+    pub fixture_type: FixtureType,
 }
 
-pub type ColorCIE = [f32; 3];
+impl GdtfDescription {
+    /// Create a new GDTF file from a .gdtf archive file.
+    pub fn from_archive_reader<R>(reader: R) -> Result<GdtfDescription>
+    where
+        R: std::io::Read + std::io::Seek,
+    {
+        let mut archive = zip::ZipArchive::new(reader)
+            .map_err(|err| anyhow!("Failed to unzip archive: {err}"))?;
 
-pub(crate) fn parse_color_cie(color_cie: raw::RawColorCIE) -> Result<ColorCIE, Error> {
-    let parts: Vec<&str> = color_cie.split(',').collect();
-    if parts.len() != 3 {
-        return Err(Error::ParseError(format!(
-            "Invalid CIE color: '{}'. Expected 3 parts, but found {}",
-            color_cie,
-            parts.len()
-        )));
+        let description = archive
+            .by_name("description.xml")
+            .map_err(|err| anyhow!("Missing description file: {err}"))?;
+
+        let description_reader = std::io::BufReader::new(description);
+
+        let raw_gdtf: raw::RawGdtfDescription = serde_xml_rs::from_reader(description_reader)
+            .map_err(|err| anyhow!("Failed to parse GDTF description: {err}"))?;
+        let gdtf: GdtfDescription = raw_gdtf.try_into()?;
+
+        Ok(gdtf)
     }
 
-    let x = parts[0]
-        .parse()
-        .map_err(|_| Error::ParseError(format!("Failed to parse CIE color X: '{}'", parts[0])))?;
+    /// Create a new GDTF file from .gdtf archive bytes.
+    pub fn from_archive_bytes(bytes: &[u8]) -> Result<GdtfDescription> {
+        let bytes = std::io::Cursor::new(bytes);
+        let reader = std::io::BufReader::new(bytes);
+        Self::from_archive_reader(reader)
+    }
 
-    let y = parts[1]
-        .parse()
-        .map_err(|_| Error::ParseError(format!("Failed to parse CIE color Y: '{}'", parts[1])))?;
+    /// Create a new GDTF file from a descriptor file.
+    pub fn from_file(file: &std::fs::File) -> Result<GdtfDescription> {
+        let file_reader = std::io::BufReader::new(file);
+        let raw_gdtf: raw::RawGdtfDescription = serde_xml_rs::from_reader(file_reader)
+            .map_err(|err| anyhow!("Failed to parse GDTF description: {err}"))?;
+        let gdtf: GdtfDescription = raw_gdtf.try_into()?;
 
-    let large_y = parts[2].parse().map_err(|_| {
-        Error::ParseError(format!("Failed to parse CIE color large Y: '{}'", parts[2]))
-    })?;
+        Ok(gdtf)
+    }
 
-    Ok([x, y, large_y])
+    /// Create a new GDTF file from a descriptor file.
+    pub fn from_str(s: &str) -> Result<GdtfDescription> {
+        let raw_gdtf: raw::RawGdtfDescription = serde_xml_rs::from_str(s)
+            .map_err(|err| anyhow!("Failed to parse GDTF description: {err}"))?;
+        let gdtf: GdtfDescription = raw_gdtf.try_into()?;
+
+        Ok(gdtf)
+    }
+}
+
+impl TryFrom<raw::RawGdtfDescription> for GdtfDescription {
+    type Error = Error;
+
+    fn try_from(value: raw::RawGdtfDescription) -> Result<Self, Self::Error> {
+        Ok(GdtfDescription {
+            data_version: value.data_version.parse()?,
+            fixture_type: FixtureType::from_raw(value.fixture_type)?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct DataVersion {
+    pub major: u32,
+    pub minor: u32,
+}
+
+impl FromStr for DataVersion {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.split('.').collect();
+        if parts.len() != 2 {
+            return Err(anyhow!(
+                "Invalid data version: '{}'. Expected 2 parts, but found {}",
+                s,
+                parts.len()
+            ));
+        }
+
+        let major = parts[0]
+            .parse()
+            .map_err(|_| anyhow!("Failed to parse data version major: '{}'", parts[0]))?;
+
+        let minor = parts[1]
+            .parse()
+            .map_err(|_| anyhow!("Failed to parse data version minor: '{}'", parts[1]))?;
+
+        Ok(Self { major, minor })
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -72,7 +121,7 @@ pub struct DmxValue {
 }
 
 impl DmxValue {
-    pub fn value(&self, channel_resolution: ChannelBitResolution) -> Result<u64, error::Error> {
+    pub fn value(&self, channel_resolution: ChannelBitResolution) -> Result<u64> {
         // Check if the ByteSpecifier is different to the ChannelResolution.
         let mut result = self.value;
         if self.byte_shifting {
@@ -102,19 +151,17 @@ impl DmxValue {
         }
 
         if get_channel_max_dmx(channel_resolution) < result {
-            return Err(error::Error::ParseError(
-                format!(
-                    "DMX value of {} is out of range for the channel resolution: {:?}",
-                    result, channel_resolution
-                )
-                .to_string(),
+            return Err(anyhow!(
+                "DMX value of {} is out of range for the channel resolution: {:?}",
+                result,
+                channel_resolution
             ));
         }
 
         Ok(result)
     }
 
-    pub fn bytes(&self, channel_resolution: ChannelBitResolution) -> Result<Vec<u8>, error::Error> {
+    pub fn bytes(&self, channel_resolution: ChannelBitResolution) -> Result<Vec<u8>> {
         let value = self.value(channel_resolution)?;
 
         let mut bytes = Vec::new();
@@ -159,22 +206,16 @@ fn get_channel_max_dmx(channel_resolution: ChannelBitResolution) -> u64 {
 }
 
 impl FromStr for DmxValue {
-    type Err = error::Error;
+    type Err = Error;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         if value.is_empty() {
-            return Err(error::Error::ParseError(
-                "expected a non-empty string in the DMX value.".to_string(),
-            ));
+            return Err(anyhow!("expected a non-empty string in the DMX value."));
         }
 
         let (first, mut second) = match value.split_once('/') {
             Some((first, second)) => (first.to_string(), second.to_string()),
-            None => {
-                return Err(error::Error::ParseError(
-                    "expected a '/' in the DMX value.".to_string(),
-                ))
-            }
+            None => return Err(anyhow!("expected a '/' in the DMX value.")),
         };
 
         let mut byte_shifting = false;
@@ -185,20 +226,12 @@ impl FromStr for DmxValue {
 
         let mut value: u64 = match first.parse() {
             Ok(value) => value,
-            Err(_) => {
-                return Err(error::Error::ParseError(
-                    "expected a number in the DMX value.".to_string(),
-                ))
-            }
+            Err(_) => return Err(anyhow!("expected a number in the DMX value.")),
         };
 
         let mut byte_specifier: i32 = match second.parse() {
             Ok(value) => value,
-            Err(_) => {
-                return Err(error::Error::ParseError(
-                    "expected a number in byte specifier".to_string(),
-                ))
-            }
+            Err(_) => return Err(anyhow!("expected a number in byte specifier")),
         };
 
         if !(first.parse::<u64>().is_ok() && second.parse::<u64>().is_ok()) {
@@ -236,147 +269,32 @@ impl From<u8> for ChannelBitResolution {
     }
 }
 
-pub type Guid = String;
+pub(crate) fn parse_name(name: String) -> Result<String> {
+    // FIXME: Validate name with a regex.
+    Ok(name.to_string())
+}
 
-pub(crate) fn parse_guid(guid: raw::RawGuid) -> Result<String, Error> {
-    if guid.is_empty() {
-        return Err(Error::InvalidGuid(guid.to_string()));
-    }
-
+pub(crate) fn parse_guid(name: String) -> Result<String> {
     // FIXME: Validate GUID with a regex.
-
-    Ok(guid.to_string())
+    Ok(name.to_string())
 }
 
-pub(crate) fn parse_optional_guid(guid: Option<raw::RawGuid>) -> Result<Option<String>, Error> {
-    match guid {
-        Some(guid) => match guid.is_empty() {
-            true => Ok(None),
-            false => Ok(Some(parse_guid(guid)?)),
-        },
-        None => Ok(None),
-    }
-}
-
-pub type Resource = String;
-
-pub(crate) fn parse_int_array(value: &str) -> Result<Vec<i32>, Error> {
-    value
-        .split(',')
-        .map(|s| {
-            s.parse()
-                .map_err(|_| Error::ParseError(format!("Invalid integer: {}", s)))
-        })
-        .collect()
-}
-
-pub(crate) fn parse_yes_no(value: &str) -> Result<bool, Error> {
-    match value {
+pub(crate) fn parse_yes_no(s: String) -> Result<bool> {
+    match s.as_str() {
         "Yes" => Ok(true),
         "No" => Ok(false),
-        _ => Err(Error::ParseError(format!(
-            "Invalid value for 'Yes'/'No': {}",
-            value
-        ))),
+        other => return Err(anyhow::anyhow!("expected 'Yes' or 'No'. Found: {other}")),
     }
 }
 
-/// # A GDTF archive file.
-pub struct GdtfArchive {
-    /// The GDTF file descriptor.
-    pub description: GdtfDescription,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct GdtfDescription {
-    pub data_version: DataVersion,
-
-    pub fixture_type: FixtureType,
-}
-
-impl GdtfDescription {
-    /// Create a new GDTF file from a .gdtf archive file.
-    pub fn from_archive_reader<R>(reader: R) -> Result<GdtfDescription, Error>
-    where
-        R: io::Read + io::Seek,
-    {
-        let mut archive = zip::ZipArchive::new(reader).map_err(|_| Error::UnzipError)?;
-
-        let description = archive
-            .by_name("description.xml")
-            .map_err(|_| Error::MissingDescription)?;
-
-        let description_reader = io::BufReader::new(description);
-
-        let raw_gdtf: raw::RawGdtfDescription = serde_xml_rs::from_reader(description_reader)
-            .map_err(|e| Error::ParseError(format!("failed to parse GDTF description: {}", e)))?;
-        let gdtf: GdtfDescription = raw_gdtf.try_into()?;
-
-        Ok(gdtf)
+pub(crate) fn parse_int_array(s: String) -> Result<Vec<i32>> {
+    let parts: Vec<&str> = s.split(',').collect();
+    let mut array = Vec::with_capacity(parts.len());
+    for part in parts {
+        let value = part
+            .parse()
+            .map_err(|_| anyhow!("Failed to parse int array value: '{}'", part))?;
+        array.push(value);
     }
-
-    /// Create a new GDTF file from .gdtf archive bytes.
-    pub fn from_archive_bytes(bytes: &[u8]) -> Result<GdtfDescription, Error> {
-        let bytes = std::io::Cursor::new(bytes);
-        let reader = std::io::BufReader::new(bytes);
-        Self::from_archive_reader(reader)
-    }
-
-    /// Create a new GDTF file from a descriptor file.
-    pub fn from_file(file: &File) -> Result<GdtfDescription, Error> {
-        let file_reader = io::BufReader::new(file);
-        let raw_gdtf: raw::RawGdtfDescription = serde_xml_rs::from_reader(file_reader)
-            .map_err(|e| Error::ParseError(format!("failed to parse GDTF description: {}", e)))?;
-        let gdtf: GdtfDescription = raw_gdtf.try_into()?;
-
-        Ok(gdtf)
-    }
-}
-
-impl TryFrom<raw::RawGdtfDescription> for GdtfDescription {
-    type Error = Error;
-
-    fn try_from(value: raw::RawGdtfDescription) -> Result<Self, Self::Error> {
-        Ok(GdtfDescription {
-            data_version: value.data_version.parse()?,
-            fixture_type: value.fixture_type.try_into()?,
-        })
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct DataVersion {
-    pub major: u32,
-    pub minor: u32,
-}
-
-impl FromStr for DataVersion {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<&str> = s.split('.').collect();
-        if parts.len() != 2 {
-            return Err(Error::ParseError(format!(
-                "Invalid data version: '{}'. Expected 2 parts, but found {}",
-                s,
-                parts.len()
-            )));
-        }
-
-        let major = parts[0].parse().map_err(|_| {
-            Error::ParseError(format!(
-                "Failed to parse data version major: '{}'",
-                parts[0]
-            ))
-        })?;
-
-        let minor = parts[1].parse().map_err(|_| {
-            Error::ParseError(format!(
-                "Failed to parse data version minor: '{}'",
-                parts[1]
-            ))
-        })?;
-
-        Ok(Self { major, minor })
-    }
+    Ok(array)
 }
