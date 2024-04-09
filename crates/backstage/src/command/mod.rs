@@ -1,8 +1,10 @@
+use std::cell::Cell;
+
 use anyhow::{anyhow, Result};
 
 use self::lexer::Token;
 use crate::command::lexer::Lexer;
-use crate::{Cue, Group, Show};
+use crate::{Cue, Executor, ExecutorButton, Group, Sequence, Show};
 
 mod lexer;
 
@@ -312,8 +314,65 @@ impl Show {
                     }
                     self.data.groups.push(group);
                 }
+                Some(Object::Executor(id)) => {
+                    let new_sequence_id = self.first_free_sequence_id();
+                    let sequence = match self.executor_mut(*id) {
+                        Some(executor) => {
+                            if let Some(sequence) = executor.sequence {
+                                sequence
+                            } else {
+                                executor.sequence = Some(new_sequence_id);
+                                new_sequence_id
+                            }
+                        }
+                        None => {
+                            // FIXME: We should make a Executor::new() to clean this up.
+                            self.executors.push(Executor {
+                                id: *id,
+                                sequence: Some(new_sequence_id),
+                                current_index: Cell::new(None),
+                                r#loop: false,
+                                flash: false,
+                                fader_value: 1.0,
+                                button_1: ExecutorButton {
+                                    action: crate::ExecutorButtonAction::Top,
+                                },
+                                button_2: ExecutorButton {
+                                    action: crate::ExecutorButtonAction::Go,
+                                },
+                                button_3: ExecutorButton {
+                                    action: crate::ExecutorButtonAction::Flash,
+                                },
+                            });
+                            new_sequence_id
+                        }
+                    };
+
+                    if let Err(err) =
+                        self.execute_command(&Command::Store(Some(Object::Sequence(sequence))))
+                    {
+                        return Err(anyhow!("Failed to insert cue into sequence: {err}"));
+                    }
+                }
                 Some(Object::Sequence(id)) => {
-                    todo!()
+                    let cues_len = match self.sequence_mut(*id).map(|s| s.cues.len()) {
+                        Some(cues_len) => cues_len,
+                        None => {
+                            self.data.sequences.push(Sequence {
+                                id: *id,
+                                label: "New Sequence".to_string(),
+                                cues: Vec::new(),
+                            });
+                            0
+                        }
+                    };
+
+                    if let Err(err) = self.execute_command(&Command::Store(Some(Object::Cue {
+                        sequence_id: *id,
+                        cue_ix: cues_len,
+                    }))) {
+                        return Err(anyhow!("Failed to insert cue: {err}"));
+                    }
                 }
                 Some(Object::Cue {
                     sequence_id,

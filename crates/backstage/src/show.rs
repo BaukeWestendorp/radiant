@@ -190,6 +190,10 @@ impl Show {
 
         *self.stage_output.borrow_mut() = stage_output;
     }
+
+    pub(crate) fn first_free_sequence_id(&self) -> usize {
+        self.data.sequences.iter().map(|s| s.id).max().unwrap_or(0) + 1
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
