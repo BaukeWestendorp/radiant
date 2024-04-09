@@ -45,14 +45,14 @@ impl PoolWindowDelegate for SequencePoolWindowDelegate {
     fn handle_click_item(&mut self, id: usize, cx: &mut ViewContext<WindowView<Self>>) {
         ShowfileManager::update(cx, |showfile, cx| {
             if let Some(Command::Store(object)) = &mut showfile.show.current_command {
-                *object = Some(Object::Sequence(id));
+                *object = Some(Object::Sequence(Some(id)));
                 if let Err(err) = showfile.show.execute_current_command() {
                     log::error!("Failed to store sequence {id}: {err}");
                 }
             } else {
                 if let Err(err) = showfile
                     .show
-                    .execute_command(&Command::Select(Some(Object::Sequence(id))))
+                    .execute_command(&Command::Select(Some(Object::Sequence(Some(id)))))
                 {
                     log::error!("Failed to select sequence {id}: {err}");
                 }

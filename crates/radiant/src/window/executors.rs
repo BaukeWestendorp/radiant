@@ -233,7 +233,7 @@ impl ExecutorButtonView {
                 ShowfileManager::update(cx, |showfile, _cx| {
                     if let Err(err) = showfile
                         .show
-                        .execute_command(&Command::Go(Some(Object::Executor(executor_id))))
+                        .execute_command(&Command::Go(Some(Object::Executor(Some(executor_id)))))
                     {
                         log::error!("Failed to execute 'go' command: {}", err.to_string());
                     }
@@ -245,7 +245,7 @@ impl ExecutorButtonView {
                 ShowfileManager::update(cx, |showfile, _cx| {
                     if let Err(err) = showfile
                         .show
-                        .execute_command(&Command::Top(Some(Object::Executor(executor_id))))
+                        .execute_command(&Command::Top(Some(Object::Executor(Some(executor_id)))))
                     {
                         log::error!("Failed to execute 'top' command: {}", err.to_string());
                     }

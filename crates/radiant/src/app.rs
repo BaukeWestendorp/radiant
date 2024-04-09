@@ -1,4 +1,4 @@
-use backstage::Command;
+use backstage::{Command, Object};
 use gpui::{
     actions, point, size, AppContext, Bounds, Global, KeyBinding, Menu, MenuItem, VisualContext,
     WindowOptions,
@@ -9,7 +9,9 @@ use ui::text_input;
 use crate::assets::Assets;
 use crate::output::{artnet, DmxOutputManager};
 use crate::showfile::ShowfileManager;
-use crate::workspace::actions::{ExecuteCommand, ExecuteCurrentCommand, SetCurrentCommand};
+use crate::workspace::actions::{
+    ExecuteCommand, ExecuteCurrentCommand, SetCurrentCommand, SetCurrentObject,
+};
 use crate::workspace::Workspace;
 
 actions!(app, [Quit]);
@@ -104,6 +106,17 @@ fn set_command_shortcuts(cx: &mut AppContext) {
     cx.bind_keys([
         KeyBinding::new("s", SetCurrentCommand(Some(Command::Store(None))), None),
         KeyBinding::new("S", SetCurrentCommand(Some(Command::Select(None))), None),
+        KeyBinding::new("f", SetCurrentObject(Some(Object::Fixture(None))), None),
+        KeyBinding::new("g", SetCurrentObject(Some(Object::Group(None))), None),
+        KeyBinding::new("e", SetCurrentObject(Some(Object::Executor(None))), None),
+        KeyBinding::new(
+            "c",
+            SetCurrentObject(Some(Object::Cue {
+                sequence_id: None,
+                cue_ix: None,
+            })),
+            None,
+        ),
         KeyBinding::new("enter", ExecuteCurrentCommand, None),
         KeyBinding::new("backspace", SetCurrentCommand(None), None),
     ]);

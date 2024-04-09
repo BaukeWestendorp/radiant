@@ -195,7 +195,7 @@ impl SheetDelegate for FixtureSheetDelegate {
                 ShowfileManager::update(cx, |showfile, _cx| {
                     if let Err(err) = showfile
                         .show
-                        .execute_command(&Command::Select(Some(Object::Fixture(fixture_id))))
+                        .execute_command(&Command::Select(Some(Object::Fixture(Some(fixture_id)))))
                     {
                         log::error!("Failed to select fixture: {:?}", err);
                     }

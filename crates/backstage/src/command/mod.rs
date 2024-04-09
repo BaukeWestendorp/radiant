@@ -9,10 +9,13 @@ mod lexer;
 // FIXME: We should deserialize this from a string by parsing.
 #[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize)]
 pub enum Object {
-    Fixture(usize),
-    Group(usize),
-    Sequence(usize),
-    Cue { sequence_id: usize, cue_ix: usize },
+    Fixture(Option<usize>),
+    Group(Option<usize>),
+    Sequence(Option<usize>),
+    Cue {
+        sequence_id: Option<usize>,
+        cue_ix: Option<usize>,
+    },
     PresetBeam(usize),
     PresetColor(usize),
     PresetDimmer(usize),
@@ -20,19 +23,36 @@ pub enum Object {
     PresetGobo(usize),
     PresetPosition(usize),
     PresetAll(usize),
-    Executor(usize),
+    Executor(Option<usize>),
 }
 
 impl std::fmt::Display for Object {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Object::Fixture(id) => write!(f, "fixture {}", id),
-            Object::Group(id) => write!(f, "group {}", id),
-            Object::Sequence(id) => write!(f, "sequence {}", id),
+            Object::Fixture(id) => write!(
+                f,
+                "fixture {}",
+                id.map(|id| id.to_string()).unwrap_or_default()
+            ),
+            Object::Group(id) => write!(
+                f,
+                "group {}",
+                id.map(|id| id.to_string()).unwrap_or_default()
+            ),
+            Object::Sequence(id) => write!(
+                f,
+                "sequence {}",
+                id.map(|id| id.to_string()).unwrap_or_default()
+            ),
             Object::Cue {
                 sequence_id,
                 cue_ix,
-            } => write!(f, "cue {}.{}", sequence_id, cue_ix),
+            } => write!(
+                f,
+                "cue {}.{}",
+                sequence_id.map(|id| id.to_string()).unwrap_or_default(),
+                cue_ix.map(|id| id.to_string()).unwrap_or_default()
+            ),
             Object::PresetBeam(id) => write!(f, "preset.beam {}", id),
             Object::PresetColor(id) => write!(f, "preset.color {}", id),
             Object::PresetDimmer(id) => write!(f, "preset.dimmer {}", id),
@@ -40,7 +60,11 @@ impl std::fmt::Display for Object {
             Object::PresetGobo(id) => write!(f, "preset.gobo {}", id),
             Object::PresetPosition(id) => write!(f, "preset.position {}", id),
             Object::PresetAll(id) => write!(f, "preset.all {}", id),
-            Object::Executor(id) => write!(f, "executor {}", id),
+            Object::Executor(id) => write!(
+                f,
+                "executor {}",
+                id.map(|id| id.to_string()).unwrap_or_default()
+            ),
         }
     }
 }
@@ -112,7 +136,7 @@ fn parse_object(lexer: &mut Lexer) -> Result<Object> {
                 .next_token()?
                 .ok_or_else(|| anyhow!("Expected number"))?;
             match number_token {
-                Token::Number(number) => Object::Fixture(number),
+                Token::Number(number) => Object::Fixture(Some(number)),
                 _ => return Err(anyhow!("Expected number")),
             }
         }
@@ -121,7 +145,7 @@ fn parse_object(lexer: &mut Lexer) -> Result<Object> {
                 .next_token()?
                 .ok_or_else(|| anyhow!("Expected number"))?;
             match number_token {
-                Token::Number(number) => Object::Group(number),
+                Token::Number(number) => Object::Group(Some(number)),
                 _ => return Err(anyhow!("Expected number")),
             }
         }
@@ -130,7 +154,7 @@ fn parse_object(lexer: &mut Lexer) -> Result<Object> {
                 .next_token()?
                 .ok_or_else(|| anyhow!("Expected number"))?;
             match number_token {
-                Token::Number(number) => Object::Sequence(number),
+                Token::Number(number) => Object::Sequence(Some(number)),
                 _ => return Err(anyhow!("Expected number")),
             }
         }
@@ -145,8 +169,8 @@ fn parse_object(lexer: &mut Lexer) -> Result<Object> {
             match number_token_1 {
                 Token::Number(sequence_id) => match number_token_2 {
                     Token::Number(cue_ix) => Object::Cue {
-                        sequence_id,
-                        cue_ix,
+                        sequence_id: Some(sequence_id),
+                        cue_ix: Some(cue_ix),
                     },
                     _ => return Err(anyhow!("Expected number")),
                 },
@@ -181,7 +205,7 @@ fn parse_object(lexer: &mut Lexer) -> Result<Object> {
                 .next_token()?
                 .ok_or_else(|| anyhow!("Expected number"))?;
             match number_token {
-                Token::Number(number) => Object::Executor(number),
+                Token::Number(number) => Object::Executor(Some(number)),
                 _ => return Err(anyhow!("Expected number")),
             }
         }
@@ -228,6 +252,10 @@ impl Show {
             }
             Command::Select(object) => match object {
                 Some(Object::Fixture(id)) => {
+                    let Some(id) = id else {
+                        return Err(anyhow!("No fixture id provided"));
+                    };
+
                     if !self.fixture_exists(*id) {
                         return Err(anyhow!("Fixture with id '{id}' not found"));
                     }
@@ -239,12 +267,18 @@ impl Show {
                     }
                 }
                 Some(Object::Group(id)) => {
+                    let Some(id) = id else {
+                        return Err(anyhow!("No group id provided"));
+                    };
+
                     let group = self
                         .group(*id)
                         .ok_or_else(|| anyhow!("Group with id '{id}' not found"))?
                         .clone();
                     for fixture_id in group.fixtures.iter() {
-                        self.execute_command(&Command::Select(Some(Object::Fixture(*fixture_id))))?;
+                        self.execute_command(&Command::Select(Some(Object::Fixture(Some(
+                            *fixture_id,
+                        )))))?;
                     }
                 }
                 Some(Object::PresetBeam(id)) => {
@@ -301,6 +335,10 @@ impl Show {
             },
             Command::Store(object) => match object {
                 Some(Object::Group(id)) => {
+                    let Some(id) = id else {
+                        return Err(anyhow!("No group id provided"));
+                    };
+
                     let selected_fixtures = self.selected_fixtures();
                     let group = Group {
                         id: *id,
@@ -313,6 +351,10 @@ impl Show {
                     self.data.groups.push(group);
                 }
                 Some(Object::Executor(id)) => {
+                    let Some(id) = id else {
+                        return Err(anyhow!("No executor id provided"));
+                    };
+
                     let new_sequence_id = self.first_free_sequence_id();
                     let sequence = match self.executor_mut(*id) {
                         Some(executor) => {
@@ -330,13 +372,17 @@ impl Show {
                         }
                     };
 
-                    if let Err(err) =
-                        self.execute_command(&Command::Store(Some(Object::Sequence(sequence))))
+                    if let Err(err) = self
+                        .execute_command(&Command::Store(Some(Object::Sequence(Some(sequence)))))
                     {
                         return Err(anyhow!("Failed to insert cue into sequence: {err}"));
                     }
                 }
                 Some(Object::Sequence(id)) => {
+                    let Some(id) = id else {
+                        return Err(anyhow!("No sequence id provided"));
+                    };
+
                     let cues_len = match self.sequence_mut(*id).map(|s| s.cues.len()) {
                         Some(cues_len) => cues_len,
                         None => {
@@ -350,8 +396,8 @@ impl Show {
                     };
 
                     if let Err(err) = self.execute_command(&Command::Store(Some(Object::Cue {
-                        sequence_id: *id,
-                        cue_ix: cues_len,
+                        sequence_id: Some(*id),
+                        cue_ix: Some(cues_len),
                     }))) {
                         return Err(anyhow!("Failed to insert cue: {err}"));
                     }
@@ -360,6 +406,14 @@ impl Show {
                     sequence_id,
                     cue_ix,
                 }) => {
+                    let Some(sequence_id) = sequence_id else {
+                        return Err(anyhow!("Cue does not have a sequence id"));
+                    };
+
+                    let Some(cue_ix) = cue_ix else {
+                        return Err(anyhow!("Cue does not have an index"));
+                    };
+
                     let changes = self.programmer_changes().clone();
                     if let Some(sequence) = self
                         .data
@@ -396,7 +450,7 @@ impl Show {
                 None => return Err(anyhow!("Store requires a destination object")),
             },
             Command::Go(object) => match object {
-                Some(Object::Executor(id)) => {
+                Some(Object::Executor(Some(id))) => {
                     let executor = self
                         .executor(*id)
                         .ok_or_else(|| anyhow!("Executor with id '{id}' not found"))?;
@@ -406,7 +460,7 @@ impl Show {
                 None => return Err(anyhow!("Go requires an executor")),
             },
             Command::Top(object) => match object {
-                Some(Object::Executor(id)) => {
+                Some(Object::Executor(Some(id))) => {
                     let executor = self
                         .executor(*id)
                         .ok_or_else(|| anyhow!("Executor with id '{id}' not found"))?;
@@ -447,7 +501,7 @@ mod tests {
 
     #[test]
     fn test_parse_select() {
-        let expected = Command::Select(Some(Object::Group(42)));
+        let expected = Command::Select(Some(Object::Group(Some(42))));
 
         assert_eq!(Command::parse("select group 42").unwrap(), expected);
         assert!(Command::parse("select group 42  foobar").is_err());
@@ -457,7 +511,7 @@ mod tests {
 
     #[test]
     fn test_parse_store() {
-        let expected = Command::Store(Some(Object::Group(42)));
+        let expected = Command::Store(Some(Object::Group(Some(42))));
 
         assert_eq!(Command::parse("store group 42").unwrap(), expected);
         assert!(Command::parse("store group 42  foobar").is_err());
@@ -478,7 +532,7 @@ mod tests {
 
     #[test]
     fn test_parse_go() {
-        let expected = Command::Go(Some(Object::Executor(42)));
+        let expected = Command::Go(Some(Object::Executor(Some(42))));
 
         assert_eq!(Command::parse("go executor 42").unwrap(), expected);
         assert!(Command::parse("go executor 42  foobar").is_err());

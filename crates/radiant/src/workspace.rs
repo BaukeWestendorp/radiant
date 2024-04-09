@@ -1,3 +1,4 @@
+use backstage::Command;
 use gpui::prelude::FluentBuilder;
 use gpui::{
     div, AppContext, Context, FocusHandle, FocusableView, Global, InteractiveElement, IntoElement,
@@ -14,18 +15,24 @@ use crate::showfile::{Layout, ShowfileManager};
 
 pub mod actions {
 
-    use backstage::Command;
+    use backstage::{Command, Object};
     use gpui::{actions, impl_actions};
 
     actions!(workspace, [ExecuteCurrentCommand]);
 
-    impl_actions!(workspace, [ExecuteCommand, SetCurrentCommand]);
+    impl_actions!(
+        workspace,
+        [ExecuteCommand, SetCurrentCommand, SetCurrentObject]
+    );
 
     #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
     pub struct ExecuteCommand(pub Command);
 
     #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
     pub struct SetCurrentCommand(pub Option<Command>);
+
+    #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
+    pub struct SetCurrentObject(pub Option<Object>);
 }
 
 pub struct Workspace {
@@ -65,6 +72,25 @@ impl Workspace {
         });
     }
 
+    fn handle_set_current_object(
+        &mut self,
+        action: &actions::SetCurrentObject,
+        cx: &mut ViewContext<Self>,
+    ) {
+        ShowfileManager::update(cx, |showfile, cx| {
+            match &mut showfile.show.current_command {
+                Some(Command::Store(object))
+                | Some(Command::Select(object))
+                | Some(Command::Go(object))
+                | Some(Command::Top(object)) => *object = action.0,
+                _ => {
+                    todo!();
+                }
+            };
+            cx.notify();
+        });
+    }
+
     fn handle_execute_current_command(
         &mut self,
         _action: &actions::ExecuteCurrentCommand,
@@ -75,12 +101,7 @@ impl Workspace {
             cx.notify();
             result
         }) {
-            log::error!(
-                "Failed to execute command '{}': {err}",
-                ShowfileManager::show(cx)
-                    .current_command
-                    .map_or("".to_string(), |cmd| cmd.to_string())
-            );
+            log::error!("Failed to execute command: {err}");
         }
     }
 }
@@ -101,6 +122,7 @@ impl Render for Workspace {
             .on_action(cx.listener(Self::handle_execute_command))
             .on_action(cx.listener(Self::handle_set_current_command))
             .on_action(cx.listener(Self::handle_execute_current_command))
+            .on_action(cx.listener(Self::handle_set_current_object))
             .track_focus(&self.focus_handle)
             .child(self.screen.clone())
     }
@@ -301,7 +323,7 @@ impl CommandLine {
             text_input.clear(cx);
             ShowfileManager::update(cx, |showfile, cx| {
                 if let Err(err) = showfile.show.execute_command_str(input) {
-                    log::error!("Failed to execute command: {}", err.to_string())
+                    log::error!("Failed to execute command: {err}")
                 } else {
                     cx.notify();
                 }
