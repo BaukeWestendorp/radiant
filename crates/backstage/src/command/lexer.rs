@@ -17,7 +17,13 @@ pub enum Token {
     Executor,
 
     Preset,
+    Beam,
     Color,
+    Dimmer,
+    Focus,
+    Gobo,
+    Position,
+    All,
 
     // Other
     Period,
@@ -38,7 +44,13 @@ impl std::fmt::Display for Token {
             Token::Cue => write!(f, "cue"),
             Token::Executor => write!(f, "executor"),
             Token::Preset => write!(f, "preset"),
+            Token::Beam => write!(f, "beam"),
             Token::Color => write!(f, "color"),
+            Token::Dimmer => write!(f, "dimmer"),
+            Token::Focus => write!(f, "focus"),
+            Token::Gobo => write!(f, "gobo"),
+            Token::Position => write!(f, "position"),
+            Token::All => write!(f, "all"),
             Token::Period => write!(f, "."),
             Token::Number(n) => write!(f, "{}", n),
         }
@@ -141,7 +153,13 @@ fn lex_keyword(input: &str) -> Result<(Token, usize)> {
         "cue" => Token::Cue,
         "executor" => Token::Executor,
         "preset" => Token::Preset,
+        "beam" => Token::Beam,
         "color" => Token::Color,
+        "dimmer" => Token::Dimmer,
+        "focus" => Token::Focus,
+        "gobo" => Token::Gobo,
+        "position" => Token::Position,
+        "all" => Token::All,
         other => return Err(anyhow!("Unknown keyword: '{other}'")),
     };
 

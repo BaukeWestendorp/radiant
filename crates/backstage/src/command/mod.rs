@@ -157,14 +157,21 @@ fn parse_object(lexer: &mut Lexer) -> Result<Object> {
             consume(lexer, Token::Period)?;
             let (type_token, _start, _end) = lexer
                 .next_token()?
-                .ok_or_else(|| anyhow!("Expected color or executor"))?;
+                .ok_or_else(|| anyhow!("Expected preset type"))?;
             let (number_token, _start, _end) = lexer
                 .next_token()?
                 .ok_or_else(|| anyhow!("Expected number"))?;
             match number_token {
-                Token::Number(number) => match type_token {
-                    Token::Color => Object::PresetColor(number),
-                    _ => return Err(anyhow!("Expected color or executor")),
+                Token::Number(id) => match type_token {
+                    Token::Beam => Object::PresetBeam(id),
+                    Token::Color => Object::PresetColor(id),
+                    Token::Dimmer => Object::PresetDimmer(id),
+                    Token::Focus => Object::PresetFocus(id),
+                    Token::Gobo => Object::PresetGobo(id),
+                    Token::Position => Object::PresetPosition(id),
+                    Token::All => Object::PresetAll(id),
+
+                    other => return Err(anyhow!("Unexpected preset type: {other}")),
                 },
                 _ => return Err(anyhow!("Expected number")),
             }
