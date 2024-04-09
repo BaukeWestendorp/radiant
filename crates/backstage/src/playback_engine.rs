@@ -1,6 +1,7 @@
 use dmx::DmxOutput;
 
 use crate::show::{Cue, Executor, Show};
+use crate::update_dmx_output_with_attribute_values;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PlaybackEngine {}
@@ -35,36 +36,17 @@ impl PlaybackEngine {
                         continue;
                     };
 
-                    for (attribute_name, attribute_value) in attribute_values.iter() {
-                        let Some(dmx_channels) = fixture.dmx_channels_for_attribute(attribute_name)
-                        else {
-                            continue;
-                        };
+                    // FIXME: We should update the DmxValue's values themselves, not the dmx output.
+                    // FIXME: We currently assume the executor fader controls the master.
+                    // let master = match executor.flash {
+                    //     true => 1.0,
+                    //     false => executor.fader_value,
+                    // };
+                    // raw_dmx_values.iter_mut().for_each(|value| {
+                    //     *value = (*value as f32 * master) as u8;
+                    // });
 
-                        let Some(channel_resolution) =
-                            fixture.channel_resolution_for_attribute(attribute_name)
-                        else {
-                            continue;
-                        };
-
-                        let mut raw_dmx_values =
-                            attribute_value.raw_values_for_channel_resolution(channel_resolution);
-
-                        // FIXME: We currently assume the executor fader controls the master.
-                        let master = match executor.flash {
-                            true => 1.0,
-                            false => executor.fader_value,
-                        };
-                        raw_dmx_values.iter_mut().for_each(|value| {
-                            *value = (*value as f32 * master) as u8;
-                        });
-
-                        for (channel, value) in dmx_channels.iter().zip(raw_dmx_values) {
-                            if let Err(err) = output.set_channel(channel, value) {
-                                log::error!("Failed to set channel output: {}", err.to_string())
-                            }
-                        }
-                    }
+                    update_dmx_output_with_attribute_values(fixture, attribute_values, &mut output);
                 }
             }
         }

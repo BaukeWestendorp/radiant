@@ -149,7 +149,7 @@ impl Fixture {
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Programmer {
     pub selection: Vec<usize>,
-    pub changes: HashMap<DmxChannel, u8>,
+    pub changes: HashMap<usize, AttributeValues>,
 }
 
 impl Programmer {

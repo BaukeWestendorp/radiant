@@ -56,7 +56,7 @@ impl Show {
         for fixture_id in self.selected_fixtures().to_vec() {
             let fixture = self.fixture(fixture_id).unwrap().clone();
             self.programmer
-                .apply_attribute_values_for_fixture(&fixture, preset.attribute_values());
+                .apply_attribute_values_for_fixture(fixture.id, preset.attribute_values().clone());
         }
 
         Ok(())
@@ -81,7 +81,7 @@ impl Show {
         &self.programmer.selection
     }
 
-    pub fn programmer_changes(&self) -> &HashMap<DmxChannel, u8> {
+    pub fn programmer_changes(&self) -> &HashMap<usize, AttributeValues> {
         &self.programmer.changes
     }
 
@@ -178,9 +178,16 @@ impl Show {
         for universe in self.used_universes().iter() {
             stage_output.add_universe_if_absent(*universe);
         }
-        stage_output
-            .apply_changes(&self.programmer.changes)
-            .unwrap();
+
+        // Apply programmer changes
+        for (fixture_id, changes) in self.programmer_changes().iter() {
+            let Some(fixture) = self.fixture(*fixture_id) else {
+                continue;
+            };
+
+            update_dmx_output_with_attribute_values(fixture, changes, &mut stage_output);
+        }
+
         *self.stage_output.borrow_mut() = stage_output;
     }
 }
@@ -332,31 +339,22 @@ impl Fixture {
 #[derive(Debug, Clone, Default)]
 pub struct Programmer {
     pub(crate) selection: Vec<usize>,
-    pub(crate) changes: HashMap<DmxChannel, u8>,
+    pub(crate) changes: HashMap<usize, AttributeValues>,
 }
 
 impl Programmer {
     pub fn apply_attribute_values_for_fixture(
         &mut self,
-        fixture: &Fixture,
-        attribute_values: &AttributeValues,
+        fixture_id: usize,
+        attribute_values: AttributeValues,
     ) {
+        let Some(changes) = self.changes.get_mut(&fixture_id) else {
+            self.changes.insert(fixture_id, attribute_values);
+            return;
+        };
+
         for (attribute_name, attribute_value) in attribute_values.iter() {
-            let Some(dmx_channels) = fixture.dmx_channels_for_attribute(attribute_name) else {
-                continue;
-            };
-
-            let Some(channel_resolution) = fixture.channel_resolution_for_attribute(attribute_name)
-            else {
-                continue;
-            };
-
-            let raw_dmx_values =
-                attribute_value.raw_values_for_channel_resolution(channel_resolution);
-
-            for (channel, value) in dmx_channels.iter().zip(raw_dmx_values) {
-                self.changes.insert(*channel, value);
-            }
+            changes.insert(attribute_name.clone(), attribute_value.clone());
         }
     }
 
@@ -483,9 +481,34 @@ impl Executor {
     }
 }
 
+pub fn update_dmx_output_with_attribute_values(
+    fixture: &Fixture,
+    attribute_values: &HashMap<String, DmxValue>,
+    output: &mut DmxOutput,
+) {
+    for (attribute_name, attribute_value) in attribute_values.iter() {
+        let Some(dmx_channels) = fixture.dmx_channels_for_attribute(attribute_name) else {
+            continue;
+        };
+
+        let Some(channel_resolution) = fixture.channel_resolution_for_attribute(attribute_name)
+        else {
+            continue;
+        };
+
+        let raw_dmx_values = attribute_value.raw_values_for_channel_resolution(channel_resolution);
+
+        for (channel, value) in dmx_channels.iter().zip(raw_dmx_values) {
+            if let Err(err) = output.set_channel(channel, value) {
+                log::error!("Failed to set channel output: {}", err.to_string())
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use dmx::DmxChannel;
+    use dmx::DmxValue;
 
     use super::Show;
     use crate::showfile::Showfile;
@@ -641,9 +664,29 @@ mod tests {
         assert_eq!(
             show.programmer
                 .changes
-                .get(&DmxChannel::new(0, 0).unwrap())
+                .get(&1)
+                .unwrap()
+                .get("ColorAdd_R")
                 .unwrap(),
-            &255
+            &DmxValue::new(255)
+        );
+        assert_eq!(
+            show.programmer
+                .changes
+                .get(&1)
+                .unwrap()
+                .get("ColorAdd_G")
+                .unwrap(),
+            &DmxValue::new(0)
+        );
+        assert_eq!(
+            show.programmer
+                .changes
+                .get(&1)
+                .unwrap()
+                .get("ColorAdd_B")
+                .unwrap(),
+            &DmxValue::new(0)
         );
         show.execute_command_str("clear").unwrap();
         assert!(show.programmer.selection.is_empty());
