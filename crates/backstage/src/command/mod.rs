@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 
 use self::lexer::Token;
 use crate::command::lexer::Lexer;
-use crate::{Group, Show};
+use crate::{Cue, Group, Show};
 
 mod lexer;
 
@@ -12,6 +12,7 @@ pub enum Object {
     Fixture(usize),
     Group(usize),
     Sequence(usize),
+    Cue { sequence_id: usize, cue_ix: usize },
     PresetBeam(usize),
     PresetColor(usize),
     PresetDimmer(usize),
@@ -28,13 +29,17 @@ impl std::fmt::Display for Object {
             Object::Fixture(id) => write!(f, "fixture {}", id),
             Object::Group(id) => write!(f, "group {}", id),
             Object::Sequence(id) => write!(f, "sequence {}", id),
-            Object::PresetBeam(id) => write!(f, "preset:beam {}", id),
-            Object::PresetColor(id) => write!(f, "preset:color {}", id),
-            Object::PresetDimmer(id) => write!(f, "preset:dimmer {}", id),
-            Object::PresetFocus(id) => write!(f, "preset:focus {}", id),
-            Object::PresetGobo(id) => write!(f, "preset:gobo {}", id),
-            Object::PresetPosition(id) => write!(f, "preset:position {}", id),
-            Object::PresetAll(id) => write!(f, "preset:all {}", id),
+            Object::Cue {
+                sequence_id,
+                cue_ix,
+            } => write!(f, "cue {}.{}", sequence_id, cue_ix),
+            Object::PresetBeam(id) => write!(f, "preset.beam {}", id),
+            Object::PresetColor(id) => write!(f, "preset.color {}", id),
+            Object::PresetDimmer(id) => write!(f, "preset.dimmer {}", id),
+            Object::PresetFocus(id) => write!(f, "preset.focus {}", id),
+            Object::PresetGobo(id) => write!(f, "preset.gobo {}", id),
+            Object::PresetPosition(id) => write!(f, "preset.position {}", id),
+            Object::PresetAll(id) => write!(f, "preset.all {}", id),
             Object::Executor(id) => write!(f, "executor {}", id),
         }
     }
@@ -120,8 +125,36 @@ fn parse_object(lexer: &mut Lexer) -> Result<Object> {
                 _ => return Err(anyhow!("Expected number")),
             }
         }
+        Some((Token::Sequence, _start, _end)) => {
+            let (number_token, _start, _end) = lexer
+                .next_token()?
+                .ok_or_else(|| anyhow!("Expected number"))?;
+            match number_token {
+                Token::Number(number) => Object::Sequence(number),
+                _ => return Err(anyhow!("Expected number")),
+            }
+        }
+        Some((Token::Cue, _start, _end)) => {
+            let (number_token_1, _start, _end) = lexer
+                .next_token()?
+                .ok_or_else(|| anyhow!("Expected number"))?;
+            consume(lexer, Token::Period)?;
+            let (number_token_2, _start, _end) = lexer
+                .next_token()?
+                .ok_or_else(|| anyhow!("Expected number"))?;
+            match number_token_1 {
+                Token::Number(sequence_id) => match number_token_2 {
+                    Token::Number(cue_ix) => Object::Cue {
+                        sequence_id,
+                        cue_ix,
+                    },
+                    _ => return Err(anyhow!("Expected number")),
+                },
+                _ => return Err(anyhow!("Expected number")),
+            }
+        }
         Some((Token::Preset, _start, _end)) => {
-            consume(lexer, Token::Seperator)?;
+            consume(lexer, Token::Period)?;
             let (type_token, _start, _end) = lexer
                 .next_token()?
                 .ok_or_else(|| anyhow!("Expected color or executor"))?;
@@ -275,6 +308,42 @@ impl Show {
                 Some(Object::Sequence(id)) => {
                     todo!()
                 }
+                Some(Object::Cue {
+                    sequence_id,
+                    cue_ix,
+                }) => {
+                    let changes = self.programmer_changes().clone();
+                    if let Some(sequence) = self
+                        .data
+                        .sequences
+                        .iter_mut()
+                        .find(|s| s.id == *sequence_id)
+                    {
+                        if *cue_ix >= sequence.cues.len() {
+                            sequence.cues.push(Cue {
+                                label: "New Cue".to_string(),
+                                changes,
+                            });
+                        } else {
+                            for (fixture_id, attribute_values) in changes.into_iter() {
+                                match sequence.cues[*cue_ix].changes.get_mut(&fixture_id) {
+                                    Some(cue_changes) => {
+                                        for (attribute_name, attribute_value) in
+                                            attribute_values.into_iter()
+                                        {
+                                            cue_changes.insert(attribute_name, attribute_value);
+                                        }
+                                    }
+                                    None => {
+                                        sequence.cues[*cue_ix]
+                                            .changes
+                                            .insert(fixture_id, attribute_values);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 Some(object) => return Err(anyhow!("'{object}' can not be stored")),
                 None => return Err(anyhow!("Store requires a destination object")),
             },
@@ -352,11 +421,11 @@ mod tests {
     fn test_parse_preset() {
         let expected = Command::Select(Some(Object::PresetColor(42)));
 
-        assert_eq!(Command::parse("select preset:color 42").unwrap(), expected);
-        assert!(Command::parse("select preset:color 42 foobar").is_err());
-        assert!(Command::parse("select preset::color 42").is_err());
-        assert!(Command::parse("select foobar preset:color 42").is_err());
-        assert!(Command::parse("select preset:color foobar 42").is_err());
+        assert_eq!(Command::parse("select preset.color 42").unwrap(), expected);
+        assert!(Command::parse("select preset.color 42 foobar").is_err());
+        assert!(Command::parse("select preset..color 42").is_err());
+        assert!(Command::parse("select foobar preset.color 42").is_err());
+        assert!(Command::parse("select preset.color foobar 42").is_err());
     }
 
     #[test]

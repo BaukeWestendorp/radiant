@@ -12,13 +12,15 @@ pub enum Token {
     // Objects
     Fixture,
     Group,
+    Sequence,
+    Cue,
     Executor,
 
     Preset,
     Color,
-    Seperator,
 
     // Other
+    Period,
     Number(usize),
 }
 
@@ -32,10 +34,12 @@ impl std::fmt::Display for Token {
             Token::Top => write!(f, "top"),
             Token::Fixture => write!(f, "fixture"),
             Token::Group => write!(f, "group"),
+            Token::Sequence => write!(f, "sequence"),
+            Token::Cue => write!(f, "cue"),
             Token::Executor => write!(f, "executor"),
             Token::Preset => write!(f, "preset"),
             Token::Color => write!(f, "color"),
-            Token::Seperator => write!(f, "seperator"),
+            Token::Period => write!(f, "."),
             Token::Number(n) => write!(f, "{}", n),
         }
     }
@@ -107,7 +111,7 @@ fn lex_single_token(input: &str) -> Result<(Token, usize)> {
     let (token, len) = match next {
         '0'..='9' => tokenize_number(input)?,
         c @ '_' | c if c.is_alphabetic() => lex_keyword(input)?,
-        ':' => (Token::Seperator, 1),
+        '.' => (Token::Period, 1),
         other => return Err(anyhow!("Unexpected character: '{other}'")),
     };
 
@@ -133,6 +137,8 @@ fn lex_keyword(input: &str) -> Result<(Token, usize)> {
         "top" => Token::Top,
         "fixture" => Token::Fixture,
         "group" => Token::Group,
+        "sequence" => Token::Sequence,
+        "cue" => Token::Cue,
         "executor" => Token::Executor,
         "preset" => Token::Preset,
         "color" => Token::Color,
