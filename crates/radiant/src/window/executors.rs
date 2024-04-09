@@ -2,8 +2,8 @@ use backstage::command::{Command, Object};
 use backstage::show::{Cue, Executor, ExecutorButton, ExecutorButtonAction, Sequence};
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, uniform_list, IntoElement, MouseDownEvent, MouseUpEvent, ParentElement, Render,
-    SharedString, Styled, View, ViewContext, VisualContext, WindowContext,
+    div, uniform_list, InteractiveElement, IntoElement, MouseButton, MouseDownEvent, MouseUpEvent,
+    ParentElement, Render, SharedString, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 use theme::ActiveTheme;
 use ui::button::{Button, ButtonStyle};
@@ -62,7 +62,7 @@ fn get_executor_views(cx: &mut WindowContext) -> Vec<View<ExecutorView>> {
     (1..=20)
         .map(|id| {
             let executor = ShowfileManager::show(cx).executor(id);
-            ExecutorView::build(executor.cloned(), cx)
+            ExecutorView::build(id, executor.cloned(), cx)
         })
         .collect::<Vec<_>>()
 }
@@ -72,11 +72,37 @@ impl Render for ExecutorsWindow {
         div()
             .size_full()
             .flex()
-            .children(self.executor_views.clone())
+            .children(
+                self.executor_views
+                    .clone()
+                    .into_iter()
+                    .map(|executor_view| {
+                        div()
+                            .on_mouse_down(MouseButton::Left, {
+                                let executor_view = executor_view.clone();
+                                move |_event, cx| {
+                                    ShowfileManager::update(cx, |showfile, cx| {
+                                        if let Some(Command::Store(object)) =
+                                            &mut showfile.show.current_command
+                                        {
+                                            *object = Some(Object::Executor(Some(
+                                                executor_view.read(cx).id,
+                                            )));
+                                        }
+                                        if let Err(err) = showfile.show.execute_current_command() {
+                                            log::error!("Failed to execute current command: {err}");
+                                        }
+                                    })
+                                }
+                            })
+                            .child(executor_view.clone())
+                    }),
+            )
     }
 }
 
 pub struct ExecutorView {
+    id: usize,
     info: View<ExecutorInfo>,
     button_1: View<ExecutorButtonView>,
     button_2: View<ExecutorButtonView>,
@@ -84,8 +110,9 @@ pub struct ExecutorView {
 }
 
 impl ExecutorView {
-    pub fn build(executor: Option<Executor>, cx: &mut WindowContext) -> View<Self> {
+    pub fn build(id: usize, executor: Option<Executor>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| Self {
+            id,
             info: ExecutorInfo::build(executor.clone(), cx),
             button_1: ExecutorButtonView::build(executor.clone(), ExecutorButtonKind::First, cx),
             button_2: ExecutorButtonView::build(executor.clone(), ExecutorButtonKind::Second, cx),
