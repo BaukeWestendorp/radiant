@@ -5,7 +5,9 @@ use std::rc::Rc;
 
 use anyhow::{anyhow, Result};
 use dmx::{DmxChannel, DmxOutput, DmxValue};
-use gdtf::{ActivationGroup, Attribute, FeatureGroup, FixtureType, GdtfDescription};
+use gdtf::{
+    ActivationGroup, Attribute, FeatureGroup, FeatureGroupType, FixtureType, GdtfDescription,
+};
 use itertools::Itertools;
 
 use crate::command::Command;
@@ -55,7 +57,10 @@ impl Show {
     pub fn apply_preset(&mut self, preset: &impl Preset) -> Result<()> {
         for fixture_id in self.selected_fixtures().clone() {
             let fixture = self.fixture(fixture_id).unwrap().clone();
-
+            let attribute_values = preset
+                .feature_groups()
+                .iter()
+                .flat_map(|fg| fixture.attributes_for_feature_group(fg));
             self.programmer
                 .apply_attribute_values_for_fixture(&fixture, preset.attribute_values());
         }
@@ -247,16 +252,38 @@ impl Fixture {
         &self.description.fixture_type
     }
 
-    pub fn activation_groups(&self) -> &Vec<ActivationGroup> {
+    pub fn activation_groups(&self) -> &[ActivationGroup] {
         &self.r#type().attribute_definitions.activation_groups
     }
 
-    pub fn feature_groups(&self) -> &Vec<FeatureGroup> {
+    pub fn feature_groups(&self) -> &[FeatureGroup] {
         &self.r#type().attribute_definitions.feature_groups
     }
 
-    pub fn attributes(&self) -> &Vec<gdtf::Attribute> {
+    pub fn attributes(&self) -> &[gdtf::Attribute] {
         &self.r#type().attribute_definitions.attributes
+    }
+
+    pub fn attributes_for_activation_group(
+        &self,
+        activation_group: &ActivationGroup,
+    ) -> Vec<&gdtf::Attribute> {
+        self.attributes()
+            .iter()
+            .filter(|attribute| attribute.activation_group.as_ref() == Some(activation_group))
+            .collect()
+    }
+
+    pub fn attributes_for_feature_group(
+        &self,
+        feature_group: &FeatureGroupType,
+    ) -> Vec<&gdtf::Attribute> {
+        self.attributes()
+            .iter()
+            .filter(|attribute| {
+                attribute.feature(self.feature_groups()).map(|f| f.name) == Some(feature_group)
+            })
+            .collect()
     }
 
     pub fn attribute_offset_for_current_mode(&self, attribute_name: &str) -> Option<Vec<i32>> {

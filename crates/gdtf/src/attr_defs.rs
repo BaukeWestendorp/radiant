@@ -23,8 +23,8 @@ impl TryFrom<RawAttributeDefinitions> for AttributeDefinitions {
                 .map(|ag| ag.groups)
                 .unwrap_or_default()
                 .into_iter()
-                .map(TryInto::try_into)
-                .collect::<Result<_, _>>()?,
+                .map(Into::into)
+                .collect(),
             feature_groups: value
                 .feature_groups
                 .groups
@@ -42,25 +42,124 @@ impl TryFrom<RawAttributeDefinitions> for AttributeDefinitions {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct ActivationGroup {
-    pub name: String,
+pub enum ActivationGroup {
+    PanTilt,
+    Xyz,
+    RotXyz,
+    ScaleXyz,
+    ColorRgb,
+    ColorHsb,
+    ColorCie,
+    ColorIndirect,
+    Gobo(usize),
+    GoboPos(usize),
+    AnimationWheel(usize),
+    AnimationWheelPos(usize),
+    AnimationSystem(usize),
+    AnimationSystemPos(usize),
+    Prism,
+    BeamShaper,
+    Shaper,
+    Custom(String),
 }
 
-impl TryFrom<RawActivationGroup> for ActivationGroup {
-    type Error = Error;
+impl<S: AsRef<str>> From<S> for ActivationGroup {
+    fn from(s: S) -> Self {
+        match s.as_ref() {
+            "PanTilt" => Self::PanTilt,
+            "XYZ" => Self::Xyz,
+            "Rot_XYZ" => Self::RotXyz,
+            "Scale_XYZ" => Self::ScaleXyz,
+            "ColorRGB" => Self::ColorRgb,
+            "ColorHSB" => Self::ColorHsb,
+            "ColorCIE" => Self::ColorCie,
+            "ColorIndirect" => Self::ColorIndirect,
+            s if s.starts_with("Gobo") && s.ends_with("Pos") => {
+                let Ok(index) = s[4..s.len() - 3].parse() else {
+                    return Self::Custom(s.to_string());
+                };
+                Self::GoboPos(index)
+            }
+            s if s.starts_with("Gobo") => {
+                let Ok(index) = s[4..].parse() else {
+                    return Self::Custom(s.to_string());
+                };
+                Self::Gobo(index)
+            }
+            s if s.starts_with("AnimationWheel") && s.ends_with("Pos") => {
+                let Ok(index) = s[13..s.len() - 3].parse() else {
+                    return Self::Custom(s.to_string());
+                };
+                Self::AnimationWheelPos(index)
+            }
+            s if s.starts_with("AnimationWheel") => {
+                let Ok(index) = s[13..].parse() else {
+                    return Self::Custom(s.to_string());
+                };
+                Self::AnimationWheel(index)
+            }
+            s if s.starts_with("AnimationSystem") && s.ends_with("Pos") => {
+                let Ok(index) = s[15..s.len() - 3].parse() else {
+                    return Self::Custom(s.to_string());
+                };
+                Self::AnimationSystemPos(index)
+            }
+            s if s.starts_with("AnimationSystem") => {
+                let Ok(index) = s[15..].parse() else {
+                    return Self::Custom(s.to_string());
+                };
+                Self::AnimationSystem(index)
+            }
+            "Prism" => Self::Prism,
+            "BeamShaper" => Self::BeamShaper,
+            "Shaper" => Self::Shaper,
+            other => Self::Custom(other.to_string()),
+        }
+    }
+}
 
-    fn try_from(value: RawActivationGroup) -> Result<Self, Self::Error> {
-        Ok(Self {
-            name: parse_name(value.name)?,
-        })
+impl From<RawActivationGroup> for ActivationGroup {
+    fn from(value: RawActivationGroup) -> Self {
+        value.name.into()
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FeatureGroup {
-    pub name: String,
+    pub name: FeatureGroupType,
     pub pretty_name: String,
     pub features: Vec<Feature>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum FeatureGroupType {
+    Dimmer,
+    Position,
+    Gobo,
+    Color,
+    Beam,
+    Focus,
+    Control,
+    Shapers,
+    Video,
+    Custom(String),
+}
+
+impl<S: AsRef<str>> From<S> for FeatureGroupType {
+    fn from(s: S) -> Self {
+        match s.as_ref() {
+            "Dimmer" => Self::Dimmer,
+            "Position" => Self::Position,
+            "Gobo" => Self::Gobo,
+            "Color" => Self::Color,
+            "Beam" => Self::Beam,
+            "Focus" => Self::Focus,
+            "Control" => Self::Control,
+            "Shapers" => Self::Shapers,
+            "Video" => Self::Video,
+            other => Self::Custom(other.to_string()),
+        }
+    }
 }
 
 impl TryFrom<RawFeatureGroup> for FeatureGroup {
@@ -69,8 +168,8 @@ impl TryFrom<RawFeatureGroup> for FeatureGroup {
     fn try_from(value: RawFeatureGroup) -> Result<Self, Self::Error> {
         let name = parse_name(value.name)?;
         Ok(Self {
-            name: name.clone(),
-            pretty_name: value.pretty.unwrap_or(name),
+            name: name.clone().into(),
+            pretty_name: value.pretty.unwrap_or(name.to_string()),
             features: value
                 .features
                 .into_iter()
@@ -99,27 +198,18 @@ impl TryFrom<RawFeature> for Feature {
 pub struct Attribute {
     pub name: String,
     pub pretty_name: String,
-    activation_group: Option<Node>,
-    feature: Node,
+    pub activation_group: Option<ActivationGroup>,
+    pub feature: Node,
     main_attribute: Option<Node>,
     pub physical_unit: PhysicalUnit,
     pub color: Option<ColorCIE>,
 }
 
 impl Attribute {
-    pub fn activation_group<'a>(
-        &'a self,
-        activation_groups: &'a [ActivationGroup],
-    ) -> Option<&ActivationGroup> {
-        self.activation_group
-            .as_ref()
-            .and_then(|node| activation_groups.iter().find(|ag| ag.name == node[0]))
-    }
-
     pub fn feature<'a>(&'a self, feature_groups: &'a [FeatureGroup]) -> Option<&Feature> {
         feature_groups
             .iter()
-            .find(|fg| fg.name == self.feature[0])
+            .find(|fg| fg.name == self.feature[0].clone().into())
             .and_then(|fg| fg.features.iter().find(|f| f.name == self.feature[1]))
     }
 
@@ -138,7 +228,7 @@ impl TryFrom<RawAttribute> for Attribute {
         Ok(Self {
             name: name.clone(),
             pretty_name: value.pretty.unwrap_or(name),
-            activation_group: value.activation_group.map(parse_node).transpose()?,
+            activation_group: value.activation_group.map(ActivationGroup::from),
             feature: parse_node(value.feature)?,
             main_attribute: value.main_attribute.map(parse_node).transpose()?,
             physical_unit: value.physical_unit.parse()?,
@@ -228,5 +318,21 @@ impl FromStr for PhysicalUnit {
                 s
             ))),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn parse_activation_group() {
+        use std::convert::TryInto;
+
+        use super::{ActivationGroup, RawActivationGroup};
+
+        let raw = RawActivationGroup {
+            name: "AnimationSystem11Pos".to_string(),
+        };
+        let activation_group: ActivationGroup = raw.try_into().unwrap();
+        assert_eq!(activation_group, ActivationGroup::AnimationSystemPos(11));
     }
 }

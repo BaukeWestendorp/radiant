@@ -1,3 +1,5 @@
+use gdtf::FeatureGroupType;
+
 use crate::{AttributeValues, Show};
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
@@ -32,7 +34,7 @@ pub trait Preset {
 
     fn set_label(&mut self, label: &str);
 
-    fn affected_attributes(&self) -> AffectedAttributes;
+    fn feature_groups(&self) -> &[FeatureGroupType];
 
     fn attribute_values(&self) -> &AttributeValues;
 }
@@ -49,7 +51,7 @@ macro_rules! preset {
         $getter:ident,
         $getter_mut:ident,
         $getter_all:ident,
-        $affected_attributes:expr) => {
+        $activation_groups:expr) => {
         #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
         pub struct $name {
             pub(crate) id: usize,
@@ -80,8 +82,8 @@ macro_rules! preset {
                 self.label = label.to_string();
             }
 
-            fn affected_attributes(&self) -> AffectedAttributes {
-                $affected_attributes
+            fn feature_groups(&self) -> &[FeatureGroupType] {
+                $activation_groups
             }
 
             fn attribute_values(&self) -> &AttributeValues {
@@ -121,7 +123,7 @@ preset!(
     beam_preset,
     beam_preset_mut,
     beam_presets,
-    AffectedAttributes::Specific(vec![])
+    &[FeatureGroupType::Beam]
 );
 
 preset!(
@@ -130,7 +132,7 @@ preset!(
     color_preset,
     color_preset_mut,
     color_presets,
-    AffectedAttributes::Specific(vec!["ColorAdd_R", "ColorAdd_G", "ColorAdd_B"])
+    &[FeatureGroupType::Color]
 );
 
 preset!(
@@ -139,7 +141,7 @@ preset!(
     dimmer_preset,
     dimmer_preset_mut,
     dimmer_presets,
-    AffectedAttributes::Specific(vec!["Dimmer"])
+    &[FeatureGroupType::Dimmer]
 );
 
 preset!(
@@ -148,7 +150,7 @@ preset!(
     focus_preset,
     focus_preset_mut,
     focus_presets,
-    AffectedAttributes::Specific(vec![])
+    &[FeatureGroupType::Focus]
 );
 
 preset!(
@@ -157,7 +159,7 @@ preset!(
     gobo_preset,
     gobo_preset_mut,
     gobo_presets,
-    AffectedAttributes::Specific(vec![])
+    &[FeatureGroupType::Gobo]
 );
 
 preset!(
@@ -166,7 +168,7 @@ preset!(
     position_preset,
     position_preset_mut,
     position_presets,
-    AffectedAttributes::Specific(vec![])
+    &[FeatureGroupType::Position]
 );
 
 preset!(
@@ -175,5 +177,12 @@ preset!(
     all_preset,
     all_preset_mut,
     all_presets,
-    AffectedAttributes::All
+    &[
+        FeatureGroupType::Beam,
+        FeatureGroupType::Color,
+        FeatureGroupType::Dimmer,
+        FeatureGroupType::Focus,
+        FeatureGroupType::Gobo,
+        FeatureGroupType::Position
+    ]
 );
