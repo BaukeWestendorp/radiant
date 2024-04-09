@@ -416,6 +416,28 @@ pub struct Executor {
     pub button_3: ExecutorButton,
 }
 
+impl Executor {
+    pub fn new(id: usize, sequence: Option<usize>) -> Self {
+        Self {
+            id,
+            sequence,
+            current_index: Cell::new(None),
+            r#loop: false,
+            flash: false,
+            fader_value: 1.0,
+            button_1: ExecutorButton {
+                action: crate::ExecutorButtonAction::Top,
+            },
+            button_2: ExecutorButton {
+                action: crate::ExecutorButtonAction::Go,
+            },
+            button_3: ExecutorButton {
+                action: crate::ExecutorButtonAction::Flash,
+            },
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct ExecutorButton {
     pub action: ExecutorButtonAction,

@@ -1,10 +1,8 @@
-use std::cell::Cell;
-
 use anyhow::{anyhow, Result};
 
 use self::lexer::Token;
 use crate::command::lexer::Lexer;
-use crate::{Cue, Executor, ExecutorButton, Group, Sequence, Show};
+use crate::{Cue, Executor, Group, Sequence, Show};
 
 mod lexer;
 
@@ -326,24 +324,8 @@ impl Show {
                             }
                         }
                         None => {
-                            // FIXME: We should make a Executor::new() to clean this up.
-                            self.executors.push(Executor {
-                                id: *id,
-                                sequence: Some(new_sequence_id),
-                                current_index: Cell::new(None),
-                                r#loop: false,
-                                flash: false,
-                                fader_value: 1.0,
-                                button_1: ExecutorButton {
-                                    action: crate::ExecutorButtonAction::Top,
-                                },
-                                button_2: ExecutorButton {
-                                    action: crate::ExecutorButtonAction::Go,
-                                },
-                                button_3: ExecutorButton {
-                                    action: crate::ExecutorButtonAction::Flash,
-                                },
-                            });
+                            self.executors
+                                .push(Executor::new(*id, Some(new_sequence_id)));
                             new_sequence_id
                         }
                     };
