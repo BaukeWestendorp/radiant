@@ -5,6 +5,7 @@ use gpui::App;
 
 mod app;
 mod assets;
+mod color;
 mod geometry;
 mod layout;
 mod output;

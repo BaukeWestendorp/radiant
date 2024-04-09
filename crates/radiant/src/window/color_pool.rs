@@ -1,9 +1,11 @@
 use backstage::{Command, Object, Preset};
-use gpui::{IntoElement, Model, ParentElement, Styled, ViewContext, WindowContext};
+use gpui::prelude::FluentBuilder;
+use gpui::{div, IntoElement, Model, ParentElement, Rgba, Styled, ViewContext, WindowContext};
 use ui::button::{Button, ButtonStyle};
 
 use super::pool::PoolWindowDelegate;
 use super::WindowView;
+use crate::color::Color;
 use crate::showfile::{ShowfileManager, Window};
 
 pub struct ColorPoolWindowDelegate {
@@ -26,14 +28,36 @@ impl PoolWindowDelegate for ColorPoolWindowDelegate {
     }
 
     fn render_item_for_id(&self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement> {
-        ShowfileManager::show(cx).color_preset(id).map(|color| {
+        let Some(color_preset) = ShowfileManager::show(cx).color_preset(id) else {
+            return None;
+        };
+
+        let color_rgba = Color::from_attribute_values(color_preset.attribute_values()).ok();
+
+        Some(
             Button::new(ButtonStyle::Secondary, id, cx)
                 .size_full()
                 .flex()
-                .justify_center()
-                .items_center()
-                .child(color.label().to_string())
-        })
+                .flex_col()
+                .child(
+                    div()
+                        .h_full()
+                        .flex()
+                        .justify_center()
+                        .items_center()
+                        .child(color_preset.label().to_string()),
+                )
+                .when_some(color_rgba, |this, color| {
+                    this.child(
+                        div()
+                            .h_5()
+                            .w_full()
+                            .border_t()
+                            .border_color(Rgba::from(color.clone().darkened(0.2)))
+                            .bg(Rgba::from(color)),
+                    )
+                }),
+        )
     }
 
     fn handle_click_item(&mut self, id: usize, cx: &mut ViewContext<WindowView<Self>>) {

@@ -190,4 +190,16 @@ impl DmxValue {
         bytes.truncate(channel_resolution as usize);
         bytes
     }
+
+    pub fn to_fraction(&self) -> f32 {
+        if self.0 <= 0xFF {
+            return self.0 as f32 / 255.0;
+        } else if self.0 <= 0xFFFF {
+            return self.0 as f32 / 65535.0;
+        } else if self.0 <= 0xFFFFFF {
+            return self.0 as f32 / 16777215.0;
+        } else {
+            return self.0 as f32 / 4294967295.0;
+        }
+    }
 }

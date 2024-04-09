@@ -54,7 +54,7 @@ macro_rules! preset {
         pub struct $name {
             pub(crate) id: usize,
             pub(crate) label: String,
-            pub attribute_values: AttributeValues,
+            pub(crate) attribute_values: AttributeValues,
         }
 
         impl $name {

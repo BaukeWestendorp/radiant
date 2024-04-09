@@ -55,12 +55,6 @@ impl Show {
     pub fn apply_preset(&mut self, preset: &impl Preset) -> Result<()> {
         for fixture_id in self.selected_fixtures().to_vec() {
             let fixture = self.fixture(fixture_id).unwrap().clone();
-            let attributes = preset
-                .feature_groups()
-                .iter()
-                .flat_map(|fg| fixture.attributes_for_feature_group(fg))
-                .collect::<Vec<_>>();
-            dbg!(&attributes);
             self.programmer
                 .apply_attribute_values_for_fixture(&fixture, preset.attribute_values());
         }
