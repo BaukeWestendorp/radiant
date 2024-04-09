@@ -395,9 +395,8 @@ pub struct Sequence {
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Cue {
-    pub groups: Vec<usize>,
     pub label: String,
-    pub attribute_values: AttributeValues,
+    pub changes: HashMap<usize, AttributeValues>,
 }
 
 pub type AttributeValues = HashMap<String, DmxValue>;

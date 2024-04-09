@@ -28,10 +28,14 @@ impl PlaybackEngine {
                     "Using values for Cue '{}' to determine dmx output",
                     current_cue.label
                 );
-                let fixtures = show.fixtures_in_groups(&current_cue.groups);
 
-                for fixture in fixtures.iter() {
-                    for (attribute_name, attribute_value) in current_cue.attribute_values.iter() {
+                for (fixture_id, attribute_values) in current_cue.changes.iter() {
+                    let Some(fixture) = show.fixture(*fixture_id) else {
+                        log::warn!("Failed to get fixture with id {fixture_id} when determining dmx output");
+                        continue;
+                    };
+
+                    for (attribute_name, attribute_value) in attribute_values.iter() {
                         let Some(dmx_channels) = fixture.dmx_channels_for_attribute(attribute_name)
                         else {
                             continue;

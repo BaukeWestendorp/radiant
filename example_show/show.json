@@ -184,36 +184,23 @@
     "sequences": [
       {
         "id": 1,
-        "label": "Switcheroo long title",
+        "label": "Sequence 1",
         "cues": [
           {
-            "groups": [1],
             "label": "Cue 1",
-            "attribute_values": {
-              "ColorAdd_R": 255,
-              "ColorAdd_G": 16,
-              "ColorAdd_B": 127,
-              "Dimmer": 255
-            }
-          },
-          {
-            "groups": [2],
-            "label": "Cue 2",
-            "attribute_values": {
-              "ColorAdd_R": 32,
-              "ColorAdd_G": 255,
-              "ColorAdd_B": 16,
-              "Dimmer": 255
-            }
-          },
-          {
-            "groups": [1, 2],
-            "label": "Cue 3",
-            "attribute_values": {
-              "ColorAdd_R": 255,
-              "ColorAdd_G": 255,
-              "ColorAdd_B": 255,
-              "Dimmer": 255
+            "changes": {
+              "1": {
+                "ColorAdd_R": 255,
+                "ColorAdd_G": 0,
+                "ColorAdd_B": 255,
+                "Dimmer": 255
+              },
+              "2": {
+                "ColorAdd_R": 0,
+                "ColorAdd_G": 255,
+                "ColorAdd_B": 0,
+                "Dimmer": 64
+              }
             }
           }
         ]

@@ -272,6 +272,9 @@ impl Show {
                     }
                     self.data.groups.push(group);
                 }
+                Some(Object::Sequence(id)) => {
+                    todo!()
+                }
                 Some(object) => return Err(anyhow!("'{object}' can not be stored")),
                 None => return Err(anyhow!("Store requires a destination object")),
             },

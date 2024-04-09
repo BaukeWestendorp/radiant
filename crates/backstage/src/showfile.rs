@@ -7,7 +7,7 @@ use std::path::Path;
 use std::rc::Rc;
 
 use anyhow::{anyhow, Error};
-use dmx::{DmxChannel, DmxOutput, DmxValue};
+use dmx::{DmxChannel, DmxOutput};
 use gdtf::GdtfDescription;
 use gdtf_share::GdtfShare;
 use lazy_static::lazy_static;
@@ -215,17 +215,15 @@ impl From<Sequence> for show::Sequence {
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Cue {
-    pub groups: Vec<usize>,
     pub label: String,
-    pub attribute_values: HashMap<String, DmxValue>,
+    pub changes: HashMap<usize, AttributeValues>,
 }
 
 impl From<Cue> for show::Cue {
     fn from(val: Cue) -> Self {
         show::Cue {
-            groups: val.groups,
             label: val.label,
-            attribute_values: val.attribute_values,
+            changes: val.changes,
         }
     }
 }
