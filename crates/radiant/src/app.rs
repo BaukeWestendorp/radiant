@@ -21,8 +21,6 @@ pub fn run_app(app: gpui::App, showfile_path: Option<String>) {
         ShowfileManager::init(showfile_path, cx);
         DmxOutputManager::init(cx);
 
-        cx.activate(false);
-
         register_io_protocols_from_showfile(cx);
 
         init_menu(cx);

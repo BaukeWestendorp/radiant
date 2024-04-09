@@ -18,6 +18,7 @@ pub mod gobo_pool;
 pub mod group_pool;
 pub mod pool;
 pub mod position_pool;
+pub mod sequence_pool;
 
 pub struct WindowView<D: WindowDelegate> {
     window: Model<Window>,

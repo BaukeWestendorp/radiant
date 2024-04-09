@@ -11,6 +11,7 @@ mod lexer;
 pub enum Object {
     Fixture(usize),
     Group(usize),
+    Sequence(usize),
     PresetBeam(usize),
     PresetColor(usize),
     PresetDimmer(usize),
@@ -26,6 +27,7 @@ impl std::fmt::Display for Object {
         match self {
             Object::Fixture(id) => write!(f, "fixture {}", id),
             Object::Group(id) => write!(f, "group {}", id),
+            Object::Sequence(id) => write!(f, "sequence {}", id),
             Object::PresetBeam(id) => write!(f, "preset:beam {}", id),
             Object::PresetColor(id) => write!(f, "preset:color {}", id),
             Object::PresetDimmer(id) => write!(f, "preset:dimmer {}", id),

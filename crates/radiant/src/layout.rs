@@ -15,6 +15,7 @@ use crate::window::focus_pool::FocusPoolWindowDelegate;
 use crate::window::gobo_pool::GoboPoolWindowDelegate;
 use crate::window::group_pool::GroupPoolWindowDelegate;
 use crate::window::position_pool::PositionPoolWindowDelegate;
+use crate::window::sequence_pool::SequencePoolWindowDelegate;
 use crate::window::WindowView;
 
 pub const GRID_SIZE: gpui::Pixels = px(80.0);
@@ -128,6 +129,14 @@ fn get_window_views(
 fn get_window_view(window: Model<Window>, cx: &mut WindowContext) -> AnyView {
     match window.read(cx).kind {
         WindowKind::Pool(pool_window) => match pool_window.kind {
+            PoolWindowKind::Group => {
+                let delegate = GroupPoolWindowDelegate::new(window.clone());
+                WindowView::build(window, delegate, cx).into()
+            }
+            PoolWindowKind::Sequence => {
+                let delegate = SequencePoolWindowDelegate::new(window.clone());
+                WindowView::build(window, delegate, cx).into()
+            }
             PoolWindowKind::BeamPreset => {
                 let delegate = BeamPoolWindowDelegate::new(window.clone());
                 WindowView::build(window, delegate, cx).into()
@@ -154,10 +163,6 @@ fn get_window_view(window: Model<Window>, cx: &mut WindowContext) -> AnyView {
             }
             PoolWindowKind::AllPreset => {
                 let delegate = AllPoolWindowDelegate::new(window.clone());
-                WindowView::build(window, delegate, cx).into()
-            }
-            PoolWindowKind::Group => {
-                let delegate = GroupPoolWindowDelegate::new(window.clone());
                 WindowView::build(window, delegate, cx).into()
             }
         },

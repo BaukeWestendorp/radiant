@@ -130,6 +130,7 @@ where
             .absolute()
             .top(row as f32 * GRID_SIZE)
             .left(col as f32 * GRID_SIZE)
+            .overflow_hidden()
             .on_mouse_down(
                 gpui::MouseButton::Left,
                 cx.listener(move |this, _event, cx| {
