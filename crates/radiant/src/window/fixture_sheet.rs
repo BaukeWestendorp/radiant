@@ -174,10 +174,12 @@ impl SheetDelegate for FixtureSheetDelegate {
                     .collect::<Vec<_>>()
                     .join(", ");
 
-                // FIXME: Reimplement this.
-                let value_in_programmer = true;
+                let value_in_programmer = ShowfileManager::show(cx)
+                    .programmer_changes()
+                    .get(&fixture.id)
+                    .and_then(|attribute_changes| attribute_changes.get(name));
 
-                if value_in_programmer {
+                if value_in_programmer.is_some() {
                     background_color = Some(cx.theme().colors().programmer_change);
                 }
 
