@@ -32,7 +32,7 @@ impl WindowDelegate for FixtureSheetWindowDelegate {
     }
 
     fn render_content(&mut self, _cx: &mut ViewContext<WindowView<Self>>) -> impl IntoElement {
-        div().size_full().child(self.sheet.clone())
+        div().child(self.sheet.clone())
     }
 }
 

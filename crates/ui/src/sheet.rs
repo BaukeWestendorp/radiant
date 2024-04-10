@@ -1,6 +1,6 @@
 use gpui::{
-    div, uniform_list, AnyElement, IntoElement, ParentElement, Pixels, Render, SharedString,
-    Styled, ViewContext,
+    div, px, uniform_list, AnyElement, InteractiveElement, IntoElement, ParentElement, Pixels,
+    Render, ScrollHandle, SharedString, StatefulInteractiveElement, Styled, ViewContext,
 };
 use theme::ActiveTheme;
 
@@ -8,6 +8,7 @@ pub struct Sheet<D: SheetDelegate> {
     pub delegate: D,
 
     id: SharedString,
+    scroll_handle: ScrollHandle,
 }
 
 impl<D: SheetDelegate> Sheet<D> {
@@ -15,6 +16,7 @@ impl<D: SheetDelegate> Sheet<D> {
         Self {
             delegate,
             id: id.to_string().into(),
+            scroll_handle: ScrollHandle::new(),
         }
     }
 }
@@ -23,44 +25,54 @@ impl<D: SheetDelegate + 'static> Render for Sheet<D> {
     fn render(&mut self, cx: &mut gpui::ViewContext<Self>) -> impl IntoElement {
         let header_row = self.delegate.render_header_row(cx).into_any_element();
 
+        let total_width = {
+            let mut total_width = px(0.0);
+            for column_id in self.delegate.columns(cx) {
+                total_width += self.delegate.column_width(&column_id, cx);
+            }
+            total_width
+        };
+
         div()
-            .flex()
-            .flex_col()
-            .border()
-            .border_color(cx.theme().colors().border)
-            .rounded_md()
-            .child(header_row)
+            .id(self.id.clone())
+            .w_full()
+            .overflow_x_scroll()
+            // .border()
+            // .border_color(cx.theme().colors().border)
+            // .rounded_md()
+            .track_scroll(&self.scroll_handle)
             .child(
-                uniform_list(
-                    cx.view().clone(),
-                    self.id.clone(),
-                    self.delegate.values(cx).len(),
-                    move |view, visible_range, cx| {
-                        let mut rows = vec![];
-
-                        for ix in visible_range {
-                            let data = view.delegate.values(cx)[ix].clone();
-                            let cells = view
-                                .delegate
-                                .columns(cx)
-                                .iter()
-                                .map(|column_id| {
-                                    let content =
-                                        view.delegate.render_cell_content(column_id, &data, cx);
-
-                                    view.delegate.render_cell(column_id, content, cx)
-                                })
-                                .collect::<Vec<_>>();
-                            let row = view.delegate.render_row(ix, cells, cx).into_any_element();
-                            rows.push(row);
-                        }
-
-                        rows
-                    },
-                )
-                .size_full(),
+                div()
+                    .flex()
+                    .flex_col()
+                    .w(total_width)
+                    .child(header_row)
+                    .child(uniform_list(
+                        cx.view().clone(),
+                        self.id.clone(),
+                        self.delegate.values(cx).len(),
+                        move |view, visible_range, cx| {
+                            let mut rows = vec![];
+                            for ix in visible_range {
+                                let data = view.delegate.values(cx)[ix].clone();
+                                let cells = view
+                                    .delegate
+                                    .columns(cx)
+                                    .iter()
+                                    .map(|column_id| {
+                                        let content =
+                                            view.delegate.render_cell_content(column_id, &data, cx);
+                                        view.delegate.render_cell(column_id, content, cx)
+                                    })
+                                    .collect::<Vec<_>>();
+                                let row =
+                                    view.delegate.render_row(ix, cells, cx).into_any_element();
+                                rows.push(row);
+                            }
+                            rows
+                        },
+                    )),
             )
-            .size_full()
     }
 }
 
@@ -143,7 +155,8 @@ pub trait SheetDelegate: Sized {
         cx: &mut ViewContext<Sheet<Self>>,
     ) -> AnyElement {
         div()
-            .w(self.column_width(column_id, cx))
+            .min_w(self.column_width(column_id, cx))
+            .max_w(self.column_width(column_id, cx))
             .whitespace_nowrap()
             .overflow_hidden()
             .border_r()

@@ -1,6 +1,7 @@
 use backstage::{Command, Object, Preset};
 use gpui::prelude::FluentBuilder;
 use gpui::{div, IntoElement, Model, ParentElement, Rgba, Styled, ViewContext, WindowContext};
+use theme::ActiveTheme;
 use ui::button::{Button, ButtonStyle};
 
 use super::pool::PoolWindowDelegate;
