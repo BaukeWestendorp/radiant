@@ -167,7 +167,7 @@ fn get_window_view(window: Model<Window>, cx: &mut WindowContext) -> AnyView {
             }
         },
         WindowKind::Executors => {
-            let delegate = ExecutorsWindowDelegate::new(cx);
+            let delegate = ExecutorsWindowDelegate::new(cx, window.clone());
             WindowView::build(window, delegate, cx).into()
         }
         WindowKind::FixtureSheet => {

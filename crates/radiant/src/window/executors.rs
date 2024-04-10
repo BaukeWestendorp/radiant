@@ -2,8 +2,9 @@ use backstage::command::{Command, Object};
 use backstage::show::{Cue, Executor, ExecutorButton, ExecutorButtonAction, Sequence};
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    div, uniform_list, InteractiveElement, IntoElement, MouseButton, MouseDownEvent, MouseUpEvent,
-    ParentElement, Render, SharedString, Styled, View, ViewContext, VisualContext, WindowContext,
+    div, uniform_list, InteractiveElement, IntoElement, Model, MouseButton, MouseDownEvent,
+    MouseUpEvent, ParentElement, Render, SharedString, Styled, View, ViewContext, VisualContext,
+    WindowContext,
 };
 use theme::ActiveTheme;
 use ui::button::{Button, ButtonStyle};
@@ -12,16 +13,16 @@ use ui::disableable::Disableable;
 
 use super::{WindowDelegate, WindowView};
 use crate::layout::GRID_SIZE;
-use crate::showfile::ShowfileManager;
+use crate::showfile::{ShowfileManager, Window};
 
 pub struct ExecutorsWindowDelegate {
     executors_window: View<ExecutorsWindow>,
 }
 
 impl ExecutorsWindowDelegate {
-    pub fn new(cx: &mut WindowContext) -> Self {
+    pub fn new(cx: &mut WindowContext, window: Model<Window>) -> Self {
         Self {
-            executors_window: ExecutorsWindow::build(cx),
+            executors_window: ExecutorsWindow::build(cx, window),
         }
     }
 }
@@ -41,25 +42,28 @@ pub struct ExecutorsWindow {
 }
 
 impl ExecutorsWindow {
-    pub fn build(cx: &mut WindowContext) -> View<Self> {
+    pub fn build(cx: &mut WindowContext, window: Model<Window>) -> View<Self> {
         cx.new_view(|cx| {
-            cx.observe_global::<ShowfileManager>(|this: &mut Self, cx| {
-                this.executor_views = get_executor_views(cx);
-                cx.notify();
+            cx.observe_global::<ShowfileManager>({
+                let window = window.clone();
+                move |this: &mut Self, cx| {
+                    let width = window.read(cx).bounds.size.width;
+                    this.executor_views = get_executor_views(cx, width);
+                    cx.notify();
+                }
             })
             .detach();
 
+            let width = window.read(cx).bounds.size.width;
             Self {
-                executor_views: get_executor_views(cx),
+                executor_views: get_executor_views(cx, width),
             }
         })
     }
 }
 
-fn get_executor_views(cx: &mut WindowContext) -> Vec<View<ExecutorView>> {
-    // FIXME: For now we just show 20 executors, but this amount should be
-    // calculated based on the width.
-    (1..=20)
+fn get_executor_views(cx: &mut WindowContext, width: usize) -> Vec<View<ExecutorView>> {
+    (1..=width)
         .map(|id| {
             let executor = ShowfileManager::show(cx).executor(id);
             ExecutorView::build(id, executor.cloned(), cx)
