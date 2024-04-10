@@ -84,10 +84,27 @@ impl Showfile {
     }
 }
 
-#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Layouts {
     pub selected_layout_id: usize,
     pub layouts: Vec<Layout>,
+}
+
+impl Default for Layouts {
+    fn default() -> Self {
+        Self {
+            selected_layout_id: 1,
+            layouts: vec![Layout {
+                id: 1,
+                label: "Layout 1".into(),
+                size: Size {
+                    width: 20,
+                    height: 12,
+                },
+                windows: Vec::new(),
+            }],
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]

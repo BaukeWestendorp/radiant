@@ -120,8 +120,9 @@ impl Fixture {
                     log::info!("Using cached GDTF file '{}'", cached_file_path.display());
                     patchlist.register_gdtf_description(rid, cached_description)
                 } else {
-                    let Ok(gdtf_share) = GDTF_SHARE.as_ref() else {
-                        return Err(anyhow!("Could not download uncached GDTF file."));
+                    let gdtf_share = match GDTF_SHARE.as_ref() {
+                        Ok(gdtf_share) => gdtf_share,
+                        Err(err) => return Err(anyhow!("Could not download uncached GDTF: {err}")),
                     };
 
                     let description_file = gdtf_share.download_file(rid).await.unwrap();

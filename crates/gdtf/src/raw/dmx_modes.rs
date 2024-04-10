@@ -33,9 +33,8 @@ pub struct RawDmxMode {
     pub name: RawName,
 
     /// Description of the DMX mode
-    #[serde_inline_default("".to_string())]
     #[serde(rename = "Description")]
-    pub description: String,
+    pub description: Option<String>,
 
     /// Name of the first geometry in the device; Only top level geometries are
     /// allowed to be linked.

@@ -11,7 +11,7 @@ pub struct FixtureType {
     pub short_name: String,
     pub long_name: String,
     pub manufacturer: String,
-    pub description: String,
+    pub description: Option<String>,
     pub fixture_type_id: String,
     pub thumbnail: Option<String>,
     pub thumbnail_offset_x: i32,

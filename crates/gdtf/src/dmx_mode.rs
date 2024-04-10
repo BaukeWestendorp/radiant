@@ -10,7 +10,7 @@ use crate::{parse_int_array, parse_name, DmxValue};
 #[derive(Debug, Clone, PartialEq)]
 pub struct DmxMode {
     pub name: String,
-    pub description: String,
+    pub description: Option<String>,
     // FIXME: pub geometry: Geometry,
     pub dmx_channels: Vec<DmxChannel>,
     // FIXME: pub relations: Vec<Relation>,
