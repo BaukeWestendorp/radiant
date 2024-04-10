@@ -33,6 +33,11 @@ impl Show {
         Self::from_showfile(showfile).await
     }
 
+    pub async fn from_showfile_str(s: &str) -> Result<Self> {
+        let showfile: Showfile = serde_json::from_str(s)?;
+        showfile.try_into_show().await
+    }
+
     pub(crate) async fn from_showfile(showfile: Showfile) -> Result<Self> {
         showfile.try_into_show().await
     }
@@ -138,6 +143,15 @@ impl Show {
 
     pub fn sequences(&self) -> &[Sequence] {
         &self.data.sequences
+    }
+
+    pub fn cue(&self, sequence_id: usize, cue_ix: usize) -> Option<&Cue> {
+        self.sequence(sequence_id).and_then(|s| s.cues.get(cue_ix))
+    }
+
+    pub fn cue_mut(&mut self, sequence_id: usize, cue_ix: usize) -> Option<&mut Cue> {
+        self.sequence_mut(sequence_id)
+            .and_then(|s| s.cues.get_mut(cue_ix))
     }
 
     pub fn executor(&self, id: usize) -> Option<&Executor> {
@@ -529,226 +543,5 @@ pub fn update_dmx_output_with_attribute_values(
                 log::error!("Failed to set channel output: {}", err.to_string())
             }
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use dmx::DmxValue;
-
-    use super::Show;
-    use crate::showfile::Showfile;
-
-    const TEST_SHOWFILE: &str = r#"{
-        "patchlist": {
-            "fixtures": [
-                {
-                    "id": 1,
-                    "gdtf_share_revision_id": 60124,
-                    "label": "Front Wash 1",
-                    "mode": "Standard mode",
-                    "channel": {
-                        "address": 0,
-                        "universe": 0
-                    }
-                },
-                {
-                    "id": 2,
-                    "label": "Wash 2",
-                    "gdtf_share_revision_id": 60124,
-                    "mode": "Standard mode",
-                    "channel": {
-                        "address": 10,
-                        "universe": 10
-                    }
-                }
-            ]
-        },
-        "presets": {
-          "colors": [
-            {
-              "id": 1,
-              "label": "Red",
-              "attribute_values": {
-                "ColorAdd_R": 255,
-                "ColorAdd_G": 0,
-                "ColorAdd_B": 0
-              }
-            }
-          ]
-        },
-        "data": {
-          "groups": [
-            {
-              "id": 1,
-              "label": "Group 1",
-              "fixtures": [1]
-            }
-          ],
-          "sequences": [
-            {
-              "id": 1,
-              "label": "Sequence 1",
-              "cues": [
-                {
-                  "groups": [1],
-                  "label": "Cue 1",
-                  "attribute_values": {
-                    "ColorAdd_R": 255,
-                    "ColorAdd_G": 16,
-                    "ColorAdd_B": 127,
-                    "Dimmer": 255
-                  }
-                },
-                {
-                  "groups": [1],
-                  "label": "Cue 2",
-                  "attribute_values": {
-                    "ColorAdd_R": 32,
-                    "ColorAdd_G": 255,
-                    "ColorAdd_B": 16,
-                    "Dimmer": 255
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        "executors": [
-          {
-            "id": 1,
-            "sequence": 1,
-            "current_index": null,
-            "loop": false,
-            "fader_value": 1.0,
-            "button_1": {
-              "action": "Top"
-            },
-            "button_2": {
-              "action": "Go"
-            },
-            "button_3": {
-              "action": "Flash"
-            }
-          },
-          {
-            "id": 2,
-            "sequence": 1,
-            "current_index": 1,
-            "loop": true,
-            "fader_value": 1.0,
-            "button_1": {
-              "action": "Top"
-            },
-            "button_2": {
-              "action": "Go"
-            },
-            "button_3": {
-              "action": "Flash"
-            }
-          }
-        ]
-    }"#;
-
-    #[tokio::test]
-    async fn from_empty_showfile() {
-        dotenv::dotenv().ok();
-        let showfile: Showfile = serde_json::from_str(r#"{}"#).unwrap();
-        Show::from_showfile(showfile).await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn from_showfile_with_fixture() {
-        let showfile: Showfile = serde_json::from_str(TEST_SHOWFILE).unwrap();
-        let show = Show::from_showfile(showfile).await.unwrap();
-
-        assert_eq!(
-            show.patchlist.fixtures[0].description.fixture_type.ref_ft,
-            Some("DB42C9F0-3236-4251-8436-D9CBE92F4021".to_string())
-        );
-
-        assert_eq!(show.patchlist.gdtf_descriptions.len(), 1);
-    }
-
-    #[tokio::test]
-    async fn test_select_fixture_command() {
-        let showfile: Showfile = serde_json::from_str(TEST_SHOWFILE).unwrap();
-        let mut show = Show::from_showfile(showfile).await.unwrap();
-
-        show.execute_command_str("select fixture 1").unwrap();
-        assert_eq!(*show.programmer.selection.first().unwrap(), 1);
-    }
-
-    #[tokio::test]
-    async fn test_clear_command() {
-        let showfile: Showfile = serde_json::from_str(TEST_SHOWFILE).unwrap();
-        let mut show = Show::from_showfile(showfile).await.unwrap();
-
-        show.execute_command_str("select fixture 1").unwrap();
-        assert_eq!(*show.programmer.selection.first().unwrap(), 1);
-        show.execute_command_str("select preset:color 1").unwrap();
-        assert_eq!(
-            show.programmer
-                .changes
-                .get(&1)
-                .unwrap()
-                .get("ColorAdd_R")
-                .unwrap(),
-            &DmxValue::new(255)
-        );
-        assert_eq!(
-            show.programmer
-                .changes
-                .get(&1)
-                .unwrap()
-                .get("ColorAdd_G")
-                .unwrap(),
-            &DmxValue::new(0)
-        );
-        assert_eq!(
-            show.programmer
-                .changes
-                .get(&1)
-                .unwrap()
-                .get("ColorAdd_B")
-                .unwrap(),
-            &DmxValue::new(0)
-        );
-        show.execute_command_str("clear").unwrap();
-        assert!(show.programmer.selection.is_empty());
-        assert!(!show.programmer.changes.is_empty());
-        show.execute_command_str("clear").unwrap();
-        assert!(show.programmer.changes.is_empty());
-    }
-
-    #[tokio::test]
-    async fn test_store_command() {
-        let showfile: Showfile = serde_json::from_str(TEST_SHOWFILE).unwrap();
-        let mut show = Show::from_showfile(showfile).await.unwrap();
-
-        assert!(show.group(100).is_none());
-        show.execute_command_str("select fixture 1").unwrap();
-        show.execute_command_str("store group 100").unwrap();
-        assert_eq!(show.group(100).unwrap().fixtures, vec![1]);
-    }
-
-    #[tokio::test]
-    async fn test_go_command() {
-        let showfile: Showfile = serde_json::from_str(TEST_SHOWFILE).unwrap();
-        let mut show = Show::from_showfile(showfile).await.unwrap();
-
-        assert_eq!(show.executor(1).unwrap().current_index.get(), None);
-        show.execute_command_str("go executor 1").unwrap();
-        assert_eq!(show.executor(1).unwrap().current_index.get(), Some(0));
-        show.execute_command_str("go executor 1").unwrap();
-        assert_eq!(show.executor(1).unwrap().current_index.get(), Some(1));
-        show.execute_command_str("go executor 1").unwrap();
-        assert_eq!(show.executor(1).unwrap().current_index.get(), None);
-
-        assert_eq!(show.executor(2).unwrap().current_index.get(), Some(1));
-        show.execute_command_str("go executor 2").unwrap();
-        assert_eq!(show.executor(2).unwrap().current_index.get(), Some(0));
-        show.execute_command_str("go executor 2").unwrap();
-        assert_eq!(show.executor(2).unwrap().current_index.get(), Some(1));
     }
 }

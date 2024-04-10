@@ -116,11 +116,15 @@ impl Command {
                         return Err(anyhow!("Go command expects an executor, got {:?}", object))
                     }
                 },
-                Token::Top => {
-                    let object = parse_object(&mut lexer)?;
-                    confirm_end_of_command!(token);
-                    Command::Top(Some(object))
-                }
+                Token::Top => match parse_object(&mut lexer)? {
+                    object @ Object::Executor(_) => {
+                        confirm_end_of_command!(token);
+                        Command::Top(Some(object))
+                    }
+                    object => {
+                        return Err(anyhow!("Top command expects an executor, got {:?}", object))
+                    }
+                },
                 other => return Err(anyhow!("Unexpected token: {:?}", other)),
             },
             None => return Err(anyhow!("Unexpected end of input")),
@@ -339,6 +343,10 @@ impl Show {
                         return Err(anyhow!("No group id provided"));
                     };
 
+                    if self.group(*id).is_some() {
+                        return Err(anyhow!("Group {id} already exists"));
+                    }
+
                     let selected_fixtures = self.selected_fixtures();
                     let group = Group {
                         id: *id,
@@ -415,32 +423,29 @@ impl Show {
                     };
 
                     let changes = self.programmer_changes().clone();
-                    if let Some(sequence) = self
-                        .data
-                        .sequences
-                        .iter_mut()
-                        .find(|s| s.id == *sequence_id)
-                    {
-                        if *cue_ix >= sequence.cues.len() {
-                            sequence.cues.push(Cue {
-                                label: "New Cue".to_string(),
-                                changes,
-                            });
-                        } else {
-                            for (fixture_id, attribute_values) in changes.into_iter() {
-                                match sequence.cues[*cue_ix].changes.get_mut(&fixture_id) {
-                                    Some(cue_changes) => {
-                                        for (attribute_name, attribute_value) in
-                                            attribute_values.into_iter()
-                                        {
-                                            cue_changes.insert(attribute_name, attribute_value);
-                                        }
+                    let Some(sequence) = self.sequence_mut(*sequence_id) else {
+                        return Err(anyhow!("Sequence with id {sequence_id} not found"));
+                    };
+
+                    if *cue_ix >= sequence.cues.len() {
+                        sequence.cues.push(Cue {
+                            label: "New Cue".to_string(),
+                            changes,
+                        });
+                    } else {
+                        for (fixture_id, attribute_values) in changes.into_iter() {
+                            match sequence.cues[*cue_ix].changes.get_mut(&fixture_id) {
+                                Some(cue_changes) => {
+                                    for (attribute_name, attribute_value) in
+                                        attribute_values.into_iter()
+                                    {
+                                        cue_changes.insert(attribute_name, attribute_value);
                                     }
-                                    None => {
-                                        sequence.cues[*cue_ix]
-                                            .changes
-                                            .insert(fixture_id, attribute_values);
-                                    }
+                                }
+                                None => {
+                                    sequence.cues[*cue_ix]
+                                        .changes
+                                        .insert(fixture_id, attribute_values);
                                 }
                             }
                         }
@@ -491,12 +496,32 @@ mod tests {
     }
 
     #[test]
+    fn test_whitespace() {
+        let expected = Command::Select(Some(Object::Group(Some(42))));
+        assert_eq!(Command::parse("select group 42").unwrap(), expected);
+        assert_eq!(Command::parse("select   group 42").unwrap(), expected);
+        assert_eq!(Command::parse("select     group     42").unwrap(), expected);
+
+        let expected = Command::Select(Some(Object::Cue {
+            sequence_id: Some(42),
+            cue_ix: Some(0),
+        }));
+        assert_eq!(
+            Command::parse("select     cue     42.  0").unwrap(),
+            expected
+        );
+        assert_eq!(
+            Command::parse("select     cue     42   .0").unwrap(),
+            expected
+        );
+    }
+
+    #[test]
     fn test_parse_clear() {
         let expected = Command::Clear;
 
         assert_eq!(Command::parse("clear").unwrap(), expected);
         assert!(Command::parse("clear foobar").is_err());
-        assert!(Command::parse("clear   foobar").is_err());
     }
 
     #[test]
@@ -504,7 +529,7 @@ mod tests {
         let expected = Command::Select(Some(Object::Group(Some(42))));
 
         assert_eq!(Command::parse("select group 42").unwrap(), expected);
-        assert!(Command::parse("select group 42  foobar").is_err());
+        assert!(Command::parse("select group 42 foobar").is_err());
         assert!(Command::parse("select foobar group 42").is_err());
         assert!(Command::parse("select group foobar 42").is_err());
     }
@@ -514,7 +539,7 @@ mod tests {
         let expected = Command::Store(Some(Object::Group(Some(42))));
 
         assert_eq!(Command::parse("store group 42").unwrap(), expected);
-        assert!(Command::parse("store group 42  foobar").is_err());
+        assert!(Command::parse("store group 42 foobar").is_err());
         assert!(Command::parse("store foobar group 42").is_err());
         assert!(Command::parse("store group foobar 42").is_err());
     }
@@ -535,9 +560,20 @@ mod tests {
         let expected = Command::Go(Some(Object::Executor(Some(42))));
 
         assert_eq!(Command::parse("go executor 42").unwrap(), expected);
-        assert!(Command::parse("go executor 42  foobar").is_err());
+        assert!(Command::parse("go executor 42 foobar").is_err());
         assert!(Command::parse("go foobar 42").is_err());
         assert!(Command::parse("go group 42").is_err());
         assert!(Command::parse("go executor foobar 42").is_err());
+    }
+
+    #[test]
+    fn test_parse_top() {
+        let expected = Command::Top(Some(Object::Executor(Some(42))));
+
+        assert_eq!(Command::parse("top executor 42").unwrap(), expected);
+        assert!(Command::parse("top executor 42 foobar").is_err());
+        assert!(Command::parse("top foobar 42").is_err());
+        assert!(Command::parse("top group 42").is_err());
+        assert!(Command::parse("top executor foobar 42").is_err());
     }
 }
