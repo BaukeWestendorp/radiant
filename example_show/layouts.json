@@ -183,7 +183,7 @@
               "y": 8
             },
             "size": {
-              "width": 4,
+              "width": 2,
               "height": 4
             }
           },
@@ -193,6 +193,20 @@
               "scroll_offset": 0
             }
           }
+        },
+        {
+          "id": 12,
+          "bounds": {
+            "origin": {
+              "x": 7,
+              "y": 8
+            },
+            "size": {
+              "width": 13,
+              "height": 4
+            }
+          },
+          "kind": "FixtureSheet"
         }
       ]
     },

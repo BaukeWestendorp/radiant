@@ -35,43 +35,48 @@ impl<D: SheetDelegate + 'static> Render for Sheet<D> {
 
         div()
             .id(self.id.clone())
-            .w_full()
+            .size_full()
             .overflow_x_scroll()
-            // .border()
-            // .border_color(cx.theme().colors().border)
-            // .rounded_md()
+            .border()
+            .border_color(cx.theme().colors().border)
+            .rounded_md()
             .track_scroll(&self.scroll_handle)
             .child(
                 div()
                     .flex()
                     .flex_col()
                     .w(total_width)
+                    .h_full()
                     .child(header_row)
-                    .child(uniform_list(
-                        cx.view().clone(),
-                        self.id.clone(),
-                        self.delegate.values(cx).len(),
-                        move |view, visible_range, cx| {
-                            let mut rows = vec![];
-                            for ix in visible_range {
-                                let data = view.delegate.values(cx)[ix].clone();
-                                let cells = view
-                                    .delegate
-                                    .columns(cx)
-                                    .iter()
-                                    .map(|column_id| {
-                                        let content =
-                                            view.delegate.render_cell_content(column_id, &data, cx);
-                                        view.delegate.render_cell(column_id, content, cx)
-                                    })
-                                    .collect::<Vec<_>>();
-                                let row =
-                                    view.delegate.render_row(ix, cells, cx).into_any_element();
-                                rows.push(row);
-                            }
-                            rows
-                        },
-                    )),
+                    .child(
+                        uniform_list(
+                            cx.view().clone(),
+                            self.id.clone(),
+                            self.delegate.values(cx).len(),
+                            move |view, visible_range, cx| {
+                                let mut rows = vec![];
+                                for ix in visible_range {
+                                    let data = view.delegate.values(cx)[ix].clone();
+                                    let cells = view
+                                        .delegate
+                                        .columns(cx)
+                                        .iter()
+                                        .map(|column_id| {
+                                            let content = view
+                                                .delegate
+                                                .render_cell_content(column_id, &data, cx);
+                                            view.delegate.render_cell(column_id, content, cx)
+                                        })
+                                        .collect::<Vec<_>>();
+                                    let row =
+                                        view.delegate.render_row(ix, cells, cx).into_any_element();
+                                    rows.push(row);
+                                }
+                                rows
+                            },
+                        )
+                        .h_full(),
+                    ),
             )
     }
 }

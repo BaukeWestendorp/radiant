@@ -73,18 +73,18 @@
       },
       {
         "id": 8,
-        "label": "LEDForce 7 RGBW 8",
-        "gdtf_share_revision_id": 22046,
-        "mode": "Standard ",
+        "label": "LEDForce 7 RGBW 7",
+        "gdtf_share_revision_id": 36314,
+        "mode": "Mode 2 RGBW + dim + strobe",
         "channel": {
-          "address": 42,
+          "address": 36,
           "universe": 0
         }
       },
       {
         "id": 9,
         "gdtf_share_revision_id": 22046,
-        "label": "LEDForce 7 RGBW 9",
+        "label": "Sharpy 1",
         "mode": "Standard ",
         "channel": {
           "address": 73,
@@ -93,7 +93,7 @@
       },
       {
         "id": 10,
-        "label": "LEDForce 7 RGBW 10",
+        "label": "Sharpy 2",
         "gdtf_share_revision_id": 22046,
         "mode": "Standard ",
         "channel": {
@@ -103,7 +103,7 @@
       },
       {
         "id": 11,
-        "label": "LEDForce 7 RGBW 11",
+        "label": "Sharpy 3",
         "gdtf_share_revision_id": 22046,
         "mode": "Standard ",
         "channel": {
@@ -113,7 +113,7 @@
       },
       {
         "id": 12,
-        "label": "LEDForce 7 RGBW 12",
+        "label": "Sharpy 4",
         "gdtf_share_revision_id": 22046,
         "mode": "Standard ",
         "channel": {
@@ -123,7 +123,7 @@
       },
       {
         "id": 13,
-        "label": "LEDForce 7 RGBW 13",
+        "label": "Sharpy 5",
         "gdtf_share_revision_id": 22046,
         "mode": "Standard ",
         "channel": {
@@ -133,7 +133,7 @@
       },
       {
         "id": 14,
-        "label": "LEDForce 7 RGBW 14",
+        "label": "Sharpy 6",
         "gdtf_share_revision_id": 22046,
         "mode": "Standard ",
         "channel": {
@@ -143,7 +143,7 @@
       },
       {
         "id": 15,
-        "label": "LEDForce 7 RGBW 15",
+        "label": "Sharpy 7",
         "gdtf_share_revision_id": 22046,
         "mode": "Standard ",
         "channel": {
@@ -153,11 +153,261 @@
       },
       {
         "id": 16,
-        "label": "LEDForce 7 RGBW 16",
+        "label": "Sharpy 8",
         "gdtf_share_revision_id": 22046,
         "mode": "Standard ",
         "channel": {
           "address": 290,
+          "universe": 0
+        }
+      },
+      {
+        "id": 16,
+        "label": "Sharpy 9",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 321,
+          "universe": 0
+        }
+      },
+      {
+        "id": 18,
+        "label": "Sharpy 10",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 352,
+          "universe": 0
+        }
+      },
+      {
+        "id": 19,
+        "label": "Sharpy 11",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 383,
+          "universe": 0
+        }
+      },
+      {
+        "id": 20,
+        "label": "Sharpy 12",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 414,
+          "universe": 0
+        }
+      },
+      {
+        "id": 21,
+        "label": "Sharpy 13",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 445,
+          "universe": 0
+        }
+      },
+      {
+        "id": 22,
+        "label": "Sharpy 14",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 476,
+          "universe": 0
+        }
+      },
+      {
+        "id": 23,
+        "label": "Sharpy 15",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 507,
+          "universe": 0
+        }
+      },
+      {
+        "id": 24,
+        "label": "Sharpy 16",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 538,
+          "universe": 0
+        }
+      },
+      {
+        "id": 25,
+        "label": "Sharpy 17",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 569,
+          "universe": 0
+        }
+      },
+      {
+        "id": 26,
+        "label": "Sharpy 18",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 600,
+          "universe": 0
+        }
+      },
+      {
+        "id": 27,
+        "label": "Sharpy 19",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 631,
+          "universe": 0
+        }
+      },
+      {
+        "id": 28,
+        "label": "Sharpy 20",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 662,
+          "universe": 0
+        }
+      },
+      {
+        "id": 29,
+        "label": "Sharpy 21",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 693,
+          "universe": 0
+        }
+      },
+      {
+        "id": 30,
+        "label": "Sharpy 22",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 724,
+          "universe": 0
+        }
+      },
+      {
+        "id": 31,
+        "label": "Sharpy 23",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 755,
+          "universe": 0
+        }
+      },
+      {
+        "id": 32,
+        "label": "Sharpy 24",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 786,
+          "universe": 0
+        }
+      },
+      {
+        "id": 33,
+        "label": "Sharpy 25",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 817,
+          "universe": 0
+        }
+      },
+      {
+        "id": 34,
+        "label": "Sharpy 26",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 848,
+          "universe": 0
+        }
+      },
+      {
+        "id": 35,
+        "label": "Sharpy 27",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 879,
+          "universe": 0
+        }
+      },
+      {
+        "id": 36,
+        "label": "Sharpy 28",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 910,
+          "universe": 0
+        }
+      },
+      {
+        "id": 37,
+        "label": "Sharpy 29",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 941,
+          "universe": 0
+        }
+      },
+      {
+        "id": 38,
+        "label": "Sharpy 30",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 972,
+          "universe": 0
+        }
+      },
+      {
+        "id": 39,
+        "label": "Sharpy 31",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 1003,
+          "universe": 0
+        }
+      },
+      {
+        "id": 40,
+        "label": "Sharpy 32",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 1034,
+          "universe": 0
+        }
+      },
+      {
+        "id": 41,
+        "label": "Sharpy 33",
+        "gdtf_share_revision_id": 22046,
+        "mode": "Standard ",
+        "channel": {
+          "address": 1065,
           "universe": 0
         }
       }
