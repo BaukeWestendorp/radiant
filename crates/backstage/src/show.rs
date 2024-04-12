@@ -60,8 +60,16 @@ impl Show {
     pub fn apply_preset(&mut self, preset: &impl Preset) -> Result<()> {
         for fixture_id in self.selected_fixtures().to_vec() {
             let fixture = self.fixture(fixture_id).unwrap().clone();
+
+            let values = preset
+                .attribute_values()
+                .iter()
+                .filter(|(attribute_name, _)| fixture.has_attribute_with_name(attribute_name))
+                .map(|(attribute_name, value)| (attribute_name.clone(), value.clone()))
+                .collect();
+
             self.programmer
-                .apply_attribute_values_for_fixture(fixture.id, preset.attribute_values().clone());
+                .apply_attribute_values_for_fixture(fixture.id, values);
         }
 
         Ok(())
@@ -279,6 +287,12 @@ impl Fixture {
 
     pub fn attributes(&self) -> &[Rc<gdtf::Attribute>] {
         &self.r#type().attribute_definitions.attributes
+    }
+
+    fn has_attribute_with_name(&self, attribute_name: &str) -> bool {
+        self.attributes()
+            .iter()
+            .any(|attribute| attribute.name == attribute_name)
     }
 
     pub fn attributes_for_feature_group(
