@@ -161,34 +161,6 @@ impl DmxValue {
         Ok(result)
     }
 
-    pub fn bytes(&self, channel_resolution: ChannelBitResolution) -> Result<Vec<u8>> {
-        let value = self.value(channel_resolution)?;
-
-        let mut bytes = Vec::new();
-        match channel_resolution {
-            ChannelBitResolution::Bit8 => {
-                bytes.push(value as u8);
-            }
-            ChannelBitResolution::Bit16 => {
-                bytes.push((value >> 8) as u8);
-                bytes.push(value as u8);
-            }
-            ChannelBitResolution::Bit24 => {
-                bytes.push((value >> 16) as u8);
-                bytes.push((value >> 8) as u8);
-                bytes.push(value as u8);
-            }
-            ChannelBitResolution::Bit32 => {
-                bytes.push((value >> 24) as u8);
-                bytes.push((value >> 16) as u8);
-                bytes.push((value >> 8) as u8);
-                bytes.push(value as u8);
-            }
-        }
-
-        Ok(bytes)
-    }
-
     pub fn byte_specifier(&self) -> u8 {
         self.byte_specifier
     }

@@ -355,7 +355,7 @@ impl Fixture {
             .first()
             .and_then(|c| c.offset.clone())?;
 
-        Some(offset.len().clamp(u8::MIN as usize, u8::MAX as usize) as u8)
+        Some(offset.len().clamp(u8::MIN as usize, u8::MAX as usize) as u8 * 8)
     }
 
     pub fn dmx_channels_for_attribute(&self, attribute_name: &str) -> Option<Vec<DmxChannel>> {

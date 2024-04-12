@@ -130,7 +130,7 @@ preset!(
     color_preset,
     color_preset_mut,
     color_presets,
-    &["Color"]
+    &["RGB", "Color"]
 );
 
 preset!(

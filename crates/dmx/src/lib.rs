@@ -186,9 +186,21 @@ impl DmxValue {
     }
 
     pub fn raw_values_for_channel_resolution(&self, channel_resolution: u8) -> Vec<u8> {
-        let mut bytes = self.0.to_le_bytes().to_vec();
-        bytes.truncate(channel_resolution as usize);
-        bytes
+        // Scale the bytes to the channel resolution.
+        // u8 to u16: 0..=255 -> 0..=65535
+        // u8 to u24: 0..=255 -> 0..=16777215
+        // etc.
+        let max_value = 2u32.pow(channel_resolution as u32) - 1;
+        let fraction = self.to_fraction();
+        let scaled_value = (fraction * max_value as f32).round() as u32;
+
+        match channel_resolution {
+            8 => vec![scaled_value as u8],
+            16 => (scaled_value as u32).to_be_bytes()[2..].to_vec(),
+            24 => (scaled_value as u32).to_be_bytes()[1..].to_vec(),
+            32 => scaled_value.to_be_bytes().to_vec(),
+            _ => panic!("Unsupported channel resolution: {}", channel_resolution),
+        }
     }
 
     pub fn to_fraction(&self) -> f32 {
