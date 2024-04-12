@@ -35,11 +35,18 @@ impl PoolWindowDelegate for ColorPoolWindowDelegate {
 
         let color_rgba = Color::from_attribute_values(color_preset.attribute_values()).ok();
 
+        let is_in_programmer = ShowfileManager::show(cx)
+            .attribute_values_in_programmer(color_preset.attribute_values());
+
         Some(
             Button::new(ButtonStyle::Secondary, id, cx)
                 .size_full()
                 .flex()
                 .flex_col()
+                .when(is_in_programmer, |this| {
+                    this.border()
+                        .border_color(cx.theme().colors().programmer_change)
+                })
                 .child(
                     div()
                         .h_full()

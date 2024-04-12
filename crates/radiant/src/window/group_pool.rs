@@ -34,7 +34,8 @@ impl PoolWindowDelegate for GroupPoolWindowDelegate {
             Some(
                 Button::new(ButtonStyle::Secondary, id, cx)
                     .when(is_selected, |this| {
-                        this.border_color(cx.theme().colors().pool_item_all_selected)
+                        this.border()
+                            .border_color(cx.theme().colors().pool_item_all_selected)
                     })
                     .size_full()
                     .flex()

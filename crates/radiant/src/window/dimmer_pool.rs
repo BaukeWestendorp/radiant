@@ -1,5 +1,8 @@
 use backstage::{Command, Object, Preset};
-use gpui::{IntoElement, Model, ParentElement, Styled, ViewContext, WindowContext};
+use gpui::{
+    prelude::FluentBuilder, IntoElement, Model, ParentElement, Styled, ViewContext, WindowContext,
+};
+use theme::ActiveTheme;
 use ui::button::{Button, ButtonStyle};
 
 use super::pool::PoolWindowDelegate;
@@ -26,14 +29,25 @@ impl PoolWindowDelegate for DimmerPoolWindowDelegate {
     }
 
     fn render_item_for_id(&self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement> {
-        ShowfileManager::show(cx).dimmer_preset(id).map(|dimmer| {
+        let Some(dimmer_preset) = ShowfileManager::show(cx).dimmer_preset(id) else {
+            return None;
+        };
+
+        let is_in_programmer = ShowfileManager::show(cx)
+            .attribute_values_in_programmer(dimmer_preset.attribute_values());
+
+        Some(
             Button::new(ButtonStyle::Secondary, id, cx)
                 .size_full()
                 .flex()
                 .justify_center()
                 .items_center()
-                .child(dimmer.label().to_string())
-        })
+                .when(is_in_programmer, |this| {
+                    this.border()
+                        .border_color(cx.theme().colors().programmer_change)
+                })
+                .child(dimmer_preset.label().to_string()),
+        )
     }
 
     fn handle_click_item(&mut self, id: usize, cx: &mut ViewContext<WindowView<Self>>) {

@@ -20,7 +20,10 @@ fn parse_full_gdtf_description() {
     assert_eq!(fixture_type.short_name, "Fixture Type Short Name");
     assert_eq!(fixture_type.long_name, "Fixture Type Long Name");
     assert_eq!(fixture_type.manufacturer, "Test Manufacturer");
-    assert_eq!(fixture_type.description, "Test Description");
+    assert_eq!(
+        fixture_type.description,
+        Some("Test Description".to_string())
+    );
     assert_eq!(
         fixture_type.fixture_type_id,
         "AE92BE76-BDDA-4432-BDAA-06AD46F01BF3"
@@ -33,7 +36,10 @@ fn parse_full_gdtf_description() {
 
     let dmx_mode = fixture_type.dmx_modes.get(0).unwrap();
     assert_eq!(dmx_mode.name, "Basic");
-    assert_eq!(dmx_mode.description, "DMX Mode Description");
+    assert_eq!(
+        dmx_mode.description,
+        Some("DMX Mode Description".to_string())
+    );
 
     let dmx_channel = dmx_mode.dmx_channels.get(0).unwrap();
     assert_eq!(dmx_channel.dmx_break, DmxBreak::Value(42));

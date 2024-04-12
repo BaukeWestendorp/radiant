@@ -67,6 +67,20 @@ impl Show {
         Ok(())
     }
 
+    pub fn attribute_values_in_programmer(
+        &self,
+        attribute_values: &HashMap<String, DmxValue>,
+    ) -> bool {
+        self.programmer_changes().values().any(|changes| {
+            for (attribute_name, attribute_value) in attribute_values.iter() {
+                if changes.get(attribute_name) != Some(attribute_value) {
+                    return false;
+                }
+            }
+            return true;
+        })
+    }
+
     pub fn fixture(&self, fixture_id: usize) -> Option<&Fixture> {
         self.patchlist.fixtures.iter().find(|f| f.id == fixture_id)
     }

@@ -1,10 +1,13 @@
 use backstage::{Command, Object, Preset};
-use gpui::{IntoElement, Model, ParentElement, Styled, ViewContext, WindowContext};
+use gpui::{
+    prelude::FluentBuilder, IntoElement, Model, ParentElement, Styled, ViewContext, WindowContext,
+};
 use ui::button::{Button, ButtonStyle};
 
 use super::pool::PoolWindowDelegate;
 use super::WindowView;
 use crate::showfile::{ShowfileManager, Window};
+use theme::ActiveTheme;
 
 pub struct BeamPoolWindowDelegate {
     window: Model<Window>,
@@ -26,14 +29,25 @@ impl PoolWindowDelegate for BeamPoolWindowDelegate {
     }
 
     fn render_item_for_id(&self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement> {
-        ShowfileManager::show(cx).beam_preset(id).map(|beam| {
+        let Some(beam_preset) = ShowfileManager::show(cx).beam_preset(id) else {
+            return None;
+        };
+
+        let is_in_programmer = ShowfileManager::show(cx)
+            .attribute_values_in_programmer(beam_preset.attribute_values());
+
+        Some(
             Button::new(ButtonStyle::Secondary, id, cx)
                 .size_full()
                 .flex()
                 .justify_center()
                 .items_center()
-                .child(beam.label().to_string())
-        })
+                .when(is_in_programmer, |this| {
+                    this.border()
+                        .border_color(cx.theme().colors().programmer_change)
+                })
+                .child(beam_preset.label().to_string()),
+        )
     }
 
     fn handle_click_item(&mut self, id: usize, cx: &mut ViewContext<WindowView<Self>>) {
