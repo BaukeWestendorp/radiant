@@ -311,7 +311,7 @@
           "ColorAdd_G": 255,
           "ColorAdd_B": 255,
           "ColorSub_C": 255,
-          "ColorSub_M": 255,
+          "ColorSub_M": 0,
           "ColorSub_Y": 0
         }
       },
@@ -360,7 +360,7 @@
           "ColorAdd_B": 255,
           "ColorSub_C": 0,
           "ColorSub_M": 255,
-          "ColorSub_Y": 127
+          "ColorSub_Y": 0
         }
       },
       {

@@ -175,5 +175,5 @@ preset!(
     all_preset,
     all_preset_mut,
     all_presets,
-    &["Beam", "Color", "Dimmer", "Focus", "Gobo", "Position"]
+    &["Beam", "RGB", "Color", "Dimmer", "Focus", "Gobo", "Position"]
 );

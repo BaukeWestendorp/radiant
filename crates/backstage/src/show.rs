@@ -79,14 +79,31 @@ impl Show {
         &self,
         attribute_values: &HashMap<String, DmxValue>,
     ) -> bool {
-        self.programmer_changes().values().any(|changes| {
-            for (attribute_name, attribute_value) in attribute_values.iter() {
-                if changes.get(attribute_name) != Some(attribute_value) {
+        self.programmer_changes()
+            .iter()
+            .any(|(fixture_id, changes)| {
+                let fixture = self.fixture(*fixture_id).unwrap();
+                let matching_attributes = attribute_values
+                    .iter()
+                    .filter(|(attribute_name, _)| {
+                        fixture
+                            .attributes()
+                            .iter()
+                            .any(|a| a.name == **attribute_name)
+                    })
+                    .collect::<Vec<_>>();
+
+                if matching_attributes.is_empty() {
                     return false;
                 }
-            }
-            return true;
-        })
+
+                matching_attributes.iter().all(|(attribute_name, value)| {
+                    match changes.get(*attribute_name) {
+                        Some(existing_value) => existing_value == *value,
+                        None => false,
+                    }
+                })
+            })
     }
 
     pub fn fixture(&self, fixture_id: usize) -> Option<&Fixture> {
