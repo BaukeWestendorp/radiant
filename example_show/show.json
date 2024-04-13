@@ -105,46 +105,81 @@
   },
   "programmer": {
     "selection": [
-      6,
-      7,
-      8,
-      9,
-      10
+      1,
+      2,
+      3,
+      4,
+      5
     ],
     "changes": {
-      "7": {
-        "Dimmer": 255,
-        "ColorSub_C": 0,
-        "ColorSub_Y": 255,
-        "Shutter1": 32,
-        "ColorSub_M": 127
-      },
-      "8": {
-        "ColorSub_C": 0,
-        "ColorSub_M": 127,
-        "Dimmer": 255,
-        "ColorSub_Y": 255,
-        "Shutter1": 32
-      },
       "9": {
-        "ColorSub_M": 127,
-        "ColorSub_C": 0,
+        "Shutter1": 32,
+        "ColorSub_M": 0,
+        "ColorSub_Y": 0,
         "Dimmer": 255,
-        "ColorSub_Y": 255,
-        "Shutter1": 32
+        "ColorSub_C": 255
       },
       "10": {
+        "ColorSub_C": 255,
+        "ColorSub_Y": 0,
+        "ColorSub_M": 0,
+        "Shutter1": 32,
+        "Dimmer": 255
+      },
+      "4": {
+        "ColorSub_C": 0,
         "ColorSub_Y": 255,
         "Shutter1": 32,
-        "ColorSub_C": 0,
         "ColorSub_M": 127,
         "Dimmer": 255
       },
       "6": {
+        "Shutter1": 32,
+        "Dimmer": 255,
+        "ColorSub_M": 0,
+        "ColorSub_Y": 0,
+        "ColorSub_C": 255
+      },
+      "7": {
+        "ColorSub_Y": 0,
+        "ColorSub_C": 255,
+        "Shutter1": 32,
+        "Dimmer": 255,
+        "ColorSub_M": 0
+      },
+      "8": {
+        "ColorSub_C": 255,
+        "Dimmer": 255,
+        "ColorSub_Y": 0,
+        "Shutter1": 32,
+        "ColorSub_M": 0
+      },
+      "1": {
+        "Dimmer": 255,
+        "ColorSub_M": 127,
+        "ColorSub_Y": 255,
+        "Shutter1": 32,
+        "ColorSub_C": 0
+      },
+      "2": {
+        "Shutter1": 32,
+        "ColorSub_C": 0,
+        "ColorSub_M": 127,
+        "Dimmer": 255,
+        "ColorSub_Y": 255
+      },
+      "3": {
+        "ColorSub_C": 0,
+        "ColorSub_Y": 255,
+        "Dimmer": 255,
+        "Shutter1": 32,
+        "ColorSub_M": 127
+      },
+      "5": {
+        "Shutter1": 32,
         "ColorSub_M": 127,
         "Dimmer": 255,
         "ColorSub_C": 0,
-        "Shutter1": 32,
         "ColorSub_Y": 255
       }
     }
@@ -190,7 +225,89 @@
         ]
       }
     ],
-    "sequences": []
+    "sequences": [
+      {
+        "id": 1,
+        "label": "Color Cycle",
+        "cues": [
+          {
+            "label": "Orange Blue",
+            "changes": {
+              "9": {
+                "Shutter1": 32,
+                "ColorSub_M": 0,
+                "ColorSub_Y": 0,
+                "Dimmer": 255,
+                "ColorSub_C": 255
+              },
+              "10": {
+                "ColorSub_C": 255,
+                "ColorSub_Y": 0,
+                "ColorSub_M": 0,
+                "Shutter1": 32,
+                "Dimmer": 255
+              },
+              "4": {
+                "ColorSub_C": 0,
+                "ColorSub_Y": 255,
+                "Shutter1": 32,
+                "ColorSub_M": 127,
+                "Dimmer": 255
+              },
+              "6": {
+                "Shutter1": 32,
+                "Dimmer": 255,
+                "ColorSub_M": 0,
+                "ColorSub_Y": 0,
+                "ColorSub_C": 255
+              },
+              "7": {
+                "ColorSub_Y": 0,
+                "ColorSub_C": 255,
+                "Shutter1": 32,
+                "Dimmer": 255,
+                "ColorSub_M": 0
+              },
+              "8": {
+                "ColorSub_C": 255,
+                "Dimmer": 255,
+                "ColorSub_Y": 0,
+                "Shutter1": 32,
+                "ColorSub_M": 0
+              },
+              "1": {
+                "Dimmer": 255,
+                "ColorSub_M": 127,
+                "ColorSub_Y": 255,
+                "Shutter1": 32,
+                "ColorSub_C": 0
+              },
+              "2": {
+                "Shutter1": 32,
+                "ColorSub_C": 0,
+                "ColorSub_M": 127,
+                "Dimmer": 255,
+                "ColorSub_Y": 255
+              },
+              "3": {
+                "ColorSub_C": 0,
+                "ColorSub_Y": 255,
+                "Dimmer": 255,
+                "Shutter1": 32,
+                "ColorSub_M": 127
+              },
+              "5": {
+                "Shutter1": 32,
+                "ColorSub_M": 127,
+                "Dimmer": 255,
+                "ColorSub_C": 0,
+                "ColorSub_Y": 255
+              }
+            }
+          }
+        ]
+      }
+    ]
   },
   "presets": {
     "beam": [
@@ -214,23 +331,23 @@
         "id": 1,
         "label": "White",
         "attribute_values": {
-          "ColorSub_C": 0,
-          "ColorSub_Y": 0,
-          "ColorAdd_R": 255,
-          "ColorSub_M": 0,
           "ColorAdd_B": 255,
-          "ColorAdd_G": 255
+          "ColorAdd_G": 255,
+          "ColorSub_C": 0,
+          "ColorSub_M": 0,
+          "ColorAdd_R": 255,
+          "ColorSub_Y": 0
         }
       },
       {
         "id": 2,
         "label": "Red",
         "attribute_values": {
-          "ColorAdd_R": 255,
-          "ColorSub_M": 255,
           "ColorSub_C": 0,
           "ColorAdd_G": 0,
+          "ColorSub_M": 255,
           "ColorAdd_B": 0,
+          "ColorAdd_R": 255,
           "ColorSub_Y": 255
         }
       },
@@ -251,9 +368,9 @@
         "label": "Yellow",
         "attribute_values": {
           "ColorAdd_R": 255,
+          "ColorSub_Y": 255,
           "ColorSub_C": 0,
           "ColorAdd_G": 255,
-          "ColorSub_Y": 255,
           "ColorAdd_B": 0,
           "ColorSub_M": 0
         }
@@ -263,22 +380,22 @@
         "label": "Lime",
         "attribute_values": {
           "ColorAdd_B": 0,
-          "ColorSub_M": 0,
-          "ColorAdd_G": 255,
           "ColorSub_C": 127,
           "ColorAdd_R": 127,
-          "ColorSub_Y": 255
+          "ColorSub_Y": 255,
+          "ColorSub_M": 0,
+          "ColorAdd_G": 255
         }
       },
       {
         "id": 6,
         "label": "Green",
         "attribute_values": {
-          "ColorAdd_R": 0,
           "ColorSub_Y": 255,
-          "ColorSub_M": 0,
-          "ColorAdd_G": 255,
           "ColorAdd_B": 0,
+          "ColorSub_M": 0,
+          "ColorAdd_R": 0,
+          "ColorAdd_G": 255,
           "ColorSub_C": 255
         }
       },
@@ -286,12 +403,12 @@
         "id": 7,
         "label": "Teal",
         "attribute_values": {
+          "ColorAdd_B": 127,
+          "ColorSub_C": 255,
+          "ColorSub_M": 127,
           "ColorAdd_R": 0,
           "ColorAdd_G": 255,
-          "ColorAdd_B": 127,
-          "ColorSub_Y": 255,
-          "ColorSub_C": 255,
-          "ColorSub_M": 127
+          "ColorSub_Y": 255
         }
       },
       {
@@ -300,10 +417,10 @@
         "attribute_values": {
           "ColorSub_M": 0,
           "ColorAdd_R": 0,
-          "ColorSub_Y": 0,
           "ColorAdd_B": 255,
-          "ColorSub_C": 255,
-          "ColorAdd_G": 255
+          "ColorAdd_G": 255,
+          "ColorSub_Y": 0,
+          "ColorSub_C": 255
         }
       },
       {
@@ -311,22 +428,22 @@
         "label": "Indigo",
         "attribute_values": {
           "ColorSub_C": 255,
-          "ColorAdd_R": 0,
+          "ColorSub_Y": 0,
+          "ColorSub_M": 127,
           "ColorAdd_B": 255,
           "ColorAdd_G": 127,
-          "ColorSub_Y": 0,
-          "ColorSub_M": 127
+          "ColorAdd_R": 0
         }
       },
       {
         "id": 10,
         "label": "Blue",
         "attribute_values": {
-          "ColorAdd_G": 0,
-          "ColorAdd_B": 255,
-          "ColorSub_M": 255,
           "ColorSub_C": 255,
+          "ColorSub_M": 255,
+          "ColorAdd_G": 0,
           "ColorAdd_R": 0,
+          "ColorAdd_B": 255,
           "ColorSub_Y": 0
         }
       },
@@ -334,36 +451,36 @@
         "id": 11,
         "label": "Violet",
         "attribute_values": {
-          "ColorAdd_R": 127,
           "ColorAdd_G": 0,
-          "ColorSub_Y": 0,
           "ColorSub_M": 255,
+          "ColorSub_Y": 0,
           "ColorSub_C": 127,
-          "ColorAdd_B": 255
+          "ColorAdd_B": 255,
+          "ColorAdd_R": 127
         }
       },
       {
         "id": 12,
         "label": "Magenta",
         "attribute_values": {
-          "ColorSub_Y": 0,
-          "ColorSub_C": 0,
           "ColorAdd_G": 0,
-          "ColorAdd_R": 255,
           "ColorSub_M": 255,
-          "ColorAdd_B": 255
+          "ColorSub_C": 0,
+          "ColorAdd_B": 255,
+          "ColorAdd_R": 255,
+          "ColorSub_Y": 0
         }
       },
       {
         "id": 13,
         "label": "Pink",
         "attribute_values": {
-          "ColorAdd_R": 255,
           "ColorAdd_B": 127,
+          "ColorAdd_R": 255,
           "ColorSub_Y": 127,
-          "ColorSub_C": 0,
           "ColorSub_M": 255,
-          "ColorAdd_G": 0
+          "ColorAdd_G": 0,
+          "ColorSub_C": 0
         }
       }
     ],
@@ -395,5 +512,22 @@
     "position": [],
     "all": []
   },
-  "executors": []
+  "executors": [
+    {
+      "id": 1,
+      "sequence": 1,
+      "current_index": null,
+      "loop": false,
+      "fader_value": 1.0,
+      "button_1": {
+        "action": "Top"
+      },
+      "button_2": {
+        "action": "Go"
+      },
+      "button_3": {
+        "action": "Flash"
+      }
+    }
+  ]
 }

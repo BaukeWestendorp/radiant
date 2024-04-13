@@ -161,6 +161,7 @@ impl ExecutorInfo {
         div()
             .bg(cx.theme().colors().element_background_secondary)
             .h_5()
+            .whitespace_nowrap()
             .overflow_hidden()
             .border_b()
             .border_color(cx.theme().colors().border)
@@ -210,6 +211,8 @@ impl ExecutorInfo {
             .when(active, |this| {
                 this.bg(cx.theme().colors().element_background_selected)
             })
+            .whitespace_nowrap()
+            .overflow_hidden()
             .child(cue.label.clone())
     }
 }
