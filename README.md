@@ -9,15 +9,20 @@ Is this a useful way for quick effect generation?
 
 One way to find out!
 
-
 ## Installation
 
 This project is based on the still very raw [GPUI](https://github.com/zed-industries/zed/tree/main/crates/gpui) framework, which means linux and windows support are still very experimental, and I'm not even sure if it will run. Feel free to prove me wrong!
 
 Because the project is in _very_ early stages, for now we only allow building the app from source.
 
+## Example
+
+The example show provided is a representation of the \*\* you can find on [this page](https://www.capture.se/Downloads/Download-Capture). After you have downloaded the file and opened it, you have to set the _External universe_ value for both universes to `ArtNet Universe 0, Sub-Net 0, Net 0 (Input 1)`. Then you should be good to go!
+
+````rust
+
 ```bash
 git clone https://github.com/BaukeWestendorp/radiant
 cd radiant
 cargo run --release
-```
+````
