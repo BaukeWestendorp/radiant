@@ -17,7 +17,7 @@ Because the project is in _very_ early stages, for now we only allow building th
 
 ## Example
 
-The example show provided is a representation of the \*\* you can find on [this page](https://www.capture.se/Downloads/Download-Capture). After you have downloaded the file and opened it, you have to set the _External universe_ value for both universes to `ArtNet Universe 0, Sub-Net 0, Net 0 (Input 1)`. Then you should be good to go!
+The example show provided is a representation of the _Sample Project for Capture Student Edition_ you can find on [this page](https://www.capture.se/Downloads/Download-Capture). After you have downloaded the file and opened it, you have to set the _External universe_ value for both universes to `ArtNet Universe 0, Sub-Net 0, Net 0 (Input 1)`. Then you should be good to go!
 
 ````rust
 
