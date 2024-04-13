@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 
 use self::lexer::Token;
 use crate::command::lexer::Lexer;
-use crate::{Cue, Executor, Group, Sequence, Show};
+use crate::{Cue, Executor, Group, Preset, Sequence, Show};
 
 mod lexer;
 
@@ -70,13 +70,17 @@ impl std::fmt::Display for Object {
 }
 
 // FIXME: We should deserialize this from a string by parsing.
-#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 pub enum Command {
     Clear,
     Select(Option<Object>),
     Store(Option<Object>),
     Go(Option<Object>),
     Top(Option<Object>),
+    Label {
+        object: Option<Object>,
+        label: Option<String>,
+    },
 }
 
 impl Command {
@@ -125,6 +129,16 @@ impl Command {
                         return Err(anyhow!("Top command expects an executor, got {:?}", object))
                     }
                 },
+                Token::Label => {
+                    let object = parse_object(&mut lexer)?;
+                    let label = parse_string(&mut lexer)?;
+                    confirm_end_of_command!(token);
+
+                    Command::Label {
+                        object: Some(object),
+                        label: Some(label),
+                    }
+                }
                 other => return Err(anyhow!("Unexpected token: {:?}", other)),
             },
             None => return Err(anyhow!("Unexpected end of input")),
@@ -218,6 +232,16 @@ fn parse_object(lexer: &mut Lexer) -> Result<Object> {
     Ok(object)
 }
 
+fn parse_string(lexer: &mut Lexer) -> Result<String> {
+    let (string_token, _start, _end) = lexer
+        .next_token()?
+        .ok_or_else(|| anyhow!("Expected string"))?;
+    match string_token {
+        Token::String(string) => Ok(string),
+        _ => Err(anyhow!("Expected string")),
+    }
+}
+
 fn consume(lexer: &mut Lexer, expected: Token) -> Result<()> {
     let (token, _start, _end) = lexer
         .next_token()?
@@ -240,6 +264,24 @@ impl std::fmt::Display for Command {
             Command::Go(None) => write!(f, "go"),
             Command::Top(Some(object)) => write!(f, "top {}", object),
             Command::Top(None) => write!(f, "top"),
+            Command::Label {
+                object: None,
+                label: None,
+            } => write!(f, "label"),
+            Command::Label {
+                object: Some(object),
+                label: None,
+            } => write!(f, "label {}", object),
+            Command::Label {
+                object: None,
+                label: Some(label),
+            } => {
+                panic!("Unexpected label without object: {}", label);
+            }
+            Command::Label {
+                object: Some(object),
+                label: Some(label),
+            } => write!(f, "label {} {}", label, object),
         }
     }
 }
@@ -474,6 +516,110 @@ impl Show {
                 Some(_) => return Err(anyhow!("Top can only be used with executors")),
                 None => return Err(anyhow!("Top requires an executor")),
             },
+            Command::Label { object, label } => {
+                let Some(object) = object else {
+                    return Err(anyhow!("No object provided"));
+                };
+
+                let Some(label) = label.clone() else {
+                    return Err(anyhow!("No label provided"));
+                };
+
+                match object {
+                    Object::Group(Some(id)) => {
+                        let group = self
+                            .group_mut(*id)
+                            .ok_or_else(|| anyhow!("Group with id '{id}' not found"))?;
+                        group.label = label;
+                    }
+                    Object::Group(None) => {
+                        return Err(anyhow!("Please provide a group id"));
+                    }
+                    Object::Executor(Some(id)) => {
+                        return Err(anyhow!("Executors do not have labels"));
+                    }
+                    Object::Executor(None) => {
+                        return Err(anyhow!("Please provide an executor id"));
+                    }
+                    Object::Sequence(Some(id)) => {
+                        let sequence = self
+                            .sequence_mut(*id)
+                            .ok_or_else(|| anyhow!("Sequence with id '{id}' not found"))?;
+                        sequence.label = label;
+                    }
+                    Object::Sequence(None) => {
+                        return Err(anyhow!("Please provide a sequence id"));
+                    }
+                    Object::Cue {
+                        sequence_id,
+                        cue_ix,
+                    } => {
+                        let Some(sequence_id) = sequence_id else {
+                            return Err(anyhow!("Cue does not have a sequence id"));
+                        };
+
+                        let Some(cue_ix) = cue_ix else {
+                            return Err(anyhow!("Cue does not have an index"));
+                        };
+
+                        let cue = self.cue_mut(*sequence_id, *cue_ix).ok_or_else(|| {
+                            anyhow!("Cue with index {cue_ix} not found on sequence {sequence_id}")
+                        })?;
+                        cue.label = label;
+                    }
+                    Object::Fixture(Some(id)) => {
+                        let fixture = self
+                            .fixture_mut(*id)
+                            .ok_or_else(|| anyhow!("Fixture with id '{id}' not found"))?;
+                        fixture.label = label;
+                    }
+                    Object::Fixture(None) => {
+                        return Err(anyhow!("Please provide a fixture id"));
+                    }
+                    Object::PresetBeam(id) => {
+                        let preset = self
+                            .beam_preset_mut(*id)
+                            .ok_or_else(|| anyhow!("Beam preset with id '{id}' not found"))?;
+                        preset.set_label(&label);
+                    }
+                    Object::PresetColor(id) => {
+                        let preset = self
+                            .color_preset_mut(*id)
+                            .ok_or_else(|| anyhow!("Color preset with id '{id}' not found"))?;
+                        preset.set_label(&label);
+                    }
+                    Object::PresetDimmer(id) => {
+                        let preset = self
+                            .dimmer_preset_mut(*id)
+                            .ok_or_else(|| anyhow!("Dimmer preset with id '{id}' not found"))?;
+                        preset.set_label(&label);
+                    }
+                    Object::PresetFocus(id) => {
+                        let preset = self
+                            .focus_preset_mut(*id)
+                            .ok_or_else(|| anyhow!("Focus preset with id '{id}' not found"))?;
+                        preset.set_label(&label);
+                    }
+                    Object::PresetGobo(id) => {
+                        let preset = self
+                            .gobo_preset_mut(*id)
+                            .ok_or_else(|| anyhow!("Gobo preset with id '{id}' not found"))?;
+                        preset.set_label(&label);
+                    }
+                    Object::PresetPosition(id) => {
+                        let preset = self
+                            .position_preset_mut(*id)
+                            .ok_or_else(|| anyhow!("Position preset with id '{id}' not found"))?;
+                        preset.set_label(&label);
+                    }
+                    Object::PresetAll(id) => {
+                        let preset = self
+                            .all_preset_mut(*id)
+                            .ok_or_else(|| anyhow!("All preset with id '{id}' not found"))?;
+                        preset.set_label(&label);
+                    }
+                }
+            }
         }
 
         self.recalculate_stage_output();
@@ -489,10 +635,18 @@ mod tests {
     #[test]
     fn test_parse_case_insensitivity() {
         let expected = Command::Clear;
-
         assert_eq!(Command::parse("clear").unwrap(), expected);
         assert_eq!(Command::parse("Clear").unwrap(), expected);
         assert_eq!(Command::parse("CLEAR").unwrap(), expected);
+
+        let expected = Command::Label {
+            object: Some(Object::Group(Some(1))),
+            label: Some("Label with UpperCase".to_string()),
+        };
+        assert_eq!(
+            Command::parse(r#"label GrouP 1 "Label with UpperCase""#).unwrap(),
+            expected
+        );
     }
 
     #[test]
@@ -575,5 +729,21 @@ mod tests {
         assert!(Command::parse("top foobar 42").is_err());
         assert!(Command::parse("top group 42").is_err());
         assert!(Command::parse("top executor foobar 42").is_err());
+    }
+
+    #[test]
+    fn test_parse_label() {
+        let expected = Command::Label {
+            object: Some(Object::Group(Some(1))),
+            label: Some("The hardest part".to_string()),
+        };
+
+        assert_eq!(
+            Command::parse("label group 1 \"The hardest part\"").unwrap(),
+            expected
+        );
+        assert!(Command::parse("label group 1 'The hardest part'").is_err());
+        assert!(Command::parse("label group 1").is_err());
+        assert!(Command::parse("label").is_err());
     }
 }

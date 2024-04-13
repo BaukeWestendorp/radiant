@@ -29,7 +29,7 @@
         "id": 1,
         "label": "Test Beam",
         "attribute_values": {
-          "Effects1": 127
+          "Dimmer": 127
         }
       }
     ],
@@ -58,7 +58,7 @@
         "id": 1,
         "label": "Test Zoom",
         "attribute_values": {
-          "Zoom": 127
+          "Dimmer": 127
         }
       }
     ],
@@ -67,7 +67,7 @@
         "id": 1,
         "label": "Test Gobo",
         "attribute_values": {
-          "Gobo1": 127
+          "Dimmer": 127
         }
       }
     ],
@@ -76,7 +76,7 @@
         "id": 1,
         "label": "Test Position",
         "attribute_values": {
-          "Pan": 32768
+          "Dimmer": 32768
         }
       }
     ],
@@ -86,7 +86,7 @@
         "label": "Test Position",
         "attribute_values": {
           "Dimmer": 127,
-          "Gobo1": 255
+          "ColorAdd_R": 255
         }
       }
     ]

@@ -82,10 +82,9 @@ impl Workspace {
                 Some(Command::Store(object))
                 | Some(Command::Select(object))
                 | Some(Command::Go(object))
-                | Some(Command::Top(object)) => *object = action.0,
-                _ => {
-                    todo!();
-                }
+                | Some(Command::Top(object))
+                | Some(Command::Label { object, .. }) => *object = action.0,
+                Some(Command::Clear) | None => {}
             };
             cx.notify();
         });
@@ -280,6 +279,7 @@ impl CommandLine {
                 command_line.text_input.update(cx, |text_input, cx| {
                     *text_input.text_mut() = ShowfileManager::show(cx)
                         .current_command
+                        .as_ref()
                         .map(|cmd| cmd.to_string())
                         .unwrap_or_default();
                     cx.notify();

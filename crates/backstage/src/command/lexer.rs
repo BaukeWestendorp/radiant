@@ -8,6 +8,7 @@ pub enum Token {
     Store,
     Go,
     Top,
+    Label,
 
     // Objects
     Fixture,
@@ -28,6 +29,7 @@ pub enum Token {
     // Other
     Period,
     Number(usize),
+    String(String),
 }
 
 impl std::fmt::Display for Token {
@@ -38,6 +40,8 @@ impl std::fmt::Display for Token {
             Token::Store => write!(f, "store"),
             Token::Go => write!(f, "go"),
             Token::Top => write!(f, "top"),
+            Token::Label => write!(f, "label"),
+
             Token::Fixture => write!(f, "fixture"),
             Token::Group => write!(f, "group"),
             Token::Sequence => write!(f, "sequence"),
@@ -51,8 +55,10 @@ impl std::fmt::Display for Token {
             Token::Gobo => write!(f, "gobo"),
             Token::Position => write!(f, "position"),
             Token::All => write!(f, "all"),
+
             Token::Period => write!(f, "."),
             Token::Number(n) => write!(f, "{}", n),
+            Token::String(s) => write!(f, "\"{}\"", s),
         }
     }
 }
@@ -66,7 +72,7 @@ impl Lexer {
     pub fn new(input: &str) -> Self {
         Self {
             ix: 0,
-            remaining: input.to_lowercase(),
+            remaining: input.to_string(),
         }
     }
 
@@ -122,12 +128,45 @@ fn lex_single_token(input: &str) -> Result<(Token, usize)> {
 
     let (token, len) = match next {
         '0'..='9' => tokenize_number(input)?,
+        '"' => lex_string(input)?,
         c @ '_' | c if c.is_alphabetic() => lex_keyword(input)?,
         '.' => (Token::Period, 1),
         other => return Err(anyhow!("Unexpected character: '{other}'")),
     };
 
     Ok((token, len))
+}
+
+fn lex_string(input: &str) -> Result<(Token, usize)> {
+    let mut chars = input.chars();
+    let mut len = 0;
+
+    if chars.next() != Some('"') {
+        return Err(anyhow!("Expected '\"'"));
+    }
+
+    let mut string = String::new();
+    let mut escaped = false;
+
+    for char in chars {
+        len += char.len_utf8();
+
+        if escaped {
+            string.push(char);
+            escaped = false;
+        } else {
+            match char {
+                '\\' => escaped = true,
+                '"' => {
+                    len += 1;
+                    break;
+                }
+                _ => string.push(char),
+            }
+        }
+    }
+
+    Ok((Token::String(string), len))
 }
 
 fn lex_keyword(input: &str) -> Result<(Token, usize)> {
@@ -141,12 +180,14 @@ fn lex_keyword(input: &str) -> Result<(Token, usize)> {
 
     let (got, bytes_read) = take_while(input, |char| char == '_' || char.is_alphanumeric())?;
 
-    let token = match got {
+    let token = match got.to_lowercase().as_str() {
         "clear" => Token::Clear,
         "select" => Token::Select,
         "store" => Token::Store,
         "go" => Token::Go,
         "top" => Token::Top,
+        "label" => Token::Label,
+
         "fixture" => Token::Fixture,
         "group" => Token::Group,
         "sequence" => Token::Sequence,
@@ -160,6 +201,7 @@ fn lex_keyword(input: &str) -> Result<(Token, usize)> {
         "gobo" => Token::Gobo,
         "position" => Token::Position,
         "all" => Token::All,
+
         other => return Err(anyhow!("Unknown keyword: '{other}'")),
     };
 
@@ -213,6 +255,22 @@ mod tests {
         let (token, bytes_read) = lex_single_token(input).unwrap();
         assert_eq!(token, Token::Clear);
         assert_eq!(bytes_read, 5);
+    }
+
+    #[test]
+    fn test_lex_string() {
+        let input = r#""hello""#;
+        let (token, bytes_read) = lex_single_token(input).unwrap();
+        assert_eq!(token, Token::String("hello".to_string()));
+        assert_eq!(bytes_read, 7);
+    }
+
+    #[test]
+    fn test_escaped_string() {
+        let input = r#""\"hello\"""#;
+        let (token, bytes_read) = lex_single_token(input).unwrap();
+        assert_eq!(token, Token::String(r#""hello""#.to_string()));
+        assert_eq!(bytes_read, 11);
     }
 
     #[test]

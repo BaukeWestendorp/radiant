@@ -109,6 +109,14 @@ fn set_command_shortcuts(cx: &mut AppContext) {
     cx.bind_keys([
         KeyBinding::new("s", SetCurrentCommand(Some(Command::Store(None))), None),
         KeyBinding::new("S", SetCurrentCommand(Some(Command::Select(None))), None),
+        KeyBinding::new(
+            "l",
+            SetCurrentCommand(Some(Command::Label {
+                object: None,
+                label: None,
+            })),
+            None,
+        ),
         KeyBinding::new("f", SetCurrentObject(Some(Object::Fixture(None))), None),
         KeyBinding::new("g", SetCurrentObject(Some(Object::Group(None))), None),
         KeyBinding::new("e", SetCurrentObject(Some(Object::Executor(None))), None),

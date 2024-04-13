@@ -1,9 +1,11 @@
+use backstage::preset::Preset;
 use backstage::Show;
 use dmx::DmxValue;
 
 macro_rules! expect_ok {
+
     ($test_name:ident, $command:expr, |$show:ident| $($code:tt)*) => {
-        #[tokio::test]
+ #[tokio::test]
         async fn $test_name() {
             let mut $show = Show::from_showfile_str(include_str!("./show.json"))
                 .await
@@ -81,13 +83,12 @@ expect_error!(select_cue, "select cue 1.1");
 
 expect_ok!(select_preset_beam, |show| {
     show.execute_command_str("select group 1").unwrap();
-
     show.execute_command_str("select preset.beam 1").unwrap();
     let attributes = show
         .programmer_changes()
         .get(&show.group(1).unwrap().fixtures[0])
         .unwrap();
-    assert_eq!(attributes.get("Effects1").unwrap(), &DmxValue::new(127));
+    assert_eq!(attributes.get("Dimmer").unwrap(), &DmxValue::new(127));
 });
 
 expect_ok!(select_preset_color, |show| {
@@ -122,7 +123,7 @@ expect_ok!(select_preset_focus, |show| {
         .programmer_changes()
         .get(&show.group(1).unwrap().fixtures[0])
         .unwrap();
-    assert_eq!(attributes.get("Zoom").unwrap(), &DmxValue::new(127));
+    assert_eq!(attributes.get("Dimmer").unwrap(), &DmxValue::new(127));
 });
 
 expect_ok!(select_preset_gobo, |show| {
@@ -133,7 +134,7 @@ expect_ok!(select_preset_gobo, |show| {
         .programmer_changes()
         .get(&show.group(1).unwrap().fixtures[0])
         .unwrap();
-    assert_eq!(attributes.get("Gobo1").unwrap(), &DmxValue::new(127));
+    assert_eq!(attributes.get("Dimmer").unwrap(), &DmxValue::new(127));
 });
 
 expect_ok!(select_preset_position, |show| {
@@ -145,7 +146,7 @@ expect_ok!(select_preset_position, |show| {
         .programmer_changes()
         .get(&show.group(1).unwrap().fixtures[0])
         .unwrap();
-    assert_eq!(attributes.get("Pan").unwrap(), &DmxValue::new(32768));
+    assert_eq!(attributes.get("Dimmer").unwrap(), &DmxValue::new(32768));
 });
 
 expect_ok!(select_preset_all, |show| {
@@ -157,7 +158,7 @@ expect_ok!(select_preset_all, |show| {
         .get(&show.group(1).unwrap().fixtures[0])
         .unwrap();
     assert_eq!(attributes.get("Dimmer").unwrap(), &DmxValue::new(127));
-    assert_eq!(attributes.get("Gobo1").unwrap(), &DmxValue::new(255));
+    assert_eq!(attributes.get("ColorAdd_R").unwrap(), &DmxValue::new(255));
 });
 
 expect_error!(select_executor, "select executor 1");
@@ -312,3 +313,65 @@ expect_ok!(top, |show| {
 
     assert!(show.execute_command_str("top cue 1").is_err());
 });
+
+expect_ok!(label_fixture, r#"label fixture 1 "Test""#, |show| {
+    assert_eq!(show.fixture(1).unwrap().label, "Test");
+});
+
+expect_ok!(label_group, r#"label group 1 "Test""#, |show| {
+    assert_eq!(show.group(1).unwrap().label, "Test");
+});
+
+expect_ok!(label_sequence, r#"label sequence 1 "Test""#, |show| {
+    assert_eq!(show.sequence(1).unwrap().label, "Test");
+});
+
+expect_ok!(label_cue, r#"label cue 1.0 "Test""#, |show| {
+    assert_eq!(show.cue(1, 0).unwrap().label, "Test");
+});
+
+expect_ok!(label_preset_beam, r#"label preset.beam 1 "Test""#, |show| {
+    assert_eq!(show.beam_preset(1).unwrap().label(), "Test");
+});
+
+expect_ok!(
+    label_preset_color,
+    r#"label preset.color 1 "Test""#,
+    |show| {
+        assert_eq!(show.color_preset(1).unwrap().label(), "Test");
+    }
+);
+
+expect_ok!(
+    label_preset_dimmer,
+    r#"label preset.dimmer 1 "Test""#,
+    |show| {
+        assert_eq!(show.dimmer_preset(1).unwrap().label(), "Test");
+    }
+);
+
+expect_ok!(
+    label_preset_focus,
+    r#"label preset.focus 1 "Test""#,
+    |show| {
+        assert_eq!(show.focus_preset(1).unwrap().label(), "Test");
+    }
+);
+
+expect_ok!(label_preset_gobo, r#"label preset.gobo 1 "Test""#, |show| {
+    assert_eq!(show.gobo_preset(1).unwrap().label(), "Test");
+});
+
+expect_ok!(
+    label_preset_position,
+    r#"label preset.position 1 "Test""#,
+    |show| {
+        assert_eq!(show.position_preset(1).unwrap().label(), "Test");
+    }
+);
+
+expect_ok!(label_preset_all, r#"label preset.all 1 "Test""#, |show| {
+    assert_eq!(show.all_preset(1).unwrap().label(), "Test");
+});
+
+expect_error!(label_executor, r#"label executor 1 "Test""#);
