@@ -72,6 +72,22 @@ impl Showfile {
     }
 }
 
+impl From<Show> for Showfile {
+    fn from(show: Show) -> Self {
+        Self {
+            patchlist: show.patchlist.into(),
+            programmer: show.programmer.into(),
+            data: show.data.into(),
+            presets: show.presets.into(),
+            executors: show
+                .executors
+                .into_iter()
+                .map(|executor| executor.into())
+                .collect(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Patchlist {
     #[serde(default = "Default::default")]
@@ -89,6 +105,14 @@ impl Patchlist {
         }
 
         Ok(patchlist)
+    }
+}
+
+impl From<show::Patchlist> for Patchlist {
+    fn from(patchlist: show::Patchlist) -> Self {
+        Self {
+            fixtures: patchlist.fixtures.into_iter().map(|f| f.into()).collect(),
+        }
     }
 }
 
@@ -144,9 +168,23 @@ impl Fixture {
             description: gdtf_description,
             channel: self.channel,
             mode: self.mode,
+            rid,
         })
     }
 }
+
+impl From<show::Fixture> for Fixture {
+    fn from(fixture: show::Fixture) -> Self {
+        Self {
+            id: fixture.id,
+            label: fixture.label,
+            gdtf_share_revision_id: fixture.rid,
+            mode: fixture.mode.clone(),
+            channel: fixture.channel,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Programmer {
     pub selection: Vec<usize>,
@@ -158,6 +196,15 @@ impl Programmer {
         show::Programmer {
             selection: self.selection,
             changes: self.changes,
+        }
+    }
+}
+
+impl From<show::Programmer> for Programmer {
+    fn from(programmer: show::Programmer) -> Self {
+        Self {
+            selection: programmer.selection,
+            changes: programmer.changes,
         }
     }
 }
@@ -180,6 +227,20 @@ impl From<Data> for show::Data {
         }
     }
 }
+
+impl From<show::Data> for Data {
+    fn from(val: show::Data) -> Self {
+        Self {
+            groups: val.groups.into_iter().map(|group| group.into()).collect(),
+            sequences: val
+                .sequences
+                .into_iter()
+                .map(|sequence| sequence.into())
+                .collect(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Group {
     pub id: usize,
@@ -190,6 +251,16 @@ pub struct Group {
 impl From<Group> for show::Group {
     fn from(val: Group) -> Self {
         show::Group {
+            id: val.id,
+            label: val.label,
+            fixtures: val.fixtures,
+        }
+    }
+}
+
+impl From<show::Group> for Group {
+    fn from(val: show::Group) -> Self {
+        Self {
             id: val.id,
             label: val.label,
             fixtures: val.fixtures,
@@ -214,6 +285,16 @@ impl From<Sequence> for show::Sequence {
     }
 }
 
+impl From<show::Sequence> for Sequence {
+    fn from(val: show::Sequence) -> Self {
+        Self {
+            id: val.id,
+            label: val.label,
+            cues: val.cues.into_iter().map(|cue| cue.into()).collect(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Cue {
     pub label: String,
@@ -223,6 +304,15 @@ pub struct Cue {
 impl From<Cue> for show::Cue {
     fn from(val: Cue) -> Self {
         show::Cue {
+            label: val.label,
+            changes: val.changes,
+        }
+    }
+}
+
+impl From<show::Cue> for Cue {
+    fn from(val: show::Cue) -> Self {
+        Self {
             label: val.label,
             changes: val.changes,
         }
@@ -250,6 +340,24 @@ pub struct Presets {
 impl From<Presets> for preset::Presets {
     fn from(val: Presets) -> Self {
         preset::Presets {
+            beam: val.beam.into_iter().map(|preset| preset.into()).collect(),
+            color: val.color.into_iter().map(|preset| preset.into()).collect(),
+            dimmer: val.dimmer.into_iter().map(|preset| preset.into()).collect(),
+            focus: val.focus.into_iter().map(|preset| preset.into()).collect(),
+            gobo: val.gobo.into_iter().map(|preset| preset.into()).collect(),
+            position: val
+                .position
+                .into_iter()
+                .map(|preset| preset.into())
+                .collect(),
+            all: val.all.into_iter().map(|preset| preset.into()).collect(),
+        }
+    }
+}
+
+impl From<preset::Presets> for Presets {
+    fn from(val: preset::Presets) -> Self {
+        Self {
             beam: val.beam.into_iter().map(|preset| preset.into()).collect(),
             color: val.color.into_iter().map(|preset| preset.into()).collect(),
             dimmer: val.dimmer.into_iter().map(|preset| preset.into()).collect(),
@@ -300,6 +408,21 @@ impl From<Executor> for show::Executor {
     }
 }
 
+impl From<show::Executor> for Executor {
+    fn from(val: show::Executor) -> Self {
+        Self {
+            id: val.id,
+            sequence: val.sequence,
+            current_index: val.current_index.get(),
+            r#loop: val.r#loop,
+            fader_value: val.fader_value,
+            button_1: val.button_1.into(),
+            button_2: val.button_2.into(),
+            button_3: val.button_3.into(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct ExecutorButton {
     pub action: ExecutorButtonAction,
@@ -308,6 +431,14 @@ pub struct ExecutorButton {
 impl From<ExecutorButton> for show::ExecutorButton {
     fn from(val: ExecutorButton) -> Self {
         show::ExecutorButton {
+            action: val.action.into(),
+        }
+    }
+}
+
+impl From<show::ExecutorButton> for ExecutorButton {
+    fn from(val: show::ExecutorButton) -> Self {
+        Self {
             action: val.action.into(),
         }
     }
@@ -327,6 +458,16 @@ impl From<ExecutorButtonAction> for show::ExecutorButtonAction {
             ExecutorButtonAction::Go => show::ExecutorButtonAction::Go,
             ExecutorButtonAction::Top => show::ExecutorButtonAction::Top,
             ExecutorButtonAction::Flash => show::ExecutorButtonAction::Flash,
+        }
+    }
+}
+
+impl From<show::ExecutorButtonAction> for ExecutorButtonAction {
+    fn from(val: show::ExecutorButtonAction) -> Self {
+        match val {
+            show::ExecutorButtonAction::Go => ExecutorButtonAction::Go,
+            show::ExecutorButtonAction::Top => ExecutorButtonAction::Top,
+            show::ExecutorButtonAction::Flash => ExecutorButtonAction::Flash,
         }
     }
 }

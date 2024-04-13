@@ -112,6 +112,16 @@ macro_rules! preset {
                 }
             }
         }
+
+        impl From<$name> for crate::showfile::Preset {
+            fn from(val: $name) -> Self {
+                crate::showfile::Preset {
+                    id: val.id,
+                    label: val.label,
+                    attribute_values: val.attribute_values,
+                }
+            }
+        }
     };
 }
 

@@ -1,7 +1,1 @@
-{
-  "artnet": [
-    {
-      "target_ip": "0.0.0.0"
-    }
-  ]
-}
+{"artnet":[{"target_ip":"0.0.0.0"}]}

@@ -14,7 +14,7 @@ use crate::workspace::actions::{
 };
 use crate::workspace::Workspace;
 
-actions!(app, [Quit]);
+actions!(app, [Quit, Save]);
 
 pub fn run_app(app: gpui::App, showfile_path: Option<String>) {
     app.with_assets(Assets).run(move |cx: &mut AppContext| {
@@ -32,6 +32,8 @@ pub fn run_app(app: gpui::App, showfile_path: Option<String>) {
         }
 
         cx.on_action(handle_quit);
+
+        cx.on_action(handle_save);
 
         let window_size = size(1719.into(), 998.into());
         let window_options = WindowOptions {
@@ -92,6 +94,7 @@ fn init_keybinds(cx: &mut AppContext) -> anyhow::Result<()> {
 fn set_default_keybinds(cx: &mut AppContext) {
     cx.bind_keys([
         KeyBinding::new("cmd-q", Quit, None),
+        KeyBinding::new("cmd-s", Save, None),
         KeyBinding::new("escape", ExecuteCommand(Command::Clear), None),
         // FIXME: This should be moved to the ui crate.
         KeyBinding::new("enter", text_input::Enter, Some("TextInput")),
@@ -141,6 +144,12 @@ fn init_menu(cx: &mut AppContext) {
 
 fn handle_quit(_action: &Quit, cx: &mut AppContext) {
     cx.quit();
+}
+
+fn handle_save(_action: &Save, cx: &mut AppContext) {
+    if let Err(err) = ShowfileManager::save(cx) {
+        log::error!("Failed to save showfile: {err}")
+    }
 }
 
 pub struct AppState {

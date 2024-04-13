@@ -1,6 +1,6 @@
-use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
+use std::{fs::File, io::Write};
 
 use backstage::Show;
 use gpui::{AppContext, BorrowAppContext, Global, SharedString};
@@ -13,11 +13,12 @@ const IO_PATH: &str = "io.json";
 
 pub struct ShowfileManager {
     showfile: Showfile,
+    path: Option<String>,
 }
 
 impl ShowfileManager {
     pub fn init(showfile_path: Option<String>, cx: &mut AppContext) {
-        let showfile = match showfile_path {
+        let showfile = match showfile_path.clone() {
             Some(showfile_path) => {
                 let showfile_path = Path::new(&showfile_path);
                 match Showfile::from_dir(showfile_path) {
@@ -35,7 +36,31 @@ impl ShowfileManager {
             None => Showfile::default(),
         };
 
-        cx.set_global(ShowfileManager { showfile });
+        cx.set_global(ShowfileManager {
+            showfile,
+            path: showfile_path.map(|path| path.into()),
+        });
+    }
+
+    pub fn save(cx: &AppContext) -> anyhow::Result<()> {
+        let manager = cx.global::<Self>();
+        let path = manager.path.as_ref().unwrap();
+        let showfile = manager.showfile.clone();
+        let showfile_path = Path::new(path.as_str());
+        std::fs::create_dir_all(showfile_path)?;
+        let layout_file = File::create(showfile_path.join(LAYOUT_PATH))?;
+        serde_json::to_writer(layout_file, &showfile.layouts)?;
+
+        let show_json = showfile.show.to_json()?;
+        let mut show_file = File::create(showfile_path.join(SHOW_PATH))?;
+        show_file.write(show_json.as_bytes())?;
+
+        let io_file = File::create(showfile_path.join(IO_PATH))?;
+        serde_json::to_writer(io_file, &showfile.io)?;
+
+        log::info!("Showfile saved to '{}'", showfile_path.display());
+
+        Ok(())
     }
 
     pub fn update<C: BorrowAppContext, R>(
@@ -60,7 +85,7 @@ impl ShowfileManager {
 
 impl Global for ShowfileManager {}
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Showfile {
     pub layouts: Layouts,
     pub show: Show,

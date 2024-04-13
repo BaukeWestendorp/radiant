@@ -13,7 +13,7 @@ use crate::playback_engine::PlaybackEngine;
 use crate::showfile::Showfile;
 use crate::{Preset, Presets};
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Show {
     pub current_command: Option<Command>,
 
@@ -40,6 +40,11 @@ impl Show {
 
     pub(crate) async fn from_showfile(showfile: Showfile) -> Result<Self> {
         showfile.try_into_show().await
+    }
+
+    pub fn to_json(self) -> Result<String> {
+        serde_json::to_string_pretty(&Showfile::from(self))
+            .map_err(|err| anyhow!("Failed to serialize showfile: {err}"))
     }
 
     pub fn execute_current_command(&mut self) -> Result<()> {
@@ -251,8 +256,8 @@ impl Show {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Patchlist {
-    fixtures: Vec<Fixture>,
-    gdtf_descriptions: HashMap<i32, Rc<GdtfDescription>>,
+    pub(crate) fixtures: Vec<Fixture>,
+    pub(crate) gdtf_descriptions: HashMap<i32, Rc<GdtfDescription>>,
 }
 
 impl Default for Patchlist {
@@ -295,6 +300,7 @@ pub struct Fixture {
     pub description: Rc<GdtfDescription>,
     pub channel: DmxChannel,
     pub mode: String,
+    pub rid: i32,
 }
 
 impl Fixture {
