@@ -340,23 +340,22 @@ impl Fixture {
         &self,
         feature_group_name: &str,
     ) -> Vec<&Rc<gdtf::Attribute>> {
-        let Some(feature_group) = self
-            .r#type()
-            .attribute_definitions
-            .feature_groups
+        self.attributes()
             .iter()
-            .find(|fg| fg.name == feature_group_name)
-        else {
-            return vec![];
-        };
+            .filter(|attribute| attribute.feature_group.name == feature_group_name)
+            .collect()
+    }
 
+    pub fn attributes_for_feature(
+        &self,
+        feature_group_name: &str,
+        feature_name: &str,
+    ) -> Vec<&Rc<Attribute>> {
         self.attributes()
             .iter()
             .filter(|attribute| {
-                feature_group
-                    .features
-                    .iter()
-                    .any(|f| *f == attribute.feature)
+                attribute.feature.name == feature_name
+                    && attribute.feature_group.name == feature_group_name
             })
             .collect()
     }

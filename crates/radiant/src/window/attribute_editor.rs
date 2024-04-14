@@ -1,3 +1,6 @@
+use std::rc::Rc;
+
+use gdtf::Attribute;
 use gpui::{
     div, prelude::FluentBuilder, ElementId, IntoElement, ParentElement, Render, SharedString,
     Styled, View, ViewContext, VisualContext, WindowContext,
@@ -89,6 +92,44 @@ impl AttributeEditorWindow {
     pub fn render_feature_group_editor(&self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let feature_selector = div().p_2().child(self.render_feature_selector(cx));
 
+        let mut attributes = vec![];
+        for fixture_id in ShowfileManager::show(cx).selected_fixtures().iter() {
+            let Some(fixture) = ShowfileManager::show(cx).fixture(*fixture_id) else {
+                continue;
+            };
+
+            let Some(selected_feature_group) = self.selected_feature_group.as_ref() else {
+                continue;
+            };
+
+            let Some(selected_feature) = self.selected_feature.as_ref() else {
+                continue;
+            };
+
+            for attribute in fixture
+                .attributes_for_feature(&selected_feature_group, &selected_feature)
+                .into_iter()
+            {
+                if !attributes
+                    .iter()
+                    .any(|a: &Rc<Attribute>| a.name == attribute.name)
+                {
+                    attributes.push(attribute.clone());
+                }
+            }
+        }
+
+        let mut faders = vec![];
+        for attribute in attributes.iter() {
+            let fader = div().child(
+                attribute
+                    .pretty_name
+                    .clone()
+                    .unwrap_or(attribute.name.clone()),
+            );
+            faders.push(fader);
+        }
+
         div()
             .flex()
             .flex_col()
@@ -101,7 +142,7 @@ impl AttributeEditorWindow {
                         .child(feature_selector),
                 )
             })
-            .child(div().p_2().size_full())
+            .child(div().p_2().size_full().children(faders))
     }
 
     pub fn render_feature_selector(&self, cx: &mut ViewContext<Self>) -> impl IntoElement {
@@ -138,6 +179,7 @@ impl AttributeEditorWindow {
             .w_full()
             .px_2()
             .py_1()
+            .selected(self.selected_feature == Some(feature.name.clone()))
             .on_click({
                 let name = feature.name.clone();
                 cx.listener(move |this, _event, _cx| {

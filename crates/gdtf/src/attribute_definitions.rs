@@ -76,6 +76,9 @@ pub struct Attribute {
     // FIXME: pub main_attribute: Option<Rc<Attribute>>,
     // FIXME: pub physical_unit: PhysicalUnit,
     // FIXME: pub color: ColorCie,
+
+    // HELPERS:
+    pub feature_group: Rc<FeatureGroup>,
 }
 
 impl Attribute {
@@ -87,10 +90,16 @@ impl Attribute {
         let feature_group_name = split[0];
         let feature_name = split[1];
 
-        let feature = feature_groups
+        let feature_group = feature_groups
             .iter()
             .find(|fg| fg.name == feature_group_name)
-            .and_then(|fg| fg.features.iter().find(|f| f.name == feature_name))
+            .unwrap()
+            .clone();
+
+        let feature = feature_group
+            .features
+            .iter()
+            .find(|f| f.name == feature_name)
             .unwrap()
             .clone();
 
@@ -98,6 +107,7 @@ impl Attribute {
             name: parse_name(raw.name)?,
             pretty_name: raw.pretty,
             feature,
+            feature_group,
         })
     }
 }
