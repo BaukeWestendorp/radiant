@@ -5,7 +5,7 @@ use crate::dmx_mode::DmxMode;
 use crate::raw::RawFixtureType;
 use crate::{parse_guid, parse_name, parse_yes_no};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FixtureType {
     pub name: String,
     pub short_name: String,

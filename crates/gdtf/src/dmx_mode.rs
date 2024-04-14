@@ -7,7 +7,7 @@ use crate::attribute_definitions::Attribute;
 use crate::raw::{RawChannelFunction, RawDmxChannel, RawDmxMode, RawLogicalChannel};
 use crate::{parse_int_array, parse_name, DmxValue};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DmxMode {
     pub name: String,
     pub description: Option<String>,
@@ -32,7 +32,7 @@ impl DmxMode {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DmxChannel {
     pub dmx_break: DmxBreak,
     pub offset: Option<Vec<i32>>,
@@ -82,7 +82,7 @@ impl DmxChannel {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DmxBreak {
     Overwrite,
     Value(i32),
@@ -99,7 +99,7 @@ impl FromStr for DmxBreak {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct LogicalChannel {
     pub attribute: Rc<Attribute>,
     // FIXME: pub snap: Snap,
@@ -126,7 +126,7 @@ impl LogicalChannel {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ChannelFunction {
     pub name: String,
     pub attribute: Option<Rc<Attribute>>,

@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 use anyhow::{anyhow, Result};
 use dmx::{DmxChannel, DmxOutput, DmxValue};
-use gdtf::{Attribute, FixtureType, GdtfDescription};
+use gdtf::{Attribute, FeatureGroup, FixtureType, GdtfDescription};
 use itertools::Itertools;
 
 use crate::command::Command;
@@ -109,6 +109,24 @@ impl Show {
                     }
                 })
             })
+    }
+
+    pub fn feature_groups_in_selected_fixtures(&self) -> Vec<Rc<FeatureGroup>> {
+        self.selected_fixtures()
+            .iter()
+            .filter_map(|fixture_id| {
+                self.fixture(*fixture_id).map(|fixture| {
+                    fixture
+                        .description
+                        .fixture_type
+                        .attribute_definitions
+                        .feature_groups
+                        .clone()
+                })
+            })
+            .flatten()
+            .unique()
+            .collect::<Vec<_>>()
     }
 
     pub fn fixture(&self, fixture_id: usize) -> Option<&Fixture> {

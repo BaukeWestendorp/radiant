@@ -5,7 +5,7 @@ use anyhow::{anyhow, Result};
 use crate::parse_name;
 use crate::raw::{RawAttribute, RawAttributeDefinitions, RawFeature, RawFeatureGroup};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AttributeDefinitions {
     // FIXME: pub activation_groups: Vec<ActivationGroup>,
     pub feature_groups: Vec<Rc<FeatureGroup>>,
@@ -33,7 +33,7 @@ impl AttributeDefinitions {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FeatureGroup {
     pub name: String,
     pub pretty_name: Option<String>,
@@ -54,7 +54,7 @@ impl FeatureGroup {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Feature {
     pub name: String,
 }
@@ -67,7 +67,7 @@ impl Feature {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Attribute {
     pub name: String,
     pub pretty_name: Option<String>,

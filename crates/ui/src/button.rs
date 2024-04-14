@@ -35,7 +35,7 @@ impl ButtonStyle {
     pub fn border_disabled(&self, cx: &AppContext) -> Hsla {
         match self {
             ButtonStyle::Primary => cx.theme().colors().border_disabled,
-            ButtonStyle::Secondary => cx.theme().colors().border_disabled,
+            ButtonStyle::Secondary => cx.theme().colors().border_disabled_secondary,
         }
     }
 
@@ -43,6 +43,13 @@ impl ButtonStyle {
         match self {
             ButtonStyle::Primary => cx.theme().colors().element_background,
             ButtonStyle::Secondary => cx.theme().colors().element_background_secondary,
+        }
+    }
+
+    pub fn background_disabled(&self, cx: &AppContext) -> Hsla {
+        match self {
+            ButtonStyle::Primary => cx.theme().colors().element_background_disabled,
+            ButtonStyle::Secondary => cx.theme().colors().element_background_disabled_secondary,
         }
     }
 
@@ -156,6 +163,7 @@ impl RenderOnce for Button {
             })
             .when(self.disabled, |this| {
                 this.cursor_not_allowed()
+                    .bg(self.style.background_disabled(cx))
                     .border_color(self.style.border_disabled(cx))
             })
             .when(!self.disabled, |this| {

@@ -16,10 +16,13 @@ fn radiant_dark() -> Theme {
 
                 border: gpui::rgb(0x404040).into(),
                 border_disabled: gpui::rgb(0x282828).into(),
+                border_disabled_secondary: gpui::rgb(0x202020).into(),
                 border_selected: gpui::rgb(0xe9ad00).into(),
 
                 element_background: gpui::rgb(0x000000).into(),
                 element_background_secondary: gpui::rgb(0x242424).into(),
+                element_background_disabled: gpui::rgb(0x000000).into(),
+                element_background_disabled_secondary: gpui::rgb(0x141414).into(),
                 element_background_hover: gpui::rgb(0x101010).into(),
                 element_background_hover_secondary: gpui::rgb(0x303030).into(),
                 element_background_selected: gpui::rgb(0x000080).into(),

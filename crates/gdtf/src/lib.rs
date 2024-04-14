@@ -16,7 +16,7 @@ pub struct GdtfArchive {
     pub description: GdtfDescription,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct GdtfDescription {
     pub data_version: DataVersion,
     pub fixture_type: FixtureType,
@@ -113,7 +113,7 @@ impl FromStr for DataVersion {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DmxValue {
     value: u64,
     byte_specifier: u8,

@@ -176,7 +176,7 @@ fn get_window_view(window: Model<Window>, cx: &mut WindowContext) -> AnyView {
             WindowView::build(window, delegate, cx).into()
         }
         WindowKind::AttributeEditor => {
-            let delegate = AttributeEditorWindowDelegate::new(cx, window.clone());
+            let delegate = AttributeEditorWindowDelegate::new(cx);
             WindowView::build(window, delegate, cx).into()
         }
     }
