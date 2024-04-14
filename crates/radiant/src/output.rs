@@ -69,7 +69,7 @@ pub mod artnet {
     impl ArtnetDmxProtocol {
         const ARTNET_PORT: u16 = 6454;
 
-        pub fn new(target_ip: &str) -> anyhow::Result<Self> {
+        pub fn new(target_ip: &str, universe: u16, local_universe: u16) -> anyhow::Result<Self> {
             let target_address = (target_ip, Self::ARTNET_PORT)
                 .to_socket_addrs()
                 .expect("Could not resolve address")
@@ -82,8 +82,8 @@ pub mod artnet {
             Ok(Self {
                 socket,
                 target_address,
-                port_address: 0,
-                local_universe: 0,
+                port_address: universe,
+                local_universe,
             })
         }
     }

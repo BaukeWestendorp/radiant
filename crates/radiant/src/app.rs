@@ -61,7 +61,11 @@ pub fn run_app(app: gpui::App, showfile_path: Option<String>) {
 fn register_io_protocols_from_showfile(cx: &mut AppContext) {
     let io = ShowfileManager::io(cx).clone();
     for protocol in io.artnet.into_iter() {
-        match artnet::ArtnetDmxProtocol::new(protocol.target_ip.as_str()) {
+        match artnet::ArtnetDmxProtocol::new(protocol.target_ip.as_str(), 0, 0) {
+            Ok(protocol) => DmxOutputManager::register_protocol(protocol, cx),
+            Err(err) => log::error!("Failed to initialize protocol: {err}"),
+        }
+        match artnet::ArtnetDmxProtocol::new(protocol.target_ip.as_str(), 1, 1) {
             Ok(protocol) => DmxOutputManager::register_protocol(protocol, cx),
             Err(err) => log::error!("Failed to initialize protocol: {err}"),
         }

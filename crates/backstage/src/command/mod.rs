@@ -535,7 +535,7 @@ impl Show {
                     Object::Group(None) => {
                         return Err(anyhow!("Please provide a group id"));
                     }
-                    Object::Executor(Some(id)) => {
+                    Object::Executor(Some(_id)) => {
                         return Err(anyhow!("Executors do not have labels"));
                     }
                     Object::Executor(None) => {
