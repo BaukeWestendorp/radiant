@@ -10,6 +10,7 @@ pub mod executors;
 pub mod fixture_sheet;
 
 pub mod all_pool;
+pub mod attribute_editor;
 pub mod beam_pool;
 pub mod color_pool;
 pub mod dimmer_pool;

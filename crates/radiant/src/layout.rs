@@ -6,6 +6,7 @@ use theme::ActiveTheme;
 
 use crate::showfile::{Layout, PoolWindowKind, Window, WindowKind};
 use crate::window::all_pool::AllPoolWindowDelegate;
+use crate::window::attribute_editor::AttributeEditorWindowDelegate;
 use crate::window::beam_pool::BeamPoolWindowDelegate;
 use crate::window::color_pool::ColorPoolWindowDelegate;
 use crate::window::dimmer_pool::DimmerPoolWindowDelegate;
@@ -172,6 +173,10 @@ fn get_window_view(window: Model<Window>, cx: &mut WindowContext) -> AnyView {
         }
         WindowKind::FixtureSheet => {
             let delegate = FixtureSheetWindowDelegate::new(cx);
+            WindowView::build(window, delegate, cx).into()
+        }
+        WindowKind::AttributeEditor => {
+            let delegate = AttributeEditorWindowDelegate::new(cx, window.clone());
             WindowView::build(window, delegate, cx).into()
         }
     }

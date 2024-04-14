@@ -158,6 +158,7 @@ pub enum WindowKind {
     Pool(PoolWindow),
     Executors,
     FixtureSheet,
+    AttributeEditor,
 }
 
 #[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]
