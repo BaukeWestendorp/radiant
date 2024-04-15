@@ -1,0 +1,30 @@
+use clap::Parser;
+use gpui::App;
+
+mod app;
+mod workspace;
+
+/// Radiant is a lighting design software.
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Path to the showfile
+    #[arg(short, long)]
+    showfile: std::path::PathBuf,
+}
+
+fn main() {
+    env_logger::init();
+    let args = Args::parse();
+
+    let app = App::new();
+    let showfile_path = std::env::current_dir()
+        .expect("Failed to get current directory")
+        .join(args.showfile)
+        .canonicalize()
+        .unwrap()
+        .to_str()
+        .map(|p| p.to_string());
+
+    app::run_app(app, showfile_path)
+}
