@@ -12,7 +12,7 @@ const SHOW_PATH: &str = "show.json";
 const IO_PATH: &str = "io.json";
 
 pub struct ShowfileManager {
-    showfile: Showfile,
+    pub showfile: Showfile,
     path: Option<String>,
 }
 

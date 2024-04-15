@@ -1,8 +1,9 @@
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::env;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
+use std::rc::Rc;
 
 use anyhow::{anyhow, Error};
 use dmx::DmxChannel;
@@ -65,7 +66,7 @@ impl Showfile {
                 .map(|executor| executor.into())
                 .collect(),
             current_command: None,
-            stage_output: Output::new(),
+            stage_output: Rc::new(RefCell::new(Output::new())),
         })
     }
 }

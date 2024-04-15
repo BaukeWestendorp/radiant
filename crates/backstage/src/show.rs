@@ -1,4 +1,4 @@
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::fs::File;
 use std::rc::Rc;
@@ -95,7 +95,7 @@ pub struct Show {
     pub(crate) data: Data,
     pub(crate) presets: Presets,
     pub(crate) executors: Vec<Executor>,
-    pub(crate) stage_output: Output,
+    pub(crate) stage_output: Rc<RefCell<Output>>,
 }
 
 impl Show {
@@ -111,7 +111,7 @@ impl Show {
     }
 
     pub(crate) async fn from_showfile(showfile: Showfile) -> Result<Self> {
-        let mut show = showfile.try_into_show().await?;
+        let show = showfile.try_into_show().await?;
         show.recalculate_stage_output();
         Ok(show)
     }
@@ -320,8 +320,8 @@ impl Show {
             .collect()
     }
 
-    pub fn stage_output(&self) -> Rc<RefCell<Output>> {
-        self.stage_output.clone()
+    pub fn stage_output(&self) -> &Rc<RefCell<Output>> {
+        &self.stage_output
     }
 
     pub fn default_stage_output(&self) -> Output {
@@ -342,7 +342,7 @@ impl Show {
         *self.stage_output.borrow_mut() = stage_output;
     }
 
-    fn stage_dmx_output(&self) -> Rc<RefCell<DmxOutput>> {
+    pub fn stage_dmx_output(&self) -> DmxOutput {
         let mut output = DmxOutput::new();
         for (fixture_id, attribute_values) in
             self.stage_output.borrow().values().clone().into_iter()
@@ -372,6 +372,7 @@ impl Show {
                 }
             }
         }
+        output
     }
 
     pub(crate) fn first_free_sequence_id(&self) -> usize {
