@@ -41,7 +41,9 @@ impl Show {
     }
 
     pub(crate) async fn from_showfile(showfile: Showfile) -> Result<Self> {
-        showfile.try_into_show().await
+        let mut show = showfile.try_into_show().await?;
+        show.recalculate_stage_output();
+        Ok(show)
     }
 
     pub fn to_json(self) -> Result<String> {
