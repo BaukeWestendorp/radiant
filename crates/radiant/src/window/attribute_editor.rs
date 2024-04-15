@@ -70,10 +70,13 @@ impl Render for AttributeEditorWindow {
         let feature_group_names = ShowfileManager::show(cx)
             .feature_groups_in_selected_fixtures()
             .iter()
+            .unique_by(|fg| fg.name.clone())
             .map(|fg| fg.name.clone())
             .sorted_by_key(|fg| predefined.iter().position(|p| p == fg))
             .filter(|fg| predefined.iter().any(|p| p == fg))
             .collect();
+
+        dbg!(&feature_group_names);
 
         let feature_group_selector = Selector::new(
             FlexDirection::Column,
