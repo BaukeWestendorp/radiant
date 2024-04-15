@@ -13,7 +13,7 @@ use lazy_static::lazy_static;
 
 use crate::playback_engine::PlaybackEngine;
 use crate::show::{self, AttributeValues, Show};
-use crate::{dmx_protocols, preset};
+use crate::{dmx_protocols, preset, Output};
 
 const FIXTURE_CACHE_PATH: &str = "radiant/fixtures";
 
@@ -187,7 +187,7 @@ impl From<show::Fixture> for Fixture {
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Programmer {
     pub selection: Vec<usize>,
-    pub changes: HashMap<usize, AttributeValues>,
+    pub changes: Output,
 }
 
 impl Programmer {
@@ -297,7 +297,7 @@ impl From<show::Sequence> for Sequence {
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Cue {
     pub label: String,
-    pub changes: HashMap<usize, AttributeValues>,
+    pub changes: Output,
 }
 
 impl From<Cue> for show::Cue {

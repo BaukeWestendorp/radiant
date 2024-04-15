@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::show::{Cue, Executor, Show};
-use crate::AttributeValues;
+use crate::Output;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PlaybackEngine {}
@@ -17,7 +17,7 @@ impl PlaybackEngine {
         Self {}
     }
 
-    pub fn determine_output(&self, show: &Show) -> HashMap<usize, AttributeValues> {
+    pub fn determine_output(&self, show: &Show) -> Output {
         let mut output = HashMap::new();
         for executor in show.executors().iter() {
             if !executor.is_running() {

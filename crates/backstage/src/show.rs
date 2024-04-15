@@ -13,6 +13,8 @@ use crate::playback_engine::PlaybackEngine;
 use crate::showfile::Showfile;
 use crate::{Preset, Presets};
 
+pub type Output = HashMap<usize, AttributeValues>;
+
 #[derive(Default, Clone)]
 pub struct Show {
     pub current_command: Option<Command>,
@@ -23,7 +25,7 @@ pub struct Show {
     pub(crate) data: Data,
     pub(crate) presets: Presets,
     pub(crate) executors: Vec<Executor>,
-    pub(crate) stage_output: HashMap<usize, AttributeValues>,
+    pub(crate) stage_output: Output,
 }
 
 impl Show {
@@ -413,7 +415,7 @@ impl Fixture {
 #[derive(Debug, Clone, Default)]
 pub struct Programmer {
     pub(crate) selection: Vec<usize>,
-    pub(crate) changes: HashMap<usize, AttributeValues>,
+    pub(crate) changes: Output,
 }
 
 impl Programmer {
@@ -468,7 +470,7 @@ pub struct Sequence {
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Cue {
     pub label: String,
-    pub changes: HashMap<usize, AttributeValues>,
+    pub changes: Output,
 }
 
 pub type AttributeValues = HashMap<String, DmxValue>;
