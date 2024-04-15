@@ -153,26 +153,13 @@ impl SheetDelegate for FixtureSheetDelegate {
                 render_value(Some(name))
             }
             FixtureSheetColumnId::Attribute(name) => {
-                let Some(channels) = fixture.dmx_channels_for_attribute(name) else {
-                    return div().into_any_element();
-                };
+                let value = ShowfileManager::show(cx)
+                    .stage_output()
+                    .get(&fixture.id)
+                    .and_then(|output| output.get(name));
 
-                let values = channels
-                    .iter()
-                    .map(|channel| {
-                        ShowfileManager::show(cx)
-                            .stage_output()
-                            .borrow()
-                            .channel(*channel)
-                            .unwrap_or(0)
-                    })
-                    .collect::<Vec<_>>();
-
-                let values_string = values
-                    .iter()
-                    .map(|v| v.to_string())
-                    .collect::<Vec<_>>()
-                    .join(", ");
+                // FIXME: We should add a to_string method to the DmxValue that can handle multiple display formats.
+                let value_string = value.map(|value| format!("{:#.2}", value.to_fraction()));
 
                 let value_in_programmer = ShowfileManager::show(cx)
                     .programmer_changes()
@@ -183,7 +170,7 @@ impl SheetDelegate for FixtureSheetDelegate {
                     background_color = Some(cx.theme().colors().programmer_change);
                 }
 
-                div().child(values_string).into_any_element()
+                div().children(value_string).into_any_element()
             }
         }
         .into_any_element();

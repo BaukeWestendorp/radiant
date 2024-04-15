@@ -1,4 +1,4 @@
-use std::cell::{Cell, RefCell};
+use std::cell::Cell;
 use std::collections::HashMap;
 use std::fs::File;
 use std::rc::Rc;
@@ -23,7 +23,7 @@ pub struct Show {
     pub(crate) data: Data,
     pub(crate) presets: Presets,
     pub(crate) executors: Vec<Executor>,
-    pub(crate) stage_output: Rc<RefCell<DmxOutput>>,
+    pub(crate) stage_output: HashMap<usize, AttributeValues>,
 }
 
 impl Show {
@@ -245,26 +245,14 @@ impl Show {
             .collect()
     }
 
-    pub fn stage_output(&self) -> Rc<RefCell<DmxOutput>> {
-        self.stage_output.clone()
+    pub fn stage_output(&self) -> &HashMap<usize, AttributeValues> {
+        &self.stage_output
     }
 
-    pub fn recalculate_stage_output(&self) {
-        let mut stage_output = self.playback_engine.determine_dmx_output(self);
-        for universe in self.used_universes().iter() {
-            stage_output.add_universe_if_absent(*universe);
-        }
-
-        // Apply programmer changes
-        for (fixture_id, changes) in self.programmer_changes().iter() {
-            let Some(fixture) = self.fixture(*fixture_id) else {
-                continue;
-            };
-
-            update_dmx_output_with_attribute_values(fixture, changes, &mut stage_output);
-        }
-
-        *self.stage_output.borrow_mut() = stage_output;
+    pub fn recalculate_stage_output(&mut self) {
+        let mut stage_output = self.playback_engine.determine_output(self);
+        stage_output.extend(self.programmer_changes().clone());
+        self.stage_output = stage_output;
     }
 
     pub(crate) fn first_free_sequence_id(&self) -> usize {

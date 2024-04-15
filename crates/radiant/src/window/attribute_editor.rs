@@ -76,8 +76,6 @@ impl Render for AttributeEditorWindow {
             .filter(|fg| predefined.iter().any(|p| p == fg))
             .collect();
 
-        dbg!(&feature_group_names);
-
         let feature_group_selector = Selector::new(
             FlexDirection::Column,
             predefined,

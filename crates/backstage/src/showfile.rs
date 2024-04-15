@@ -1,13 +1,12 @@
-use std::cell::{Cell, RefCell};
+use std::cell::Cell;
 use std::collections::HashMap;
 use std::env;
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-use std::rc::Rc;
 
 use anyhow::{anyhow, Error};
-use dmx::{DmxChannel, DmxOutput};
+use dmx::DmxChannel;
 use gdtf::GdtfDescription;
 use gdtf_share::GdtfShare;
 use lazy_static::lazy_static;
@@ -67,7 +66,7 @@ impl Showfile {
                 .map(|executor| executor.into())
                 .collect(),
             current_command: None,
-            stage_output: Rc::new(RefCell::new(DmxOutput::default())),
+            stage_output: HashMap::new(),
         })
     }
 }

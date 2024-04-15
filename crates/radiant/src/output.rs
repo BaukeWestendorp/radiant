@@ -4,8 +4,6 @@ use anyhow::Result;
 use dmx::DmxOutput;
 use gpui::{AppContext, BorrowAppContext, Global};
 
-use crate::showfile::ShowfileManager;
-
 const DMX_OUTPUT_RATE: Duration = Duration::from_millis(1000 / 40);
 
 pub struct DmxOutputManager {
@@ -21,14 +19,14 @@ impl DmxOutputManager {
         cx.spawn(|mut cx| async move {
             loop {
                 cx.update_global(|this: &mut Self, cx| {
-                    ShowfileManager::show(cx).recalculate_stage_output();
-                    let stage_output = ShowfileManager::show(cx).stage_output().borrow().clone();
+                    // ShowfileManager::show(cx).recalculate_stage_output();
+                    // let stage_output = ShowfileManager::show(cx).stage_output().clone();
 
-                    for protocol in this.protocols.iter_mut() {
-                        if let Err(error) = protocol.send_dmx_output(&stage_output) {
-                            log::error!("Failed to send DMX output: {error}");
-                        }
-                    }
+                    // for protocol in this.protocols.iter_mut() {
+                    //     // if let Err(error) = protocol.send_dmx_output(&stage_output) {
+                    //     //     log::error!("Failed to send DMX output: {error}");
+                    //     // }
+                    // }
                 })
                 .ok();
 
