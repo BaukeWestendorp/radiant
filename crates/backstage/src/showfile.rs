@@ -1,5 +1,4 @@
 use std::cell::Cell;
-use std::collections::HashMap;
 use std::env;
 use std::fs::File;
 use std::io::Write;
@@ -66,7 +65,7 @@ impl Showfile {
                 .map(|executor| executor.into())
                 .collect(),
             current_command: None,
-            stage_output: HashMap::new(),
+            stage_output: Output::new(),
         })
     }
 }
@@ -186,7 +185,9 @@ impl From<show::Fixture> for Fixture {
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Programmer {
+    #[serde(default = "Default::default")]
     pub selection: Vec<usize>,
+    #[serde(default = "Default::default")]
     pub changes: Output,
 }
 
@@ -210,7 +211,9 @@ impl From<show::Programmer> for Programmer {
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Data {
+    #[serde(default = "Default::default")]
     pub groups: Vec<Group>,
+    #[serde(default = "Default::default")]
     pub sequences: Vec<Sequence>,
 }
 
@@ -484,9 +487,10 @@ impl From<ArtnetDmxProtocol> for dmx_protocols::ArtnetDmxProtocol {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-
-    use crate::showfile::{Data, Patchlist, Presets, Programmer, Showfile};
+    use crate::{
+        showfile::{Data, Patchlist, Presets, Programmer, Showfile},
+        Output,
+    };
 
     macro_rules! check_showfile {
         ($json:expr, $show_file:expr) => {
@@ -505,7 +509,7 @@ mod tests {
                 },
                 programmer: Programmer {
                     selection: Vec::new(),
-                    changes: HashMap::new(),
+                    changes: Output::new(),
                 },
                 data: Data {
                     groups: Vec::new(),

@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::show::{Cue, Executor, Show};
 use crate::Output;
 
@@ -18,7 +16,7 @@ impl PlaybackEngine {
     }
 
     pub fn determine_output(&self, show: &Show) -> Output {
-        let mut output = HashMap::new();
+        let mut output = Output::new();
         for executor in show.executors().iter() {
             if !executor.is_running() {
                 continue;
@@ -30,7 +28,7 @@ impl PlaybackEngine {
                     current_cue.label
                 );
 
-                for (fixture_id, attribute_values) in current_cue.changes.iter() {
+                for (fixture_id, attribute_values) in current_cue.changes.values.iter() {
                     let values = attribute_values.clone();
 
                     // FIXME: We currently assume the executor fader controls the master.
@@ -43,7 +41,7 @@ impl PlaybackEngine {
                     //     *value = (*value as f32 * master) as u8;
                     // });
 
-                    output.insert(*fixture_id, values);
+                    output.values.insert(*fixture_id, values);
                 }
             }
         }

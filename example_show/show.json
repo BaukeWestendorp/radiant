@@ -294,94 +294,39 @@
     ]
   },
   "programmer": {
-    "selection": [
-      206,
-      207,
-      208,
-      209,
-      210,
-      211,
-      212,
-      213
-    ],
-    "changes": {}
+    "selection": [206, 207, 208, 209, 210, 211, 212, 213]
   },
   "data": {
     "groups": [
       {
         "id": 1,
         "label": "All Wash",
-        "fixtures": [
-          101,
-          102,
-          103,
-          104,
-          105,
-          106,
-          107,
-          108,
-          109,
-          110
-        ]
+        "fixtures": [101, 102, 103, 104, 105, 106, 107, 108, 109, 110]
       },
       {
         "id": 2,
         "label": "Wash Left",
-        "fixtures": [
-          101,
-          102,
-          103,
-          104,
-          105
-        ]
+        "fixtures": [101, 102, 103, 104, 105]
       },
       {
         "id": 3,
         "label": "Wash Right",
-        "fixtures": [
-          106,
-          107,
-          108,
-          109,
-          110
-        ]
+        "fixtures": [106, 107, 108, 109, 110]
       },
       {
         "id": 5,
         "label": "All Front",
-        "fixtures": [
-          301,
-          302,
-          303,
-          304,
-          305,
-          306
-        ]
+        "fixtures": [301, 302, 303, 304, 305, 306]
       },
       {
         "id": 7,
         "label": "All Mac Viper",
-        "fixtures": [
-          201,
-          205,
-          204,
-          203,
-          202
-        ]
+        "fixtures": [201, 205, 204, 203, 202]
       },
       {
         "id": 9,
         "label": "All Mac Quantum",
-        "fixtures": [
-          206,
-          207,
-          208,
-          209,
-          210,
-          211,
-          212,
-          213
-        ]
+        "fixtures": [206, 207, 208, 209, 210, 211, 212, 213]
       }
     ],
     "sequences": [
@@ -392,23 +337,25 @@
           {
             "label": "New Cue",
             "changes": {
-              "306": {
-                "Dimmer": 255
-              },
-              "302": {
-                "Dimmer": 255
-              },
-              "301": {
-                "Dimmer": 255
-              },
-              "303": {
-                "Dimmer": 255
-              },
-              "305": {
-                "Dimmer": 255
-              },
-              "304": {
-                "Dimmer": 255
+              "values": {
+                "306": {
+                  "Dimmer": 255
+                },
+                "302": {
+                  "Dimmer": 255
+                },
+                "301": {
+                  "Dimmer": 255
+                },
+                "303": {
+                  "Dimmer": 255
+                },
+                "305": {
+                  "Dimmer": 255
+                },
+                "304": {
+                  "Dimmer": 255
+                }
               }
             }
           }
@@ -421,25 +368,27 @@
           {
             "label": "New Cue",
             "changes": {
-              "204": {
-                "Shutter1": 32,
-                "Dimmer": 255
-              },
-              "201": {
-                "Shutter1": 32,
-                "Dimmer": 255
-              },
-              "202": {
-                "Shutter1": 32,
-                "Dimmer": 255
-              },
-              "203": {
-                "Shutter1": 32,
-                "Dimmer": 255
-              },
-              "205": {
-                "Dimmer": 255,
-                "Shutter1": 32
+              "values": {
+                "204": {
+                  "Shutter1": 32,
+                  "Dimmer": 255
+                },
+                "201": {
+                  "Shutter1": 32,
+                  "Dimmer": 255
+                },
+                "202": {
+                  "Shutter1": 32,
+                  "Dimmer": 255
+                },
+                "203": {
+                  "Shutter1": 32,
+                  "Dimmer": 255
+                },
+                "205": {
+                  "Dimmer": 255,
+                  "Shutter1": 32
+                }
               }
             }
           }
@@ -452,37 +401,39 @@
           {
             "label": "New Cue",
             "changes": {
-              "210": {
-                "Shutter1": 32,
-                "Dimmer": 255
-              },
-              "208": {
-                "Shutter1": 32,
-                "Dimmer": 255
-              },
-              "207": {
-                "Dimmer": 255,
-                "Shutter1": 32
-              },
-              "206": {
-                "Shutter1": 32,
-                "Dimmer": 255
-              },
-              "213": {
-                "Shutter1": 32,
-                "Dimmer": 255
-              },
-              "211": {
-                "Dimmer": 255,
-                "Shutter1": 32
-              },
-              "212": {
-                "Dimmer": 255,
-                "Shutter1": 32
-              },
-              "209": {
-                "Dimmer": 255,
-                "Shutter1": 32
+              "values": {
+                "210": {
+                  "Shutter1": 32,
+                  "Dimmer": 255
+                },
+                "208": {
+                  "Shutter1": 32,
+                  "Dimmer": 255
+                },
+                "207": {
+                  "Dimmer": 255,
+                  "Shutter1": 32
+                },
+                "206": {
+                  "Shutter1": 32,
+                  "Dimmer": 255
+                },
+                "213": {
+                  "Shutter1": 32,
+                  "Dimmer": 255
+                },
+                "211": {
+                  "Dimmer": 255,
+                  "Shutter1": 32
+                },
+                "212": {
+                  "Dimmer": 255,
+                  "Shutter1": 32
+                },
+                "209": {
+                  "Dimmer": 255,
+                  "Shutter1": 32
+                }
               }
             }
           }
@@ -495,45 +446,47 @@
           {
             "label": "New Cue",
             "changes": {
-              "102": {
-                "Shutter1": 32,
-                "Dimmer": 255
-              },
-              "109": {
-                "Dimmer": 255,
-                "Shutter1": 32
-              },
-              "108": {
-                "Shutter1": 32,
-                "Dimmer": 255
-              },
-              "107": {
-                "Shutter1": 32,
-                "Dimmer": 255
-              },
-              "104": {
-                "Shutter1": 32,
-                "Dimmer": 255
-              },
-              "103": {
-                "Shutter1": 32,
-                "Dimmer": 255
-              },
-              "110": {
-                "Dimmer": 255,
-                "Shutter1": 32
-              },
-              "101": {
-                "Dimmer": 255,
-                "Shutter1": 32
-              },
-              "105": {
-                "Dimmer": 255,
-                "Shutter1": 32
-              },
-              "106": {
-                "Dimmer": 255,
-                "Shutter1": 32
+              "values": {
+                "102": {
+                  "Shutter1": 32,
+                  "Dimmer": 255
+                },
+                "109": {
+                  "Dimmer": 255,
+                  "Shutter1": 32
+                },
+                "108": {
+                  "Shutter1": 32,
+                  "Dimmer": 255
+                },
+                "107": {
+                  "Shutter1": 32,
+                  "Dimmer": 255
+                },
+                "104": {
+                  "Shutter1": 32,
+                  "Dimmer": 255
+                },
+                "103": {
+                  "Shutter1": 32,
+                  "Dimmer": 255
+                },
+                "110": {
+                  "Dimmer": 255,
+                  "Shutter1": 32
+                },
+                "101": {
+                  "Dimmer": 255,
+                  "Shutter1": 32
+                },
+                "105": {
+                  "Dimmer": 255,
+                  "Shutter1": 32
+                },
+                "106": {
+                  "Dimmer": 255,
+                  "Shutter1": 32
+                }
               }
             }
           }
@@ -546,293 +499,299 @@
           {
             "label": "New Cue",
             "changes": {
-              "213": {
-                "ColorSub_C": 127,
-                "ColorSub_Y": 255,
-                "ColorSub_M": 0,
-                "Dimmer": 127
-              },
-              "109": {
-                "ColorSub_Y": 255,
-                "ColorSub_M": 127,
-                "ColorSub_C": 0
-              },
-              "103": {
-                "ColorSub_C": 0,
-                "ColorSub_M": 127,
-                "ColorSub_Y": 255
-              },
-              "101": {
-                "ColorSub_M": 127,
-                "ColorSub_C": 0,
-                "ColorSub_Y": 255
-              },
-              "108": {
-                "ColorSub_Y": 255,
-                "ColorSub_M": 127,
-                "ColorSub_C": 0
-              },
-              "107": {
-                "ColorSub_C": 0,
-                "ColorSub_Y": 255,
-                "ColorSub_M": 127
-              },
-              "212": {
-                "ColorSub_Y": 255,
-                "ColorSub_C": 127,
-                "Dimmer": 127,
-                "ColorSub_M": 0
-              },
-              "110": {
-                "ColorSub_Y": 255,
-                "ColorSub_C": 0,
-                "ColorSub_M": 127
-              },
-              "211": {
-                "ColorSub_C": 127,
-                "ColorSub_M": 0,
-                "Dimmer": 127,
-                "ColorSub_Y": 255
-              },
-              "105": {
-                "ColorSub_Y": 255,
-                "ColorSub_C": 0,
-                "ColorSub_M": 127
-              },
-              "209": {
-                "ColorSub_C": 127,
-                "ColorSub_Y": 255,
-                "Dimmer": 127,
-                "ColorSub_M": 0
-              },
-              "207": {
-                "ColorSub_C": 127,
-                "Dimmer": 127,
-                "ColorSub_M": 0,
-                "ColorSub_Y": 255
-              },
-              "104": {
-                "ColorSub_C": 0,
-                "ColorSub_Y": 255,
-                "ColorSub_M": 127
-              },
-              "206": {
-                "Dimmer": 127,
-                "ColorSub_C": 127,
-                "ColorSub_M": 0,
-                "ColorSub_Y": 255
-              },
-              "208": {
-                "ColorSub_C": 127,
-                "Dimmer": 127,
-                "ColorSub_Y": 255,
-                "ColorSub_M": 0
-              },
-              "210": {
-                "ColorSub_C": 127,
-                "ColorSub_Y": 255,
-                "ColorSub_M": 0,
-                "Dimmer": 127
-              },
-              "106": {
-                "ColorSub_Y": 255,
-                "ColorSub_M": 127,
-                "ColorSub_C": 0
-              },
-              "102": {
-                "ColorSub_C": 0,
-                "ColorSub_Y": 255,
-                "ColorSub_M": 127
+              "values": {
+                "213": {
+                  "ColorSub_C": 127,
+                  "ColorSub_Y": 255,
+                  "ColorSub_M": 0,
+                  "Dimmer": 127
+                },
+                "109": {
+                  "ColorSub_Y": 255,
+                  "ColorSub_M": 127,
+                  "ColorSub_C": 0
+                },
+                "103": {
+                  "ColorSub_C": 0,
+                  "ColorSub_M": 127,
+                  "ColorSub_Y": 255
+                },
+                "101": {
+                  "ColorSub_M": 127,
+                  "ColorSub_C": 0,
+                  "ColorSub_Y": 255
+                },
+                "108": {
+                  "ColorSub_Y": 255,
+                  "ColorSub_M": 127,
+                  "ColorSub_C": 0
+                },
+                "107": {
+                  "ColorSub_C": 0,
+                  "ColorSub_Y": 255,
+                  "ColorSub_M": 127
+                },
+                "212": {
+                  "ColorSub_Y": 255,
+                  "ColorSub_C": 127,
+                  "Dimmer": 127,
+                  "ColorSub_M": 0
+                },
+                "110": {
+                  "ColorSub_Y": 255,
+                  "ColorSub_C": 0,
+                  "ColorSub_M": 127
+                },
+                "211": {
+                  "ColorSub_C": 127,
+                  "ColorSub_M": 0,
+                  "Dimmer": 127,
+                  "ColorSub_Y": 255
+                },
+                "105": {
+                  "ColorSub_Y": 255,
+                  "ColorSub_C": 0,
+                  "ColorSub_M": 127
+                },
+                "209": {
+                  "ColorSub_C": 127,
+                  "ColorSub_Y": 255,
+                  "Dimmer": 127,
+                  "ColorSub_M": 0
+                },
+                "207": {
+                  "ColorSub_C": 127,
+                  "Dimmer": 127,
+                  "ColorSub_M": 0,
+                  "ColorSub_Y": 255
+                },
+                "104": {
+                  "ColorSub_C": 0,
+                  "ColorSub_Y": 255,
+                  "ColorSub_M": 127
+                },
+                "206": {
+                  "Dimmer": 127,
+                  "ColorSub_C": 127,
+                  "ColorSub_M": 0,
+                  "ColorSub_Y": 255
+                },
+                "208": {
+                  "ColorSub_C": 127,
+                  "Dimmer": 127,
+                  "ColorSub_Y": 255,
+                  "ColorSub_M": 0
+                },
+                "210": {
+                  "ColorSub_C": 127,
+                  "ColorSub_Y": 255,
+                  "ColorSub_M": 0,
+                  "Dimmer": 127
+                },
+                "106": {
+                  "ColorSub_Y": 255,
+                  "ColorSub_M": 127,
+                  "ColorSub_C": 0
+                },
+                "102": {
+                  "ColorSub_C": 0,
+                  "ColorSub_Y": 255,
+                  "ColorSub_M": 127
+                }
               }
             }
           },
           {
             "label": "New Cue",
             "changes": {
-              "105": {
-                "ColorSub_C": 255,
-                "ColorSub_Y": 0,
-                "ColorSub_M": 0
-              },
-              "103": {
-                "ColorSub_Y": 0,
-                "ColorSub_M": 0,
-                "ColorSub_C": 255
-              },
-              "208": {
-                "ColorSub_M": 127,
-                "ColorSub_C": 0,
-                "ColorSub_Y": 255
-              },
-              "108": {
-                "ColorSub_Y": 0,
-                "ColorSub_C": 255,
-                "ColorSub_M": 0
-              },
-              "107": {
-                "ColorSub_C": 255,
-                "ColorSub_M": 0,
-                "ColorSub_Y": 0
-              },
-              "210": {
-                "ColorSub_M": 127,
-                "ColorSub_Y": 255,
-                "ColorSub_C": 0
-              },
-              "207": {
-                "ColorSub_C": 0,
-                "ColorSub_Y": 255,
-                "ColorSub_M": 127
-              },
-              "206": {
-                "ColorSub_C": 0,
-                "ColorSub_M": 127,
-                "ColorSub_Y": 255
-              },
-              "104": {
-                "ColorSub_M": 0,
-                "ColorSub_C": 255,
-                "ColorSub_Y": 0
-              },
-              "110": {
-                "ColorSub_Y": 0,
-                "ColorSub_C": 255,
-                "ColorSub_M": 0
-              },
-              "212": {
-                "ColorSub_Y": 255,
-                "ColorSub_C": 0,
-                "ColorSub_M": 127
-              },
-              "109": {
-                "ColorSub_C": 255,
-                "ColorSub_M": 0,
-                "ColorSub_Y": 0
-              },
-              "209": {
-                "ColorSub_Y": 255,
-                "ColorSub_C": 0,
-                "ColorSub_M": 127
-              },
-              "211": {
-                "ColorSub_C": 0,
-                "ColorSub_M": 127,
-                "ColorSub_Y": 255
-              },
-              "102": {
-                "ColorSub_C": 255,
-                "ColorSub_M": 0,
-                "ColorSub_Y": 0
-              },
-              "101": {
-                "ColorSub_Y": 0,
-                "ColorSub_C": 255,
-                "ColorSub_M": 0
-              },
-              "106": {
-                "ColorSub_Y": 0,
-                "ColorSub_C": 255,
-                "ColorSub_M": 0
-              },
-              "213": {
-                "ColorSub_M": 127,
-                "ColorSub_C": 0,
-                "ColorSub_Y": 255
+              "values": {
+                "105": {
+                  "ColorSub_C": 255,
+                  "ColorSub_Y": 0,
+                  "ColorSub_M": 0
+                },
+                "103": {
+                  "ColorSub_Y": 0,
+                  "ColorSub_M": 0,
+                  "ColorSub_C": 255
+                },
+                "208": {
+                  "ColorSub_M": 127,
+                  "ColorSub_C": 0,
+                  "ColorSub_Y": 255
+                },
+                "108": {
+                  "ColorSub_Y": 0,
+                  "ColorSub_C": 255,
+                  "ColorSub_M": 0
+                },
+                "107": {
+                  "ColorSub_C": 255,
+                  "ColorSub_M": 0,
+                  "ColorSub_Y": 0
+                },
+                "210": {
+                  "ColorSub_M": 127,
+                  "ColorSub_Y": 255,
+                  "ColorSub_C": 0
+                },
+                "207": {
+                  "ColorSub_C": 0,
+                  "ColorSub_Y": 255,
+                  "ColorSub_M": 127
+                },
+                "206": {
+                  "ColorSub_C": 0,
+                  "ColorSub_M": 127,
+                  "ColorSub_Y": 255
+                },
+                "104": {
+                  "ColorSub_M": 0,
+                  "ColorSub_C": 255,
+                  "ColorSub_Y": 0
+                },
+                "110": {
+                  "ColorSub_Y": 0,
+                  "ColorSub_C": 255,
+                  "ColorSub_M": 0
+                },
+                "212": {
+                  "ColorSub_Y": 255,
+                  "ColorSub_C": 0,
+                  "ColorSub_M": 127
+                },
+                "109": {
+                  "ColorSub_C": 255,
+                  "ColorSub_M": 0,
+                  "ColorSub_Y": 0
+                },
+                "209": {
+                  "ColorSub_Y": 255,
+                  "ColorSub_C": 0,
+                  "ColorSub_M": 127
+                },
+                "211": {
+                  "ColorSub_C": 0,
+                  "ColorSub_M": 127,
+                  "ColorSub_Y": 255
+                },
+                "102": {
+                  "ColorSub_C": 255,
+                  "ColorSub_M": 0,
+                  "ColorSub_Y": 0
+                },
+                "101": {
+                  "ColorSub_Y": 0,
+                  "ColorSub_C": 255,
+                  "ColorSub_M": 0
+                },
+                "106": {
+                  "ColorSub_Y": 0,
+                  "ColorSub_C": 255,
+                  "ColorSub_M": 0
+                },
+                "213": {
+                  "ColorSub_M": 127,
+                  "ColorSub_C": 0,
+                  "ColorSub_Y": 255
+                }
               }
             }
           },
           {
             "label": "New Cue",
             "changes": {
-              "209": {
-                "ColorSub_M": 127,
-                "ColorSub_Y": 255,
-                "ColorSub_C": 0
-              },
-              "208": {
-                "ColorSub_Y": 255,
-                "ColorSub_C": 0,
-                "ColorSub_M": 127
-              },
-              "104": {
-                "ColorSub_M": 255,
-                "ColorSub_Y": 0,
-                "ColorSub_C": 127
-              },
-              "211": {
-                "ColorSub_C": 0,
-                "ColorSub_M": 127,
-                "ColorSub_Y": 255
-              },
-              "103": {
-                "ColorSub_M": 255,
-                "ColorSub_C": 127,
-                "ColorSub_Y": 0
-              },
-              "101": {
-                "ColorSub_M": 255,
-                "ColorSub_Y": 0,
-                "ColorSub_C": 127
-              },
-              "207": {
-                "ColorSub_M": 127,
-                "ColorSub_C": 0,
-                "ColorSub_Y": 255
-              },
-              "206": {
-                "ColorSub_C": 0,
-                "ColorSub_M": 127,
-                "ColorSub_Y": 255
-              },
-              "105": {
-                "ColorSub_C": 127,
-                "ColorSub_M": 255,
-                "ColorSub_Y": 0
-              },
-              "110": {
-                "ColorSub_C": 127,
-                "ColorSub_M": 255,
-                "ColorSub_Y": 0
-              },
-              "107": {
-                "ColorSub_C": 127,
-                "ColorSub_Y": 0,
-                "ColorSub_M": 255
-              },
-              "212": {
-                "ColorSub_C": 0,
-                "ColorSub_M": 127,
-                "ColorSub_Y": 255
-              },
-              "106": {
-                "ColorSub_Y": 0,
-                "ColorSub_C": 127,
-                "ColorSub_M": 255
-              },
-              "102": {
-                "ColorSub_M": 255,
-                "ColorSub_C": 127,
-                "ColorSub_Y": 0
-              },
-              "108": {
-                "ColorSub_M": 255,
-                "ColorSub_Y": 0,
-                "ColorSub_C": 127
-              },
-              "213": {
-                "ColorSub_M": 127,
-                "ColorSub_C": 0,
-                "ColorSub_Y": 255
-              },
-              "210": {
-                "ColorSub_Y": 255,
-                "ColorSub_C": 0,
-                "ColorSub_M": 127
-              },
-              "109": {
-                "ColorSub_M": 255,
-                "ColorSub_C": 127,
-                "ColorSub_Y": 0
+              "values": {
+                "209": {
+                  "ColorSub_M": 127,
+                  "ColorSub_Y": 255,
+                  "ColorSub_C": 0
+                },
+                "208": {
+                  "ColorSub_Y": 255,
+                  "ColorSub_C": 0,
+                  "ColorSub_M": 127
+                },
+                "104": {
+                  "ColorSub_M": 255,
+                  "ColorSub_Y": 0,
+                  "ColorSub_C": 127
+                },
+                "211": {
+                  "ColorSub_C": 0,
+                  "ColorSub_M": 127,
+                  "ColorSub_Y": 255
+                },
+                "103": {
+                  "ColorSub_M": 255,
+                  "ColorSub_C": 127,
+                  "ColorSub_Y": 0
+                },
+                "101": {
+                  "ColorSub_M": 255,
+                  "ColorSub_Y": 0,
+                  "ColorSub_C": 127
+                },
+                "207": {
+                  "ColorSub_M": 127,
+                  "ColorSub_C": 0,
+                  "ColorSub_Y": 255
+                },
+                "206": {
+                  "ColorSub_C": 0,
+                  "ColorSub_M": 127,
+                  "ColorSub_Y": 255
+                },
+                "105": {
+                  "ColorSub_C": 127,
+                  "ColorSub_M": 255,
+                  "ColorSub_Y": 0
+                },
+                "110": {
+                  "ColorSub_C": 127,
+                  "ColorSub_M": 255,
+                  "ColorSub_Y": 0
+                },
+                "107": {
+                  "ColorSub_C": 127,
+                  "ColorSub_Y": 0,
+                  "ColorSub_M": 255
+                },
+                "212": {
+                  "ColorSub_C": 0,
+                  "ColorSub_M": 127,
+                  "ColorSub_Y": 255
+                },
+                "106": {
+                  "ColorSub_Y": 0,
+                  "ColorSub_C": 127,
+                  "ColorSub_M": 255
+                },
+                "102": {
+                  "ColorSub_M": 255,
+                  "ColorSub_C": 127,
+                  "ColorSub_Y": 0
+                },
+                "108": {
+                  "ColorSub_M": 255,
+                  "ColorSub_Y": 0,
+                  "ColorSub_C": 127
+                },
+                "213": {
+                  "ColorSub_M": 127,
+                  "ColorSub_C": 0,
+                  "ColorSub_Y": 255
+                },
+                "210": {
+                  "ColorSub_Y": 255,
+                  "ColorSub_C": 0,
+                  "ColorSub_M": 127
+                },
+                "109": {
+                  "ColorSub_M": 255,
+                  "ColorSub_C": 127,
+                  "ColorSub_Y": 0
+                }
               }
             }
           }

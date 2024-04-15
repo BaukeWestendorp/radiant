@@ -107,34 +107,38 @@
           {
             "label": "Cue 1",
             "changes": {
-              "1": {
-                "ColorAdd_R": 127,
-                "ColorAdd_G": 0,
-                "ColorAdd_B": 127,
-                "Dimmer": 127
-              },
-              "2": {
-                "ColorAdd_R": 0,
-                "ColorAdd_G": 127,
-                "ColorAdd_B": 0,
-                "Dimmer": 64
+              "values": {
+                "1": {
+                  "ColorAdd_R": 127,
+                  "ColorAdd_G": 0,
+                  "ColorAdd_B": 127,
+                  "Dimmer": 127
+                },
+                "2": {
+                  "ColorAdd_R": 0,
+                  "ColorAdd_G": 127,
+                  "ColorAdd_B": 0,
+                  "Dimmer": 64
+                }
               }
             }
           },
           {
             "label": "Cue 1",
             "changes": {
-              "1": {
-                "ColorAdd_R": 127,
-                "ColorAdd_G": 0,
-                "ColorAdd_B": 127,
-                "Dimmer": 127
-              },
-              "2": {
-                "ColorAdd_R": 0,
-                "ColorAdd_G": 127,
-                "ColorAdd_B": 0,
-                "Dimmer": 64
+              "values": {
+                "1": {
+                  "ColorAdd_R": 127,
+                  "ColorAdd_G": 0,
+                  "ColorAdd_B": 127,
+                  "Dimmer": 127
+                },
+                "2": {
+                  "ColorAdd_R": 0,
+                  "ColorAdd_G": 127,
+                  "ColorAdd_B": 0,
+                  "Dimmer": 64
+                }
               }
             }
           }
@@ -147,17 +151,19 @@
           {
             "label": "Cue 1",
             "changes": {
-              "1": {
-                "ColorAdd_R": 127,
-                "ColorAdd_G": 0,
-                "ColorAdd_B": 127,
-                "Dimmer": 127
-              },
-              "2": {
-                "ColorAdd_R": 0,
-                "ColorAdd_G": 127,
-                "ColorAdd_B": 0,
-                "Dimmer": 64
+              "values": {
+                "1": {
+                  "ColorAdd_R": 127,
+                  "ColorAdd_G": 0,
+                  "ColorAdd_B": 127,
+                  "Dimmer": 127
+                },
+                "2": {
+                  "ColorAdd_R": 0,
+                  "ColorAdd_G": 127,
+                  "ColorAdd_B": 0,
+                  "Dimmer": 64
+                }
               }
             }
           }

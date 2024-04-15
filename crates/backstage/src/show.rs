@@ -13,7 +13,46 @@ use crate::playback_engine::PlaybackEngine;
 use crate::showfile::Showfile;
 use crate::{Preset, Presets};
 
-pub type Output = HashMap<usize, AttributeValues>;
+#[derive(Debug, Clone, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Output {
+    pub values: HashMap<usize, AttributeValues>,
+}
+
+impl Output {
+    pub fn new() -> Self {
+        Self {
+            values: HashMap::new(),
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.values.is_empty()
+    }
+
+    pub fn set(&mut self, fixture_id: &usize, attribute_name: &str, value: DmxValue) {
+        if let Some(attribute_values) = self.values.get_mut(fixture_id) {
+            attribute_values.insert(attribute_name.to_string(), value);
+        } else {
+            let mut attribute_values = AttributeValues::new();
+            attribute_values.insert(attribute_name.to_string(), value);
+            self.values.insert(*fixture_id, attribute_values);
+        }
+    }
+
+    pub fn attribute_value(&self, fixture_id: &usize, attribute_name: &str) -> Option<&DmxValue> {
+        self.values
+            .get(fixture_id)
+            .and_then(|values| values.get(attribute_name))
+    }
+
+    pub fn combine(&mut self, other: Output) {
+        for (fixture_id, attribute_values) in other.values {
+            for (attribute_name, value) in attribute_values {
+                self.set(&fixture_id, &attribute_name, value);
+            }
+        }
+    }
+}
 
 #[derive(Default, Clone)]
 pub struct Show {
@@ -89,6 +128,7 @@ impl Show {
         attribute_values: &HashMap<String, DmxValue>,
     ) -> bool {
         self.programmer_changes()
+            .values
             .iter()
             .any(|(fixture_id, changes)| {
                 let fixture = self.fixture(*fixture_id).unwrap();
@@ -152,7 +192,7 @@ impl Show {
         &self.programmer.selection
     }
 
-    pub fn programmer_changes(&self) -> &HashMap<usize, AttributeValues> {
+    pub fn programmer_changes(&self) -> &Output {
         &self.programmer.changes
     }
 
@@ -249,13 +289,24 @@ impl Show {
             .collect()
     }
 
-    pub fn stage_output(&self) -> &HashMap<usize, AttributeValues> {
+    pub fn stage_output(&self) -> &Output {
         &self.stage_output
     }
 
+    pub fn default_stage_output(&self) -> Output {
+        let mut output = Output::new();
+        for fixture in self.fixtures().iter() {
+            for attribute in fixture.attributes().iter() {
+                output.set(&fixture.id, &attribute.name, DmxValue::new(0));
+            }
+        }
+        output
+    }
+
     pub fn recalculate_stage_output(&mut self) {
-        let mut stage_output = self.playback_engine.determine_output(self);
-        stage_output.extend(self.programmer_changes().clone());
+        let mut stage_output = self.default_stage_output();
+        stage_output.combine(self.playback_engine.determine_output(self));
+        stage_output.combine(self.programmer_changes().clone());
         self.stage_output = stage_output;
     }
 
@@ -426,14 +477,7 @@ impl Programmer {
         fixture_id: usize,
         attribute_values: AttributeValues,
     ) {
-        let Some(changes) = self.changes.get_mut(&fixture_id) else {
-            self.changes.insert(fixture_id, attribute_values);
-            return;
-        };
-
-        for (attribute_name, attribute_value) in attribute_values.iter() {
-            changes.insert(attribute_name.clone(), attribute_value.clone());
-        }
+        self.changes.values.insert(fixture_id, attribute_values);
     }
 
     pub fn has_changes(&self) -> bool {
@@ -441,7 +485,7 @@ impl Programmer {
     }
 
     pub fn clear_changes(&mut self) {
-        self.changes.clear();
+        self.changes.values.clear();
     }
 
     pub fn clear_selection(&mut self) {

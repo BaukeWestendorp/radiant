@@ -155,6 +155,7 @@ impl SheetDelegate for FixtureSheetDelegate {
             FixtureSheetColumnId::Attribute(name) => {
                 let value = ShowfileManager::show(cx)
                     .stage_output()
+                    .values
                     .get(&fixture.id)
                     .and_then(|output| output.get(name));
 
@@ -163,6 +164,7 @@ impl SheetDelegate for FixtureSheetDelegate {
 
                 let value_in_programmer = ShowfileManager::show(cx)
                     .programmer_changes()
+                    .values
                     .get(&fixture.id)
                     .and_then(|attribute_changes| attribute_changes.get(name));
 

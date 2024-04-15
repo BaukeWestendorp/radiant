@@ -291,7 +291,7 @@ impl Show {
         match command {
             Command::Clear => {
                 if self.programmer.selection.is_empty() {
-                    self.programmer.changes.clear();
+                    self.programmer.changes.values.clear();
                 } else {
                     self.programmer.selection.clear();
                 }
@@ -475,8 +475,8 @@ impl Show {
                             changes,
                         });
                     } else {
-                        for (fixture_id, attribute_values) in changes.into_iter() {
-                            match sequence.cues[*cue_ix].changes.get_mut(&fixture_id) {
+                        for (fixture_id, attribute_values) in changes.values.into_iter() {
+                            match sequence.cues[*cue_ix].changes.values.get_mut(&fixture_id) {
                                 Some(cue_changes) => {
                                     for (attribute_name, attribute_value) in
                                         attribute_values.into_iter()
@@ -487,6 +487,7 @@ impl Show {
                                 None => {
                                     sequence.cues[*cue_ix]
                                         .changes
+                                        .values
                                         .insert(fixture_id, attribute_values);
                                 }
                             }
