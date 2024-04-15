@@ -1,6 +1,7 @@
 use std::rc::Rc;
+use std::str::FromStr;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Error, Result};
 
 use crate::parse_name;
 use crate::raw::{RawAttribute, RawAttributeDefinitions, RawFeature, RawFeatureGroup};
@@ -73,8 +74,9 @@ pub struct Attribute {
     pub pretty_name: Option<String>,
     // FIXME: pub activation_group: Option<Rc<ActivationGroup>>,
     pub feature: Rc<Feature>,
-    // FIXME: pub main_attribute: Option<Rc<Attribute>>,
-    // FIXME: pub physical_unit: PhysicalUnit,
+    // FIXME: We should make this an Rc<Attribute>, but we haven't parsed all attributes yet.
+    pub main_attribute: Option<String>,
+    pub physical_unit: PhysicalUnit,
     // FIXME: pub color: ColorCie,
 
     // HELPERS:
@@ -107,7 +109,69 @@ impl Attribute {
             name: parse_name(raw.name)?,
             pretty_name: raw.pretty,
             feature,
+            main_attribute: raw.main_attribute,
+            physical_unit: raw.physical_unit.parse()?,
+
             feature_group,
         })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+pub enum PhysicalUnit {
+    #[default]
+    None,
+    Percent,
+    Length,
+    Mass,
+    Time,
+    Temperature,
+    LuminousIntensity,
+    Angle,
+    Force,
+    Frequency,
+    Current,
+    Voltage,
+    Power,
+    Energy,
+    Area,
+    Volume,
+    Speed,
+    Acceleration,
+    AngularSpeed,
+    AngularAcceleration,
+    WaveLength,
+    ColorComponent,
+}
+
+impl FromStr for PhysicalUnit {
+    type Err = Error;
+
+    fn from_str(s: &str) -> std::prelude::v1::Result<Self, Self::Err> {
+        match s.to_ascii_lowercase().as_str() {
+            "none" => Ok(Self::None),
+            "percent" => Ok(Self::Percent),
+            "length" => Ok(Self::Length),
+            "mass" => Ok(Self::Mass),
+            "time" => Ok(Self::Time),
+            "temperature" => Ok(Self::Temperature),
+            "luminousintensity" => Ok(Self::LuminousIntensity),
+            "angle" => Ok(Self::Angle),
+            "force" => Ok(Self::Force),
+            "frequency" => Ok(Self::Frequency),
+            "current" => Ok(Self::Current),
+            "voltage" => Ok(Self::Voltage),
+            "power" => Ok(Self::Power),
+            "energy" => Ok(Self::Energy),
+            "area" => Ok(Self::Area),
+            "volume" => Ok(Self::Volume),
+            "speed" => Ok(Self::Speed),
+            "acceleration" => Ok(Self::Acceleration),
+            "angularspeed" => Ok(Self::AngularSpeed),
+            "angularacceleration" => Ok(Self::AngularAcceleration),
+            "wavelength" => Ok(Self::WaveLength),
+            "colorcomponent" => Ok(Self::ColorComponent),
+            _ => Err(anyhow!("Unknown physical unit: {}", s)),
+        }
     }
 }
