@@ -153,19 +153,15 @@ impl SheetDelegate for FixtureSheetDelegate {
                 render_value(Some(name))
             }
             FixtureSheetColumnId::Attribute(name) => {
-                let value = ShowfileManager::show(cx)
-                    .stage_output()
-                    .values
-                    .get(&fixture.id)
-                    .and_then(|output| output.get(name));
+                let stage_output = ShowfileManager::show(cx).stage_output();
+                let value = stage_output.borrow().get(&fixture.id, name).cloned();
 
                 // FIXME: We should add a to_string method to the DmxValue that can handle multiple display formats.
                 let value_string = value.map(|value| format!("{:#.2}", value.to_fraction()));
 
                 let value_in_programmer = ShowfileManager::show(cx)
                     .programmer_changes()
-                    .values
-                    .get(&fixture.id)
+                    .get_changes_for_fixture(&fixture.id)
                     .and_then(|attribute_changes| attribute_changes.get(name));
 
                 if value_in_programmer.is_some() {

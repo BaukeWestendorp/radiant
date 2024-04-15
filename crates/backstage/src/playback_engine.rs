@@ -28,7 +28,7 @@ impl PlaybackEngine {
                     current_cue.label
                 );
 
-                for (fixture_id, attribute_values) in current_cue.changes.values.iter() {
+                for (fixture_id, attribute_values) in current_cue.changes.values().iter() {
                     let values = attribute_values.clone();
 
                     // FIXME: We currently assume the executor fader controls the master.
@@ -41,7 +41,9 @@ impl PlaybackEngine {
                     //     *value = (*value as f32 * master) as u8;
                     // });
 
-                    output.values.insert(*fixture_id, values);
+                    for (attribute_name, value) in values.iter() {
+                        output.set(&fixture_id, attribute_name, *value)
+                    }
                 }
             }
         }

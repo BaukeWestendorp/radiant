@@ -19,14 +19,17 @@ impl DmxOutputManager {
         cx.spawn(|mut cx| async move {
             loop {
                 cx.update_global(|this: &mut Self, cx| {
-                    // ShowfileManager::show(cx).recalculate_stage_output();
-                    // let stage_output = ShowfileManager::show(cx).stage_output().clone();
+                    ShowfileManager::show(cx).recalculate_stage_output();
+                    let stage_dmx_output = ShowfileManager::show(cx)
+                        .stage_dmx_output()
+                        .borrow()
+                        .clone();
 
-                    // for protocol in this.protocols.iter_mut() {
-                    //     // if let Err(error) = protocol.send_dmx_output(&stage_output) {
-                    //     //     log::error!("Failed to send DMX output: {error}");
-                    //     // }
-                    // }
+                    for protocol in this.protocols.iter_mut() {
+                        if let Err(error) = protocol.send_dmx_output(&stage_dmx_output) {
+                            log::error!("Failed to send DMX output: {error}");
+                        }
+                    }
                 })
                 .ok();
 
@@ -89,7 +92,7 @@ pub mod artnet {
     impl DmxProtocol for ArtnetDmxProtocol {
         fn send_dmx_output(&mut self, output: &DmxOutput) -> anyhow::Result<()> {
             let Some(universe) = output.universe(self.local_universe) else {
-                log::trace!(
+                log::debug!(
                     "Failed to get universe with id {} while trying to output DMX",
                     self.local_universe
                 );

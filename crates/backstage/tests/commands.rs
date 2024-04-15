@@ -46,7 +46,10 @@ expect_ok!(clear, |show| {
     assert!(show.is_fixture_selected(1));
 
     show.execute_command_str("select preset.color 1").unwrap();
-    let fixture_changes = show.programmer_changes().values.get(&1).unwrap();
+    let fixture_changes = show
+        .programmer_changes()
+        .get_changes_for_fixture(&1)
+        .unwrap();
     assert_eq!(
         fixture_changes.get("ColorAdd_R").unwrap(),
         &DmxValue::new(255)
@@ -62,7 +65,7 @@ expect_ok!(clear, |show| {
 
     show.execute_command_str("clear").unwrap();
     assert!(show.selected_fixtures().is_empty());
-    assert!(!show.programmer_changes().values.is_empty());
+    assert!(!show.programmer_changes().is_empty());
 
     show.execute_command_str("clear").unwrap();
     assert!(show.programmer_changes().is_empty());
@@ -85,8 +88,7 @@ expect_ok!(select_preset_beam, |show| {
     show.execute_command_str("select preset.beam 1").unwrap();
     let attributes = show
         .programmer_changes()
-        .values
-        .get(&show.group(1).unwrap().fixtures[0])
+        .get_changes_for_fixture(&show.group(1).unwrap().fixtures[0])
         .unwrap();
     assert_eq!(attributes.get("Dimmer").unwrap(), &DmxValue::new(127));
 });
@@ -97,8 +99,7 @@ expect_ok!(select_preset_color, |show| {
     show.execute_command_str("select preset.color 1").unwrap();
     let attributes = show
         .programmer_changes()
-        .values
-        .get(&show.group(1).unwrap().fixtures[0])
+        .get_changes_for_fixture(&show.group(1).unwrap().fixtures[0])
         .unwrap();
     assert_eq!(attributes.get("ColorAdd_R").unwrap(), &DmxValue::new(255));
     assert_eq!(attributes.get("ColorAdd_G").unwrap(), &DmxValue::new(0));
@@ -111,8 +112,7 @@ expect_ok!(select_preset_dimmer, |show| {
     show.execute_command_str("select preset.dimmer 1").unwrap();
     let attributes = show
         .programmer_changes()
-        .values
-        .get(&show.group(1).unwrap().fixtures[0])
+        .get_changes_for_fixture(&show.group(1).unwrap().fixtures[0])
         .unwrap();
     assert_eq!(attributes.get("Dimmer").unwrap(), &DmxValue::new(127));
 });
@@ -123,8 +123,7 @@ expect_ok!(select_preset_focus, |show| {
     show.execute_command_str("select preset.focus 1").unwrap();
     let attributes = show
         .programmer_changes()
-        .values
-        .get(&show.group(1).unwrap().fixtures[0])
+        .get_changes_for_fixture(&show.group(1).unwrap().fixtures[0])
         .unwrap();
     assert_eq!(attributes.get("Dimmer").unwrap(), &DmxValue::new(127));
 });
@@ -135,8 +134,7 @@ expect_ok!(select_preset_gobo, |show| {
     show.execute_command_str("select preset.gobo 1").unwrap();
     let attributes = show
         .programmer_changes()
-        .values
-        .get(&show.group(1).unwrap().fixtures[0])
+        .get_changes_for_fixture(&show.group(1).unwrap().fixtures[0])
         .unwrap();
     assert_eq!(attributes.get("Dimmer").unwrap(), &DmxValue::new(127));
 });
@@ -148,8 +146,7 @@ expect_ok!(select_preset_position, |show| {
         .unwrap();
     let attributes = show
         .programmer_changes()
-        .values
-        .get(&show.group(1).unwrap().fixtures[0])
+        .get_changes_for_fixture(&show.group(1).unwrap().fixtures[0])
         .unwrap();
     assert_eq!(attributes.get("Dimmer").unwrap(), &DmxValue::new(32768));
 });
@@ -160,8 +157,7 @@ expect_ok!(select_preset_all, |show| {
     show.execute_command_str("select preset.all 1").unwrap();
     let attributes = show
         .programmer_changes()
-        .values
-        .get(&show.group(1).unwrap().fixtures[0])
+        .get_changes_for_fixture(&show.group(1).unwrap().fixtures[0])
         .unwrap();
     assert_eq!(attributes.get("Dimmer").unwrap(), &DmxValue::new(127));
     assert_eq!(attributes.get("ColorAdd_R").unwrap(), &DmxValue::new(255));
@@ -197,8 +193,7 @@ expect_ok!(store_sequence, |show| {
     assert_eq!(
         show.sequence(100).unwrap().cues[0]
             .changes
-            .values
-            .get(&1)
+            .get_changes_for_fixture(&1)
             .unwrap()
             .get("ColorAdd_R")
             .unwrap(),
@@ -212,8 +207,7 @@ expect_ok!(store_sequence, |show| {
     assert_eq!(
         show.sequence(100).unwrap().cues[1]
             .changes
-            .values
-            .get(&1)
+            .get_changes_for_fixture(&1)
             .unwrap()
             .get("ColorAdd_R")
             .unwrap(),
@@ -234,8 +228,7 @@ expect_ok!(store_cue, |show| {
         show.cue(2, 1)
             .unwrap()
             .changes
-            .values
-            .get(&1)
+            .get_changes_for_fixture(&1)
             .unwrap()
             .get("ColorAdd_R")
             .unwrap(),
@@ -249,8 +242,7 @@ expect_ok!(store_cue, |show| {
         show.cue(2, 2)
             .unwrap()
             .changes
-            .values
-            .get(&1)
+            .get_changes_for_fixture(&1)
             .unwrap()
             .get("ColorAdd_R")
             .unwrap(),
@@ -269,8 +261,7 @@ expect_ok!(store_executor, |show| {
         show.cue(1, 2)
             .unwrap()
             .changes
-            .values
-            .get(&1)
+            .get_changes_for_fixture(&1)
             .unwrap()
             .get("ColorAdd_R")
             .unwrap(),
@@ -285,8 +276,7 @@ expect_ok!(store_executor, |show| {
         show.cue(3, 0)
             .unwrap()
             .changes
-            .values
-            .get(&1)
+            .get_changes_for_fixture(&1)
             .unwrap()
             .get("ColorAdd_R")
             .unwrap(),

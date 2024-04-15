@@ -15,7 +15,7 @@ use crate::{Preset, Presets};
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Output {
-    pub values: HashMap<usize, AttributeValues>,
+    values: HashMap<usize, AttributeValues>,
 }
 
 impl Output {
@@ -29,6 +29,29 @@ impl Output {
         self.values.is_empty()
     }
 
+    pub fn clear(&mut self) {
+        self.values.clear();
+    }
+
+    pub fn values(&self) -> &HashMap<usize, AttributeValues> {
+        &self.values
+    }
+
+    pub fn insert(&mut self, fixture_id: &usize, values: AttributeValues) {
+        self.values.insert(*fixture_id, values);
+    }
+
+    pub fn get_changes_for_fixture(&self, fixture_id: &usize) -> Option<&AttributeValues> {
+        self.values.get(fixture_id)
+    }
+
+    pub fn get_changes_for_fixture_mut(
+        &mut self,
+        fixture_id: &usize,
+    ) -> Option<&mut AttributeValues> {
+        self.values.get_mut(fixture_id)
+    }
+
     pub fn set(&mut self, fixture_id: &usize, attribute_name: &str, value: DmxValue) {
         if let Some(attribute_values) = self.values.get_mut(fixture_id) {
             attribute_values.insert(attribute_name.to_string(), value);
@@ -39,7 +62,7 @@ impl Output {
         }
     }
 
-    pub fn attribute_value(&self, fixture_id: &usize, attribute_name: &str) -> Option<&DmxValue> {
+    pub fn get(&self, fixture_id: &usize, attribute_name: &str) -> Option<&DmxValue> {
         self.values
             .get(fixture_id)
             .and_then(|values| values.get(attribute_name))
@@ -51,6 +74,14 @@ impl Output {
                 self.set(&fixture_id, &attribute_name, value);
             }
         }
+    }
+}
+
+impl Iterator for Output {
+    type Item = (usize, AttributeValues);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.values.iter().next().map(|(k, v)| (*k, v.clone()))
     }
 }
 
@@ -128,7 +159,7 @@ impl Show {
         attribute_values: &HashMap<String, DmxValue>,
     ) -> bool {
         self.programmer_changes()
-            .values
+            .values()
             .iter()
             .any(|(fixture_id, changes)| {
                 let fixture = self.fixture(*fixture_id).unwrap();
@@ -289,25 +320,58 @@ impl Show {
             .collect()
     }
 
-    pub fn stage_output(&self) -> &Output {
-        &self.stage_output
+    pub fn stage_output(&self) -> Rc<RefCell<Output>> {
+        self.stage_output.clone()
     }
 
     pub fn default_stage_output(&self) -> Output {
         let mut output = Output::new();
         for fixture in self.fixtures().iter() {
             for attribute in fixture.attributes().iter() {
+                // FIXME: Get the actual default values
                 output.set(&fixture.id, &attribute.name, DmxValue::new(0));
             }
         }
         output
     }
 
-    pub fn recalculate_stage_output(&mut self) {
+    pub fn recalculate_stage_output(&self) {
         let mut stage_output = self.default_stage_output();
         stage_output.combine(self.playback_engine.determine_output(self));
         stage_output.combine(self.programmer_changes().clone());
-        self.stage_output = stage_output;
+        *self.stage_output.borrow_mut() = stage_output;
+    }
+
+    fn stage_dmx_output(&self) -> Rc<RefCell<DmxOutput>> {
+        let mut output = DmxOutput::new();
+        for (fixture_id, attribute_values) in
+            self.stage_output.borrow().values().clone().into_iter()
+        {
+            let Some(fixture) = self.fixture(fixture_id) else {
+                continue;
+            };
+
+            for (attribute_name, attribute_value) in attribute_values {
+                let Some(dmx_channels) = fixture.dmx_channels_for_attribute(&attribute_name) else {
+                    continue;
+                };
+
+                let Some(channel_resolution) =
+                    fixture.channel_resolution_for_attribute(&attribute_name)
+                else {
+                    continue;
+                };
+
+                let raw_dmx_values =
+                    attribute_value.raw_values_for_channel_resolution(channel_resolution);
+
+                for (channel, value) in dmx_channels.iter().zip(raw_dmx_values) {
+                    if let Err(err) = output.set_channel(channel, value) {
+                        log::error!("Failed to set channel output: {}", err.to_string())
+                    }
+                }
+            }
+        }
     }
 
     pub(crate) fn first_free_sequence_id(&self) -> usize {
@@ -477,7 +541,9 @@ impl Programmer {
         fixture_id: usize,
         attribute_values: AttributeValues,
     ) {
-        self.changes.values.insert(fixture_id, attribute_values);
+        for (attribute_name, value) in attribute_values {
+            self.changes.set(&fixture_id, &attribute_name, value);
+        }
     }
 
     pub fn has_changes(&self) -> bool {
@@ -485,7 +551,7 @@ impl Programmer {
     }
 
     pub fn clear_changes(&mut self) {
-        self.changes.values.clear();
+        self.changes.clear();
     }
 
     pub fn clear_selection(&mut self) {
