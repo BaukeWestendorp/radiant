@@ -1,0 +1,14 @@
+[package]
+name = "gdtf"
+version = "0.1.0"
+edition = "2021"
+licence = "MIT"
+
+[dependencies]
+anyhow.workspace = true
+serde-inline-default.workspace = true
+serde.workspace = true
+
+once_cell = "1.19.0"
+serde-xml-rs = "0.6.0"
+zip = { version = "0.6.6", default-features = false }

@@ -1,0 +1,18 @@
+[package]
+name = "backstage"
+version = "0.1.0"
+edition.workspace = true
+
+[dependencies]
+gdtf.workspace = true
+gdtf_share.workspace = true
+
+env_logger.workspace = true
+log.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+xdg = "2.5.2"
+lazy_static = "1.4.0"
+futures-lite = "2.3.0"

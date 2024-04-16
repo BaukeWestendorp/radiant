@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<GDTF DataVersion="42.66">
+    <FixtureType
+        CanHaveChildren="No"
+        Description="Test Description"
+        FixtureTypeID="AE92BE76-BDDA-4432-BDAA-06AD46F01BF3"
+        LongName="Fixture Type Long Name"
+        Manufacturer="Test Manufacturer"
+        Name="Fixture Type Name"
+        RefFT=""
+        ShortName="Fixture Type Short Name"
+        Thumbnail="thumbnail"
+        ThumbnailOffsetX="90"
+        ThumbnailOffsetY="78"
+    >
+        <AttributeDefinitions>
+            <ActivationGroups>
+                <ActivationGroup Name="ColorRGB" />
+                <ActivationGroup Name="PanTilt" />
+            </ActivationGroups>
+
+            <FeatureGroups>
+                <FeatureGroup Name="Color" Pretty="Color">
+                    <Feature Name="RGB" />
+                </FeatureGroup>
+                <FeatureGroup Name="Dimmer" Pretty="Dimmer">
+                    <Feature Name="Dimmer" />
+                </FeatureGroup>
+                <FeatureGroup Name="Beam" Pretty="Beam">
+                    <Feature Name="Beam" />
+                </FeatureGroup>
+                <FeatureGroup Name="Position" Pretty="Position">
+                    <Feature Name="PanTilt" />
+                </FeatureGroup>
+            </FeatureGroups>
+
+            <Attributes>
+                <Attribute
+                    ActivationGroup="ColorRGB"
+                    Feature="Color.RGB"
+                    Name="ColorAdd_R"
+                    PhysicalUnit="ColorComponent"
+                    Pretty="R"
+                />
+                <Attribute
+                    ActivationGroup="ColorRGB"
+                    Feature="Color.RGB"
+                    Name="ColorAdd_G"
+                    PhysicalUnit="ColorComponent"
+                    Pretty="G"
+                />
+                <Attribute
+                    ActivationGroup="ColorRGB"
+                    Feature="Color.RGB"
+                    Name="ColorAdd_B"
+                    PhysicalUnit="ColorComponent"
+                    Pretty="B"
+                />
+                <Attribute
+                    ActivationGroup="ColorRGB"
+                    Feature="Color.RGB"
+                    Name="ColorAdd_W"
+                    PhysicalUnit="ColorComponent"
+                    Pretty="White"
+                />
+                <Attribute
+                    Feature="Dimmer.Dimmer"
+                    Name="Dimmer"
+                    PhysicalUnit="None"
+                    Pretty="Dim"
+                />
+                <Attribute
+                    Feature="Beam.Beam"
+                    MainAttribute="Shutter1"
+                    Name="Shutter1Strobe"
+                    PhysicalUnit="Frequency"
+                    Pretty="Strobe1"
+                />
+                <Attribute
+                    Feature="Beam.Beam"
+                    Name="Shutter1"
+                    PhysicalUnit="None"
+                    Pretty="Sh1"
+                />
+                <Attribute
+                    ActivationGroup="PanTilt"
+                    Feature="Position.PanTilt"
+                    Name="Tilt"
+                    PhysicalUnit="Angle"
+                    Pretty="T"
+                />
+            </Attributes>
+        </AttributeDefinitions>
+        <Wheels />
+        <PhysicalDescriptions />
+        <Models />
+        <Geometries />
+        <DMXModes>
+            <DMXMode
+                Description="DMX Mode Description"
+                Geometry="Yoke"
+                Name="Basic"
+            >
+                <DMXChannels>
+                    <DMXChannel
+                        DMXBreak="42"
+                        Geometry="Body"
+                        Highlight="255/1"
+                        InitialFunction="Body_ColorAdd_R.ColorAdd_R.Red"
+                        Offset="1,2"
+                    >
+                        <LogicalChannel
+                            Attribute="ColorAdd_R"
+                            DMXChangeTimeLimit="0.000000"
+                            Master="None"
+                            MibFade="0.000000"
+                            Snap="No"
+                        >
+                            <ChannelFunction
+                                Attribute="ColorAdd_R"
+                                CustomName=""
+                                DMXFrom="0/1"
+                                Default="255/1"
+                                Emitter="Red"
+                                Max="1.000000"
+                                Min="0.000000"
+                                Name="Red"
+                                OriginalAttribute=""
+                                PhysicalFrom="0.000000"
+                                PhysicalTo="1.000000"
+                                RealAcceleration="0.000000"
+                                RealFade="0.000000"
+                            >
+                                <ChannelSet
+                                    DMXFrom="0/1"
+                                    Name="Min"
+                                    WheelSlotIndex="0"
+                                />
+                                <ChannelSet
+                                    DMXFrom="1/1"
+                                    Name=""
+                                    WheelSlotIndex="0"
+                                />
+                                <ChannelSet
+                                    DMXFrom="255/1"
+                                    Name="Max"
+                                    WheelSlotIndex="0"
+                                />
+                            </ChannelFunction>
+                        </LogicalChannel>
+                    </DMXChannel>
+                </DMXChannels>
+                <Relations />
+                <FTMacros />
+            </DMXMode>
+        </DMXModes>
+        <Revisions />
+        <FTPresets />
+        <Protocols />
+    </FixtureType>
+</GDTF>

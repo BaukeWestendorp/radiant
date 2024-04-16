@@ -10,7 +10,7 @@ mod workspace;
 struct Args {
     /// Path to the showfile
     #[arg(short, long)]
-    showfile: std::path::PathBuf,
+    showfile: Option<std::path::PathBuf>,
 }
 
 fn main() {
@@ -18,13 +18,13 @@ fn main() {
     let args = Args::parse();
 
     let app = App::new();
-    let showfile_path = std::env::current_dir()
-        .expect("Failed to get current directory")
-        .join(args.showfile)
-        .canonicalize()
-        .unwrap()
-        .to_str()
-        .map(|p| p.to_string());
+    let showfile_path = args.showfile.map(|showfile| {
+        std::env::current_dir()
+            .expect("Failed to get current directory")
+            .join(showfile)
+            .canonicalize()
+            .unwrap()
+    });
 
     app::run_app(app, showfile_path)
 }
