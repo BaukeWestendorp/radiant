@@ -13,7 +13,7 @@ struct Args {
     showfile: Option<std::path::PathBuf>,
 }
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     env_logger::init();
     let args = Args::parse();
 
@@ -26,5 +26,7 @@ fn main() {
             .unwrap()
     });
 
-    app::run_app(app, showfile_path)
+    app::run_app(app, showfile_path)?;
+
+    Ok(())
 }

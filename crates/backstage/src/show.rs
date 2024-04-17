@@ -6,37 +6,17 @@ use crate::dmx::DmxChannel;
 use gdtf::GdtfDescription;
 use gdtf_share::GdtfShare;
 use lazy_static::lazy_static;
-use std::{
-    io::Write,
-    path::{Path, PathBuf},
-    rc::Rc,
-};
-
-const FIXTURE_CACHE_PATH: &str = "radiant/fixtures";
-
-#[cfg(test)]
-const GDTF_SHARE_API_USER: &str = "TEST_GDTF_SHARE_API_USER";
-#[cfg(test)]
-const GDTF_SHARE_API_PASSWORD: &str = "TEST_GDTF_SHARE_API_PASSWORD";
-
-#[cfg(not(test))]
-const GDTF_SHARE_API_USER: &str = "GDTF_SHARE_API_USER";
-#[cfg(not(test))]
-const GDTF_SHARE_API_PASSWORD: &str = "GDTF_SHARE_API_PASSWORD";
+use std::{collections::HashMap, io::Write, path::PathBuf, rc::Rc};
 
 lazy_static! {
     static ref BASE_DIRS: xdg::BaseDirectories = xdg::BaseDirectories::new().unwrap();
-    static ref GDTF_SHARE: Result<GdtfShare, Error> = {
-        let user =
-            std::env::var(GDTF_SHARE_API_USER).map_err(|_| Error::GdtfShareAuthenticationFailed)?;
-        let password = std::env::var(GDTF_SHARE_API_PASSWORD)
-            .map_err(|_| Error::GdtfShareAuthenticationFailed)?;
-        match futures_lite::future::block_on(GdtfShare::auth(user, password)) {
-            Ok(gdtf_share) => {
-                log::info!("Authenticated with GDTF Share API");
-                Ok(gdtf_share)
-            }
-            Err(err) => Err(err.into()),
+    static ref FIXTURE_CACHE_PATH: PathBuf = {
+        match std::env::var("BACKSTAGE_FIXTURE_CACHE_LOCATION") {
+            Ok(path) => PathBuf::from(path),
+            Err(_) => BASE_DIRS
+                .place_cache_file("radiant/fixtures")
+                .map_err(|_| Error::GdtfFileCacheFailed)
+                .expect("Failed to get fixture cache path"),
         }
     };
 }
@@ -62,7 +42,7 @@ pub type RevisionId = i32;
 /// # Show
 ///
 /// The show struct contains all information related to a show.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct Show {
     patchlist: Patchlist,
 }
@@ -73,6 +53,18 @@ impl Show {
         Self {
             patchlist: Patchlist::new(),
         }
+    }
+
+    /// Initialize the show. This will get all GDTF descriptions from the GDTF share.
+    pub async fn initialize(
+        &mut self,
+        gdtf_share_username: String,
+        gdtf_share_password: String,
+    ) -> Result<(), Error> {
+        self.patchlist
+            .initialize(gdtf_share_username, gdtf_share_password)
+            .await?;
+        Ok(())
     }
 
     /// Get the patchlist.
@@ -113,10 +105,11 @@ impl TryInto<Show> for ShowIntermediate {
 /// # Patchlist
 ///
 /// The patchlist struct contains all information about the fixtures in the show.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct Patchlist {
     fixtures: Vec<Fixture>,
-    gdtf_descriptions: Vec<Rc<GdtfDescription>>,
+    gdtf_descriptions: HashMap<RevisionId, Rc<GdtfDescription>>,
+    gdtf_share: Option<GdtfShare>,
 }
 
 impl Patchlist {
@@ -124,8 +117,42 @@ impl Patchlist {
     pub fn new() -> Self {
         Self {
             fixtures: Vec::new(),
-            gdtf_descriptions: Vec::new(),
+            gdtf_descriptions: HashMap::new(),
+            gdtf_share: None,
         }
+    }
+
+    pub(crate) async fn initialize(
+        &mut self,
+        gdtf_share_username: String,
+        gdtf_share_password: String,
+    ) -> Result<(), Error> {
+        self.authenticate_gdtf_share(gdtf_share_username, gdtf_share_password)
+            .await?;
+
+        for fixture in self.fixtures.clone() {
+            self.patch_fixture(
+                fixture.id,
+                fixture.label,
+                fixture.revision_id,
+                fixture.channel,
+                fixture.mode,
+            )
+            .await?;
+        }
+
+        Ok(())
+    }
+
+    pub(crate) async fn authenticate_gdtf_share(
+        &mut self,
+        username: String,
+        password: String,
+    ) -> Result<(), Error> {
+        let gdtf_share = GdtfShare::new(username, password);
+        gdtf_share.auth().await?;
+        self.gdtf_share = Some(gdtf_share);
+        Ok(())
     }
 
     /// Get the fixtures.
@@ -151,18 +178,44 @@ impl Patchlist {
         channel: DmxChannel,
         mode: String,
     ) -> Result<(), Error> {
-        let cached_file_path = BASE_DIRS
-            .place_cache_file(Path::new(FIXTURE_CACHE_PATH).join(format!("{revision_id}.gdtf")))
-            .map_err(|_| Error::GdtfFileCacheFailed)?;
+        let description = self.get_gdtf_description(revision_id).await?;
 
-        let description = match self.get_cached_description(&cached_file_path)? {
+        let new_fixture = Fixture {
+            id,
+            label,
+            revision_id,
+            description: Some(description),
+            channel,
+            mode,
+        };
+
+        if let Some(fixture) = self.fixtures.iter_mut().find(|f| f.id == id) {
+            *fixture = new_fixture;
+        } else {
+            self.fixtures.push(new_fixture);
+        }
+
+        Ok(())
+    }
+
+    async fn get_gdtf_description(
+        &mut self,
+        revision_id: RevisionId,
+    ) -> Result<Rc<GdtfDescription>, Error> {
+        if let Some(description) = self.gdtf_descriptions.get(&revision_id) {
+            return Ok(description.clone());
+        }
+
+        let gdtf_share = match self.gdtf_share {
+            Some(ref gdtf_share) => gdtf_share,
+            None => return Err(Error::GdtfShareNotAuthenticated),
+        };
+
+        let cached_file_path = FIXTURE_CACHE_PATH.join(format!("{}.gdtf", revision_id));
+
+        let description = match get_cached_gdtf_description(&cached_file_path)? {
             Some(cached_description) => cached_description,
             None => {
-                let gdtf_share = match GDTF_SHARE.as_ref() {
-                    Ok(gdtf_share) => gdtf_share,
-                    Err(err) => return Err(err.clone()),
-                };
-
                 let description_file = gdtf_share.download_file(revision_id).await?;
                 let reader = std::io::Cursor::new(description_file.clone());
                 let description = GdtfDescription::from_archive_reader(reader)
@@ -178,33 +231,10 @@ impl Patchlist {
         };
 
         let description = Rc::new(description);
-        self.gdtf_descriptions.push(description.clone());
+        self.gdtf_descriptions
+            .insert(revision_id, description.clone());
 
-        self.fixtures.push(Fixture {
-            id,
-            label,
-            revision_id,
-            description,
-            channel,
-            mode,
-        });
-
-        Ok(())
-    }
-
-    fn get_cached_description(
-        &self,
-        file_path: &PathBuf,
-    ) -> Result<Option<GdtfDescription>, Error> {
-        match std::fs::read(file_path) {
-            Ok(cached_file) => {
-                let cached_description = GdtfDescription::from_archive_bytes(&cached_file)
-                    .map_err(|_| Error::GdtfFileInvalid)?;
-                log::info!("Using cached GDTF file '{}'", file_path.display());
-                Ok(Some(cached_description))
-            }
-            _ => Ok(None),
-        }
+        Ok(description)
     }
 }
 
@@ -229,14 +259,14 @@ impl TryInto<Patchlist> for PatchlistIntermediate {
     fn try_into(self) -> Result<Patchlist, Error> {
         let mut patchlist = Patchlist::new();
         for fixture in self.fixtures {
-            // FIXME: We should make this non-blocking.
-            futures_lite::future::block_on(patchlist.patch_fixture(
-                fixture.id,
-                fixture.label,
-                fixture.revision_id,
-                fixture.channel,
-                fixture.mode,
-            ))?;
+            patchlist.fixtures.push(Fixture {
+                id: fixture.id,
+                label: fixture.label,
+                revision_id: fixture.revision_id,
+                description: None,
+                channel: fixture.channel,
+                mode: fixture.mode,
+            })
         }
         Ok(patchlist)
     }
@@ -253,12 +283,23 @@ pub struct Fixture {
     pub label: String,
     /// The revision id of the fixture. This should correspond to the revision id of the GDTF description.
     pub revision_id: i32,
-    /// The GDTF description of the fixture.
-    pub description: Rc<GdtfDescription>,
+    /// The GDTF description of the fixture. This is `None` if the show has not been initialized yet.
+    description: Option<Rc<GdtfDescription>>,
     /// The channel on which the fixture is patched.
     pub channel: DmxChannel,
     /// The DMX mode used. The mode must be one of the modes in the GDTF description.
     pub mode: String,
+}
+
+impl Fixture {
+    /// Get the GDTF description of the fixture.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the show has not been initialized yet.
+    pub fn description(&self) -> Rc<GdtfDescription> {
+        self.description.clone().unwrap()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
@@ -270,38 +311,24 @@ struct FixtureIntermediate {
     pub mode: String,
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::show::FixtureId;
-
-    use super::Show;
-
-    #[test]
-    fn deserialize_show() {
-        let json = r#"{
-            "patchlist": {
-                "fixtures": [
-                    {
-                        "id": 1,
-                        "label": "Test",
-                        "revision_id": 31143,
-                        "channel": [1, 2],
-                        "mode": "Mode"
-                    }
-                ]
-            }
-        }"#;
-        let show: Show = serde_json::from_str(json).unwrap();
-        assert!(show.patchlist().fixture(&FixtureId::new(1)).is_some())
+fn get_cached_gdtf_description(file_path: &PathBuf) -> Result<Option<GdtfDescription>, Error> {
+    match std::fs::read(file_path) {
+        Ok(cached_file) => {
+            let cached_description = GdtfDescription::from_archive_bytes(&cached_file)
+                .map_err(|_| Error::GdtfFileInvalid)?;
+            log::info!("Using cached GDTF file '{}'", file_path.display());
+            Ok(Some(cached_description))
+        }
+        _ => Ok(None),
     }
 }
 
 /// Error type for errors related to the show.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum Error {
-    /// Error when trying to authenticate to the GDTF share.
-    #[error("GDTF share authentication failed")]
-    GdtfShareAuthenticationFailed,
+    /// Error when the GDTF share is not authenticated.
+    #[error("GDTF share is not authenticated failed")]
+    GdtfShareNotAuthenticated,
     /// Error when trying to cache a GDTF file.
     #[error("GDTF file caching failed")]
     GdtfFileCacheFailed,

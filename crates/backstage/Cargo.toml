@@ -15,4 +15,3 @@ thiserror.workspace = true
 
 xdg = "2.5.2"
 lazy_static = "1.4.0"
-futures-lite = "2.3.0"

@@ -421,7 +421,6 @@ name = "backstage"
 version = "0.1.0"
 dependencies = [
  "env_logger 0.11.3",
- "futures-lite 2.3.0",
  "gdtf",
  "gdtf_share",
  "lazy_static",
@@ -3086,10 +3085,15 @@ dependencies = [
 name = "radiant"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "backstage",
  "clap 4.5.4",
  "env_logger 0.11.3",
  "gpui",
  "log",
+ "serde",
+ "serde_json",
+ "smol 2.0.0",
 ]
 
 [[package]]

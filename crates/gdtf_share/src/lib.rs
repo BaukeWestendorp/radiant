@@ -9,20 +9,30 @@ const DOWNLOAD_FILE_URL: &str = "https://gdtf-share.com/apis/public/downloadFile
 #[derive(Debug, Clone)]
 pub struct GdtfShare {
     client: HttpClient,
+    user: String,
+    password: String,
 }
 
 impl GdtfShare {
-    pub async fn auth(user: String, password: String) -> Result<Self, Error> {
+    pub fn new(user: String, password: String) -> Self {
         let jar = CookieJar::default();
         let client = HttpClient::builder().cookie_jar(jar).build().unwrap();
+        Self {
+            client,
+            user,
+            password,
+        }
+    }
 
-        let response = send_auth_request(&client, user, password).await?;
+    pub async fn auth(&self) -> Result<(), Error> {
+        let response = send_auth_request(&self.client, &self.user, &self.password).await?;
         if !response.result {
             return Err(Error::AuthFailed {
                 message: response.error.unwrap_or("No error message".to_string()),
             });
         }
-        Ok(Self { client })
+
+        Ok(())
     }
 
     pub async fn get_list(&self) -> Result<Vec<FixtureInfo>, Error> {
@@ -47,8 +57,8 @@ impl GdtfShare {
 
 async fn send_auth_request(
     client: &HttpClient,
-    user: String,
-    password: String,
+    user: &str,
+    password: &str,
 ) -> Result<AuthResponse, Error> {
     let body = format!("user={user}&password={password}");
     client

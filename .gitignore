@@ -1,4 +1,8 @@
 /target
-.DS_Store
-.env
 /.zed
+
+.env
+
+.DS_Store
+
+profile.json
