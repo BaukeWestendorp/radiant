@@ -1729,11 +1729,9 @@ dependencies = [
 name = "gdtf_share"
 version = "0.1.0"
 dependencies = [
- "bytes",
  "isahc",
  "serde",
  "serde_json",
- "smol 2.0.0",
  "thiserror",
 ]
 
