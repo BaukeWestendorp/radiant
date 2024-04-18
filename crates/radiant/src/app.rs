@@ -1,10 +1,8 @@
-use std::{path::PathBuf, time::Duration};
+use std::path::PathBuf;
 
 use gpui::{AppContext, WindowOptions};
 
-use crate::{showfile::Showfile, workspace::Workspace};
-
-pub const DMX_UPDATE_RATE: Duration = Duration::from_millis(1000 / 40);
+use crate::{output, showfile::Showfile, workspace::Workspace};
 
 pub fn run_app(app: gpui::App, showfile_path: Option<PathBuf>) {
     app.run(move |cx: &mut AppContext| {
@@ -12,17 +10,7 @@ pub fn run_app(app: gpui::App, showfile_path: Option<PathBuf>) {
             .map_err(|err| log::error!("Failed to initialize showfile: {err}"))
             .ok();
 
-        cx.spawn(|cx| async move {
-            loop {
-                cx.read_global::<Showfile, _>(|showfile, _cx| {
-                    let dmx_output = showfile.show.get_dmx_output();
-                })
-                .unwrap();
-
-                cx.background_executor().timer(DMX_UPDATE_RATE).await;
-            }
-        })
-        .detach();
+        output::start_dmx_output_loop(cx);
 
         cx.open_window(WindowOptions::default(), |cx| {
             let view = Workspace::build(cx);

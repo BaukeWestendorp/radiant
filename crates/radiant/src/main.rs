@@ -2,6 +2,7 @@ use clap::Parser;
 use gpui::App;
 
 mod app;
+mod output;
 mod showfile;
 mod workspace;
 
