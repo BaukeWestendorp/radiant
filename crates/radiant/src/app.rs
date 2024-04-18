@@ -13,7 +13,7 @@ pub fn run_app(app: gpui::App, showfile_path: Option<PathBuf>) -> Result<()> {
             serde_json::from_reader(file)?
         }
         None => {
-            log::info!("No showfile path provided. Opening a new showfile.");
+            log::info!("No showfile path provided. Opening an empty showfile.");
             Show::default()
         }
     };

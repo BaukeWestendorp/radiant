@@ -6,7 +6,7 @@ use crate::dmx::DmxChannel;
 use gdtf::GdtfDescription;
 use gdtf_share::GdtfShare;
 use lazy_static::lazy_static;
-use std::{collections::HashMap, io::Write, path::PathBuf, rc::Rc};
+use std::{collections::HashMap, fmt::Display, io::Write, path::PathBuf, rc::Rc};
 
 lazy_static! {
     static ref BASE_DIRS: xdg::BaseDirectories = xdg::BaseDirectories::new().unwrap();
@@ -36,6 +36,12 @@ impl FixtureId {
     }
 }
 
+impl Display for FixtureId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 /// The revision id of a GDTF file.
 pub type RevisionId = i32;
 
@@ -45,6 +51,7 @@ pub type RevisionId = i32;
 #[derive(Debug, Clone, Default)]
 pub struct Show {
     patchlist: Patchlist,
+    programmer: Programmer,
 }
 
 impl Show {
@@ -52,6 +59,7 @@ impl Show {
     pub fn new() -> Self {
         Self {
             patchlist: Patchlist::new(),
+            programmer: Programmer::new(),
         }
     }
 
@@ -76,6 +84,16 @@ impl Show {
     pub fn patchlist_mut(&mut self) -> &mut Patchlist {
         &mut self.patchlist
     }
+
+    /// Get the programmer.
+    pub fn programmer(&self) -> &Programmer {
+        &self.programmer
+    }
+
+    /// Get the programmer mutably.
+    pub fn programmer_mut(&mut self) -> &mut Programmer {
+        &mut self.programmer
+    }
 }
 
 impl<'de> serde::Deserialize<'de> for Show {
@@ -88,17 +106,22 @@ impl<'de> serde::Deserialize<'de> for Show {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 struct ShowIntermediate {
+    #[serde(default = "Default::default")]
     patchlist: PatchlistIntermediate,
+    #[serde(default = "Default::default")]
+    programmer: Programmer,
 }
 
 impl TryInto<Show> for ShowIntermediate {
     type Error = Error;
 
     fn try_into(self) -> Result<Show, Error> {
-        let patchlist = self.patchlist.try_into()?;
-        Ok(Show { patchlist })
+        Ok(Show {
+            patchlist: self.patchlist.try_into()?,
+            programmer: self.programmer,
+        })
     }
 }
 
@@ -213,7 +236,17 @@ impl Patchlist {
 
         let cached_file_path = FIXTURE_CACHE_PATH.join(format!("{}.gdtf", revision_id));
 
-        let description = match get_cached_gdtf_description(&cached_file_path)? {
+        let cached_description = match std::fs::read(&cached_file_path) {
+            Ok(cached_file) => {
+                let cached_description = GdtfDescription::from_archive_bytes(&cached_file)
+                    .map_err(|_| Error::GdtfFileInvalid)?;
+                log::info!("Using cached GDTF file '{}'", cached_file_path.display());
+                Some(cached_description)
+            }
+            _ => None,
+        };
+
+        let description = match cached_description {
             Some(cached_description) => cached_description,
             None => {
                 let description_file = gdtf_share.download_file(revision_id).await?;
@@ -248,7 +281,7 @@ impl<'de> serde::Deserialize<'de> for Patchlist {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize)]
 struct PatchlistIntermediate {
     pub fixtures: Vec<FixtureIntermediate>,
 }
@@ -311,15 +344,190 @@ struct FixtureIntermediate {
     pub mode: String,
 }
 
-fn get_cached_gdtf_description(file_path: &PathBuf) -> Result<Option<GdtfDescription>, Error> {
-    match std::fs::read(file_path) {
-        Ok(cached_file) => {
-            let cached_description = GdtfDescription::from_archive_bytes(&cached_file)
-                .map_err(|_| Error::GdtfFileInvalid)?;
-            log::info!("Using cached GDTF file '{}'", file_path.display());
-            Ok(Some(cached_description))
+/// # Programmer
+///
+/// The programmer contains changes made to the output of the show. These, for example can be used to make presets.
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Programmer {
+    changes: Changes,
+}
+
+impl Programmer {
+    /// Create a new programmer.
+    pub fn new() -> Self {
+        Programmer {
+            changes: Changes::new(),
         }
-        _ => Ok(None),
+    }
+
+    /// Set the value of an attribute of a fixture.
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if the fixture or attribute is not found.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use backstage::show::{AttributeValue, FixtureId, Programmer};
+    /// let mut programmer = Programmer::new();
+    /// let fixture_id = FixtureId::new(0);
+    /// programmer.set_attribute(&fixture_id, "Dimmer".to_string(), AttributeValue::new(1.0)).unwrap();
+    /// assert_eq!(programmer.get_attribute(&fixture_id, "Dimmer"), Some(&AttributeValue::new(1.0)));
+    /// ```
+    ///
+    /// ```
+    /// # use backstage::show::{AttributeValue, FixtureId, Programmer};
+    /// let mut programmer = Programmer::new();
+    /// let fixture_id = FixtureId::new(0);
+    /// programmer.set_attribute(&fixture_id, "Dimmer".to_string(), AttributeValue::new(1.0)).unwrap();
+    /// assert_eq!(programmer.get_attribute(&fixture_id, "Focus"), None);
+    /// ```
+    pub fn set_attribute(
+        &mut self,
+        fixture_id: &FixtureId,
+        attribute_name: String,
+        value: AttributeValue,
+    ) -> Result<(), Error> {
+        if !self.changes.contains_key(fixture_id) {
+            self.changes.insert(fixture_id.clone(), HashMap::new());
+        }
+
+        let fixture_changes = self
+            .changes
+            .get_mut(fixture_id)
+            .ok_or(Error::FixtureNotFound(*fixture_id))?;
+        fixture_changes.insert(attribute_name, value);
+
+        Ok(())
+    }
+
+    /// Get the value of an attribute of a fixture.
+    /// Returns `None` if the attribute is not found.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use backstage::show::{AttributeValue, FixtureId, Programmer};
+    /// let mut programmer = Programmer::new();
+    /// let fixture_id = FixtureId::new(0);
+    /// programmer.set_attribute(&fixture_id, "Dimmer".to_string(), AttributeValue::new(1.0)).unwrap();
+    ///
+    /// assert_eq!(programmer.get_attribute(&fixture_id, "Dimmer"), Some(&AttributeValue::new(1.0)));
+    /// assert_eq!(programmer.get_attribute(&fixture_id, "Focus"), None);
+    /// assert_eq!(programmer.get_attribute(&FixtureId::new(1), "Dimmer"), None);
+    /// ```
+    pub fn get_attribute(
+        &self,
+        fixture_id: &FixtureId,
+        attribute_name: &str,
+    ) -> Option<&AttributeValue> {
+        self.changes
+            .get(fixture_id)
+            .and_then(|fixture_changes| fixture_changes.get(attribute_name))
+    }
+}
+
+/// A map with the changed attributes per fixture.
+pub type Changes = HashMap<FixtureId, HashMap<String, AttributeValue>>;
+
+/// The value of an attribute.
+///
+/// The value is a floating point number between 0.0 and 1.0.
+#[derive(Debug, Clone, Copy, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct AttributeValue(f32);
+
+impl AttributeValue {
+    /// Create a new attribute value.
+    pub fn new(value: f32) -> Self {
+        Self(value.clamp(0.0, 1.0))
+    }
+
+    /// Get the value of the attribute.
+    pub fn value(&self) -> f32 {
+        self.0.clamp(0.0, 1.0)
+    }
+
+    /// Get the value of the attribute from the raw bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use backstage::show::{AttributeValue, ChannelResolution};
+    /// let value = AttributeValue::from_bytes(&[0xFF, 0xFF, 0xFF, 0xFF], ChannelResolution::Bit32).unwrap();
+    /// assert_eq!(value.value(), 1.0);
+    ///
+    /// let value = AttributeValue::from_bytes(&[0x00, 0x00], ChannelResolution::Bit16).unwrap();
+    /// assert_eq!(value.value(), 0.0);
+    ///
+    /// let value = AttributeValue::from_bytes(&[0x00, 0x00, 0x00, 0x00], ChannelResolution::Bit32).unwrap();
+    /// assert_eq!(value.value(), 0.0);
+    ///
+    ///
+    /// let value = AttributeValue::from_bytes(&[0x7F], ChannelResolution::Bit8).unwrap();
+    /// assert_eq!(value.value(), 127.0/255.0);
+    ///
+    /// let value = AttributeValue::from_bytes(&[0x7F, 0xFF], ChannelResolution::Bit16).unwrap();
+    /// assert_eq!(value.value(), 32767.0/65535.0);
+    ///
+    /// let value = AttributeValue::from_bytes(&[0x7F, 0xFF, 0xFF], ChannelResolution::Bit24).unwrap();
+    /// assert_eq!(value.value(), 8388607.0/16777215.0);
+    ///
+    /// let value = AttributeValue::from_bytes(&[0x7F, 0xFF, 0xFF, 0xFF], ChannelResolution::Bit32).unwrap();
+    /// assert_eq!(value.value(), 2147483647.0/4294967295.0);
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if the bytes do not match the channel resolution.
+    pub fn from_bytes(bytes: &[u8], channel_resolution: ChannelResolution) -> Result<Self, Error> {
+        if bytes.len() != channel_resolution as usize / 8 {
+            return Err(Error::MismatchedChannelResolution {
+                found: ChannelResolution::try_from(bytes.len() as u8 * 8)?,
+                expected: channel_resolution,
+            });
+        }
+
+        let value = match channel_resolution {
+            ChannelResolution::Bit8 => bytes[0] as f32 / 255.0,
+            ChannelResolution::Bit16 => u16::from_be_bytes([bytes[0], bytes[1]]) as f32 / 65535.0,
+            ChannelResolution::Bit24 => {
+                u32::from_be_bytes([0, bytes[0], bytes[1], bytes[2]]) as f32 / 16777215.0
+            }
+            ChannelResolution::Bit32 => {
+                u32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as f32 / 4294967295.0
+            }
+        };
+
+        Ok(Self::new(value))
+    }
+}
+
+/// The resolution of a DMX channel.
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+pub enum ChannelResolution {
+    /// 8-bit resolution.
+    Bit8 = 8,
+    /// 16-bit resolution.
+    Bit16 = 16,
+    /// 24-bit resolution.
+    Bit24 = 24,
+    /// 32-bit resolution.
+    Bit32 = 32,
+}
+
+impl TryFrom<u8> for ChannelResolution {
+    type Error = Error;
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            8 => Ok(Self::Bit8),
+            16 => Ok(Self::Bit16),
+            24 => Ok(Self::Bit24),
+            32 => Ok(Self::Bit32),
+            _ => Err(Error::InvalidChannelResolution(value)),
+        }
     }
 }
 
@@ -341,4 +549,21 @@ pub enum Error {
     /// Error related to the GDTF share.
     #[error("{0}")]
     GdtfError(#[from] gdtf_share::Error),
+    /// Error when a fixture is not found.
+    #[error("Fixture not found with id {0}")]
+    FixtureNotFound(FixtureId),
+    /// Error when an attribute is not found.
+    #[error("Attribute not found with name {0}")]
+    AttributeNotFound(String),
+    /// Invalid channel resolution.
+    #[error("Invalid channel resolution: {0}")]
+    InvalidChannelResolution(u8),
+    /// Error when the channel resolution is invalid.
+    #[error("Mismatched channel resolution: found {found:?}, expected {expected:?}")]
+    MismatchedChannelResolution {
+        /// The found channel resolution.
+        found: ChannelResolution,
+        /// The expected channel resolution.
+        expected: ChannelResolution,
+    },
 }

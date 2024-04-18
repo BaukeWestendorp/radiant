@@ -24,3 +24,10 @@ fn deserialize_show() {
     let show: Show = serde_json::from_str(json).unwrap();
     assert!(show.patchlist().fixture(&FixtureId::new(1)).is_some())
 }
+
+#[test]
+fn deserialize_empty_show() {
+    let json = r#"{}"#;
+    let show: Show = serde_json::from_str(json).unwrap();
+    assert!(show.patchlist().fixtures().is_empty())
+}
