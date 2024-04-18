@@ -1,46 +1,32 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, time::Duration};
 
-use anyhow::Result;
-use backstage::show::Show;
 use gpui::{AppContext, WindowOptions};
 
-use crate::workspace::Workspace;
+use crate::{showfile::Showfile, workspace::Workspace};
 
-pub fn run_app(app: gpui::App, showfile_path: Option<PathBuf>) -> Result<()> {
-    let mut show: Show = match showfile_path {
-        Some(showfile_path) => {
-            let file = std::fs::File::open(showfile_path.join("show.json"))?;
-            serde_json::from_reader(file)?
-        }
-        None => {
-            log::info!("No showfile path provided. Opening an empty showfile.");
-            Show::default()
-        }
-    };
+pub const DMX_UPDATE_RATE: Duration = Duration::from_millis(1000 / 40);
 
+pub fn run_app(app: gpui::App, showfile_path: Option<PathBuf>) {
     app.run(move |cx: &mut AppContext| {
-        smol::block_on(async {
-            match show
-                .initialize(
-                    std::env::var("GDTF_SHARE_USER").unwrap(),
-                    std::env::var("GDTF_SHARE_PASSWORD").unwrap(),
-                )
-                .await
-            {
-                Ok(_) => {
-                    log::info!("Show has been initialized")
-                }
-                Err(err) => {
-                    log::error!("Failed to initialize show: {err}")
-                }
+        Showfile::init(showfile_path, cx)
+            .map_err(|err| log::error!("Failed to initialize showfile: {err}"))
+            .ok();
+
+        cx.spawn(|cx| async move {
+            loop {
+                cx.read_global::<Showfile, _>(|showfile, _cx| {
+                    let dmx_output = showfile.show.get_dmx_output();
+                })
+                .unwrap();
+
+                cx.background_executor().timer(DMX_UPDATE_RATE).await;
             }
-        });
+        })
+        .detach();
 
         cx.open_window(WindowOptions::default(), |cx| {
             let view = Workspace::build(cx);
             view
         });
     });
-
-    Ok(())
 }

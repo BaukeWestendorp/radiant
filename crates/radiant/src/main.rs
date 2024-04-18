@@ -2,6 +2,7 @@ use clap::Parser;
 use gpui::App;
 
 mod app;
+mod showfile;
 mod workspace;
 
 /// Radiant is a lighting design software.
@@ -13,7 +14,7 @@ struct Args {
     showfile: Option<std::path::PathBuf>,
 }
 
-fn main() -> anyhow::Result<()> {
+fn main() {
     env_logger::init();
     let args = Args::parse();
 
@@ -26,7 +27,5 @@ fn main() -> anyhow::Result<()> {
             .unwrap()
     });
 
-    app::run_app(app, showfile_path)?;
-
-    Ok(())
+    app::run_app(app, showfile_path);
 }
