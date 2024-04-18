@@ -2,7 +2,7 @@
 name = "gdtf"
 version = "0.1.0"
 edition = "2021"
-licence = "MIT"
+license = "MIT"
 
 [dependencies]
 anyhow.workspace = true

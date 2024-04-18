@@ -2,6 +2,7 @@
 name = "radiant"
 version = "0.1.0"
 edition.workspace = true
+license = "MIT"
 
 [dependencies]
 backstage.workspace = true

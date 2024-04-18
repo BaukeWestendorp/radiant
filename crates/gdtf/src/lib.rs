@@ -33,7 +33,7 @@ impl GdtfDescription {
 
         let description = archive
             .by_name("description.xml")
-            .map_err(|err| anyhow!("Missing description file: {err}"))?;
+            .map_err(|err| anyhow!("Failed to get description file: {err}"))?;
 
         let description_reader = std::io::BufReader::new(description);
 
@@ -259,7 +259,7 @@ pub(crate) fn parse_yes_no(s: String) -> Result<bool> {
     }
 }
 
-pub(crate) fn parse_int_array(s: String) -> Result<Vec<i32>> {
+pub(crate) fn parse_i32_array(s: String) -> Result<Vec<i32>> {
     let parts: Vec<&str> = s.split(',').collect();
     let mut array = Vec::with_capacity(parts.len());
     for part in parts {

@@ -427,6 +427,7 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
+ "smol 2.0.0",
  "thiserror",
  "xdg",
 ]

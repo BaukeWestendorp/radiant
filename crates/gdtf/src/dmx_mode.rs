@@ -5,7 +5,7 @@ use anyhow::{anyhow, Result};
 
 use crate::attribute_definitions::Attribute;
 use crate::raw::{RawChannelFunction, RawDmxChannel, RawDmxMode, RawLogicalChannel};
-use crate::{parse_int_array, parse_name, DmxValue};
+use crate::{parse_i32_array, parse_name, DmxValue};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DmxMode {
@@ -28,6 +28,16 @@ impl DmxMode {
                 .into_iter()
                 .map(|channel| DmxChannel::from_raw(channel, attributes))
                 .collect::<Result<_>>()?,
+        })
+    }
+
+    pub fn channel_with_attribute(&self, attribute_name: &str) -> Option<&DmxChannel> {
+        // FIXME: We currently just get the first logical channel with this attribute, but is that the right way?
+        self.dmx_channels.iter().find(|channel| {
+            channel
+                .logical_channels
+                .iter()
+                .any(|lc| lc.attribute.name == attribute_name)
         })
     }
 }
@@ -70,7 +80,7 @@ impl DmxChannel {
             dmx_break: DmxBreak::from_str(&raw.dmx_break)?,
             offset: match raw.offset.as_str() {
                 "" | "None" => None,
-                offset => Some(parse_int_array(offset.to_string())?),
+                offset => Some(parse_i32_array(offset.to_string())?),
             },
             initial_function,
             highlight: match raw.highlight.as_str() {

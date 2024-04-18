@@ -2,8 +2,8 @@
 //!
 //! The show module contains the show struct and its sub-structs.
 
-use crate::dmx::DmxChannel;
-use gdtf::GdtfDescription;
+use crate::dmx::{self, DmxChannel, DmxOutput};
+use gdtf::{DmxMode, GdtfDescription};
 use gdtf_share::GdtfShare;
 use lazy_static::lazy_static;
 use std::{collections::HashMap, fmt::Display, io::Write, path::PathBuf, rc::Rc};
@@ -93,6 +93,11 @@ impl Show {
     /// Get the programmer mutably.
     pub fn programmer_mut(&mut self) -> &mut Programmer {
         &mut self.programmer
+    }
+
+    /// Get the calculated DMX output for the current show state.
+    pub fn get_dmx_output(&self) -> &DmxOutput {
+        self.programmer.get_dmx_output()
     }
 }
 
@@ -239,7 +244,7 @@ impl Patchlist {
         let cached_description = match std::fs::read(&cached_file_path) {
             Ok(cached_file) => {
                 let cached_description = GdtfDescription::from_archive_bytes(&cached_file)
-                    .map_err(|_| Error::GdtfFileInvalid)?;
+                    .map_err(|err| Error::GdtfFileInvalid(err.to_string()))?;
                 log::info!("Using cached GDTF file '{}'", cached_file_path.display());
                 Some(cached_description)
             }
@@ -252,7 +257,7 @@ impl Patchlist {
                 let description_file = gdtf_share.download_file(revision_id).await?;
                 let reader = std::io::Cursor::new(description_file.clone());
                 let description = GdtfDescription::from_archive_reader(reader)
-                    .map_err(|_| Error::GdtfFileInvalid)?;
+                    .map_err(|err| Error::GdtfFileInvalid(err.to_string()))?;
 
                 let mut file = std::fs::File::create_new(cached_file_path.clone())
                     .map_err(|_| Error::GdtfFileCacheFailed)?;
@@ -333,6 +338,33 @@ impl Fixture {
     pub fn description(&self) -> Rc<GdtfDescription> {
         self.description.clone().unwrap()
     }
+
+    /// Get the offset of the channel for the given attribute.
+    /// These could be multiple bytes if the attribute has a higher channel resolution.
+    pub fn channel_offset_for_attribute(&self, attribute_name: &str) -> Option<&[i32]> {
+        self.dmx_mode()
+            .channel_with_attribute(attribute_name)
+            .and_then(|channel| channel.offset.as_ref().map(|offset| offset.as_slice()))
+    }
+
+    /// Get the current DMX mode of the fixture.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the show has not been initialized yet,
+    /// or if the name of the mode name in the fixture is not found in the GDTF Description.
+    pub fn dmx_mode(&self) -> &DmxMode {
+        let mode = self
+            .description
+            .as_ref()
+            .expect("Show not initialized")
+            .fixture_type
+            .dmx_modes
+            .iter()
+            .find(|m| m.name == self.mode)
+            .expect("Mode not found");
+        mode
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
@@ -350,6 +382,8 @@ struct FixtureIntermediate {
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Programmer {
     changes: Changes,
+    #[serde(skip)]
+    dmx_output: DmxOutput,
 }
 
 impl Programmer {
@@ -357,6 +391,7 @@ impl Programmer {
     pub fn new() -> Self {
         Programmer {
             changes: Changes::new(),
+            dmx_output: DmxOutput::new(),
         }
     }
 
@@ -365,38 +400,35 @@ impl Programmer {
     /// # Errors
     ///
     /// This function will return an error if the fixture or attribute is not found.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use backstage::show::{AttributeValue, FixtureId, Programmer};
-    /// let mut programmer = Programmer::new();
-    /// let fixture_id = FixtureId::new(0);
-    /// programmer.set_attribute(&fixture_id, "Dimmer".to_string(), AttributeValue::new(1.0)).unwrap();
-    /// assert_eq!(programmer.get_attribute(&fixture_id, "Dimmer"), Some(&AttributeValue::new(1.0)));
-    /// ```
-    ///
-    /// ```
-    /// # use backstage::show::{AttributeValue, FixtureId, Programmer};
-    /// let mut programmer = Programmer::new();
-    /// let fixture_id = FixtureId::new(0);
-    /// programmer.set_attribute(&fixture_id, "Dimmer".to_string(), AttributeValue::new(1.0)).unwrap();
-    /// assert_eq!(programmer.get_attribute(&fixture_id, "Focus"), None);
-    /// ```
     pub fn set_attribute(
         &mut self,
-        fixture_id: &FixtureId,
+        fixture: &Fixture,
         attribute_name: String,
         value: AttributeValue,
     ) -> Result<(), Error> {
-        if !self.changes.contains_key(fixture_id) {
-            self.changes.insert(fixture_id.clone(), HashMap::new());
+        if !self.changes.contains_key(&fixture.id) {
+            self.changes.insert(fixture.id.clone(), HashMap::new());
         }
+
+        let Some(channel_offset) = fixture.channel_offset_for_attribute(&attribute_name) else {
+            return Err(Error::AttributeNotFound(attribute_name));
+        };
+        let value_bytes =
+            value.to_bytes(ChannelResolution::try_from(channel_offset.len() as u8 * 8)?);
+
+        let channel_offset = channel_offset
+            .iter()
+            // NOTE: We subtract 1 from the offset because the GDTF spec uses 1-based indexing for the offsets.
+            .map(|&offset| offset as u16 - 1)
+            .collect::<Vec<_>>();
+
+        self.dmx_output
+            .set_values(&fixture.channel, &channel_offset, value_bytes.as_slice())?;
 
         let fixture_changes = self
             .changes
-            .get_mut(fixture_id)
-            .ok_or(Error::FixtureNotFound(*fixture_id))?;
+            .get_mut(&fixture.id)
+            .ok_or(Error::FixtureNotFound(fixture.id))?;
         fixture_changes.insert(attribute_name, value);
 
         Ok(())
@@ -404,19 +436,6 @@ impl Programmer {
 
     /// Get the value of an attribute of a fixture.
     /// Returns `None` if the attribute is not found.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use backstage::show::{AttributeValue, FixtureId, Programmer};
-    /// let mut programmer = Programmer::new();
-    /// let fixture_id = FixtureId::new(0);
-    /// programmer.set_attribute(&fixture_id, "Dimmer".to_string(), AttributeValue::new(1.0)).unwrap();
-    ///
-    /// assert_eq!(programmer.get_attribute(&fixture_id, "Dimmer"), Some(&AttributeValue::new(1.0)));
-    /// assert_eq!(programmer.get_attribute(&fixture_id, "Focus"), None);
-    /// assert_eq!(programmer.get_attribute(&FixtureId::new(1), "Dimmer"), None);
-    /// ```
     pub fn get_attribute(
         &self,
         fixture_id: &FixtureId,
@@ -425,6 +444,11 @@ impl Programmer {
         self.changes
             .get(fixture_id)
             .and_then(|fixture_changes| fixture_changes.get(attribute_name))
+    }
+
+    /// Get the DMX output of the programmer.
+    pub fn get_dmx_output(&self) -> &DmxOutput {
+        &self.dmx_output
     }
 }
 
@@ -501,6 +525,48 @@ impl AttributeValue {
 
         Ok(Self::new(value))
     }
+
+    /// Convert the attribute value to raw bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use backstage::show::{AttributeValue, ChannelResolution};
+    /// let value = AttributeValue::new(0.0);
+    /// assert_eq!(value.to_bytes(ChannelResolution::Bit8), vec![0x00]);
+    ///
+    /// let value = AttributeValue::new(0.0);
+    /// assert_eq!(value.to_bytes(ChannelResolution::Bit32), vec![0x00, 0x00, 0x00, 0x00]);
+    ///
+    /// let value = AttributeValue::new(1.0);
+    /// assert_eq!(value.to_bytes(ChannelResolution::Bit8), vec![0xFF]);
+    ///
+    /// let value = AttributeValue::new(1.0);
+    /// assert_eq!(value.to_bytes(ChannelResolution::Bit32), vec![0xFF, 0xFF, 0xFF, 0xFF]);
+    ///
+    /// let value = AttributeValue::new(0.5);
+    /// assert_eq!(value.to_bytes(ChannelResolution::Bit8), vec![0x80]);
+    ///
+    /// let value = AttributeValue::new(0.5);
+    /// assert_eq!(value.to_bytes(ChannelResolution::Bit16), vec![0x80, 0x00]);
+    ///
+    /// let value = AttributeValue::new(0.5);
+    /// assert_eq!(value.to_bytes(ChannelResolution::Bit24), vec![0x80, 0x00, 0x00]);
+    ///
+    /// let value = AttributeValue::new(0.5);
+    /// assert_eq!(value.to_bytes(ChannelResolution::Bit32), vec![0x80, 0x00, 0x00, 0x00]);
+    /// ```
+    pub fn to_bytes(&self, channel_resolution: ChannelResolution) -> Vec<u8> {
+        let max_value = 2u64.pow(channel_resolution as u32) - 1;
+        let scaled_value = (self.0 * max_value as f32).round() as u32;
+
+        match channel_resolution {
+            ChannelResolution::Bit8 => vec![scaled_value as u8],
+            ChannelResolution::Bit16 => (scaled_value as u32).to_be_bytes()[2..].to_vec(),
+            ChannelResolution::Bit24 => (scaled_value as u32).to_be_bytes()[1..].to_vec(),
+            ChannelResolution::Bit32 => scaled_value.to_be_bytes().to_vec(),
+        }
+    }
 }
 
 /// The resolution of a DMX channel.
@@ -534,6 +600,13 @@ impl TryFrom<u8> for ChannelResolution {
 /// Error type for errors related to the show.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum Error {
+    /// A GDTF Share error.
+    #[error("{0}")]
+    GdtfShareError(#[from] gdtf_share::Error),
+    /// A DMX error.
+    #[error("{0}")]
+    DmxError(#[from] dmx::Error),
+
     /// Error when the GDTF share is not authenticated.
     #[error("GDTF share is not authenticated failed")]
     GdtfShareNotAuthenticated,
@@ -544,11 +617,8 @@ pub enum Error {
     #[error("GDTF file download failed")]
     GdtfFileDownloadFailed,
     /// Error when trying to parse a GDTF file.
-    #[error("GDTF file invalid")]
-    GdtfFileInvalid,
-    /// Error related to the GDTF share.
-    #[error("{0}")]
-    GdtfError(#[from] gdtf_share::Error),
+    #[error("GDTF file invalid: {0}")]
+    GdtfFileInvalid(String),
     /// Error when a fixture is not found.
     #[error("Fixture not found with id {0}")]
     FixtureNotFound(FixtureId),
