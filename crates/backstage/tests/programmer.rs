@@ -31,9 +31,8 @@ fn test_dmx_output() {
         .unwrap();
 
     let dmx_output = show.programmer().get_dmx_output();
-    dbg!(&dmx_output);
     assert_eq!(
-        dmx_output.get_value(&DmxChannel::new(1, 2).unwrap()),
+        dmx_output.get_value(&DmxChannel::new(0, 1).unwrap()),
         Some(128)
     );
 }
@@ -55,7 +54,7 @@ fn patch_test_fixture(show: &mut Show) -> FixtureId {
         fixture_id,
         "Test Fixture".to_string(),
         1,
-        DmxChannel::new(1, 1).unwrap(),
+        DmxChannel::new(0, 0).unwrap(),
         "Basic".to_string(),
     ))
     .unwrap();

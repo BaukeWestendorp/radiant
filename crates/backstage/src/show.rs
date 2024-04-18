@@ -29,8 +29,6 @@ pub struct FixtureId(usize);
 
 impl FixtureId {
     /// Create a new fixture id.
-    ///
-    /// Will return None if the id is zero.
     pub fn new(id: usize) -> Self {
         Self(id)
     }

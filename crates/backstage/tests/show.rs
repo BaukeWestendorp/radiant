@@ -15,7 +15,7 @@ fn deserialize_show() {
                     "id": 1,
                     "label": "Test",
                     "revision_id": 1,
-                    "channel": [1, 2],
+                    "channel": [0, 1],
                     "mode": "Basic"
                 }
             ]

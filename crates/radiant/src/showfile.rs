@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 use backstage::show::Show;
 
+#[derive(Debug, Clone)]
 pub struct Showfile {
     pub show: Show,
 }
