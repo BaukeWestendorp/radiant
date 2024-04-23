@@ -247,10 +247,11 @@ impl AttributeSlider {
 impl Render for AttributeSlider {
     fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
-            .w_full()
+            .w_10()
             .h_full()
             .flex()
             .flex_col()
+            .items_center()
             .child(div().size_full().child(self.slider.clone()))
             .child(
                 self.attribute

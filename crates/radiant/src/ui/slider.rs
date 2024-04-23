@@ -50,7 +50,6 @@ impl Render for Slider {
                             .id(this.id.clone())
                             .size_full()
                             .relative()
-                            .bg(gpui::red())
                             .on_drag(
                                 DraggedSlider {
                                     id: this.id.clone(),
@@ -71,7 +70,9 @@ impl Render for Slider {
             },
             |_bounds, mut element, cx| element.paint(cx),
         )
-        .size_full()
+        .border()
+        .border_color(gpui::white())
+        .h_full()
     }
 }
 
