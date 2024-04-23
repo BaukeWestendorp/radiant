@@ -378,15 +378,50 @@ impl Fixture {
             .attributes
     }
 
-    /// Get all attributes for a feature.
+    /// Get all attributes for the current mode of the fixture.
     ///
     /// # Panics
     ///
     /// This function will panic if the show has not been initialized yet.
-    pub fn attributes_for_feature(&self, feature: &Feature) -> Vec<&Rc<Attribute>> {
-        self.attributes()
+    pub fn attributes_for_current_mode(&self) -> Vec<&Rc<Attribute>> {
+        self.dmx_mode()
+            .dmx_channels
+            .iter()
+            .flat_map(|channel| {
+                channel
+                    .logical_channels
+                    .iter()
+                    .filter_map(|logical_channel| self.attribute(&logical_channel.attribute.name))
+            })
+            .collect()
+    }
+
+    /// Get an attribute by name.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the show has not been initialized yet.
+    pub fn attribute(&self, attribute_name: &str) -> Option<&Rc<Attribute>> {
+        self.description
+            .as_ref()
+            .expect("Show not initialized")
+            .fixture_type
+            .attribute_definitions
+            .attributes
+            .iter()
+            .find(|attribute| attribute.name == *attribute_name)
+    }
+
+    /// Get all attributes for a feature in the current mode of the fixture.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the show has not been initialized yet.
+    pub fn attributes_for_feature_in_current_mode(&self, feature: &Feature) -> Vec<&Rc<Attribute>> {
+        self.attributes_for_current_mode()
             .iter()
             .filter(|attribute| *attribute.feature == *feature)
+            .cloned()
             .collect()
     }
 
@@ -451,7 +486,7 @@ impl Programmer {
     /// # Errors
     ///
     /// This function will return an error if the fixture or attribute is not found.
-    pub fn set_attribute(
+    pub fn set_attribute_value(
         &mut self,
         fixture: &Fixture,
         attribute_name: String,
@@ -487,7 +522,7 @@ impl Programmer {
 
     /// Get the value of an attribute of a fixture.
     /// Returns `None` if the attribute is not found.
-    pub fn get_attribute(
+    pub fn get_attribute_value(
         &self,
         fixture_id: &FixtureId,
         attribute_name: &str,

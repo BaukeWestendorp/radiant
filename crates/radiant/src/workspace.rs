@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use backstage::show::{AttributeValue, FixtureId};
 use gdtf::{Attribute, Feature};
 use gpui::{
     div, AppContext, Context, Global, IntoElement, ParentElement, Render, SharedString, Styled,
@@ -121,7 +122,10 @@ impl AttributeEditor {
             .unwrap();
 
         let mut attributes = vec![];
-        for attribute in fixture.attributes_for_feature(&feature).into_iter() {
+        for attribute in fixture
+            .attributes_for_feature_in_current_mode(&feature)
+            .into_iter()
+        {
             if attribute.main_attribute.is_some() {
                 continue;
                 // FIXME: We should do something with secondary attributes.
@@ -194,7 +198,42 @@ pub struct AttributeSlider {
 
 impl AttributeSlider {
     pub fn build(attribute: Rc<Attribute>, cx: &mut WindowContext) -> View<Self> {
-        let slider_value = cx.new_model(|_cx| 0.5);
+        let fixture_id = FixtureId::new(101);
+
+        let slider_value = cx.new_model({
+            let attribute_name = attribute.name.clone();
+            move |cx| {
+                let value = Showfile::get(cx)
+                    .show
+                    .programmer()
+                    .get_attribute_value(&fixture_id, &attribute_name);
+
+                value.map(|v| v.value()).unwrap_or(0.0)
+            }
+        });
+
+        cx.observe(&slider_value, {
+            let attribute_name = attribute.name.clone();
+            move |slider_value, cx| {
+                let value = *slider_value.read(cx);
+                Showfile::update(cx, |showfile, _cx| {
+                    let fixture = showfile
+                        .show
+                        .patchlist()
+                        .fixture(&fixture_id)
+                        .unwrap()
+                        .clone();
+
+                    showfile.show.programmer_mut().set_attribute_value(
+                        &fixture,
+                        attribute_name.clone(),
+                        AttributeValue::new(value),
+                    )
+                })
+                .unwrap();
+            }
+        })
+        .detach();
 
         cx.new_view(|cx| Self {
             slider: cx.new_view(|_cx| {
