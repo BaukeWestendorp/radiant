@@ -4,6 +4,7 @@ use gpui::App;
 mod app;
 mod output;
 mod showfile;
+mod ui;
 mod workspace;
 
 /// Radiant is a lighting design software.
