@@ -3,7 +3,7 @@
 //! The show module contains the show struct and its sub-structs.
 
 use crate::dmx::{self, DmxChannel, DmxOutput};
-use gdtf::{DmxMode, GdtfDescription};
+use gdtf::{Attribute, DmxMode, Feature, FeatureGroup, GdtfDescription};
 use gdtf_share::GdtfShare;
 use lazy_static::lazy_static;
 use std::{collections::HashMap, fmt::Display, io::Write, path::PathBuf, rc::Rc};
@@ -337,12 +337,57 @@ impl Fixture {
         self.description.clone().unwrap()
     }
 
-    /// Get the offset of the channel for the given attribute.
-    /// These could be multiple bytes if the attribute has a higher channel resolution.
-    pub fn channel_offset_for_attribute(&self, attribute_name: &str) -> Option<&[i32]> {
-        self.dmx_mode()
-            .channel_with_attribute(attribute_name)
-            .and_then(|channel| channel.offset.as_ref().map(|offset| offset.as_slice()))
+    /// Get all feature groups of the fixture type.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the show has not been initialized yet.
+    pub fn feature_groups(&self) -> &[Rc<FeatureGroup>] {
+        &self
+            .description
+            .as_ref()
+            .expect("Show not initialized")
+            .fixture_type
+            .attribute_definitions
+            .feature_groups
+    }
+
+    /// Get a feature group by name.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the show has not been initialized yet.
+    pub fn feature_group(&self, feature_group_name: &str) -> Option<&Rc<FeatureGroup>> {
+        self.feature_groups()
+            .iter()
+            .find(|fg| fg.name == *feature_group_name)
+    }
+
+    /// Get all attributes of the fixture type.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the show has not been initialized yet.
+    pub fn attributes(&self) -> &[Rc<Attribute>] {
+        &self
+            .description
+            .as_ref()
+            .expect("Show not initialized")
+            .fixture_type
+            .attribute_definitions
+            .attributes
+    }
+
+    /// Get all attributes for a feature.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the show has not been initialized yet.
+    pub fn attributes_for_feature(&self, feature: &Feature) -> Vec<&Rc<Attribute>> {
+        self.attributes()
+            .iter()
+            .filter(|attribute| *attribute.feature == *feature)
+            .collect()
     }
 
     /// Get the current DMX mode of the fixture.
@@ -362,6 +407,14 @@ impl Fixture {
             .find(|m| m.name == self.mode)
             .expect("Mode not found");
         mode
+    }
+
+    /// Get the offset of the channel for the given attribute.
+    /// These could be multiple bytes if the attribute has a higher channel resolution.
+    pub fn channel_offset_for_attribute(&self, attribute_name: &str) -> Option<&[i32]> {
+        self.dmx_mode()
+            .channel_with_attribute(attribute_name)
+            .and_then(|channel| channel.offset.as_ref().map(|offset| offset.as_slice()))
     }
 }
 
