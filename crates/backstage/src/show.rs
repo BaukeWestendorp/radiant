@@ -50,6 +50,7 @@ pub type RevisionId = i32;
 pub struct Show {
     patchlist: Patchlist,
     programmer: Programmer,
+    selected_fixtures: Vec<FixtureId>,
 }
 
 impl Show {
@@ -58,6 +59,7 @@ impl Show {
         Self {
             patchlist: Patchlist::new(),
             programmer: Programmer::new(),
+            selected_fixtures: Vec::new(),
         }
     }
 
@@ -95,7 +97,20 @@ impl Show {
 
     /// Get the calculated DMX output for the current show state.
     pub fn get_dmx_output(&self) -> &DmxOutput {
-        self.programmer.get_dmx_output()
+        self.programmer().get_dmx_output()
+    }
+
+    /// Get the selected fixtures.
+    pub fn selected_fixtures(&self) -> Vec<&Fixture> {
+        self.selected_fixtures
+            .iter()
+            .map(|fixture_id| self.patchlist().fixture(&fixture_id).unwrap())
+            .collect()
+    }
+
+    /// Get the id's of the selected fixtures
+    pub fn selected_fixture_ids(&self) -> &[FixtureId] {
+        &self.selected_fixtures
     }
 }
 
@@ -115,6 +130,8 @@ struct ShowIntermediate {
     patchlist: PatchlistIntermediate,
     #[serde(default = "Default::default")]
     programmer: Programmer,
+    #[serde(default = "Default::default")]
+    selected_fixtures: Vec<FixtureId>,
 }
 
 impl TryInto<Show> for ShowIntermediate {
@@ -124,6 +141,7 @@ impl TryInto<Show> for ShowIntermediate {
         Ok(Show {
             patchlist: self.patchlist.try_into()?,
             programmer: self.programmer,
+            selected_fixtures: self.selected_fixtures,
         })
     }
 }
