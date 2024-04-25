@@ -154,7 +154,8 @@ impl Patchlist {
         gdtf_share_password: String,
     ) -> Result<(), Error> {
         self.authenticate_gdtf_share(gdtf_share_username, gdtf_share_password)
-            .await?;
+            .await
+            .ok();
 
         for fixture in self.fixtures.clone() {
             self.patch_fixture(
@@ -232,11 +233,6 @@ impl Patchlist {
             return Ok(description.clone());
         }
 
-        let gdtf_share = match self.gdtf_share {
-            Some(ref gdtf_share) => gdtf_share,
-            None => return Err(Error::GdtfShareNotAuthenticated),
-        };
-
         let cached_file_path = FIXTURE_CACHE_PATH.join(format!("{}.gdtf", revision_id));
 
         let cached_description = match std::fs::read(&cached_file_path) {
@@ -252,6 +248,11 @@ impl Patchlist {
         let description = match cached_description {
             Some(cached_description) => cached_description,
             None => {
+                let gdtf_share = match self.gdtf_share {
+                    Some(ref gdtf_share) => gdtf_share,
+                    None => return Err(Error::GdtfShareNotAuthenticated),
+                };
+
                 let description_file = gdtf_share.download_file(revision_id).await?;
                 let reader = std::io::Cursor::new(description_file.clone());
                 let description = GdtfDescription::from_archive_reader(reader)
