@@ -1,52 +1,67 @@
 use gpui::{
-    div, prelude::FluentBuilder, px, InteractiveElement, IntoElement, Model, ParentElement, Render,
-    SharedString, StatefulInteractiveElement, Styled, View, ViewContext, VisualContext,
-    WindowContext,
+    div, prelude::FluentBuilder, px, ElementId, InteractiveElement, IntoElement, Model,
+    ParentElement, Render, SharedString, StatefulInteractiveElement, Styled, View, ViewContext,
+    VisualContext, WindowContext,
 };
 
-pub struct Picker {
-    labels: Vec<SharedString>,
-    selected: Model<Option<usize>>,
+pub struct Picker<V>
+where
+    V: PartialEq + Clone + 'static,
+{
+    options: Vec<PickerOption<V>>,
+    selected: Model<Option<PickerOption<V>>>,
 }
 
-impl Picker {
+impl<V: PartialEq + Clone + 'static> Picker<V> {
     pub fn build(
-        labels: Vec<SharedString>,
-        selected: Model<Option<usize>>,
+        options: Vec<PickerOption<V>>,
+        selected: Model<Option<PickerOption<V>>>,
         cx: &mut WindowContext,
     ) -> View<Self> {
-        cx.new_view(|_cx| Self { labels, selected })
+        cx.new_view(|_cx| Self { options, selected })
     }
 }
 
-impl Render for Picker {
+impl<V: PartialEq + Clone + 'static> Render for Picker<V> {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let selected_ix = self.selected.read(cx);
+        let selected_option = self.selected.read(cx);
 
-        let buttons = self
-            .labels
-            .clone()
-            .into_iter()
-            .enumerate()
-            .map(|(ix, label)| {
-                div()
-                    .id(label.clone())
-                    .px_2()
-                    .py(px(2.0))
-                    .border()
-                    .border_color(gpui::white())
-                    .on_click(cx.listener(move |this, _event, cx| {
-                        this.selected.update(cx, |selected, cx| {
-                            *selected = Some(ix);
-                            cx.notify();
+        let buttons = self.options.clone().into_iter().map(|option| {
+            let disabled = option.value == None;
+            let selected = selected_option.as_ref().is_some_and(|o| o.id == option.id);
+            let label = option.label.clone();
+
+            div()
+                .id(option.id.clone())
+                .px_2()
+                .py(px(2.0))
+                .border()
+                .border_color(gpui::white())
+                .when(disabled, |this| {
+                    this.border_color(gpui::rgb(0x444444)).cursor_not_allowed()
+                })
+                .when(selected, |this| this.border_color(gpui::red()))
+                .when(!disabled, |this| {
+                    this.on_click({
+                        cx.listener(move |this, _event, cx| {
+                            let option = option.clone();
+                            this.selected.update(cx, move |selected, cx| {
+                                *selected = Some(option);
+                                cx.notify();
+                            })
                         })
-                    }))
-                    .when(*selected_ix == Some(ix), |this| {
-                        this.border_color(gpui::red())
                     })
-                    .child(label)
-            });
+                })
+                .child(label)
+        });
 
         div().children(buttons)
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct PickerOption<V: PartialEq + Clone> {
+    pub id: ElementId,
+    pub label: SharedString,
+    pub value: Option<V>,
 }

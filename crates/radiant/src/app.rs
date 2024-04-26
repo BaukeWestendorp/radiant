@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use gpui::{AppContext, WindowOptions};
+use gpui::{AppContext, VisualContext, WindowOptions};
 
 use crate::{
     output::{artnet::ArtnetDmxProtocol, OutputManager},
@@ -19,6 +19,7 @@ pub fn run_app(app: gpui::App, showfile_path: Option<PathBuf>) {
 
         cx.open_window(WindowOptions::default(), |cx| {
             let view = Workspace::build(cx);
+            cx.focus_view(&view);
             view
         });
     });

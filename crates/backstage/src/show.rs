@@ -112,6 +112,13 @@ impl Show {
     pub fn selected_fixture_ids(&self) -> &[FixtureId] {
         &self.selected_fixtures
     }
+
+    /// Add a fixture id to the currently selected fixtures.
+    pub fn select_fixture(&mut self, fixture_id: FixtureId) {
+        if !self.selected_fixtures.contains(&fixture_id) {
+            self.selected_fixtures.push(fixture_id);
+        }
+    }
 }
 
 impl<'de> serde::Deserialize<'de> for Show {
