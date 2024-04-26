@@ -62,17 +62,22 @@ impl AttributeEditor {
     }
 
     fn update_feature_picker(&mut self, feature_group: &SharedString, cx: &mut ViewContext<Self>) {
-        let features = Showfile::get(cx)
-            .show
-            .selected_fixtures()
-            .iter()
-            .flat_map(|fixture| {
-                fixture
-                    .feature_group(feature_group)
-                    .map(|fg| fg.features.clone())
-                    .unwrap_or_default()
-            })
-            .collect::<Vec<_>>();
+        let mut features: Vec<Rc<Feature>> = Vec::new();
+
+        for fixture in Showfile::get(cx).show.selected_fixtures().iter() {
+            for feature in fixture
+                .feature_group(feature_group)
+                .map(|fg| fg.features.clone())
+                .unwrap_or_default()
+            {
+                if !features
+                    .iter()
+                    .any(|f: &Rc<Feature>| f.name == feature.name)
+                {
+                    features.push(feature);
+                }
+            }
+        }
 
         if features.is_empty() {
             self.feature_picker = None;
