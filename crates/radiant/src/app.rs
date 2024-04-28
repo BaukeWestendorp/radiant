@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
 use gpui::{
-    actions, px, AppContext, KeyBinding, Menu, MenuItem, Pixels, VisualContext, WindowOptions,
+    actions, point, px, size, AppContext, Bounds, KeyBinding, Menu, MenuItem, Pixels,
+    VisualContext, WindowOptions,
 };
 
 actions!(app, [Quit]);
@@ -36,7 +37,22 @@ pub fn run_app(app: gpui::App, showfile_path: Option<PathBuf>) {
             log::info!("Exited Radiant. Goodbye!")
         });
 
-        cx.open_window(WindowOptions::default(), |cx| {
+        let window_size = size(1719.into(), 998.into());
+        let window_options = WindowOptions {
+            bounds: Some(Bounds {
+                origin: cx
+                    .primary_display()
+                    .map(|display| {
+                        display.bounds().center()
+                            - point(window_size.width / 2, window_size.height / 2)
+                    })
+                    .unwrap_or(point(1920.into(), 1080.into())),
+                size: window_size,
+            }),
+            ..Default::default()
+        };
+
+        cx.open_window(window_options, |cx| {
             let view = Workspace::build(cx);
             cx.focus_view(&view);
             view
