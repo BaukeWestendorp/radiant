@@ -46,7 +46,7 @@ pub type RevisionId = i32;
 /// # Show
 ///
 /// The show struct contains all information related to a show.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Show {
     patchlist: Patchlist,
     programmer: Programmer,
@@ -161,6 +161,12 @@ pub struct Patchlist {
     fixtures: Vec<Fixture>,
     gdtf_descriptions: HashMap<RevisionId, Rc<GdtfDescription>>,
     gdtf_share: Option<GdtfShare>,
+}
+
+impl PartialEq for Patchlist {
+    fn eq(&self, other: &Self) -> bool {
+        self.fixtures == other.fixtures && self.gdtf_descriptions == other.gdtf_descriptions
+    }
 }
 
 impl Patchlist {

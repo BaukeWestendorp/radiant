@@ -3,15 +3,9 @@ use gpui::{
     VisualContext, WindowContext,
 };
 
-use crate::geo::Bounds;
+use crate::showfile::Window;
 
 pub mod attribute_editor;
-
-pub struct Window {
-    pub id: usize,
-    pub bounds: Bounds,
-    pub kind: WindowKind,
-}
 
 pub struct WindowView<D: WindowDelegate> {
     window: Window,

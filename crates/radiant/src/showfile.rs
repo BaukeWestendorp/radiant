@@ -6,7 +6,7 @@ use backstage::show::Show;
 
 use crate::geo::{Bounds, Size};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Showfile {
     pub show: Show,
     pub layouts: Layouts,
@@ -61,10 +61,16 @@ impl Showfile {
 
 impl Global for Showfile {}
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Layouts {
     pub selected_layout_id: usize,
     pub layouts: Vec<Layout>,
+}
+
+impl Layouts {
+    pub fn current_layout(&self) -> Option<&Layout> {
+        self.layouts.get(self.selected_layout_id)
+    }
 }
 
 impl Default for Layouts {
@@ -84,7 +90,7 @@ impl Default for Layouts {
     }
 }
 
-#[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Default, serde::Deserialize, serde::Serialize)]
 pub struct Layout {
     pub id: usize,
     pub label: SharedString,
@@ -98,38 +104,37 @@ impl Layout {
     }
 }
 
-#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct Window {
     pub id: usize,
     pub bounds: Bounds,
     pub kind: WindowKind,
 }
 
-#[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize, serde::Serialize)]
 pub enum WindowKind {
     Pool(PoolWindow),
     AttributeEditor,
 }
 
-#[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct PoolWindow {
     pub kind: PoolWindowKind,
     pub scroll_offset: i32,
 }
 
-#[derive(Debug, Clone, Copy, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize, serde::Serialize)]
 pub enum PoolWindowKind {
     Group,
-    Sequence,
     Preset,
 }
 
-#[derive(Debug, Clone, Default, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct Io {
     pub artnet: Vec<ArtnetProtocol>,
 }
 
-#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct ArtnetProtocol {
     pub target_ip: String,
 }

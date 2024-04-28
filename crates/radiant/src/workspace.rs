@@ -4,16 +4,12 @@ use gpui::{
     ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 
-use crate::{
-    geo::{Bounds, Point, Size},
-    showfile::Showfile,
-    window::{attribute_editor::AttributeEditorWindowDelegate, Window, WindowKind, WindowView},
-};
+use crate::{layout::LayoutView, showfile::Showfile};
 
 pub struct Workspace {
     selected_fixtures: Model<Vec<FixtureId>>,
 
-    window: View<WindowView<AttributeEditorWindowDelegate>>,
+    current_layout_view: View<LayoutView>,
 
     focus_handle: FocusHandle,
 }
@@ -38,24 +34,31 @@ impl Workspace {
             })
             .detach();
 
+            cx.observe_global::<Showfile>({
+                move |workspace: &mut Self, cx| {
+                    let current_layout = workspace.current_layout_view.read(cx).layout.clone();
+
+                    let updated_layout = Showfile::get(cx).layouts.current_layout();
+                    if Some(current_layout.read(cx)) != updated_layout {
+                        workspace.current_layout_view = LayoutView::build(
+                            current_layout,
+                            workspace.selected_fixtures.clone(),
+                            cx,
+                        );
+                        cx.notify();
+                    }
+                }
+            })
+            .detach();
+
             Self {
+                selected_fixtures: selected_fixtures.clone(),
                 focus_handle: cx.focus_handle(),
-                window: WindowView::build(
-                    Window {
-                        id: 0,
-                        bounds: Bounds {
-                            size: Size {
-                                width: 10,
-                                height: 10,
-                            },
-                            origin: Point { x: 0, y: 0 },
-                        },
-                        kind: WindowKind::AttributeEditor,
-                    },
-                    AttributeEditorWindowDelegate::new(selected_fixtures.clone(), cx),
+                current_layout_view: LayoutView::build(
+                    cx.new_model(|cx| Showfile::get(cx).layouts.current_layout().unwrap().clone()),
+                    selected_fixtures,
                     cx,
                 ),
-                selected_fixtures,
             }
         })
     }
@@ -66,7 +69,7 @@ impl Render for Workspace {
         div()
             .size_full()
             .text_color(gpui::white())
-            .child(self.window.clone())
+            .child(self.current_layout_view.clone())
     }
 }
 

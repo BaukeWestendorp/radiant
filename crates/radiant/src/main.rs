@@ -3,6 +3,7 @@ use gpui::App;
 
 mod app;
 mod geo;
+mod layout;
 mod output;
 mod pool;
 mod showfile;
