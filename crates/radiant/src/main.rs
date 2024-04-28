@@ -4,6 +4,7 @@ use gpui::App;
 mod app;
 mod attribute_editor;
 mod output;
+mod pool;
 mod showfile;
 mod ui;
 mod workspace;

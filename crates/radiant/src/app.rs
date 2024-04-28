@@ -1,8 +1,12 @@
 use std::path::PathBuf;
 
-use gpui::{actions, AppContext, KeyBinding, Menu, MenuItem, VisualContext, WindowOptions};
+use gpui::{
+    actions, px, AppContext, KeyBinding, Menu, MenuItem, Pixels, VisualContext, WindowOptions,
+};
 
 actions!(app, [Quit]);
+
+pub const GRID_SIZE: Pixels = px(80.0);
 
 use crate::{
     output::{artnet::ArtnetDmxProtocol, OutputManager},

@@ -4,12 +4,13 @@ use gpui::{
     ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 
-use crate::{attribute_editor::AttributeEditor, showfile::Showfile};
+use crate::{attribute_editor::AttributeEditor, pool::Pool, showfile::Showfile};
 
 pub struct Workspace {
     attribute_editor: View<AttributeEditor>,
     selected_fixtures: Model<Vec<FixtureId>>,
     focus_handle: FocusHandle,
+    pool: View<Pool>,
 }
 
 impl Workspace {
@@ -36,6 +37,7 @@ impl Workspace {
                 focus_handle: cx.focus_handle(),
                 attribute_editor: AttributeEditor::build(selected_fixtures.clone(), cx),
                 selected_fixtures,
+                pool: Pool::build(30, 30, cx),
             }
         })
     }
@@ -46,7 +48,8 @@ impl Render for Workspace {
         div()
             .size_full()
             .text_color(gpui::white())
-            .child(self.attribute_editor.clone())
+            .child(div().w_56().h_56().child(self.attribute_editor.clone()))
+            .child(self.pool.clone())
     }
 }
 
