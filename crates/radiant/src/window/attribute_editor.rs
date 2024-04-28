@@ -68,6 +68,9 @@ impl AttributeEditor {
                     let selected_fixtures = selected_fixtures.clone();
                     move |this: &mut Self, selected_feature_group, cx| {
                         this.attribute_sliders = Vec::new();
+                        selected_feature.update(cx, |selected_feature, _cx| {
+                            *selected_feature = None;
+                        });
 
                         let Some(feature_group) = selected_feature_group
                             .read(cx)
