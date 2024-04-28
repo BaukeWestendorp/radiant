@@ -12,6 +12,30 @@ use crate::{
     ui::{Picker, PickerOption, Slider},
 };
 
+use super::{WindowDelegate, WindowView};
+
+pub struct AttributeEditorWindowDelegate {
+    attribute_editor: View<AttributeEditor>,
+}
+
+impl AttributeEditorWindowDelegate {
+    pub fn new(selected_fixtures: Model<Vec<FixtureId>>, cx: &mut WindowContext) -> Self {
+        Self {
+            attribute_editor: AttributeEditor::build(selected_fixtures, cx),
+        }
+    }
+}
+
+impl WindowDelegate for AttributeEditorWindowDelegate {
+    fn title(&mut self, _cx: &mut ViewContext<WindowView<Self>>) -> Option<SharedString> {
+        Some("Attribute Editor".into())
+    }
+
+    fn render_content(&mut self, _cx: &mut ViewContext<WindowView<Self>>) -> impl IntoElement {
+        div().size_full().p_2().child(self.attribute_editor.clone())
+    }
+}
+
 pub struct AttributeEditor {
     feature_group_picker: View<Picker<Rc<FeatureGroup>>>,
     feature_picker: Option<View<Picker<Rc<Feature>>>>,

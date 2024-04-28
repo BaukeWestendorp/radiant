@@ -37,6 +37,7 @@ impl<V: PartialEq + Clone + 'static> Render for Picker<V> {
                 .py(px(2.0))
                 .border()
                 .border_color(gpui::white())
+                .rounded_md()
                 .when(disabled, |this| {
                     this.border_color(gpui::rgb(0x444444)).cursor_not_allowed()
                 })

@@ -2,11 +2,12 @@ use clap::Parser;
 use gpui::App;
 
 mod app;
-mod attribute_editor;
+mod geo;
 mod output;
 mod pool;
 mod showfile;
 mod ui;
+mod window;
 mod workspace;
 
 /// Radiant is a lighting design software.

@@ -59,7 +59,15 @@ impl Render for Slider {
                             .on_drag_move(cx.listener(move |this, event, cx| {
                                 this.handle_drag(&bounds, event, cx)
                             }))
-                            .child(div().w_full().h(h).absolute().bottom_0().bg(gpui::green()))
+                            .child(
+                                div()
+                                    .absolute()
+                                    .w_full()
+                                    .h(h)
+                                    .rounded_md()
+                                    .bottom_0()
+                                    .bg(gpui::green()),
+                            )
                             .into_any_element()
                     });
 
@@ -72,6 +80,7 @@ impl Render for Slider {
         )
         .border()
         .border_color(gpui::white())
+        .rounded_md()
         .h_full()
     }
 }
