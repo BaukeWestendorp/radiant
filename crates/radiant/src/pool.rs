@@ -1,5 +1,5 @@
 use gpui::{
-    div, px, IntoElement, ParentElement, Render, Styled, View, ViewContext, VisualContext,
+    div, IntoElement, ParentElement, Render, Styled, View, ViewContext, VisualContext,
     WindowContext,
 };
 
