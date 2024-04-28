@@ -25,6 +25,7 @@ impl<D: WindowDelegate + 'static> WindowView<D> {
     fn render_content(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let background = div()
             .size_full()
+            .bg(gpui::black())
             .border()
             .border_color(gpui::white())
             .rounded_md();
@@ -37,6 +38,7 @@ impl<D: WindowDelegate + 'static> WindowView<D> {
                 div()
                     .absolute()
                     .size_full()
+                    .overflow_hidden()
                     .child(self.delegate.render_content(cx)),
             )
     }
@@ -76,17 +78,18 @@ pub trait WindowDelegate {
     where
         Self: Sized,
     {
+        let header_height = GRID_SIZE / 2.0;
+
         let main = div()
             .border()
             .border_color(gpui::blue())
+            .bg(gpui::rgb(0x000088))
             .rounded_md()
             .size_full()
             .flex()
             .items_center()
             .px_2()
             .children(self.title(cx));
-
-        let header_height = GRID_SIZE / 2.0;
 
         Some(
             div()
