@@ -3,7 +3,7 @@ use gpui::{
     VisualContext, WindowContext,
 };
 
-use crate::showfile::Window;
+use crate::{app::GRID_SIZE, showfile::Window};
 
 pub mod attribute_editor;
 
@@ -86,10 +86,13 @@ pub trait WindowDelegate {
             .px_2()
             .children(self.title(cx));
 
+        let header_height = GRID_SIZE / 2.0;
+
         Some(
             div()
                 .w_full()
-                .h_10()
+                .min_h(header_height)
+                .max_h(header_height)
                 .flex()
                 .gap_1()
                 .child(main)
