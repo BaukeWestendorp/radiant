@@ -1,19 +1,26 @@
 use gpui::{
     canvas, div, prelude::*, px, AvailableSpace, Bounds, DragMoveEvent, ElementId, Model, Pixels,
-    ViewContext,
+    View, ViewContext, WindowContext,
 };
 
 pub struct Slider {
     id: ElementId,
     value: Model<f32>,
+    markers: Option<Vec<f32>>,
 }
 
 impl Slider {
-    pub fn new(id: impl Into<ElementId>, value: Model<f32>) -> Self {
-        Self {
+    pub fn build(
+        id: impl Into<ElementId>,
+        value: Model<f32>,
+        markers: Option<Model<Vec<f32>>>,
+        cx: &mut WindowContext,
+    ) -> View<Self> {
+        cx.new_view(|cx| Self {
             id: id.into(),
             value,
-        }
+            markers: markers.map(|markers| markers.read(cx).clone()),
+        })
     }
 
     fn handle_drag(
@@ -46,6 +53,24 @@ impl Render for Slider {
                     let h = bounds.size.height * px(value);
 
                     let mut slider = this.update(cx, |this, cx| {
+                        let markers = this
+                            .markers
+                            .as_ref()
+                            .map(|markers| {
+                                markers
+                                    .iter()
+                                    .map(|marker| {
+                                        div()
+                                            .absolute()
+                                            .w_full()
+                                            .bottom(bounds.size.height * px(*marker))
+                                            .border_t()
+                                            .border_color(gpui::red())
+                                    })
+                                    .collect()
+                            })
+                            .unwrap_or_else(|| vec![]);
+
                         div()
                             .id(this.id.clone())
                             .size_full()
@@ -68,6 +93,7 @@ impl Render for Slider {
                                     .bottom_0()
                                     .bg(gpui::green()),
                             )
+                            .children(markers)
                             .into_any_element()
                     });
 
