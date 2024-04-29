@@ -1,3 +1,4 @@
+use backstage::cmd::{Command, Object};
 use gpui::{
     div, prelude::FluentBuilder, Global, InteractiveElement, IntoElement, MouseButton,
     ParentElement, SharedString, Styled, ViewContext, WindowContext,
@@ -175,7 +176,12 @@ impl PoolDelegate for GroupPoolWindowDelegate {
         )
     }
 
-    fn on_click_item(&mut self, id: usize, _cx: &mut WindowContext) {
-        log::info!("Clicked pool item {id}");
+    fn on_click_item(&mut self, id: usize, cx: &mut WindowContext) {
+        Showfile::update(cx, |showfile, _cx| {
+            showfile
+                .show
+                .execute_command(&Command::Select(Some(Object::Group(Some(id)))))
+                .unwrap();
+        });
     }
 }

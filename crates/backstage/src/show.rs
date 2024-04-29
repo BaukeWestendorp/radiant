@@ -126,6 +126,10 @@ impl Show {
             self.selected_fixtures.push(fixture_id);
         }
     }
+
+    pub fn clear_selection(&mut self) {
+        self.selected_fixtures.clear();
+    }
 }
 
 impl<'de> serde::Deserialize<'de> for Show {
@@ -577,6 +581,11 @@ impl Programmer {
     /// Get the DMX output of the programmer.
     pub fn get_dmx_output(&self) -> &DmxOutput {
         &self.dmx_output
+    }
+
+    /// Clear all changes in the programmer.
+    pub fn clear_changes(&mut self) {
+        self.changes.clear();
     }
 }
 

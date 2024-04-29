@@ -6,5 +6,6 @@
 
 #![warn(missing_docs)]
 
+pub mod cmd;
 pub mod dmx;
 pub mod show;
