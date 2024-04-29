@@ -740,13 +740,20 @@ impl TryFrom<u8> for ChannelResolution {
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Data {
     /// All groups in the show.
+    #[serde(default)]
     groups: Vec<Group>,
+    /// All presets in the show.
+    #[serde(default)]
+    presets: Vec<Preset>,
 }
 
 impl Data {
     /// Creates a new data collection.
     pub fn new() -> Self {
-        Self { groups: Vec::new() }
+        Self {
+            groups: Vec::new(),
+            presets: Vec::new(),
+        }
     }
 
     /// Get the groups.
@@ -757,6 +764,16 @@ impl Data {
     /// Get a group with the given id.
     pub fn group(&self, id: usize) -> Option<&Group> {
         self.groups().iter().find(|group| group.id == id)
+    }
+
+    /// Get the presets,
+    pub fn presets(&self) -> &[Preset] {
+        &self.presets
+    }
+
+    /// Get a preset with the given id.
+    pub fn preset(&self, id: usize) -> Option<&Preset> {
+        self.presets().iter().find(|preset| preset.id == id)
     }
 }
 
@@ -769,6 +786,18 @@ pub struct Group {
     pub label: String,
     /// An ordered list of all fixtures in the group.
     pub fixtures: Vec<FixtureId>,
+}
+
+/// A preset contains attribute values that should be changed.
+
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Preset {
+    /// The preset id.
+    pub id: usize,
+    /// The label of the preset.
+    pub label: String,
+    /// The list of changed attribute values.
+    pub attribute_values: HashMap<String, AttributeValue>,
 }
 
 /// Error type for errors related to the show.

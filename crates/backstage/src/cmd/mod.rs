@@ -19,6 +19,8 @@ pub enum Object {
     Fixture(Option<FixtureId>),
     /// A group in the show.
     Group(Option<usize>),
+    /// A Preset in the show.
+    Preset(Option<usize>),
 }
 
 impl std::fmt::Display for Object {
@@ -32,6 +34,11 @@ impl std::fmt::Display for Object {
             Object::Group(id) => write!(
                 f,
                 "group {}",
+                id.map(|id| id.to_string()).unwrap_or_default()
+            ),
+            Object::Preset(id) => write!(
+                f,
+                "preset {}",
                 id.map(|id| id.to_string()).unwrap_or_default()
             ),
         }
@@ -183,6 +190,32 @@ impl Show {
                         self.execute_command(&Command::Select(Some(Object::Fixture(Some(
                             *fixture_id,
                         )))))?;
+                    }
+                }
+                Some(Object::Preset(id)) => {
+                    let Some(id) = id else {
+                        return Err(Error::ExecutionError("No preset id provided".to_string()));
+                    };
+
+                    let preset = self
+                        .data()
+                        .preset(*id)
+                        .ok_or_else(|| {
+                            Error::ExecutionError(format!("Preset with id '{id}' not found"))
+                        })?
+                        .clone();
+
+                    for fixture_id in self.selected_fixture_ids().to_vec() {
+                        let fixture = self.patchlist().fixture(&fixture_id).unwrap().clone();
+                        for (attribute_name, value) in &preset.attribute_values {
+                            self.programmer_mut()
+                                .set_attribute_value(
+                                    &fixture,
+                                    attribute_name.clone(),
+                                    value.clone(),
+                                )
+                                .unwrap()
+                        }
                     }
                 }
                 None => {

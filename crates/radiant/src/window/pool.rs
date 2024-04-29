@@ -185,3 +185,44 @@ impl PoolDelegate for GroupPoolWindowDelegate {
         });
     }
 }
+
+pub struct PresetPoolWindowDelegate {}
+
+impl PresetPoolWindowDelegate {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl PoolDelegate for PresetPoolWindowDelegate {
+    fn title(&self, _cx: &mut WindowContext) -> SharedString {
+        "Preset".into()
+    }
+
+    fn has_content(&self, id: usize, cx: &mut WindowContext) -> bool {
+        Showfile::get(cx).show.data().preset(id).is_some()
+    }
+
+    fn render_pool_item(&mut self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement> {
+        let Some(preset) = Showfile::get(cx).show.data().preset(id) else {
+            return None;
+        };
+
+        Some(
+            div()
+                .size_full()
+                .p_1()
+                .child(div().my_auto().child(preset.label.clone()))
+                .overflow_hidden(),
+        )
+    }
+
+    fn on_click_item(&mut self, id: usize, cx: &mut WindowContext) {
+        Showfile::update(cx, |showfile, _cx| {
+            showfile
+                .show
+                .execute_command(&Command::Select(Some(Object::Preset(Some(id)))))
+                .unwrap();
+        });
+    }
+}

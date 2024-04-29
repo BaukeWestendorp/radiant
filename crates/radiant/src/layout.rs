@@ -9,7 +9,7 @@ use crate::{
     showfile::{Layout, PoolWindowKind, Window, WindowKind},
     window::{
         attribute_editor::AttributeEditorWindowDelegate,
-        pool::{GroupPoolWindowDelegate, PoolWindowDelegate},
+        pool::{GroupPoolWindowDelegate, PoolWindowDelegate, PresetPoolWindowDelegate},
         WindowView,
     },
 };
@@ -105,7 +105,7 @@ fn get_window_view(
                 WindowView::build(delegate, cx).into()
             }
             PoolWindowKind::Preset => {
-                let delegate = PoolWindowDelegate::new(GroupPoolWindowDelegate::new(), window);
+                let delegate = PoolWindowDelegate::new(PresetPoolWindowDelegate::new(), window);
                 WindowView::build(delegate, cx).into()
             }
         },
