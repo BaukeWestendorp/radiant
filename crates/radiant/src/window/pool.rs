@@ -1,9 +1,12 @@
 use gpui::{
-    div, prelude::FluentBuilder, InteractiveElement, IntoElement, MouseButton, ParentElement,
-    SharedString, Styled, ViewContext, WindowContext,
+    div, prelude::FluentBuilder, Global, InteractiveElement, IntoElement, MouseButton,
+    ParentElement, SharedString, Styled, ViewContext, WindowContext,
 };
 
-use crate::{app::GRID_SIZE, showfile::Window};
+use crate::{
+    app::GRID_SIZE,
+    showfile::{Showfile, Window},
+};
 
 use super::{WindowDelegate, WindowView};
 
@@ -12,7 +15,14 @@ pub trait PoolDelegate {
 
     fn has_content(&self, id: usize, cx: &mut WindowContext) -> bool;
 
-    fn render_pool_item(&mut self, id: usize, cx: &mut WindowContext) -> impl IntoElement;
+    fn render_pool_item(&mut self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement>;
+    fn render_header_item(
+        &mut self,
+        _id: usize,
+        _cx: &mut WindowContext,
+    ) -> Option<impl IntoElement> {
+        Option::<gpui::Empty>::None
+    }
 
     fn on_click_item(&mut self, id: usize, cx: &mut WindowContext);
 }
@@ -37,6 +47,8 @@ impl<D: PoolDelegate + 'static> WindowDelegate for PoolWindowDelegate<D> {
     }
 
     fn render_content(&mut self, cx: &mut ViewContext<WindowView<Self>>) -> impl IntoElement {
+        let line_height = cx.line_height() * 0.5;
+
         let header_cell = div()
             .size(GRID_SIZE)
             .border()
@@ -49,28 +61,45 @@ impl<D: PoolDelegate + 'static> WindowDelegate for PoolWindowDelegate<D> {
             .child(self.pool_delegate.title(cx));
 
         let items = (0..self.window.bounds.area()).map(|id| {
+            let has_content = self.pool_delegate.has_content(id, cx);
+
+            let border_color = match has_content {
+                true => gpui::white().into(),
+                false => gpui::rgb(0x999999),
+            };
+
+            let item_header = div()
+                .border_b()
+                .border_color(border_color)
+                .flex()
+                .items_center()
+                .justify_between()
+                .p_1()
+                .child(
+                    div()
+                        .when(!has_content, |this| this.text_color(gpui::rgb(0xaaaaaa)))
+                        .child(id.to_string()),
+                )
+                .children(self.pool_delegate.render_header_item(id, cx));
+
             div()
                 .size(GRID_SIZE)
                 .relative()
+                .text_sm()
                 .child(
                     div()
                         .absolute()
                         .size_full()
                         .border()
-                        .border_color(gpui::white())
-                        .rounded_md()
-                        .text_sm()
-                        .when(!self.pool_delegate.has_content(id, cx), |this| {
-                            this.text_color(gpui::rgb(0xaaaaaa))
-                        })
-                        .child(id.to_string())
-                        .pl_1(),
+                        .border_color(border_color)
+                        .rounded_md(),
                 )
                 .child(
                     div()
                         .absolute()
                         .size_full()
-                        .child(self.pool_delegate.render_pool_item(id, cx)),
+                        .child(item_header)
+                        .children(self.pool_delegate.render_pool_item(id, cx)),
                 )
                 .on_mouse_down(
                     MouseButton::Left,
@@ -84,6 +113,7 @@ impl<D: PoolDelegate + 'static> WindowDelegate for PoolWindowDelegate<D> {
             .w(self.window.bounds.size.width as f32 * GRID_SIZE)
             .h(self.window.bounds.size.height as f32 * GRID_SIZE)
             .overflow_hidden()
+            .line_height(line_height)
             .flex()
             .flex_wrap()
             .child(header_cell)
@@ -111,32 +141,38 @@ impl PoolDelegate for GroupPoolWindowDelegate {
         "Group".into()
     }
 
-    fn has_content(&self, _id: usize, _cx: &mut WindowContext) -> bool {
-        false
+    fn has_content(&self, id: usize, cx: &mut WindowContext) -> bool {
+        Showfile::get(cx).show.data().group(id).is_some()
     }
 
-    fn render_pool_item(&mut self, _id: usize, cx: &mut WindowContext) -> impl IntoElement {
-        div()
-            .size_full()
-            .child(
-                div()
-                    .h_6()
-                    .border_b()
-                    .border_color(gpui::white())
-                    .flex()
-                    .items_center()
-                    .justify_end()
-                    .pr_1()
-                    .text_sm()
-                    .child("3 fxt."),
-            )
-            .child(
-                div()
-                    .my_auto()
-                    .child("Item name long y sdfjl sdlkdf sdjfkl aya"),
-            )
-            .overflow_hidden()
-            .line_height(cx.line_height() * 0.5)
+    fn render_pool_item(&mut self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement> {
+        let Some(group) = Showfile::get(cx).show.data().group(id) else {
+            return None;
+        };
+
+        Some(
+            div()
+                .size_full()
+                .p_1()
+                .child(div().my_auto().child(group.label.clone()))
+                .overflow_hidden(),
+        )
+    }
+
+    fn render_header_item(
+        &mut self,
+        id: usize,
+        cx: &mut WindowContext,
+    ) -> Option<impl IntoElement> {
+        let Some(group) = Showfile::get(cx).show.data().group(id) else {
+            return None;
+        };
+
+        Some(
+            div()
+                .text_color(gpui::rgb(0xaaaaaa))
+                .child(format!("{} fxt.", group.fixtures.len())),
+        )
     }
 
     fn on_click_item(&mut self, id: usize, _cx: &mut WindowContext) {
