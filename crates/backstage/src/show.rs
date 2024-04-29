@@ -35,7 +35,7 @@ impl FixtureId {
 }
 
 impl Display for FixtureId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.0)
     }
 }
@@ -50,6 +50,7 @@ pub type RevisionId = i32;
 pub struct Show {
     patchlist: Patchlist,
     programmer: Programmer,
+    data: Data,
     selected_fixtures: Vec<FixtureId>,
 }
 
@@ -59,6 +60,7 @@ impl Show {
         Self {
             patchlist: Patchlist::new(),
             programmer: Programmer::new(),
+            data: Data::new(),
             selected_fixtures: Vec::new(),
         }
     }
@@ -93,6 +95,11 @@ impl Show {
     /// Get the programmer mutably.
     pub fn programmer_mut(&mut self) -> &mut Programmer {
         &mut self.programmer
+    }
+
+    /// Get the data collection.
+    pub fn data(&self) -> &Data {
+        &self.data
     }
 
     /// Get the calculated DMX output for the current show state.
@@ -138,6 +145,8 @@ struct ShowIntermediate {
     #[serde(default = "Default::default")]
     programmer: Programmer,
     #[serde(default = "Default::default")]
+    data: Data,
+    #[serde(default = "Default::default")]
     selected_fixtures: Vec<FixtureId>,
 }
 
@@ -148,6 +157,7 @@ impl TryInto<Show> for ShowIntermediate {
         Ok(Show {
             patchlist: self.patchlist.try_into()?,
             programmer: self.programmer,
+            data: self.data,
             selected_fixtures: self.selected_fixtures,
         })
     }
@@ -713,6 +723,41 @@ impl TryFrom<u8> for ChannelResolution {
             _ => Err(Error::InvalidChannelResolution(value)),
         }
     }
+}
+
+/// A collection of different types of data used in a show.
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Data {
+    /// All groups in the show.
+    groups: Vec<Group>,
+}
+
+impl Data {
+    /// Creates a new data collection.
+    pub fn new() -> Self {
+        Self { groups: Vec::new() }
+    }
+
+    /// Get the groups.
+    pub fn groups(&self) -> &[Group] {
+        &self.groups
+    }
+
+    /// Get a group with the given id.
+    pub fn group(&self, id: usize) -> Option<&Group> {
+        self.groups().iter().find(|group| group.id == id)
+    }
+}
+
+/// An ordered group of fixtures.
+#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct Group {
+    /// The group id.
+    pub id: usize,
+    /// The label of the group.
+    pub label: String,
+    /// An ordered list of all fixtures in the group.
+    pub fixtures: Vec<FixtureId>,
 }
 
 /// Error type for errors related to the show.

@@ -1,14 +1,9 @@
-use std::os::unix::raw::nlink_t;
-
 use gpui::{
-    div, prelude::FluentBuilder, px, Global, InteractiveElement, IntoElement, MouseButton,
-    ParentElement, SharedString, Styled, ViewContext, WindowContext,
+    div, prelude::FluentBuilder, InteractiveElement, IntoElement, MouseButton, ParentElement,
+    SharedString, Styled, ViewContext, WindowContext,
 };
 
-use crate::{
-    app::GRID_SIZE,
-    showfile::{Showfile, Window},
-};
+use crate::{app::GRID_SIZE, showfile::Window};
 
 use super::{WindowDelegate, WindowView};
 
