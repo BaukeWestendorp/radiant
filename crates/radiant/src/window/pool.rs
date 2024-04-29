@@ -1,31 +1,59 @@
 use gpui::{
-    div, IntoElement, ParentElement, Render, SharedString, Styled, View, ViewContext,
-    VisualContext, WindowContext,
+    div, InteractiveElement, IntoElement, MouseButton, ParentElement, SharedString, Styled,
+    ViewContext, WindowContext,
 };
 
 use crate::{app::GRID_SIZE, showfile::Window};
 
 use super::{WindowDelegate, WindowView};
 
-pub struct PoolWindowDelegate {
-    pool: View<Pool>,
+pub trait PoolDelegate {
+    fn title(&mut self, cx: &mut WindowContext) -> SharedString;
+
+    fn render_pool_item(&mut self, id: usize, cx: &mut WindowContext) -> impl IntoElement;
+
+    fn on_click_item(&mut self, id: usize, cx: &mut WindowContext);
 }
 
-impl PoolWindowDelegate {
-    pub fn new(window: &Window, cx: &mut WindowContext) -> Self {
+pub struct PoolWindowDelegate<D: PoolDelegate> {
+    pub pool_delegate: D,
+    window: Window,
+}
+
+impl<D: PoolDelegate> PoolWindowDelegate<D> {
+    pub fn new(pool_delegate: D, window: Window) -> Self {
         Self {
-            pool: Pool::build(window.bounds.size.width, window.bounds.size.height, cx),
+            pool_delegate,
+            window,
         }
     }
 }
 
-impl WindowDelegate for PoolWindowDelegate {
-    fn title(&mut self, _cx: &mut ViewContext<WindowView<Self>>) -> Option<SharedString> {
-        Some("Pool".into())
+impl<D: PoolDelegate + 'static> WindowDelegate for PoolWindowDelegate<D> {
+    fn title(&mut self, cx: &mut ViewContext<WindowView<Self>>) -> Option<SharedString> {
+        Some(self.pool_delegate.title(cx))
     }
 
-    fn render_content(&mut self, _cx: &mut ViewContext<WindowView<Self>>) -> impl IntoElement {
-        div().size_full().child(self.pool.clone())
+    fn render_content(&mut self, cx: &mut ViewContext<WindowView<Self>>) -> impl IntoElement {
+        let items = (0..self.window.bounds.area()).map(|id| {
+            div()
+                .size(GRID_SIZE)
+                .child(self.pool_delegate.render_pool_item(id, cx))
+                .on_mouse_down(
+                    MouseButton::Left,
+                    cx.listener(move |this, _event, cx| {
+                        this.delegate.pool_delegate.on_click_item(id, cx)
+                    }),
+                )
+        });
+
+        div()
+            .w(self.window.bounds.size.width as f32 * GRID_SIZE)
+            .h(self.window.bounds.size.height as f32 * GRID_SIZE)
+            .overflow_hidden()
+            .flex()
+            .flex_wrap()
+            .children(items)
     }
 
     fn render_header(
@@ -36,33 +64,24 @@ impl WindowDelegate for PoolWindowDelegate {
     }
 }
 
-pub struct Pool {
-    columns: usize,
-    rows: usize,
-}
+pub struct GroupPoolWindowDelegate {}
 
-impl Pool {
-    pub fn build(columns: usize, rows: usize, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|_cx| Self { columns, rows })
+impl GroupPoolWindowDelegate {
+    pub fn new() -> Self {
+        Self {}
     }
 }
 
-impl Render for Pool {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let items = (0..self.columns * self.rows).map(|_ix| {
-            div()
-                .rounded_md()
-                .border()
-                .border_color(gpui::white())
-                .size(GRID_SIZE)
-        });
+impl PoolDelegate for GroupPoolWindowDelegate {
+    fn title(&mut self, _cx: &mut WindowContext) -> SharedString {
+        "Group".into()
+    }
 
-        div()
-            .w(self.columns as f32 * GRID_SIZE)
-            .h(self.rows as f32 * GRID_SIZE)
-            .overflow_hidden()
-            .flex()
-            .flex_wrap()
-            .children(items)
+    fn render_pool_item(&mut self, id: usize, _cx: &mut WindowContext) -> impl IntoElement {
+        id.to_string()
+    }
+
+    fn on_click_item(&mut self, id: usize, _cx: &mut WindowContext) {
+        log::info!("Clicked pool item {id}");
     }
 }

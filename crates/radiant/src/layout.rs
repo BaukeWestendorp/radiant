@@ -8,7 +8,9 @@ use crate::{
     app::GRID_SIZE,
     showfile::{Layout, PoolWindowKind, Window, WindowKind},
     window::{
-        attribute_editor::AttributeEditorWindowDelegate, pool::PoolWindowDelegate, WindowView,
+        attribute_editor::AttributeEditorWindowDelegate,
+        pool::{GroupPoolWindowDelegate, PoolWindowDelegate},
+        WindowView,
     },
 };
 
@@ -99,11 +101,11 @@ fn get_window_view(
     match &window.kind {
         WindowKind::Pool(pool_window) => match pool_window.kind {
             PoolWindowKind::Group => {
-                let delegate = PoolWindowDelegate::new(&window, cx);
+                let delegate = PoolWindowDelegate::new(GroupPoolWindowDelegate::new(), window);
                 WindowView::build(delegate, cx).into()
             }
             PoolWindowKind::Preset => {
-                let delegate = PoolWindowDelegate::new(&window, cx);
+                let delegate = PoolWindowDelegate::new(GroupPoolWindowDelegate::new(), window);
                 WindowView::build(delegate, cx).into()
             }
         },
