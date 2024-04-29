@@ -5,7 +5,6 @@ mod app;
 mod geo;
 mod layout;
 mod output;
-mod pool;
 mod showfile;
 mod ui;
 mod window;

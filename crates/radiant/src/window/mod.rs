@@ -3,12 +3,12 @@ use gpui::{
     VisualContext, WindowContext,
 };
 
-use crate::{app::GRID_SIZE, showfile::Window};
+use crate::app::GRID_SIZE;
 
 pub mod attribute_editor;
+pub mod pool;
 
 pub struct WindowView<D: WindowDelegate> {
-    window: Window,
     delegate: D,
 }
 
@@ -18,8 +18,8 @@ pub enum WindowKind {
 }
 
 impl<D: WindowDelegate + 'static> WindowView<D> {
-    pub fn build(window: Window, delegate: D, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|_cx| Self { window, delegate })
+    pub fn build(delegate: D, cx: &mut WindowContext) -> View<Self> {
+        cx.new_view(|_cx| Self { delegate })
     }
 
     fn render_content(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {

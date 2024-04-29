@@ -7,7 +7,9 @@ use gpui::{
 use crate::{
     app::GRID_SIZE,
     showfile::{Layout, PoolWindowKind, Window, WindowKind},
-    window::{attribute_editor::AttributeEditorWindowDelegate, WindowView},
+    window::{
+        attribute_editor::AttributeEditorWindowDelegate, pool::PoolWindowDelegate, WindowView,
+    },
 };
 
 pub struct LayoutView {
@@ -97,17 +99,17 @@ fn get_window_view(
     match &window.kind {
         WindowKind::Pool(pool_window) => match pool_window.kind {
             PoolWindowKind::Group => {
-                let delegate = AttributeEditorWindowDelegate::new(selected_fixtures, cx);
-                WindowView::build(window, delegate, cx).into()
+                let delegate = PoolWindowDelegate::new(&window, cx);
+                WindowView::build(delegate, cx).into()
             }
             PoolWindowKind::Preset => {
-                let delegate = AttributeEditorWindowDelegate::new(selected_fixtures, cx);
-                WindowView::build(window, delegate, cx).into()
+                let delegate = PoolWindowDelegate::new(&window, cx);
+                WindowView::build(delegate, cx).into()
             }
         },
         WindowKind::AttributeEditor => {
             let delegate = AttributeEditorWindowDelegate::new(selected_fixtures, cx);
-            WindowView::build(window, delegate, cx).into()
+            WindowView::build(delegate, cx).into()
         }
     }
 }
