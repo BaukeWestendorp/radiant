@@ -271,6 +271,10 @@ impl DmxOutput {
 
         Ok(())
     }
+
+    pub fn clear(&mut self) {
+        self.universes.clear();
+    }
 }
 
 /// An error that can occur when working with DMX.

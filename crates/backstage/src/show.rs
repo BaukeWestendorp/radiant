@@ -586,6 +586,7 @@ impl Programmer {
     /// Clear all changes in the programmer.
     pub fn clear_changes(&mut self) {
         self.changes.clear();
+        self.dmx_output.clear();
     }
 }
 

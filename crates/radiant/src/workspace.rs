@@ -1,10 +1,22 @@
 use backstage::show::FixtureId;
 use gpui::{
-    div, AppContext, Context, FocusHandle, FocusableView, Global, IntoElement, Model,
-    ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext,
+    div, AppContext, Context, FocusHandle, FocusableView, Global, InteractiveElement, IntoElement,
+    Model, ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 
 use crate::{layout::LayoutView, showfile::Showfile};
+
+use self::action::ExecuteCommand;
+
+pub mod action {
+    use backstage::cmd::Command;
+    use gpui::impl_actions;
+
+    impl_actions!(workspace, [ExecuteCommand]);
+
+    #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
+    pub struct ExecuteCommand(pub Command);
+}
 
 pub struct Workspace {
     selected_fixtures: Model<Vec<FixtureId>>,
@@ -62,11 +74,22 @@ impl Workspace {
             }
         })
     }
+
+    fn handle_execute_command(&mut self, command: &ExecuteCommand, cx: &mut ViewContext<Self>) {
+        Showfile::update(cx, |showfile, _cx| {
+            showfile.show.execute_command(&command.0)
+        })
+        .map_err(|err| log::error!("Failed to execute command: {err}"))
+        .ok();
+    }
 }
 
 impl Render for Workspace {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
+            .key_context("Workspace")
+            .track_focus(&self.focus_handle)
+            .on_action(cx.listener(Self::handle_execute_command))
             .size_full()
             .text_color(gpui::white())
             .child(self.current_layout_view.clone())

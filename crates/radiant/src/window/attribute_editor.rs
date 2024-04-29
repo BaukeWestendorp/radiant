@@ -40,6 +40,8 @@ pub struct AttributeEditor {
     feature_group_picker: View<Picker<Rc<FeatureGroup>>>,
     feature_picker: Option<View<Picker<Rc<Feature>>>>,
     attribute_sliders: Vec<View<AttributeSlider>>,
+    selected_feature_group: Model<Option<PickerOption<Rc<FeatureGroup>>>>,
+    selected_feature: Model<Option<PickerOption<Rc<Feature>>>>,
 }
 
 impl AttributeEditor {
@@ -51,6 +53,17 @@ impl AttributeEditor {
             cx.observe(&selected_fixtures, {
                 let selected_feature_group = selected_feature_group.clone();
                 move |this: &mut Self, selected_fixtures, cx| {
+                    this.attribute_sliders = Vec::new();
+                    this.selected_feature.update(cx, |selected_feature, cx| {
+                        *selected_feature = None;
+                        cx.notify();
+                    });
+                    this.selected_feature_group
+                        .update(cx, |selected_feature_group, cx| {
+                            *selected_feature_group = None;
+                            cx.notify();
+                        });
+
                     let picker = Self::get_feature_group_picker(
                         &selected_feature_group,
                         selected_fixtures,
@@ -68,7 +81,7 @@ impl AttributeEditor {
                     let selected_fixtures = selected_fixtures.clone();
                     move |this: &mut Self, selected_feature_group, cx| {
                         this.attribute_sliders = Vec::new();
-                        selected_feature.update(cx, |selected_feature, _cx| {
+                        this.selected_feature.update(cx, |selected_feature, _cx| {
                             *selected_feature = None;
                         });
 
@@ -119,6 +132,8 @@ impl AttributeEditor {
                 ),
                 feature_picker: None,
                 attribute_sliders: Vec::new(),
+                selected_feature_group,
+                selected_feature,
             }
         })
     }
