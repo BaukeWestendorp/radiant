@@ -35,6 +35,17 @@ impl<D: PoolDelegate + 'static> WindowDelegate for PoolWindowDelegate<D> {
     }
 
     fn render_content(&mut self, cx: &mut ViewContext<WindowView<Self>>) -> impl IntoElement {
+        let header_cell = div()
+            .size(GRID_SIZE)
+            .border()
+            .border_color(gpui::blue())
+            .bg(gpui::rgb(0x000088))
+            .rounded_md()
+            .flex()
+            .justify_center()
+            .items_center()
+            .child(self.pool_delegate.title(cx));
+
         let items = (0..self.window.bounds.area()).map(|id| {
             div()
                 .size(GRID_SIZE)
@@ -53,6 +64,7 @@ impl<D: PoolDelegate + 'static> WindowDelegate for PoolWindowDelegate<D> {
             .overflow_hidden()
             .flex()
             .flex_wrap()
+            .child(header_cell)
             .children(items)
     }
 
