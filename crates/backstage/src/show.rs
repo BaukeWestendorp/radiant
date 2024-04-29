@@ -127,6 +127,7 @@ impl Show {
         }
     }
 
+    /// Remove all fixtures from the selection.
     pub fn clear_selection(&mut self) {
         self.selected_fixtures.clear();
     }

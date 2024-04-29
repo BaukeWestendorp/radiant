@@ -272,6 +272,7 @@ impl DmxOutput {
         Ok(())
     }
 
+    /// Clear all DMX universes.
     pub fn clear(&mut self) {
         self.universes.clear();
     }

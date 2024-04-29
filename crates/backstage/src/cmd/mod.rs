@@ -1,3 +1,8 @@
+//! # Commands
+//!
+//! This module contains the definition of commands.
+//! Commands are parsed from strings and can be executed on a show to change its state.
+
 use self::lexer::Token;
 use crate::{
     cmd::lexer::Lexer,
@@ -7,9 +12,12 @@ use crate::{
 mod lexer;
 
 // FIXME: We should deserialize this from a string by parsing.
+/// A representation of an object in the show.
 #[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize)]
 pub enum Object {
+    /// A fixture in the show.
     Fixture(Option<FixtureId>),
+    /// A group in the show.
     Group(Option<usize>),
 }
 
@@ -31,13 +39,31 @@ impl std::fmt::Display for Object {
 }
 
 // FIXME: We should deserialize this from a string by parsing.
+/// A command that can be executed in the show.
 #[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 pub enum Command {
+    /// If the show has some fixtures selected, it will clear these.
+    /// Otherwise, it will clear the programmer.
     Clear,
+    /// Select an object in the show.
     Select(Option<Object>),
 }
 
 impl Command {
+    /// Parse a command from a string.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use backstage::cmd::{Command, Object};
+    /// # use backstage::show::FixtureId;
+    ///
+    /// let command = Command::parse("clear").unwrap();
+    /// assert_eq!(command, Command::Clear);
+    ///
+    /// let command = Command::parse("select fixture 1").unwrap();
+    /// assert_eq!(command, Command::Select(Some(Object::Fixture(Some(FixtureId::new(1))))));
+    /// ```
     pub fn parse(input: impl AsRef<str>) -> Result<Command, Error> {
         let mut lexer = Lexer::new(input.as_ref());
 
@@ -92,24 +118,6 @@ fn parse_object(lexer: &mut Lexer) -> Result<Object, Error> {
     Ok(object)
 }
 
-fn parse_string(lexer: &mut Lexer) -> Result<String, Error> {
-    let (string_token, _start, _end) = lexer.next_token()?.ok_or_else(|| Error::ExpectedString)?;
-    match string_token {
-        Token::String(string) => Ok(string),
-        _ => Err(Error::ExpectedString),
-    }
-}
-
-fn consume(lexer: &mut Lexer, expected: Token) -> Result<(), Error> {
-    let (token, _start, _end) = lexer
-        .next_token()?
-        .ok_or_else(|| Error::ExpectedToken(expected.clone()))?;
-    if token != expected {
-        return Err(Error::ExpectedToken(expected));
-    }
-    Ok(())
-}
-
 impl std::fmt::Display for Command {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
@@ -121,6 +129,17 @@ impl std::fmt::Display for Command {
 }
 
 impl Show {
+    /// Execute a command in the show.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use backstage::cmd::{Command, Object};
+    /// # use backstage::show::Show;
+    ///
+    /// let mut show = Show::new();
+    /// show.execute_command(&Command::Clear).unwrap();
+    /// ```
     pub fn execute_command(&mut self, command: &Command) -> Result<(), Error> {
         match command {
             Command::Clear => {
@@ -179,19 +198,27 @@ impl Show {
 }
 
 #[derive(Debug, thiserror::Error)]
+/// Represents an error that occurred during parsing or execution of a command.
 pub enum Error {
+    /// An unexpected token was encountered.
     #[error("Unexpected token: {0}")]
     UnexpectedToken(Token),
+    /// An expected number was not found.
     #[error("Expected number")]
     ExpectedNumber,
+    /// An expected string was not found.
     #[error("Expected string")]
     ExpectedString,
+    /// An unexpected end of input was encountered.
     #[error("Unexpected end of input")]
     UnexpectedEndOfInput,
+    /// An expected token was not found.
     #[error("Expected token: {0}")]
     ExpectedToken(Token),
+    /// An execution error occurred.
     #[error("Execution error: {0}")]
     ExecutionError(String),
+    /// A tokenization error occurred.
     #[error("Tokenization error: {0}")]
     TokenizationError(String),
 }
