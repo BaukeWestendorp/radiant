@@ -309,15 +309,32 @@ pub struct AttributeSlider {
 
 impl AttributeSlider {
     pub fn build(attribute: Rc<Attribute>, cx: &mut WindowContext) -> View<Self> {
-        let slider_value = cx.new_model({
-            let attribute_name = attribute.name.clone();
-            move |cx| {
-                let value = Showfile::get(cx)
+        let values = Showfile::get(cx)
+            .show
+            .selected_fixture_ids()
+            .iter()
+            .map(|fixture_id| {
+                Showfile::get(cx)
                     .show
                     .programmer()
-                    .get_attribute_value(&FixtureId::new(101), &attribute_name);
+                    .get_attribute_value(fixture_id, &attribute.name)
+                    .unwrap_or(&AttributeValue::default())
+                    .value()
+            })
+            .collect::<Vec<_>>();
+        let first_value = values.first().unwrap_or(&0.0);
+        let values_all_same = values.iter().all(|v| v == first_value);
 
-                value.map(|v| v.value()).unwrap_or(0.0)
+        let slider_value = cx.new_model(|_cx| match values_all_same {
+            true => *first_value,
+            false => 0.0,
+        });
+
+        let markers = cx.new_model(|_cx| {
+            if values.len() > 1 && !values_all_same {
+                values
+            } else {
+                Vec::new()
             }
         });
 
@@ -350,9 +367,12 @@ impl AttributeSlider {
         .detach();
 
         cx.new_view(|cx| Self {
-            slider: cx.new_view(|_cx| {
-                Slider::new(SharedString::from(attribute.name.clone()), slider_value)
-            }),
+            slider: Slider::build(
+                SharedString::from(attribute.name.clone()),
+                slider_value,
+                Some(markers),
+                cx,
+            ),
             attribute,
         })
     }
