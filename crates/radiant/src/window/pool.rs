@@ -5,7 +5,7 @@ use gpui::{
 };
 
 use crate::{
-    app::GRID_SIZE,
+    layout::GRID_SIZE,
     showfile::{Showfile, Window},
 };
 

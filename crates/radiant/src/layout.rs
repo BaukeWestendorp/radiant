@@ -1,11 +1,10 @@
 use backstage::show::FixtureId;
 use gpui::{
-    div, px, AnyView, IntoElement, Model, ParentElement, Render, Styled, View, ViewContext,
+    div, px, AnyView, IntoElement, Model, ParentElement, Pixels, Render, Styled, View, ViewContext,
     VisualContext, WindowContext,
 };
 
 use crate::{
-    app::GRID_SIZE,
     showfile::{Layout, PoolWindowKind, Window, WindowKind},
     window::{
         attribute_editor::AttributeEditorWindowDelegate,
@@ -13,6 +12,8 @@ use crate::{
         WindowView,
     },
 };
+
+pub const GRID_SIZE: Pixels = px(80.0);
 
 pub struct LayoutView {
     pub layout: Model<Layout>,

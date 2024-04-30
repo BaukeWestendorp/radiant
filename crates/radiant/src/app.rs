@@ -2,13 +2,11 @@ use std::path::PathBuf;
 
 use backstage::cmd::Command;
 use gpui::{
-    actions, point, px, size, AppContext, Bounds, KeyBinding, Menu, MenuItem, Pixels,
-    VisualContext, WindowOptions,
+    actions, point, size, AppContext, Bounds, KeyBinding, Menu, MenuItem, VisualContext,
+    WindowOptions,
 };
 
 actions!(app, [Quit]);
-
-pub const GRID_SIZE: Pixels = px(80.0);
 
 use crate::{
     output::{artnet::ArtnetDmxProtocol, OutputManager},
@@ -24,6 +22,7 @@ pub fn run_app(app: gpui::App, showfile_path: Option<PathBuf>) {
 
         OutputManager::init(cx);
         OutputManager::register_protocol(ArtnetDmxProtocol::new("0.0.0.0", 0, 0).unwrap(), cx);
+        OutputManager::register_protocol(ArtnetDmxProtocol::new("0.0.0.0", 1, 1).unwrap(), cx);
 
         cx.bind_keys([
             KeyBinding::new("cmd-q", Quit, None),

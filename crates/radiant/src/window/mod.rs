@@ -3,7 +3,7 @@ use gpui::{
     VisualContext, WindowContext,
 };
 
-use crate::app::GRID_SIZE;
+use crate::layout::GRID_SIZE;
 
 pub mod attribute_editor;
 pub mod pool;
