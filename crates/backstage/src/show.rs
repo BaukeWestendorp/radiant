@@ -75,6 +75,7 @@ impl Show {
         self.patchlist
             .initialize(gdtf_share_username, gdtf_share_password)
             .await?;
+
         Ok(())
     }
 
@@ -104,8 +105,21 @@ impl Show {
     }
 
     /// Get the calculated DMX output for the current show state.
-    pub fn get_dmx_output(&self) -> &DmxOutput {
-        self.programmer().get_dmx_output()
+    pub fn get_dmx_output(&self) -> DmxOutput {
+        let mut output = DmxOutput::new();
+
+        for fixture in self.patchlist().fixtures() {
+            // FIXME: We should set the default values for all channels here.
+            let universe = fixture.channel.universe;
+            output
+                .set_value(&DmxChannel::new(universe, 0).unwrap(), 0)
+                .unwrap();
+        }
+
+        let programmer_output = self.programmer().get_dmx_output();
+        output.layer(programmer_output);
+
+        output
     }
 
     /// Get the selected fixtures.

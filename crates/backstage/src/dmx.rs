@@ -277,6 +277,20 @@ impl DmxOutput {
     pub fn clear(&mut self) {
         self.universes.clear();
     }
+
+    /// Layer another DMX output on top of this one.
+    pub fn layer(&mut self, other: &DmxOutput) {
+        for (universe_id, universe) in other.universes.iter() {
+            let self_universe = self
+                .universes
+                .entry(*universe_id)
+                .or_insert_with(DmxUniverse::new);
+
+            for (address, value) in universe.channels.iter().enumerate() {
+                self_universe.channels[address] = *value;
+            }
+        }
+    }
 }
 
 /// An error that can occur when working with DMX.
