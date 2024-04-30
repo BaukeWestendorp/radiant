@@ -1,6 +1,6 @@
 use gpui::{
-    div, px, ElementId, IntoElement, Model, ParentElement, Render, SharedString, Styled, View,
-    ViewContext, VisualContext, WindowContext,
+    div, prelude::FluentBuilder, px, ElementId, FlexDirection, IntoElement, Model, ParentElement,
+    Render, SharedString, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 
 use super::{Button, Disableable, Selectable};
@@ -9,17 +9,23 @@ pub struct Picker<V>
 where
     V: PartialEq + Clone + 'static,
 {
+    direction: FlexDirection,
     options: Vec<PickerOption<V>>,
     selected: Model<Option<PickerOption<V>>>,
 }
 
 impl<V: PartialEq + Clone + 'static> Picker<V> {
     pub fn build(
+        direction: FlexDirection,
         options: Vec<PickerOption<V>>,
         selected: Model<Option<PickerOption<V>>>,
         cx: &mut WindowContext,
     ) -> View<Self> {
-        cx.new_view(|_cx| Self { options, selected })
+        cx.new_view(|_cx| Self {
+            direction,
+            options,
+            selected,
+        })
     }
 }
 
@@ -33,6 +39,7 @@ impl<V: PartialEq + Clone + 'static> Render for Picker<V> {
             let label = option.label.clone();
 
             Button::new(option.id.clone())
+                .size_full()
                 .disabled(disabled)
                 .selected(selected)
                 .child(div().px_2().py(px(2.0)).child(label))
@@ -45,7 +52,21 @@ impl<V: PartialEq + Clone + 'static> Render for Picker<V> {
                 }))
         });
 
-        div().flex().flex_col().gap_2().children(buttons)
+        div()
+            .w_full()
+            .flex()
+            .when(self.direction == FlexDirection::Column, |this| {
+                this.flex_col()
+            })
+            .when(self.direction == FlexDirection::ColumnReverse, |this| {
+                this.flex_col_reverse()
+            })
+            .when(self.direction == FlexDirection::Row, |this| this.flex_row())
+            .when(self.direction == FlexDirection::RowReverse, |this| {
+                this.flex_row_reverse()
+            })
+            .gap_2()
+            .children(buttons)
     }
 }
 

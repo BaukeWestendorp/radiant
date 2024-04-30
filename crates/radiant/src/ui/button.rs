@@ -1,7 +1,7 @@
 use gpui::{
-    div, prelude::FluentBuilder, AnyElement, ClickEvent, ElementId, InteractiveElement,
-    IntoElement, MouseButton, ParentElement, RenderOnce, StatefulInteractiveElement, Styled,
-    WindowContext,
+    div, prelude::FluentBuilder, AnyElement, ClickEvent, Div, ElementId, InteractiveElement,
+    IntoElement, MouseButton, ParentElement, RenderOnce, StatefulInteractiveElement,
+    StyleRefinement, Styled, WindowContext,
 };
 use smallvec::SmallVec;
 
@@ -9,6 +9,7 @@ use crate::theme::{Activatable, Disableable, Hoverable, THEME};
 
 #[derive(IntoElement)]
 pub struct Button {
+    base: Div,
     id: ElementId,
     children: SmallVec<[AnyElement; 2]>,
     selected: bool,
@@ -19,6 +20,7 @@ pub struct Button {
 impl Button {
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self {
+            base: div(),
             id: id.into(),
             children: SmallVec::new(),
             selected: false,
@@ -38,7 +40,7 @@ impl Button {
 
 impl RenderOnce for Button {
     fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
-        div()
+        self.base
             .rounded_md()
             .border()
             .border_color(THEME.border)
@@ -76,6 +78,12 @@ impl RenderOnce for Button {
 impl ParentElement for Button {
     fn extend(&mut self, elements: impl Iterator<Item = AnyElement>) {
         self.children.extend(elements)
+    }
+}
+
+impl Styled for Button {
+    fn style(&mut self) -> &mut StyleRefinement {
+        self.base.style()
     }
 }
 

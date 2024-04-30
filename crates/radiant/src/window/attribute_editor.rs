@@ -3,12 +3,15 @@ use std::rc::Rc;
 use backstage::show::{AttributeValue, FixtureId};
 use gdtf::{Attribute, Feature, FeatureGroup};
 use gpui::{
-    div, Context, Global, IntoElement, Model, ParentElement, Render, SharedString, Styled, View,
-    ViewContext, VisualContext, WindowContext,
+    div, Context, FlexDirection, Global, InteractiveElement, IntoElement, Model, ParentElement,
+    Render, ScrollHandle, SharedString, StatefulInteractiveElement, Styled, View, ViewContext,
+    VisualContext, WindowContext,
 };
 
 use crate::{
+    layout::GRID_SIZE,
     showfile::Showfile,
+    theme::THEME,
     ui::{Picker, PickerOption, Slider},
 };
 
@@ -32,7 +35,7 @@ impl WindowDelegate for AttributeEditorWindowDelegate {
     }
 
     fn render_content(&mut self, _cx: &mut ViewContext<WindowView<Self>>) -> impl IntoElement {
-        div().size_full().p_2().child(self.attribute_editor.clone())
+        div().size_full().child(self.attribute_editor.clone())
     }
 }
 
@@ -42,6 +45,7 @@ pub struct AttributeEditor {
     attribute_sliders: Vec<View<AttributeSlider>>,
     selected_feature_group: Model<Option<PickerOption<Rc<FeatureGroup>>>>,
     selected_feature: Model<Option<PickerOption<Rc<Feature>>>>,
+    feature_group_picker_scroll_handle: ScrollHandle,
 }
 
 impl AttributeEditor {
@@ -134,6 +138,7 @@ impl AttributeEditor {
                 attribute_sliders: Vec::new(),
                 selected_feature_group,
                 selected_feature,
+                feature_group_picker_scroll_handle: ScrollHandle::new(),
             }
         })
     }
@@ -187,7 +192,12 @@ impl AttributeEditor {
             })
             .collect();
 
-        Picker::build(picker_options, selected_feature_group.clone(), cx)
+        Picker::build(
+            FlexDirection::Column,
+            picker_options,
+            selected_feature_group.clone(),
+            cx,
+        )
     }
 
     fn get_feature_picker(
@@ -231,7 +241,12 @@ impl AttributeEditor {
             })
             .collect();
 
-        Some(Picker::build(feature_options, selected_feature, cx))
+        Some(Picker::build(
+            FlexDirection::Row,
+            feature_options,
+            selected_feature,
+            cx,
+        ))
     }
 
     fn get_attribute_sliders(
@@ -278,16 +293,20 @@ impl Render for AttributeEditor {
         div()
             .size_full()
             .flex()
-            .gap_2()
             .child(
                 div()
-                    .w_20()
-                    .h_full()
-                    .child(self.feature_group_picker.clone()),
+                    .id("feature_group_picker")
+                    .w(GRID_SIZE * 1.5)
+                    .track_scroll(&self.feature_group_picker_scroll_handle)
+                    .overflow_y_scroll()
+                    .border_r()
+                    .border_color(THEME.border)
+                    .child(div().p_2().child(self.feature_group_picker.clone())),
             )
             .child(
                 div()
                     .size_full()
+                    .p_2()
                     .flex()
                     .flex_col()
                     .gap_2()
