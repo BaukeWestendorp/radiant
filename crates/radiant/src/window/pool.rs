@@ -1,4 +1,7 @@
-use backstage::cmd::{Command, Object};
+use backstage::{
+    cmd::{Command, Object},
+    show::PresetFilter,
+};
 use gpui::{
     div, prelude::FluentBuilder, Global, InteractiveElement, IntoElement, MouseButton,
     ParentElement, SharedString, Styled, ViewContext, WindowContext,
@@ -215,25 +218,31 @@ impl PoolDelegate for GroupPoolWindowDelegate {
     }
 }
 
-pub struct PresetPoolWindowDelegate {}
+pub struct PresetPoolWindowDelegate {
+    filter: PresetFilter,
+}
 
 impl PresetPoolWindowDelegate {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(filter: PresetFilter) -> Self {
+        Self { filter }
     }
 }
 
 impl PoolDelegate for PresetPoolWindowDelegate {
     fn title(&self, _cx: &mut WindowContext) -> SharedString {
-        "Preset".into()
+        format!("Preset\n({})", self.filter).into()
     }
 
     fn has_content(&self, id: usize, cx: &mut WindowContext) -> bool {
-        Showfile::get(cx).show.data().preset(id).is_some()
+        Showfile::get(cx)
+            .show
+            .data()
+            .preset(&self.filter, id)
+            .is_some()
     }
 
     fn render_pool_item(&mut self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement> {
-        let Some(preset) = Showfile::get(cx).show.data().preset(id) else {
+        let Some(preset) = Showfile::get(cx).show.data().preset(&self.filter, id) else {
             return None;
         };
 

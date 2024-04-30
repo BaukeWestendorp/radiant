@@ -6,7 +6,7 @@
 use self::lexer::Token;
 use crate::{
     cmd::lexer::Lexer,
-    show::{FixtureId, Show},
+    show::{FixtureId, PresetFilter, Show},
 };
 
 mod lexer;
@@ -199,7 +199,7 @@ impl Show {
 
                     let preset = self
                         .data()
-                        .preset(*id)
+                        .preset(&PresetFilter::All, *id)
                         .ok_or_else(|| {
                             Error::ExecutionError(format!("Preset with id '{id}' not found"))
                         })?

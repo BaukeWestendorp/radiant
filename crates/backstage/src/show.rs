@@ -775,7 +775,7 @@ pub struct Data {
     groups: Vec<Group>,
     /// All presets in the show.
     #[serde(default)]
-    presets: Vec<Preset>,
+    presets: HashMap<PresetFilter, Vec<Preset>>,
 }
 
 impl Data {
@@ -783,7 +783,7 @@ impl Data {
     pub fn new() -> Self {
         Self {
             groups: Vec::new(),
-            presets: Vec::new(),
+            presets: HashMap::new(),
         }
     }
 
@@ -798,13 +798,13 @@ impl Data {
     }
 
     /// Get the presets,
-    pub fn presets(&self) -> &[Preset] {
-        &self.presets
+    pub fn presets(&self, filter: &PresetFilter) -> Option<&Vec<Preset>> {
+        self.presets.get(filter)
     }
 
     /// Get a preset with the given id.
-    pub fn preset(&self, id: usize) -> Option<&Preset> {
-        self.presets().iter().find(|preset| preset.id == id)
+    pub fn preset(&self, filter: &PresetFilter, id: usize) -> Option<&Preset> {
+        self.presets(filter)?.iter().find(|preset| preset.id == id)
     }
 }
 
@@ -820,8 +820,7 @@ pub struct Group {
 }
 
 /// A preset contains attribute values that should be changed.
-
-#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Preset {
     /// The preset id.
     pub id: usize,
@@ -829,6 +828,24 @@ pub struct Preset {
     pub label: String,
     /// The list of changed attribute values.
     pub attribute_values: HashMap<String, AttributeValue>,
+}
+
+/// A Filter for a preset. This controls which attributes are stored in a preset.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+pub enum PresetFilter {
+    /// Filter on a feature group. All attributes in the feature group with the given name will be valid.
+    FeatureGroup(String),
+    /// Allow all attributes.
+    All,
+}
+
+impl Display for PresetFilter {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            PresetFilter::FeatureGroup(feature_group) => write!(f, "{feature_group}"),
+            PresetFilter::All => write!(f, "All"),
+        }
+    }
 }
 
 /// Error type for errors related to the show.

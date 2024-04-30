@@ -1,4 +1,4 @@
-use backstage::show::FixtureId;
+use backstage::show::{FixtureId, PresetFilter};
 use gpui::{
     div, px, AnyView, IntoElement, Model, ParentElement, Pixels, Render, Styled, View, ViewContext,
     VisualContext, WindowContext,
@@ -110,7 +110,10 @@ fn get_window_view(
                 WindowView::build(delegate, cx).into()
             }
             PoolWindowKind::Preset => {
-                let delegate = PoolWindowDelegate::new(PresetPoolWindowDelegate::new(), window);
+                let delegate = PoolWindowDelegate::new(
+                    PresetPoolWindowDelegate::new(PresetFilter::All),
+                    window,
+                );
                 WindowView::build(delegate, cx).into()
             }
         },
