@@ -4,7 +4,7 @@ use gpui::{
     Model, ParentElement, Render, Styled, View, ViewContext, VisualContext, WindowContext,
 };
 
-use crate::{layout::LayoutView, showfile::Showfile};
+use crate::{layout::LayoutView, showfile::Showfile, theme::THEME};
 
 use self::action::ExecuteCommand;
 
@@ -97,7 +97,8 @@ impl Render for Workspace {
             .track_focus(&self.focus_handle)
             .on_action(cx.listener(Self::handle_execute_command))
             .size_full()
-            .text_color(gpui::white())
+            .text_color(THEME.text)
+            .bg(THEME.background)
             .child(self.current_layout_view.clone())
     }
 }

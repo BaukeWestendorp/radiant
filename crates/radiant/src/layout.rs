@@ -6,6 +6,7 @@ use gpui::{
 
 use crate::{
     showfile::{Layout, PoolWindowKind, Window, WindowKind},
+    theme::THEME,
     window::{
         attribute_editor::AttributeEditorWindowDelegate,
         pool::{GroupPoolWindowDelegate, PoolWindowDelegate, PresetPoolWindowDelegate},
@@ -36,6 +37,7 @@ impl LayoutView {
         })
     }
 
+    // FIXME: We could make this a lot faster with a canvas.
     fn render_grid(&self, cx: &mut WindowContext) -> impl IntoElement {
         let grid_size = self.layout.read(cx).size;
         let dot_size = 2.0;
@@ -46,7 +48,7 @@ impl LayoutView {
                 let dot = div()
                     .absolute()
                     .size(px(dot_size))
-                    .bg(gpui::white())
+                    .bg(THEME.accent)
                     .top(y as f32 * GRID_SIZE - px(dot_size / 2.0))
                     .left(x as f32 * GRID_SIZE - px(dot_size / 2.0));
                 dots.push(dot);

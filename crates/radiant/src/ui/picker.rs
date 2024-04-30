@@ -1,8 +1,9 @@
 use gpui::{
-    div, prelude::FluentBuilder, px, ElementId, InteractiveElement, IntoElement, Model,
-    ParentElement, Render, SharedString, StatefulInteractiveElement, Styled, View, ViewContext,
-    VisualContext, WindowContext,
+    div, px, ElementId, IntoElement, Model, ParentElement, Render, SharedString, Styled, View,
+    ViewContext, VisualContext, WindowContext,
 };
+
+use super::{Button, Disableable, Selectable};
 
 pub struct Picker<V>
 where
@@ -31,32 +32,20 @@ impl<V: PartialEq + Clone + 'static> Render for Picker<V> {
             let selected = selected_option.as_ref().is_some_and(|o| o.id == option.id);
             let label = option.label.clone();
 
-            div()
-                .id(option.id.clone())
-                .px_2()
-                .py(px(2.0))
-                .border()
-                .border_color(gpui::white())
-                .rounded_md()
-                .when(disabled, |this| {
-                    this.border_color(gpui::rgb(0x444444)).cursor_not_allowed()
-                })
-                .when(selected, |this| this.border_color(gpui::red()))
-                .when(!disabled, |this| {
-                    this.on_click({
-                        cx.listener(move |this, _event, cx| {
-                            let option = option.clone();
-                            this.selected.update(cx, move |selected, cx| {
-                                *selected = Some(option);
-                                cx.notify();
-                            })
-                        })
-                    })
-                })
-                .child(label)
+            Button::new(option.id.clone())
+                .disabled(disabled)
+                .selected(selected)
+                .child(div().px_2().py(px(2.0)).child(label))
+                .on_click(cx.listener(move |this, _event, cx| {
+                    let option = option.clone();
+                    this.selected.update(cx, move |selected, cx| {
+                        *selected = Some(option);
+                        cx.notify();
+                    });
+                }))
         });
 
-        div().children(buttons)
+        div().flex().flex_col().gap_2().children(buttons)
     }
 }
 

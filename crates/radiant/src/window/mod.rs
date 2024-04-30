@@ -3,7 +3,7 @@ use gpui::{
     VisualContext, WindowContext,
 };
 
-use crate::layout::GRID_SIZE;
+use crate::{layout::GRID_SIZE, theme::THEME};
 
 pub mod attribute_editor;
 pub mod pool;
@@ -25,9 +25,9 @@ impl<D: WindowDelegate + 'static> WindowView<D> {
     fn render_content(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let background = div()
             .size_full()
-            .bg(gpui::black())
+            .bg(THEME.background_secondary)
             .border()
-            .border_color(gpui::white())
+            .border_color(THEME.border)
             .rounded_md();
 
         div()
@@ -53,6 +53,7 @@ impl<D: WindowDelegate + 'static> Render for WindowView<D> {
             .size_full()
             .flex()
             .flex_col()
+            .shadow_lg()
             .children(header)
             .child(content)
     }
@@ -81,9 +82,9 @@ pub trait WindowDelegate {
         let header_height = GRID_SIZE / 2.0;
 
         let main = div()
+            .bg(THEME.header)
             .border()
-            .border_color(gpui::blue())
-            .bg(gpui::rgb(0x000088))
+            .border_color(THEME.header_border)
             .rounded_md()
             .size_full()
             .flex()

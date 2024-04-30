@@ -7,6 +7,7 @@ use gpui::{
 use crate::{
     layout::GRID_SIZE,
     showfile::{Showfile, Window},
+    theme::{Hoverable, THEME},
 };
 
 use super::{WindowDelegate, WindowView};
@@ -52,9 +53,9 @@ impl<D: PoolDelegate + 'static> WindowDelegate for PoolWindowDelegate<D> {
 
         let header_cell = div()
             .size(GRID_SIZE)
+            .bg(THEME.header)
             .border()
-            .border_color(gpui::blue())
-            .bg(gpui::rgb(0x000088))
+            .border_color(THEME.header_border)
             .rounded_md()
             .flex()
             .justify_center()
@@ -65,31 +66,47 @@ impl<D: PoolDelegate + 'static> WindowDelegate for PoolWindowDelegate<D> {
             let has_content = self.pool_delegate.has_content(id, cx);
 
             let border_color = match has_content {
-                true => gpui::white().into(),
-                false => gpui::rgb(0x999999),
+                true => THEME.border,
+                false => THEME.border_secondary,
+            };
+
+            let header_bg_color = match has_content {
+                true => THEME.fill_tertiary,
+                false => gpui::transparent_black(),
+            };
+
+            let bg_color = match has_content {
+                true => THEME.fill_secondary,
+                false => gpui::transparent_black(),
             };
 
             let item_header = div()
-                .border_b()
+                .bg(header_bg_color)
+                .when(has_content, |this| {
+                    this.group_hover("item", |this| this.bg(header_bg_color.hovered()))
+                })
+                .border()
                 .border_color(border_color)
                 .flex()
                 .items_center()
                 .justify_between()
                 .p_1()
-                .child(
-                    div()
-                        .when(!has_content, |this| this.text_color(gpui::rgb(0xaaaaaa)))
-                        .child(id.to_string()),
-                )
+                .child(id.to_string())
                 .children(self.pool_delegate.render_header_item(id, cx));
 
             div()
+                .group("item")
                 .size(GRID_SIZE)
                 .relative()
                 .text_sm()
+                .when(has_content, |this| this.cursor_pointer())
                 .child(
                     div()
                         .absolute()
+                        .bg(bg_color)
+                        .when(has_content, |this| {
+                            this.group_hover("item", |this| this.bg(bg_color.hovered()))
+                        })
                         .size_full()
                         .border()
                         .border_color(border_color)
@@ -171,7 +188,7 @@ impl PoolDelegate for GroupPoolWindowDelegate {
 
         Some(
             div()
-                .text_color(gpui::rgb(0xaaaaaa))
+                .text_color(THEME.text_secondary)
                 .child(format!("{} fxt.", group.fixtures.len())),
         )
     }

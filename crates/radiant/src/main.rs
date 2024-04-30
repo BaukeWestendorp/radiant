@@ -6,6 +6,7 @@ mod geo;
 mod layout;
 mod output;
 mod showfile;
+mod theme;
 mod ui;
 mod window;
 mod workspace;

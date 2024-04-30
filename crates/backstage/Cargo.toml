@@ -9,13 +9,13 @@ gdtf.workspace = true
 gdtf_share.workspace = true
 
 env_logger.workspace = true
+lazy_static.workspace = true
 log.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 
 xdg = "2.5.2"
-lazy_static = "1.4.0"
 
 [dev-dependencies]
 smol = "2.0.0"

@@ -3,6 +3,8 @@ use gpui::{
     View, ViewContext, WindowContext,
 };
 
+use crate::theme::THEME;
+
 pub struct Slider {
     id: ElementId,
     value: Model<f32>,
@@ -16,10 +18,20 @@ impl Slider {
         markers: Option<Model<Vec<f32>>>,
         cx: &mut WindowContext,
     ) -> View<Self> {
-        cx.new_view(|cx| Self {
-            id: id.into(),
-            value,
-            markers: markers.map(|markers| markers.read(cx).clone()),
+        cx.new_view(|cx| {
+            markers.clone().map(|markers| {
+                cx.observe(&markers, |this: &mut Self, markers, cx| {
+                    this.markers = Some(markers.read(cx).clone());
+                    cx.notify();
+                })
+                .detach();
+            });
+
+            Self {
+                id: id.into(),
+                value,
+                markers: markers.map(|markers| markers.read(cx).clone()),
+            }
         })
     }
 
@@ -64,8 +76,8 @@ impl Render for Slider {
                                             .absolute()
                                             .w_full()
                                             .bottom(bounds.size.height * px(*marker))
-                                            .border_t()
-                                            .border_color(gpui::red())
+                                            .border_t_4()
+                                            .border_color(THEME.accent)
                                     })
                                     .collect()
                             })
@@ -73,8 +85,21 @@ impl Render for Slider {
 
                         div()
                             .id(this.id.clone())
-                            .size_full()
                             .relative()
+                            .size_full()
+                            .border()
+                            .border_color(THEME.border)
+                            .rounded_md()
+                            .child(
+                                div()
+                                    .absolute()
+                                    .w_full()
+                                    .h(h)
+                                    .rounded_md()
+                                    .bottom_0()
+                                    .bg(THEME.fill_selected),
+                            )
+                            .children(markers)
                             .on_drag(
                                 DraggedSlider {
                                     id: this.id.clone(),
@@ -84,16 +109,6 @@ impl Render for Slider {
                             .on_drag_move(cx.listener(move |this, event, cx| {
                                 this.handle_drag(&bounds, event, cx)
                             }))
-                            .children(markers)
-                            .child(
-                                div()
-                                    .absolute()
-                                    .w_full()
-                                    .h(h)
-                                    .rounded_md()
-                                    .bottom_0()
-                                    .bg(gpui::green()),
-                            )
                             .into_any_element()
                     });
 
@@ -104,9 +119,6 @@ impl Render for Slider {
             },
             |_bounds, mut element, cx| element.paint(cx),
         )
-        .border()
-        .border_color(gpui::white())
-        .rounded_md()
         .h_full()
     }
 }

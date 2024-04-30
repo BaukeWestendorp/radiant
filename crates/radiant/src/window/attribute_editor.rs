@@ -341,8 +341,14 @@ impl AttributeSlider {
 
         cx.observe(&slider_value, {
             let attribute_name = attribute.name.clone();
+            let markers = markers.clone();
             move |slider_value, cx| {
                 let value = *slider_value.read(cx);
+                markers.update(cx, |markers, cx| {
+                    *markers = Vec::new();
+                    cx.notify();
+                });
+
                 Showfile::update(cx, |showfile, _cx| {
                     let selected_fixtures = showfile
                         .show
