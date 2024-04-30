@@ -13,14 +13,14 @@ mod lexer;
 
 // FIXME: We should deserialize this from a string by parsing.
 /// A representation of an object in the show.
-#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Deserialize)]
 pub enum Object {
     /// A fixture in the show.
     Fixture(Option<FixtureId>),
     /// A group in the show.
     Group(Option<usize>),
-    /// A Preset in the show.
-    Preset(Option<usize>),
+    /// A preset in the show.
+    Preset(Option<PresetFilter>, Option<usize>),
 }
 
 impl std::fmt::Display for Object {
@@ -36,9 +36,13 @@ impl std::fmt::Display for Object {
                 "group {}",
                 id.map(|id| id.to_string()).unwrap_or_default()
             ),
-            Object::Preset(id) => write!(
+            Object::Preset(filter, id) => write!(
                 f,
-                "preset {}",
+                "preset {}::{}",
+                filter
+                    .as_ref()
+                    .map(|filter| filter.to_string())
+                    .unwrap_or_default(),
                 id.map(|id| id.to_string()).unwrap_or_default()
             ),
         }
@@ -192,16 +196,24 @@ impl Show {
                         )))))?;
                     }
                 }
-                Some(Object::Preset(id)) => {
+                Some(Object::Preset(filter, id)) => {
+                    let Some(filter) = filter else {
+                        return Err(Error::ExecutionError(
+                            "No preset filter provided".to_string(),
+                        ));
+                    };
+
                     let Some(id) = id else {
                         return Err(Error::ExecutionError("No preset id provided".to_string()));
                     };
 
                     let preset = self
                         .data()
-                        .preset(&PresetFilter::All, *id)
+                        .preset(&filter, *id)
                         .ok_or_else(|| {
-                            Error::ExecutionError(format!("Preset with id '{id}' not found"))
+                            Error::ExecutionError(format!(
+                                "Preset of type '{filter}' with id '{id}' not found"
+                            ))
                         })?
                         .clone();
 
@@ -217,9 +229,8 @@ impl Show {
                                     &fixture,
                                     attribute_name.clone(),
                                     value.clone(),
-                                ).map_err(|err| {
-                                    log::error!("Failed to set attribute value while selecting preset {id}: {err}")
-                                }).ok();
+                                )
+                                .ok();
                         }
                     }
                 }

@@ -831,12 +831,53 @@ pub struct Preset {
 }
 
 /// A Filter for a preset. This controls which attributes are stored in a preset.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum PresetFilter {
     /// Filter on a feature group. All attributes in the feature group with the given name will be valid.
     FeatureGroup(String),
     /// Allow all attributes.
     All,
+}
+
+impl serde::Serialize for PresetFilter {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            PresetFilter::FeatureGroup(feature_group) => serializer.serialize_str(feature_group),
+            PresetFilter::All => serializer.serialize_str("All"),
+        }
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for PresetFilter {
+    fn deserialize<D>(deserializer: D) -> Result<PresetFilter, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        struct PresetFilterVisitor;
+
+        impl<'de> serde::de::Visitor<'de> for PresetFilterVisitor {
+            type Value = PresetFilter;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("a string")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<PresetFilter, E>
+            where
+                E: serde::de::Error,
+            {
+                match value {
+                    "All" => Ok(PresetFilter::All),
+                    feature_group => Ok(PresetFilter::FeatureGroup(feature_group.to_string())),
+                }
+            }
+        }
+
+        deserializer.deserialize_str(PresetFilterVisitor)
+    }
 }
 
 impl Display for PresetFilter {

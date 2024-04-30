@@ -259,7 +259,10 @@ impl PoolDelegate for PresetPoolWindowDelegate {
         Showfile::update(cx, |showfile, _cx| {
             showfile
                 .show
-                .execute_command(&Command::Select(Some(Object::Preset(Some(id)))))
+                .execute_command(&Command::Select(Some(Object::Preset(
+                    Some(self.filter.clone()),
+                    Some(id),
+                ))))
                 .map_err(|err| {
                     log::error!(
                         "Failed to execute command when clicking on preset pool item: {err}"

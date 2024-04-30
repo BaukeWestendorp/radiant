@@ -1,8 +1,8 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use gpui::{AppContext, Global, SharedString};
-use std::path::PathBuf;
+use std::{fmt::Display, path::PathBuf, str::FromStr};
 
-use backstage::show::Show;
+use backstage::show::{PresetFilter, Show};
 
 use crate::geo::{Bounds, Size};
 
@@ -123,10 +123,98 @@ pub struct PoolWindow {
     pub scroll_offset: i32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PoolWindowKind {
     Group,
-    Preset,
+    Preset(PresetKind),
+}
+
+impl serde::Serialize for PoolWindowKind {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        match self {
+            PoolWindowKind::Group => serializer.serialize_str("Group"),
+            PoolWindowKind::Preset(kind) => format!("Preset({})", kind).serialize(serializer),
+        }
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for PoolWindowKind {
+    fn deserialize<D>(deserializer: D) -> Result<PoolWindowKind, D::Error>
+    where
+        D: serde::de::Deserializer<'de>,
+    {
+        let s: String = serde::Deserialize::deserialize(deserializer)?;
+        if s == "Group" {
+            Ok(PoolWindowKind::Group)
+        } else {
+            let kind = s
+                .strip_prefix("Preset(")
+                .and_then(|s| s.strip_suffix(")"))
+                .ok_or_else(|| serde::de::Error::custom("Invalid PoolWindowKind"))?;
+            Ok(PoolWindowKind::Preset(
+                kind.parse().map_err(serde::de::Error::custom)?,
+            ))
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize, serde::Serialize)]
+pub enum PresetKind {
+    Dimmer,
+    Position,
+    Gobo,
+    Color,
+    Beam,
+    Focus,
+    Control,
+    Shapers,
+    Video,
+    All,
+}
+
+impl Display for PresetKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PresetKind::Dimmer => write!(f, "Dimmer"),
+            PresetKind::Position => write!(f, "Position"),
+            PresetKind::Gobo => write!(f, "Gobo"),
+            PresetKind::Color => write!(f, "Color"),
+            PresetKind::Beam => write!(f, "Beam"),
+            PresetKind::Focus => write!(f, "Focus"),
+            PresetKind::Control => write!(f, "Control"),
+            PresetKind::Shapers => write!(f, "Shapers"),
+            PresetKind::Video => write!(f, "Video"),
+            PresetKind::All => write!(f, "All"),
+        }
+    }
+}
+
+impl FromStr for PresetKind {
+    type Err = anyhow::Error;
+    fn from_str(s: &str) -> std::prelude::v1::Result<Self, Self::Err> {
+        match s {
+            "Dimmer" => Ok(PresetKind::Dimmer),
+            "Position" => Ok(PresetKind::Position),
+            "Gobo" => Ok(PresetKind::Gobo),
+            "Color" => Ok(PresetKind::Color),
+            "Beam" => Ok(PresetKind::Beam),
+            "Focus" => Ok(PresetKind::Focus),
+            "Control" => Ok(PresetKind::Control),
+            "Shapers" => Ok(PresetKind::Shapers),
+            "Video" => Ok(PresetKind::Video),
+            "All" => Ok(PresetKind::All),
+            other => Err(anyhow!("Invalid PresetKind: '{other}'")),
+        }
+    }
+}
+
+impl From<PresetKind> for PresetFilter {
+    fn from(kind: PresetKind) -> Self {
+        PresetFilter::FeatureGroup(kind.to_string())
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, serde::Deserialize, serde::Serialize)]
