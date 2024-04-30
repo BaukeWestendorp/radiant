@@ -148,6 +148,16 @@ impl Show {
         }
     }
 
+    /// Check if a fixture with the given id is in the current selection.
+    pub fn is_fixture_selected(&self, id: &FixtureId) -> bool {
+        self.selected_fixtures.contains(&id)
+    }
+
+    /// Check if all fixtures with the given id's are in the current selection.
+    pub fn are_fixtures_selected(&self, fixtures: &[FixtureId]) -> bool {
+        !fixtures.iter().any(|id| !self.is_fixture_selected(id))
+    }
+
     /// Remove all fixtures from the selection.
     pub fn clear_selection(&mut self) {
         self.selected_fixtures.clear();

@@ -186,9 +186,18 @@ impl PoolDelegate for GroupPoolWindowDelegate {
             return None;
         };
 
+        let is_selected = Showfile::get(cx)
+            .show
+            .are_fixtures_selected(&group.fixtures);
+
+        let text_color = match is_selected {
+            true => THEME.status_complete_selection,
+            false => THEME.text_secondary,
+        };
+
         Some(
             div()
-                .text_color(THEME.text_secondary)
+                .text_color(text_color)
                 .child(format!("{} fxt.", group.fixtures.len())),
         )
     }
