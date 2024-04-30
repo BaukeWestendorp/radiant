@@ -181,7 +181,10 @@ impl PoolDelegate for GroupPoolWindowDelegate {
             showfile
                 .show
                 .execute_command(&Command::Select(Some(Object::Group(Some(id)))))
-                .unwrap();
+                .map_err(|err| {
+                    log::error!("Failed to execute command when clicking on group pool item: {err}")
+                })
+                .ok();
         });
     }
 }
@@ -222,7 +225,12 @@ impl PoolDelegate for PresetPoolWindowDelegate {
             showfile
                 .show
                 .execute_command(&Command::Select(Some(Object::Preset(Some(id)))))
-                .unwrap();
+                .map_err(|err| {
+                    log::error!(
+                        "Failed to execute command when clicking on preset pool item: {err}"
+                    )
+                })
+                .ok();
         });
     }
 }

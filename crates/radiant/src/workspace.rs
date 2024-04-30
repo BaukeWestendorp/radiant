@@ -67,7 +67,13 @@ impl Workspace {
                 selected_fixtures: selected_fixtures.clone(),
                 focus_handle: cx.focus_handle(),
                 current_layout_view: LayoutView::build(
-                    cx.new_model(|cx| Showfile::get(cx).layouts.current_layout().unwrap().clone()),
+                    cx.new_model(|cx| {
+                        Showfile::get(cx)
+                            .layouts
+                            .current_layout()
+                            .expect("Failed to get current layout")
+                            .clone()
+                    }),
                     selected_fixtures,
                     cx,
                 ),

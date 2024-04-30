@@ -27,7 +27,8 @@ impl OutputManager {
                         }
                     });
                 })
-                .unwrap();
+                .map_err(|err| log::error!("Failed to send DMX output: {err}"))
+                .ok();
 
                 cx.background_executor().timer(DMX_UPDATE_RATE).await;
             }
@@ -53,6 +54,7 @@ pub trait DmxProtocol {
 pub mod artnet {
     use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
 
+    use anyhow::anyhow;
     use artnet_protocol::{ArtCommand, Output};
     use backstage::dmx::DmxOutput;
 
@@ -69,11 +71,10 @@ pub mod artnet {
         const ARTNET_PORT: u16 = 6454;
 
         pub fn new(target_ip: &str, universe: u16, local_universe: u16) -> anyhow::Result<Self> {
-            let target_address = (target_ip, Self::ARTNET_PORT)
-                .to_socket_addrs()
-                .expect("Could not resolve address")
-                .next()
-                .unwrap();
+            let Some(target_address) = (target_ip, Self::ARTNET_PORT).to_socket_addrs()?.next()
+            else {
+                return Err(anyhow!("Failed to parse target address:"));
+            };
 
             let socket = UdpSocket::bind("0.0.0.0:0")?;
             socket.set_broadcast(true)?;

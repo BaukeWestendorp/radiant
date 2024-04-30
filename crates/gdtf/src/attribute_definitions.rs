@@ -95,14 +95,14 @@ impl Attribute {
         let feature_group = feature_groups
             .iter()
             .find(|fg| fg.name == feature_group_name)
-            .unwrap()
+            .ok_or_else(|| anyhow!("Unknown feature group: {}", feature_group_name))?
             .clone();
 
         let feature = feature_group
             .features
             .iter()
             .find(|f| f.name == feature_name)
-            .unwrap()
+            .ok_or_else(|| anyhow!("Unknown feature: {}", feature_name))?
             .clone();
 
         Ok(Self {

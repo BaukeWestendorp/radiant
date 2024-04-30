@@ -9,7 +9,8 @@ use lazy_static::lazy_static;
 use std::{collections::HashMap, fmt::Display, io::Write, path::PathBuf, rc::Rc};
 
 lazy_static! {
-    static ref BASE_DIRS: xdg::BaseDirectories = xdg::BaseDirectories::new().unwrap();
+    static ref BASE_DIRS: xdg::BaseDirectories =
+        xdg::BaseDirectories::new().expect("Failed to get base directories");
     static ref FIXTURE_CACHE_PATH: PathBuf = {
         match std::env::var("BACKSTAGE_FIXTURE_CACHE_LOCATION") {
             Ok(path) => PathBuf::from(path),
@@ -111,7 +112,13 @@ impl Show {
     pub fn selected_fixtures(&self) -> Vec<&Fixture> {
         self.selected_fixtures
             .iter()
-            .map(|fixture_id| self.patchlist().fixture(&fixture_id).unwrap())
+            .filter_map(|fixture_id| {
+                let fixture = self.patchlist().fixture(&fixture_id);
+                if fixture.is_none() {
+                    log::warn!("Fixture with id {fixture_id} not found while getting the selected fixtures");
+                }
+                fixture
+            })
             .collect()
     }
 
@@ -381,7 +388,7 @@ impl Fixture {
     ///
     /// This function will panic if the show has not been initialized yet.
     pub fn description(&self) -> Rc<GdtfDescription> {
-        self.description.clone().unwrap()
+        self.description.clone().expect("Show not initialized")
     }
 
     /// Get all feature groups of the fixture type.

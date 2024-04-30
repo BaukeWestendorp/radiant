@@ -206,15 +206,20 @@ impl Show {
                         .clone();
 
                     for fixture_id in self.selected_fixture_ids().to_vec() {
-                        let fixture = self.patchlist().fixture(&fixture_id).unwrap().clone();
+                        let Some(fixture) = self.patchlist().fixture(&fixture_id).cloned() else {
+                            log::warn!("Failed to get fixture with id {fixture_id} while selecting preset {id}");
+                            continue;
+                        };
+
                         for (attribute_name, value) in &preset.attribute_values {
                             self.programmer_mut()
                                 .set_attribute_value(
                                     &fixture,
                                     attribute_name.clone(),
                                     value.clone(),
-                                )
-                                .unwrap()
+                                ).map_err(|err| {
+                                    log::error!("Failed to set attribute value while selecting preset {id}: {err}")
+                                }).ok();
                         }
                     }
                 }

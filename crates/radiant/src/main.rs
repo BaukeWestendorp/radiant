@@ -29,7 +29,7 @@ fn main() {
             .expect("Failed to get current directory")
             .join(showfile)
             .canonicalize()
-            .unwrap()
+            .expect("Failed to canonicalize showfile path")
     });
 
     app::run_app(app, showfile_path);

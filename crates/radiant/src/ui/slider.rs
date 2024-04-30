@@ -84,6 +84,7 @@ impl Render for Slider {
                             .on_drag_move(cx.listener(move |this, event, cx| {
                                 this.handle_drag(&bounds, event, cx)
                             }))
+                            .children(markers)
                             .child(
                                 div()
                                     .absolute()
@@ -93,7 +94,6 @@ impl Render for Slider {
                                     .bottom_0()
                                     .bg(gpui::green()),
                             )
-                            .children(markers)
                             .into_any_element()
                     });
 

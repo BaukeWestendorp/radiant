@@ -227,10 +227,11 @@ impl DmxOutput {
         if !self.universes.contains_key(&channel.universe) {
             self.universes.insert(channel.universe, DmxUniverse::new());
         }
-        self.universes
-            .get_mut(&channel.universe)
-            .unwrap()
-            .set_channel(channel.address, value)?;
+        let Some(universe) = self.universes.get_mut(&channel.universe) else {
+            return Err(Error::UniverseNotFound(channel.universe));
+        };
+
+        universe.set_channel(channel.address, value)?;
 
         Ok(())
     }
@@ -287,9 +288,12 @@ pub enum Error {
     /// Failed to parse a DMX string.
     #[error("Failed to parse DMX string '{0}'")]
     ParseError(String),
-    /// Error when the lengths of two slices do not match.
+    /// Error for when the lengths of two slices do not match.
     #[error("Length mismatch: {0} != {1}")]
     LengthMismatch(usize, usize),
+    /// A universe with the given id has not be found
+    #[error("Universe with id {0} not found")]
+    UniverseNotFound(u16),
 }
 
 #[cfg(test)]

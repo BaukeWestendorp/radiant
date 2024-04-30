@@ -158,11 +158,12 @@ impl AttributeEditor {
 
         let mut feature_groups = Vec::<Rc<FeatureGroup>>::new();
         for fixture_id in selected_fixtures.read(cx).iter() {
-            let fixture = Showfile::get(cx)
-                .show
-                .patchlist()
-                .fixture(fixture_id)
-                .unwrap();
+            let Some(fixture) = Showfile::get(cx).show.patchlist().fixture(fixture_id) else {
+                log::warn!(
+                    "Failed to get fixture with id {fixture_id} while getting the feature group picker"
+                );
+                continue;
+            };
             for feature_group in fixture.feature_groups().iter() {
                 if !feature_groups
                     .iter()
