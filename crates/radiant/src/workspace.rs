@@ -100,14 +100,6 @@ impl Workspace {
         })
     }
 
-    fn handle_execute_command(&mut self, command: &ExecuteCommand, cx: &mut ViewContext<Self>) {
-        Showfile::update(cx, |showfile, _cx| {
-            showfile.show.execute_command(&command.0)
-        })
-        .map_err(|err| log::error!("Failed to execute command: {err}"))
-        .ok();
-    }
-
     fn render_sidebar(&self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let layouts = Showfile::get(cx).layouts.clone();
 
@@ -185,6 +177,15 @@ impl Workspace {
                 }
             }))
             .child(content)
+    }
+
+    fn handle_execute_command(&mut self, command: &ExecuteCommand, cx: &mut ViewContext<Self>) {
+        Showfile::update(cx, |showfile, _cx| {
+            showfile.show.execute_command(&command.0)
+        })
+        .map_err(|err| log::error!("Failed to execute command: {err}"))
+        .ok();
+        cx.notify();
     }
 }
 
