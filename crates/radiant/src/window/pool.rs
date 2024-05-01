@@ -3,7 +3,7 @@ use backstage::{
     show::PresetFilter,
 };
 use gpui::{
-    div, prelude::FluentBuilder, Global, InteractiveElement, IntoElement, MouseButton,
+    div, prelude::FluentBuilder, FontWeight, Global, InteractiveElement, IntoElement, MouseButton,
     ParentElement, SharedString, Styled, ViewContext, WindowContext,
 };
 
@@ -125,7 +125,8 @@ impl<D: PoolDelegate + 'static> WindowDelegate for PoolWindowDelegate<D> {
                 .on_mouse_down(
                     MouseButton::Left,
                     cx.listener(move |this, _event, cx| {
-                        this.delegate.pool_delegate.on_click_item(id, cx)
+                        this.delegate.pool_delegate.on_click_item(id, cx);
+                        cx.notify();
                     }),
                 )
         });
@@ -239,6 +240,25 @@ impl PoolDelegate for PresetPoolWindowDelegate {
             .data()
             .preset(&self.filter, id)
             .is_some()
+    }
+
+    fn render_header_item(
+        &mut self,
+        id: usize,
+        cx: &mut WindowContext,
+    ) -> Option<impl IntoElement> {
+        let Some(preset) = Showfile::get(cx).show.data().preset(&self.filter, id) else {
+            return None;
+        };
+
+        let is_in_programmer = Showfile::get(cx)
+            .show
+            .programmer_contains(&preset.attribute_values);
+
+        match is_in_programmer {
+            true => Some(div().text_color(THEME.status_programmer_change).child("P")),
+            false => None,
+        }
     }
 
     fn render_pool_item(&mut self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement> {

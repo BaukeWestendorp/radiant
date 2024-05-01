@@ -27,6 +27,7 @@ pub struct Theme {
     pub accent: Hsla,
 
     pub status_complete_selection: Hsla,
+    pub status_programmer_change: Hsla,
 }
 
 lazy_static! {
@@ -55,7 +56,8 @@ lazy_static! {
 
         accent: rgb(0xe9ad00).into(),
 
-        status_complete_selection: rgb(0x8fff00).into()
+        status_complete_selection: rgb(0x8fff00).into(),
+        status_programmer_change: rgb(0xff0808).into(),
     };
 }
 

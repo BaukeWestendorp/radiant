@@ -99,6 +99,36 @@ impl Show {
         &mut self.programmer
     }
 
+    /// Check if the programmer contains all of the given attribute values.
+    pub fn programmer_contains(&self, attribute_values: &HashMap<String, AttributeValue>) -> bool {
+        self.programmer.changes.iter().any(|(fixture_id, changes)| {
+            let Some(fixture) = self.patchlist().fixture(fixture_id) else {
+                return false;
+            };
+
+            let matching_attributes = attribute_values
+                .iter()
+                .filter(|(attribute_name, _)| {
+                    fixture
+                        .attributes()
+                        .iter()
+                        .any(|a| a.name == **attribute_name)
+                })
+                .collect::<Vec<_>>();
+
+            if matching_attributes.is_empty() {
+                return false;
+            }
+
+            matching_attributes.iter().all(|(attribute_name, value)| {
+                match changes.get(*attribute_name) {
+                    Some(existing_value) => existing_value == *value,
+                    None => false,
+                }
+            })
+        })
+    }
+
     /// Get the data collection.
     pub fn data(&self) -> &Data {
         &self.data
