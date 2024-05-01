@@ -68,7 +68,7 @@ pub trait Hoverable {
 impl Hoverable for Hsla {
     fn hovered(self) -> Self {
         let mut hsla = self;
-        hsla.l = (hsla.l + 0.05).clamp(0.0, 1.0);
+        hsla.l = (hsla.l + 0.075).clamp(0.0, 1.0);
         hsla
     }
 }

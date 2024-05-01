@@ -3,7 +3,7 @@ use backstage::{
     show::PresetFilter,
 };
 use gpui::{
-    div, prelude::FluentBuilder, FontWeight, Global, InteractiveElement, IntoElement, MouseButton,
+    div, prelude::FluentBuilder, Global, InteractiveElement, IntoElement, MouseButton,
     ParentElement, SharedString, Styled, ViewContext, WindowContext,
 };
 

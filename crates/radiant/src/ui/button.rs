@@ -20,7 +20,12 @@ pub struct Button {
 impl Button {
     pub fn new(id: impl Into<ElementId>) -> Self {
         Self {
-            base: div(),
+            base: div()
+                .rounded_md()
+                .border()
+                .border_color(THEME.border)
+                .bg(THEME.fill_secondary)
+                .text_color(THEME.text),
             id: id.into(),
             children: SmallVec::new(),
             selected: false,
@@ -39,27 +44,31 @@ impl Button {
 }
 
 impl RenderOnce for Button {
-    fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
+    fn render(mut self, _cx: &mut WindowContext) -> impl IntoElement {
+        let style = self.base.style().clone();
+        let background_color = style
+            .background
+            .unwrap_or_default()
+            .color()
+            .unwrap_or_default();
+        let text_color = style.text.unwrap_or_default().color.unwrap_or_default();
+        let border_color = style.border_color.unwrap_or_default();
+
         self.base
-            .rounded_md()
-            .border()
-            .border_color(THEME.border)
-            .bg(THEME.fill_secondary)
-            .text_color(THEME.text)
             .id(self.id.clone())
             .when(self.selected, |this| {
                 this.border_color(THEME.border_selected)
             })
             .when(self.disabled, |this| {
                 this.cursor_not_allowed()
-                    .bg(THEME.fill_secondary.disabled())
-                    .border_color(THEME.border.disabled())
-                    .text_color(THEME.text.disabled())
+                    .bg(background_color.disabled())
+                    .border_color(border_color.disabled())
+                    .text_color(text_color.disabled())
             })
             .when(!self.disabled, |this| {
                 this.cursor_pointer()
-                    .hover(|hover| hover.bg(THEME.fill_secondary.hovered()))
-                    .active(|active| active.bg(THEME.fill_secondary.active()))
+                    .hover(|hover| hover.bg(background_color.hovered()))
+                    .active(|active| active.bg(background_color.active()))
             })
             .when_some(
                 self.on_click.filter(|_| !self.disabled),

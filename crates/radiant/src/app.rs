@@ -44,7 +44,7 @@ pub fn run_app(app: gpui::App, showfile_path: Option<PathBuf>) {
             log::info!("Exited Radiant. Goodbye!")
         });
 
-        let window_size = size(1719.into(), 998.into());
+        let window_size = size(1712.into(), 998.into());
         let window_options = WindowOptions {
             bounds: Some(Bounds {
                 origin: cx

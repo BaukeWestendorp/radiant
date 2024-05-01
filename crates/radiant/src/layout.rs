@@ -28,7 +28,17 @@ impl LayoutView {
         cx: &mut WindowContext,
     ) -> View<Self> {
         cx.new_view(|cx| {
-            let window_views = get_window_views(layout.clone(), selected_fixtures, cx);
+            let window_views = get_window_views(layout.clone(), selected_fixtures.clone(), cx);
+
+            cx.observe(&layout, {
+                let selected_fixtures = selected_fixtures.clone();
+                move |this: &mut Self, layout, cx| {
+                    this.window_views =
+                        get_window_views(layout.clone(), selected_fixtures.clone(), cx);
+                    cx.notify();
+                }
+            })
+            .detach();
 
             Self {
                 layout,
