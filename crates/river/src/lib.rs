@@ -1,3 +1,6 @@
+#[cfg(feature = "gpui")]
+pub mod gpui;
+
 use slotmap::{SecondaryMap, SlotMap};
 
 slotmap::new_key_type! {

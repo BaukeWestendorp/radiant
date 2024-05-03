@@ -6,3 +6,8 @@ license = "MIT"
 
 [dependencies]
 slotmap = "1.0"
+gpui = { git = "https://github.com/zed-industries/zed", tag = "v0.133.7", optional = true }
+
+[features]
+default = ["gpui"]
+gpui = ["dep:gpui"]

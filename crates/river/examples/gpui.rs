@@ -1,6 +1,16 @@
+use gpui::{App, AppContext, WindowOptions};
 use river::{Graph, NodeId, NodeType, Value};
 
 fn main() {
+    App::new().run(|cx: &mut AppContext| {
+        cx.open_window(WindowOptions::default(), |cx| {
+            let graph = create_graph();
+
+            Graph::<ExampleNodeType, ExampleDataType, ExampleValue>::build_view(graph, cx)
+        });
+    });
+}
+fn create_graph() -> Graph<ExampleNodeType, ExampleDataType, ExampleValue> {
     let mut graph = Graph::<ExampleNodeType, ExampleDataType, ExampleValue>::new();
     let a = graph.add_node(ExampleNodeType::IntegerNew);
     graph
@@ -25,10 +35,7 @@ fn main() {
 
     graph.process(adder);
 
-    dbg!(graph
-        .get_output(graph.get_node(adder).unwrap().outputs().get(0).unwrap().1)
-        .unwrap()
-        .value());
+    graph
 }
 
 #[derive(Debug, Clone)]
