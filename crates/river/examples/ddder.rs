@@ -1,7 +1,7 @@
-use river::{NodeId, NodeType, RiverEditor, Value};
+use river::{Graph, NodeId, NodeType, Value};
 
 fn main() {
-    let mut editor = RiverEditor::<ExampleNodeType, ExampleDataType, ExampleValue>::new();
+    let mut editor = Graph::<ExampleNodeType, ExampleDataType, ExampleValue>::new();
     let a = editor.add_node(ExampleNodeType::IntegerNew);
     editor
         .get_output_mut(editor.get_node(a).unwrap().outputs().get(0).unwrap().1)
@@ -61,11 +61,7 @@ impl NodeType for ExampleNodeType {
     type DataType = ExampleDataType;
     type Value = ExampleValue;
 
-    fn build_node(
-        &self,
-        editor: &mut RiverEditor<Self, Self::DataType, Self::Value>,
-        node_id: NodeId,
-    ) {
+    fn build_node(&self, editor: &mut Graph<Self, Self::DataType, Self::Value>, node_id: NodeId) {
         match self {
             Self::IntegerNew => {
                 editor.add_output(node_id, "Value".to_string(), Self::DataType::Integer);
@@ -78,11 +74,7 @@ impl NodeType for ExampleNodeType {
         }
     }
 
-    fn process(
-        &self,
-        editor: &mut RiverEditor<Self, Self::DataType, Self::Value>,
-        node_id: NodeId,
-    ) {
+    fn process(&self, editor: &mut Graph<Self, Self::DataType, Self::Value>, node_id: NodeId) {
         let node = editor.get_node(node_id).unwrap();
 
         match self {

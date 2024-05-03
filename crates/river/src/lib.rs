@@ -7,7 +7,7 @@ slotmap::new_key_type! {
 }
 
 #[derive(Debug, Clone)]
-pub struct RiverEditor<N, D, V>
+pub struct Graph<N, D, V>
 where
     N: NodeType,
     V: Value,
@@ -18,7 +18,7 @@ where
     connections: SecondaryMap<InputId, OutputId>,
 }
 
-impl<N, D, V> RiverEditor<N, D, V>
+impl<N, D, V> Graph<N, D, V>
 where
     N: NodeType<DataType = D, Value = V>,
     V: Value<DataType = D>,
@@ -108,13 +108,9 @@ pub trait NodeType: Clone {
     type DataType;
     type Value: Value;
 
-    fn build_node(
-        &self,
-        editor: &mut RiverEditor<Self, Self::DataType, Self::Value>,
-        node_id: NodeId,
-    );
+    fn build_node(&self, editor: &mut Graph<Self, Self::DataType, Self::Value>, node_id: NodeId);
 
-    fn process(&self, editor: &mut RiverEditor<Self, Self::DataType, Self::Value>, node_id: NodeId);
+    fn process(&self, editor: &mut Graph<Self, Self::DataType, Self::Value>, node_id: NodeId);
 }
 
 pub trait Value {
