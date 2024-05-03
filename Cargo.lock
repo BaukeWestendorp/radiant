@@ -3290,6 +3290,9 @@ dependencies = [
 [[package]]
 name = "river"
 version = "0.1.0"
+dependencies = [
+ "slotmap",
+]
 
 [[package]]
 name = "roxmltree"
