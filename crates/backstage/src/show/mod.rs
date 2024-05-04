@@ -8,6 +8,10 @@ use gdtf_share::GdtfShare;
 use lazy_static::lazy_static;
 use std::{collections::HashMap, fmt::Display, io::Write, path::PathBuf, rc::Rc};
 
+use self::graph::Graph;
+
+pub mod graph;
+
 lazy_static! {
     static ref BASE_DIRS: xdg::BaseDirectories =
         xdg::BaseDirectories::new().expect("Failed to get base directories");
@@ -47,7 +51,7 @@ pub type RevisionId = i32;
 /// # Show
 ///
 /// The show struct contains all information related to a show.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct Show {
     patchlist: Patchlist,
     programmer: Programmer,
@@ -204,7 +208,7 @@ impl<'de> serde::Deserialize<'de> for Show {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 struct ShowIntermediate {
     #[serde(default = "Default::default")]
     patchlist: PatchlistIntermediate,
@@ -798,7 +802,7 @@ impl TryFrom<u8> for ChannelResolution {
 }
 
 /// A collection of different types of data used in a show.
-#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct Data {
     /// All groups in the show.
     #[serde(default)]
@@ -806,6 +810,8 @@ pub struct Data {
     /// All presets in the show.
     #[serde(default)]
     presets: HashMap<PresetFilter, Vec<Preset>>,
+    /// All graphs in the show.
+    graphs: Vec<Graph>,
 }
 
 impl Data {
@@ -814,6 +820,7 @@ impl Data {
         Self {
             groups: Vec::new(),
             presets: HashMap::new(),
+            graphs: Vec::new(),
         }
     }
 
@@ -835,6 +842,16 @@ impl Data {
     /// Get a preset with the given id.
     pub fn preset(&self, filter: &PresetFilter, id: usize) -> Option<&Preset> {
         self.presets(filter)?.iter().find(|preset| preset.id == id)
+    }
+
+    /// Get the graphs.
+    pub fn graphs(&self) -> &[Graph] {
+        &self.graphs
+    }
+
+    /// Get a graph with the given id.
+    pub fn graph(&self, id: usize) -> Option<&Graph> {
+        self.graphs().iter().find(|graph| graph.id() == id)
     }
 }
 

@@ -16,6 +16,7 @@ serde_json.workspace = true
 thiserror.workspace = true
 
 xdg = "2.5.2"
+slotmap = { version = "1.0", features = ["serde"] }
 
 [dev-dependencies]
 smol = "2.0.0"

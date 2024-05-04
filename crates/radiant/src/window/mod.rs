@@ -6,6 +6,7 @@ use gpui::{
 use crate::{layout::GRID_SIZE, theme::THEME};
 
 pub mod attribute_editor;
+pub mod graph_editor;
 pub mod pool;
 
 pub struct WindowView<D: WindowDelegate> {

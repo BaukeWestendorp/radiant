@@ -9,6 +9,7 @@ use crate::{
     theme::THEME,
     window::{
         attribute_editor::AttributeEditorWindowDelegate,
+        graph_editor::GraphEditorWindowDelegate,
         pool::{GroupPoolWindowDelegate, PoolWindowDelegate, PresetPoolWindowDelegate},
         WindowView,
     },
@@ -127,6 +128,10 @@ fn get_window_view(
         },
         WindowKind::AttributeEditor => {
             let delegate = AttributeEditorWindowDelegate::new(selected_fixtures, cx);
+            WindowView::build(delegate, cx).into()
+        }
+        WindowKind::GraphEditor(graph_id) => {
+            let delegate = GraphEditorWindowDelegate::new(Some(*graph_id), cx);
             WindowView::build(delegate, cx).into()
         }
     }
