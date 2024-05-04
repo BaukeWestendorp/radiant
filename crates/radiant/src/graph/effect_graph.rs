@@ -1,54 +1,23 @@
-use river::{Graph, NodeId, NodeType, Value};
-
-fn main() {
-    let mut graph = Graph::<ExampleNodeType, ExampleDataType, ExampleValue>::new();
-    let a = graph.add_node(ExampleNodeType::IntegerNew);
-    graph
-        .get_output_mut(graph.get_node(a).unwrap().outputs().get(0).unwrap().1)
-        .unwrap()
-        .set_value(ExampleValue::Integer(42));
-    let b = graph.add_node(ExampleNodeType::IntegerNew);
-    graph
-        .get_output_mut(graph.get_node(b).unwrap().outputs().get(0).unwrap().1)
-        .unwrap()
-        .set_value(ExampleValue::Integer(27));
-
-    let adder = graph.add_node(ExampleNodeType::IntegerAdd);
-    graph.add_connection(
-        graph.get_node(a).unwrap().outputs().get(0).unwrap().1,
-        graph.get_node(adder).unwrap().inputs().get(0).unwrap().1,
-    );
-    graph.add_connection(
-        graph.get_node(b).unwrap().outputs().get(0).unwrap().1,
-        graph.get_node(adder).unwrap().inputs().get(1).unwrap().1,
-    );
-
-    graph.process(adder);
-
-    dbg!(graph
-        .get_output(graph.get_node(adder).unwrap().outputs().get(0).unwrap().1)
-        .unwrap()
-        .value());
-}
+use super::{Graph, NodeId, NodeType, Value};
 
 #[derive(Debug, Clone)]
-pub enum ExampleDataType {
+pub enum GraphDataType {
     Integer,
 }
 
 #[derive(Debug, Clone)]
-pub enum ExampleNodeType {
+pub enum GraphNodeType {
     IntegerNew,
     IntegerAdd,
 }
 
 #[derive(Debug, Clone)]
-pub enum ExampleValue {
+pub enum GraphValue {
     Integer(i32),
 }
 
-impl Value for ExampleValue {
-    type DataType = ExampleDataType;
+impl Value for GraphValue {
+    type DataType = GraphDataType;
 
     fn initial_value(data_type: &Self::DataType) -> Self {
         match data_type {
@@ -57,9 +26,9 @@ impl Value for ExampleValue {
     }
 }
 
-impl NodeType for ExampleNodeType {
-    type DataType = ExampleDataType;
-    type Value = ExampleValue;
+impl NodeType for GraphNodeType {
+    type DataType = GraphDataType;
+    type Value = GraphValue;
 
     fn build_node(&self, graph: &mut Graph<Self, Self::DataType, Self::Value>, node_id: NodeId) {
         match self {
@@ -93,9 +62,7 @@ impl NodeType for ExampleNodeType {
                 let b = graph.get_output(*b_id).unwrap();
 
                 let sum = match (a.value(), b.value()) {
-                    (ExampleValue::Integer(a), ExampleValue::Integer(b)) => {
-                        ExampleValue::Integer(a + b)
-                    }
+                    (GraphValue::Integer(a), GraphValue::Integer(b)) => GraphValue::Integer(a + b),
                 };
 
                 graph

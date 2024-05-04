@@ -1,7 +1,6 @@
-#[cfg(feature = "gpui")]
-pub mod gpui;
-
 use slotmap::{SecondaryMap, SlotMap};
+
+pub mod effect_graph;
 
 slotmap::new_key_type! {
     pub struct NodeId;
@@ -48,6 +47,10 @@ where
         id
     }
 
+    pub fn nodes(&self) -> impl Iterator<Item = &Node<N>> {
+        self.nodes.values()
+    }
+
     pub fn get_node(&self, id: NodeId) -> Option<&Node<N>> {
         self.nodes.get(id)
     }
@@ -65,6 +68,10 @@ where
         });
         self.nodes[node].inputs.push((label, id));
         id
+    }
+
+    pub fn inputs(&self) -> impl Iterator<Item = &Input<D, V>> {
+        self.inputs.values()
     }
 
     pub fn get_input(&self, id: InputId) -> Option<&Input<D, V>> {
@@ -86,6 +93,10 @@ where
         id
     }
 
+    pub fn outputs(&self) -> impl Iterator<Item = &Output<D, V>> {
+        self.outputs.values()
+    }
+
     pub fn get_output(&self, id: OutputId) -> Option<&Output<D, V>> {
         self.outputs.get(id)
     }
@@ -94,16 +105,16 @@ where
         self.outputs.get_mut(id)
     }
 
+    pub fn get_connected_output(&self, input: InputId) -> Option<&OutputId> {
+        self.connections.get(input)
+    }
+
     pub fn add_connection(&mut self, source: OutputId, target: InputId) {
         self.connections.insert(target, source);
     }
 
     pub fn process(&mut self, node: NodeId) {
         self.nodes[node].node_type.clone().process(self, node);
-    }
-
-    pub fn get_connected_output(&self, input: InputId) -> Option<&OutputId> {
-        self.connections.get(input)
     }
 }
 

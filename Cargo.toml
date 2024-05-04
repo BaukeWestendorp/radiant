@@ -4,7 +4,7 @@ members = [
     "crates/backstage",
     "crates/gdtf",
     "crates/gdtf_share",
-    "crates/radiant", "crates/river",
+    "crates/radiant",
 ]
 
 [workspace.package]
