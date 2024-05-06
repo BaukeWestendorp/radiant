@@ -1,10 +1,11 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::format};
 
 use backstage::show::graph::{DataType, Graph, InputId, Node, NodeId, OutputId};
 use gpui::{
-    canvas, div, point, prelude::FluentBuilder, px, rgba, Bounds, Context, Element, Global,
-    IntoElement, Model, ParentElement, Path, Pixels, Render, SharedString, Styled, View,
-    ViewContext, VisualContext, WindowContext,
+    canvas, div, point, prelude::FluentBuilder, px, rgba, Bounds, Context, DragMoveEvent, Element,
+    ElementId, Entity, Global, InteractiveElement, IntoElement, Model, ParentElement, Path, Pixels,
+    Point, Render, SharedString, StatefulInteractiveElement, Styled, View, ViewContext,
+    VisualContext, WindowContext,
 };
 
 use crate::{showfile::Showfile, theme::THEME};
@@ -57,25 +58,38 @@ impl GraphView {
         cx.new_view(|cx| {
             let socket_bounds = cx.new_model(|_cx| HashMap::new());
 
-            let nodes = graph
-                .read(cx)
-                .nodes()
-                .cloned()
-                .collect::<Vec<_>>()
-                .into_iter()
-                .filter_map(|node| {
-                    NodeView::build(node.id(), graph.clone(), socket_bounds.clone(), cx)
-                        .map_err(|err| {
-                            log::error!("Failed to build node: {}", err);
-                        })
-                        .ok()
-                })
-                .collect();
+            let get_node_views = |graph: Model<Graph>,
+                                  socket_bounds: Model<HashMap<Socket, Bounds<Pixels>>>,
+                                  cx: &mut WindowContext| {
+                graph
+                    .read(cx)
+                    .nodes()
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .into_iter()
+                    .filter_map(|node| {
+                        NodeView::build(node.id(), graph.clone(), socket_bounds.clone(), cx)
+                            .map_err(|err| {
+                                log::error!("Failed to build node: {}", err);
+                            })
+                            .ok()
+                    })
+                    .collect()
+            };
+
+            cx.observe(&graph, {
+                let socket_bounds = socket_bounds.clone();
+                move |this: &mut Self, graph, cx| {
+                    this.nodes = get_node_views(graph.clone(), socket_bounds.clone(), cx);
+                    cx.notify();
+                }
+            })
+            .detach();
 
             Self {
-                graph,
-                socket_bounds,
-                nodes,
+                graph: graph.clone(),
+                socket_bounds: socket_bounds.clone(),
+                nodes: get_node_views(graph, socket_bounds, cx),
             }
         })
     }
@@ -149,6 +163,7 @@ impl NodeView {
             },
             Ok,
         )?;
+
         Ok(cx.new_view(|_cx| Self {
             node,
             graph,
@@ -244,7 +259,6 @@ impl NodeView {
                 canvas(
                     |_, _| {},
                     move |bounds, _, cx| {
-                        dbg!(&bounds);
                         socket_bounds.update(cx, |socket_bounds, _cx| {
                             socket_bounds.insert(socket, bounds)
                         });
@@ -258,6 +272,7 @@ impl NodeView {
 impl Render for NodeView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
+            .id(SharedString::from(format!("{:?}", self.node.id())))
             .absolute()
             .left(px(self.node.x()))
             .top(px(self.node.y()))
@@ -272,6 +287,29 @@ impl Render for NodeView {
             .text_sm()
             .child(self.render_header(cx))
             .child(self.render_content(cx))
+            .on_drag(
+                DraggedNode::new(
+                    self.node.id(),
+                    point(
+                        px(self.node.x() - cx.mouse_position().x.0),
+                        px(self.node.y() - cx.mouse_position().y.0),
+                    ),
+                ),
+                |dragged_node, cx| cx.new_view(|_cx| dragged_node.clone()),
+            )
+            .on_drag_move(cx.listener(|this, event: &DragMoveEvent<DraggedNode>, cx| {
+                if event.drag(cx).id == this.node.id() {
+                    this.graph.update(cx, |graph, cx| {
+                        if let Some(node) = graph.get_node_mut(this.node.id()) {
+                            node.set_position(
+                                event.event.position.x.0 + event.drag(cx).grab_offset.x.0,
+                                event.event.position.y.0 + event.drag(cx).grab_offset.y.0,
+                            );
+                            cx.notify();
+                        }
+                    });
+                }
+            }))
     }
 }
 
@@ -279,4 +317,16 @@ impl Render for NodeView {
 pub enum Socket {
     Input(InputId),
     Output(OutputId),
+}
+
+#[derive(Debug, Clone, Render)]
+pub struct DraggedNode {
+    pub id: NodeId,
+    pub grab_offset: Point<Pixels>,
+}
+
+impl DraggedNode {
+    pub fn new(id: NodeId, grab_offset: Point<Pixels>) -> Self {
+        Self { id, grab_offset }
+    }
 }
