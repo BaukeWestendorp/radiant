@@ -133,6 +133,8 @@ pub struct NodeView {
 }
 
 impl NodeView {
+    const SOCKET_SIZE: Pixels = px(12.0);
+
     pub fn build(
         node_id: NodeId,
         graph: Model<Graph>,
@@ -165,6 +167,7 @@ impl NodeView {
             .border_b()
             .border_color(THEME.border)
             .flex()
+            .items_center()
             .justify_between()
             .child(label)
     }
@@ -185,6 +188,7 @@ impl NodeView {
                         .flex()
                         .items_center()
                         .gap_2()
+                        .ml(-Self::SOCKET_SIZE / 2.0)
                         .child(self.render_socket(
                             Socket::Input(*input_id),
                             input.data_type(),
@@ -207,6 +211,7 @@ impl NodeView {
                     .justify_end()
                     .items_center()
                     .gap_2()
+                    .mr(-Self::SOCKET_SIZE / 2.0)
                     .child(label.clone())
                     .child(self.render_socket(
                         Socket::Output(*output_id),
@@ -216,7 +221,11 @@ impl NodeView {
             )
         });
 
-        div().children(inputs).children(outputs)
+        div()
+            .size_full()
+            .overflow_hidden()
+            .children(inputs)
+            .children(outputs)
     }
 
     fn render_socket(
@@ -226,7 +235,7 @@ impl NodeView {
         socket_bounds: Model<HashMap<Socket, Bounds<Pixels>>>,
     ) -> impl IntoElement {
         div()
-            .size_3()
+            .size(Self::SOCKET_SIZE)
             .border()
             .border_color(rgba(0x00000080))
             .bg(gpui::rgb(data_type.hex_color()))
@@ -260,6 +269,7 @@ impl Render for NodeView {
             .border_color(THEME.border)
             .flex()
             .flex_col()
+            .text_sm()
             .child(self.render_header(cx))
             .child(self.render_content(cx))
     }
