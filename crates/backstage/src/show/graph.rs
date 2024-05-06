@@ -201,6 +201,11 @@ impl Graph {
         self.outputs.get_mut(id)
     }
 
+    /// Get all connections in the graph.
+    pub fn connections(&self) -> &SecondaryMap<InputId, OutputId> {
+        &self.connections
+    }
+
     /// Get the connected output of a input, if it has a connection to one.
     pub fn get_connected_output(&self, input: InputId) -> Option<&OutputId> {
         self.connections.get(input)
