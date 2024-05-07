@@ -1,11 +1,11 @@
-use std::{collections::HashMap, fmt::format};
+use std::collections::HashMap;
 
 use backstage::show::graph::{DataType, Graph, InputId, Node, NodeId, OutputId};
 use gpui::{
     canvas, div, point, prelude::FluentBuilder, px, rgba, Bounds, Context, DragMoveEvent, Element,
-    ElementId, Entity, Global, InteractiveElement, IntoElement, Model, ParentElement, Path, Pixels,
-    Point, Render, SharedString, StatefulInteractiveElement, Styled, View, ViewContext,
-    VisualContext, WindowContext,
+    Global, InteractiveElement, IntoElement, Model, ParentElement, Path, Pixels, Point, Render,
+    SharedString, StatefulInteractiveElement, Styled, View, ViewContext, VisualContext,
+    WindowContext,
 };
 
 use crate::{showfile::Showfile, theme::THEME};
