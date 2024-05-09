@@ -10,7 +10,10 @@ use crate::{
     window::{
         attribute_editor::AttributeEditorWindowDelegate,
         graph_editor::GraphEditorWindowDelegate,
-        pool::{GroupPoolWindowDelegate, PoolWindowDelegate, PresetPoolWindowDelegate},
+        pool::{
+            EffectPoolWindowDelegate, GroupPoolWindowDelegate, PoolWindowDelegate,
+            PresetPoolWindowDelegate,
+        },
         WindowView,
     },
 };
@@ -123,6 +126,10 @@ fn get_window_view(
             PoolWindowKind::Preset(kind) => {
                 let delegate =
                     PoolWindowDelegate::new(PresetPoolWindowDelegate::new(kind.into()), window);
+                WindowView::build(delegate, cx).into()
+            }
+            PoolWindowKind::Effect => {
+                let delegate = PoolWindowDelegate::new(EffectPoolWindowDelegate::new(), window);
                 WindowView::build(delegate, cx).into()
             }
         },

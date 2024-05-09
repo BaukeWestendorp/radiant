@@ -117,7 +117,7 @@ impl NodeKind {
 
 #[cfg(test)]
 mod tests {
-    use crate::show::graph::GraphState;
+    use crate::show::effect_graph::GraphState;
 
     use super::{Graph, GraphNode, GraphValue, NodeKind};
 

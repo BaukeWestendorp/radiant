@@ -8,11 +8,11 @@ use gdtf_share::GdtfShare;
 use lazy_static::lazy_static;
 use std::{collections::HashMap, fmt::Display, io::Write, path::PathBuf, rc::Rc};
 
-use self::graph::{Graph, GraphState};
+use self::effect_graph::{Graph, GraphState};
 
 // FIXME: Temporary
 #[allow(missing_docs)]
-pub mod graph;
+pub mod effect_graph;
 
 lazy_static! {
     static ref BASE_DIRS: xdg::BaseDirectories =
@@ -813,6 +813,7 @@ pub struct Data {
     #[serde(default)]
     presets: HashMap<PresetFilter, Vec<Preset>>,
     /// All effects in the show.
+    #[serde(default)]
     effects: Vec<Effect>,
 }
 
@@ -938,30 +939,41 @@ impl Display for PresetFilter {
     }
 }
 
+/// An effect that can be applied to a group of fixtures to manipulate their attributes.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Effect {
     id: usize,
+    /// The label of the effect.
+    pub label: String,
+    /// The kind of the effect.
     pub kind: EffectKind,
 }
 
 impl Effect {
-    pub fn new(id: usize, kind: EffectKind) -> Self {
-        Self { id, kind }
+    /// Creates a new effect.
+    pub fn new(id: usize, label: String, kind: EffectKind) -> Self {
+        Self { id, label, kind }
     }
 
+    /// Get the id of the effect.
     pub fn id(&self) -> usize {
         self.id
     }
 }
 
+/// The kind of an effect.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum EffectKind {
+    /// A node-graph based effect.
     Graph(GraphEffect),
 }
 
+/// A node-graph based effect.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct GraphEffect {
+    /// The graph.
     pub graph: Graph,
+    /// The state of the graph.
     #[serde(skip)]
     pub state: GraphState,
 }

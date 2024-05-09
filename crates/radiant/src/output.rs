@@ -1,8 +1,5 @@
 use anyhow::Result;
-use backstage::{
-    dmx::DmxOutput,
-    show::graph::{GraphState, NodeKind},
-};
+use backstage::dmx::DmxOutput;
 use gpui::{AppContext, BorrowAppContext, Global};
 use std::time::Duration;
 

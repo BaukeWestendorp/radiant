@@ -69,42 +69,11 @@ pub struct PoolWindow {
     pub scroll_offset: i32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize, serde::Serialize)]
 pub enum PoolWindowKind {
     Group,
     Preset(PresetKind),
-}
-
-impl serde::Serialize for PoolWindowKind {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::ser::Serializer,
-    {
-        match self {
-            PoolWindowKind::Group => serializer.serialize_str("Group"),
-            PoolWindowKind::Preset(kind) => format!("Preset({})", kind).serialize(serializer),
-        }
-    }
-}
-
-impl<'de> serde::Deserialize<'de> for PoolWindowKind {
-    fn deserialize<D>(deserializer: D) -> Result<PoolWindowKind, D::Error>
-    where
-        D: serde::de::Deserializer<'de>,
-    {
-        let s: String = serde::Deserialize::deserialize(deserializer)?;
-        if s == "Group" {
-            Ok(PoolWindowKind::Group)
-        } else {
-            let kind = s
-                .strip_prefix("Preset(")
-                .and_then(|s| s.strip_suffix(")"))
-                .ok_or_else(|| serde::de::Error::custom("Invalid PoolWindowKind"))?;
-            Ok(PoolWindowKind::Preset(
-                kind.parse().map_err(serde::de::Error::custom)?,
-            ))
-        }
-    }
+    Effect,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, serde::Deserialize, serde::Serialize)]

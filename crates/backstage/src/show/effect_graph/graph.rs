@@ -1,5 +1,7 @@
 use std::{cell::RefCell, collections::HashMap};
 
+use crate::dmx::{DmxChannel, DmxOutput};
+
 use super::{GraphState, GraphValue, NodeKind, ValueType};
 use slotmap::{SecondaryMap, SlotMap};
 
@@ -95,6 +97,12 @@ impl Graph {
             }
         }
         unreachable!()
+    }
+
+    pub fn process(&self, dmx_output: &mut DmxOutput) {
+        dmx_output
+            .set_value(&DmxChannel::new(1, 171).unwrap(), 255)
+            .unwrap();
     }
 }
 

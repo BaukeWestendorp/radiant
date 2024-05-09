@@ -1,6 +1,6 @@
 use backstage::{
     cmd::{Command, Object},
-    show::PresetFilter,
+    show::{EffectKind, PresetFilter},
 };
 use gpui::{
     div, prelude::FluentBuilder, Global, InteractiveElement, IntoElement, MouseButton,
@@ -290,5 +290,55 @@ impl PoolDelegate for PresetPoolWindowDelegate {
                 })
                 .ok();
         });
+    }
+}
+
+pub struct EffectPoolWindowDelegate {}
+
+impl EffectPoolWindowDelegate {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl PoolDelegate for EffectPoolWindowDelegate {
+    fn title(&self, _cx: &mut WindowContext) -> SharedString {
+        "Effect".into()
+    }
+
+    fn has_content(&self, id: usize, cx: &mut WindowContext) -> bool {
+        Showfile::get(cx).show.data().effect(id).is_some()
+    }
+
+    fn render_header_item(
+        &mut self,
+        id: usize,
+        cx: &mut WindowContext,
+    ) -> Option<impl IntoElement> {
+        let Some(effect) = Showfile::get(cx).show.data().effect(id) else {
+            return None;
+        };
+
+        match &effect.kind {
+            EffectKind::Graph(_) => Some(div().child("Graph").text_color(THEME.text_secondary)),
+        }
+    }
+
+    fn render_pool_item(&mut self, id: usize, cx: &mut WindowContext) -> Option<impl IntoElement> {
+        let Some(effect) = Showfile::get(cx).show.data().effect(id) else {
+            return None;
+        };
+
+        Some(
+            div()
+                .size_full()
+                .p_1()
+                .child(div().my_auto().child(effect.label.clone()))
+                .overflow_hidden(),
+        )
+    }
+
+    fn on_click_item(&mut self, id: usize, cx: &mut WindowContext) {
+        todo!();
     }
 }
