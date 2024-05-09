@@ -67,8 +67,8 @@ impl NodeKind {
                     "value".to_string(),
                     graph,
                     "Value".to_string(),
-                    OutputKind::ConstantOnly,
-                    vec![ValueType::Integer],
+                    OutputKind::ConstantOnly(OutputControl::NumberInput),
+                    ValueType::Integer,
                 );
             }
             Self::Add => {
@@ -77,21 +77,21 @@ impl NodeKind {
                     graph,
                     "A".to_string(),
                     InputKind::ConnectionOrConstant,
-                    vec![ValueType::Integer],
+                    ValueType::Integer,
                 );
                 node.add_input(
                     "b".to_string(),
                     graph,
                     "B".to_string(),
                     InputKind::ConnectionOrConstant,
-                    vec![ValueType::Integer],
+                    ValueType::Integer,
                 );
                 node.add_output(
                     "sum".to_string(),
                     graph,
                     "Sum".to_string(),
                     OutputKind::CalculatedOnly,
-                    vec![ValueType::Integer],
+                    ValueType::Integer,
                 );
             }
             Self::Output => {
@@ -100,7 +100,7 @@ impl NodeKind {
                     graph,
                     "Value".to_string(),
                     InputKind::ConnectionOrConstant,
-                    vec![ValueType::Integer],
+                    ValueType::Integer,
                 );
             }
         }

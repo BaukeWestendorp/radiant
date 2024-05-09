@@ -134,9 +134,9 @@ impl GraphNode {
         graph: &mut Graph,
         label: String,
         kind: InputKind,
-        value_types: Vec<ValueType>,
+        value_type: ValueType,
     ) {
-        let input_id = graph.add_input(|input_id| Input::new(input_id, label, kind, value_types));
+        let input_id = graph.add_input(|input_id| Input::new(input_id, label, kind, value_type));
         self.inputs.borrow_mut().insert(id, input_id);
     }
 
@@ -159,10 +159,10 @@ impl GraphNode {
         graph: &mut Graph,
         label: String,
         kind: OutputKind,
-        value_types: Vec<ValueType>,
+        value_type: ValueType,
     ) {
         let output_id =
-            graph.add_output(|output_id| Output::new(output_id, label, kind, value_types));
+            graph.add_output(|output_id| Output::new(output_id, label, kind, value_type));
         self.outputs.borrow_mut().insert(id, output_id);
     }
 
@@ -202,16 +202,16 @@ pub struct Input {
     id: InputId,
     label: String,
     kind: InputKind,
-    value_types: Vec<ValueType>,
+    value_type: ValueType,
 }
 
 impl Input {
-    pub fn new(id: InputId, label: String, kind: InputKind, value_types: Vec<ValueType>) -> Self {
+    pub fn new(id: InputId, label: String, kind: InputKind, value_type: ValueType) -> Self {
         Self {
             id,
             label,
             kind,
-            value_types,
+            value_type,
         }
     }
 
@@ -227,8 +227,8 @@ impl Input {
         &self.kind
     }
 
-    pub fn value_types(&self) -> &[ValueType] {
-        &self.value_types
+    pub fn value_type(&self) -> &ValueType {
+        &self.value_type
     }
 }
 
@@ -239,21 +239,21 @@ pub enum InputKind {
     ConnectionOrConstant,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Output {
     id: OutputId,
     label: String,
     kind: OutputKind,
-    value_types: Vec<ValueType>,
+    value_type: ValueType,
 }
 
 impl Output {
-    pub fn new(id: OutputId, label: String, kind: OutputKind, value_types: Vec<ValueType>) -> Self {
+    pub fn new(id: OutputId, label: String, kind: OutputKind, value_type: ValueType) -> Self {
         Self {
             id,
             label,
             kind,
-            value_types,
+            value_type,
         }
     }
 
@@ -269,14 +269,19 @@ impl Output {
         &self.kind
     }
 
-    pub fn value_types(&self) -> &[ValueType] {
-        &self.value_types
+    pub fn value_type(&self) -> &ValueType {
+        &self.value_type
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum OutputKind {
     CalculatedOnly,
-    ConstantOnly,
-    CalculatedOrConstant,
+    ConstantOnly(OutputControl),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
+pub enum OutputControl {
+    Slider { min: f32, max: f32 },
+    NumberInput,
 }

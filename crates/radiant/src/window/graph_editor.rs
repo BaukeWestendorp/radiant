@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use backstage::show::graph::{Graph, GraphNode, InputId, NodeId, OutputId, ValueType};
+use backstage::show::graph::{
+    Graph, GraphNode, GraphState, InputId, NodeId, OutputControl, OutputId, OutputKind, ValueType,
+};
 use gpui::{
     canvas, div, point, prelude::FluentBuilder, px, rgba, Bounds, Context, DragMoveEvent, Element,
     Global, InteractiveElement, IntoElement, Model, ParentElement, Path, Pixels, Point, Render,
@@ -49,16 +51,22 @@ impl WindowDelegate for GraphEditorWindowDelegate {
 
 pub struct GraphView {
     graph: Model<Graph>,
+    graph_state: Model<GraphState>,
     socket_bounds: Model<HashMap<Socket, Bounds<Pixels>>>,
     nodes: Vec<View<NodeView>>,
 }
 
 impl GraphView {
-    pub fn build(graph: Model<Graph>, cx: &mut WindowContext) -> View<Self> {
+    pub fn build(
+        graph: Model<Graph>,
+        graph_state: Model<GraphState>,
+        cx: &mut WindowContext,
+    ) -> View<Self> {
         cx.new_view(|cx| {
             let socket_bounds = cx.new_model(|_cx| HashMap::new());
 
             let get_node_views = |graph: Model<Graph>,
+                                  graph_state: Model<GraphState>,
                                   socket_bounds: Model<HashMap<Socket, Bounds<Pixels>>>,
                                   cx: &mut WindowContext| {
                 graph
@@ -67,11 +75,18 @@ impl GraphView {
                     .clone()
                     .into_iter()
                     .filter_map(|(node_id, node)| {
-                        NodeView::build(node, node_id, graph.clone(), socket_bounds.clone(), cx)
-                            .map_err(|err| {
-                                log::error!("Failed to build node: {}", err);
-                            })
-                            .ok()
+                        NodeView::build(
+                            node,
+                            node_id,
+                            graph.clone(),
+                            graph_state.clone(),
+                            socket_bounds.clone(),
+                            cx,
+                        )
+                        .map_err(|err| {
+                            log::error!("Failed to build node: {}", err);
+                        })
+                        .ok()
                     })
                     .collect()
             };
@@ -79,7 +94,12 @@ impl GraphView {
             cx.observe(&graph, {
                 let socket_bounds = socket_bounds.clone();
                 move |this: &mut Self, graph, cx| {
-                    this.nodes = get_node_views(graph.clone(), socket_bounds.clone(), cx);
+                    this.nodes = get_node_views(
+                        graph.clone(),
+                        this.graph_state.clone(),
+                        socket_bounds.clone(),
+                        cx,
+                    );
                     cx.notify();
                 }
             })
@@ -87,8 +107,9 @@ impl GraphView {
 
             Self {
                 graph: graph.clone(),
+                graph_state: graph_state.clone(),
                 socket_bounds: socket_bounds.clone(),
-                nodes: get_node_views(graph, socket_bounds, cx),
+                nodes: get_node_views(graph, graph_state, socket_bounds, cx),
             }
         })
     }
@@ -143,6 +164,7 @@ pub struct NodeView {
     node: GraphNode,
     node_id: NodeId,
     graph: Model<Graph>,
+    graph_state: Model<GraphState>,
     socket_bounds: Model<HashMap<Socket, Bounds<Pixels>>>,
 }
 
@@ -153,6 +175,7 @@ impl NodeView {
         node: GraphNode,
         node_id: NodeId,
         graph: Model<Graph>,
+        graph_state: Model<GraphState>,
         socket_bounds: Model<HashMap<Socket, Bounds<Pixels>>>,
         cx: &mut WindowContext,
     ) -> anyhow::Result<View<Self>> {
@@ -160,6 +183,7 @@ impl NodeView {
             node,
             node_id,
             graph,
+            graph_state,
             socket_bounds,
         }))
     }
@@ -199,7 +223,7 @@ impl NodeView {
                         .ml(-Self::SOCKET_SIZE / 2.0)
                         .child(self.render_socket(
                             Socket::Input(input_id),
-                            input.value_types(),
+                            input.value_type(),
                             self.socket_bounds.clone(),
                         ))
                         .child(input.label().to_string()),
@@ -213,6 +237,25 @@ impl NodeView {
                 return None;
             };
 
+            let control = match output.kind() {
+                OutputKind::CalculatedOnly => None,
+                OutputKind::ConstantOnly(control) => match control {
+                    OutputControl::NumberInput => {
+                        let output_value = self.graph_state.update(cx, {
+                            let graph = self.graph.clone();
+                            move |graph_state, cx| {
+                                graph_state
+                                    .get_output_value(&output_id, &graph.read(cx).clone())
+                                    .clone()
+                            }
+                        });
+
+                        Some(format!("{:?}", output_value))
+                    }
+                    OutputControl::Slider { min, max } => Some("Slider".to_string()),
+                },
+            };
+
             Some(
                 div()
                     .flex()
@@ -220,10 +263,11 @@ impl NodeView {
                     .items_center()
                     .gap_2()
                     .mr(-Self::SOCKET_SIZE / 2.0)
+                    .children(control)
                     .child(output.label().to_string())
                     .child(self.render_socket(
                         Socket::Output(output_id),
-                        output.value_types(),
+                        output.value_type(),
                         self.socket_bounds.clone(),
                     )),
             )
@@ -239,14 +283,11 @@ impl NodeView {
     fn render_socket(
         &self,
         socket: Socket,
-        value_types: &[ValueType],
+        value_type: &ValueType,
         socket_bounds: Model<HashMap<Socket, Bounds<Pixels>>>,
     ) -> impl IntoElement {
-        let color = match value_types.len() {
-            0 => rgba(0xffffff40),
-            1 => gpui::rgb(value_types[0].hex_color()),
-            _ => rgba(0xffffffa0),
-        };
+        let color = gpui::rgb(value_type.hex_color());
+
         div()
             .size(Self::SOCKET_SIZE)
             .border()
