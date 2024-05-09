@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::anyhow;
 use gpui::SharedString;
 use std::{fmt::Display, str::FromStr};
 

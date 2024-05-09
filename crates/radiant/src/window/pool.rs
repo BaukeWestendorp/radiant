@@ -192,6 +192,7 @@ impl PoolDelegate for GroupPoolWindowDelegate {
 
         let is_selected = Showfile::get(cx)
             .show
+            .programmer()
             .are_fixtures_selected(&group.fixtures);
 
         let text_color = match is_selected {
@@ -339,6 +340,16 @@ impl PoolDelegate for EffectPoolWindowDelegate {
     }
 
     fn on_click_item(&mut self, id: usize, cx: &mut WindowContext) {
-        todo!();
+        Showfile::update(cx, |showfile, _cx| {
+            showfile
+                .show
+                .execute_command(&Command::Select(Some(Object::Effect(Some(id)))))
+                .map_err(|err| {
+                    log::error!(
+                        "Failed to execute command when clicking on effect pool item: {err}"
+                    )
+                })
+                .ok();
+        });
     }
 }

@@ -21,6 +21,8 @@ pub enum Object {
     Group(Option<usize>),
     /// A preset in the show.
     Preset(Option<PresetFilter>, Option<usize>),
+    /// An effect in the show.
+    Effect(Option<usize>),
 }
 
 impl std::fmt::Display for Object {
@@ -43,6 +45,11 @@ impl std::fmt::Display for Object {
                     .as_ref()
                     .map(|filter| filter.to_string())
                     .unwrap_or_default(),
+                id.map(|id| id.to_string()).unwrap_or_default()
+            ),
+            Object::Effect(id) => write!(
+                f,
+                "effect {}",
                 id.map(|id| id.to_string()).unwrap_or_default()
             ),
         }
@@ -154,10 +161,10 @@ impl Show {
     pub fn execute_command(&mut self, command: &Command) -> Result<(), Error> {
         match command {
             Command::Clear => {
-                if self.selected_fixture_ids().is_empty() {
+                if self.programmer().selected_fixture_ids().is_empty() {
                     self.programmer_mut().clear_changes()
                 } else {
-                    self.clear_selection();
+                    self.programmer_mut().clear_selection();
                 }
             }
             Command::Select(object) => match object {
@@ -172,8 +179,8 @@ impl Show {
                         )));
                     }
 
-                    if !self.selected_fixture_ids().contains(id) {
-                        self.select_fixture(*id);
+                    if !self.programmer().selected_fixture_ids().contains(id) {
+                        self.programmer_mut().select_fixture(*id);
                     } else {
                         log::debug!("Fixture with id '{id}' already selected");
                     }
@@ -217,7 +224,7 @@ impl Show {
                         })?
                         .clone();
 
-                    for fixture_id in self.selected_fixture_ids().to_vec() {
+                    for fixture_id in self.programmer().selected_fixture_ids().to_vec() {
                         let Some(fixture) = self.patchlist().fixture(&fixture_id).cloned() else {
                             log::warn!("Failed to get fixture with id {fixture_id} while selecting preset {id}");
                             continue;
@@ -225,6 +232,7 @@ impl Show {
 
                         for (attribute_name, value) in &preset.attribute_values {
                             self.programmer_mut()
+                                .changes_mut()
                                 .set_attribute_value(
                                     &fixture,
                                     attribute_name.clone(),
@@ -233,6 +241,21 @@ impl Show {
                                 .ok();
                         }
                     }
+                }
+                Some(Object::Effect(id)) => {
+                    let Some(id) = id else {
+                        return Err(Error::ExecutionError("No effect id provided".to_string()));
+                    };
+
+                    let effect = self
+                        .data()
+                        .effect(*id)
+                        .ok_or_else(|| {
+                            Error::ExecutionError(format!("Effect with id '{id}' not found"))
+                        })?
+                        .clone();
+
+                    self.programmer_mut().set_selected_effect(Some(effect));
                 }
                 None => {
                     return Err(Error::ExecutionError(

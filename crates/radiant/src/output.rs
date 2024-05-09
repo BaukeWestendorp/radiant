@@ -17,7 +17,13 @@ impl OutputManager {
         cx.spawn(|mut cx| async move {
             loop {
                 cx.update_global::<Showfile, _>(|showfile, cx| {
-                    let dmx_output = showfile.show.get_dmx_output();
+                    let dmx_output = match showfile.show.get_dmx_output() {
+                        Ok(dmx_output) => dmx_output,
+                        Err(err) => {
+                            log::error!("Failed to get DMX output: {err}");
+                            return;
+                        }
+                    };
 
                     cx.update_global::<Self, _>(|output_manager, _cx| {
                         for protocol in output_manager.protocols.iter_mut() {

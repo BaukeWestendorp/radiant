@@ -58,7 +58,6 @@ pub struct Show {
     patchlist: Patchlist,
     programmer: Programmer,
     data: Data,
-    selected_fixtures: Vec<FixtureId>,
 }
 
 impl Show {
@@ -68,7 +67,6 @@ impl Show {
             patchlist: Patchlist::new(),
             programmer: Programmer::new(),
             data: Data::new(),
-            selected_fixtures: Vec::new(),
         }
     }
 
@@ -107,60 +105,41 @@ impl Show {
 
     /// Check if the programmer contains all of the given attribute values.
     pub fn programmer_contains(&self, attribute_values: &HashMap<String, AttributeValue>) -> bool {
-        self.programmer.changes.iter().any(|(fixture_id, changes)| {
-            let Some(fixture) = self.patchlist().fixture(fixture_id) else {
-                return false;
-            };
+        self.programmer
+            .changes()
+            .changes
+            .iter()
+            .any(|(fixture_id, changes)| {
+                let Some(fixture) = self.patchlist().fixture(fixture_id) else {
+                    return false;
+                };
 
-            let matching_attributes = attribute_values
-                .iter()
-                .filter(|(attribute_name, _)| {
-                    fixture
-                        .attributes()
-                        .iter()
-                        .any(|a| a.name == **attribute_name)
-                })
-                .collect::<Vec<_>>();
+                let matching_attributes = attribute_values
+                    .iter()
+                    .filter(|(attribute_name, _)| {
+                        fixture
+                            .attributes()
+                            .iter()
+                            .any(|a| a.name == **attribute_name)
+                    })
+                    .collect::<Vec<_>>();
 
-            if matching_attributes.is_empty() {
-                return false;
-            }
-
-            matching_attributes.iter().all(|(attribute_name, value)| {
-                match changes.get(*attribute_name) {
-                    Some(existing_value) => existing_value == *value,
-                    None => false,
+                if matching_attributes.is_empty() {
+                    return false;
                 }
+
+                matching_attributes.iter().all(|(attribute_name, value)| {
+                    match changes.get(*attribute_name) {
+                        Some(existing_value) => existing_value == *value,
+                        None => false,
+                    }
+                })
             })
-        })
-    }
-
-    /// Get the data collection.
-    pub fn data(&self) -> &Data {
-        &self.data
-    }
-
-    /// Get the calculated DMX output for the current show state.
-    pub fn get_dmx_output(&self) -> DmxOutput {
-        let mut output = DmxOutput::new();
-
-        for fixture in self.patchlist().fixtures() {
-            // FIXME: We should set the default values for all channels here.
-            let universe = fixture.channel.universe;
-            output
-                .set_value(&DmxChannel::new(universe, 0).unwrap(), 0)
-                .unwrap();
-        }
-
-        let programmer_output = self.programmer().get_dmx_output();
-        output.layer(programmer_output);
-
-        output
     }
 
     /// Get the selected fixtures.
     pub fn selected_fixtures(&self) -> Vec<&Fixture> {
-        self.selected_fixtures
+        self.programmer().selected_fixture_ids()
             .iter()
             .filter_map(|fixture_id| {
                 let fixture = self.patchlist().fixture(&fixture_id);
@@ -172,31 +151,45 @@ impl Show {
             .collect()
     }
 
-    /// Get the id's of the selected fixtures
-    pub fn selected_fixture_ids(&self) -> &[FixtureId] {
-        &self.selected_fixtures
+    /// Get the data collection.
+    pub fn data(&self) -> &Data {
+        &self.data
     }
 
-    /// Add a fixture id to the currently selected fixtures.
-    pub fn select_fixture(&mut self, fixture_id: FixtureId) {
-        if !self.selected_fixtures.contains(&fixture_id) {
-            self.selected_fixtures.push(fixture_id);
+    /// Get the calculated DMX output for the current show state.
+    pub fn get_dmx_output(&self) -> Result<DmxOutput, Error> {
+        let mut output = DmxOutput::new();
+
+        for fixture in self.patchlist().fixtures() {
+            // FIXME: We should set the default values for all channels here.
+            let universe = fixture.channel.universe;
+            output
+                .set_value(&DmxChannel::new(universe, 0).unwrap(), 0)
+                .unwrap();
         }
+
+        let programmer_output = self.get_programmer_dmx_output()?;
+        output.layer(&programmer_output);
+
+        Ok(output)
     }
 
-    /// Check if a fixture with the given id is in the current selection.
-    pub fn is_fixture_selected(&self, id: &FixtureId) -> bool {
-        self.selected_fixtures.contains(&id)
-    }
+    /// Get the DMX output of the programmer.
+    pub fn get_programmer_dmx_output(&self) -> Result<DmxOutput, Error> {
+        let mut dmx_output = DmxOutput::new();
 
-    /// Check if all fixtures with the given id's are in the current selection.
-    pub fn are_fixtures_selected(&self, fixtures: &[FixtureId]) -> bool {
-        !fixtures.iter().any(|id| !self.is_fixture_selected(id))
-    }
+        // FIXME: We should probably layer the changes, and then apply them to the output, to prevent a double loop.
 
-    /// Remove all fixtures from the selection.
-    pub fn clear_selection(&mut self) {
-        self.selected_fixtures.clear();
+        self.programmer()
+            .changes()
+            .apply_to_dmx_output(&mut dmx_output, self.patchlist())?;
+
+        if let Some(selected_effect) = self.programmer().selected_effect() {
+            let changes = selected_effect.get_changes(self.patchlist());
+            changes.apply_to_dmx_output(&mut dmx_output, self.patchlist())?;
+        }
+
+        Ok(dmx_output)
     }
 }
 
@@ -212,14 +205,12 @@ impl<'de> serde::Deserialize<'de> for Show {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 struct ShowIntermediate {
-    #[serde(default = "Default::default")]
+    #[serde(default)]
     patchlist: PatchlistIntermediate,
-    #[serde(default = "Default::default")]
+    #[serde(default)]
     programmer: Programmer,
-    #[serde(default = "Default::default")]
+    #[serde(default)]
     data: Data,
-    #[serde(default = "Default::default")]
-    selected_fixtures: Vec<FixtureId>,
 }
 
 impl TryInto<Show> for ShowIntermediate {
@@ -230,7 +221,6 @@ impl TryInto<Show> for ShowIntermediate {
             patchlist: self.patchlist.try_into()?,
             programmer: self.programmer,
             data: self.data,
-            selected_fixtures: self.selected_fixtures,
         })
     }
 }
@@ -579,19 +569,90 @@ struct FixtureIntermediate {
 /// # Programmer
 ///
 /// The programmer contains changes made to the output of the show. These, for example can be used to make presets.
-#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct Programmer {
+    #[serde(default)]
     changes: Changes,
-    #[serde(skip)]
-    dmx_output: DmxOutput,
+    #[serde(default)]
+    selected_effect: Option<Effect>,
+    #[serde(default)]
+    selected_fixtures: Vec<FixtureId>,
 }
 
 impl Programmer {
     /// Create a new programmer.
     pub fn new() -> Self {
         Programmer {
+            selected_fixtures: Vec::new(),
             changes: Changes::new(),
-            dmx_output: DmxOutput::new(),
+            selected_effect: None,
+        }
+    }
+
+    /// Get all changes in the programmer.
+    pub fn changes(&self) -> &Changes {
+        &self.changes
+    }
+
+    /// Get a mutable reference to all changes in the programmer.
+    pub fn changes_mut(&mut self) -> &mut Changes {
+        &mut self.changes
+    }
+
+    /// Clear all changes in the programmer.
+    pub fn clear_changes(&mut self) {
+        self.changes.clear();
+        self.selected_effect = None;
+    }
+
+    /// Set the currently selected effect. This effect will be applied to the output of the programmer over the selected fixtures
+    pub fn set_selected_effect(&mut self, effect: Option<Effect>) {
+        self.selected_effect = effect;
+    }
+
+    fn selected_effect(&self) -> Option<&Effect> {
+        self.selected_effect.as_ref()
+    }
+
+    /// Get the id's of the selected fixtures
+    pub fn selected_fixture_ids(&self) -> &[FixtureId] {
+        &self.selected_fixtures
+    }
+
+    /// Add a fixture id to the currently selected fixtures.
+    pub fn select_fixture(&mut self, fixture_id: FixtureId) {
+        if !self.selected_fixtures.contains(&fixture_id) {
+            self.selected_fixtures.push(fixture_id);
+        }
+    }
+
+    /// Check if a fixture with the given id is in the current selection.
+    pub fn is_fixture_selected(&self, id: &FixtureId) -> bool {
+        self.selected_fixtures.contains(&id)
+    }
+
+    /// Check if all fixtures with the given id's are in the current selection.
+    pub fn are_fixtures_selected(&self, fixtures: &[FixtureId]) -> bool {
+        !fixtures.iter().any(|id| !self.is_fixture_selected(id))
+    }
+
+    /// Remove all fixtures from the selection.
+    pub fn clear_selection(&mut self) {
+        self.selected_fixtures.clear();
+    }
+}
+
+/// A map with the changed attributes per fixture.
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct Changes {
+    changes: HashMap<FixtureId, HashMap<String, AttributeValue>>,
+}
+
+impl Changes {
+    /// Create a new Changes object.
+    pub fn new() -> Self {
+        Changes {
+            changes: HashMap::new(),
         }
     }
 
@@ -609,21 +670,6 @@ impl Programmer {
         if !self.changes.contains_key(&fixture.id) {
             self.changes.insert(fixture.id.clone(), HashMap::new());
         }
-
-        let Some(channel_offset) = fixture.channel_offset_for_attribute(&attribute_name) else {
-            return Err(Error::AttributeNotFound(attribute_name));
-        };
-        let value_bytes =
-            value.to_bytes(ChannelResolution::try_from(channel_offset.len() as u8 * 8)?);
-
-        let channel_offset = channel_offset
-            .iter()
-            // NOTE: We subtract 1 from the offset because the GDTF spec uses 1-based indexing for the offsets.
-            .map(|&offset| offset as u16 - 1)
-            .collect::<Vec<_>>();
-
-        self.dmx_output
-            .set_values(&fixture.channel, &channel_offset, value_bytes.as_slice())?;
 
         let fixture_changes = self
             .changes
@@ -646,20 +692,54 @@ impl Programmer {
             .and_then(|fixture_changes| fixture_changes.get(attribute_name))
     }
 
-    /// Get the DMX output of the programmer.
-    pub fn get_dmx_output(&self) -> &DmxOutput {
-        &self.dmx_output
+    /// Clear all changes.
+    pub fn clear(&mut self) {
+        self.changes.clear();
     }
 
-    /// Clear all changes in the programmer.
-    pub fn clear_changes(&mut self) {
-        self.changes.clear();
-        self.dmx_output.clear();
+    /// FIXME: Move this function to DmxOutput.
+    pub fn apply_to_dmx_output(
+        &self,
+        dmx_output: &mut DmxOutput,
+        patchlist: &Patchlist,
+    ) -> Result<(), Error> {
+        for (fixture_id, attribute_values) in self.changes.iter() {
+            let fixture = patchlist
+                .fixture(&fixture_id)
+                .expect("Fixture not found in show");
+            for (attribute_name, attribute_value) in attribute_values.iter() {
+                let Some(channel_offset) = fixture.channel_offset_for_attribute(&attribute_name)
+                else {
+                    return Err(Error::AttributeNotFound(attribute_name.clone()));
+                };
+
+                let channel_offset = channel_offset
+                    .iter()
+                    // NOTE: We subtract 1 from the offset because the GDTF spec uses 1-based indexing for the offsets.
+                    .map(|&offset| offset as u16 - 1)
+                    .collect::<Vec<_>>();
+
+                let value_bytes = attribute_value
+                    .to_bytes(ChannelResolution::try_from(channel_offset.len() as u8 * 8)?);
+
+                dmx_output.set_values(&fixture.channel, &channel_offset, &value_bytes)?;
+            }
+        }
+
+        Ok(())
     }
 }
 
-/// A map with the changed attributes per fixture.
-pub type Changes = HashMap<FixtureId, HashMap<String, AttributeValue>>;
+impl Iterator for Changes {
+    type Item = (FixtureId, HashMap<String, AttributeValue>);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.changes
+            .iter()
+            .next()
+            .map(|(id, changes)| (id.clone(), changes.clone()))
+    }
+}
 
 /// The value of an attribute.
 ///
@@ -958,6 +1038,14 @@ impl Effect {
     /// Get the id of the effect.
     pub fn id(&self) -> usize {
         self.id
+    }
+
+    fn get_changes(&self, patchlist: &Patchlist) -> Changes {
+        match &self.kind {
+            EffectKind::Graph(graph_effect) => graph_effect
+                .graph
+                .get_output(&graph_effect.state, patchlist),
+        }
     }
 }
 

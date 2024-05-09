@@ -10,11 +10,13 @@ fn test_set_get_attribute() {
 
     let fixture = show.patchlist().fixture(&fixture_id).unwrap().clone();
     show.programmer_mut()
+        .changes_mut()
         .set_attribute_value(&fixture, "Dimmer".to_string(), AttributeValue::new(0.5))
         .unwrap();
 
     let attribute_value = show
         .programmer()
+        .changes()
         .get_attribute_value(&fixture_id, "Dimmer")
         .unwrap();
     assert_eq!(attribute_value.value(), 0.5);
@@ -27,10 +29,11 @@ fn test_dmx_output() {
 
     let fixture = show.patchlist().fixture(&fixture_id).unwrap().clone();
     show.programmer_mut()
+        .changes_mut()
         .set_attribute_value(&fixture, "Dimmer".to_string(), AttributeValue::new(0.5))
         .unwrap();
 
-    let dmx_output = show.programmer().get_dmx_output();
+    let dmx_output = show.get_programmer_dmx_output().unwrap();
     assert_eq!(
         dmx_output.get_value(&DmxChannel::new(0, 1).unwrap()),
         Some(128)

@@ -36,8 +36,13 @@ pub struct Workspace {
 impl Workspace {
     pub fn build(cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
-            let selected_fixtures =
-                cx.new_model(|cx| Showfile::get(cx).show.selected_fixture_ids().to_vec());
+            let selected_fixtures = cx.new_model(|cx| {
+                Showfile::get(cx)
+                    .show
+                    .programmer()
+                    .selected_fixture_ids()
+                    .to_vec()
+            });
 
             let current_layout = cx.new_model(|cx| {
                 Showfile::get(cx)
@@ -51,8 +56,11 @@ impl Workspace {
                 workspace
                     .selected_fixtures
                     .update(cx, |selected_fixtures, cx| {
-                        let updated_selected_fixtures =
-                            Showfile::get(cx).show.selected_fixture_ids().to_vec();
+                        let updated_selected_fixtures = Showfile::get(cx)
+                            .show
+                            .programmer()
+                            .selected_fixture_ids()
+                            .to_vec();
                         if *selected_fixtures != updated_selected_fixtures {
                             *selected_fixtures = updated_selected_fixtures;
                             cx.notify();

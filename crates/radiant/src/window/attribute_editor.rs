@@ -331,12 +331,14 @@ impl AttributeSlider {
     pub fn build(attribute: Rc<Attribute>, cx: &mut WindowContext) -> View<Self> {
         let values = Showfile::get(cx)
             .show
+            .programmer()
             .selected_fixture_ids()
             .iter()
             .map(|fixture_id| {
                 Showfile::get(cx)
                     .show
                     .programmer()
+                    .changes()
                     .get_attribute_value(fixture_id, &attribute.name)
                     .unwrap_or(&AttributeValue::default())
                     .value()
@@ -380,6 +382,7 @@ impl AttributeSlider {
                         showfile
                             .show
                             .programmer_mut()
+                            .changes_mut()
                             .set_attribute_value(
                                 &fixture,
                                 attribute_name.clone(),

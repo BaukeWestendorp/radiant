@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap};
 
-use crate::dmx::{DmxChannel, DmxOutput};
+use crate::show::{AttributeValue, Changes, FixtureId, Patchlist};
 
 use super::{GraphState, GraphValue, NodeKind, ValueType};
 use slotmap::{SecondaryMap, SlotMap};
@@ -99,10 +99,14 @@ impl Graph {
         unreachable!()
     }
 
-    pub fn process(&self, dmx_output: &mut DmxOutput) {
-        dmx_output
-            .set_value(&DmxChannel::new(1, 171).unwrap(), 255)
+    pub fn get_output(&self, state: &GraphState, patchlist: &Patchlist) -> Changes {
+        let mut changes = Changes::new();
+        let fixture = patchlist.fixture(&FixtureId(301)).unwrap();
+        changes
+            .set_attribute_value(&fixture, "Dimmer".to_string(), AttributeValue::new(1.0))
             .unwrap();
+        // TODO: Actually get the changes from the graph.
+        changes
     }
 }
 
