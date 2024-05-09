@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-use crate::graph::{Graph, InputId, InputKind, OutputId};
+use super::{Graph, GraphValue, InputId, InputKind, OutputId};
 
-pub struct GraphState<GraphValue> {
+pub struct GraphState {
     input_constants: HashMap<InputId, GraphValue>,
     output_values: HashMap<OutputId, GraphValue>,
 }
 
-impl<GraphValue> GraphState<GraphValue> {
+impl GraphState {
     pub fn new() -> Self {
         Self {
             input_constants: HashMap::new(),
@@ -23,21 +23,13 @@ impl<GraphValue> GraphState<GraphValue> {
         }
     }
 
-    pub fn get_output_value(
-        &mut self,
-        output_id: &OutputId,
-        graph: &Graph<GraphValue>,
-    ) -> &GraphValue {
+    pub fn get_output_value(&mut self, output_id: &OutputId, graph: &Graph) -> &GraphValue {
         let node_id = graph.output_parent_node(*output_id);
         graph.node(node_id).unwrap().process(graph, self);
         self.output_values.get(output_id).unwrap()
     }
 
-    pub fn get_input_value(
-        &mut self,
-        input_id: InputId,
-        graph: &Graph<GraphValue>,
-    ) -> Option<&GraphValue> {
+    pub fn get_input_value(&mut self, input_id: InputId, graph: &Graph) -> Option<&GraphValue> {
         let input = graph.input(input_id).unwrap();
         match input.kind() {
             InputKind::ConnectionOnly => match graph.connection(input_id) {

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use backstage::show::graph::{DataType, Graph, InputId, Node, NodeId, OutputId};
+use backstage::show::graph::{Graph, GraphNode, InputId, NodeId, OutputId, ValueType};
 use gpui::{
     canvas, div, point, prelude::FluentBuilder, px, rgba, Bounds, Context, DragMoveEvent, Element,
     Global, InteractiveElement, IntoElement, Model, ParentElement, Path, Pixels, Point, Render,
@@ -64,11 +64,10 @@ impl GraphView {
                 graph
                     .read(cx)
                     .nodes()
-                    .cloned()
-                    .collect::<Vec<_>>()
+                    .clone()
                     .into_iter()
-                    .filter_map(|node| {
-                        NodeView::build(node.id(), graph.clone(), socket_bounds.clone(), cx)
+                    .filter_map(|(node_id, node)| {
+                        NodeView::build(node, node_id, graph.clone(), socket_bounds.clone(), cx)
                             .map_err(|err| {
                                 log::error!("Failed to build node: {}", err);
                             })
@@ -141,7 +140,8 @@ impl Render for GraphView {
 }
 
 pub struct NodeView {
-    node: Node,
+    node: GraphNode,
+    node_id: NodeId,
     graph: Model<Graph>,
     socket_bounds: Model<HashMap<Socket, Bounds<Pixels>>>,
 }
@@ -150,29 +150,22 @@ impl NodeView {
     const SOCKET_SIZE: Pixels = px(12.0);
 
     pub fn build(
+        node: GraphNode,
         node_id: NodeId,
         graph: Model<Graph>,
         socket_bounds: Model<HashMap<Socket, Bounds<Pixels>>>,
         cx: &mut WindowContext,
     ) -> anyhow::Result<View<Self>> {
-        let node = graph.read(cx).get_node(node_id).cloned().map_or_else(
-            || {
-                Err(anyhow::anyhow!(
-                    "Failed to build node: Node with provided id not found."
-                ))
-            },
-            Ok,
-        )?;
-
         Ok(cx.new_view(|_cx| Self {
             node,
+            node_id,
             graph,
             socket_bounds,
         }))
     }
 
     fn render_header(&self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let label = self.node.node_type().label();
+        let label = self.node.kind().label().to_string();
 
         div()
             .px_2()
@@ -191,9 +184,9 @@ impl NodeView {
         let inputs = self
             .node
             .inputs()
-            .iter()
-            .filter_map(|(label, input_id)| {
-                let Some(input) = self.graph.read(cx).get_input(*input_id).cloned() else {
+            .into_iter()
+            .filter_map(|input_id| {
+                let Some(input) = self.graph.read(cx).input(input_id).cloned() else {
                     log::error!("Failed to get input: Input with provided id not found.");
                     return None;
                 };
@@ -205,17 +198,17 @@ impl NodeView {
                         .gap_2()
                         .ml(-Self::SOCKET_SIZE / 2.0)
                         .child(self.render_socket(
-                            Socket::Input(*input_id),
-                            input.data_type(),
+                            Socket::Input(input_id),
+                            input.value_types(),
                             self.socket_bounds.clone(),
                         ))
-                        .child(label.clone()),
+                        .child(input.label().to_string()),
                 )
             })
             .collect::<Vec<_>>();
 
-        let outputs = self.node.outputs().iter().filter_map(|(label, output_id)| {
-            let Some(output) = self.graph.read(cx).get_output(*output_id).cloned() else {
+        let outputs = self.node.outputs().into_iter().filter_map(|output_id| {
+            let Some(output) = self.graph.read(cx).output(output_id).cloned() else {
                 log::error!("Failed to get output: Output with provided id not found.");
                 return None;
             };
@@ -227,10 +220,10 @@ impl NodeView {
                     .items_center()
                     .gap_2()
                     .mr(-Self::SOCKET_SIZE / 2.0)
-                    .child(label.clone())
+                    .child(output.label().to_string())
                     .child(self.render_socket(
-                        Socket::Output(*output_id),
-                        output.data_type(),
+                        Socket::Output(output_id),
+                        output.value_types(),
                         self.socket_bounds.clone(),
                     )),
             )
@@ -246,14 +239,19 @@ impl NodeView {
     fn render_socket(
         &self,
         socket: Socket,
-        data_type: &DataType,
+        value_types: &[ValueType],
         socket_bounds: Model<HashMap<Socket, Bounds<Pixels>>>,
     ) -> impl IntoElement {
+        let color = match value_types.len() {
+            0 => rgba(0xffffff40),
+            1 => gpui::rgb(value_types[0].hex_color()),
+            _ => rgba(0xffffffa0),
+        };
         div()
             .size(Self::SOCKET_SIZE)
             .border()
             .border_color(rgba(0x00000080))
-            .bg(gpui::rgb(data_type.hex_color()))
+            .bg(color)
             .rounded_full()
             .child({
                 canvas(
@@ -272,7 +270,7 @@ impl NodeView {
 impl Render for NodeView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
-            .id(SharedString::from(format!("{:?}", self.node.id())))
+            .id(SharedString::from(format!("{:?}", self.node_id)))
             .absolute()
             .left(px(self.node.x()))
             .top(px(self.node.y()))
@@ -289,7 +287,7 @@ impl Render for NodeView {
             .child(self.render_content(cx))
             .on_drag(
                 DraggedNode::new(
-                    self.node.id(),
+                    self.node_id,
                     point(
                         px(self.node.x() - cx.mouse_position().x.0),
                         px(self.node.y() - cx.mouse_position().y.0),
@@ -298,9 +296,9 @@ impl Render for NodeView {
                 |dragged_node, cx| cx.new_view(|_cx| dragged_node.clone()),
             )
             .on_drag_move(cx.listener(|this, event: &DragMoveEvent<DraggedNode>, cx| {
-                if event.drag(cx).id == this.node.id() {
+                if event.drag(cx).id == this.node_id {
                     this.graph.update(cx, |graph, cx| {
-                        if let Some(node) = graph.get_node_mut(this.node.id()) {
+                        if let Some(node) = graph.node_mut(this.node_id) {
                             node.set_position(
                                 event.event.position.x.0 + event.drag(cx).grab_offset.x.0,
                                 event.event.position.y.0 + event.drag(cx).grab_offset.y.0,
