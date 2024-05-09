@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use super::{Graph, GraphValue, InputId, InputKind, OutputId};
 
+#[derive(Debug, Clone, Default)]
 pub struct GraphState {
     input_constants: HashMap<InputId, GraphValue>,
     output_values: HashMap<OutputId, GraphValue>,

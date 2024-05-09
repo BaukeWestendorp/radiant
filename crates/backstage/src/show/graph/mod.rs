@@ -123,7 +123,7 @@ mod tests {
 
     #[test]
     fn test_simple_graph() {
-        let mut graph = Graph::new(0);
+        let mut graph = Graph::new();
         let mut graph_state = GraphState::new();
 
         let a_id = graph.add_node(GraphNode::new(NodeKind::NewInteger(27), 0.0, 0.0));

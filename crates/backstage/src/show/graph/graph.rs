@@ -12,7 +12,6 @@ slotmap::new_key_type! {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Graph {
-    id: usize,
     nodes: SlotMap<NodeId, GraphNode>,
     inputs: SlotMap<InputId, Input>,
     outputs: SlotMap<OutputId, Output>,
@@ -20,18 +19,13 @@ pub struct Graph {
 }
 
 impl Graph {
-    pub fn new(id: usize) -> Self {
+    pub fn new() -> Self {
         Self {
-            id,
             nodes: SlotMap::default(),
             inputs: SlotMap::default(),
             outputs: SlotMap::default(),
             connections: SecondaryMap::default(),
         }
-    }
-
-    pub fn id(&self) -> usize {
-        self.id
     }
 
     pub fn add_node(&mut self, node: GraphNode) -> NodeId {

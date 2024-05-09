@@ -17,22 +17,10 @@ pub struct OutputManager {
 
 impl OutputManager {
     pub fn init(cx: &mut AppContext) {
-        let mut graph_state = GraphState::new();
-
         cx.spawn(|mut cx| async move {
             loop {
                 cx.update_global::<Showfile, _>(|showfile, cx| {
                     let dmx_output = showfile.show.get_dmx_output();
-
-                    let graph = showfile.show.data().graph(0).unwrap();
-                    let output_node = graph
-                        .nodes()
-                        .iter()
-                        .find(|(_node_id, node)| node.kind() == &NodeKind::Output)
-                        .unwrap()
-                        .1;
-                    let graph_output_value = output_node.process(graph, &mut graph_state);
-                    log::debug!("Graph output value: {graph_output_value:?}");
 
                     cx.update_global::<Self, _>(|output_manager, _cx| {
                         for protocol in output_manager.protocols.iter_mut() {

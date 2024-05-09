@@ -8,7 +8,7 @@ use gdtf_share::GdtfShare;
 use lazy_static::lazy_static;
 use std::{collections::HashMap, fmt::Display, io::Write, path::PathBuf, rc::Rc};
 
-use self::graph::Graph;
+use self::graph::{Graph, GraphState};
 
 // FIXME: Temporary
 #[allow(missing_docs)]
@@ -812,8 +812,8 @@ pub struct Data {
     /// All presets in the show.
     #[serde(default)]
     presets: HashMap<PresetFilter, Vec<Preset>>,
-    /// All graphs in the show.
-    graphs: Vec<Graph>,
+    /// All effects in the show.
+    effects: Vec<Effect>,
 }
 
 impl Data {
@@ -822,7 +822,7 @@ impl Data {
         Self {
             groups: Vec::new(),
             presets: HashMap::new(),
-            graphs: Vec::new(),
+            effects: Vec::new(),
         }
     }
 
@@ -846,14 +846,14 @@ impl Data {
         self.presets(filter)?.iter().find(|preset| preset.id == id)
     }
 
-    /// Get the graphs.
-    pub fn graphs(&self) -> &[Graph] {
-        &self.graphs
+    /// Get the effects.
+    pub fn effects(&self) -> &[Effect] {
+        &self.effects
     }
 
-    /// Get a graph with the given id.
-    pub fn graph(&self, id: usize) -> Option<&Graph> {
-        self.graphs().iter().find(|graph| graph.id() == id)
+    /// Get a effect with the given id.
+    pub fn effect(&self, id: usize) -> Option<&Effect> {
+        self.effects().iter().find(|effect| effect.id() == id)
     }
 }
 
@@ -936,6 +936,34 @@ impl Display for PresetFilter {
             PresetFilter::All => write!(f, "All"),
         }
     }
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct Effect {
+    id: usize,
+    pub kind: EffectKind,
+}
+
+impl Effect {
+    pub fn new(id: usize, kind: EffectKind) -> Self {
+        Self { id, kind }
+    }
+
+    pub fn id(&self) -> usize {
+        self.id
+    }
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub enum EffectKind {
+    Graph(GraphEffect),
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct GraphEffect {
+    pub graph: Graph,
+    #[serde(skip)]
+    pub state: GraphState,
 }
 
 /// Error type for errors related to the show.
