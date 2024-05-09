@@ -10,6 +10,8 @@ use std::{collections::HashMap, fmt::Display, io::Write, path::PathBuf, rc::Rc};
 
 use self::graph::Graph;
 
+// FIXME: Temporary
+#[allow(missing_docs)]
 pub mod graph;
 
 lazy_static! {

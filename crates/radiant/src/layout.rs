@@ -130,8 +130,8 @@ fn get_window_view(
             let delegate = AttributeEditorWindowDelegate::new(selected_fixtures, cx);
             WindowView::build(delegate, cx).into()
         }
-        WindowKind::GraphEditor(graph_id) => {
-            let delegate = GraphEditorWindowDelegate::new(Some(*graph_id), cx);
+        WindowKind::GraphEditor(_graph_id) => {
+            let delegate = GraphEditorWindowDelegate::new(cx);
             WindowView::build(delegate, cx).into()
         }
     }
