@@ -1,114 +1,24 @@
+use gpui::*;
 use slotmap::{SecondaryMap, SlotMap};
 
-use crate::FlowError;
+use crate::{FlowError, Input, InputId, Node, NodeId, NodeKind, Output, OutputId, OutputValue};
 
-slotmap::new_key_type! {
-    pub struct NodeId;
-    pub struct InputId;
-    pub struct OutputId;
-}
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct Node<DataType, Value, NodeKind>
+#[derive(Debug, Clone, Default)]
+pub struct Graph<D, V, N>
 where
-    NodeKind: GraphNodeKind<DataType = DataType, Value = Value>,
+    N: NodeKind<DataType = D, Value = V>,
 {
-    pub id: NodeId,
-    pub kind: NodeKind,
-    pub inputs: Vec<(String, InputId)>,
-    pub outputs: Vec<(String, OutputId)>,
-}
-
-impl<DataType, Value, NodeKind> Node<DataType, Value, NodeKind>
-where
-    NodeKind: GraphNodeKind<DataType = DataType, Value = Value>,
-{
-    pub fn inputs<'a>(
-        &'a self,
-        graph: &'a Graph<DataType, Value, NodeKind>,
-    ) -> impl Iterator<Item = &Input<DataType, Value>> + 'a {
-        self.input_ids().map(|id| graph.input(id))
-    }
-
-    pub fn outputs<'a>(
-        &'a self,
-        graph: &'a Graph<DataType, Value, NodeKind>,
-    ) -> impl Iterator<Item = &Output<DataType, Value>> + 'a {
-        self.output_ids().map(|id| graph.output(id))
-    }
-
-    pub fn input_ids(&self) -> impl Iterator<Item = InputId> + '_ {
-        self.inputs.iter().map(|(_name, id)| *id)
-    }
-
-    pub fn output_ids(&self) -> impl Iterator<Item = OutputId> + '_ {
-        self.outputs.iter().map(|(_name, id)| *id)
-    }
-
-    pub fn input(&self, name: &str) -> Result<InputId, FlowError> {
-        self.inputs
-            .iter()
-            .find(|(param_name, _id)| param_name == name)
-            .map(|x| x.1)
-            .ok_or_else(|| FlowError::NoSocketNamed(self.id, name.into()))
-    }
-
-    pub fn output(&self, name: &str) -> Result<OutputId, FlowError> {
-        self.outputs
-            .iter()
-            .find(|(param_name, _id)| param_name == name)
-            .map(|x| x.1)
-            .ok_or_else(|| FlowError::NoSocketNamed(self.id, name.into()))
-    }
-
-    pub fn process(
-        &self,
-        context: &mut NodeKind::ProcessingContext,
-        graph: &Graph<DataType, Value, NodeKind>,
-        cache: &mut GraphProcessingCache<Value>,
-    ) -> Result<(), FlowError> {
-        self.kind.process(self.id, context, graph, cache)
-    }
-}
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct Input<DataType, Value> {
-    pub id: InputId,
-    pub data_type: DataType,
-    pub value: Value,
-    pub node: NodeId,
-}
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct Output<DataType, Value> {
-    pub id: OutputId,
-    pub node: NodeId,
-    pub data_type: DataType,
-    pub value: OutputValue<Value>,
-}
-
-#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
-pub enum OutputValue<Value> {
-    Computed,
-    Constant(Value),
-}
-
-#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
-pub struct Graph<DataType, Value, NodeKind>
-where
-    NodeKind: GraphNodeKind<DataType = DataType, Value = Value>,
-{
-    pub nodes: SlotMap<NodeId, Node<DataType, Value, NodeKind>>,
-    pub inputs: SlotMap<InputId, Input<DataType, Value>>,
-    pub outputs: SlotMap<OutputId, Output<DataType, Value>>,
+    pub nodes: SlotMap<NodeId, Node<D, V, N>>,
+    pub inputs: SlotMap<InputId, Input<D, V>>,
+    pub outputs: SlotMap<OutputId, Output<D, V>>,
     pub connections: SecondaryMap<InputId, OutputId>,
 
     graph_ends: Vec<NodeId>,
 }
 
-impl<DataType, Value, NodeKind> Graph<DataType, Value, NodeKind>
+impl<D, V, N> Graph<D, V, N>
 where
-    NodeKind: GraphNodeKind<DataType = DataType, Value = Value>,
+    N: NodeKind<DataType = D, Value = V>,
 {
     pub fn new() -> Self {
         Self {
@@ -124,12 +34,13 @@ where
         self.nodes.keys()
     }
 
-    pub fn add_node(&mut self, kind: NodeKind) -> NodeId {
+    pub fn add_node(&mut self, kind: N, position: Point<Pixels>) -> NodeId {
         let node_id = self.nodes.insert_with_key(|node_id| Node {
             id: node_id,
             kind: kind.clone(),
             inputs: Vec::new(),
             outputs: Vec::new(),
+            position,
         });
 
         self.graph_ends.push(node_id);
@@ -157,17 +68,11 @@ where
         self.nodes.remove(node_id).expect("Node should exist");
     }
 
-    pub fn node(&self, node_id: NodeId) -> &Node<DataType, Value, NodeKind> {
+    pub fn node(&self, node_id: NodeId) -> &Node<D, V, N> {
         &self.nodes[node_id]
     }
 
-    pub fn add_input(
-        &mut self,
-        node_id: NodeId,
-        label: String,
-        data_type: DataType,
-        value: Value,
-    ) -> InputId {
+    pub fn add_input(&mut self, node_id: NodeId, label: String, data_type: D, value: V) -> InputId {
         let input_id = self.inputs.insert_with_key(|input_id| Input {
             id: input_id,
             data_type,
@@ -188,7 +93,7 @@ where
             .retain(|target_id, _| target_id != input_id)
     }
 
-    pub fn input(&self, input_id: InputId) -> &Input<DataType, Value> {
+    pub fn input(&self, input_id: InputId) -> &Input<D, V> {
         &self.inputs[input_id]
     }
 
@@ -196,8 +101,8 @@ where
         &mut self,
         node_id: NodeId,
         label: String,
-        data_type: DataType,
-        value: OutputValue<Value>,
+        data_type: D,
+        value: OutputValue<V>,
     ) -> OutputId {
         let output_id = self.outputs.insert_with_key(|output_id| Output {
             id: output_id,
@@ -219,20 +124,20 @@ where
             .retain(|_, source_id| *source_id != output_id);
     }
 
-    pub fn output(&self, output_id: OutputId) -> &Output<DataType, Value> {
+    pub fn output(&self, output_id: OutputId) -> &Output<D, V> {
         &self.outputs[output_id]
     }
 
-    pub fn output_mut(&mut self, output_id: OutputId) -> &mut Output<DataType, Value> {
+    pub fn output_mut(&mut self, output_id: OutputId) -> &mut Output<D, V> {
         &mut self.outputs[output_id]
     }
 
     pub fn get_output_value<'a>(
         &'a self,
         output_id: OutputId,
-        context: &mut NodeKind::ProcessingContext,
-        cache: &'a mut GraphProcessingCache<Value>,
-    ) -> Result<&Value, FlowError> {
+        context: &mut N::ProcessingContext,
+        cache: &'a mut GraphProcessingCache<V>,
+    ) -> Result<&V, FlowError> {
         let output = self.output(output_id);
         match &output.value {
             OutputValue::Computed => {
@@ -264,8 +169,8 @@ where
 
     pub fn process(
         &self,
-        context: &mut NodeKind::ProcessingContext,
-        cache: &mut GraphProcessingCache<Value>,
+        context: &mut N::ProcessingContext,
+        cache: &mut GraphProcessingCache<V>,
     ) -> Result<(), FlowError> {
         for node_id in &self.graph_ends {
             let node = self.node(*node_id);
@@ -281,61 +186,34 @@ where
 }
 
 #[derive(Debug, Clone)]
-pub struct GraphProcessingCache<Value> {
-    output_value_cache: SecondaryMap<OutputId, Value>,
+pub struct GraphProcessingCache<V> {
+    output_value_cache: SecondaryMap<OutputId, V>,
 }
 
-impl<Value> Default for GraphProcessingCache<Value> {
-    fn default() -> Self {
-        Self {
-            output_value_cache: SecondaryMap::default(),
-        }
-    }
-}
-
-impl<Value> GraphProcessingCache<Value> {
-    pub fn get_output_value(&self, output_id: OutputId) -> Result<&Value, FlowError> {
+impl<V> GraphProcessingCache<V> {
+    pub fn get_output_value(&self, output_id: OutputId) -> Result<&V, FlowError> {
         match self.output_value_cache.get(output_id) {
             Some(value) => Ok(value),
             None => Err(FlowError::NoCachedOutputValueFor(output_id)),
         }
     }
 
-    pub fn get_output_value_mut(&mut self, output_id: OutputId) -> Result<&mut Value, FlowError> {
+    pub fn get_output_value_mut(&mut self, output_id: OutputId) -> Result<&mut V, FlowError> {
         match self.output_value_cache.get_mut(output_id) {
             Some(value) => Ok(value),
             None => Err(FlowError::NoCachedOutputValueFor(output_id)),
         }
     }
 
-    pub fn set_output_value(&mut self, output_id: OutputId, value: Value) {
+    pub fn set_output_value(&mut self, output_id: OutputId, value: V) {
         self.output_value_cache.insert(output_id, value);
     }
 }
 
-pub trait GraphNodeKind: Clone {
-    type DataType;
-    type Value;
-    type ProcessingContext;
-
-    fn build(&self, graph: &mut Graph<Self::DataType, Self::Value, Self>, node_id: NodeId)
-    where
-        Self: Sized;
-
-    fn process(
-        &self,
-        node_id: NodeId,
-        context: &mut Self::ProcessingContext,
-        graph: &Graph<Self::DataType, Self::Value, Self>,
-        cache: &mut GraphProcessingCache<Self::Value>,
-    ) -> Result<(), FlowError>
-    where
-        Self: Sized;
-}
-
-pub trait GraphValue {
-    type DataType;
-    fn try_cast_to(self, target_type: &Self::DataType) -> Result<Self, FlowError>
-    where
-        Self: Sized;
+impl<V> Default for GraphProcessingCache<V> {
+    fn default() -> Self {
+        Self {
+            output_value_cache: SecondaryMap::default(),
+        }
+    }
 }

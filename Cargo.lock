@@ -1380,22 +1380,13 @@ checksum = "8ce81f49ae8a0482e4c55ea62ebbd7e5a686af544c00b9d090bba3ff9be97b3d"
 name = "flow"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "gpui",
+ "rust-embed",
  "serde",
  "serde_json",
  "slotmap",
  "thiserror",
-]
-
-[[package]]
-name = "flow_gpui"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "flow",
- "gpui",
- "rust-embed",
- "serde",
- "slotmap",
  "ui",
 ]
 
@@ -2948,7 +2939,6 @@ name = "radiant"
 version = "0.1.0"
 dependencies = [
  "flow",
- "flow_gpui",
  "gpui",
 ]
 

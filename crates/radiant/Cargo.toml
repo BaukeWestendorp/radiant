@@ -5,6 +5,5 @@ edition.workspace = true
 
 [dependencies]
 flow.workspace = true
-flow_gpui.workspace = true
 
 gpui.workspace = true
