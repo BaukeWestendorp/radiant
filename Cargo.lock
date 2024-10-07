@@ -1382,7 +1382,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "gpui",
- "rust-embed",
  "serde",
  "serde_json",
  "slotmap",
@@ -2938,8 +2937,10 @@ dependencies = [
 name = "radiant"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "flow",
  "gpui",
+ "rust-embed",
 ]
 
 [[package]]

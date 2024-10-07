@@ -7,3 +7,6 @@ edition.workspace = true
 flow.workspace = true
 
 gpui.workspace = true
+anyhow.workspace = true
+
+rust-embed = "8.5.0"
