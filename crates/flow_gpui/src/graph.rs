@@ -129,6 +129,7 @@ impl<
             .border_1()
             .border_color(rgb(0x404040))
             .rounded_md()
+            .hover(|v| v) // FIXME: This is a hack to prevent a weird movement issue when dragging for some reason?
             .child(header)
             .child(content)
             .on_drag(
