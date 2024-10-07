@@ -1,0 +1,10 @@
+[package]
+name = "radiant"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+flow.workspace = true
+flow_gpui.workspace = true
+
+gpui.workspace = true

@@ -1,0 +1,21 @@
+[workspace]
+members = ["crates/flow", "crates/radiant", "crates/flow_gpui", "crates/ui"]
+resolver = "2"
+
+[workspace.package]
+name = "radiant"
+version = "0.1.0"
+edition = "2021"
+
+[workspace.dependencies]
+flow = { path = "crates/flow" }
+flow_gpui = { path = "crates/flow_gpui" }
+ui = { path = "crates/ui" }
+
+gpui = { git = "https://github.com/zed-industries/zed.git" }
+
+anyhow = "1.0.89"
+serde = { version = "1.0.203", features = ["derive"] }
+serde_json = "1.0.117"
+slotmap = { version = "1.0.7", features = ["serde"] }
+thiserror = "1.0.61"

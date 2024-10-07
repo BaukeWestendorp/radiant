@@ -1,0 +1,15 @@
+[package]
+name = "flow_gpui"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+ui.workspace = true
+flow.workspace = true
+
+gpui.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+slotmap.workspace = true
+
+rust-embed = "8.5.0"
