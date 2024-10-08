@@ -64,7 +64,7 @@ fn create_graph() -> ExampleGraph {
     let mut graph = ExampleGraph::new();
 
     let a_node_id = graph.add_node(ExampleNodeKind::IntValue, point(px(50.0), px(50.0)));
-    let b_node_id = graph.add_node(ExampleNodeKind::IntValue, point(px(50.0), px(150.0)));
+    let b_node_id = graph.add_node(ExampleNodeKind::FloatValue, point(px(50.0), px(150.0)));
     let add_node_id = graph.add_node(ExampleNodeKind::IntAdd, point(px(300.0), px(100.0)));
     let output_node_id = graph.add_node(ExampleNodeKind::Output, point(px(550.0), px(100.0)));
 
@@ -74,7 +74,7 @@ fn create_graph() -> ExampleGraph {
 
     graph
         .output_mut(graph.node(b_node_id).output("value").unwrap())
-        .value = OutputValue::Constant(ExampleValue::Int(69));
+        .value = OutputValue::Constant(ExampleValue::Float(69.8));
 
     graph.add_connection(
         graph.input(graph.node(add_node_id).input("a").unwrap()).id,

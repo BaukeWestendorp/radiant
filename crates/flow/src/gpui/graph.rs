@@ -69,7 +69,7 @@ where
         let x_dist = source_pos.x - target_pos.x;
         let y_dist = source_pos.y - target_pos.y;
 
-        let source_horizontal = div()
+        let target_horizontal = div()
             .absolute()
             .left(if source_pos.x < target_pos.x {
                 source_pos.x
@@ -79,9 +79,9 @@ where
             .w(x_dist.abs() / 2.0)
             .top(source_pos.y)
             .h_px()
-            .bg(source_data_type.color());
+            .bg(target_data_type.color());
 
-        let source_vertical = div()
+        let target_vertical = div()
             .absolute()
             .left(if source_pos.x < target_pos.x {
                 source_pos.x + x_dist.abs() / 2.0
@@ -95,9 +95,9 @@ where
                 target_pos.y + y_dist.abs() / 2.0
             })
             .h(y_dist.abs() / 2.0)
-            .bg(source_data_type.color());
+            .bg(target_data_type.color());
 
-        let target_vertical = div()
+        let source_vertical = div()
             .absolute()
             .left(if source_pos.x < target_pos.x {
                 target_pos.x - x_dist.abs() / 2.0
@@ -111,9 +111,9 @@ where
                 target_pos.y
             })
             .h(y_dist.abs() / 2.0)
-            .bg(target_data_type.color());
+            .bg(source_data_type.color());
 
-        let target_horizontal = div()
+        let source_horizontal = div()
             .absolute()
             .left(if source_pos.x < target_pos.x {
                 source_pos.x + x_dist.abs() / 2.0
@@ -123,13 +123,13 @@ where
             .w(x_dist.abs() / 2.0)
             .top(target_pos.y)
             .h_px()
-            .bg(target_data_type.color());
+            .bg(source_data_type.color());
 
         z_stack([
-            source_horizontal,
-            source_vertical,
-            target_vertical,
             target_horizontal,
+            target_vertical,
+            source_vertical,
+            source_horizontal,
         ])
     }
 

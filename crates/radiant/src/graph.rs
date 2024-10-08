@@ -1,11 +1,12 @@
-use flow::{Graph, OutputValue};
-use gpui::{rgb, Hsla};
+use flow::{Graph, OutputValue, Value};
+use gpui::{rgb, Hsla, View};
 
 pub type ExampleGraph = Graph<ExampleDataType, ExampleValue, ExampleNodeKind>;
 
 #[derive(Clone)]
 pub enum ExampleDataType {
     Int,
+    Float,
 }
 
 impl flow::DataType for ExampleDataType {
@@ -14,32 +15,41 @@ impl flow::DataType for ExampleDataType {
     fn color(&self) -> Hsla {
         match self {
             ExampleDataType::Int => rgb(0xc905ff).into(),
+            ExampleDataType::Float => rgb(0xccff00).into(),
         }
+    }
+
+    fn widget<V>(&self) -> View<V> {
+        todo!()
     }
 }
 
 #[derive(Clone)]
 pub enum ExampleValue {
     Int(i32),
+    Float(f32),
 }
 
 impl flow::Value for ExampleValue {
     type DataType = ExampleDataType;
 
-    fn try_cast_to(
-        self,
-        _target_type: &Self::DataType,
-    ) -> std::prelude::v1::Result<Self, flow::FlowError>
+    fn try_cast_to(self, target_type: &Self::DataType) -> Result<Self, flow::FlowError>
     where
         Self: Sized,
     {
-        todo!()
+        match (&self, target_type) {
+            (Self::Int(_), ExampleDataType::Int) => Ok(self),
+            (Self::Int(v), ExampleDataType::Float) => Ok(Self::Float(*v as f32)),
+            (Self::Float(v), ExampleDataType::Int) => Ok(Self::Int(*v as i32)),
+            (Self::Float(_), ExampleDataType::Float) => Ok(self),
+        }
     }
 }
 
 #[derive(Clone)]
 pub enum ExampleNodeKind {
     IntValue,
+    FloatValue,
     IntAdd,
     Output,
 }
@@ -61,6 +71,14 @@ impl flow::NodeKind for ExampleNodeKind {
                     "value".to_string(),
                     ExampleDataType::Int,
                     OutputValue::Constant(ExampleValue::Int(0)),
+                );
+            }
+            ExampleNodeKind::FloatValue => {
+                graph.add_output(
+                    node_id,
+                    "value".to_string(),
+                    ExampleDataType::Float,
+                    OutputValue::Constant(ExampleValue::Float(0.0)),
                 );
             }
             ExampleNodeKind::IntAdd => {
@@ -107,19 +125,34 @@ impl flow::NodeKind for ExampleNodeKind {
         let node = graph.node(node_id);
         match &node.kind {
             ExampleNodeKind::IntValue => {}
+            ExampleNodeKind::FloatValue => {}
             ExampleNodeKind::Output => {
                 let value_id = graph.connection(node.input("value")?).unwrap();
                 let value = graph.get_output_value(value_id, context, cache)?.clone();
-                let ExampleValue::Int(value) = value;
+                let ExampleValue::Int(value) = value else {
+                    panic!();
+                };
                 context.output_value = value;
             }
             ExampleNodeKind::IntAdd => {
                 let a_id = graph.connection(node.input("a")?).unwrap();
                 let b_id = graph.connection(node.input("b")?).unwrap();
-                let a = graph.get_output_value(a_id, context, cache)?.clone();
-                let b = graph.get_output_value(b_id, context, cache)?.clone();
-                let ExampleValue::Int(a) = a;
-                let ExampleValue::Int(b) = b;
+                let a = graph
+                    .get_output_value(a_id, context, cache)?
+                    .clone()
+                    .try_cast_to(&ExampleDataType::Int)
+                    .unwrap();
+                let b = graph
+                    .get_output_value(b_id, context, cache)?
+                    .clone()
+                    .try_cast_to(&ExampleDataType::Int)
+                    .unwrap();
+                let ExampleValue::Int(a) = a else {
+                    panic!();
+                };
+                let ExampleValue::Int(b) = b else {
+                    panic!();
+                };
                 let sum = a + b;
                 cache.set_output_value(node.output("sum")?, ExampleValue::Int(sum));
             }
@@ -131,6 +164,7 @@ impl flow::NodeKind for ExampleNodeKind {
     fn label(&self) -> &str {
         match self {
             ExampleNodeKind::IntValue => "Int Value",
+            ExampleNodeKind::FloatValue => "Float Value",
             ExampleNodeKind::Output => "Output",
             ExampleNodeKind::IntAdd => "Int Add",
         }
