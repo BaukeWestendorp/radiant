@@ -26,7 +26,7 @@ fn main() {
         ]);
 
         cx.set_menus(vec![Menu {
-            name: "simple_graph".to_string().into(),
+            name: "Radiant".to_string().into(),
             items: vec![
                 MenuItem::action("Quit", Quit),
                 MenuItem::action("Process Graph", ProcessGraph),

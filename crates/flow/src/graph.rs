@@ -72,6 +72,10 @@ where
         &self.nodes[node_id]
     }
 
+    pub fn node_mut(&mut self, node_id: NodeId) -> &mut Node<D, V, N> {
+        &mut self.nodes[node_id]
+    }
+
     pub fn add_input(&mut self, node_id: NodeId, label: String, data_type: D, value: V) -> InputId {
         let input_id = self.inputs.insert_with_key(|input_id| Input {
             id: input_id,

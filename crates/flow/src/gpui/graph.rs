@@ -3,7 +3,7 @@ use ui::z_stack;
 
 use crate::{DataType, Graph, NodeId, NodeKind};
 
-use super::node::{self, Socket};
+use super::node::{self, NodeView, Socket};
 
 pub struct GraphView<D, V, N>
 where
@@ -11,6 +11,7 @@ where
     N: NodeKind<DataType = D, Value = V>,
 {
     graph: Model<Graph<D, V, N>>,
+    node_views: Vec<View<node::NodeView<D, V, N>>>,
 }
 
 impl<D, V, N> GraphView<D, V, N>
@@ -20,7 +21,21 @@ where
     N: NodeKind<DataType = D, Value = V> + 'static,
 {
     pub fn build(graph: Model<Graph<D, V, N>>, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|_cx| Self { graph })
+        cx.new_view(|cx| {
+            // FIXME: Fuck this.
+            let node_ids = graph
+                .read(cx)
+                .nodes
+                .values()
+                .map(|node| node.id)
+                .collect::<Vec<_>>();
+            let node_views = node_ids
+                .into_iter()
+                .map(|id| NodeView::build(id, graph.clone(), cx))
+                .collect::<Vec<_>>();
+
+            Self { graph, node_views }
+        })
     }
 
     fn render_connections(&self, cx: &ViewContext<Self>) -> impl IntoElement {
@@ -158,9 +173,11 @@ where
     N: NodeKind<DataType = D, Value = V> + 'static,
 {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let nodes = vec![div()];
         z_stack([
-            div().size_24().children(nodes).into_any_element(),
+            div()
+                .size_24()
+                .children(self.node_views.clone())
+                .into_any_element(),
             self.render_connections(cx).into_any_element(),
         ])
     }
