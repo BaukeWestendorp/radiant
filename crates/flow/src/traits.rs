@@ -7,6 +7,8 @@ pub trait NodeKind: Clone {
     type Value;
     type ProcessingContext;
 
+    fn label(&self) -> &str;
+
     fn build(&self, graph: &mut Graph<Self::DataType, Self::Value, Self>, node_id: NodeId)
     where
         Self: Sized;
@@ -20,8 +22,6 @@ pub trait NodeKind: Clone {
     ) -> Result<(), FlowError>
     where
         Self: Sized;
-
-    fn label(&self) -> &str;
 }
 
 pub trait Value {
@@ -32,7 +32,7 @@ pub trait Value {
         Self: Sized;
 }
 
-pub trait DataType {
+pub trait DataType: From<Self::Value> {
     type Value: Value;
 
     fn color(&self) -> Hsla;

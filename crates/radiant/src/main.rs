@@ -1,9 +1,9 @@
+use effect_graph::{EffectGraph, EffectNodeKind, EffectProcessingContext, EffectValue};
 use flow::{GraphProcessingCache, OutputValue};
 use gpui::*;
-use graph::{ExampleGraph, ExampleNodeKind, ExampleProcessingContext, ExampleValue};
 
 mod assets;
-mod graph;
+mod effect_graph;
 
 actions!(app, [ProcessGraph, Quit]);
 
@@ -37,7 +37,7 @@ fn main() {
             let graph_model = graph_model.clone();
             move |_action, cx| {
                 graph_model.update(cx, |graph, _cx| {
-                    let mut context = ExampleProcessingContext { output_value: 0 };
+                    let mut context = EffectProcessingContext { output_value: 0 };
                     let mut cache = GraphProcessingCache::default();
 
                     graph.process(&mut context, &mut cache).unwrap();
@@ -60,21 +60,21 @@ fn main() {
     })
 }
 
-fn create_graph() -> ExampleGraph {
-    let mut graph = ExampleGraph::new();
+fn create_graph() -> EffectGraph {
+    let mut graph = EffectGraph::new();
 
-    let a_node_id = graph.add_node(ExampleNodeKind::IntValue, point(px(50.0), px(50.0)));
-    let b_node_id = graph.add_node(ExampleNodeKind::FloatValue, point(px(50.0), px(150.0)));
-    let add_node_id = graph.add_node(ExampleNodeKind::IntAdd, point(px(300.0), px(100.0)));
-    let output_node_id = graph.add_node(ExampleNodeKind::Output, point(px(550.0), px(100.0)));
+    let a_node_id = graph.add_node(EffectNodeKind::IntValue, point(px(50.0), px(50.0)));
+    let b_node_id = graph.add_node(EffectNodeKind::FloatValue, point(px(50.0), px(150.0)));
+    let add_node_id = graph.add_node(EffectNodeKind::IntAdd, point(px(300.0), px(100.0)));
+    let output_node_id = graph.add_node(EffectNodeKind::Output, point(px(550.0), px(100.0)));
 
     graph
         .output_mut(graph.node(a_node_id).output("value").unwrap())
-        .value = OutputValue::Constant(ExampleValue::Int(42));
+        .value = OutputValue::Constant(EffectValue::Int(42));
 
     graph
         .output_mut(graph.node(b_node_id).output("value").unwrap())
-        .value = OutputValue::Constant(ExampleValue::Float(69.8));
+        .value = OutputValue::Constant(EffectValue::Float(69.8));
 
     graph.add_connection(
         graph.input(graph.node(add_node_id).input("a").unwrap()).id,
