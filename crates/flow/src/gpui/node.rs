@@ -1,8 +1,10 @@
+use std::collections::HashMap;
+
 use gpui::prelude::FluentBuilder;
 use gpui::*;
 use ui::StyledExt;
 
-use crate::{DataType, Graph, InputId, Node, NodeId, NodeKind, OutputId};
+use crate::{DataType, Graph, InputId, Node, NodeId, NodeKind, OutputId, Value, WidgetEvent};
 
 pub(crate) const NODE_CONTENT_Y_PADDING: Pixels = px(6.0);
 pub(crate) const NODE_WIDTH: Pixels = px(200.0);
@@ -16,13 +18,14 @@ where
     N: NodeKind<DataType = D, Value = V>,
 {
     graph: Model<Graph<D, V, N>>,
+    output_widgets: HashMap<OutputId, AnyView>,
     node_id: NodeId,
 }
 
 impl<D, V, N> NodeView<D, V, N>
 where
     D: DataType<Value = V> + 'static,
-    V: 'static,
+    V: Value + 'static,
     N: NodeKind<DataType = D, Value = V> + 'static,
 {
     pub fn build(
@@ -30,7 +33,15 @@ where
         graph: Model<Graph<D, V, N>>,
         cx: &mut WindowContext,
     ) -> View<Self> {
-        cx.new_view(|_cx| Self { graph, node_id })
+        cx.new_view(|cx| {
+            let output_widgets = Self::create_output_widget_views(graph, cx);
+
+            Self {
+                graph,
+                output_widgets,
+                node_id,
+            }
+        })
     }
 
     fn node<'a>(&'a self, cx: &'a AppContext) -> &Node<D, V, N> {
@@ -65,12 +76,30 @@ where
             cx.notify();
         });
     }
+
+    fn create_output_widget_views(
+        graph: &Model<Graph<D, V, N>>,
+        cx: &mut ViewContext<Self>,
+    ) -> HashMap<OutputId, AnyView> {
+        let constant_outputs = graph
+            .read(cx)
+            .outputs
+            .clone()
+            .iter()
+            .filter(|(_id, o)| matches!(o.value, crate::OutputValue::Constant(_)));
+
+        let mut output_widgets = HashMap::new();
+        for (id, o) in constant_outputs {
+            output_widgets.insert(id, o.data_type.widget(cx));
+        }
+        output_widgets
+    }
 }
 
 impl<D, V, N> Render for NodeView<D, V, N>
 where
     D: DataType<Value = V> + 'static,
-    V: 'static,
+    V: Value + 'static,
     N: NodeKind<DataType = D, Value = V> + 'static,
 {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
@@ -153,6 +182,14 @@ where
             )
             .on_drag_move(cx.listener(Self::node_on_drag_move))
     }
+}
+
+impl<D, V, N> EventEmitter<WidgetEvent<V>> for NodeView<D, V, N>
+where
+    D: DataType<Value = V> + 'static,
+    V: Value + 'static,
+    N: NodeKind<DataType = D, Value = V> + 'static,
+{
 }
 
 pub enum Socket {

@@ -1,6 +1,6 @@
 use gpui::{Pixels, Point};
 
-use crate::{FlowError, Graph, GraphProcessingCache, InputId, NodeId, NodeKind, OutputId};
+use crate::{FlowError, Graph, GraphProcessingCache, InputId, NodeId, NodeKind, OutputId, Value};
 
 #[derive(Debug, Clone)]
 pub struct Node<D, V, N>
@@ -74,8 +74,8 @@ pub struct Input<D, V> {
     pub node: NodeId,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct Output<D, V> {
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+pub struct Output<D, V: Value> {
     pub id: OutputId,
     pub node: NodeId,
     pub data_type: D,
@@ -83,7 +83,7 @@ pub struct Output<D, V> {
 }
 
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
-pub enum OutputValue<V> {
+pub enum OutputValue<V: Value> {
     Computed,
     Constant(V),
 }

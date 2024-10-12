@@ -1,3 +1,5 @@
+pub mod input;
+
 use gpui::{div, Div, IntoElement, ParentElement, Styled};
 
 /// Extends [`gpui::Styled`].

@@ -1,41 +1,39 @@
 use gpui::*;
 use ui::z_stack;
 
-use crate::{DataType, Graph, NodeId, NodeKind, Value};
+use crate::graph::{DataType, Graph, NodeId};
 
 use super::node::{self, NodeView, Socket};
 
-pub struct GraphView<D, V, N>
-where
-    D: DataType<Value = V>,
-    N: NodeKind<DataType = D, Value = V>,
-{
-    graph: Model<Graph<D, V, N>>,
-    node_views: Vec<View<node::NodeView<D, V, N>>>,
+pub struct GraphView {
+    graph: Model<Graph>,
+    nodes: Vec<View<NodeView>>,
 }
 
-impl<D, V, N> GraphView<D, V, N>
-where
-    D: DataType<Value = V> + 'static,
-    V: Value + 'static,
-    N: NodeKind<DataType = D, Value = V> + 'static,
-{
-    pub fn build(graph: Model<Graph<D, V, N>>, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|cx| {
-            // FIXME: Fuck this.
-            let node_ids = graph
-                .read(cx)
-                .nodes
-                .values()
-                .map(|node| node.id)
-                .collect::<Vec<_>>();
-            let node_views = node_ids
-                .into_iter()
-                .map(|id| NodeView::build(id, graph.clone(), cx))
-                .collect::<Vec<_>>();
+impl GraphView {
+    pub fn build(graph: Model<Graph>, cx: &mut WindowContext) -> View<Self> {
+        cx.new_view({
+            move |cx| {
+                cx.observe(&graph, move |view: &mut Self, graph, cx| {
+                    view.nodes = Self::build_nodes(&graph, cx);
+                })
+                .detach();
 
-            Self { graph, node_views }
+                Self {
+                    nodes: Self::build_nodes(&graph, cx),
+                    graph,
+                }
+            }
         })
+    }
+
+    fn build_nodes(graph: &Model<Graph>, cx: &mut WindowContext) -> Vec<View<NodeView>> {
+        let nodes = graph.read(cx).node_ids().collect::<Vec<_>>();
+
+        nodes
+            .into_iter()
+            .map(|id| NodeView::build(id, graph.clone(), cx))
+            .collect()
     }
 
     fn render_connections(&self, cx: &ViewContext<Self>) -> impl IntoElement {
@@ -61,8 +59,8 @@ where
         &self,
         source_pos: &Point<Pixels>,
         target_pos: &Point<Pixels>,
-        target_data_type: &D,
-        source_data_type: &D,
+        target_data_type: &DataType,
+        source_data_type: &DataType,
     ) -> impl IntoElement {
         // FIXME: This is a mess. Once GPUI supports actual bezier paths, use them.
 
@@ -166,19 +164,18 @@ where
     }
 }
 
-impl<D, V, N> Render for GraphView<D, V, N>
-where
-    D: DataType<Value = V> + 'static,
-    V: Value + 'static,
-    N: NodeKind<DataType = D, Value = V> + 'static,
-{
+impl Render for GraphView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         z_stack([
             div()
                 .size_24()
-                .children(self.node_views.clone())
+                .children(self.nodes.clone())
                 .into_any_element(),
             self.render_connections(cx).into_any_element(),
         ])
+        .size_full()
+        .text_color(white())
+        .text_xs()
+        .font_family("IBM Plex Mono")
     }
 }

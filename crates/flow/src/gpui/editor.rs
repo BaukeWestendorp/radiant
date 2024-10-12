@@ -1,6 +1,6 @@
 use gpui::*;
 
-use crate::{DataType, Graph, NodeKind};
+use crate::{traits, DataType, Graph, NodeKind, Value};
 
 use super::graph::GraphView;
 
@@ -15,7 +15,7 @@ where
 impl<D, V, N> EditorView<D, V, N>
 where
     D: DataType<Value = V> + 'static,
-    V: 'static,
+    V: traits::Value + 'static,
     N: NodeKind<DataType = D, Value = V> + 'static,
 {
     pub fn new(cx: &mut WindowContext, graph_model: Option<Model<Graph<D, V, N>>>) -> Self {
@@ -28,7 +28,7 @@ where
 impl<D, V, N> Render for EditorView<D, V, N>
 where
     D: DataType<Value = V> + 'static,
-    V: 'static,
+    V: Value + 'static,
     N: NodeKind<DataType = D, Value = V> + 'static,
 {
     fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {

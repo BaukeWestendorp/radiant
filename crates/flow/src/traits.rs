@@ -1,4 +1,4 @@
-use gpui::Hsla;
+use gpui::{AnyView, EventEmitter, Hsla, ViewContext};
 
 use crate::{FlowError, Graph, GraphProcessingCache, NodeId};
 
@@ -36,4 +36,13 @@ pub trait DataType: From<Self::Value> {
     type Value: Value;
 
     fn color(&self) -> Hsla;
+
+    fn widget<V>(&self, cx: &mut ViewContext<V>) -> AnyView
+    where
+        V: EventEmitter<WidgetEvent<Self::Value>>,
+        <Self as crate::traits::DataType>::Value: 'static;
+}
+
+pub enum WidgetEvent<V: Value> {
+    ChangeValue(V),
 }

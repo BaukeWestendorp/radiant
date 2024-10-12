@@ -4,9 +4,13 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-flow.workspace = true
+ui.workspace = true
 
 gpui.workspace = true
 anyhow.workspace = true
+log.workspace = true
+env_logger.workspace = true
+slotmap.workspace = true
+thiserror.workspace = true
 
 rust-embed = "8.5.0"
