@@ -68,31 +68,6 @@ pub struct ProcessingContext {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct ProcessingCache {
-    output_value_cache: SecondaryMap<OutputId, Value>,
-}
-
-impl ProcessingCache {
-    pub fn get_output_value(&self, output_id: OutputId) -> Result<&Value, GraphError> {
-        match self.output_value_cache.get(output_id) {
-            Some(value) => Ok(value),
-            None => Err(GraphError::NoCachedOutputValueFor(output_id)),
-        }
-    }
-
-    pub fn get_output_value_mut(&mut self, output_id: OutputId) -> Result<&mut Value, GraphError> {
-        match self.output_value_cache.get_mut(output_id) {
-            Some(value) => Ok(value),
-            None => Err(GraphError::NoCachedOutputValueFor(output_id)),
-        }
-    }
-
-    pub fn set_output_value(&mut self, output_id: OutputId, value: Value) {
-        self.output_value_cache.insert(output_id, value);
-    }
-}
-
-#[derive(Debug, Clone, Default)]
 pub struct Graph {
     pub nodes: SlotMap<NodeId, Node>,
     pub inputs: SlotMap<InputId, Input>,
@@ -159,17 +134,10 @@ impl Graph {
         &mut self.nodes[node_id]
     }
 
-    pub fn add_input(
-        &mut self,
-        node_id: NodeId,
-        label: String,
-        data_type: DataType,
-        value: Value,
-    ) -> InputId {
+    pub fn add_input(&mut self, node_id: NodeId, label: String, data_type: DataType) -> InputId {
         let input_id = self.inputs.insert_with_key(|input_id| Input {
             id: input_id,
             data_type,
-            value,
             node: node_id,
         });
 
@@ -226,22 +194,18 @@ impl Graph {
     }
 
     pub fn get_output_value<'a>(
-        &'a self,
+        &self,
         output_id: OutputId,
         context: &mut ProcessingContext,
-        cache: &'a mut ProcessingCache,
-    ) -> Result<&Value, GraphError> {
+    ) -> Result<Value, GraphError> {
         let output = self.output(output_id);
         match &output.value {
             OutputValue::Computed => {
                 let node = self.node(output.node);
-                node.process(context, self, cache)?;
-                let value = cache
-                    .get_output_value(output_id)
-                    .expect("A calculated value should always have a value");
-                Ok(value)
+                let result = node.process(context, self)?;
+                Ok(result.get(&output_id).unwrap().clone())
             }
-            OutputValue::Constant(value) => Ok(value),
+            OutputValue::Constant(value) => Ok(value.clone()),
         }
     }
 
@@ -260,14 +224,10 @@ impl Graph {
         self.connections.get(target_id).copied()
     }
 
-    pub fn process(
-        &self,
-        context: &mut ProcessingContext,
-        cache: &mut ProcessingCache,
-    ) -> Result<(), GraphError> {
+    pub fn process(&self, context: &mut ProcessingContext) -> Result<(), GraphError> {
         for node_id in &self.graph_ends {
             let node = self.node(*node_id);
-            node.kind.process(*node_id, context, self, cache)?;
+            node.kind.process(*node_id, context, self)?;
         }
 
         Ok(())

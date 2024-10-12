@@ -1,8 +1,8 @@
 use gpui::*;
 
 use super::{
-    error::GraphError, DataType, Graph, InputId, NodeId, NodeKind, OutputId, ProcessingCache,
-    ProcessingContext, Value,
+    error::GraphError, node_kind::ProcessingResult, DataType, Graph, InputId, NodeId, NodeKind,
+    OutputId, ProcessingContext, Value,
 };
 
 #[derive(Debug, Clone)]
@@ -51,9 +51,8 @@ impl Node {
         &self,
         context: &mut ProcessingContext,
         graph: &Graph,
-        cache: &mut ProcessingCache,
-    ) -> Result<(), GraphError> {
-        self.kind.process(self.id, context, graph, cache)
+    ) -> Result<ProcessingResult, GraphError> {
+        self.kind.process(self.id, context, graph)
     }
 }
 
@@ -61,7 +60,6 @@ impl Node {
 pub struct Input {
     pub id: InputId,
     pub data_type: DataType,
-    pub value: Value,
     pub node: NodeId,
 }
 

@@ -3,10 +3,10 @@ use graph::node::OutputValue;
 use graph::node_kind::NodeKind;
 use graph::view::graph::GraphView;
 use graph::view::node::ControlEvent;
-use graph::{Graph, ProcessingCache, ProcessingContext, Value};
+use graph::{Graph, ProcessingContext, Value};
 
 mod assets;
-mod graph;
+pub mod graph;
 
 actions!(app, [ProcessGraph, Quit]);
 
@@ -53,10 +53,9 @@ fn register_actions(graph: &mut Model<Graph>, cx: &mut AppContext) {
         move |_, cx| {
             graph.update(cx, |graph, _cx| {
                 let mut context = ProcessingContext::default();
-                let mut cache = ProcessingCache::default();
 
                 log::info!("Processing graph...");
-                graph.process(&mut context, &mut cache).unwrap();
+                graph.process(&mut context).unwrap();
                 log::info!("Output value: {}", context.output);
             });
         }

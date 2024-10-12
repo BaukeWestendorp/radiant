@@ -199,14 +199,13 @@ impl InputView {
 }
 
 impl Render for InputView {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .h_flex()
             .h(SOCKET_HEIGHT)
             .gap_2()
             .child(render_socket(&self.input.data_type, false))
             .child(self.label.clone())
-            .child(self.input.data_type.control(cx))
     }
 }
 

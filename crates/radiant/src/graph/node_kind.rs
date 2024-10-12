@@ -1,7 +1,9 @@
+use std::collections::HashMap;
+
 use super::{
     error::GraphError,
     node::{Node, OutputValue},
-    DataType, Graph, NodeId, ProcessingCache, ProcessingContext, Value,
+    DataType, Graph, NodeId, OutputId, ProcessingContext, Value,
 };
 
 #[derive(Debug, Clone)]
@@ -35,8 +37,8 @@ impl NodeKind {
                 );
             }
             Self::IntAdd => {
-                graph.add_input(node_id, "a".to_string(), DataType::Int, Value::Int(0));
-                graph.add_input(node_id, "b".to_string(), DataType::Int, Value::Int(0));
+                graph.add_input(node_id, "a".to_string(), DataType::Int);
+                graph.add_input(node_id, "b".to_string(), DataType::Int);
                 graph.add_output(
                     node_id,
                     "sum".to_string(),
@@ -45,7 +47,7 @@ impl NodeKind {
                 );
             }
             Self::Output => {
-                graph.add_input(node_id, "value".to_string(), DataType::Int, Value::Int(0));
+                graph.add_input(node_id, "value".to_string(), DataType::Int);
             }
         }
     }
@@ -55,18 +57,17 @@ impl NodeKind {
         node_id: NodeId,
         context: &mut ProcessingContext,
         graph: &Graph,
-        cache: &mut ProcessingCache,
-    ) -> Result<(), GraphError>
+    ) -> Result<ProcessingResult, GraphError>
     where
         Self: Sized,
     {
         let mut value_for_input = |node: &Node, input_name: &str| -> Result<Value, GraphError> {
             let connection_id = graph.connection(node.input(input_name)?).unwrap();
-            let value = graph
-                .get_output_value(connection_id, context, cache)?
-                .clone();
+            let value = graph.get_output_value(connection_id, context)?.clone();
             Ok(value)
         };
+
+        let mut processing_result = HashMap::new();
 
         let node = graph.node(node_id);
         match &node.kind {
@@ -88,11 +89,11 @@ impl NodeKind {
 
                 let sum = a + b;
 
-                cache.set_output_value(node.output("sum")?, Value::Int(sum));
+                processing_result.insert(node.output("sum")?, Value::Int(sum));
             }
         }
 
-        Ok(())
+        Ok(processing_result)
     }
 
     pub fn label(&self) -> &str {
@@ -104,3 +105,5 @@ impl NodeKind {
         }
     }
 }
+
+pub type ProcessingResult = HashMap<OutputId, Value>;
