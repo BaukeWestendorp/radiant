@@ -4,6 +4,7 @@ use graph::node_kind::NodeKind;
 use graph::view::graph::GraphView;
 use graph::view::node::ControlEvent;
 use graph::{Graph, ProcessingContext, Value};
+use ui::theme::Theme;
 
 mod assets;
 pub mod graph;
@@ -14,14 +15,7 @@ fn main() {
     env_logger::init();
 
     App::new().with_assets(assets::Assets).run(|cx| {
-        let options = WindowOptions {
-            window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
-                None,
-                size(px(800.0), px(600.0)),
-                cx,
-            ))),
-            ..Default::default()
-        };
+        cx.set_global(Theme::default());
 
         cx.bind_keys([
             KeyBinding::new("p", ProcessGraph, None),
@@ -39,6 +33,15 @@ fn main() {
         let mut graph = cx.new_model(|_cx| create_graph());
 
         register_actions(&mut graph, cx);
+
+        let options = WindowOptions {
+            window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
+                None,
+                size(px(800.0), px(600.0)),
+                cx,
+            ))),
+            ..Default::default()
+        };
 
         cx.open_window(options, |cx| GraphView::build(graph, cx))
             .unwrap();

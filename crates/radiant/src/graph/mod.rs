@@ -42,10 +42,22 @@ pub enum DataType {
 }
 
 impl DataType {
-    pub fn control<V: EventEmitter<ControlEvent>>(&self, cx: &mut ViewContext<V>) -> AnyView {
+    pub fn control<V: EventEmitter<ControlEvent>>(
+        &self,
+        id: impl Into<ElementId>,
+        initial_value: Value,
+        cx: &mut ViewContext<V>,
+    ) -> AnyView {
         match self {
             Self::Int => {
-                let int_field = cx.new_view(|_cx| IntField::new());
+                let int_field = cx.new_view(|cx| {
+                    let mut int_field = IntField::new(id, cx);
+                    let Value::Int(value) = initial_value else {
+                        panic!("Invalid value type")
+                    };
+                    int_field.set_value(value, cx);
+                    int_field
+                });
 
                 cx.subscribe(&int_field, |_view, _int_field, event: &InputEvent, cx| {
                     let InputEvent::ChangeValue(value) = event;
@@ -57,8 +69,14 @@ impl DataType {
             }
             Self::Float => {
                 // FIXME: Implement float field.
-                let int_field = cx.new_view(|_cx| IntField::new());
-
+                let int_field = cx.new_view(|cx| {
+                    let mut int_field = IntField::new(id, cx);
+                    let Value::Float(value) = initial_value else {
+                        panic!("Invalid value type")
+                    };
+                    int_field.set_value(value as i32, cx);
+                    int_field
+                });
                 cx.subscribe(&int_field, |_view, _int_field, event: &InputEvent, cx| {
                     let InputEvent::ChangeValue(value) = event;
                     cx.emit(ControlEvent::ChangeValue(Value::Float(*value as f32)));

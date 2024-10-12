@@ -1,5 +1,5 @@
 use gpui::*;
-use ui::z_stack;
+use ui::{theme::ActiveTheme, z_stack};
 
 use crate::graph::{DataType, Graph, NodeId};
 
@@ -149,7 +149,7 @@ impl GraphView {
             node::NODE_CONTENT_Y_PADDING.0 + // Move below the content's vertical padding.
             socket_index as f32 * (node::SOCKET_HEIGHT.0 + node::SOCKET_GAP.0) + // Move to the correct socket.
            node::SOCKET_HEIGHT.0 / 2.0 + // Move to the center of the socket.
-            -1.0; // FIXME: Why do we need this to actually move it to the center?
+            1.0; // FIXME: Why do we need this to actually move it to the center?
 
         node_position + point(px(x_offset), px(y_offset))
     }
@@ -158,15 +158,13 @@ impl GraphView {
 impl Render for GraphView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         z_stack([
-            div()
-                .size_24()
-                .children(self.nodes.clone())
-                .into_any_element(),
+            div().children(self.nodes.clone()).into_any_element(),
             self.render_connections(cx).into_any_element(),
         ])
         .size_full()
-        .text_color(white())
-        .text_xs()
-        .font_family("IBM Plex Mono")
+        .bg(cx.theme().background)
+        .text_color(cx.theme().foreground)
+        .text_size(cx.theme().font_size)
+        .font_family(cx.theme().font_family.clone())
     }
 }

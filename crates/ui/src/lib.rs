@@ -1,6 +1,9 @@
 pub mod input;
+pub mod theme;
 
-use gpui::{div, Div, IntoElement, ParentElement, Styled};
+use gpui::*;
+
+pub const INPUT_HEIGHT: Pixels = px(20.0);
 
 /// Extends [`gpui::Styled`].
 pub trait StyledExt: Styled + Sized {

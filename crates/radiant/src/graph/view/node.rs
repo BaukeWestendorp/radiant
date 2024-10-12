@@ -1,7 +1,7 @@
 use gpui::prelude::FluentBuilder;
 use gpui::*;
 
-use ui::StyledExt;
+use ui::{theme::ActiveTheme, StyledExt};
 
 use crate::graph::{
     node::{Input, Node, Output, OutputValue},
@@ -11,7 +11,7 @@ use crate::graph::{
 pub(crate) const NODE_CONTENT_Y_PADDING: Pixels = px(6.0);
 pub(crate) const NODE_WIDTH: Pixels = px(200.0);
 pub(crate) const HEADER_HEIGHT: Pixels = px(24.0);
-pub(crate) const SOCKET_HEIGHT: Pixels = px(12.0);
+pub(crate) const SOCKET_HEIGHT: Pixels = ui::INPUT_HEIGHT;
 pub(crate) const SOCKET_GAP: Pixels = px(12.0);
 
 pub struct NodeView {
@@ -129,7 +129,7 @@ impl Render for NodeView {
                 .px_1()
                 .py_px()
                 .border_b_1()
-                .border_color(rgb(0x404040))
+                .border_color(cx.theme().border)
                 .child(label)
         };
 
@@ -147,15 +147,15 @@ impl Render for NodeView {
         div()
             // FIXME: This way of creating an id feels hacky.
             .id(ElementId::Name(format!("node-{:?}", self.node_id).into()))
+            .hover(|e| e) // FIXME: This is a hack to make the node a little bit less spacy when dragging for some reason...
             .absolute()
             .left(position.x)
             .top(position.y)
             .w(NODE_WIDTH)
-            .bg(rgb(0x181818))
+            .bg(cx.theme().secondary)
             .border_1()
-            .border_color(rgb(0x404040))
-            .rounded_md()
-            .hover(|v| v) // FIXME: This is a hack to prevent a weird movement issue when dragging for some reason?
+            .border_color(cx.theme().border)
+            .rounded(cx.theme().radius)
             .child(header)
             .child(content)
             .on_drag(
@@ -189,12 +189,12 @@ impl InputView {
 }
 
 impl Render for InputView {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .h_flex()
             .h(SOCKET_HEIGHT)
             .gap_2()
-            .child(render_socket(&self.input.data_type, false))
+            .child(render_connector(&self.input.data_type, false, cx))
             .child(self.label.clone())
     }
 }
@@ -204,13 +204,21 @@ impl EventEmitter<ControlEvent> for InputView {}
 pub struct OutputView {
     output: Output,
     label: String,
-    control_view: AnyView,
+    control_view: Option<AnyView>,
 }
 
 impl OutputView {
     pub fn build(output: Output, label: String, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
-            let control_view = output.data_type.control(cx);
+            let control_id: SharedString = format!("output-{:?}", output.id).into();
+            let control_view = match &output.value {
+                OutputValue::Computed => None,
+                OutputValue::Constant(initial_value) => Some(output.data_type.control(
+                    ElementId::Name(control_id),
+                    initial_value.clone(),
+                    cx,
+                )),
+            };
 
             Self {
                 output,
@@ -222,26 +230,27 @@ impl OutputView {
 }
 
 impl Render for OutputView {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
+            .pl_1()
             .h_flex()
             .h(SOCKET_HEIGHT)
             .w_full()
             .flex_row_reverse()
             .gap_2()
-            .child(render_socket(&self.output.data_type, true))
+            .child(render_connector(&self.output.data_type, true, cx))
             .child(self.label.clone())
-            .child(self.control_view.clone())
+            .children(self.control_view.clone())
     }
 }
 
-fn render_socket(data_type: &DataType, left: bool) -> impl IntoElement {
+fn render_connector(data_type: &DataType, left: bool, cx: &AppContext) -> impl IntoElement {
     div()
         .w_1()
-        .h(SOCKET_HEIGHT)
+        .h(px(13.0))
         .bg(data_type.color())
-        .rounded_r_sm()
-        .when(left, |e| e.rounded_r_none().rounded_l_sm())
+        .rounded_r(cx.theme().radius)
+        .when(left, |e| e.rounded_r_none().rounded_l(cx.theme().radius))
 }
 
 impl EventEmitter<ControlEvent> for OutputView {}
