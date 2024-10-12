@@ -23,21 +23,11 @@ pub struct NodeView {
 
 impl NodeView {
     pub fn build(node_id: NodeId, graph: Model<Graph>, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view({
-            move |cx| {
-                cx.observe(&graph, move |view: &mut Self, graph, cx| {
-                    view.inputs = Self::build_inputs(node_id, &graph, cx);
-                    view.outputs = Self::build_outputs(node_id, &graph, cx);
-                })
-                .detach();
-
-                Self {
-                    node_id,
-                    inputs: Self::build_inputs(node_id, &graph, cx),
-                    outputs: Self::build_outputs(node_id, &graph, cx),
-                    graph,
-                }
-            }
+        cx.new_view(|cx| Self {
+            node_id,
+            inputs: Self::build_inputs(node_id, &graph, cx),
+            outputs: Self::build_outputs(node_id, &graph, cx),
+            graph,
         })
     }
 
@@ -214,16 +204,25 @@ impl EventEmitter<ControlEvent> for InputView {}
 pub struct OutputView {
     output: Output,
     label: String,
+    control_view: AnyView,
 }
 
 impl OutputView {
     pub fn build(output: Output, label: String, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|_cx| Self { output, label })
+        cx.new_view(|cx| {
+            let control_view = output.data_type.control(cx);
+
+            Self {
+                output,
+                label,
+                control_view,
+            }
+        })
     }
 }
 
 impl Render for OutputView {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .h_flex()
             .h(SOCKET_HEIGHT)
@@ -232,7 +231,7 @@ impl Render for OutputView {
             .gap_2()
             .child(render_socket(&self.output.data_type, true))
             .child(self.label.clone())
-            .child(self.output.data_type.control(cx))
+            .child(self.control_view.clone())
     }
 }
 

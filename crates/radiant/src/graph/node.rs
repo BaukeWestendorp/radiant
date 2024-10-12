@@ -15,14 +15,6 @@ pub struct Node {
 }
 
 impl Node {
-    pub fn inputs<'a>(&'a self, graph: &'a Graph) -> impl Iterator<Item = &Input> + 'a {
-        self.input_ids().map(|id| graph.input(id))
-    }
-
-    pub fn outputs<'a>(&'a self, graph: &'a Graph) -> impl Iterator<Item = &Output> + 'a {
-        self.output_ids().map(|id| graph.output(id))
-    }
-
     pub fn input_ids(&self) -> impl Iterator<Item = InputId> + '_ {
         self.inputs.iter().map(|(_name, id)| *id)
     }

@@ -3,6 +3,7 @@ use gpui::*;
 use node::{Input, Node, Output, OutputValue};
 use node_kind::NodeKind;
 use slotmap::{SecondaryMap, SlotMap};
+use ui::input::{InputEvent, IntField};
 use view::node::ControlEvent;
 
 pub mod error;
@@ -41,16 +42,31 @@ pub enum DataType {
 }
 
 impl DataType {
-    pub fn control<V: EventEmitter<ControlEvent>>(&self, cx: &ViewContext<V>) -> impl IntoElement {
+    pub fn control<V: EventEmitter<ControlEvent>>(&self, cx: &mut ViewContext<V>) -> AnyView {
         match self {
-            Self::Int => div().child("int").on_mouse_down(
-                MouseButton::Left,
-                cx.listener(|_, _, cx| cx.emit(ControlEvent::ChangeValue(Value::Int(100)))),
-            ),
-            Self::Float => div().child("float").on_mouse_down(
-                MouseButton::Left,
-                cx.listener(|_, _, cx| cx.emit(ControlEvent::ChangeValue(Value::Float(100.0)))),
-            ),
+            Self::Int => {
+                let int_field = cx.new_view(|_cx| IntField::new());
+
+                cx.subscribe(&int_field, |_view, _int_field, event: &InputEvent, cx| {
+                    let InputEvent::ChangeValue(value) = event;
+                    cx.emit(ControlEvent::ChangeValue(Value::Int(*value)));
+                })
+                .detach();
+
+                int_field.into()
+            }
+            Self::Float => {
+                // FIXME: Implement float field.
+                let int_field = cx.new_view(|_cx| IntField::new());
+
+                cx.subscribe(&int_field, |_view, _int_field, event: &InputEvent, cx| {
+                    let InputEvent::ChangeValue(value) = event;
+                    cx.emit(ControlEvent::ChangeValue(Value::Float(*value as f32)));
+                })
+                .detach();
+
+                int_field.into()
+            }
         }
     }
 

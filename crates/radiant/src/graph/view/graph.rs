@@ -12,18 +12,9 @@ pub struct GraphView {
 
 impl GraphView {
     pub fn build(graph: Model<Graph>, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view({
-            move |cx| {
-                cx.observe(&graph, move |view: &mut Self, graph, cx| {
-                    view.nodes = Self::build_nodes(&graph, cx);
-                })
-                .detach();
-
-                Self {
-                    nodes: Self::build_nodes(&graph, cx),
-                    graph,
-                }
-            }
+        cx.new_view(|cx| Self {
+            nodes: Self::build_nodes(&graph, cx),
+            graph,
         })
     }
 

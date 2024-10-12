@@ -26,9 +26,18 @@ impl Render for IntField {
             .border_color(white())
             .on_mouse_down(
                 MouseButton::Left,
-                cx.listener(|view, _event, _cx| {
+                cx.listener(|view, _event, cx| {
                     view.set_value(1);
+                    cx.emit(InputEvent::ChangeValue(1));
+                    cx.notify();
                 }),
             )
     }
+}
+
+impl EventEmitter<InputEvent> for IntField {}
+
+#[derive(Debug, Clone, Copy)]
+pub enum InputEvent {
+    ChangeValue(i32),
 }
