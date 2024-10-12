@@ -51,14 +51,14 @@ fn register_actions(graph: &mut Model<Graph>, cx: &mut AppContext) {
     cx.on_action::<ProcessGraph>({
         let graph = graph.clone();
         move |_, cx| {
-            log::info!("Processing graph...");
             graph.update(cx, |graph, _cx| {
                 let mut context = ProcessingContext::default();
                 let mut cache = ProcessingCache::default();
 
+                log::info!("Processing graph...");
                 graph.process(&mut context, &mut cache).unwrap();
+                log::info!("Output value: {}", context.output);
             });
-            log::info!("Done!");
         }
     });
 

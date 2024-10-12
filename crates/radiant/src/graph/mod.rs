@@ -22,6 +22,18 @@ pub enum Value {
     Float(f32),
 }
 
+impl Value {
+    fn try_cast_to(&self, target: DataType) -> Result<Self, GraphError> {
+        match (&self, target) {
+            (Self::Int(_), DataType::Int) => Ok(self.clone()),
+            (Self::Int(v), DataType::Float) => Ok(Self::Float(*v as f32)),
+
+            (Self::Float(v), DataType::Int) => Ok(Self::Int(*v as i32)),
+            (Self::Float(_), DataType::Float) => Ok(self.clone()),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum DataType {
     Int,
@@ -33,11 +45,11 @@ impl DataType {
         match self {
             Self::Int => div().child("int").on_mouse_down(
                 MouseButton::Left,
-                cx.listener(|_, _, cx| cx.emit(ControlEvent::ChangeValue)),
+                cx.listener(|_, _, cx| cx.emit(ControlEvent::ChangeValue(Value::Int(100)))),
             ),
             Self::Float => div().child("float").on_mouse_down(
                 MouseButton::Left,
-                cx.listener(|_, _, cx| cx.emit(ControlEvent::ChangeValue)),
+                cx.listener(|_, _, cx| cx.emit(ControlEvent::ChangeValue(Value::Float(100.0)))),
             ),
         }
     }
@@ -52,7 +64,7 @@ impl DataType {
 
 #[derive(Debug, Clone, Default)]
 pub struct ProcessingContext {
-    output: i32,
+    pub output: i32,
 }
 
 #[derive(Debug, Clone, Default)]

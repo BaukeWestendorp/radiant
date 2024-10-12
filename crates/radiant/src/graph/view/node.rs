@@ -4,8 +4,8 @@ use gpui::*;
 use ui::StyledExt;
 
 use crate::graph::{
-    node::{Input, Node, Output},
-    DataType, Graph, InputId, NodeId, OutputId,
+    node::{Input, Node, Output, OutputValue},
+    DataType, Graph, InputId, NodeId, OutputId, Value,
 };
 
 pub(crate) const NODE_CONTENT_Y_PADDING: Pixels = px(6.0);
@@ -85,8 +85,17 @@ impl NodeView {
                     let output = graph.read(cx).output(output_id).clone();
 
                     let output_view = OutputView::build(output.clone(), label, cx);
-                    cx.subscribe(&output_view, |_view, event, _cx| {
-                        dbg!(&event);
+                    cx.subscribe(&output_view, {
+                        let graph = graph.clone();
+                        move |view, event, cx| {
+                            let output_id = view.read(cx).output.id;
+                            let ControlEvent::ChangeValue(value) = event;
+                            graph.update(cx, move |graph, cx| {
+                                graph.output_mut(output_id).value =
+                                    OutputValue::Constant(value.clone());
+                                cx.notify();
+                            });
+                        }
                     })
                     .detach();
                     output_view
@@ -241,7 +250,7 @@ impl EventEmitter<ControlEvent> for OutputView {}
 
 #[derive(Debug, Clone)]
 pub enum ControlEvent {
-    ChangeValue,
+    ChangeValue(Value),
 }
 
 pub enum Socket {
