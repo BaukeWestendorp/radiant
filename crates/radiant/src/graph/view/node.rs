@@ -4,8 +4,8 @@ use gpui::*;
 use ui::{theme::ActiveTheme, StyledExt};
 
 use crate::graph::{
-    node::{Input, Node, Output, OutputValue},
-    Graph, InputId, NodeId, OutputId, Value,
+    node::{Input, Node, Output, OutputValue, Socket},
+    Graph, NodeId, Value,
 };
 
 pub(crate) const NODE_CONTENT_Y_PADDING: Pixels = px(6.0);
@@ -208,12 +208,6 @@ pub enum ControlEvent {
 pub enum SocketEvent {
     StartNewConnection(Socket),
     EndNewConnection,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Socket {
-    Input(InputId),
-    Output(OutputId),
 }
 
 pub struct InputView {

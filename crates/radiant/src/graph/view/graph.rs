@@ -1,9 +1,9 @@
 use gpui::*;
 use ui::{theme::ActiveTheme, z_stack};
 
-use crate::graph::{DataType, Graph, InputId, NodeId, OutputId};
+use crate::graph::{node::Socket, DataType, Graph, InputId, NodeId, OutputId};
 
-use super::node::{self, NodeView, Socket, SocketEvent};
+use super::node::{self, NodeView, SocketEvent};
 
 pub struct GraphView {
     graph: Model<Graph>,
@@ -44,9 +44,19 @@ impl GraphView {
                 match socket {
                     Socket::Input(input_id) => {
                         self.new_connection = (None, Some(*input_id));
+                        self.graph.update(cx, |graph, cx| {
+                            graph.remove_connection(*input_id);
+                            cx.notify();
+                        });
                     }
                     Socket::Output(output_id) => {
                         self.new_connection = (Some(*output_id), None);
+                        self.graph.update(cx, |graph, cx| {
+                            if let Some(input_id) = graph.connection_target(*output_id) {
+                                graph.remove_connection(input_id);
+                                cx.notify();
+                            }
+                        });
                     }
                 }
                 cx.notify();

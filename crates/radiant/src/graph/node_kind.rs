@@ -85,8 +85,8 @@ impl NodeKind {
         Self: Sized,
     {
         let mut value_for_input = |node: &Node, input_name: &str| -> Result<Value, GraphError> {
-            let connection_id = graph.connection(node.input(input_name)?).unwrap();
-            let value = graph.get_output_value(connection_id, context)?.clone();
+            let connection_id = graph.connection_source(node.input(input_name)?).unwrap();
+            let value = graph.get_output_value(&connection_id, context)?.clone();
             Ok(value)
         };
 

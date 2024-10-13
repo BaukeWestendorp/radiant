@@ -68,3 +68,9 @@ pub enum OutputValue {
     Computed,
     Constant { value: Value, control: Control },
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Socket {
+    Input(InputId),
+    Output(OutputId),
+}

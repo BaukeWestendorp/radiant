@@ -250,8 +250,18 @@ impl Graph {
         self.connections.remove(target_id);
     }
 
-    pub fn connection(&self, target_id: InputId) -> Option<&OutputId> {
-        self.connections.get(target_id)
+    pub fn connection_source(&self, target_id: InputId) -> Option<OutputId> {
+        self.connections.get(target_id).copied()
+    }
+
+    pub fn connection_target(&self, source_id: OutputId) -> Option<InputId> {
+        self.connections.iter().find_map(|(target_id, source)| {
+            if *source == source_id {
+                Some(target_id)
+            } else {
+                None
+            }
+        })
     }
 
     pub fn process(&self, context: &mut ProcessingContext) -> Result<(), GraphError> {
