@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use super::{
     error::GraphError,
     node::{Node, OutputValue},
+    view::control::Control,
     DataType, Graph, NodeId, OutputId, ProcessingContext, Value,
 };
 
@@ -10,6 +11,7 @@ use super::{
 pub enum NodeKind {
     NewInt,
     NewFloat,
+    NewString,
     IntAdd,
     Output,
 }
@@ -25,7 +27,10 @@ impl NodeKind {
                     node_id,
                     "value".to_string(),
                     DataType::Int,
-                    OutputValue::Constant(Value::Int(0)),
+                    OutputValue::Constant {
+                        value: Value::Int(0),
+                        control: Control::IntField,
+                    },
                 );
             }
             Self::NewFloat => {
@@ -33,7 +38,25 @@ impl NodeKind {
                     node_id,
                     "value".to_string(),
                     DataType::Float,
-                    OutputValue::Constant(Value::Float(0.0)),
+                    OutputValue::Constant {
+                        value: Value::Float(0.0),
+                        control: Control::Range {
+                            range: 0.0..=100.0,
+                            step: 10.0,
+                            strict: true,
+                        },
+                    },
+                );
+            }
+            Self::NewString => {
+                graph.add_output(
+                    node_id,
+                    "value".to_string(),
+                    DataType::String,
+                    OutputValue::Constant {
+                        value: Value::String("".to_string().into()),
+                        control: Control::TextField,
+                    },
                 );
             }
             Self::IntAdd => {
@@ -73,6 +96,7 @@ impl NodeKind {
         match &node.kind {
             Self::NewInt => {}
             Self::NewFloat => {}
+            Self::NewString => {}
             Self::Output => {
                 let Value::Int(value) = value_for_input(node, "value")? else {
                     return Err(GraphError::CastFailed);
@@ -100,6 +124,7 @@ impl NodeKind {
         match self {
             Self::NewInt => "Int Value",
             Self::NewFloat => "Float Value",
+            Self::NewString => "String Value",
             Self::Output => "Output",
             Self::IntAdd => "Int Add",
         }

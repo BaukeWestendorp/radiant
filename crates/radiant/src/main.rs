@@ -16,6 +16,7 @@ fn main() {
 
     App::new().with_assets(assets::Assets).run(|cx| {
         cx.set_global(Theme::default());
+        ui::init(cx);
 
         cx.bind_keys([
             KeyBinding::new("p", ProcessGraph, None),
@@ -76,16 +77,30 @@ fn create_graph() -> Graph {
 
     let a_node_id = graph.add_node(NodeKind::NewInt, point(px(50.0), px(50.0)));
     let b_node_id = graph.add_node(NodeKind::NewFloat, point(px(50.0), px(150.0)));
+    let new_string_node_id = graph.add_node(NodeKind::NewString, point(px(50.0), px(250.0)));
     let add_node_id = graph.add_node(NodeKind::IntAdd, point(px(300.0), px(100.0)));
     let output_node_id = graph.add_node(NodeKind::Output, point(px(550.0), px(100.0)));
 
-    graph
+    if let OutputValue::Constant { value, .. } = &mut graph
         .output_mut(graph.node(a_node_id).output("value").unwrap())
-        .value = OutputValue::Constant(Value::Int(42));
+        .value
+    {
+        *value = Value::Int(42);
+    }
 
-    graph
+    if let OutputValue::Constant { value, .. } = &mut graph
         .output_mut(graph.node(b_node_id).output("value").unwrap())
-        .value = OutputValue::Constant(Value::Float(69.8));
+        .value
+    {
+        *value = Value::Float(0.33);
+    }
+
+    if let OutputValue::Constant { value, .. } = &mut graph
+        .output_mut(graph.node(new_string_node_id).output("value").unwrap())
+        .value
+    {
+        *value = Value::String("Hello, world!".into());
+    }
 
     graph.add_connection(
         graph.input(graph.node(add_node_id).input("a").unwrap()).id,

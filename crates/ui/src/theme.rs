@@ -92,7 +92,7 @@ impl Colorize for Hsla {
 
     /// Return a new color with the lightness increased by the given factor.
     fn lighten(&self, factor: f32) -> Hsla {
-        let l = (self.l * 1.0 - factor.clamp(0.0, 1.0)).min(1.0);
+        let l = (self.l * 1.0 + factor.clamp(0.0, 1.0)).min(1.0);
 
         Hsla { l, ..*self }
     }
@@ -115,25 +115,25 @@ pub struct Theme {
     pub primary: Hsla,
     pub primary_hover: Hsla,
     pub primary_active: Hsla,
-    pub primary_foreground: Hsla,
     pub secondary: Hsla,
     pub secondary_hover: Hsla,
     pub secondary_active: Hsla,
-    pub secondary_foreground: Hsla,
     pub tertriary: Hsla,
     pub tertriary_hover: Hsla,
     pub tertriary_active: Hsla,
-    pub tertriary_foreground: Hsla,
     pub destructive: Hsla,
     pub destructive_hover: Hsla,
     pub destructive_active: Hsla,
-    pub destructive_foreground: Hsla,
     pub muted: Hsla,
     pub muted_foreground: Hsla,
     pub accent: Hsla,
-    pub accent_foreground: Hsla,
     pub border: Hsla,
     pub selection: Hsla,
+
+    pub input_height: Pixels,
+    pub cursor_width: Pixels,
+    pub cursor_blink_interval_ms: u64,
+    pub cursor_blink_pause_delay_ms: u64,
 }
 
 impl Default for Theme {
@@ -145,30 +145,30 @@ impl Default for Theme {
             radius: px(4.0),
 
             // Colors
-            background: hsl(0.0, 0.0, 6.0),
+            background: hsl(0.0, 0.0, 2.0),
             foreground: hsl(0., 0., 98.0),
-            primary: hsl(223.0, 0.0, 98.0),
-            primary_hover: hsl(223.0, 0.0, 90.0),
-            primary_active: hsl(223.0, 0.0, 80.0),
-            primary_foreground: hsl(223.0, 5.9, 10.0),
+            primary: hsl(0.0, 0.0, 6.0),
+            primary_hover: hsl(0.0, 0.0, 6.0).lighten(0.02),
+            primary_active: hsl(0.0, 0.0, 6.0).lighten(0.05),
             secondary: hsl(0.0, 0.0, 10.0),
-            secondary_hover: hsl(0.0, 0.0, 10.0).opacity(0.5),
-            secondary_active: hsl(0.0, 0.0, 10.0).opacity(0.8),
-            secondary_foreground: hsl(0.0, 0.0, 98.0),
+            secondary_hover: hsl(0.0, 0.0, 10.0).lighten(0.02),
+            secondary_active: hsl(0.0, 0.0, 10.0).lighten(0.05),
             tertriary: hsl(0.0, 0.0, 18.0),
-            tertriary_hover: hsl(0.0, 0.0, 18.0).opacity(0.5),
-            tertriary_active: hsl(0.0, 0.0, 18.0).opacity(0.8),
-            tertriary_foreground: hsl(0.0, 0.0, 98.0),
+            tertriary_hover: hsl(0.0, 0.0, 18.0).lighten(0.02),
+            tertriary_active: hsl(0.0, 0.0, 18.0).lighten(0.05),
             destructive: hsl(0.0, 62.8, 30.6),
             destructive_hover: hsl(0.0, 62.8, 35.6),
             destructive_active: hsl(0.0, 62.8, 20.6),
-            destructive_foreground: hsl(0.0, 0.0, 98.0),
             muted: hsl(240.0, 3.7, 15.9),
-            muted_foreground: hsl(240.0, 5.0, 64.9),
+            muted_foreground: hsl(240.0, 3.7, 15.9).lighten(0.2),
             accent: hsl(44.0, 98.0, 50.0),
-            accent_foreground: hsl(44.0, 100.0, 90.0),
             border: hsl(240.0, 3.7, 15.9),
-            selection: hsl(211.0, 97.0, 22.0),
+            selection: hsl(194.0, 67.0, 25.0),
+
+            input_height: px(22.0),
+            cursor_width: px(2.0),
+            cursor_blink_interval_ms: 750,
+            cursor_blink_pause_delay_ms: 500,
         }
     }
 }

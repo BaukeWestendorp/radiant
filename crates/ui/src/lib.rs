@@ -3,7 +3,9 @@ pub mod theme;
 
 use gpui::*;
 
-pub const INPUT_HEIGHT: Pixels = px(20.0);
+pub fn init(cx: &mut AppContext) {
+    input::text_field::init(cx);
+}
 
 /// Extends [`gpui::Styled`].
 pub trait StyledExt: Styled + Sized {
@@ -31,3 +33,23 @@ pub fn z_stack(children: impl IntoIterator<Item = impl IntoElement>) -> Div {
         .map(|child| div().size_full().child(child).absolute());
     div().relative().children(children)
 }
+
+pub trait InteractiveElementExt: InteractiveElement {
+    /// Set the listener for a double click event.
+    fn on_double_click(
+        mut self,
+        listener: impl Fn(&ClickEvent, &mut WindowContext) + 'static,
+    ) -> Self
+    where
+        Self: Sized,
+    {
+        self.interactivity().on_click(move |event, context| {
+            if event.up.click_count == 2 {
+                listener(event, context);
+            }
+        });
+        self
+    }
+}
+
+impl<E: InteractiveElement> InteractiveElementExt for Focusable<E> {}

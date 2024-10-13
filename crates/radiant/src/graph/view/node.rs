@@ -11,7 +11,7 @@ use crate::graph::{
 pub(crate) const NODE_CONTENT_Y_PADDING: Pixels = px(6.0);
 pub(crate) const NODE_WIDTH: Pixels = px(200.0);
 pub(crate) const HEADER_HEIGHT: Pixels = px(24.0);
-pub(crate) const SOCKET_HEIGHT: Pixels = ui::INPUT_HEIGHT;
+pub(crate) const SOCKET_HEIGHT: Pixels = px(22.0); // cx.theme().input_height;
 pub(crate) const SOCKET_GAP: Pixels = px(12.0);
 
 pub struct NodeView {
@@ -79,10 +79,14 @@ impl NodeView {
                         let graph = graph.clone();
                         move |view, event, cx| {
                             let output_id = view.read(cx).output.id;
-                            let ControlEvent::ChangeValue(value) = event;
+                            let ControlEvent::ChangeValue(new_value) = event;
                             graph.update(cx, move |graph, cx| {
-                                graph.output_mut(output_id).value =
-                                    OutputValue::Constant(value.clone());
+                                if let OutputValue::Constant { value, .. } =
+                                    &mut graph.output_mut(output_id).value
+                                {
+                                    *value = new_value.clone();
+                                }
+
                                 cx.notify();
                             });
                         }
@@ -213,11 +217,9 @@ impl OutputView {
             let control_id: SharedString = format!("output-{:?}", output.id).into();
             let control_view = match &output.value {
                 OutputValue::Computed => None,
-                OutputValue::Constant(initial_value) => Some(output.data_type.control(
-                    ElementId::Name(control_id),
-                    initial_value.clone(),
-                    cx,
-                )),
+                OutputValue::Constant { value, control } => {
+                    Some(control.view(ElementId::Name(control_id), value.clone(), cx))
+                }
             };
 
             Self {

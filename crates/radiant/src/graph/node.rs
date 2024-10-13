@@ -1,8 +1,8 @@
 use gpui::*;
 
 use super::{
-    error::GraphError, node_kind::ProcessingResult, DataType, Graph, InputId, NodeId, NodeKind,
-    OutputId, ProcessingContext, Value,
+    super::NodeKind, error::GraphError, node_kind::ProcessingResult, view::control::Control,
+    DataType, Graph, InputId, NodeId, OutputId, ProcessingContext, Value,
 };
 
 #[derive(Debug, Clone)]
@@ -66,5 +66,5 @@ pub struct Output {
 #[derive(Debug, Clone)]
 pub enum OutputValue {
     Computed,
-    Constant(Value),
+    Constant { value: Value, control: Control },
 }
