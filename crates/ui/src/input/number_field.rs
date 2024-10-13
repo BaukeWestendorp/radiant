@@ -20,13 +20,13 @@ impl NumberField {
 
                 cx.subscribe(
                     &field,
-                    |field, _view, event: &TextFieldEvent, cx| match event {
+                    |this, _view, event: &TextFieldEvent, cx| match event {
                         TextFieldEvent::Change(string_value) => {
                             let float_value = string_value.parse().unwrap_or_default();
                             cx.emit(NumberFieldEvent::Change(float_value));
                         }
                         TextFieldEvent::Blur => {
-                            field.set_value(field.value(cx), cx);
+                            this.set_value(this.value(cx), cx);
                         }
                         _ => (),
                     },

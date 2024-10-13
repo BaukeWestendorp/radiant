@@ -5,7 +5,7 @@ use ui::{theme::ActiveTheme, StyledExt};
 
 use crate::graph::{
     node::{Input, Node, Output, OutputValue},
-    DataType, Graph, InputId, NodeId, OutputId, Value,
+    Graph, InputId, NodeId, OutputId, Value,
 };
 
 pub(crate) const NODE_CONTENT_Y_PADDING: Pixels = px(6.0);
@@ -38,7 +38,7 @@ impl NodeView {
     fn build_inputs(
         node_id: NodeId,
         graph: &Model<Graph>,
-        cx: &mut WindowContext,
+        cx: &mut ViewContext<Self>,
     ) -> Vec<View<InputView>> {
         let inputs = {
             let graph = graph.read(cx);
@@ -51,7 +51,15 @@ impl NodeView {
                 let graph = graph.clone();
                 move |(label, input_id)| {
                     let input = graph.read(cx).input(input_id).clone();
-                    InputView::build(input, label, cx)
+                    let input_view = InputView::build(input, label, graph.clone(), cx);
+
+                    // Propagate events from the input view to the graph
+                    cx.subscribe(&input_view, |_this, _, event: &SocketEvent, cx| {
+                        cx.emit(event.clone())
+                    })
+                    .detach();
+
+                    input_view
                 }
             })
             .collect()
@@ -60,7 +68,7 @@ impl NodeView {
     fn build_outputs(
         node_id: NodeId,
         graph: &Model<Graph>,
-        cx: &mut WindowContext,
+        cx: &mut ViewContext<Self>,
     ) -> Vec<View<OutputView>> {
         let outputs = {
             let graph = graph.read(cx);
@@ -74,11 +82,12 @@ impl NodeView {
                 move |(label, output_id)| {
                     let output = graph.read(cx).output(output_id).clone();
 
-                    let output_view = OutputView::build(output.clone(), label, cx);
+                    let output_view = OutputView::build(output.clone(), label, graph.clone(), cx);
+
                     cx.subscribe(&output_view, {
                         let graph = graph.clone();
-                        move |view, event, cx| {
-                            let output_id = view.read(cx).output.id;
+                        move |_this, output_view, event, cx| {
+                            let output_id = output_view.read(cx).output.id;
                             let ControlEvent::Change(new_value) = event;
                             graph.update(cx, move |graph, cx| {
                                 if let OutputValue::Constant { value, .. } =
@@ -92,6 +101,13 @@ impl NodeView {
                         }
                     })
                     .detach();
+
+                    // Propagate events from the input view to the graph
+                    cx.subscribe(&output_view, |_this, _, event: &SocketEvent, cx| {
+                        cx.emit(event.clone())
+                    })
+                    .detach();
+
                     output_view
                 }
             })
@@ -174,6 +190,8 @@ impl Render for NodeView {
     }
 }
 
+impl EventEmitter<SocketEvent> for NodeView {}
+
 struct DraggedNode {
     pub node_id: NodeId,
 
@@ -181,14 +199,41 @@ struct DraggedNode {
     pub start_mouse_position: Point<Pixels>,
 }
 
+#[derive(Debug, Clone)]
+pub enum ControlEvent {
+    Change(Value),
+}
+
+#[derive(Debug, Clone)]
+pub enum SocketEvent {
+    StartNewConnection(Socket),
+    EndNewConnection,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Socket {
+    Input(InputId),
+    Output(OutputId),
+}
+
 pub struct InputView {
     input: Input,
     label: String,
+    graph: Model<Graph>,
 }
 
 impl InputView {
-    pub fn build(input: Input, label: String, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|_cx| Self { input, label })
+    pub fn build(
+        input: Input,
+        label: String,
+        graph: Model<Graph>,
+        cx: &mut WindowContext,
+    ) -> View<Self> {
+        cx.new_view(|_cx| Self {
+            input,
+            label,
+            graph,
+        })
     }
 }
 
@@ -198,21 +243,33 @@ impl Render for InputView {
             .h_flex()
             .h(SOCKET_HEIGHT)
             .gap_2()
-            .child(render_connector(&self.input.data_type, false, cx))
+            .child(render_connector(
+                &Socket::Input(self.input.id),
+                &self.graph,
+                cx,
+            ))
             .child(self.label.clone())
     }
 }
 
 impl EventEmitter<ControlEvent> for InputView {}
 
+impl EventEmitter<SocketEvent> for InputView {}
+
 pub struct OutputView {
     output: Output,
     label: String,
     control_view: Option<AnyView>,
+    graph: Model<Graph>,
 }
 
 impl OutputView {
-    pub fn build(output: Output, label: String, cx: &mut WindowContext) -> View<Self> {
+    pub fn build(
+        output: Output,
+        label: String,
+        graph: Model<Graph>,
+        cx: &mut WindowContext,
+    ) -> View<Self> {
         cx.new_view(|cx| {
             let control_id: SharedString = format!("output-{:?}", output.id).into();
             let control_view = match &output.value {
@@ -226,6 +283,7 @@ impl OutputView {
                 output,
                 label,
                 control_view,
+                graph,
             }
         })
     }
@@ -240,29 +298,80 @@ impl Render for OutputView {
             .w_full()
             .flex_row_reverse()
             .gap_2()
-            .child(render_connector(&self.output.data_type, true, cx))
+            .child(render_connector(
+                &Socket::Output(self.output.id),
+                &self.graph,
+                cx,
+            ))
             .child(self.label.clone())
             .children(self.control_view.clone())
     }
 }
 
-fn render_connector(data_type: &DataType, left: bool, cx: &AppContext) -> impl IntoElement {
-    div()
-        .w_1()
-        .h(px(13.0))
-        .bg(data_type.color())
-        .rounded_r(cx.theme().radius)
-        .when(left, |e| e.rounded_r_none().rounded_l(cx.theme().radius))
-}
+impl EventEmitter<SocketEvent> for OutputView {}
 
 impl EventEmitter<ControlEvent> for OutputView {}
 
-#[derive(Debug, Clone)]
-pub enum ControlEvent {
-    Change(Value),
+fn render_connector<V: EventEmitter<SocketEvent>>(
+    socket: &Socket,
+    graph: &Model<Graph>,
+    cx: &ViewContext<V>,
+) -> impl IntoElement {
+    let width = px(3.0);
+    let height = px(13.0);
+    let hover_box_size = px(19.0);
+
+    let left = match socket {
+        Socket::Input(_) => false,
+        Socket::Output(_) => true,
+    };
+
+    let data_type = match socket {
+        Socket::Input(input_id) => &graph.read(cx).input(*input_id).data_type,
+        Socket::Output(output_id) => &graph.read(cx).output(*output_id).data_type,
+    };
+
+    div()
+        .w(width)
+        .h(height)
+        .bg(data_type.color())
+        .rounded_r(cx.theme().radius)
+        .when(left, |e| e.rounded_r_none().rounded_l(cx.theme().radius))
+        .child(
+            div()
+                .id(ElementId::Name(format!("socket-{:?}", socket).into()))
+                .size(hover_box_size)
+                .ml(width / 2.0 - hover_box_size / 2.0)
+                .mt(height / 2.0 - hover_box_size / 2.0)
+                .cursor_grab()
+                .on_drag(
+                    SocketDrag {
+                        socket: socket.clone(),
+                    },
+                    |_, cx| cx.new_view(|_cx| EmptyView),
+                )
+                .on_drag_move(cx.listener({
+                    let socket = *socket;
+                    move |_view, event: &DragMoveEvent<SocketDrag>, cx| {
+                        let drag = event.drag(cx);
+                        if drag.socket != socket {
+                            return;
+                        }
+                        cx.emit(SocketEvent::StartNewConnection(socket.clone()));
+                    }
+                }))
+                // FIXME: Is there a way to do this in a single listener?
+                .on_mouse_up(
+                    MouseButton::Left,
+                    cx.listener(|_, _, cx| cx.emit(SocketEvent::EndNewConnection)),
+                )
+                .on_mouse_up_out(
+                    MouseButton::Left,
+                    cx.listener(|_, _, cx| cx.emit(SocketEvent::EndNewConnection)),
+                ),
+        )
 }
 
-pub enum Socket {
-    Input(InputId),
-    Output(OutputId),
+struct SocketDrag {
+    socket: Socket,
 }

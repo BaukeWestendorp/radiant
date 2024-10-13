@@ -151,7 +151,7 @@ impl Graph {
             self.outputs.remove(output);
         }
 
-        self.remove_graph_end(node_id);
+        self.remove_graph_end(&node_id);
 
         self.nodes.remove(node_id).expect("Node should exist");
     }
@@ -225,10 +225,10 @@ impl Graph {
 
     pub fn get_output_value<'a>(
         &self,
-        output_id: OutputId,
+        output_id: &OutputId,
         context: &mut ProcessingContext,
     ) -> Result<Value, GraphError> {
-        let output = self.output(output_id);
+        let output = self.output(*output_id);
         match &output.value {
             OutputValue::Computed => {
                 let node = self.node(output.node);
@@ -243,15 +243,15 @@ impl Graph {
         self.connections.insert(target_id, source_id);
 
         let source_node = self.output(source_id).node;
-        self.remove_graph_end(source_node);
+        self.remove_graph_end(&source_node);
     }
 
     pub fn remove_connection(&mut self, target_id: InputId) {
         self.connections.remove(target_id);
     }
 
-    pub fn connection(&self, target_id: InputId) -> Option<OutputId> {
-        self.connections.get(target_id).copied()
+    pub fn connection(&self, target_id: InputId) -> Option<&OutputId> {
+        self.connections.get(target_id)
     }
 
     pub fn process(&self, context: &mut ProcessingContext) -> Result<(), GraphError> {
@@ -263,7 +263,7 @@ impl Graph {
         Ok(())
     }
 
-    fn remove_graph_end(&mut self, node_id: NodeId) {
-        self.graph_ends.retain(|id| *id != node_id);
+    fn remove_graph_end(&mut self, node_id: &NodeId) {
+        self.graph_ends.retain(|id| id != node_id);
     }
 }

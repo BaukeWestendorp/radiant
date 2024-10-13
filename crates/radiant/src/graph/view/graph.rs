@@ -1,33 +1,112 @@
 use gpui::*;
 use ui::{theme::ActiveTheme, z_stack};
 
-use crate::graph::{DataType, Graph, NodeId};
+use crate::graph::{DataType, Graph, InputId, NodeId, OutputId};
 
-use super::node::{self, NodeView, Socket};
+use super::node::{self, NodeView, Socket, SocketEvent};
 
 pub struct GraphView {
     graph: Model<Graph>,
     nodes: Vec<View<NodeView>>,
+    new_connection: (Option<OutputId>, Option<InputId>),
 }
 
 impl GraphView {
     pub fn build(graph: Model<Graph>, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|cx| Self {
+        let graph = cx.new_view(|cx| Self {
             nodes: Self::build_nodes(&graph, cx),
             graph,
-        })
+            new_connection: (None, None),
+        });
+
+        graph
     }
 
-    fn build_nodes(graph: &Model<Graph>, cx: &mut WindowContext) -> Vec<View<NodeView>> {
+    fn build_nodes(graph: &Model<Graph>, cx: &mut ViewContext<Self>) -> Vec<View<NodeView>> {
         let nodes = graph.read(cx).node_ids().collect::<Vec<_>>();
 
         nodes
             .into_iter()
-            .map(|id| NodeView::build(id, graph.clone(), cx))
+            .map(|id| {
+                let node_view = NodeView::build(id, graph.clone(), cx);
+                cx.subscribe(&node_view, |this, _, event: &SocketEvent, cx| {
+                    this.handle_socket_event(event, cx);
+                })
+                .detach();
+                node_view
+            })
             .collect()
     }
 
-    fn render_connections(&self, cx: &ViewContext<Self>) -> impl IntoElement {
+    fn handle_socket_event(&mut self, event: &SocketEvent, cx: &mut ViewContext<Self>) {
+        match event {
+            SocketEvent::StartNewConnection(socket) => {
+                match socket {
+                    Socket::Input(input_id) => {
+                        self.new_connection = (None, Some(*input_id));
+                    }
+                    Socket::Output(output_id) => {
+                        self.new_connection = (Some(*output_id), None);
+                    }
+                }
+                cx.notify();
+            }
+            SocketEvent::EndNewConnection => {
+                let end_position = cx.mouse_position();
+
+                let square_dist = |a: Point<Pixels>, b: Point<Pixels>| {
+                    let dx = a.x - b.x;
+                    let dy = a.y - b.y;
+                    dx * dx + dy * dy
+                };
+
+                match self.new_connection {
+                    (Some(source_id), None) => {
+                        let graph = self.graph.read(cx);
+                        let input_ids = graph.inputs.keys().collect::<Vec<_>>();
+                        for input_id in input_ids {
+                            let input = self.graph.read(cx).input(input_id);
+                            let position =
+                                self.get_socket_position(input.node, &Socket::Input(input_id), cx);
+
+                            if square_dist(position, end_position) < px(100.0) {
+                                self.graph.update(cx, |graph, cx| {
+                                    graph.add_connection(input_id, source_id);
+                                    cx.notify();
+                                });
+                                cx.notify();
+                            }
+                        }
+                    }
+                    (None, Some(target_id)) => {
+                        let graph = self.graph.read(cx);
+                        let output_ids = graph.outputs.keys().collect::<Vec<_>>();
+                        for output_id in output_ids {
+                            let output = self.graph.read(cx).output(output_id);
+                            let position = self.get_socket_position(
+                                output.node,
+                                &Socket::Output(output_id),
+                                cx,
+                            );
+
+                            if square_dist(position, end_position) < px(100.0) {
+                                self.graph.update(cx, |graph, cx| {
+                                    graph.add_connection(target_id, output_id);
+                                    cx.notify();
+                                });
+                                cx.notify();
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+
+                self.new_connection = (None, None);
+            }
+        }
+    }
+
+    fn render_connections(&self, cx: &ViewContext<Self>) -> Div {
         let connections = &self.graph.read(cx).connections;
 
         z_stack(connections.iter().map(|(target_id, source_id)| {
@@ -46,13 +125,51 @@ impl GraphView {
         }))
     }
 
+    fn render_new_connection(&self, cx: &ViewContext<Self>) -> Div {
+        let (source_pos, target_pos, source_data_type, target_data_type) = match self.new_connection
+        {
+            (None, None) => return div(),
+            (None, Some(target_id)) => {
+                let target = self.graph.read(cx).input(target_id);
+                let target_pos =
+                    self.get_socket_position(target.node, &Socket::Input(target_id), cx);
+                let source_pos = cx.mouse_position();
+                let source_data_type = &target.data_type;
+                let target_data_type = &target.data_type;
+                (source_pos, target_pos, source_data_type, target_data_type)
+            }
+            (Some(source_id), None) => {
+                let source = self.graph.read(cx).output(source_id);
+                let source_pos =
+                    self.get_socket_position(source.node, &Socket::Output(source_id), cx);
+                let target_pos = cx.mouse_position();
+                let source_data_type = &source.data_type;
+                let target_data_type = &source.data_type;
+                (source_pos, target_pos, source_data_type, target_data_type)
+            }
+            (Some(source_id), Some(target_id)) => {
+                let source = self.graph.read(cx).output(source_id);
+                let target = self.graph.read(cx).input(target_id);
+                let source_pos =
+                    self.get_socket_position(source.node, &Socket::Output(source_id), cx);
+                let target_pos =
+                    self.get_socket_position(target.node, &Socket::Input(target_id), cx);
+                let source_data_type = &source.data_type;
+                let target_data_type = &target.data_type;
+                (source_pos, target_pos, source_data_type, target_data_type)
+            }
+        };
+
+        self.render_connection(&source_pos, &target_pos, source_data_type, target_data_type)
+    }
+
     fn render_connection(
         &self,
         source_pos: &Point<Pixels>,
         target_pos: &Point<Pixels>,
         target_data_type: &DataType,
         source_data_type: &DataType,
-    ) -> impl IntoElement {
+    ) -> Div {
         // FIXME: This is a mess. Once GPUI supports actual bezier paths, use them.
 
         let x_dist = source_pos.x - target_pos.x;
@@ -158,8 +275,9 @@ impl GraphView {
 impl Render for GraphView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         z_stack([
-            div().children(self.nodes.clone()).into_any_element(),
-            self.render_connections(cx).into_any_element(),
+            div().children(self.nodes.clone()),
+            self.render_connections(cx),
+            self.render_new_connection(cx),
         ])
         .size_full()
         .bg(cx.theme().background)

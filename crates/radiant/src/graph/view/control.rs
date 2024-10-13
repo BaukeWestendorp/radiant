@@ -38,7 +38,7 @@ impl Control {
                     int_field
                 });
 
-                cx.subscribe(&field, |_view, _field, event: &NumberFieldEvent, cx| {
+                cx.subscribe(&field, |_this, _field, event: &NumberFieldEvent, cx| {
                     let NumberFieldEvent::Change(int_value) = event;
                     let value = Value::Int(*int_value as i32);
                     cx.emit(ControlEvent::Change(value));
@@ -54,7 +54,7 @@ impl Control {
                     field.set_value(value, cx);
                     field
                 });
-                cx.subscribe(&field, |_view, _field, event: &NumberFieldEvent, cx| {
+                cx.subscribe(&field, |_this, _field, event: &NumberFieldEvent, cx| {
                     let NumberFieldEvent::Change(float_value) = event;
                     let value = Value::Float(*float_value);
                     cx.emit(ControlEvent::Change(value));
@@ -70,7 +70,7 @@ impl Control {
                     field.set_value(value, cx);
                     field
                 });
-                cx.subscribe(&field, |_view, _field, event: &TextFieldEvent, cx| {
+                cx.subscribe(&field, |_this, _field, event: &TextFieldEvent, cx| {
                     if let TextFieldEvent::Change(stromg_value) = event {
                         let value = Value::String(stromg_value.clone());
                         cx.emit(ControlEvent::Change(value));
@@ -94,7 +94,7 @@ impl Control {
                     slider.set_strict(*strict);
                     slider
                 });
-                cx.subscribe(&slider, |_view, _slider, event: &SliderEvent, cx| {
+                cx.subscribe(&slider, |_this, _slider, event: &SliderEvent, cx| {
                     let SliderEvent::Change(value) = event;
                     cx.emit(ControlEvent::Change(Value::Float(*value)));
                 })
