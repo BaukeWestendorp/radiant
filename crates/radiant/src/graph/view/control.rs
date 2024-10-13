@@ -1,7 +1,7 @@
 use std::ops::RangeInclusive;
 
 use gpui::*;
-use ui::input::{NumberField, TextField, TextFieldEvent};
+use ui::input::{NumberField, Slider, SliderEvent, TextField, TextFieldEvent};
 
 use crate::graph::Value;
 
@@ -10,13 +10,11 @@ use super::node::ControlEvent;
 #[derive(Debug, Clone)]
 pub enum Control {
     IntField,
-    FloatField {
-        step: f32,
-    },
+    FloatField,
     TextField,
-    Range {
+    Slider {
         range: RangeInclusive<f32>,
-        step: f32,
+        step: Option<f32>,
         strict: bool,
     },
 }
@@ -33,36 +31,33 @@ impl Control {
         match self {
             Self::IntField => {
                 let field = cx.new_view(|cx| {
-                    let mut int_field = NumberField::new(id, cx);
-                    let Value::Int(value) = initial_value else {
-                        panic!("Invalid value type, expected Int, got {:?}", initial_value)
-                    };
+                    let mut int_field = NumberField::new(cx);
+                    let value: i32 = initial_value.try_into().unwrap();
                     int_field.set_value(value as f32, cx);
-                    int_field.set_step(1.0);
+                    int_field.set_validate(Some(Box::new(|v| v.parse::<i32>().is_ok())), cx);
                     int_field
                 });
 
                 cx.subscribe(&field, |_view, _field, event: &NumberFieldEvent, cx| {
-                    let NumberFieldEvent::ChangeValue(value) = event;
-                    cx.emit(ControlEvent::ChangeValue(Value::Int(*value as i32)));
+                    let NumberFieldEvent::Change(int_value) = event;
+                    let value = Value::Int(*int_value as i32);
+                    cx.emit(ControlEvent::Change(value));
                 })
                 .detach();
 
                 field.into()
             }
-            Self::FloatField { step } => {
+            Self::FloatField => {
                 let field = cx.new_view(|cx| {
-                    let mut field = NumberField::new(id, cx);
-                    let Value::Float(value) = initial_value else {
-                        panic!("Invalid value type")
-                    };
+                    let mut field = NumberField::new(cx);
+                    let value: f32 = initial_value.try_into().unwrap();
                     field.set_value(value, cx);
-                    field.set_step(*step);
                     field
                 });
                 cx.subscribe(&field, |_view, _field, event: &NumberFieldEvent, cx| {
-                    let NumberFieldEvent::ChangeValue(value) = event;
-                    cx.emit(ControlEvent::ChangeValue(Value::Float(*value)));
+                    let NumberFieldEvent::Change(float_value) = event;
+                    let value = Value::Float(*float_value);
+                    cx.emit(ControlEvent::Change(value));
                 })
                 .detach();
 
@@ -71,44 +66,41 @@ impl Control {
             Self::TextField => {
                 let field = cx.new_view(|cx| {
                     let mut field = TextField::new(cx);
-                    let Value::String(value) = initial_value else {
-                        panic!("Invalid value type")
-                    };
+                    let value: SharedString = initial_value.try_into().unwrap();
                     field.set_value(value, cx);
                     field
                 });
                 cx.subscribe(&field, |_view, _field, event: &TextFieldEvent, cx| {
-                    if let TextFieldEvent::Change(value) = event {
-                        cx.emit(ControlEvent::ChangeValue(Value::String(value.clone())));
+                    if let TextFieldEvent::Change(stromg_value) = event {
+                        let value = Value::String(stromg_value.clone());
+                        cx.emit(ControlEvent::Change(value));
                     }
                 })
                 .detach();
 
                 field.into()
             }
-            Self::Range {
+            Self::Slider {
                 range,
                 step,
                 strict,
             } => {
-                let field = cx.new_view(|cx| {
-                    let mut field = NumberField::new(id, cx);
-                    let Value::Float(value) = initial_value else {
-                        panic!("Invalid value type")
-                    };
-                    field.set_value(value, cx);
-                    field.set_step(*step);
-                    field.set_range(range.clone());
-                    field.set_strict(*strict);
-                    field
+                let slider = cx.new_view(|cx| {
+                    let mut slider = Slider::new(id, cx);
+                    let value: f32 = initial_value.try_into().unwrap();
+                    slider.set_value(value, cx);
+                    slider.set_step(*step, cx);
+                    slider.set_range(range.clone(), cx);
+                    slider.set_strict(*strict);
+                    slider
                 });
-                cx.subscribe(&field, |_view, _field, event: &NumberFieldEvent, cx| {
-                    let NumberFieldEvent::ChangeValue(value) = event;
-                    cx.emit(ControlEvent::ChangeValue(Value::Float(*value)));
+                cx.subscribe(&slider, |_view, _slider, event: &SliderEvent, cx| {
+                    let SliderEvent::Change(value) = event;
+                    cx.emit(ControlEvent::Change(Value::Float(*value)));
                 })
                 .detach();
 
-                field.into()
+                slider.into()
             }
         }
     }

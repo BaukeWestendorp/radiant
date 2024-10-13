@@ -40,10 +40,10 @@ impl NodeKind {
                     DataType::Float,
                     OutputValue::Constant {
                         value: Value::Float(0.0),
-                        control: Control::Range {
+                        control: Control::Slider {
                             range: 0.0..=100.0,
-                            step: 10.0,
-                            strict: true,
+                            step: Some(10.0),
+                            strict: false,
                         },
                     },
                 );

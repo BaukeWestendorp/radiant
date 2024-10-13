@@ -413,6 +413,8 @@ impl TextField {
 
     fn enter(&mut self, _: &Enter, cx: &mut ViewContext<Self>) {
         cx.emit(TextFieldEvent::PressEnter);
+        cx.emit(TextFieldEvent::Change(self.value.clone()));
+        cx.blur();
     }
 
     fn left(&mut self, _: &Left, cx: &mut ViewContext<Self>) {

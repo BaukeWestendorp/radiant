@@ -1,171 +1,96 @@
-use std::ops::RangeInclusive;
-
 use gpui::*;
-use prelude::FluentBuilder;
+use regex::Regex;
 
-use crate::{theme::ActiveTheme, z_stack, StyledExt};
-
-const DRAG_MULTIPLIER: f32 = 0.5;
+use super::{TextField, TextFieldEvent};
 
 pub struct NumberField {
-    id: ElementId,
-    focus_handle: FocusHandle,
-    value: f32,
-    range: Option<RangeInclusive<f32>>,
-    step: Option<f32>,
-    strict: bool,
-
-    bounds: Bounds<Pixels>,
+    text_field: View<TextField>,
 }
 
 impl NumberField {
-    pub fn new(id: impl Into<ElementId>, cx: &mut ViewContext<Self>) -> Self {
-        let focus_handle = cx.focus_handle();
+    pub fn new(cx: &mut ViewContext<Self>) -> Self {
         Self {
-            id: id.into(),
-            focus_handle: focus_handle.clone(),
-            value: 0.0,
-            range: None,
-            step: None,
-            strict: false,
-            bounds: Bounds::default(),
+            text_field: {
+                let field = cx.new_view(|cx| {
+                    let mut field = TextField::new(cx);
+                    field.set_pattern(Some(Regex::new(r"^-?\d*\.?\d*$").unwrap()));
+
+                    field
+                });
+
+                cx.subscribe(
+                    &field,
+                    |field, _view, event: &TextFieldEvent, cx| match event {
+                        TextFieldEvent::Change(string_value) => {
+                            let float_value = string_value.parse().unwrap_or_default();
+                            cx.emit(NumberFieldEvent::Change(float_value));
+                        }
+                        TextFieldEvent::Blur => {
+                            field.set_value(field.value(cx), cx);
+                        }
+                        _ => (),
+                    },
+                )
+                .detach();
+
+                field
+            },
         }
     }
 
-    pub fn value(&self) -> f32 {
-        self.value
+    pub fn value(&self, cx: &AppContext) -> f32 {
+        self.text_field.read(cx).value().parse().unwrap_or_default()
     }
 
     pub fn set_value(&mut self, value: f32, cx: &mut ViewContext<Self>) {
-        let stepped_value = self
-            .step
-            .map_or(value, |step| (value / step).round() * step);
-        let strict_value = self.range.as_ref().map_or(stepped_value, |range| {
-            range.start().max(range.end().min(stepped_value))
+        self.text_field.update(cx, |field, cx| {
+            field.set_value(value.to_string().into(), cx)
         });
-        self.value = strict_value;
-        cx.emit(NumberFieldEvent::ChangeValue(value));
+        cx.emit(NumberFieldEvent::Change(value));
     }
 
-    pub fn range(&self) -> Option<&RangeInclusive<f32>> {
-        self.range.as_ref()
+    pub fn validate<'a>(&'a self, cx: &'a AppContext) -> Option<&dyn Fn(&str) -> bool> {
+        self.text_field.read(cx).validate().as_ref().map(|f| &**f)
     }
 
-    pub fn set_range(&mut self, range: RangeInclusive<f32>) {
-        self.range = Some(range);
+    pub fn set_validate(
+        &self,
+        validate: Option<Box<dyn Fn(&str) -> bool + 'static>>,
+        cx: &mut ViewContext<Self>,
+    ) {
+        self.text_field
+            .update(cx, |field, _cx| field.set_validate(validate));
     }
 
-    pub fn step(&self) -> Option<f32> {
-        self.step
+    pub fn pattern<'a>(&'a self, cx: &'a AppContext) -> Option<&Regex> {
+        self.text_field.read(cx).pattern()
     }
 
-    pub fn set_step(&mut self, step: f32) {
-        self.step = Some(step);
-    }
-
-    pub fn strict(&self) -> bool {
-        self.strict
-    }
-
-    pub fn set_strict(&mut self, strict: bool) {
-        self.strict = strict;
+    pub fn set_pattern(&self, pattern: Option<Regex>, cx: &mut ViewContext<Self>) {
+        self.text_field
+            .update(cx, |field, _cx| field.set_pattern(pattern));
     }
 
     pub fn focus(&self, cx: &mut ViewContext<Self>) {
-        self.focus_handle.focus(cx);
-    }
-
-    fn on_drag_move(&mut self, event: &DragMoveEvent<Drag>, cx: &mut ViewContext<Self>) {
-        let drag = event.drag(cx);
-
-        if drag.id != self.id {
-            return;
-        }
-
-        let delta_x = cx.mouse_position().x.0 - drag.start_mouse_position.x.0;
-        let value = match &self.range {
-            Some(range) => {
-                let relative =
-                    (cx.mouse_position().x - self.bounds.left()) / self.bounds.size.width;
-                range.start() + (range.end() - range.start()) * relative
-            }
-            None => drag.start_value + delta_x * DRAG_MULTIPLIER,
-        };
-
-        self.set_value(value, cx);
-        cx.notify();
+        self.text_field.focus_handle(cx).focus(cx);
     }
 }
 
 impl Render for NumberField {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let focused = self.focus_handle.is_focused(cx);
+        let focus_handle = self.text_field.focus_handle(cx);
 
-        let bounds_updater = div()
+        div()
+            .track_focus(&focus_handle)
             .size_full()
-            .child({
-                let view = cx.view().clone();
-                canvas(
-                    move |bounds, cx| view.update(cx, |view, _cx| view.bounds = bounds),
-                    |_, _, _| {},
-                )
-                .absolute()
-                .size_full()
-            })
-            .into_any_element();
-
-        let background =
-            div()
-                .h_full()
-                .rounded(cx.theme().radius)
-                .when_some(self.range(), |e, range| {
-                    let diff = *range.end() - *range.start();
-                    let relative_value = self.value() / diff;
-                    e.w(relative(relative_value)).bg(cx.theme().tertriary)
-                });
-
-        let field = div()
-            .id(self.id.clone())
-            .h_flex()
-            .size_full()
-            .px_1()
-            .border_color(cx.theme().border)
-            .border_1()
-            .when(focused, |e| e.border_color(cx.theme().accent))
-            .rounded(cx.theme().radius)
-            .child(self.value.to_string())
-            .child(bounds_updater)
-            .on_drag(
-                Drag {
-                    id: self.id.clone(),
-                    start_value: self.value,
-                    start_mouse_position: cx.mouse_position(),
-                },
-                |_, cx| cx.new_view(|_cx| EmptyView),
-            )
-            .on_drag_move(cx.listener(Self::on_drag_move));
-
-        z_stack([background.into_any_element(), field.into_any_element()])
-            .track_focus(&self.focus_handle)
-            .h(cx.theme().input_height)
-            .w_full()
-            .bg(cx.theme().primary)
-            .hover(|e| e.bg(cx.theme().primary_hover))
-            .rounded(cx.theme().radius)
             .overflow_hidden()
-            .cursor_ew_resize()
+            .child(self.text_field.clone())
     }
 }
 
-struct Drag {
-    pub id: ElementId,
-    pub start_value: f32,
-    pub start_mouse_position: Point<Pixels>,
-}
-
 impl FocusableView for NumberField {
-    fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
-        self.focus_handle.clone()
+    fn focus_handle(&self, cx: &AppContext) -> FocusHandle {
+        self.text_field.focus_handle(cx)
     }
 }
 
@@ -173,5 +98,5 @@ impl EventEmitter<NumberFieldEvent> for NumberField {}
 
 #[derive(Debug, Clone, Copy)]
 pub enum NumberFieldEvent {
-    ChangeValue(f32),
+    Change(f32),
 }

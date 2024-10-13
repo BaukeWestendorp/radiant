@@ -31,6 +31,50 @@ impl Value {
     }
 }
 
+impl TryInto<i32> for Value {
+    type Error = GraphError;
+
+    fn try_into(self) -> Result<i32, Self::Error> {
+        match self {
+            Self::Int(v) => Ok(v),
+            _ => Err(GraphError::CastFailed),
+        }
+    }
+}
+
+impl TryInto<f32> for Value {
+    type Error = GraphError;
+
+    fn try_into(self) -> Result<f32, Self::Error> {
+        match self {
+            Self::Float(v) => Ok(v),
+            _ => Err(GraphError::CastFailed),
+        }
+    }
+}
+
+impl TryInto<SharedString> for Value {
+    type Error = GraphError;
+
+    fn try_into(self) -> Result<SharedString, Self::Error> {
+        match self {
+            Self::String(v) => Ok(v),
+            _ => Err(GraphError::CastFailed),
+        }
+    }
+}
+
+impl TryInto<String> for Value {
+    type Error = GraphError;
+
+    fn try_into(self) -> Result<String, Self::Error> {
+        match self {
+            Self::String(v) => Ok(v.to_string()),
+            _ => Err(GraphError::CastFailed),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum DataType {
     Int,

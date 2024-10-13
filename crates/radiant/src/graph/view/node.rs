@@ -79,7 +79,7 @@ impl NodeView {
                         let graph = graph.clone();
                         move |view, event, cx| {
                             let output_id = view.read(cx).output.id;
-                            let ControlEvent::ChangeValue(new_value) = event;
+                            let ControlEvent::Change(new_value) = event;
                             graph.update(cx, move |graph, cx| {
                                 if let OutputValue::Constant { value, .. } =
                                     &mut graph.output_mut(output_id).value
@@ -259,7 +259,7 @@ impl EventEmitter<ControlEvent> for OutputView {}
 
 #[derive(Debug, Clone)]
 pub enum ControlEvent {
-    ChangeValue(Value),
+    Change(Value),
 }
 
 pub enum Socket {
