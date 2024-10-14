@@ -1,5 +1,5 @@
 use super::error::GraphError;
-use super::node::{Input, Node, Output, OutputValue};
+use super::node::{Input, InputValue, Node, Output, OutputValue};
 use super::node_kind::NodeKind;
 use gpui::*;
 use slotmap::{SecondaryMap, SlotMap};
@@ -169,13 +169,13 @@ impl Graph {
         node_id: NodeId,
         label: String,
         data_type: DataType,
-        constant_value: Value,
+        constant_value: InputValue,
     ) -> InputId {
         let input_id = self.inputs.insert_with_key(|input_id| Input {
             id: input_id,
             data_type,
             node: node_id,
-            constant_value,
+            value: constant_value,
         });
 
         self.nodes[node_id].inputs.push((label, input_id));
@@ -193,6 +193,10 @@ impl Graph {
 
     pub fn input(&self, input_id: InputId) -> &Input {
         &self.inputs[input_id]
+    }
+
+    pub fn input_mut(&mut self, input_id: InputId) -> &mut Input {
+        &mut self.inputs[input_id]
     }
 
     pub fn add_output(

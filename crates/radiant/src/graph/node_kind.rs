@@ -1,11 +1,11 @@
-use std::collections::HashMap;
-
 use super::{
     error::GraphError,
     node::{Node, OutputValue},
     view::control::Control,
     DataType, Graph, NodeId, OutputId, ProcessingContext, Value,
 };
+use crate::graph::node::InputValue;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub enum NodeKind {
@@ -60,8 +60,24 @@ impl NodeKind {
                 );
             }
             Self::IntAdd => {
-                graph.add_input(node_id, "a".to_string(), DataType::Int, Value::Int(0));
-                graph.add_input(node_id, "b".to_string(), DataType::Int, Value::Int(0));
+                graph.add_input(
+                    node_id,
+                    "a".to_string(),
+                    DataType::Int,
+                    InputValue::Constant {
+                        value: Value::Int(0),
+                        control: Control::IntField,
+                    },
+                );
+                graph.add_input(
+                    node_id,
+                    "b".to_string(),
+                    DataType::Int,
+                    InputValue::Constant {
+                        value: Value::Int(0),
+                        control: Control::IntField,
+                    },
+                );
                 graph.add_output(
                     node_id,
                     "sum".to_string(),
@@ -70,7 +86,15 @@ impl NodeKind {
                 );
             }
             Self::Output => {
-                graph.add_input(node_id, "value".to_string(), DataType::Int, Value::Int(0));
+                graph.add_input(
+                    node_id,
+                    "value".to_string(),
+                    DataType::Int,
+                    InputValue::Constant {
+                        value: Value::Int(0),
+                        control: Control::IntField,
+                    },
+                );
             }
         }
     }
@@ -88,7 +112,10 @@ impl NodeKind {
             let input_id = node.input(input_name)?;
             let connection_id = graph.connection_source(input_id);
             let value = match connection_id {
-                None => graph.input(input_id).constant_value.clone(),
+                None => {
+                    let InputValue::Constant { value, .. } = graph.input(input_id).value.clone();
+                    value
+                }
                 Some(id) => graph.get_output_value(&id, context)?.clone(),
             };
             Ok(value)

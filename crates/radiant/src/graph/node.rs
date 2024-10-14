@@ -53,7 +53,7 @@ pub struct Input {
     pub id: InputId,
     pub data_type: DataType,
     pub node: NodeId,
-    pub constant_value: Value,
+    pub value: InputValue,
 }
 
 #[derive(Debug, Clone)]
@@ -67,6 +67,11 @@ pub struct Output {
 #[derive(Debug, Clone)]
 pub enum OutputValue {
     Computed,
+    Constant { value: Value, control: Control },
+}
+
+#[derive(Debug, Clone)]
+pub enum InputValue {
     Constant { value: Value, control: Control },
 }
 

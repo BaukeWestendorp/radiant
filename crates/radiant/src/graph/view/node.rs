@@ -3,6 +3,7 @@ use gpui::*;
 
 use ui::{theme::ActiveTheme, StyledExt};
 
+use crate::graph::node::InputValue;
 use crate::graph::{
     node::{Input, Node, Output, OutputValue, Socket},
     Graph, NodeId, Value,
@@ -52,6 +53,22 @@ impl NodeView {
                 move |(label, input_id)| {
                     let input = graph.read(cx).input(input_id).clone();
                     let input_view = InputView::build(input, label, graph.clone(), cx);
+
+                    cx.subscribe(&input_view, {
+                        let graph = graph.clone();
+                        move |_this, input_view, event, cx| {
+                            let input_id = input_view.read(cx).input.id;
+                            let ControlEvent::Change(new_value) = event;
+                            graph.update(cx, move |graph, cx| {
+                                let InputValue::Constant { value, .. } =
+                                    &mut graph.input_mut(input_id).value;
+                                *value = new_value.clone();
+
+                                cx.notify();
+                            });
+                        }
+                    })
+                    .detach();
 
                     // Propagate events from the input view to the graph
                     cx.subscribe(&input_view, |_this, _, event: &SocketEvent, cx| {
@@ -214,6 +231,7 @@ pub struct InputView {
     input: Input,
     label: String,
     graph: Model<Graph>,
+    control_view: AnyView,
 }
 
 impl InputView {
@@ -223,11 +241,24 @@ impl InputView {
         graph: Model<Graph>,
         cx: &mut WindowContext,
     ) -> View<Self> {
-        cx.new_view(|_cx| Self {
-            input,
-            label,
-            graph,
+        cx.new_view(|cx| {
+            let control_id: SharedString = format!("input-{:?}", input.id).into();
+            let InputValue::Constant { value, control } = input.value.clone();
+            let control_view = control.view(ElementId::Name(control_id), value, cx);
+            Self {
+                input,
+                label,
+                graph,
+                control_view,
+            }
         })
+    }
+
+    fn has_connection(&self, cx: &AppContext) -> bool {
+        self.graph
+            .read(cx)
+            .connection_source(self.input.id)
+            .is_some()
     }
 }
 
@@ -235,6 +266,7 @@ impl Render for InputView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .h_flex()
+            .pr_1()
             .h(SOCKET_HEIGHT)
             .gap_2()
             .child(render_connector(
@@ -243,6 +275,9 @@ impl Render for InputView {
                 cx,
             ))
             .child(self.label.clone())
+            .when(!self.has_connection(cx), |e| {
+                e.child(self.control_view.clone())
+            })
     }
 }
 
