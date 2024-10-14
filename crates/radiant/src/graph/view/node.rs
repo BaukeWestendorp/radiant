@@ -232,6 +232,7 @@ pub struct InputView {
     label: String,
     graph: Model<Graph>,
     control_view: AnyView,
+    hovering: bool,
 }
 
 impl InputView {
@@ -250,6 +251,7 @@ impl InputView {
                 label,
                 graph,
                 control_view,
+                hovering: false,
             }
         })
     }
@@ -272,6 +274,7 @@ impl Render for InputView {
             .child(render_connector(
                 &Socket::Input(self.input.id),
                 &self.graph,
+                self.hovering,
                 cx,
             ))
             .child(self.label.clone())
@@ -285,11 +288,18 @@ impl EventEmitter<ControlEvent> for InputView {}
 
 impl EventEmitter<SocketEvent> for InputView {}
 
+impl Hovering for InputView {
+    fn set_hovering(&mut self, hovering: bool) {
+        self.hovering = hovering;
+    }
+}
+
 pub struct OutputView {
     output: Output,
     label: String,
     control_view: Option<AnyView>,
     graph: Model<Graph>,
+    hovering: bool,
 }
 
 impl OutputView {
@@ -313,6 +323,7 @@ impl OutputView {
                 label,
                 control_view,
                 graph,
+                hovering: false,
             }
         })
     }
@@ -330,6 +341,7 @@ impl Render for OutputView {
             .child(render_connector(
                 &Socket::Output(self.output.id),
                 &self.graph,
+                self.hovering,
                 cx,
             ))
             .child(self.label.clone())
@@ -341,14 +353,21 @@ impl EventEmitter<SocketEvent> for OutputView {}
 
 impl EventEmitter<ControlEvent> for OutputView {}
 
-fn render_connector<V: EventEmitter<SocketEvent>>(
+impl Hovering for OutputView {
+    fn set_hovering(&mut self, hovering: bool) {
+        self.hovering = hovering;
+    }
+}
+
+fn render_connector<V: EventEmitter<SocketEvent> + Hovering>(
     socket: &Socket,
     graph: &Model<Graph>,
+    hovering: bool,
     cx: &ViewContext<V>,
 ) -> impl IntoElement {
     let width = px(3.0);
     let height = px(13.0);
-    let hover_box_size = px(19.0);
+    let hover_box_size = px(35.0);
 
     let left = match socket {
         Socket::Input(_) => false,
@@ -364,6 +383,7 @@ fn render_connector<V: EventEmitter<SocketEvent>>(
         .w(width)
         .h(height)
         .bg(data_type.color())
+        .when(hovering, |e| e.bg(white()))
         .rounded_r(cx.theme().radius)
         .when(left, |e| e.rounded_r_none().rounded_l(cx.theme().radius))
         .child(
@@ -373,6 +393,10 @@ fn render_connector<V: EventEmitter<SocketEvent>>(
                 .ml(width / 2.0 - hover_box_size / 2.0)
                 .mt(height / 2.0 - hover_box_size / 2.0)
                 .cursor_grab()
+                .on_hover(cx.listener(|this, hovering, cx| {
+                    this.set_hovering(*hovering);
+                    cx.notify();
+                }))
                 .on_drag(
                     SocketDrag {
                         socket: socket.clone(),
@@ -403,4 +427,8 @@ fn render_connector<V: EventEmitter<SocketEvent>>(
 
 struct SocketDrag {
     socket: Socket,
+}
+
+trait Hovering {
+    fn set_hovering(&mut self, hovering: bool);
 }

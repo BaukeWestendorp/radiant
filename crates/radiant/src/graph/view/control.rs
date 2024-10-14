@@ -71,8 +71,8 @@ impl Control {
                     field
                 });
                 cx.subscribe(&field, |_this, _field, event: &TextFieldEvent, cx| {
-                    if let TextFieldEvent::Change(stromg_value) = event {
-                        let value = Value::String(stromg_value.clone());
+                    if let TextFieldEvent::Change(string_value) = event {
+                        let value = Value::String(string_value.clone());
                         cx.emit(ControlEvent::Change(value));
                     }
                 })

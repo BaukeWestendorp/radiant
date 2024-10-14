@@ -58,7 +58,6 @@ fn register_actions(graph: &mut Model<Graph>, cx: &mut AppContext) {
             graph.update(cx, |graph, _cx| {
                 let mut context = ProcessingContext::default();
 
-                log::info!("Processing graph...");
                 graph.process(&mut context).unwrap();
                 log::info!("Output value: {}", context.output);
             });
