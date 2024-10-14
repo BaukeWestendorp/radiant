@@ -39,18 +39,68 @@ impl GraphView {
     }
 
     fn handle_socket_event(&mut self, event: &SocketEvent, cx: &mut ViewContext<Self>) {
+        let end_position = cx.mouse_position();
+
+        let square_dist = |a: Point<Pixels>, b: Point<Pixels>| {
+            let dx = a.x - b.x;
+            let dy = a.y - b.y;
+            dx * dx + dy * dy
+        };
+
+        let graph = self.graph.read(cx);
+        let input_ids = graph.inputs.keys().collect::<Vec<_>>();
+        let output_ids = graph.outputs.keys().collect::<Vec<_>>();
+
+        let find_closest_input = || {
+            for input_id in input_ids {
+                let input = graph.input(input_id);
+                let position = self.get_socket_position(input.node, &Socket::Input(input_id), cx);
+
+                if square_dist(position, end_position) < px(100.0) {
+                    return Some(input_id);
+                }
+            }
+            None
+        };
+
+        let find_closest_output = || {
+            for output_id in output_ids {
+                let output = graph.output(output_id);
+                let position =
+                    self.get_socket_position(output.node, &Socket::Output(output_id), cx);
+
+                if square_dist(position, end_position) < px(100.0) {
+                    return Some(output_id);
+                }
+            }
+            None
+        };
+
         match event {
             SocketEvent::StartNewConnection(socket) => {
                 match socket {
                     Socket::Input(input_id) => {
-                        self.new_connection = (None, Some(*input_id));
+                        let target_id = Some(*input_id);
+                        let source_id = match find_closest_output() {
+                            Some(closest_output) => Some(closest_output),
+                            None => None,
+                        };
+                        self.new_connection = (source_id, target_id);
+
                         self.graph.update(cx, |graph, cx| {
                             graph.remove_connection(*input_id);
                             cx.notify();
                         });
                     }
                     Socket::Output(output_id) => {
-                        self.new_connection = (Some(*output_id), None);
+                        let source_id = Some(*output_id);
+                        let target_id = match find_closest_input() {
+                            Some(closest_input) => Some(closest_input),
+                            None => None,
+                        };
+
+                        self.new_connection = (source_id, target_id);
+
                         self.graph.update(cx, |graph, cx| {
                             if let Some(input_id) = graph.connection_target(*output_id) {
                                 graph.remove_connection(input_id);
@@ -62,51 +112,31 @@ impl GraphView {
                 cx.notify();
             }
             SocketEvent::EndNewConnection => {
-                let end_position = cx.mouse_position();
-
-                let square_dist = |a: Point<Pixels>, b: Point<Pixels>| {
-                    let dx = a.x - b.x;
-                    let dy = a.y - b.y;
-                    dx * dx + dy * dy
-                };
-
                 match self.new_connection {
                     (Some(source_id), None) => {
-                        let graph = self.graph.read(cx);
-                        let input_ids = graph.inputs.keys().collect::<Vec<_>>();
-                        for input_id in input_ids {
-                            let input = self.graph.read(cx).input(input_id);
-                            let position =
-                                self.get_socket_position(input.node, &Socket::Input(input_id), cx);
-
-                            if square_dist(position, end_position) < px(100.0) {
-                                self.graph.update(cx, |graph, cx| {
-                                    graph.add_connection(input_id, source_id);
-                                    cx.notify();
-                                });
+                        if let Some(closest_input) = find_closest_input() {
+                            self.graph.update(cx, |graph, cx| {
+                                graph.add_connection(closest_input, source_id);
                                 cx.notify();
-                            }
+                            });
+                            cx.notify();
                         }
                     }
                     (None, Some(target_id)) => {
-                        let graph = self.graph.read(cx);
-                        let output_ids = graph.outputs.keys().collect::<Vec<_>>();
-                        for output_id in output_ids {
-                            let output = self.graph.read(cx).output(output_id);
-                            let position = self.get_socket_position(
-                                output.node,
-                                &Socket::Output(output_id),
-                                cx,
-                            );
-
-                            if square_dist(position, end_position) < px(100.0) {
-                                self.graph.update(cx, |graph, cx| {
-                                    graph.add_connection(target_id, output_id);
-                                    cx.notify();
-                                });
+                        if let Some(closest_output) = find_closest_output() {
+                            self.graph.update(cx, |graph, cx| {
+                                graph.add_connection(target_id, closest_output);
                                 cx.notify();
-                            }
+                            });
+                            cx.notify();
                         }
+                    }
+                    (Some(source_id), Some(target_id)) => {
+                        self.graph.update(cx, |graph, cx| {
+                            graph.add_connection(target_id, source_id);
+                            cx.notify();
+                        });
+                        cx.notify();
                     }
                     _ => {}
                 }
