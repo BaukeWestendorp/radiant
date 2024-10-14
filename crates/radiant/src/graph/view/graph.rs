@@ -85,6 +85,13 @@ impl GraphView {
                             Some(closest_output) => Some(closest_output),
                             None => None,
                         };
+
+                        if let Some(source_id) = source_id {
+                            if !graph.check_connection_validity(*input_id, source_id) {
+                                return;
+                            }
+                        }
+
                         self.new_connection = (source_id, target_id);
 
                         self.graph.update(cx, |graph, cx| {
@@ -98,6 +105,12 @@ impl GraphView {
                             Some(closest_input) => Some(closest_input),
                             None => None,
                         };
+
+                        if let Some(target_id) = target_id {
+                            if !graph.check_connection_validity(target_id, *output_id) {
+                                return;
+                            }
+                        }
 
                         self.new_connection = (source_id, target_id);
 

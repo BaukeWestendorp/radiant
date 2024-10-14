@@ -287,7 +287,7 @@ impl Graph {
         })
     }
 
-    fn check_connection_validity(&self, target_id: InputId, source_id: OutputId) -> bool {
+    pub fn check_connection_validity(&self, target_id: InputId, source_id: OutputId) -> bool {
         let target_data_type = &self.input(target_id).data_type;
         let source_data_type = &self.output(source_id).data_type;
         source_data_type
