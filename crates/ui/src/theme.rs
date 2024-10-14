@@ -1,9 +1,6 @@
 use std::ops::Deref;
 
-use gpui::{
-    hsla, px, AppContext, Global, Hsla, ModelContext, Pixels, SharedString, ViewContext,
-    WindowContext,
-};
+use gpui::*;
 
 pub trait ActiveTheme {
     fn theme(&self) -> &Theme;
@@ -33,7 +30,7 @@ impl<'a> ActiveTheme for WindowContext<'a> {
     }
 }
 
-/// Make a [gpui::Hsla] color.
+/// Make a [Hsla] color.
 ///
 /// - h: 0..360.0
 /// - s: 0.0..100.0

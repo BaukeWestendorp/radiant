@@ -1,3 +1,4 @@
+use crate::graph::view::editor::EditorView;
 use gpui::*;
 use graph::node::OutputValue;
 use graph::node_kind::NodeKind;
@@ -17,6 +18,7 @@ fn main() {
     App::new().with_assets(assets::Assets).run(|cx| {
         cx.set_global(Theme::default());
         ui::init(cx);
+        graph::view::editor::init(cx);
 
         cx.bind_keys([
             KeyBinding::new("p", ProcessGraph, None),
@@ -44,7 +46,7 @@ fn main() {
             ..Default::default()
         };
 
-        cx.open_window(options, |cx| GraphView::build(graph, cx))
+        cx.open_window(options, |cx| EditorView::build(graph, cx))
             .unwrap();
 
         cx.activate(true);

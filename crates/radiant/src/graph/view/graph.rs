@@ -1,5 +1,5 @@
 use gpui::*;
-use ui::{theme::ActiveTheme, z_stack};
+use ui::z_stack;
 
 use crate::graph::{node::Socket, DataType, Graph, InputId, NodeId, OutputId};
 
@@ -333,9 +333,5 @@ impl Render for GraphView {
             self.render_new_connection(cx),
         ])
         .size_full()
-        .bg(cx.theme().background)
-        .text_color(cx.theme().foreground)
-        .text_size(cx.theme().font_size)
-        .font_family(cx.theme().font_family.clone())
     }
 }
