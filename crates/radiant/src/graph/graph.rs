@@ -18,7 +18,7 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn try_cast_to(&self, target: DataType) -> Result<Self, GraphError> {
+    pub fn try_cast_to(&self, target: &DataType) -> Result<Self, GraphError> {
         match (&self, target) {
             (Self::Int(_), DataType::Int) => Ok(self.clone()),
             (Self::Int(v), DataType::Float) => Ok(Self::Float(*v as f32)),
@@ -88,6 +88,14 @@ impl DataType {
             DataType::Int => rgb(0xD137FF).into(),
             DataType::Float => rgb(0x37D1FF).into(),
             DataType::String => rgb(0xFFD137).into(),
+        }
+    }
+
+    pub fn default_value(&self) -> Value {
+        match self {
+            DataType::Int => Value::Int(Default::default()),
+            DataType::Float => Value::Float(Default::default()),
+            DataType::String => Value::String(Default::default()),
         }
     }
 }
@@ -251,6 +259,10 @@ impl Graph {
     }
 
     pub fn add_connection(&mut self, target_id: InputId, source_id: OutputId) {
+        if !self.check_connection_validity(target_id, source_id) {
+            return;
+        }
+
         self.connections.insert(target_id, source_id);
 
         let source_node = self.output(source_id).node;
@@ -273,6 +285,15 @@ impl Graph {
                 None
             }
         })
+    }
+
+    fn check_connection_validity(&self, target_id: InputId, source_id: OutputId) -> bool {
+        let target_data_type = &self.input(target_id).data_type;
+        let source_data_type = &self.output(source_id).data_type;
+        source_data_type
+            .default_value()
+            .try_cast_to(&target_data_type)
+            .is_ok()
     }
 
     pub fn process(&self, context: &mut ProcessingContext) -> Result<(), GraphError> {

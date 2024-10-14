@@ -135,10 +135,10 @@ impl NodeKind {
                 context.output = value;
             }
             Self::IntAdd => {
-                let Value::Int(a) = value_for_input(node, "a")?.try_cast_to(DataType::Int)? else {
+                let Value::Int(a) = value_for_input(node, "a")?.try_cast_to(&DataType::Int)? else {
                     panic!("Invalid Cast");
                 };
-                let Value::Int(b) = value_for_input(node, "b")?.try_cast_to(DataType::Int)? else {
+                let Value::Int(b) = value_for_input(node, "b")?.try_cast_to(&DataType::Int)? else {
                     panic!("Invalid Cast");
                 };
 
