@@ -53,6 +53,7 @@ pub struct Input {
     pub id: InputId,
     pub data_type: DataType,
     pub node: NodeId,
+    pub constant_value: Value,
 }
 
 #[derive(Debug, Clone)]

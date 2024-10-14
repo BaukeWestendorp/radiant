@@ -164,11 +164,18 @@ impl Graph {
         &mut self.nodes[node_id]
     }
 
-    pub fn add_input(&mut self, node_id: NodeId, label: String, data_type: DataType) -> InputId {
+    pub fn add_input(
+        &mut self,
+        node_id: NodeId,
+        label: String,
+        data_type: DataType,
+        constant_value: Value,
+    ) -> InputId {
         let input_id = self.inputs.insert_with_key(|input_id| Input {
             id: input_id,
             data_type,
             node: node_id,
+            constant_value,
         });
 
         self.nodes[node_id].inputs.push((label, input_id));

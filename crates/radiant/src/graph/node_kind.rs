@@ -60,8 +60,8 @@ impl NodeKind {
                 );
             }
             Self::IntAdd => {
-                graph.add_input(node_id, "a".to_string(), DataType::Int);
-                graph.add_input(node_id, "b".to_string(), DataType::Int);
+                graph.add_input(node_id, "a".to_string(), DataType::Int, Value::Int(0));
+                graph.add_input(node_id, "b".to_string(), DataType::Int, Value::Int(0));
                 graph.add_output(
                     node_id,
                     "sum".to_string(),
@@ -70,7 +70,7 @@ impl NodeKind {
                 );
             }
             Self::Output => {
-                graph.add_input(node_id, "value".to_string(), DataType::Int);
+                graph.add_input(node_id, "value".to_string(), DataType::Int, Value::Int(0));
             }
         }
     }
@@ -85,8 +85,12 @@ impl NodeKind {
         Self: Sized,
     {
         let mut value_for_input = |node: &Node, input_name: &str| -> Result<Value, GraphError> {
-            let connection_id = graph.connection_source(node.input(input_name)?).unwrap();
-            let value = graph.get_output_value(&connection_id, context)?.clone();
+            let input_id = node.input(input_name)?;
+            let connection_id = graph.connection_source(input_id);
+            let value = match connection_id {
+                None => graph.input(input_id).constant_value.clone(),
+                Some(id) => graph.get_output_value(&id, context)?.clone(),
+            };
             Ok(value)
         };
 
