@@ -3,7 +3,7 @@ use std::ops::RangeInclusive;
 use gpui::*;
 use prelude::FluentBuilder;
 
-use crate::{theme::ActiveTheme, StyledExt};
+use crate::{bounds_updater, theme::ActiveTheme, StyledExt};
 
 use super::{NumberField, NumberFieldEvent};
 
@@ -106,19 +106,6 @@ impl Render for Slider {
         let focused = focus_handle.is_focused(cx);
         let number_field = self.number_field.clone();
 
-        let bounds_updater = div()
-            .size_full()
-            .child({
-                let view = cx.view().clone();
-                canvas(
-                    move |bounds, cx| view.update(cx, |this, _cx| this.slider_bounds = bounds),
-                    |_, _, _| {},
-                )
-                .absolute()
-                .size_full()
-            })
-            .into_any_element();
-
         let diff = *self.range.end() - *self.range.start();
         let relative_value = (self.value(cx) / diff).clamp(0.0, 1.0);
         let slider_background = div()
@@ -138,7 +125,9 @@ impl Render for Slider {
             .rounded(cx.theme().radius)
             .cursor_ew_resize()
             .child(slider_background)
-            .child(bounds_updater)
+            .child(bounds_updater(cx.view().clone(), |this, bounds, _cx| {
+                this.slider_bounds = bounds
+            }))
             .on_drag(
                 Drag {
                     id: self.id.clone(),

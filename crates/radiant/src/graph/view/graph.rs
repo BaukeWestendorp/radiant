@@ -1,5 +1,5 @@
 use gpui::*;
-use ui::z_stack;
+use ui::{bounds_updater, z_stack};
 
 use crate::graph::{node::Socket, DataType, Graph, GraphEvent, InputId, NodeId, OutputId};
 
@@ -357,20 +357,14 @@ impl GraphView {
 
 impl Render for GraphView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let bounds_updater = div().size_full().child({
-            let view = cx.view().clone();
-            canvas(
-                move |bounds, cx| view.update(cx, |this, _cx| this.bounds = bounds),
-                |_, _, _| {},
-            )
-            .size_full()
-        });
-
         z_stack([
             div().children(self.nodes.clone()),
             self.render_connections(cx),
             self.render_new_connection(cx),
-            bounds_updater,
+            div().child(bounds_updater(
+                cx.view().clone(),
+                |this: &mut Self, bounds, _cx| this.bounds = bounds,
+            )),
         ])
         .size_full()
     }

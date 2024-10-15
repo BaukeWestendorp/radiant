@@ -53,3 +53,15 @@ pub trait InteractiveElementExt: InteractiveElement {
 }
 
 impl<E: InteractiveElement> InteractiveElementExt for Focusable<E> {}
+
+pub fn bounds_updater<V: 'static>(
+    view: View<V>,
+    f: impl FnOnce(&mut V, Bounds<Pixels>, &mut ViewContext<V>) + 'static,
+) -> impl IntoElement {
+    let view = view.clone();
+    canvas(
+        move |bounds, cx| view.update(cx, |view, cx| f(view, bounds, cx)),
+        |_, _, _| {},
+    )
+    .size_full()
+}
