@@ -2,8 +2,6 @@ use crate::graph::view::editor::EditorView;
 use gpui::*;
 use graph::node::OutputValue;
 use graph::node_kind::NodeKind;
-use graph::view::graph::GraphView;
-use graph::view::node::ControlEvent;
 use graph::{Graph, ProcessingContext, Value};
 use ui::theme::Theme;
 
@@ -70,8 +68,6 @@ fn register_actions(graph: &mut Model<Graph>, cx: &mut AppContext) {
         cx.quit();
     });
 }
-
-impl EventEmitter<ControlEvent> for GraphView {}
 
 fn create_graph() -> Graph {
     let mut graph = Graph::new();

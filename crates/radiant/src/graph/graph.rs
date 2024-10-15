@@ -252,7 +252,10 @@ impl Graph {
             OutputValue::Computed => {
                 let node = self.node(output.node);
                 let result = node.process(context, self)?;
-                Ok(result.get(&output_id).unwrap().clone())
+                Ok(result
+                    .get(&output_id)
+                    .expect("An output value should always be generated after processing")
+                    .clone())
             }
             OutputValue::Constant { value, .. } => Ok(value.clone()),
         }

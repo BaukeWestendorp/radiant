@@ -136,10 +136,10 @@ impl NodeKind {
             }
             Self::IntAdd => {
                 let Value::Int(a) = value_for_input(node, "a")?.try_cast_to(&DataType::Int)? else {
-                    panic!("Invalid Cast");
+                    return Err(GraphError::CastFailed);
                 };
                 let Value::Int(b) = value_for_input(node, "b")?.try_cast_to(&DataType::Int)? else {
-                    panic!("Invalid Cast");
+                    return Err(GraphError::CastFailed);
                 };
 
                 let sum = a + b;

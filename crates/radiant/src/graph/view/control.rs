@@ -32,7 +32,9 @@ impl Control {
             Self::IntField => {
                 let field = cx.new_view(|cx| {
                     let mut int_field = NumberField::new(cx);
-                    let value: i32 = initial_value.try_into().unwrap();
+                    let value: i32 = initial_value
+                        .try_into()
+                        .expect("IntField should have i32 value");
                     int_field.set_value(value as f32, cx);
                     int_field.set_validate(Some(Box::new(|v| v.parse::<i32>().is_ok())), cx);
                     int_field
@@ -50,7 +52,9 @@ impl Control {
             Self::FloatField => {
                 let field = cx.new_view(|cx| {
                     let mut field = NumberField::new(cx);
-                    let value: f32 = initial_value.try_into().unwrap();
+                    let value: f32 = initial_value
+                        .try_into()
+                        .expect("FloatField should have f32 value");
                     field.set_value(value, cx);
                     field
                 });
@@ -66,7 +70,9 @@ impl Control {
             Self::TextField => {
                 let field = cx.new_view(|cx| {
                     let mut field = TextField::new(cx);
-                    let value: SharedString = initial_value.try_into().unwrap();
+                    let value: SharedString = initial_value
+                        .try_into()
+                        .expect("TextField should have SharedString value");
                     field.set_value(value, cx);
                     field
                 });
@@ -87,7 +93,9 @@ impl Control {
             } => {
                 let slider = cx.new_view(|cx| {
                     let mut slider = Slider::new(id, cx);
-                    let value: f32 = initial_value.try_into().unwrap();
+                    let value: f32 = initial_value
+                        .try_into()
+                        .expect("Slider should have f32 value");
                     slider.set_value(value, cx);
                     slider.set_step(*step, cx);
                     slider.set_range(range.clone(), cx);
