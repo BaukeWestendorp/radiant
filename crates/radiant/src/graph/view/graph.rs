@@ -14,7 +14,7 @@ pub struct GraphView {
 
 impl GraphView {
     pub fn build(graph: Model<Graph>, cx: &mut WindowContext) -> View<Self> {
-        let graph = cx.new_view(|cx| {
+        cx.new_view(|cx| {
             cx.subscribe(&graph, Self::handle_graph_event).detach();
 
             Self {
@@ -23,14 +23,11 @@ impl GraphView {
                 new_connection: (None, None),
                 bounds: Bounds::default(),
             }
-        });
-
-        graph
+        })
     }
 
     fn build_nodes(graph: &Model<Graph>, cx: &mut ViewContext<Self>) -> Vec<View<NodeView>> {
         let nodes = graph.read(cx).node_ids().collect::<Vec<_>>();
-
         nodes
             .into_iter()
             .map(|id| Self::build_node(id, graph.clone(), cx))
@@ -71,15 +68,15 @@ impl GraphView {
     fn handle_socket_event(&mut self, event: &SocketEvent, cx: &mut ViewContext<Self>) {
         let end_position = cx.mouse_position() - self.bounds.origin;
 
+        let graph = self.graph.read(cx);
+        let input_ids = graph.inputs.keys().collect::<Vec<_>>();
+        let output_ids = graph.outputs.keys().collect::<Vec<_>>();
+
         let square_dist = |a: Point<Pixels>, b: Point<Pixels>| {
             let dx = a.x - b.x;
             let dy = a.y - b.y;
             dx * dx + dy * dy
         };
-
-        let graph = self.graph.read(cx);
-        let input_ids = graph.inputs.keys().collect::<Vec<_>>();
-        let output_ids = graph.outputs.keys().collect::<Vec<_>>();
 
         let find_closest_input = || {
             for input_id in input_ids {
@@ -116,6 +113,7 @@ impl GraphView {
                             None => None,
                         };
 
+                        // Don't allow connecting two uncastable types.
                         if let Some(source_id) = source_id {
                             if !graph.check_connection_validity(*input_id, source_id) {
                                 return;
@@ -124,6 +122,7 @@ impl GraphView {
 
                         self.new_connection = (source_id, target_id);
 
+                        // Remove the existing connection
                         self.graph.update(cx, |graph, cx| {
                             graph.remove_connection(*input_id);
                             cx.notify();
@@ -136,6 +135,7 @@ impl GraphView {
                             None => None,
                         };
 
+                        // Don't allow connecting two uncastable types.
                         if let Some(target_id) = target_id {
                             if !graph.check_connection_validity(target_id, *output_id) {
                                 return;
@@ -144,6 +144,7 @@ impl GraphView {
 
                         self.new_connection = (source_id, target_id);
 
+                        // Remove the existing connection
                         self.graph.update(cx, |graph, cx| {
                             if let Some(input_id) = graph.connection_target(*output_id) {
                                 graph.remove_connection(input_id);
@@ -155,31 +156,29 @@ impl GraphView {
                 cx.notify();
             }
             SocketEvent::EndNewConnection => {
+                let update_graph = |input_id, output_id, cx: &mut ViewContext<Self>| {
+                    self.graph.update(cx, |graph, cx| {
+                        graph.add_connection(input_id, output_id);
+                        cx.notify();
+                    });
+                    cx.notify();
+                };
+
                 match self.new_connection {
                     (Some(source_id), None) => {
+                        // If we find a connector nearby, use that socket.
                         if let Some(closest_input) = find_closest_input() {
-                            self.graph.update(cx, |graph, cx| {
-                                graph.add_connection(closest_input, source_id);
-                                cx.notify();
-                            });
-                            cx.notify();
+                            update_graph(closest_input, source_id, cx);
                         }
                     }
                     (None, Some(target_id)) => {
+                        // If we find a connector nearby, use that socket.
                         if let Some(closest_output) = find_closest_output() {
-                            self.graph.update(cx, |graph, cx| {
-                                graph.add_connection(target_id, closest_output);
-                                cx.notify();
-                            });
-                            cx.notify();
+                            update_graph(target_id, closest_output, cx);
                         }
                     }
                     (Some(source_id), Some(target_id)) => {
-                        self.graph.update(cx, |graph, cx| {
-                            graph.add_connection(target_id, source_id);
-                            cx.notify();
-                        });
-                        cx.notify();
+                        update_graph(target_id, source_id, cx);
                     }
                     _ => {}
                 }
@@ -209,26 +208,22 @@ impl GraphView {
     }
 
     fn render_new_connection(&self, cx: &ViewContext<Self>) -> Div {
-        let (source_pos, target_pos, source_data_type, target_data_type) = match self.new_connection
-        {
+        let relative_mouse_pos = cx.mouse_position() - self.bounds.origin;
+        let (source_pos, target_pos, source_type, target_type) = match self.new_connection {
             (None, None) => return div(),
             (None, Some(target_id)) => {
                 let target = self.graph.read(cx).input(target_id);
                 let target_pos =
                     self.get_socket_position(target.node, &Socket::Input(target_id), cx);
-                let source_pos = cx.mouse_position() - self.bounds.origin;
-                let source_data_type = &target.data_type;
-                let target_data_type = &target.data_type;
-                (source_pos, target_pos, source_data_type, target_data_type)
+                let source_pos = relative_mouse_pos;
+                (source_pos, target_pos, &target.data_type, &target.data_type)
             }
             (Some(source_id), None) => {
                 let source = self.graph.read(cx).output(source_id);
                 let source_pos =
                     self.get_socket_position(source.node, &Socket::Output(source_id), cx);
-                let target_pos = cx.mouse_position() - self.bounds.origin;
-                let source_data_type = &source.data_type;
-                let target_data_type = &source.data_type;
-                (source_pos, target_pos, source_data_type, target_data_type)
+                let target_pos = relative_mouse_pos;
+                (source_pos, target_pos, &source.data_type, &source.data_type)
             }
             (Some(source_id), Some(target_id)) => {
                 let source = self.graph.read(cx).output(source_id);
@@ -237,13 +232,11 @@ impl GraphView {
                     self.get_socket_position(source.node, &Socket::Output(source_id), cx);
                 let target_pos =
                     self.get_socket_position(target.node, &Socket::Input(target_id), cx);
-                let source_data_type = &source.data_type;
-                let target_data_type = &target.data_type;
-                (source_pos, target_pos, source_data_type, target_data_type)
+                (source_pos, target_pos, &source.data_type, &target.data_type)
             }
         };
 
-        self.render_connection(&source_pos, &target_pos, source_data_type, target_data_type)
+        self.render_connection(&source_pos, &target_pos, source_type, target_type)
     }
 
     fn render_connection(
