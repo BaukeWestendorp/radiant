@@ -111,7 +111,7 @@ impl Render for Slider {
             .child({
                 let view = cx.view().clone();
                 canvas(
-                    move |bounds, cx| view.update(cx, |view, _cx| view.slider_bounds = bounds),
+                    move |bounds, cx| view.update(cx, |this, _cx| this.slider_bounds = bounds),
                     |_, _, _| {},
                 )
                 .absolute()

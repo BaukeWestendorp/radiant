@@ -9,6 +9,7 @@ pub struct GraphView {
     graph: Model<Graph>,
     nodes: Vec<View<NodeView>>,
     new_connection: (Option<OutputId>, Option<InputId>),
+    bounds: Bounds<Pixels>,
 }
 
 impl GraphView {
@@ -20,6 +21,7 @@ impl GraphView {
                 nodes: Self::build_nodes(&graph, cx),
                 graph,
                 new_connection: (None, None),
+                bounds: Bounds::default(),
             }
         });
 
@@ -67,7 +69,7 @@ impl GraphView {
     }
 
     fn handle_socket_event(&mut self, event: &SocketEvent, cx: &mut ViewContext<Self>) {
-        let end_position = cx.mouse_position();
+        let end_position = cx.mouse_position() - self.bounds.origin;
 
         let square_dist = |a: Point<Pixels>, b: Point<Pixels>| {
             let dx = a.x - b.x;
@@ -214,7 +216,7 @@ impl GraphView {
                 let target = self.graph.read(cx).input(target_id);
                 let target_pos =
                     self.get_socket_position(target.node, &Socket::Input(target_id), cx);
-                let source_pos = cx.mouse_position();
+                let source_pos = cx.mouse_position() - self.bounds.origin;
                 let source_data_type = &target.data_type;
                 let target_data_type = &target.data_type;
                 (source_pos, target_pos, source_data_type, target_data_type)
@@ -223,7 +225,7 @@ impl GraphView {
                 let source = self.graph.read(cx).output(source_id);
                 let source_pos =
                     self.get_socket_position(source.node, &Socket::Output(source_id), cx);
-                let target_pos = cx.mouse_position();
+                let target_pos = cx.mouse_position() - self.bounds.origin;
                 let source_data_type = &source.data_type;
                 let target_data_type = &source.data_type;
                 (source_pos, target_pos, source_data_type, target_data_type)
@@ -355,10 +357,20 @@ impl GraphView {
 
 impl Render for GraphView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        let bounds_updater = div().size_full().child({
+            let view = cx.view().clone();
+            canvas(
+                move |bounds, cx| view.update(cx, |this, _cx| this.bounds = bounds),
+                |_, _, _| {},
+            )
+            .size_full()
+        });
+
         z_stack([
             div().children(self.nodes.clone()),
             self.render_connections(cx),
             self.render_new_connection(cx),
+            bounds_updater,
         ])
         .size_full()
     }
