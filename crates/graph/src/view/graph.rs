@@ -1,9 +1,9 @@
+use super::node::{self, NodeView, SocketEvent};
+use crate::graph::{Graph, GraphEvent, InputId, NodeId, OutputId};
+use crate::node::Socket;
+use crate::DataType;
 use gpui::*;
 use ui::{bounds_updater, z_stack};
-
-use crate::graph::{node::Socket, DataType, Graph, GraphEvent, InputId, NodeId, OutputId};
-
-use super::node::{self, NodeView, SocketEvent};
 
 const NEW_CONNECTOR_SNAP_DISTANCE: f32 = 18.0;
 

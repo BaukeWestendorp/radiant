@@ -1,12 +1,11 @@
-use crate::graph::view::editor::EditorView;
 use gpui::*;
 use graph::node::OutputValue;
+use graph::view::editor::EditorView;
 use graph::NodeKind;
 use graph::{Graph, ProcessingContext, Value};
 use ui::theme::Theme;
 
 mod assets;
-pub mod graph;
 
 actions!(app, [ProcessGraph, Quit]);
 

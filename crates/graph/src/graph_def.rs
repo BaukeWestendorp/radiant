@@ -1,7 +1,7 @@
-use crate::graph::error::GraphError;
-use crate::graph::node::{InputValue, Node, OutputValue};
-use crate::graph::view::control::Control;
+use crate::error::GraphError;
 use crate::graph::{Graph, NodeId, ProcessingResult};
+use crate::node::{InputValue, Node, OutputValue};
+use crate::view::control::Control;
 use gpui::{rgb, Hsla, SharedString};
 use std::collections::HashMap;
 
@@ -13,7 +13,7 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn try_cast_to(&self, target: &DataType) -> anyhow::Result<Self, GraphError> {
+    pub fn try_cast_to(&self, target: &DataType) -> Result<Self, GraphError> {
         match (&self, target) {
             (Self::Int(_), DataType::Int) => Ok(self.clone()),
             (Self::Int(v), DataType::Float) => Ok(Self::Float(*v as f32)),
@@ -29,7 +29,7 @@ impl Value {
 impl TryInto<i32> for Value {
     type Error = GraphError;
 
-    fn try_into(self) -> anyhow::Result<i32, Self::Error> {
+    fn try_into(self) -> Result<i32, Self::Error> {
         match self {
             Self::Int(v) => Ok(v),
             _ => Err(GraphError::CastFailed),
@@ -40,7 +40,7 @@ impl TryInto<i32> for Value {
 impl TryInto<f32> for Value {
     type Error = GraphError;
 
-    fn try_into(self) -> anyhow::Result<f32, Self::Error> {
+    fn try_into(self) -> Result<f32, Self::Error> {
         match self {
             Self::Float(v) => Ok(v),
             _ => Err(GraphError::CastFailed),
@@ -51,7 +51,7 @@ impl TryInto<f32> for Value {
 impl TryInto<SharedString> for Value {
     type Error = GraphError;
 
-    fn try_into(self) -> anyhow::Result<SharedString, Self::Error> {
+    fn try_into(self) -> Result<SharedString, Self::Error> {
         match self {
             Self::String(v) => Ok(v),
             _ => Err(GraphError::CastFailed),
@@ -62,7 +62,7 @@ impl TryInto<SharedString> for Value {
 impl TryInto<String> for Value {
     type Error = GraphError;
 
-    fn try_into(self) -> anyhow::Result<String, Self::Error> {
+    fn try_into(self) -> Result<String, Self::Error> {
         match self {
             Self::String(v) => Ok(v.to_string()),
             _ => Err(GraphError::CastFailed),

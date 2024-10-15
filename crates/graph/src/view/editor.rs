@@ -1,13 +1,13 @@
-use crate::graph::NodeKind;
-use crate::graph::view::graph::GraphView;
 use crate::graph::{Graph, GraphEvent};
+use crate::view::graph::GraphView;
+use crate::NodeKind;
 use gpui::*;
 use strum::IntoEnumIterator;
 use ui::input::TextField;
 use ui::theme::ActiveTheme;
 use ui::StyledExt;
 
-actions!(graph_editor, [OpenNodeContextMenu, CloseNodeContextMenu,]);
+actions!(graph_editor, [OpenNodeContextMenu, CloseNodeContextMenu]);
 
 const CONTEXT: &str = "GraphEditor";
 

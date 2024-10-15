@@ -3,7 +3,7 @@ use std::ops::RangeInclusive;
 use gpui::*;
 use ui::input::{NumberField, Slider, SliderEvent, TextField, TextFieldEvent};
 
-use crate::graph::Value;
+use crate::Value;
 
 use super::node::ControlEvent;
 

@@ -1,13 +1,9 @@
 use gpui::prelude::FluentBuilder;
 use gpui::*;
 
+use crate::node::{Input, InputValue, Node, Output, OutputValue, Socket};
+use crate::{Graph, NodeId, Value};
 use ui::{theme::ActiveTheme, StyledExt};
-
-use crate::graph::node::InputValue;
-use crate::graph::{
-    node::{Input, Node, Output, OutputValue, Socket},
-    Graph, NodeId, Value,
-};
 
 pub(crate) const NODE_CONTENT_Y_PADDING: Pixels = px(6.0);
 pub(crate) const NODE_WIDTH: Pixels = px(200.0);

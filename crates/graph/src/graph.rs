@@ -1,6 +1,6 @@
 use super::error::GraphError;
 use super::node::{Input, InputValue, Node, Output, OutputValue};
-use crate::graph::{DataType, NodeKind, ProcessingContext, Value};
+use crate::{DataType, NodeKind, ProcessingContext, Value};
 use gpui::*;
 use slotmap::{SecondaryMap, SlotMap};
 use std::collections::HashMap;

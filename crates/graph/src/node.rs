@@ -1,7 +1,7 @@
 use gpui::*;
 
 use super::{
-    super::NodeKind, error::GraphError, view::control::Control, DataType, Graph, InputId, NodeId,
+    error::GraphError, view::control::Control, DataType, Graph, InputId, NodeId, NodeKind,
     OutputId, ProcessingContext, ProcessingResult, Value,
 };
 
