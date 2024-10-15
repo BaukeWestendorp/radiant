@@ -1,8 +1,8 @@
 use gpui::*;
 
 use super::{
-    super::NodeKind, error::GraphError, node_kind::ProcessingResult, view::control::Control,
-    DataType, Graph, InputId, NodeId, OutputId, ProcessingContext, Value,
+    super::NodeKind, error::GraphError, view::control::Control, DataType, Graph, InputId, NodeId,
+    OutputId, ProcessingContext, ProcessingResult, Value,
 };
 
 #[derive(Debug, Clone)]

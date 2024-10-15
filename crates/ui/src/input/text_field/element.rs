@@ -78,17 +78,40 @@ impl Element for TextElement {
             (value, cx.theme().foreground)
         };
 
-        let runs = if display_text.is_empty() {
-            vec![]
+        let run = TextRun {
+            len: display_text.len(),
+            font: style.font(),
+            color: text_color,
+            background_color: None,
+            underline: None,
+            strikethrough: None,
+        };
+
+        let runs = if let Some(marked_range) = field.marked_range.as_ref() {
+            vec![
+                TextRun {
+                    len: marked_range.start,
+                    ..run.clone()
+                },
+                TextRun {
+                    len: marked_range.end - marked_range.start,
+                    underline: Some(UnderlineStyle {
+                        color: Some(run.color),
+                        thickness: px(1.0),
+                        wavy: false,
+                    }),
+                    ..run.clone()
+                },
+                TextRun {
+                    len: display_text.len() - marked_range.end,
+                    ..run.clone()
+                },
+            ]
+            .into_iter()
+            .filter(|run| run.len > 0)
+            .collect()
         } else {
-            vec![TextRun {
-                len: display_text.len(),
-                font: style.font(),
-                color: text_color,
-                background_color: None,
-                underline: None,
-                strikethrough: None,
-            }]
+            vec![run]
         };
 
         let font_size = style.font_size.to_pixels(cx.rem_size());

@@ -1,7 +1,7 @@
 use crate::graph::view::editor::EditorView;
 use gpui::*;
 use graph::node::OutputValue;
-use graph::node_kind::NodeKind;
+use graph::NodeKind;
 use graph::{Graph, ProcessingContext, Value};
 use ui::theme::Theme;
 

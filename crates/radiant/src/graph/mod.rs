@@ -1,7 +1,8 @@
 pub mod error;
 pub mod graph;
+mod graph_def;
 pub mod node;
-pub mod node_kind;
 pub mod view;
 
 pub use graph::*;
+pub use graph_def::*;

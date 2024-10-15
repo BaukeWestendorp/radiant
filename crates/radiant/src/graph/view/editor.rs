@@ -1,4 +1,4 @@
-use crate::graph::node_kind::NodeKind;
+use crate::graph::NodeKind;
 use crate::graph::view::graph::GraphView;
 use crate::graph::{Graph, GraphEvent};
 use gpui::*;
@@ -99,7 +99,11 @@ struct NewNodeContextMenu {
 impl NewNodeContextMenu {
     pub fn build(graph: Model<Graph>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
-            let search_box = cx.new_view(|cx| TextField::new(cx));
+            let search_box = cx.new_view(|cx| {
+                let mut field = TextField::new(cx);
+                field.set_placeholder("Search".into());
+                field
+            });
 
             Self {
                 graph,
@@ -137,7 +141,6 @@ impl NewNodeContextMenu {
             .p_1()
             .border_b_1()
             .border_color(cx.theme().border)
-            .child("Search")
             .child(self.search_box.clone())
     }
 

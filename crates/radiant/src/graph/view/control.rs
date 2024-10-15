@@ -58,6 +58,7 @@ impl Control {
                     field.set_value(value, cx);
                     field
                 });
+
                 cx.subscribe(&field, |_this, _field, event: &NumberFieldEvent, cx| {
                     let NumberFieldEvent::Change(float_value) = event;
                     let value = Value::Float(*float_value);
@@ -76,6 +77,7 @@ impl Control {
                     field.set_value(value, cx);
                     field
                 });
+
                 cx.subscribe(&field, |_this, _field, event: &TextFieldEvent, cx| {
                     if let TextFieldEvent::Change(string_value) = event {
                         let value = Value::String(string_value.clone());
@@ -102,6 +104,7 @@ impl Control {
                     slider.set_strict(*strict);
                     slider
                 });
+
                 cx.subscribe(&slider, |_this, _slider, event: &SliderEvent, cx| {
                     let SliderEvent::Change(value) = event;
                     cx.emit(ControlEvent::Change(Value::Float(*value)));

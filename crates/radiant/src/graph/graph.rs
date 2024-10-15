@@ -1,108 +1,14 @@
 use super::error::GraphError;
 use super::node::{Input, InputValue, Node, Output, OutputValue};
-use super::node_kind::NodeKind;
+use crate::graph::{DataType, NodeKind, ProcessingContext, Value};
 use gpui::*;
 use slotmap::{SecondaryMap, SlotMap};
+use std::collections::HashMap;
 
 slotmap::new_key_type! {
     pub struct NodeId;
     pub struct InputId;
     pub struct OutputId;
-}
-
-#[derive(Debug, Clone)]
-pub enum Value {
-    Int(i32),
-    Float(f32),
-    String(SharedString),
-}
-
-impl Value {
-    pub fn try_cast_to(&self, target: &DataType) -> Result<Self, GraphError> {
-        match (&self, target) {
-            (Self::Int(_), DataType::Int) => Ok(self.clone()),
-            (Self::Int(v), DataType::Float) => Ok(Self::Float(*v as f32)),
-
-            (Self::Float(v), DataType::Int) => Ok(Self::Int(*v as i32)),
-            (Self::Float(_), DataType::Float) => Ok(self.clone()),
-
-            _ => Err(GraphError::CastFailed),
-        }
-    }
-}
-
-impl TryInto<i32> for Value {
-    type Error = GraphError;
-
-    fn try_into(self) -> Result<i32, Self::Error> {
-        match self {
-            Self::Int(v) => Ok(v),
-            _ => Err(GraphError::CastFailed),
-        }
-    }
-}
-
-impl TryInto<f32> for Value {
-    type Error = GraphError;
-
-    fn try_into(self) -> Result<f32, Self::Error> {
-        match self {
-            Self::Float(v) => Ok(v),
-            _ => Err(GraphError::CastFailed),
-        }
-    }
-}
-
-impl TryInto<SharedString> for Value {
-    type Error = GraphError;
-
-    fn try_into(self) -> Result<SharedString, Self::Error> {
-        match self {
-            Self::String(v) => Ok(v),
-            _ => Err(GraphError::CastFailed),
-        }
-    }
-}
-
-impl TryInto<String> for Value {
-    type Error = GraphError;
-
-    fn try_into(self) -> Result<String, Self::Error> {
-        match self {
-            Self::String(v) => Ok(v.to_string()),
-            _ => Err(GraphError::CastFailed),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum DataType {
-    Int,
-    Float,
-    String,
-}
-
-impl DataType {
-    pub fn color(&self) -> Hsla {
-        match self {
-            DataType::Int => rgb(0xD137FF).into(),
-            DataType::Float => rgb(0x37D1FF).into(),
-            DataType::String => rgb(0xFFD137).into(),
-        }
-    }
-
-    pub fn default_value(&self) -> Value {
-        match self {
-            DataType::Int => Value::Int(Default::default()),
-            DataType::Float => Value::Float(Default::default()),
-            DataType::String => Value::String(Default::default()),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct ProcessingContext {
-    pub output: i32,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -319,3 +225,5 @@ impl EventEmitter<GraphEvent> for Graph {}
 pub enum GraphEvent {
     AddNode(NodeKind, Point<Pixels>),
 }
+
+pub type ProcessingResult = HashMap<OutputId, Value>;
