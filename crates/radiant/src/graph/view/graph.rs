@@ -1,7 +1,7 @@
 use gpui::*;
 use ui::z_stack;
 
-use crate::graph::{node::Socket, DataType, Graph, InputId, NodeId, OutputId};
+use crate::graph::{node::Socket, DataType, Graph, GraphEvent, InputId, NodeId, OutputId};
 
 use super::node::{self, NodeView, SocketEvent};
 
@@ -13,10 +13,14 @@ pub struct GraphView {
 
 impl GraphView {
     pub fn build(graph: Model<Graph>, cx: &mut WindowContext) -> View<Self> {
-        let graph = cx.new_view(|cx| Self {
-            nodes: Self::build_nodes(&graph, cx),
-            graph,
-            new_connection: (None, None),
+        let graph = cx.new_view(|cx| {
+            cx.subscribe(&graph, Self::handle_graph_event).detach();
+
+            Self {
+                nodes: Self::build_nodes(&graph, cx),
+                graph,
+                new_connection: (None, None),
+            }
         });
 
         graph
@@ -27,15 +31,39 @@ impl GraphView {
 
         nodes
             .into_iter()
-            .map(|id| {
-                let node_view = NodeView::build(id, graph.clone(), cx);
-                cx.subscribe(&node_view, |this, _, event: &SocketEvent, cx| {
-                    this.handle_socket_event(event, cx);
-                })
-                .detach();
-                node_view
-            })
+            .map(|id| Self::build_node(id, graph.clone(), cx))
             .collect()
+    }
+
+    fn build_node(
+        id: NodeId,
+        graph: Model<Graph>,
+        cx: &mut ViewContext<GraphView>,
+    ) -> View<NodeView> {
+        let node_view = NodeView::build(id, graph.clone(), cx);
+        cx.subscribe(&node_view, |this, _, event: &SocketEvent, cx| {
+            this.handle_socket_event(event, cx);
+        })
+        .detach();
+        node_view
+    }
+
+    fn handle_graph_event(
+        &mut self,
+        _graph: Model<Graph>,
+        event: &GraphEvent,
+        cx: &mut ViewContext<Self>,
+    ) {
+        match event {
+            GraphEvent::AddNode(node_kind, position) => {
+                let node_id = self.graph.update(cx, |graph, _cx| {
+                    graph.add_node(node_kind.clone(), *position)
+                });
+
+                let node_view = Self::build_node(node_id, self.graph.clone(), cx);
+                self.nodes.push(node_view)
+            }
+        }
     }
 
     fn handle_socket_event(&mut self, event: &SocketEvent, cx: &mut ViewContext<Self>) {

@@ -7,7 +7,7 @@ use super::{
 use crate::graph::node::InputValue;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, strum::EnumIter)]
 pub enum NodeKind {
     NewInt,
     NewFloat,

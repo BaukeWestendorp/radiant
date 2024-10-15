@@ -309,3 +309,10 @@ impl Graph {
         self.graph_ends.retain(|id| id != node_id);
     }
 }
+
+impl EventEmitter<GraphEvent> for Graph {}
+
+#[derive(Debug, Clone)]
+pub enum GraphEvent {
+    AddNode(NodeKind, Point<Pixels>),
+}
