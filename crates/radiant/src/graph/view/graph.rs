@@ -5,6 +5,8 @@ use crate::graph::{node::Socket, DataType, Graph, GraphEvent, InputId, NodeId, O
 
 use super::node::{self, NodeView, SocketEvent};
 
+const NEW_CONNECTOR_SNAP_DISTANCE: f32 = 18.0;
+
 pub struct GraphView {
     graph: Model<Graph>,
     nodes: Vec<View<NodeView>>,
@@ -72,6 +74,8 @@ impl GraphView {
         let input_ids = graph.inputs.keys().collect::<Vec<_>>();
         let output_ids = graph.outputs.keys().collect::<Vec<_>>();
 
+        let squared_snap_distance = NEW_CONNECTOR_SNAP_DISTANCE * NEW_CONNECTOR_SNAP_DISTANCE;
+
         let square_dist = |a: Point<Pixels>, b: Point<Pixels>| {
             let dx = a.x - b.x;
             let dy = a.y - b.y;
@@ -83,7 +87,7 @@ impl GraphView {
                 let input = graph.input(input_id);
                 let position = self.get_socket_position(input.node, &Socket::Input(input_id), cx);
 
-                if square_dist(position, end_position) < px(100.0) {
+                if square_dist(position, end_position) < px(squared_snap_distance) {
                     return Some(input_id);
                 }
             }
@@ -96,7 +100,7 @@ impl GraphView {
                 let position =
                     self.get_socket_position(output.node, &Socket::Output(output_id), cx);
 
-                if square_dist(position, end_position) < px(100.0) {
+                if square_dist(position, end_position) < px(squared_snap_distance) {
                     return Some(output_id);
                 }
             }
