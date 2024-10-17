@@ -100,7 +100,7 @@ pub struct ProcessingContext {
     pub output: i32,
 }
 
-#[derive(Debug, Clone, strum::EnumIter)]
+#[derive(Debug, Clone, PartialEq, strum::EnumIter)]
 pub enum NodeKind {
     NewInt,
     NewFloat,

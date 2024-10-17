@@ -18,14 +18,14 @@ pub fn init(cx: &mut AppContext) {
     ]);
 }
 
-pub struct EditorView {
+pub struct GraphEditorView {
     graph_view: View<GraphView>,
     new_node_context_menu: View<NewNodeContextMenu>,
 
     focus_handle: FocusHandle,
 }
 
-impl EditorView {
+impl GraphEditorView {
     pub fn build(graph: Model<Graph>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
             let graph_view = GraphView::build(graph.clone(), cx);
@@ -65,7 +65,7 @@ impl EditorView {
     }
 }
 
-impl Render for EditorView {
+impl Render for GraphEditorView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .key_context(CONTEXT)
@@ -73,17 +73,13 @@ impl Render for EditorView {
             .on_action(cx.listener(Self::open_node_context_menu))
             .on_action(cx.listener(Self::close_node_context_menu))
             .size_full()
-            .bg(cx.theme().background)
-            .text_color(cx.theme().foreground)
-            .text_size(cx.theme().font_size)
-            .font_family(cx.theme().font_family.clone())
             .child(self.render_header(cx))
             .child(self.graph_view.clone())
             .child(self.new_node_context_menu.clone())
     }
 }
 
-impl FocusableView for EditorView {
+impl FocusableView for GraphEditorView {
     fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
         self.focus_handle.clone()
     }

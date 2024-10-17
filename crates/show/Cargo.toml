@@ -1,0 +1,9 @@
+[package]
+name = "show"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+graph.workspace = true
+
+slotmap.workspace = true

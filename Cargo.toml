@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/radiant", "crates/ui", "crates/graph"]
+members = ["crates/radiant", "crates/ui", "crates/graph", "crates/show"]
 resolver = "2"
 
 [workspace.package]
@@ -9,6 +9,7 @@ edition = "2021"
 [workspace.dependencies]
 ui = { path = "crates/ui" }
 graph = { path = "crates/graph" }
+show = { path = "crates/show" }
 
 gpui = { git = "https://github.com/zed-industries/zed.git" }
 

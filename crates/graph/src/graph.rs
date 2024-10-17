@@ -36,13 +36,13 @@ impl Graph {
         self.nodes.keys()
     }
 
-    pub fn add_node(&mut self, kind: NodeKind, position: Point<Pixels>) -> NodeId {
+    pub fn add_node(&mut self, kind: NodeKind, x: f32, y: f32) -> NodeId {
         let node_id = self.nodes.insert_with_key(|node_id| Node {
             id: node_id,
             kind: kind.clone(),
             inputs: Vec::new(),
             outputs: Vec::new(),
-            position,
+            position: point(px(x), px(y)),
         });
 
         self.graph_ends.push(node_id);

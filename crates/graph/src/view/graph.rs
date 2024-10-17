@@ -58,7 +58,7 @@ impl GraphView {
         match event {
             GraphEvent::AddNode(node_kind, position) => {
                 let node_id = self.graph.update(cx, |graph, _cx| {
-                    graph.add_node(node_kind.clone(), *position)
+                    graph.add_node(node_kind.clone(), position.x.into(), position.y.into())
                 });
 
                 let node_view = Self::build_node(node_id, self.graph.clone(), cx);
