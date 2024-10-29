@@ -4,6 +4,11 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-graph.workspace = true
+flow.workspace = true
+flow_gpui.workspace = true
+gpui.workspace = true
+ui.workspace = true
 
 slotmap.workspace = true
+
+strum = { version = "0.26.3", features = ["derive"] }

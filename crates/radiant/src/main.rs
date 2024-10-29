@@ -14,7 +14,7 @@ fn main() {
     App::new().with_assets(assets::Assets).run(|cx| {
         cx.set_global(Theme::default());
         ui::init(cx);
-        graph::view::editor::init(cx);
+        flow_gpui::init(cx);
 
         let show = Show::default();
 

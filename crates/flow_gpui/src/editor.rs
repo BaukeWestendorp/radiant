@@ -1,6 +1,7 @@
-use crate::graph::{Graph, GraphEvent};
-use crate::view::graph::GraphView;
-use crate::NodeKind;
+use crate::graph::{GraphEvent, GraphView};
+use crate::{VisualControl, VisualDataType, VisualNodeData};
+use flow::graph::Graph;
+use flow::graph_def::{GraphDefinition, NodeKind};
 use gpui::*;
 use ui::input::TextField;
 use ui::theme::ActiveTheme;
@@ -17,15 +18,20 @@ pub fn init(cx: &mut AppContext) {
     ]);
 }
 
-pub struct GraphEditorView {
-    graph_view: View<GraphView>,
-    new_node_context_menu: View<NewNodeContextMenu>,
+pub struct GraphEditorView<Def: GraphDefinition> {
+    graph_view: View<GraphView<Def>>,
+    new_node_context_menu: View<NewNodeContextMenu<Def>>,
 
     focus_handle: FocusHandle,
 }
 
-impl GraphEditorView {
-    pub fn build(graph: Model<Graph>, cx: &mut WindowContext) -> View<Self> {
+impl<Def: GraphDefinition + 'static> GraphEditorView<Def>
+where
+    Def::NodeData: VisualNodeData,
+    Def::DataType: VisualDataType,
+    Def::Control: VisualControl<Def>,
+{
+    pub fn build(graph: Model<Graph<Def>>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
             let graph_view = GraphView::build(graph.clone(), cx);
             let new_node_context_menu = NewNodeContextMenu::build(graph, cx);
@@ -64,7 +70,12 @@ impl GraphEditorView {
     }
 }
 
-impl Render for GraphEditorView {
+impl<Def: GraphDefinition + 'static> Render for GraphEditorView<Def>
+where
+    Def::NodeData: VisualNodeData,
+    Def::DataType: VisualDataType,
+    Def::Control: VisualControl<Def>,
+{
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .key_context(CONTEXT)
@@ -78,21 +89,29 @@ impl Render for GraphEditorView {
     }
 }
 
-impl FocusableView for GraphEditorView {
+impl<Def: GraphDefinition + 'static> FocusableView for GraphEditorView<Def>
+where
+    Def::DataType: VisualDataType,
+    Def::NodeData: VisualNodeData,
+    Def::Control: VisualControl<Def>,
+{
     fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
         self.focus_handle.clone()
     }
 }
 
-struct NewNodeContextMenu {
-    graph: Model<Graph>,
+struct NewNodeContextMenu<Def: GraphDefinition> {
+    graph: Model<Graph<Def>>,
     shown: bool,
     position: Point<Pixels>,
     search_box: View<TextField>,
 }
 
-impl NewNodeContextMenu {
-    pub fn build(graph: Model<Graph>, cx: &mut WindowContext) -> View<Self> {
+impl<Def: GraphDefinition + 'static> NewNodeContextMenu<Def>
+where
+    Def::NodeData: VisualNodeData,
+{
+    pub fn build(graph: Model<Graph<Def>>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
             let search_box = cx.new_view(|cx| {
                 let mut field = TextField::new(cx);
@@ -109,22 +128,30 @@ impl NewNodeContextMenu {
         })
     }
 
-    pub fn show<V: 'static>(&mut self, cx: &mut ViewContext<V>) {
+    pub fn show<View: 'static>(&mut self, cx: &mut ViewContext<View>) {
         self.shown = true;
         self.position = cx.mouse_position();
         self.search_box.focus_handle(cx).focus(cx);
         cx.notify();
     }
 
-    pub fn hide<V: 'static>(&mut self, cx: &mut ViewContext<V>) {
+    pub fn hide<View: 'static>(&mut self, cx: &mut ViewContext<View>) {
         self.shown = false;
         cx.notify();
     }
 
-    fn create_new_node(&self, node_kind: NodeKind, cx: &mut WindowContext) {
-        let position = self.position;
+    fn create_new_node(
+        &self,
+        node_kind: Def::NodeKind,
+        mut data: Def::NodeData,
+        cx: &mut WindowContext,
+    ) {
+        data.set_position(self.position);
         self.graph.update(cx, |_graph, cx| {
-            cx.emit(GraphEvent::AddNode(node_kind, position));
+            cx.emit(GraphEvent::AddNode {
+                kind: node_kind,
+                data,
+            });
         });
     }
 
@@ -141,13 +168,13 @@ impl NewNodeContextMenu {
 
     fn render_node_list(&self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let filter = self.search_box.read(cx).value();
-        let nodes = NodeKind::iter()
+        let nodes = Def::NodeKind::all()
             .filter(|n| n.label().to_lowercase().contains(&filter.to_lowercase()))
             .collect::<Vec<_>>();
         let node_count = nodes.len();
 
         let render_list_item = move |ix, cx: &ViewContext<Self>| -> AnyElement {
-            let node_kind: &NodeKind = &nodes[ix];
+            let node_kind: &Def::NodeKind = &nodes[ix];
             let label = node_kind.label().to_string();
 
             div()
@@ -163,7 +190,8 @@ impl NewNodeContextMenu {
                     cx.listener({
                         let node_kind = node_kind.clone();
                         move |this, _, cx| {
-                            this.create_new_node(node_kind.clone(), cx);
+                            let data = <Def::NodeData as Default>::default();
+                            this.create_new_node(node_kind.clone(), data, cx);
                             this.hide(cx);
                         }
                     }),
@@ -187,7 +215,10 @@ impl NewNodeContextMenu {
     }
 }
 
-impl Render for NewNodeContextMenu {
+impl<Def: GraphDefinition + 'static> Render for NewNodeContextMenu<Def>
+where
+    Def::NodeData: VisualNodeData,
+{
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         if !self.shown {
             return div();

@@ -1455,6 +1455,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ce81f49ae8a0482e4c55ea62ebbd7e5a686af544c00b9d090bba3ff9be97b3d"
 
 [[package]]
+name = "flow"
+version = "0.1.0"
+dependencies = [
+ "slotmap",
+ "thiserror",
+]
+
+[[package]]
+name = "flow_gpui"
+version = "0.1.0"
+dependencies = [
+ "flow",
+ "gpui",
+ "ui",
+]
+
+[[package]]
 name = "flume"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1907,7 +1924,6 @@ version = "0.1.0"
 dependencies = [
  "gpui",
  "slotmap",
- "strum 0.26.3",
  "thiserror",
  "ui",
 ]
@@ -3027,8 +3043,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "env_logger",
+ "flow_gpui",
  "gpui",
- "graph",
  "log",
  "rust-embed",
  "show",
@@ -3549,8 +3565,12 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 name = "show"
 version = "0.1.0"
 dependencies = [
- "graph",
+ "flow",
+ "flow_gpui",
+ "gpui",
  "slotmap",
+ "strum 0.26.3",
+ "ui",
 ]
 
 [[package]]

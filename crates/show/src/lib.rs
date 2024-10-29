@@ -1,41 +1,29 @@
-use graph::node::OutputValue;
-use graph::{Graph, NodeKind, Value};
-use slotmap::SlotMap;
+use crate::effect_graph::{
+    EffectGraph, EffectGraphNodeData, EffectGraphNodeKind, EffectGraphValue,
+};
+use crate::fixture::{AttributeValue, Fixture, FixtureId};
+use flow::OutputParameterKind;
+use gpui::{point, px};
 
-slotmap::new_key_type! {
-    pub struct FixtureId;
-}
-
-pub struct Fixture {
-    id: FixtureId,
-}
-
-impl Fixture {
-    pub fn new(id: FixtureId) -> Self {
-        Self { id }
-    }
-
-    pub fn id(&self) -> FixtureId {
-        self.id
-    }
-}
+pub mod effect_graph;
+pub mod fixture;
 
 pub struct Show {
-    fixtures: SlotMap<FixtureId, Fixture>,
+    fixtures: Vec<Fixture>,
 
-    effect_graph: Graph,
+    effect_graph: EffectGraph,
 }
 
 impl Show {
-    pub fn fixtures(&self) -> impl Iterator<Item = (FixtureId, &Fixture)> {
+    pub fn fixtures(&self) -> impl Iterator<Item = &Fixture> {
         self.fixtures.iter()
     }
 
-    pub fn fixture(&self, id: FixtureId) -> Option<&Fixture> {
-        self.fixtures.get(id)
+    pub fn fixture(&self, id: &FixtureId) -> Option<&Fixture> {
+        self.fixtures.iter().find(|f| f.id() == id)
     }
 
-    pub fn effect_graph(&self) -> &Graph {
+    pub fn effect_graph(&self) -> &EffectGraph {
         &self.effect_graph
     }
 }
@@ -44,8 +32,8 @@ impl Default for Show {
     fn default() -> Self {
         Self {
             fixtures: {
-                let mut fixtures = SlotMap::default();
-                fixtures.insert_with_key(|id| Fixture::new(id));
+                let mut fixtures = Vec::default();
+                fixtures.push(Fixture::new(FixtureId(0)));
                 fixtures
             },
             effect_graph: create_example_graph(),
@@ -53,57 +41,56 @@ impl Default for Show {
     }
 }
 
-fn create_example_graph() -> Graph {
-    let mut graph = Graph::new();
+fn create_example_graph() -> EffectGraph {
+    let mut graph = EffectGraph::new();
 
-    let a_node_id = graph.add_node(NodeKind::NewInt, 50.0, 50.0);
-    let b_node_id = graph.add_node(NodeKind::NewFloat, 50.0, 150.0);
-    let new_string_node_id = graph.add_node(NodeKind::NewString, 50.0, 250.0);
-    let add_node_id = graph.add_node(NodeKind::IntAdd, 300.0, 100.0);
-    let output_node_id = graph.add_node(NodeKind::Output, 550.0, 100.0);
-
-    if let OutputValue::Constant { value, .. } = &mut graph
-        .output_mut(graph.node(a_node_id).output("value").unwrap())
-        .value
-    {
-        *value = Value::Int(42);
-    }
-
-    if let OutputValue::Constant { value, .. } = &mut graph
-        .output_mut(graph.node(b_node_id).output("value").unwrap())
-        .value
-    {
-        *value = Value::Float(0.33);
-    }
-
-    if let OutputValue::Constant { value, .. } = &mut graph
-        .output_mut(graph.node(new_string_node_id).output("value").unwrap())
-        .value
-    {
-        *value = Value::String("Hello, world!".into());
-    }
-
-    graph.add_connection(
-        graph.input(graph.node(add_node_id).input("a").unwrap()).id,
-        graph
-            .output(graph.node(a_node_id).output("value").unwrap())
-            .id,
+    let fixture_id_node_id = graph.add_node(
+        EffectGraphNodeKind::FixtureId,
+        EffectGraphNodeData {
+            position: point(px(50.0), px(50.0)),
+        },
+    );
+    let attribute_value_node_id = graph.add_node(
+        EffectGraphNodeKind::AttributeValue,
+        EffectGraphNodeData {
+            position: point(px(50.0), px(250.0)),
+        },
+    );
+    let set_attribute_node_id = graph.add_node(
+        EffectGraphNodeKind::SetFixtureAttribute,
+        EffectGraphNodeData {
+            position: point(px(350.0), px(150.0)),
+        },
     );
 
-    graph.add_connection(
-        graph.input(graph.node(add_node_id).input("b").unwrap()).id,
-        graph
-            .output(graph.node(b_node_id).output("value").unwrap())
-            .id,
+    if let OutputParameterKind::Constant { value, .. } = &mut graph
+        .output_mut(graph.node(fixture_id_node_id).output("id").id)
+        .kind
+    {
+        *value = EffectGraphValue::FixtureId(FixtureId(42))
+    }
+
+    if let OutputParameterKind::Constant { value, .. } = &mut graph
+        .output_mut(graph.node(attribute_value_node_id).output("value").id)
+        .kind
+    {
+        *value = EffectGraphValue::AttributeValue(AttributeValue::new(0.5))
+    }
+
+    graph.add_edge(
+        graph.node(fixture_id_node_id).output("id").id,
+        graph.node(set_attribute_node_id).input("id").id,
     );
 
-    graph.add_connection(
-        graph
-            .input(graph.node(output_node_id).input("value").unwrap())
-            .id,
-        graph
-            .output(graph.node(add_node_id).output("sum").unwrap())
-            .id,
+    graph.add_edge(
+        graph.node(attribute_value_node_id).output("value").id,
+        graph.node(set_attribute_node_id).input("ColorAdd_R").id,
     );
+
+    graph.add_edge(
+        graph.node(attribute_value_node_id).output("value").id,
+        graph.node(set_attribute_node_id).input("ColorAdd_G").id,
+    );
+
     graph
 }

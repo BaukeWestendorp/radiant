@@ -6,7 +6,7 @@ edition.workspace = true
 [dependencies]
 show.workspace = true
 ui.workspace = true
-graph.workspace = true
+flow_gpui.workspace = true
 
 gpui.workspace = true
 anyhow.workspace = true
