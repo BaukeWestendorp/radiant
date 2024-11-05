@@ -8,7 +8,9 @@ flow.workspace = true
 flow_gpui.workspace = true
 gpui.workspace = true
 ui.workspace = true
+dmx.workspace = true
 
 slotmap.workspace = true
 
 strum = { version = "0.26.3", features = ["derive"] }
+anyhow.workspace = true

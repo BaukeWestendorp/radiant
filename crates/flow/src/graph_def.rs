@@ -1,6 +1,7 @@
 use crate::error::GraphError;
 use crate::graph::Graph;
-use crate::NodeId;
+use crate::{NodeId, OutputId};
+use std::collections::HashMap;
 
 pub trait GraphDefinition: Sized + Clone {
     type NodeKind: NodeKind<Self> + Clone;
@@ -20,7 +21,7 @@ pub trait NodeKind<Def: GraphDefinition> {
         node_id: NodeId,
         context: &mut Self::ProcessingContext,
         graph: &Graph<Def>,
-    ) -> Result<ProcessingResult, GraphError>;
+    ) -> Result<ProcessingResult<Def>, GraphError>;
 
     fn label(&self) -> &'static str;
 
@@ -29,8 +30,28 @@ pub trait NodeKind<Def: GraphDefinition> {
     fn all() -> impl Iterator<Item = Self>;
 }
 
-#[derive(Debug, Clone)]
-pub struct ProcessingResult {}
+#[derive(Debug, Clone, Default)]
+pub struct ProcessingResult<Def: GraphDefinition> {
+    values: HashMap<OutputId, Def::Value>,
+}
+
+impl<Def: GraphDefinition> ProcessingResult<Def> {
+    pub fn new() -> Self {
+        Self {
+            values: HashMap::new(),
+        }
+    }
+
+    pub fn get_value(&self, id: &OutputId) -> &Def::Value {
+        self.values
+            .get(id)
+            .expect("output value should always be set after processing a node")
+    }
+
+    pub fn set_value(&mut self, id: OutputId, value: Def::Value) {
+        self.values.insert(id, value);
+    }
+}
 
 pub trait Value<Def: GraphDefinition> {
     fn try_cast_to(&self, target: &Def::DataType) -> Result<Self, GraphError>

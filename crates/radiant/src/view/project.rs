@@ -5,18 +5,28 @@ use show::Show;
 use ui::theme::ActiveTheme;
 
 pub struct ProjectView {
+    show: Model<Show>,
     editor_view: View<GraphEditorView<EffectGraphDefinition>>,
     focus_handle: FocusHandle,
 }
 
 impl ProjectView {
-    pub fn build(show: Show, cx: &mut WindowContext) -> View<Self> {
+    pub fn build(show: Model<Show>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
-            let effect_graph = show.effect_graph().clone();
-            let graph_model = cx.new_model(|_cx| effect_graph);
-            let editor_view = GraphEditorView::build(graph_model, cx);
+            let effect_graph = show.read(cx).effect_graph().clone();
+            let effect_graph_model = cx.new_model(|_cx| effect_graph);
+
+            cx.observe(&effect_graph_model, |this: &mut Self, model, cx| {
+                this.show.update(cx, |show, cx| {
+                    *show.effect_graph_mut() = model.read(cx).clone()
+                });
+            })
+            .detach();
+
+            let editor_view = GraphEditorView::build(effect_graph_model, cx);
             let focus_handle = cx.focus_handle().clone();
             Self {
+                show,
                 editor_view,
                 focus_handle,
             }

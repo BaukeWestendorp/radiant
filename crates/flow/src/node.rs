@@ -1,4 +1,6 @@
-use crate::graph_def::NodeKind;
+use crate::error::GraphError;
+use crate::graph::Graph;
+use crate::graph_def::{NodeKind, ProcessingResult};
 use crate::{GraphDefinition, InputId, NodeId, OutputId};
 
 #[derive(Debug, Clone)]
@@ -23,7 +25,10 @@ impl<Def: GraphDefinition> Node<Def> {
         self.inputs
             .iter()
             .find(|i| i.label == label)
-            .expect("Tried to get input parameter with nonexistent label")
+            .expect(&format!(
+            "Tried to get input parameter with nonexistent label: '{label}' not found on '{}' node",
+            self.kind.label()
+        ))
     }
 
     pub fn inputs(&self) -> &[NodeInputParameter] {
@@ -50,6 +55,14 @@ impl<Def: GraphDefinition> Node<Def> {
 
     pub fn output_ids(&self) -> impl Iterator<Item = OutputId> + '_ {
         self.outputs.iter().map(|i| i.id)
+    }
+
+    pub fn process(
+        &self,
+        context: &mut <Def::NodeKind as NodeKind<Def>>::ProcessingContext,
+        graph: &Graph<Def>,
+    ) -> Result<ProcessingResult<Def>, GraphError> {
+        self.kind.process(self.id, context, graph)
     }
 }
 

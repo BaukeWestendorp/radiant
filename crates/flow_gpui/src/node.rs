@@ -64,11 +64,7 @@ where
                             let ControlEvent::Change(new_value) = event;
                             graph.update(cx, move |graph, cx| {
                                 let InputParameterKind::EdgeOrConstant { value, .. } =
-                                    &mut graph.input_mut(input_id).kind
-                                else {
-                                    todo!()
-                                };
-
+                                    &mut graph.input_mut(input_id).kind;
                                 *value = new_value.clone();
 
                                 cx.notify();
@@ -270,13 +266,6 @@ where
                         hovering: false,
                     }
                 }
-                InputParameterKind::RequiresEdge => Self {
-                    input_id,
-                    label,
-                    graph,
-                    control_view: None,
-                    hovering: false,
-                },
             }
         })
     }

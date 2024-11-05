@@ -5,6 +5,8 @@ pub mod graph;
 pub mod graph_def;
 pub mod node;
 
+pub use error::*;
+
 slotmap::new_key_type! {
     pub struct NodeId;
     pub struct InputId;
@@ -33,7 +35,6 @@ impl<Def: GraphDefinition> Input<Def> {
 
 #[derive(Clone)]
 pub enum InputParameterKind<Def: GraphDefinition> {
-    RequiresEdge,
     EdgeOrConstant {
         value: Def::Value,
         control: Def::Control,

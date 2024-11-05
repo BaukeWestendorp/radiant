@@ -4,6 +4,7 @@ use show::Show;
 use ui::theme::Theme;
 
 mod assets;
+mod io;
 mod view;
 
 actions!(app, [Quit]);
@@ -15,8 +16,8 @@ fn main() {
         cx.set_global(Theme::default());
         ui::init(cx);
         flow_gpui::init(cx);
-
-        let show = Show::default();
+        let show = cx.new_model(|_cx| Show::default());
+        io::init(show.clone(), cx);
 
         cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
 

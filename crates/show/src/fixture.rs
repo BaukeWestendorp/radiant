@@ -39,6 +39,10 @@ impl AttributeValue {
     pub fn relative_value(&self) -> f32 {
         self.value
     }
+
+    pub fn byte(&self) -> u8 {
+        (self.value * 255f32) as u8
+    }
 }
 
 impl Default for AttributeValue {

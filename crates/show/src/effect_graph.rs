@@ -1,7 +1,9 @@
 use crate::fixture::{AttributeValue, FixtureId};
+use dmx::{DmxChannel, DmxOutput};
 use flow::error::GraphError;
 use flow::graph::Graph;
 use flow::graph_def::{Control, DataType, GraphDefinition, NodeKind, ProcessingResult, Value};
+use flow::node::Node;
 use flow::{InputParameterKind, NodeId, OutputParameterKind};
 use flow_gpui::node::ControlEvent;
 use flow_gpui::{VisualControl, VisualDataType, VisualNodeData};
@@ -12,7 +14,7 @@ use strum::IntoEnumIterator;
 use ui::input::{NumberField, Slider, SliderEvent};
 
 #[derive(Clone)]
-pub struct EffectGraphDefinition {}
+pub struct EffectGraphDefinition;
 
 impl GraphDefinition for EffectGraphDefinition {
     type NodeKind = EffectGraphNodeKind;
@@ -29,10 +31,11 @@ pub enum EffectGraphNodeKind {
     FixtureId,
     AttributeValue,
     SetFixtureAttribute,
+    SetFixtureChannelValue,
 }
 
 impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
-    type ProcessingContext = ();
+    type ProcessingContext = EffectGraphProcessingContext;
 
     fn build(&self, graph: &mut EffectGraph, node_id: NodeId) {
         match self {
@@ -60,25 +63,57 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
                     node_id,
                     "id".to_string(),
                     EffectGraphDataType::FixtureId,
-                    InputParameterKind::RequiresEdge,
+                    InputParameterKind::EdgeOrConstant {
+                        value: EffectGraphValue::FixtureId(FixtureId::default()),
+                        control: EffectGraphControl::FixtureId,
+                    },
                 );
                 graph.add_input(
                     node_id,
                     "ColorAdd_R".to_string(),
                     EffectGraphDataType::AttributeValue,
-                    InputParameterKind::RequiresEdge,
+                    InputParameterKind::EdgeOrConstant {
+                        value: EffectGraphValue::AttributeValue(AttributeValue::default()),
+                        control: EffectGraphControl::AttributeValue,
+                    },
                 );
                 graph.add_input(
                     node_id,
                     "ColorAdd_G".to_string(),
                     EffectGraphDataType::AttributeValue,
-                    InputParameterKind::RequiresEdge,
+                    InputParameterKind::EdgeOrConstant {
+                        value: EffectGraphValue::AttributeValue(AttributeValue::default()),
+                        control: EffectGraphControl::AttributeValue,
+                    },
                 );
                 graph.add_input(
                     node_id,
                     "ColorAdd_B".to_string(),
                     EffectGraphDataType::AttributeValue,
-                    InputParameterKind::RequiresEdge,
+                    InputParameterKind::EdgeOrConstant {
+                        value: EffectGraphValue::AttributeValue(AttributeValue::default()),
+                        control: EffectGraphControl::AttributeValue,
+                    },
+                );
+            }
+            Self::SetFixtureChannelValue => {
+                graph.add_input(
+                    node_id,
+                    "channel".to_string(),
+                    EffectGraphDataType::DmxChannel,
+                    InputParameterKind::EdgeOrConstant {
+                        value: EffectGraphValue::DmxChannel(DmxChannel::default()),
+                        control: EffectGraphControl::DmxChannel,
+                    },
+                );
+                graph.add_input(
+                    node_id,
+                    "value".to_string(),
+                    EffectGraphDataType::AttributeValue,
+                    InputParameterKind::EdgeOrConstant {
+                        value: EffectGraphValue::AttributeValue(AttributeValue::default()),
+                        control: EffectGraphControl::AttributeValue,
+                    },
                 );
             }
         }
@@ -86,11 +121,51 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
 
     fn process(
         &self,
-        _node_id: NodeId,
-        _context: &mut Self::ProcessingContext,
-        _graph: &EffectGraph,
-    ) -> Result<ProcessingResult, GraphError> {
-        todo!();
+        node_id: NodeId,
+        context: &mut Self::ProcessingContext,
+        graph: &EffectGraph,
+    ) -> Result<ProcessingResult<EffectGraphDefinition>, GraphError> {
+        let node = graph.node(node_id);
+        let processing_result = ProcessingResult::<EffectGraphDefinition>::new();
+
+        let mut value_for_input = |node: &Node<EffectGraphDefinition>,
+                                   input_name: &str|
+         -> Result<EffectGraphValue, GraphError> {
+            let input_id = node.input(input_name).id;
+            let connection_id = graph.edge_source(input_id);
+            let value = match connection_id {
+                None => {
+                    let InputParameterKind::EdgeOrConstant { value, .. } =
+                        graph.input(input_id).kind.clone();
+                    value
+                }
+                Some(id) => graph.get_output_value(&id, context)?.clone(),
+            };
+            Ok(value)
+        };
+
+        match node.kind() {
+            EffectGraphNodeKind::FixtureId => {}
+            EffectGraphNodeKind::AttributeValue => {}
+            EffectGraphNodeKind::SetFixtureAttribute => {}
+            EffectGraphNodeKind::SetFixtureChannelValue => {
+                let EffectGraphValue::DmxChannel(channel) = value_for_input(node, "channel")?
+                else {
+                    return Err(GraphError::CastFailed);
+                };
+
+                let EffectGraphValue::AttributeValue(value) = value_for_input(node, "value")?
+                else {
+                    return Err(GraphError::CastFailed);
+                };
+
+                context
+                    .dmx_output
+                    .set_channel_value(0, channel, value.byte())
+            }
+        }
+
+        Ok(processing_result)
     }
 
     fn label(&self) -> &'static str {
@@ -98,12 +173,18 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
             Self::FixtureId => "Get Fixture Id",
             Self::AttributeValue => "Get Attribute Value",
             Self::SetFixtureAttribute => "Set Fixture Attribute",
+            Self::SetFixtureChannelValue => "Set Fixture Channel Value",
         }
     }
 
     fn all() -> impl Iterator<Item = Self> {
         Self::iter()
     }
+}
+
+#[derive(Clone, Default)]
+pub struct EffectGraphProcessingContext {
+    pub dmx_output: DmxOutput,
 }
 
 #[derive(Clone, Default)]
@@ -125,6 +206,7 @@ impl VisualNodeData for EffectGraphNodeData {
 pub enum EffectGraphValue {
     FixtureId(FixtureId),
     AttributeValue(AttributeValue),
+    DmxChannel(DmxChannel),
 }
 
 impl Value<EffectGraphDefinition> for EffectGraphValue {
@@ -160,10 +242,22 @@ impl TryFrom<EffectGraphValue> for AttributeValue {
     }
 }
 
+impl TryFrom<EffectGraphValue> for DmxChannel {
+    type Error = GraphError;
+
+    fn try_from(value: EffectGraphValue) -> Result<Self, Self::Error> {
+        match value {
+            EffectGraphValue::DmxChannel(value) => Ok(value),
+            _ => Err(GraphError::CastFailed),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum EffectGraphDataType {
     FixtureId,
     AttributeValue,
+    DmxChannel,
 }
 
 impl DataType<EffectGraphDefinition> for EffectGraphDataType {
@@ -171,6 +265,7 @@ impl DataType<EffectGraphDefinition> for EffectGraphDataType {
         match self {
             Self::FixtureId => EffectGraphValue::FixtureId(FixtureId::default()),
             Self::AttributeValue => EffectGraphValue::AttributeValue(AttributeValue::default()),
+            Self::DmxChannel => EffectGraphValue::DmxChannel(DmxChannel::default()),
         }
     }
 }
@@ -178,8 +273,9 @@ impl DataType<EffectGraphDefinition> for EffectGraphDataType {
 impl VisualDataType for EffectGraphDataType {
     fn color(&self) -> Hsla {
         match self {
-            EffectGraphDataType::FixtureId => rgb(0x080AFF).into(),
-            EffectGraphDataType::AttributeValue => rgb(0xFFAE18).into(),
+            Self::FixtureId => rgb(0x080AFF).into(),
+            Self::AttributeValue => rgb(0xFFAE18).into(),
+            Self::DmxChannel => rgb(0xFF0000).into(),
         }
     }
 }
@@ -188,6 +284,7 @@ impl VisualDataType for EffectGraphDataType {
 pub enum EffectGraphControl {
     FixtureId,
     AttributeValue,
+    DmxChannel,
 }
 
 impl Control<EffectGraphDefinition> for EffectGraphControl {}
@@ -243,6 +340,28 @@ impl VisualControl<EffectGraphDefinition> for EffectGraphControl {
                 .detach();
 
                 slider.into()
+            }
+            Self::DmxChannel => {
+                let field = cx.new_view(|cx| {
+                    let mut field = NumberField::new(cx);
+                    let channel: DmxChannel = initial_value
+                        .try_into()
+                        .expect("DmxChannel field expects a DmxChannel value");
+                    field.set_value(channel.value() as f32, cx);
+                    field.set_validate(Some(Box::new(|v| v.parse::<DmxChannel>().is_ok())), cx);
+                    field
+                });
+
+                cx.subscribe(&field, |_this, _field, event: &NumberFieldEvent, cx| {
+                    let NumberFieldEvent::Change(float_value) = event;
+                    let value = EffectGraphValue::DmxChannel(
+                        DmxChannel::new(*float_value as u16).unwrap_or_default(),
+                    );
+                    cx.emit(ControlEvent::Change(value));
+                })
+                .detach();
+
+                field.into()
             }
         }
     }
