@@ -26,6 +26,6 @@ impl ArtnetNode {
 
         let bytes = command.write_to_buffer().unwrap();
         let addr = "127.0.0.1:6454";
-        self.socket.send_to(&bytes, &addr).unwrap();
+        self.socket.send_to(&bytes, addr).unwrap();
     }
 }

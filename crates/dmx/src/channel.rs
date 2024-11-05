@@ -32,9 +32,9 @@ impl FromStr for DmxChannel {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self::new(
+        Self::new(
             s.parse()
                 .map_err(|_| anyhow!("Failed to parse DMX Channel"))?,
-        )?)
+        )
     }
 }

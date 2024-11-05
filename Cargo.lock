@@ -1941,6 +1941,7 @@ version = "0.1.0"
 dependencies = [
  "gpui",
  "slotmap",
+ "strum 0.26.3",
  "thiserror",
  "ui",
 ]

@@ -23,7 +23,7 @@ impl Slider {
         Self {
             id: id.into(),
             number_field: {
-                let field = cx.new_view(|cx| NumberField::new(cx));
+                let field = cx.new_view(NumberField::new);
 
                 cx.subscribe(&field, |_, _, event: &NumberFieldEvent, cx| {
                     let NumberFieldEvent::Change(value) = event;

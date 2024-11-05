@@ -13,6 +13,12 @@ pub struct Graph<Def: GraphDefinition> {
     graph_ends: Vec<crate::NodeId>,
 }
 
+impl<Def: GraphDefinition> Default for Graph<Def> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<Def: GraphDefinition> Graph<Def> {
     pub fn new() -> Self {
         Self {
@@ -193,7 +199,7 @@ impl<Def: GraphDefinition> Graph<Def> {
             .is_ok()
     }
 
-    pub fn get_output_value<'a>(
+    pub fn get_output_value(
         &self,
         output_id: &OutputId,
         context: &mut <Def::NodeKind as NodeKind<Def>>::ProcessingContext,
@@ -203,7 +209,7 @@ impl<Def: GraphDefinition> Graph<Def> {
             OutputParameterKind::Computed => {
                 let node = self.node(output.node_id);
                 let result = node.process(context, self)?;
-                Ok(result.get_value(&output_id).clone())
+                Ok(result.get_value(output_id).clone())
             }
             OutputParameterKind::Constant { value, .. } => Ok(value.clone()),
         }

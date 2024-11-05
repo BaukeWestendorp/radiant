@@ -112,10 +112,7 @@ impl GraphView {
                 match socket {
                     Socket::Input(input_id) => {
                         let target_id = Some(*input_id);
-                        let source_id = match find_closest_output() {
-                            Some(closest_output) => Some(closest_output),
-                            None => None,
-                        };
+                        let source_id = find_closest_output();
 
                         // Don't allow connecting two uncastable types.
                         if let Some(source_id) = source_id {
@@ -134,10 +131,7 @@ impl GraphView {
                     }
                     Socket::Output(output_id) => {
                         let source_id = Some(*output_id);
-                        let target_id = match find_closest_input() {
-                            Some(closest_input) => Some(closest_input),
-                            None => None,
-                        };
+                        let target_id = find_closest_input();
 
                         // Don't allow connecting two uncastable types.
                         if let Some(target_id) = target_id {

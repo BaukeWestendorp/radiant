@@ -427,7 +427,7 @@ where
                 }))
                 .on_drag(
                     SocketDrag {
-                        parameter: parameter.clone(),
+                        parameter: *parameter,
                     },
                     |_, cx| cx.new_view(|_cx| EmptyView),
                 )
@@ -438,7 +438,7 @@ where
                         if drag.parameter != parameter {
                             return;
                         }
-                        cx.emit(SocketEvent::StartNewEdge(parameter.clone()));
+                        cx.emit(SocketEvent::StartNewEdge(parameter));
                     }
                 }))
                 // FIXME: Is there a way to do this in a single listener?

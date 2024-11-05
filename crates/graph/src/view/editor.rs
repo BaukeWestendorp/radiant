@@ -2,6 +2,7 @@ use crate::graph::{Graph, GraphEvent};
 use crate::view::graph::GraphView;
 use crate::NodeKind;
 use gpui::*;
+use strum::IntoEnumIterator;
 use ui::input::TextField;
 use ui::theme::ActiveTheme;
 use ui::StyledExt;

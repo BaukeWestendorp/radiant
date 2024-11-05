@@ -9,3 +9,4 @@ ui.workspace = true
 
 slotmap.workspace = true
 thiserror.workspace = true
+strum.workspace = true

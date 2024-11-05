@@ -1,3 +1,6 @@
+#![allow(clippy::type_complexity)]
+#![allow(clippy::option_as_ref_deref)]
+
 pub mod input;
 pub mod theme;
 
@@ -7,7 +10,7 @@ pub fn init(cx: &mut AppContext) {
     input::text_field::init(cx);
 }
 
-/// Extends [`gpui::Styled`].
+/// Extends [`Styled`].
 pub trait StyledExt: Styled + Sized {
     /// Horizontally stacks elements.
     ///

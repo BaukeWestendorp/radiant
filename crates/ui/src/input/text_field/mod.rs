@@ -186,7 +186,7 @@ impl TextField {
     }
 
     pub fn validate(&self) -> Option<&dyn Fn(&str) -> bool> {
-        self.validate.as_ref().map(|f| &**f)
+        self.validate.as_deref()
     }
 
     pub fn focus(&self, cx: &mut ViewContext<Self>) {
@@ -370,7 +370,7 @@ impl TextField {
         let prev_chars = prev_text.chars().rev().peekable();
         let next_chars = next_text.chars().peekable();
 
-        for (_, c) in prev_chars.enumerate() {
+        for c in prev_chars {
             if !is_word(c) {
                 break;
             }
@@ -378,7 +378,7 @@ impl TextField {
             start -= c.len_utf16();
         }
 
-        for (_, c) in next_chars.enumerate() {
+        for c in next_chars {
             if !is_word(c) {
                 break;
             }

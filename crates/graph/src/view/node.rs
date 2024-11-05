@@ -393,12 +393,9 @@ fn render_connector<V: EventEmitter<SocketEvent> + Hovering>(
                     this.set_hovering(*hovering);
                     cx.notify();
                 }))
-                .on_drag(
-                    SocketDrag {
-                        socket: socket.clone(),
-                    },
-                    |_, cx| cx.new_view(|_cx| EmptyView),
-                )
+                .on_drag(SocketDrag { socket: *socket }, |_, cx| {
+                    cx.new_view(|_cx| EmptyView)
+                })
                 .on_drag_move(cx.listener({
                     let socket = *socket;
                     move |_view, event: &DragMoveEvent<SocketDrag>, cx| {
@@ -406,7 +403,7 @@ fn render_connector<V: EventEmitter<SocketEvent> + Hovering>(
                         if drag.socket != socket {
                             return;
                         }
-                        cx.emit(SocketEvent::StartNewConnection(socket.clone()));
+                        cx.emit(SocketEvent::StartNewConnection(socket));
                     }
                 }))
                 // FIXME: Is there a way to do this in a single listener?

@@ -35,11 +35,7 @@ impl Show {
 impl Default for Show {
     fn default() -> Self {
         Self {
-            fixtures: {
-                let mut fixtures = Vec::default();
-                fixtures.push(Fixture::new(FixtureId(0)));
-                fixtures
-            },
+            fixtures: vec![Fixture::new(FixtureId(0))],
             effect_graph: create_example_graph(),
         }
     }

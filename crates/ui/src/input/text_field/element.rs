@@ -143,14 +143,12 @@ impl Element for TextElement {
                 // selection start is out of left
                 scroll_offset.x = -cursor_start;
             }
-        } else {
-            if scroll_offset.x + cursor_end <= px(0.) {
-                // selection end is out of left
-                scroll_offset.x = -cursor_end;
-            }
+        } else if scroll_offset.x + cursor_end <= px(0.) {
+            // selection end is out of left
+            scroll_offset.x = -cursor_end;
         }
 
-        bounds.origin = bounds.origin + scroll_offset;
+        bounds.origin += scroll_offset;
 
         let inset = px(0.5);
         let cursor_pos = line.x_for_index(cursor);

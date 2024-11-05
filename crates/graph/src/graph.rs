@@ -148,7 +148,7 @@ impl Graph {
         &mut self.outputs[output_id]
     }
 
-    pub fn get_output_value<'a>(
+    pub fn get_output_value(
         &self,
         output_id: &OutputId,
         context: &mut ProcessingContext,
@@ -159,7 +159,7 @@ impl Graph {
                 let node = self.node(output.node);
                 let result = node.process(context, self)?;
                 Ok(result
-                    .get(&output_id)
+                    .get(output_id)
                     .expect("An output value should always be generated after processing")
                     .clone())
             }
@@ -201,7 +201,7 @@ impl Graph {
         let source_data_type = &self.output(source_id).data_type;
         source_data_type
             .default_value()
-            .try_cast_to(&target_data_type)
+            .try_cast_to(target_data_type)
             .is_ok()
     }
 
