@@ -95,7 +95,7 @@ where
             for input_id in input_ids {
                 let input = graph.input(input_id);
                 let position =
-                    self.get_socket_position(input.node_id, &Parameter::Input(input_id), cx);
+                    self.get_socket_position(input.node_id(), &Parameter::Input(input_id), cx);
 
                 if square_dist(position, end_position) < px(squared_snap_distance) {
                     return Some(input_id);
@@ -108,7 +108,7 @@ where
             for output_id in output_ids {
                 let output = graph.output(output_id);
                 let position =
-                    self.get_socket_position(output.node_id, &Parameter::Output(output_id), cx);
+                    self.get_socket_position(output.node_id(), &Parameter::Output(output_id), cx);
 
                 if square_dist(position, end_position) < px(squared_snap_distance) {
                     return Some(output_id);
@@ -204,15 +204,15 @@ where
             let source = self.graph.read(cx).output(*source_id);
 
             let target_pos =
-                self.get_socket_position(target.node_id, &Parameter::Input(target_id), cx);
+                self.get_socket_position(target.node_id(), &Parameter::Input(target_id), cx);
             let source_pos =
-                self.get_socket_position(source.node_id, &Parameter::Output(*source_id), cx);
+                self.get_socket_position(source.node_id(), &Parameter::Output(*source_id), cx);
 
             self.render_edge(
                 &target_pos,
                 &source_pos,
-                &target.data_type,
-                &source.data_type,
+                &target.data_type(),
+                &source.data_type(),
             )
         }))
     }
@@ -224,25 +224,40 @@ where
             (None, Some(target_id)) => {
                 let target = self.graph.read(cx).input(target_id);
                 let target_pos =
-                    self.get_socket_position(target.node_id, &Parameter::Input(target_id), cx);
+                    self.get_socket_position(target.node_id(), &Parameter::Input(target_id), cx);
                 let source_pos = relative_mouse_pos;
-                (source_pos, target_pos, &target.data_type, &target.data_type)
+                (
+                    source_pos,
+                    target_pos,
+                    &target.data_type(),
+                    &target.data_type(),
+                )
             }
             (Some(source_id), None) => {
                 let source = self.graph.read(cx).output(source_id);
                 let source_pos =
-                    self.get_socket_position(source.node_id, &Parameter::Output(source_id), cx);
+                    self.get_socket_position(source.node_id(), &Parameter::Output(source_id), cx);
                 let target_pos = relative_mouse_pos;
-                (source_pos, target_pos, &source.data_type, &source.data_type)
+                (
+                    source_pos,
+                    target_pos,
+                    &source.data_type(),
+                    &source.data_type(),
+                )
             }
             (Some(source_id), Some(target_id)) => {
                 let source = self.graph.read(cx).output(source_id);
                 let target = self.graph.read(cx).input(target_id);
                 let source_pos =
-                    self.get_socket_position(source.node_id, &Parameter::Output(source_id), cx);
+                    self.get_socket_position(source.node_id(), &Parameter::Output(source_id), cx);
                 let target_pos =
-                    self.get_socket_position(target.node_id, &Parameter::Input(target_id), cx);
-                (source_pos, target_pos, &source.data_type, &target.data_type)
+                    self.get_socket_position(target.node_id(), &Parameter::Input(target_id), cx);
+                (
+                    source_pos,
+                    target_pos,
+                    &source.data_type(),
+                    &target.data_type(),
+                )
             }
         };
 

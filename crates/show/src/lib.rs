@@ -45,14 +45,14 @@ fn create_example_graph() -> EffectGraph {
     let mut graph = EffectGraph::new();
 
     let attribute_value_node_id = graph.add_node(
-        EffectGraphNodeKind::AttributeValue,
+        EffectGraphNodeKind::NewAttributeValue,
         EffectGraphNodeData {
             position: point(px(50.0), px(250.0)),
         },
     );
 
     let set_channel_value_node_id = graph.add_node(
-        EffectGraphNodeKind::SetFixtureChannelValue,
+        EffectGraphNodeKind::SetChannelValue,
         EffectGraphNodeData {
             position: point(px(350.0), px(150.0)),
         },
@@ -71,4 +71,27 @@ fn create_example_graph() -> EffectGraph {
     );
 
     graph
+}
+
+#[derive(Clone, Default)]
+pub struct FixtureGroup {
+    fixtures: Vec<FixtureId>,
+}
+
+impl FixtureGroup {
+    pub fn new(fixtures: Vec<FixtureId>) -> Self {
+        Self { fixtures }
+    }
+
+    pub fn fixtures(&self) -> &[FixtureId] {
+        &self.fixtures
+    }
+
+    pub fn push_fixture(&mut self, fixture: FixtureId) {
+        self.fixtures.push(fixture);
+    }
+
+    pub fn len(&self) -> usize {
+        self.fixtures.len()
+    }
 }

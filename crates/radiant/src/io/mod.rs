@@ -2,7 +2,8 @@ use artnet::ArtnetNode;
 use dmx::DmxOutput;
 use gpui::{AppContext, Global, Model, Timer, UpdateGlobal};
 use show::effect_graph::EffectGraphProcessingContext;
-use show::Show;
+use show::fixture::FixtureId;
+use show::{FixtureGroup, Show};
 use std::time::Duration;
 
 pub mod artnet;
@@ -17,8 +18,9 @@ pub fn init(show: Model<Show>, cx: &mut AppContext) {
             // FIXME: This is kind of ad-hoc and should not be in this task. We might need to do something similar to cursor blink thing in Zed.
             cx.update(|cx| {
                 let mut context = EffectGraphProcessingContext::default();
+                context.set_group(FixtureGroup::new(vec![FixtureId(0), FixtureId(1)]));
                 show.update(cx, |show, _cx| {
-                    show.effect_graph_mut().process(&mut context).unwrap();
+                    context.process_frame(show.effect_graph_mut()).unwrap();
                 });
 
                 IoManager::update_global(cx, |io_manager, _cx| {

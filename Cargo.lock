@@ -1936,17 +1936,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "graph"
-version = "0.1.0"
-dependencies = [
- "gpui",
- "slotmap",
- "strum 0.26.3",
- "thiserror",
- "ui",
-]
-
-[[package]]
 name = "grid"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3591,6 +3580,7 @@ dependencies = [
  "flow",
  "flow_gpui",
  "gpui",
+ "log",
  "slotmap",
  "strum 0.26.3",
  "ui",

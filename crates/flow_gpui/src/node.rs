@@ -403,8 +403,8 @@ where
     };
 
     let data_type = match parameter {
-        Parameter::Input(input_id) => &graph.read(cx).input(*input_id).data_type,
-        Parameter::Output(output_id) => &graph.read(cx).output(*output_id).data_type,
+        Parameter::Input(input_id) => &graph.read(cx).input(*input_id).data_type(),
+        Parameter::Output(output_id) => &graph.read(cx).output(*output_id).data_type(),
     };
 
     div()

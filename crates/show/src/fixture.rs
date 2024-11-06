@@ -12,6 +12,16 @@ impl FromStr for FixtureId {
     }
 }
 
+impl FixtureId {
+    pub fn new(id: u32) -> Self {
+        Self(id)
+    }
+
+    pub fn id(&self) -> u32 {
+        self.0
+    }
+}
+
 pub struct Fixture {
     id: FixtureId,
 }
