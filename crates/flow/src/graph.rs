@@ -56,8 +56,8 @@ impl<Def: GraphDefinition> Graph<Def> {
 
     pub fn remove_node(&mut self, node_id: crate::NodeId) {
         self.edges.retain(|target_id, source_id| {
-            self.output_parameters[*source_id].node_id == node_id
-                || self.input_parameters[target_id].node_id == node_id
+            self.output_parameters[*source_id].node_id != node_id
+                || self.input_parameters[target_id].node_id != node_id
         });
 
         for input in self.nodes[node_id].input_ids().collect::<Vec<_>>() {
