@@ -59,7 +59,10 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
                     node_id,
                     "id".to_string(),
                     EffectGraphDataType::FixtureId,
-                    OutputParameterKind::Computed,
+                    OutputParameterKind::Constant {
+                        value: EffectGraphValue::FixtureId(FixtureId::default()),
+                        control: EffectGraphControl::FixtureId,
+                    },
                 );
             }
             Self::NewAttributeValue => {
