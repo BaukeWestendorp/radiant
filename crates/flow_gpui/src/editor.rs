@@ -256,7 +256,10 @@ where
         let nodes = Def::NodeKind::all()
             .filter(|n| {
                 n.label().to_lowercase().contains(&filter.to_lowercase())
-                    && Some(n.category()) == self.selected_category
+                    && match self.selected_category {
+                        Some(category) => n.category() == category,
+                        None => true,
+                    }
             })
             .collect::<Vec<_>>();
         let categories = <Def::NodeKind as VisualNodeKind>::Category::all().collect::<Vec<_>>();
