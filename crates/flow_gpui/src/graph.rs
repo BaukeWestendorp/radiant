@@ -151,14 +151,6 @@ where
                         }
 
                         self.new_edge = (source_id, target_id);
-
-                        // Remove the existing edge
-                        self.graph.update(cx, |graph, cx| {
-                            if let Some(input_id) = graph.edge_target(*output_id) {
-                                graph.remove_edge(input_id);
-                                cx.notify();
-                            }
-                        });
                     }
                 }
                 cx.notify();
