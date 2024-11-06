@@ -403,6 +403,8 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
 }
 
 impl VisualNodeKind for EffectGraphNodeKind {
+    type Category = NodeCategory;
+
     fn label(&self) -> &str {
         match self {
             Self::NewFixtureId => "New Fixture Id",
@@ -420,6 +422,40 @@ impl VisualNodeKind for EffectGraphNodeKind {
 
             Self::SetChannelValue => "Set Channel Value",
         }
+    }
+
+    fn category(&self) -> Self::Category {
+        match self {
+            Self::NewFixtureId | Self::NewAttributeValue => NodeCategory::NewValue,
+            Self::Add
+            | Self::Subtract
+            | Self::Multiply
+            | Self::Divide
+            | Self::Floor
+            | Self::Round
+            | Self::Ceil => NodeCategory::Math,
+            Self::GetFixture => NodeCategory::Context,
+            Self::SetChannelValue => NodeCategory::Output,
+        }
+    }
+}
+
+pub enum NodeCategory {
+    NewValue,
+    Math,
+    Context,
+    Output,
+}
+
+impl ToString for NodeCategory {
+    fn to_string(&self) -> String {
+        match self {
+            NodeCategory::NewValue => "New Value",
+            NodeCategory::Math => "Math",
+            NodeCategory::Context => "Context",
+            NodeCategory::Output => "Output",
+        }
+        .to_string()
     }
 }
 

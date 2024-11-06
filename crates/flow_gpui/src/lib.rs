@@ -12,7 +12,11 @@ pub fn init(cx: &mut AppContext) {
 }
 
 pub trait VisualNodeKind {
+    type Category: ToString;
+
     fn label(&self) -> &str;
+
+    fn category(&self) -> Self::Category;
 }
 
 pub trait VisualDataType {
