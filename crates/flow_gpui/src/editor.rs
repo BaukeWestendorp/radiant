@@ -1,7 +1,7 @@
 use crate::graph::{GraphEvent, GraphView};
-use crate::{VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
+use crate::{NodeCategory, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
 use flow::graph::Graph;
-use flow::graph_def::{GraphDefinition, NodeKind};
+use flow::graph_def::GraphDefinition;
 use gpui::*;
 use ui::input::TextField;
 use ui::theme::ActiveTheme;
@@ -19,7 +19,10 @@ pub(crate) fn init(cx: &mut AppContext) {
     )]);
 }
 
-pub struct GraphEditorView<Def: GraphDefinition> {
+pub struct GraphEditorView<Def: GraphDefinition>
+where
+    Def::NodeKind: VisualNodeKind,
+{
     graph_view: View<GraphView<Def>>,
     new_node_context_menu: View<NewNodeContextMenu<Def>>,
     graph_offset: Point<Pixels>,
@@ -143,11 +146,15 @@ struct EditorDrag {
     pub start_mouse_position: Point<Pixels>,
 }
 
-struct NewNodeContextMenu<Def: GraphDefinition> {
+struct NewNodeContextMenu<Def: GraphDefinition>
+where
+    Def::NodeKind: VisualNodeKind,
+{
     graph: Model<Graph<Def>>,
     shown: bool,
     position: Point<Pixels>,
     search_box: View<TextField>,
+    selected_category: Option<<Def::NodeKind as VisualNodeKind>::Category>,
 }
 
 impl<Def: GraphDefinition + 'static> NewNodeContextMenu<Def>
@@ -168,13 +175,18 @@ where
                 shown: false,
                 position: cx.mouse_position(),
                 search_box,
+                selected_category: None,
             }
         })
     }
 
     pub fn show<View: 'static>(&mut self, cx: &mut ViewContext<View>) {
         self.shown = true;
-        self.search_box.focus_handle(cx).focus(cx);
+        self.deselect_category(cx);
+        self.search_box.update(cx, |search_box, cx| {
+            search_box.focus(cx);
+            search_box.clear(cx);
+        });
         cx.stop_propagation();
         cx.notify();
     }
@@ -208,6 +220,26 @@ where
         });
     }
 
+    fn select_category(
+        &mut self,
+        category: <Def::NodeKind as VisualNodeKind>::Category,
+        cx: &mut WindowContext,
+    ) {
+        self.search_box.update(cx, |search_box, _cx| {
+            search_box.set_placeholder(format!("Search in '{}'", category.to_string()).into());
+        });
+
+        self.selected_category = Some(category);
+    }
+
+    fn deselect_category(&mut self, cx: &mut WindowContext) {
+        self.search_box.update(cx, |search_box, _cx| {
+            search_box.set_placeholder("Search".into());
+        });
+
+        self.selected_category = None;
+    }
+
     fn render_header(&self, cx: &AppContext) -> impl IntoElement {
         div()
             .h_flex()
@@ -222,14 +254,16 @@ where
     fn render_node_list(&self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let filter = self.search_box.read(cx).value();
         let nodes = Def::NodeKind::all()
-            .filter(|n| n.label().to_lowercase().contains(&filter.to_lowercase()))
+            .filter(|n| {
+                n.label().to_lowercase().contains(&filter.to_lowercase())
+                    && Some(n.category()) == self.selected_category
+            })
             .collect::<Vec<_>>();
-        let node_count = nodes.len();
+        let categories = <Def::NodeKind as VisualNodeKind>::Category::all().collect::<Vec<_>>();
 
-        let render_list_item = move |ix, cx: &ViewContext<Self>| -> AnyElement {
-            let node_kind: &Def::NodeKind = &nodes[ix];
-            let label = node_kind.label().to_string();
+        let show_categories = filter.is_empty() && self.selected_category.is_none();
 
+        let render_list_item = move |item: AnyElement, cx: &ViewContext<Self>| -> AnyElement {
             div()
                 .p_1()
                 .bg(cx.theme().primary)
@@ -237,29 +271,61 @@ where
                 .border_b_1()
                 .border_color(cx.theme().background)
                 .cursor_pointer()
-                .child(label)
-                .on_mouse_down(
-                    MouseButton::Left,
-                    cx.listener({
-                        let node_kind = node_kind.clone();
-                        move |this, _, cx| {
-                            let data = <Def::NodeData as Default>::default();
-                            this.create_new_node(node_kind.clone(), data, cx);
-                            this.hide(cx);
-                        }
-                    }),
-                )
+                .child(item)
                 .into_any_element()
+        };
+
+        let item_count = if show_categories {
+            categories.len()
+        } else {
+            nodes.len()
         };
 
         uniform_list(
             cx.view().clone(),
             "new_node_context_menu",
-            node_count,
+            item_count,
             move |_this, visible_range, cx| -> Vec<AnyElement> {
                 visible_range
                     .into_iter()
-                    .map(|ix| render_list_item(ix, cx))
+                    .map(|ix| {
+                        if show_categories {
+                            let category = &categories[ix];
+                            let label = format!("> {}", category.to_string());
+
+                            let item = div().size_full().child(label).on_mouse_down(
+                                MouseButton::Left,
+                                cx.listener({
+                                    let category = *category;
+                                    move |this, _, cx| {
+                                        cx.prevent_default();
+
+                                        this.select_category(category, cx);
+                                    }
+                                }),
+                            );
+                            render_list_item(item.into_any_element(), cx)
+                        } else {
+                            let node_kind = &nodes[ix];
+                            let label = node_kind.label().to_string();
+
+                            let item = div().size_full().child(label).on_mouse_down(
+                                MouseButton::Left,
+                                cx.listener({
+                                    let node_kind = node_kind.clone();
+                                    move |this, _, cx| {
+                                        cx.prevent_default();
+
+                                        let data = <Def::NodeData as Default>::default();
+                                        this.create_new_node(node_kind.clone(), data, cx);
+                                        this.hide(cx);
+                                    }
+                                }),
+                            );
+
+                            render_list_item(item.into_any_element(), cx)
+                        }
+                    })
                     .collect()
             },
         )

@@ -22,10 +22,6 @@ pub trait NodeKind<Def: GraphDefinition> {
         context: &mut Self::ProcessingContext,
         graph: &Graph<Def>,
     ) -> Result<ProcessingResult<Def>, GraphError>;
-
-    // FIXME: I don't know what this warning is about...
-    #[allow(opaque_hidden_inferred_bound)]
-    fn all() -> impl Iterator<Item = Self>;
 }
 
 #[derive(Debug, Clone, Default)]

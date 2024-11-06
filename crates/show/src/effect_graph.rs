@@ -396,10 +396,6 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
 
         Ok(processing_result)
     }
-
-    fn all() -> impl Iterator<Item = Self> {
-        Self::iter()
-    }
 }
 
 impl VisualNodeKind for EffectGraphNodeKind {
@@ -438,13 +434,24 @@ impl VisualNodeKind for EffectGraphNodeKind {
             Self::SetChannelValue => NodeCategory::Output,
         }
     }
+
+    fn all() -> impl Iterator<Item = Self> {
+        Self::iter()
+    }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, strum::EnumIter)]
 pub enum NodeCategory {
     NewValue,
     Math,
     Context,
     Output,
+}
+
+impl flow_gpui::NodeCategory for NodeCategory {
+    fn all() -> impl Iterator<Item = Self> {
+        Self::iter()
+    }
 }
 
 impl ToString for NodeCategory {

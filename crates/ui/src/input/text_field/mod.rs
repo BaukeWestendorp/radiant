@@ -165,6 +165,11 @@ impl TextField {
         cx.emit(TextFieldEvent::Change(value));
     }
 
+    pub fn clear(&mut self, cx: &mut ViewContext<Self>) {
+        self.value = "".into();
+        cx.emit(TextFieldEvent::Change(self.value.clone()))
+    }
+
     pub fn set_placeholder(&mut self, placeholder: SharedString) {
         self.placeholder = placeholder;
     }

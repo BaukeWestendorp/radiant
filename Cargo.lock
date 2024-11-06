@@ -1486,6 +1486,7 @@ dependencies = [
  "flow",
  "gpui",
  "log",
+ "strum 0.26.3",
  "ui",
 ]
 
