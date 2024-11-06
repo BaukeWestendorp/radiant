@@ -4,11 +4,11 @@ use crate::{NodeId, OutputId};
 use std::collections::HashMap;
 
 pub trait GraphDefinition: Sized + Clone {
-    type NodeKind: NodeKind<Self> + Clone;
-    type NodeData: Clone;
-    type Value: Value<Self> + Clone;
-    type DataType: DataType<Self> + Clone;
-    type Control: Control<Self> + Clone;
+    type NodeKind: NodeKind<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
+    type NodeData: Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
+    type Value: Value<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
+    type DataType: DataType<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
+    type Control: Control<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
 }
 
 pub trait NodeKind<Def: GraphDefinition> {

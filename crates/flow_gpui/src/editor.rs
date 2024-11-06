@@ -211,7 +211,7 @@ where
         mut data: Def::NodeData,
         cx: &mut WindowContext,
     ) {
-        data.set_position(self.position);
+        data.set_position(self.position.into());
         self.graph.update(cx, |_graph, cx| {
             cx.emit(GraphEvent::AddNode {
                 kind: node_kind,

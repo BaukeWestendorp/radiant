@@ -1,16 +1,18 @@
 use crate::graph_def::{DataType, GraphDefinition, NodeKind, Value};
 use crate::node::{Node, NodeInputParameter, NodeOutputParameter};
-use crate::{GraphError, InputId, OutputId, OutputParameterKind};
+use crate::{
+    GraphError, Input, InputId, InputParameterKind, NodeId, Output, OutputId, OutputParameterKind,
+};
 use slotmap::{SecondaryMap, SlotMap};
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Graph<Def: GraphDefinition> {
-    nodes: SlotMap<crate::NodeId, Node<Def>>,
-    input_parameters: SlotMap<InputId, crate::Input<Def>>,
-    output_parameters: SlotMap<OutputId, crate::Output<Def>>,
+    nodes: SlotMap<NodeId, Node<Def>>,
+    input_parameters: SlotMap<InputId, Input<Def>>,
+    output_parameters: SlotMap<OutputId, Output<Def>>,
     edges: SecondaryMap<InputId, OutputId>,
 
-    graph_ends: Vec<crate::NodeId>,
+    graph_ends: Vec<NodeId>,
 }
 
 impl<Def: GraphDefinition> Default for Graph<Def> {
@@ -30,19 +32,19 @@ impl<Def: GraphDefinition> Graph<Def> {
         }
     }
 
-    pub fn node(&self, node_id: crate::NodeId) -> &Node<Def> {
+    pub fn node(&self, node_id: NodeId) -> &Node<Def> {
         &self.nodes[node_id]
     }
 
-    pub fn node_mut(&mut self, node_id: crate::NodeId) -> &mut Node<Def> {
+    pub fn node_mut(&mut self, node_id: NodeId) -> &mut Node<Def> {
         &mut self.nodes[node_id]
     }
 
-    pub fn node_ids(&self) -> impl Iterator<Item = crate::NodeId> + '_ {
+    pub fn node_ids(&self) -> impl Iterator<Item = NodeId> + '_ {
         self.nodes.keys()
     }
 
-    pub fn add_node(&mut self, kind: Def::NodeKind, data: Def::NodeData) -> crate::NodeId {
+    pub fn add_node(&mut self, kind: Def::NodeKind, data: Def::NodeData) -> NodeId {
         let node_id = self
             .nodes
             .insert_with_key(|id| Node::new(id, kind.clone(), data));
@@ -54,7 +56,7 @@ impl<Def: GraphDefinition> Graph<Def> {
         node_id
     }
 
-    pub fn remove_node(&mut self, node_id: crate::NodeId) {
+    pub fn remove_node(&mut self, node_id: NodeId) {
         self.edges.retain(|target_id, source_id| {
             self.output_parameters[*source_id].node_id != node_id
                 || self.input_parameters[target_id].node_id != node_id
@@ -70,14 +72,16 @@ impl<Def: GraphDefinition> Graph<Def> {
 
         self.remove_graph_end(&node_id);
 
-        self.nodes.remove(node_id).expect("Node should exist");
+        self.nodes
+            .remove(node_id)
+            .expect("tried to remove non-existent node");
     }
 
-    pub fn input(&self, input_id: InputId) -> &crate::Input<Def> {
+    pub fn input(&self, input_id: InputId) -> &Input<Def> {
         &self.input_parameters[input_id]
     }
 
-    pub fn input_mut(&mut self, input_id: InputId) -> &mut crate::Input<Def> {
+    pub fn input_mut(&mut self, input_id: InputId) -> &mut Input<Def> {
         &mut self.input_parameters[input_id]
     }
 
@@ -87,12 +91,12 @@ impl<Def: GraphDefinition> Graph<Def> {
 
     pub fn add_input(
         &mut self,
-        node_id: crate::NodeId,
+        node_id: NodeId,
         label: String,
         data_type: Def::DataType,
-        kind: crate::InputParameterKind<Def>,
+        kind: InputParameterKind<Def>,
     ) -> InputId {
-        let parameter_id = self.input_parameters.insert_with_key(|id| crate::Input {
+        let parameter_id = self.input_parameters.insert_with_key(|id| Input {
             id,
             node_id,
             data_type,
@@ -114,11 +118,11 @@ impl<Def: GraphDefinition> Graph<Def> {
         self.edges.retain(|target_id, _| target_id != input_id)
     }
 
-    pub fn output(&self, output_id: OutputId) -> &crate::Output<Def> {
+    pub fn output(&self, output_id: OutputId) -> &Output<Def> {
         &self.output_parameters[output_id]
     }
 
-    pub fn output_mut(&mut self, output_id: OutputId) -> &mut crate::Output<Def> {
+    pub fn output_mut(&mut self, output_id: OutputId) -> &mut Output<Def> {
         &mut self.output_parameters[output_id]
     }
 
@@ -128,12 +132,12 @@ impl<Def: GraphDefinition> Graph<Def> {
 
     pub fn add_output(
         &mut self,
-        node_id: crate::NodeId,
+        node_id: NodeId,
         label: String,
         data_type: Def::DataType,
         kind: OutputParameterKind<Def>,
     ) -> OutputId {
-        let parameter_id = self.output_parameters.insert_with_key(|id| crate::Output {
+        let parameter_id = self.output_parameters.insert_with_key(|id| Output {
             id,
             node_id,
             data_type,
@@ -227,7 +231,7 @@ impl<Def: GraphDefinition> Graph<Def> {
         Ok(())
     }
 
-    fn remove_graph_end(&mut self, node_id: &crate::NodeId) {
+    fn remove_graph_end(&mut self, node_id: &NodeId) {
         self.graph_ends.retain(|id| id != node_id);
     }
 }

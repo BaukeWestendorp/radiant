@@ -19,7 +19,7 @@ pub enum Parameter {
     Output(OutputId),
 }
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Input<Def: GraphDefinition> {
     id: InputId,
     node_id: NodeId,
@@ -41,7 +41,7 @@ impl<Def: GraphDefinition> Input<Def> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub enum InputParameterKind<Def: GraphDefinition> {
     EdgeOrConstant {
         value: Def::Value,
@@ -49,7 +49,7 @@ pub enum InputParameterKind<Def: GraphDefinition> {
     },
 }
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Output<Def: GraphDefinition> {
     id: OutputId,
     node_id: NodeId,
@@ -71,7 +71,7 @@ impl<Def: GraphDefinition> Output<Def> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub enum OutputParameterKind<Def: GraphDefinition> {
     Computed,
     Constant {

@@ -1,5 +1,13 @@
 [workspace]
-members = ["crates/radiant", "crates/ui", "crates/show", "crates/flow_gpui", "crates/flow", "crates/dmx"]
+members = [
+    "crates/radiant",
+    "crates/ui",
+    "crates/show",
+    "crates/flow_gpui",
+    "crates/flow",
+    "crates/dmx",
+    "crates/geo",
+]
 resolver = "2"
 
 [workspace.package]
@@ -12,6 +20,7 @@ flow = { path = "crates/flow" }
 flow_gpui = { path = "crates/flow_gpui" }
 show = { path = "crates/show" }
 dmx = { path = "crates/dmx" }
+geo = { path = "crates/geo" }
 
 gpui = { git = "https://github.com/zed-industries/zed.git" }
 
@@ -21,3 +30,6 @@ thiserror = "1.0.61"
 log = "0.4.22"
 env_logger = "0.11.5"
 strum = { version = "0.26.3", features = ["derive"] }
+
+serde = { version = "1.0.214", features = ["derive"] }
+serde_json = "1.0.132"

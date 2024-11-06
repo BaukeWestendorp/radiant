@@ -13,7 +13,10 @@ gpui.workspace = true
 anyhow.workspace = true
 log.workspace = true
 env_logger.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 
 rust-embed = "8.5.0"
 socket2 = { version = "0.5.7", features = ["all"] }
 artnet_protocol = "0.4.3"
+dirs = "5.0.1"

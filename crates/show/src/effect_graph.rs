@@ -8,13 +8,11 @@ use flow::node::Node;
 use flow::{InputParameterKind, NodeId, OutputParameterKind};
 use flow_gpui::node::ControlEvent;
 use flow_gpui::{VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
-use gpui::{
-    rgb, AnyView, ElementId, EventEmitter, Hsla, Pixels, Point, ViewContext, VisualContext,
-};
+use gpui::{rgb, AnyView, ElementId, EventEmitter, Hsla, ViewContext, VisualContext};
 use strum::IntoEnumIterator;
 use ui::input::{NumberField, Slider, SliderEvent};
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct EffectGraphDefinition;
 
 impl GraphDefinition for EffectGraphDefinition {
@@ -27,7 +25,7 @@ impl GraphDefinition for EffectGraphDefinition {
 
 pub type EffectGraph = Graph<EffectGraphDefinition>;
 
-#[derive(Debug, Clone, PartialEq, strum::EnumIter)]
+#[derive(Debug, Clone, PartialEq, strum::EnumIter, serde::Serialize, serde::Deserialize)]
 pub enum EffectGraphNodeKind {
     // New Values
     NewFixtureId,
@@ -488,22 +486,22 @@ impl EffectGraphProcessingContext {
     }
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct EffectGraphNodeData {
-    pub position: Point<Pixels>,
+    pub position: geo::Point,
 }
 
 impl VisualNodeData for EffectGraphNodeData {
-    fn position(&self) -> &Point<Pixels> {
+    fn position(&self) -> &geo::Point {
         &self.position
     }
 
-    fn set_position(&mut self, position: Point<Pixels>) {
+    fn set_position(&mut self, position: geo::Point) {
         self.position = position;
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum EffectGraphValue {
     Int(i32),
     Float(f32),
@@ -579,7 +577,7 @@ impl TryFrom<EffectGraphValue> for DmxChannel {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum EffectGraphDataType {
     Int,
     Float,
@@ -614,7 +612,7 @@ impl VisualDataType for EffectGraphDataType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum EffectGraphControl {
     Int,
     Float,

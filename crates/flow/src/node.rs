@@ -3,7 +3,7 @@ use crate::graph::Graph;
 use crate::graph_def::{NodeKind, ProcessingResult};
 use crate::{GraphDefinition, InputId, NodeId, OutputId};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Node<Def: GraphDefinition> {
     pub id: NodeId,
     pub data: Def::NodeData,
@@ -72,13 +72,13 @@ impl<Def: GraphDefinition> Node<Def> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct NodeInputParameter {
     pub label: String,
     pub id: InputId,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct NodeOutputParameter {
     pub label: String,
     pub id: OutputId,

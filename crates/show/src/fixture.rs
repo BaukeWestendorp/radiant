@@ -1,7 +1,19 @@
 use flow::error::GraphError;
 use std::str::FromStr;
 
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Default)]
+#[derive(
+    Debug,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    serde::Serialize,
+    serde::Deserialize,
+)]
 pub struct FixtureId(pub u32);
 
 impl FromStr for FixtureId {
@@ -22,6 +34,7 @@ impl FixtureId {
     }
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Fixture {
     id: FixtureId,
 }
@@ -36,7 +49,7 @@ impl Fixture {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, serde::Serialize, serde::Deserialize)]
 pub struct AttributeValue {
     value: f32,
 }

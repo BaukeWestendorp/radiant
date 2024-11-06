@@ -160,11 +160,11 @@ where
             return;
         }
 
-        let new_position =
-            node_drag.start_node_position + (cx.mouse_position() - node_drag.start_mouse_position);
+        let new_pos = node_drag.start_node_position
+            + (geo::Point::from(cx.mouse_position()) - node_drag.start_mouse_position);
 
         self.graph.update(cx, |graph, cx| {
-            graph.node_mut(self.node_id).data.set_position(new_position);
+            graph.node_mut(self.node_id).data.set_position(new_pos);
             cx.notify();
         });
     }
@@ -212,8 +212,8 @@ where
             .track_focus(&self.focus_handle)
             .hover(|e| e) // FIXME: This is a hack to make the node a little bit less spacy when dragging for some reason...
             .absolute()
-            .left(position.x)
-            .top(position.y)
+            .left(px(position.x))
+            .top(px(position.y))
             .w(NODE_WIDTH)
             .bg(cx.theme().secondary)
             .border_1()
@@ -234,7 +234,7 @@ where
                 NodeDrag {
                     node_id: self.node_id,
                     start_node_position: *position,
-                    start_mouse_position: cx.mouse_position(),
+                    start_mouse_position: cx.mouse_position().into(),
                 },
                 |_, cx| cx.new_view(|_cx| EmptyView),
             )
@@ -272,8 +272,8 @@ pub enum SocketEvent {
 struct NodeDrag {
     pub node_id: NodeId,
 
-    pub start_node_position: Point<Pixels>,
-    pub start_mouse_position: Point<Pixels>,
+    pub start_node_position: geo::Point,
+    pub start_mouse_position: geo::Point,
 }
 
 pub struct InputView<Def: GraphDefinition> {

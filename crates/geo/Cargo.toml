@@ -1,9 +1,8 @@
 [package]
-name = "flow"
+name = "geo"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
-slotmap.workspace = true
-thiserror.workspace = true
 serde.workspace = true
+gpui.workspace = true

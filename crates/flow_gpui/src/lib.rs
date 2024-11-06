@@ -34,9 +34,9 @@ pub trait VisualDataType {
 }
 
 pub trait VisualNodeData: Default {
-    fn position(&self) -> &Point<Pixels>;
+    fn position(&self) -> &geo::Point;
 
-    fn set_position(&mut self, position: Point<Pixels>);
+    fn set_position(&mut self, position: geo::Point);
 }
 
 pub trait VisualControl<Def: GraphDefinition + 'static> {

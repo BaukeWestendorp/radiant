@@ -1,7 +1,19 @@
 use anyhow::{anyhow, bail};
 use std::str::FromStr;
 
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, Default)]
+#[derive(
+    Debug,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    Default,
+    serde::Serialize,
+    serde::Deserialize,
+)]
 pub struct DmxChannel(u16);
 
 impl DmxChannel {

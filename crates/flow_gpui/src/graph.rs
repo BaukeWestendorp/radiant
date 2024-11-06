@@ -383,8 +383,8 @@ where
             1.0; // FIXME: Why do we need this to actually move it to the center?
 
         point(
-            node_position.x + px(x_offset),
-            node_position.y + px(y_offset),
+            px(node_position.x + x_offset),
+            px(node_position.y + y_offset),
         )
     }
 }

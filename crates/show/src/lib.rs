@@ -1,13 +1,13 @@
-use crate::effect_graph::{
-    EffectGraph, EffectGraphNodeData, EffectGraphNodeKind, EffectGraphValue,
-};
-use crate::fixture::{AttributeValue, Fixture, FixtureId};
-use flow::OutputParameterKind;
-use gpui::{point, px};
+use std::fs;
+use std::path::Path;
+
+use crate::effect_graph::EffectGraph;
+use crate::fixture::{Fixture, FixtureId};
 
 pub mod effect_graph;
 pub mod fixture;
 
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Show {
     fixtures: Vec<Fixture>,
 
@@ -30,47 +30,29 @@ impl Show {
     pub fn effect_graph_mut(&mut self) -> &mut EffectGraph {
         &mut self.effect_graph
     }
+
+    pub fn load_from_file(path: &Path) -> anyhow::Result<Self> {
+        let show_json = fs::read_to_string(path)?;
+        let show: Self = serde_json::from_str(&show_json)?;
+        Ok(show)
+    }
+
+    pub fn save_to_file(&self, path: &Path) -> anyhow::Result<()> {
+        let show_json = serde_json::to_string_pretty(self)?;
+
+        fs::write(path, show_json)?;
+
+        Ok(())
+    }
 }
 
 impl Default for Show {
     fn default() -> Self {
         Self {
             fixtures: vec![Fixture::new(FixtureId(0))],
-            effect_graph: create_example_graph(),
+            effect_graph: EffectGraph::default(),
         }
     }
-}
-
-fn create_example_graph() -> EffectGraph {
-    let mut graph = EffectGraph::new();
-
-    let attribute_value_node_id = graph.add_node(
-        EffectGraphNodeKind::NewAttributeValue,
-        EffectGraphNodeData {
-            position: point(px(50.0), px(250.0)),
-        },
-    );
-
-    let set_channel_value_node_id = graph.add_node(
-        EffectGraphNodeKind::SetChannelValue,
-        EffectGraphNodeData {
-            position: point(px(350.0), px(150.0)),
-        },
-    );
-
-    if let OutputParameterKind::Constant { value, .. } = &mut graph
-        .output_mut(graph.node(attribute_value_node_id).output("value").id)
-        .kind
-    {
-        *value = EffectGraphValue::AttributeValue(AttributeValue::new(0.5))
-    }
-
-    graph.add_edge(
-        graph.node(attribute_value_node_id).output("value").id,
-        graph.node(set_channel_value_node_id).input("value").id,
-    );
-
-    graph
 }
 
 #[derive(Clone, Default)]
