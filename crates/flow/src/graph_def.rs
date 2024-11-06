@@ -23,8 +23,6 @@ pub trait NodeKind<Def: GraphDefinition> {
         graph: &Graph<Def>,
     ) -> Result<ProcessingResult<Def>, GraphError>;
 
-    fn label(&self) -> &'static str;
-
     // FIXME: I don't know what this warning is about...
     #[allow(opaque_hidden_inferred_bound)]
     fn all() -> impl Iterator<Item = Self>;

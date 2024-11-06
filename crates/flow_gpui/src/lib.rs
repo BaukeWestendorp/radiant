@@ -11,6 +11,10 @@ pub fn init(cx: &mut AppContext) {
     node::init(cx);
 }
 
+pub trait VisualNodeKind {
+    fn label(&self) -> &str;
+}
+
 pub trait VisualDataType {
     fn color(&self) -> Hsla;
 }

@@ -1,5 +1,5 @@
 use crate::node::{NodeEvent, NodeView, SocketEvent};
-use crate::{node, VisualControl, VisualDataType, VisualNodeData};
+use crate::{node, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
 use flow::graph::Graph;
 use flow::graph_def::GraphDefinition;
 use flow::{InputId, NodeId, OutputId, Parameter};
@@ -17,6 +17,7 @@ pub struct GraphView<Def: GraphDefinition> {
 
 impl<Def: GraphDefinition + 'static> GraphView<Def>
 where
+    Def::NodeKind: VisualNodeKind,
     Def::NodeData: VisualNodeData,
     Def::DataType: VisualDataType,
     Def::Control: VisualControl<Def>,
@@ -390,6 +391,7 @@ where
 
 impl<Def: GraphDefinition + 'static> Render for GraphView<Def>
 where
+    Def::NodeKind: VisualNodeKind,
     Def::NodeData: VisualNodeData,
     Def::DataType: VisualDataType,
     Def::Control: VisualControl<Def>,

@@ -7,7 +7,7 @@ use flow::graph_def::{Control, DataType, GraphDefinition, NodeKind, ProcessingRe
 use flow::node::Node;
 use flow::{InputParameterKind, NodeId, OutputParameterKind};
 use flow_gpui::node::ControlEvent;
-use flow_gpui::{VisualControl, VisualDataType, VisualNodeData};
+use flow_gpui::{VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
 use gpui::{
     rgb, AnyView, ElementId, EventEmitter, Hsla, Pixels, Point, ViewContext, VisualContext,
 };
@@ -397,7 +397,13 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
         Ok(processing_result)
     }
 
-    fn label(&self) -> &'static str {
+    fn all() -> impl Iterator<Item = Self> {
+        Self::iter()
+    }
+}
+
+impl VisualNodeKind for EffectGraphNodeKind {
+    fn label(&self) -> &str {
         match self {
             Self::NewFixtureId => "New Fixture Id",
             Self::NewAttributeValue => "New Attribute ",
@@ -414,10 +420,6 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
 
             Self::SetChannelValue => "Set Channel Value",
         }
-    }
-
-    fn all() -> impl Iterator<Item = Self> {
-        Self::iter()
     }
 }
 

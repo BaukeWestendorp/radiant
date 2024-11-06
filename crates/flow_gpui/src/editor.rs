@@ -1,5 +1,5 @@
 use crate::graph::{GraphEvent, GraphView};
-use crate::{VisualControl, VisualDataType, VisualNodeData};
+use crate::{VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
 use flow::graph::Graph;
 use flow::graph_def::{GraphDefinition, NodeKind};
 use gpui::*;
@@ -31,6 +31,7 @@ pub struct GraphEditorView<Def: GraphDefinition> {
 impl<Def: GraphDefinition + 'static> GraphEditorView<Def>
 where
     Def::NodeData: VisualNodeData,
+    Def::NodeKind: VisualNodeKind,
     Def::DataType: VisualDataType,
     Def::Control: VisualControl<Def>,
 {
@@ -81,6 +82,7 @@ where
 impl<Def: GraphDefinition + 'static> Render for GraphEditorView<Def>
 where
     Def::NodeData: VisualNodeData,
+    Def::NodeKind: VisualNodeKind,
     Def::DataType: VisualDataType,
     Def::Control: VisualControl<Def>,
 {
@@ -127,6 +129,7 @@ where
 impl<Def: GraphDefinition + 'static> FocusableView for GraphEditorView<Def>
 where
     Def::DataType: VisualDataType,
+    Def::NodeKind: VisualNodeKind,
     Def::NodeData: VisualNodeData,
     Def::Control: VisualControl<Def>,
 {
@@ -149,6 +152,7 @@ struct NewNodeContextMenu<Def: GraphDefinition> {
 
 impl<Def: GraphDefinition + 'static> NewNodeContextMenu<Def>
 where
+    Def::NodeKind: VisualNodeKind,
     Def::NodeData: VisualNodeData,
 {
     pub fn build(graph: Model<Graph<Def>>, cx: &mut WindowContext) -> View<Self> {
@@ -266,6 +270,7 @@ where
 
 impl<Def: GraphDefinition + 'static> Render for NewNodeContextMenu<Def>
 where
+    Def::NodeKind: VisualNodeKind,
     Def::NodeData: VisualNodeData,
 {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {

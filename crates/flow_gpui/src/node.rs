@@ -1,7 +1,7 @@
 use crate::graph::GraphEvent;
-use crate::{VisualControl, VisualDataType, VisualNodeData};
+use crate::{VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
 use flow::graph::Graph;
-use flow::graph_def::{GraphDefinition, NodeKind};
+use flow::graph_def::GraphDefinition;
 use flow::node::Node;
 use flow::{InputId, InputParameterKind, NodeId, OutputId, OutputParameterKind, Parameter};
 use gpui::prelude::FluentBuilder;
@@ -36,6 +36,7 @@ pub struct NodeView<Def: GraphDefinition> {
 
 impl<Def: GraphDefinition + 'static> NodeView<Def>
 where
+    Def::NodeKind: VisualNodeKind,
     Def::NodeData: VisualNodeData,
     Def::DataType: VisualDataType,
     Def::Control: VisualControl<Def>,
@@ -172,6 +173,7 @@ where
 impl<Def: GraphDefinition + 'static> Render for NodeView<Def>
 where
     Def::NodeData: VisualNodeData,
+    Def::NodeKind: VisualNodeKind,
     Def::DataType: VisualDataType,
     Def::Control: VisualControl<Def>,
 {
@@ -242,6 +244,7 @@ where
 
 impl<Def: GraphDefinition + 'static> FocusableView for NodeView<Def>
 where
+    Def::NodeKind: VisualNodeKind,
     Def::NodeData: VisualNodeData,
     Def::DataType: VisualDataType,
     Def::Control: VisualControl<Def>,
