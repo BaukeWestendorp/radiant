@@ -20,6 +20,11 @@ pub fn open_show_window(show: Show, cx: &mut AppContext) -> anyhow::Result<Windo
             size(px(1200.0), px(800.0)),
             cx,
         ))),
+        titlebar: Some(TitlebarOptions {
+            title: Some("Radiant".into()),
+            ..Default::default()
+        }),
+        window_min_size: Some(size(px(600.0), px(400.0))),
         ..Default::default()
     };
 
