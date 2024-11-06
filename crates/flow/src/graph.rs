@@ -61,11 +61,11 @@ impl<Def: GraphDefinition> Graph<Def> {
         });
 
         for input in self.nodes[node_id].input_ids().collect::<Vec<_>>() {
-            self.input_parameters.remove(input);
+            self.remove_input(input);
         }
 
         for output in self.nodes[node_id].output_ids().collect::<Vec<_>>() {
-            self.output_parameters.remove(output);
+            self.remove_output(output);
         }
 
         self.remove_graph_end(&node_id);

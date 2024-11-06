@@ -7,7 +7,8 @@ pub mod graph;
 pub mod node;
 
 pub fn init(cx: &mut AppContext) {
-    editor::init(cx)
+    editor::init(cx);
+    node::init(cx);
 }
 
 pub trait VisualDataType {

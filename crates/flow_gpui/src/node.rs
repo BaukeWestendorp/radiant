@@ -1,3 +1,4 @@
+use crate::graph::GraphEvent;
 use crate::{VisualControl, VisualDataType, VisualNodeData};
 use flow::graph::Graph;
 use flow::graph_def::{GraphDefinition, NodeKind};
@@ -5,6 +6,7 @@ use flow::node::Node;
 use flow::{InputId, InputParameterKind, NodeId, OutputId, OutputParameterKind, Parameter};
 use gpui::prelude::FluentBuilder;
 use gpui::*;
+use ui::theme::Colorize;
 use ui::{theme::ActiveTheme, StyledExt};
 
 pub(crate) const NODE_CONTENT_Y_PADDING: Pixels = px(6.0);
@@ -13,11 +15,23 @@ pub(crate) const HEADER_HEIGHT: Pixels = px(24.0);
 pub(crate) const SOCKET_HEIGHT: Pixels = px(22.0); // cx.theme().input_height;
 pub(crate) const SOCKET_GAP: Pixels = px(12.0);
 
+actions!(graph_editor, [RemoveNode]);
+
+const CONTEXT: &str = "GraphNode";
+
+pub(crate) fn init(cx: &mut AppContext) {
+    cx.bind_keys([
+        KeyBinding::new("backspace", RemoveNode, Some(CONTEXT)),
+        KeyBinding::new("delete", RemoveNode, Some(CONTEXT)),
+    ]);
+}
+
 pub struct NodeView<Def: GraphDefinition> {
     node_id: NodeId,
     graph: Model<Graph<Def>>,
     inputs: Vec<View<InputView<Def>>>,
     outputs: Vec<View<OutputView<Def>>>,
+    focus_handle: FocusHandle,
 }
 
 impl<Def: GraphDefinition + 'static> NodeView<Def>
@@ -32,7 +46,12 @@ where
             inputs: Self::build_inputs(node_id, &graph, cx),
             outputs: Self::build_outputs(node_id, &graph, cx),
             graph,
+            focus_handle: cx.focus_handle().clone(),
         })
+    }
+
+    pub fn node_id(&self) -> NodeId {
+        self.node_id
     }
 
     fn node<'cx>(&'cx self, cx: &'cx AppContext) -> &Node<Def> {
@@ -158,6 +177,7 @@ where
 {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let node = self.node(cx);
+        let focused = self.focus_handle.is_focused(cx);
 
         let header = {
             let label = node.kind().label().to_owned();
@@ -185,7 +205,9 @@ where
 
         let position = node.data.position();
         div()
+            .key_context(CONTEXT)
             .id(ElementId::Name(format!("node-{:?}", self.node_id).into()))
+            .track_focus(&self.focus_handle)
             .hover(|e| e) // FIXME: This is a hack to make the node a little bit less spacy when dragging for some reason...
             .absolute()
             .left(position.x)
@@ -195,8 +217,17 @@ where
             .border_1()
             .border_color(cx.theme().border)
             .rounded(cx.theme().radius)
+            .when(focused, |e| {
+                e.bg(cx.theme().secondary_active)
+                    .border_color(cx.theme().accent.darken(0.5))
+            })
             .child(header)
             .child(content)
+            .on_action::<RemoveNode>(cx.listener(|this, _, cx| {
+                cx.emit(GraphEvent::RemoveNode {
+                    node_id: this.node_id,
+                });
+            }))
             .on_drag(
                 NodeDrag {
                     node_id: self.node_id,
@@ -209,23 +240,37 @@ where
     }
 }
 
-impl<Def: GraphDefinition + 'static> EventEmitter<SocketEvent> for NodeView<Def> {}
-
-struct NodeDrag {
-    pub node_id: NodeId,
-
-    pub start_node_position: Point<Pixels>,
-    pub start_mouse_position: Point<Pixels>,
+impl<Def: GraphDefinition + 'static> FocusableView for NodeView<Def>
+where
+    Def::NodeData: VisualNodeData,
+    Def::DataType: VisualDataType,
+    Def::Control: VisualControl<Def>,
+{
+    fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
+        self.focus_handle.clone()
+    }
 }
 
-pub enum ControlEvent<Def: GraphDefinition> {
-    Change(Def::Value),
+impl<Def: GraphDefinition + 'static> EventEmitter<SocketEvent> for NodeView<Def> {}
+
+impl<Def: GraphDefinition + 'static> EventEmitter<GraphEvent<Def>> for NodeView<Def> {}
+
+#[derive(Debug, Clone, Copy)]
+pub enum NodeEvent {
+    Delete { node_id: NodeId },
 }
 
 #[derive(Debug, Clone)]
 pub enum SocketEvent {
     StartNewEdge(Parameter),
     EndNewEdge,
+}
+
+struct NodeDrag {
+    pub node_id: NodeId,
+
+    pub start_node_position: Point<Pixels>,
+    pub start_mouse_position: Point<Pixels>,
 }
 
 pub struct InputView<Def: GraphDefinition> {
@@ -376,6 +421,10 @@ impl<Def: GraphDefinition> Hovering for OutputView<Def> {
     fn set_hovering(&mut self, hovering: bool) {
         self.hovering = hovering;
     }
+}
+
+pub enum ControlEvent<Def: GraphDefinition> {
+    Change(Def::Value),
 }
 
 fn render_connector<Def, View>(

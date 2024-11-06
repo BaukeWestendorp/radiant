@@ -89,15 +89,13 @@ impl Colorize for Hsla {
 
     /// Return a new color with the lightness increased by the given factor.
     fn lighten(&self, factor: f32) -> Hsla {
-        let l = (self.l * 1.0 + factor.clamp(0.0, 1.0)).min(1.0);
-
+        let l = (self.l * (1.0 + factor.clamp(0.0, 1.0))).min(1.0);
         Hsla { l, ..*self }
     }
 
     /// Return a new color with the darkness increased by the given factor.
     fn darken(&self, factor: f32) -> Hsla {
-        let l = (self.l * 1.0 - factor.clamp(0.0, 1.0)).max(0.0);
-
+        let l = (self.l * (1.0 - factor.clamp(0.0, 1.0))).max(0.0);
         Hsla { l, ..*self }
     }
 }
@@ -145,14 +143,14 @@ impl Default for Theme {
             background: hsl(0.0, 0.0, 2.0),
             foreground: hsl(0., 0., 98.0),
             primary: hsl(0.0, 0.0, 6.0),
-            primary_hover: hsl(0.0, 0.0, 6.0).lighten(0.02),
-            primary_active: hsl(0.0, 0.0, 6.0).lighten(0.05),
+            primary_hover: hsl(0.0, 0.0, 7.0),
+            primary_active: hsl(0.0, 0.0, 8.0),
             secondary: hsl(0.0, 0.0, 10.0),
-            secondary_hover: hsl(0.0, 0.0, 10.0).lighten(0.02),
-            secondary_active: hsl(0.0, 0.0, 10.0).lighten(0.05),
+            secondary_hover: hsl(0.0, 0.0, 11.0),
+            secondary_active: hsl(0.0, 0.0, 12.0),
             tertriary: hsl(0.0, 0.0, 18.0),
-            tertriary_hover: hsl(0.0, 0.0, 18.0).lighten(0.02),
-            tertriary_active: hsl(0.0, 0.0, 18.0).lighten(0.05),
+            tertriary_hover: hsl(0.0, 0.0, 20.0),
+            tertriary_active: hsl(0.0, 0.0, 22.0),
             destructive: hsl(0.0, 62.8, 30.6),
             destructive_hover: hsl(0.0, 62.8, 35.6),
             destructive_active: hsl(0.0, 62.8, 20.6),

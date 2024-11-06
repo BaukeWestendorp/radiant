@@ -1,4 +1,4 @@
-use crate::node::{NodeView, SocketEvent};
+use crate::node::{NodeEvent, NodeView, SocketEvent};
 use crate::{node, VisualControl, VisualDataType, VisualNodeData};
 use flow::graph::Graph;
 use flow::graph_def::GraphDefinition;
@@ -55,6 +55,12 @@ where
             this.handle_socket_event(event, cx);
         })
         .detach();
+
+        cx.subscribe(&node_view, move |this, _, event: &GraphEvent<Def>, cx| {
+            this.handle_graph_event(graph.clone(), event, cx);
+        })
+        .detach();
+
         node_view
     }
 
@@ -72,6 +78,16 @@ where
 
                 let node_view = Self::build_node(node_id, self.graph.clone(), cx);
                 self.nodes.push(node_view)
+            }
+
+            GraphEvent::RemoveNode { node_id } => {
+                self.graph.update(cx, |graph, cx| {
+                    graph.remove_node(*node_id);
+                    self.nodes
+                        .retain(|node| node.read(cx).node_id() != *node_id);
+                    cx.notify();
+                });
+                cx.notify();
             }
         }
     }
@@ -397,6 +413,11 @@ pub enum GraphEvent<Def: GraphDefinition> {
         kind: Def::NodeKind,
         data: Def::NodeData,
     },
+    RemoveNode {
+        node_id: NodeId,
+    },
 }
 
 impl<Def: GraphDefinition + 'static> EventEmitter<GraphEvent<Def>> for Graph<Def> {}
+
+impl<Def: GraphDefinition + 'static> EventEmitter<NodeEvent> for Graph<Def> {}

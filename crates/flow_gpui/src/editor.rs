@@ -11,7 +11,7 @@ actions!(graph_editor, [CloseNodeContextMenu]);
 
 const CONTEXT: &str = "GraphEditor";
 
-pub fn init(cx: &mut AppContext) {
+pub(crate) fn init(cx: &mut AppContext) {
     cx.bind_keys([KeyBinding::new(
         "escape",
         CloseNodeContextMenu,
@@ -85,42 +85,42 @@ where
     Def::Control: VisualControl<Def>,
 {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        let graph_viewer = div()
+            .id("editor-graph")
+            .size_full()
+            .absolute()
+            .overflow_hidden()
+            .child(
+                div()
+                    .size_full()
+                    .left(self.graph_offset.x)
+                    .top(self.graph_offset.y)
+                    .child(self.graph_view.clone()),
+            )
+            .on_drag(
+                EditorDrag {
+                    start_offset: self.graph_offset,
+                    start_mouse_position: cx.mouse_position(),
+                },
+                |_, cx| cx.new_view(|_cx| EmptyView),
+            )
+            .on_drag_move(cx.listener(Self::handle_editor_drag));
+
         div()
             .key_context(CONTEXT)
             .track_focus(&self.focus_handle)
             .size_full()
-            .child(
-                div()
-                    .id("editor-graph")
-                    .size_full()
-                    .absolute()
-                    .overflow_hidden()
-                    .child(
-                        div()
-                            .size_full()
-                            .left(self.graph_offset.x)
-                            .top(self.graph_offset.y)
-                            .child(self.graph_view.clone()),
-                    )
-                    .on_drag(
-                        EditorDrag {
-                            start_offset: self.graph_offset,
-                            start_mouse_position: cx.mouse_position(),
-                        },
-                        |_, cx| cx.new_view(|_cx| EmptyView),
-                    )
-                    .on_drag_move(cx.listener(Self::handle_editor_drag)),
-            )
+            .child(graph_viewer)
             .child(self.new_node_context_menu.clone())
+            .child(bounds_updater(
+                cx.view().clone(),
+                |this: &mut Self, bounds, _cx| this.bounds = bounds,
+            ))
             .on_action(cx.listener(Self::close_node_context_menu))
             .on_mouse_down(
                 MouseButton::Right,
                 cx.listener(|this, _, cx| this.open_node_context_menu(cx)),
             )
-            .child(bounds_updater(
-                cx.view().clone(),
-                |this: &mut Self, bounds, _cx| this.bounds = bounds,
-            ))
     }
 }
 
