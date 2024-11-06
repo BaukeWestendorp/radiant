@@ -5,17 +5,18 @@ use flow::graph_def::{GraphDefinition, NodeKind};
 use gpui::*;
 use ui::input::TextField;
 use ui::theme::ActiveTheme;
-use ui::StyledExt;
+use ui::{bounds_updater, StyledExt};
 
-actions!(graph_editor, [OpenNodeContextMenu, CloseNodeContextMenu]);
+actions!(graph_editor, [CloseNodeContextMenu]);
 
 const CONTEXT: &str = "GraphEditor";
 
 pub fn init(cx: &mut AppContext) {
-    cx.bind_keys([
-        KeyBinding::new("space", OpenNodeContextMenu, Some(CONTEXT)),
-        KeyBinding::new("escape", CloseNodeContextMenu, Some(CONTEXT)),
-    ]);
+    cx.bind_keys([KeyBinding::new(
+        "escape",
+        CloseNodeContextMenu,
+        Some(CONTEXT),
+    )]);
 }
 
 pub struct GraphEditorView<Def: GraphDefinition> {
@@ -24,6 +25,7 @@ pub struct GraphEditorView<Def: GraphDefinition> {
     graph_offset: Point<Pixels>,
 
     focus_handle: FocusHandle,
+    bounds: Bounds<Pixels>,
 }
 
 impl<Def: GraphDefinition + 'static> GraphEditorView<Def>
@@ -43,13 +45,16 @@ where
                 new_node_context_menu,
                 graph_offset: Point::default(),
                 focus_handle,
+                bounds: Bounds::default(),
             }
         })
     }
 
-    fn open_node_context_menu(&mut self, _: &OpenNodeContextMenu, cx: &mut ViewContext<Self>) {
+    fn open_node_context_menu(&mut self, cx: &mut ViewContext<Self>) {
         self.new_node_context_menu.update(cx, |menu, cx| {
             menu.show(cx);
+            let position = cx.mouse_position() - self.bounds.origin;
+            menu.set_position(position, cx);
         });
     }
 
@@ -57,18 +62,6 @@ where
         self.new_node_context_menu.update(cx, |menu, cx| {
             menu.hide(cx);
         });
-    }
-
-    fn render_header(&self, cx: &WindowContext) -> impl IntoElement {
-        div()
-            .h_flex()
-            .px_2()
-            .bg(cx.theme().secondary)
-            .w_full()
-            .h_8()
-            .border_b_1()
-            .border_color(cx.theme().border)
-            .child("header")
     }
 
     fn handle_editor_drag(
@@ -95,10 +88,7 @@ where
         div()
             .key_context(CONTEXT)
             .track_focus(&self.focus_handle)
-            .on_action(cx.listener(Self::open_node_context_menu))
-            .on_action(cx.listener(Self::close_node_context_menu))
             .size_full()
-            .child(self.render_header(cx))
             .child(
                 div()
                     .id("editor-graph")
@@ -122,6 +112,15 @@ where
                     .on_drag_move(cx.listener(Self::handle_editor_drag)),
             )
             .child(self.new_node_context_menu.clone())
+            .on_action(cx.listener(Self::close_node_context_menu))
+            .on_mouse_down(
+                MouseButton::Right,
+                cx.listener(|this, _, cx| this.open_node_context_menu(cx)),
+            )
+            .child(bounds_updater(
+                cx.view().clone(),
+                |this: &mut Self, bounds, _cx| this.bounds = bounds,
+            ))
     }
 }
 
@@ -171,13 +170,22 @@ where
 
     pub fn show<View: 'static>(&mut self, cx: &mut ViewContext<View>) {
         self.shown = true;
-        self.position = cx.mouse_position();
         self.search_box.focus_handle(cx).focus(cx);
+        cx.stop_propagation();
         cx.notify();
     }
 
     pub fn hide<View: 'static>(&mut self, cx: &mut ViewContext<View>) {
         self.shown = false;
+        cx.notify();
+    }
+
+    pub fn set_position<View: 'static>(
+        &mut self,
+        position: Point<Pixels>,
+        cx: &mut ViewContext<View>,
+    ) {
+        self.position = position;
         cx.notify();
     }
 

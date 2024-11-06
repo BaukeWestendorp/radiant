@@ -8,3 +8,4 @@ flow.workspace = true
 ui.workspace = true
 
 gpui.workspace = true
+log = "0.4.22"
