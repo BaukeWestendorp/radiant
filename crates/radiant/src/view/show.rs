@@ -40,6 +40,7 @@ impl ShowView {
 
             cx.observe(&effect_graph_model, |this: &mut Self, model, cx| {
                 *this.show.effect_graph_mut() = model.read(cx).clone();
+                cx.set_window_edited(true);
                 cx.notify();
             })
             .detach();
@@ -70,7 +71,7 @@ impl ShowView {
         let path = cx.prompt_for_new_path(initial_directory.as_path());
         cx.spawn({
             let show = self.show.clone();
-            move |_, _cx| async move {
+            move |_, mut cx| async move {
                 let path = match path.await? {
                     Ok(path) => path,
                     Err(err) => bail!("Failed to get save-path: {}", err),
@@ -83,6 +84,10 @@ impl ShowView {
                 // FIXME: GPUI adds an extra extension for some reason.
 
                 show.save_to_file(&path)?;
+
+                cx.update(|cx| {
+                    cx.set_window_edited(false);
+                })?;
 
                 Ok(())
             }
