@@ -21,6 +21,7 @@ pub fn init(cx: &mut AppContext) {
 pub struct GraphEditorView<Def: GraphDefinition> {
     graph_view: View<GraphView<Def>>,
     new_node_context_menu: View<NewNodeContextMenu<Def>>,
+    graph_offset: Point<Pixels>,
 
     focus_handle: FocusHandle,
 }
@@ -40,6 +41,7 @@ where
             Self {
                 graph_view,
                 new_node_context_menu,
+                graph_offset: Point::default(),
                 focus_handle,
             }
         })
@@ -68,6 +70,19 @@ where
             .border_color(cx.theme().border)
             .child("header")
     }
+
+    fn handle_editor_drag(
+        &mut self,
+        event: &DragMoveEvent<EditorDrag>,
+        cx: &mut ViewContext<Self>,
+    ) {
+        let editor_drag = event.drag(cx);
+
+        let new_offset =
+            editor_drag.start_offset + (cx.mouse_position() - editor_drag.start_mouse_position);
+
+        self.graph_offset = new_offset;
+    }
 }
 
 impl<Def: GraphDefinition + 'static> Render for GraphEditorView<Def>
@@ -84,7 +99,28 @@ where
             .on_action(cx.listener(Self::close_node_context_menu))
             .size_full()
             .child(self.render_header(cx))
-            .child(self.graph_view.clone())
+            .child(
+                div()
+                    .id("editor-graph")
+                    .size_full()
+                    .absolute()
+                    .overflow_hidden()
+                    .child(
+                        div()
+                            .size_full()
+                            .left(self.graph_offset.x)
+                            .top(self.graph_offset.y)
+                            .child(self.graph_view.clone()),
+                    )
+                    .on_drag(
+                        EditorDrag {
+                            start_offset: self.graph_offset,
+                            start_mouse_position: cx.mouse_position(),
+                        },
+                        |_, cx| cx.new_view(|_cx| EmptyView),
+                    )
+                    .on_drag_move(cx.listener(Self::handle_editor_drag)),
+            )
             .child(self.new_node_context_menu.clone())
     }
 }
@@ -98,6 +134,11 @@ where
     fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
         self.focus_handle.clone()
     }
+}
+
+struct EditorDrag {
+    pub start_offset: Point<Pixels>,
+    pub start_mouse_position: Point<Pixels>,
 }
 
 struct NewNodeContextMenu<Def: GraphDefinition> {

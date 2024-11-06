@@ -133,19 +133,15 @@ where
             .collect()
     }
 
-    fn node_on_drag_move(
-        &mut self,
-        event: &DragMoveEvent<DraggedNode>,
-        cx: &mut ViewContext<Self>,
-    ) {
-        let dragged_node = event.drag(cx);
+    fn handle_node_drag(&mut self, event: &DragMoveEvent<NodeDrag>, cx: &mut ViewContext<Self>) {
+        let node_drag = event.drag(cx);
 
-        if self.node_id != dragged_node.node_id {
+        if self.node_id != node_drag.node_id {
             return;
         }
 
-        let new_position = dragged_node.start_node_position
-            + (cx.mouse_position() - dragged_node.start_mouse_position);
+        let new_position =
+            node_drag.start_node_position + (cx.mouse_position() - node_drag.start_mouse_position);
 
         self.graph.update(cx, |graph, cx| {
             graph.node_mut(self.node_id).data.set_position(new_position);
@@ -202,20 +198,20 @@ where
             .child(header)
             .child(content)
             .on_drag(
-                DraggedNode {
+                NodeDrag {
                     node_id: self.node_id,
                     start_node_position: *position,
                     start_mouse_position: cx.mouse_position(),
                 },
                 |_, cx| cx.new_view(|_cx| EmptyView),
             )
-            .on_drag_move(cx.listener(Self::node_on_drag_move))
+            .on_drag_move(cx.listener(Self::handle_node_drag))
     }
 }
 
 impl<Def: GraphDefinition + 'static> EventEmitter<SocketEvent> for NodeView<Def> {}
 
-struct DraggedNode {
+struct NodeDrag {
     pub node_id: NodeId,
 
     pub start_node_position: Point<Pixels>,
