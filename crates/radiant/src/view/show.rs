@@ -1,9 +1,12 @@
 use anyhow::bail;
 use flow_gpui::editor::GraphEditorView;
 use gpui::*;
-use show::effect_graph::EffectGraphDefinition;
-use show::Show;
+use show::effect_graph::{EffectGraphDefinition, EffectGraphProcessingContext};
+use show::fixture::FixtureId;
+use show::{FixtureGroup, Show};
 use ui::theme::ActiveTheme;
+
+use crate::io::{IoManager, IoManagerEvent};
 
 actions!(show, [Save]);
 
@@ -32,7 +35,8 @@ pub fn open_show_window(show: Show, cx: &mut AppContext) -> anyhow::Result<Windo
 }
 
 pub struct ShowView {
-    show: Show,
+    io_manager: Model<IoManager>,
+    show: Model<Show>,
     editor_view: View<GraphEditorView<EffectGraphDefinition>>,
     focus_handle: FocusHandle,
 }
@@ -44,20 +48,58 @@ impl ShowView {
             let effect_graph_model = cx.new_model(|_cx| effect_graph);
 
             cx.observe(&effect_graph_model, |this: &mut Self, model, cx| {
-                *this.show.effect_graph_mut() = model.read(cx).clone();
+                this.show.update(cx, |show, cx| {
+                    *show.effect_graph_mut() = model.read(cx).clone();
+                });
                 cx.set_window_edited(true);
                 cx.notify();
             })
             .detach();
 
+            let io_manager = cx.new_model(|cx| {
+                let io_manager = IoManager::new(show.dmx_protocols()).unwrap();
+                io_manager.start_emitting(cx);
+                io_manager
+            });
+
+            cx.subscribe(&io_manager, Self::handle_io_manager_event)
+                .detach();
+
             let editor_view = GraphEditorView::build(effect_graph_model, cx);
             let focus_handle = cx.focus_handle().clone();
+
             Self {
-                show,
+                io_manager,
+                show: cx.new_model(|_cx| show),
                 editor_view,
                 focus_handle,
             }
         })
+    }
+
+    fn handle_io_manager_event(
+        &mut self,
+        io_manager: Model<IoManager>,
+        event: &IoManagerEvent,
+        cx: &mut ViewContext<Self>,
+    ) {
+        match event {
+            IoManagerEvent::OutputRequested => io_manager.update(cx, |io_manager, cx| {
+                let mut context = EffectGraphProcessingContext::default();
+                context.set_group(FixtureGroup::new(vec![
+                    FixtureId(0),
+                    FixtureId(1),
+                    FixtureId(2),
+                    FixtureId(3),
+                    FixtureId(4),
+                    FixtureId(5),
+                ]));
+                context
+                    .process_frame(self.show.read(cx).effect_graph())
+                    .unwrap();
+                io_manager.set_dmx_output(context.dmx_output);
+            }),
+        }
     }
 
     fn render_sidebar(&self, cx: &AppContext) -> impl IntoElement {
@@ -88,11 +130,14 @@ impl ShowView {
 
                 // FIXME: GPUI adds an extra extension for some reason.
 
-                show.save_to_file(&path)?;
+                cx.update(|cx| -> anyhow::Result<()> {
+                    show.read(cx).save_to_file(&path)?;
 
-                cx.update(|cx| {
                     cx.set_window_edited(false);
-                })?;
+                    cx.add_recent_document(&path);
+
+                    Ok(())
+                })??;
 
                 Ok(())
             }

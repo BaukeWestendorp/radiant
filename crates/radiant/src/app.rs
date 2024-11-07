@@ -78,6 +78,7 @@ impl RadiantApp {
 
                 cx.update(|cx| -> anyhow::Result<()> {
                     view::show::open_show_window(show, cx)?;
+                    cx.add_recent_document(&path);
                     Ok(())
                 })??;
 

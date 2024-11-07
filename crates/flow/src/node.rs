@@ -25,7 +25,9 @@ impl<Def: GraphDefinition> Node<Def> {
         self.inputs
             .iter()
             .find(|i| i.label == label)
-            .unwrap_or_else(|| panic!("Tried to get input parameter with nonexistent label: '{label}' not found on node"))
+            .expect(&format!(
+                "Tried to get input parameter with nonexistent label: '{label}' not found on node"
+            ))
     }
 
     pub fn inputs(&self) -> &[NodeInputParameter] {
@@ -40,7 +42,9 @@ impl<Def: GraphDefinition> Node<Def> {
         self.outputs
             .iter()
             .find(|o| o.label == label)
-            .unwrap_or_else(|| panic!("Tried to get output parameter with nonexistent label: '{label}' not found on node"))
+            .expect(&format!(
+                "Tried to get output parameter with nonexistent label: '{label}' not found on node"
+            ))
     }
 
     pub fn outputs(&self) -> &[NodeOutputParameter] {

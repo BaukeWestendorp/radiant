@@ -1,6 +1,6 @@
 use crate::DmxChannel;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct DmxUniverse(Vec<u8>);
 
 impl DmxUniverse {

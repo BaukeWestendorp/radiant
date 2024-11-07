@@ -13,7 +13,9 @@ impl NumberField {
             text_field: {
                 let field = cx.new_view(|cx| {
                     let mut field = TextField::new(cx);
-                    field.set_pattern(Some(Regex::new(r"^-?\d*\.?\d*$").unwrap()));
+                    field.set_pattern(Some(
+                        Regex::new(r"^-?\d*\.?\d*$").expect("regex should be valid"),
+                    ));
 
                     field
                 });

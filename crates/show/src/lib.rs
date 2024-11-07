@@ -1,4 +1,5 @@
 use std::fs;
+use std::net::Ipv4Addr;
 use std::path::Path;
 
 use crate::effect_graph::EffectGraph;
@@ -9,6 +10,8 @@ pub mod fixture;
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Show {
+    dmx_protocols: DmxProtocols,
+
     fixtures: Vec<Fixture>,
 
     effect_graph: EffectGraph,
@@ -31,6 +34,10 @@ impl Show {
         &mut self.effect_graph
     }
 
+    pub fn dmx_protocols(&self) -> &DmxProtocols {
+        &self.dmx_protocols
+    }
+
     pub fn load_from_file(path: &Path) -> anyhow::Result<Self> {
         let show_json = fs::read_to_string(path)?;
         let show: Self = serde_json::from_str(&show_json)?;
@@ -49,10 +56,28 @@ impl Show {
 impl Default for Show {
     fn default() -> Self {
         Self {
+            dmx_protocols: DmxProtocols::default(),
             fixtures: vec![Fixture::new(FixtureId(0))],
             effect_graph: EffectGraph::default(),
         }
     }
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct DmxProtocols {
+    artnet: Vec<ArtnetNodeSettings>,
+}
+
+impl DmxProtocols {
+    pub fn artnet(&self) -> &[ArtnetNodeSettings] {
+        &self.artnet
+    }
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ArtnetNodeSettings {
+    pub destination_ip: Ipv4Addr,
+    pub universe: u16,
 }
 
 #[derive(Clone, Default)]

@@ -388,7 +388,7 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
 
                 context
                     .dmx_output
-                    .set_channel_value(0, channel, value.byte())
+                    .set_channel_value(0, channel, value.byte());
             }
         }
 
@@ -476,7 +476,7 @@ impl EffectGraphProcessingContext {
         self.group = group;
     }
 
-    pub fn process_frame(&mut self, graph: &mut EffectGraph) -> Result<(), GraphError> {
+    pub fn process_frame(&mut self, graph: &EffectGraph) -> Result<(), GraphError> {
         self.current_fixture_index = 0;
         while self.current_fixture_index < self.group.len() {
             graph.process(self)?;
@@ -520,9 +520,15 @@ impl Value<EffectGraphDefinition> for EffectGraphValue {
             (Self::Int(v), DT::DmxChannel) => Ok(Self::DmxChannel(
                 DmxChannel::new(*v as u16).map_err(|_| GraphError::CastFailed)?,
             )),
+            (Self::Int(v), DT::AttributeValue) => {
+                Ok(Self::AttributeValue(AttributeValue::new(*v as f32)))
+            }
 
             (Self::Float(_), DT::Float) => Ok(self.clone()),
             (Self::Float(v), DT::Int) => Ok(Self::Int(*v as i32)),
+            (Self::Float(v), DT::AttributeValue) => {
+                Ok(Self::AttributeValue(AttributeValue::new(*v)))
+            }
 
             (Self::FixtureId(_), DT::FixtureId) => Ok(self.clone()),
             (Self::FixtureId(v), DT::Int) => Ok(Self::Int(v.0 as i32)),

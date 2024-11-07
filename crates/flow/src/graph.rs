@@ -220,7 +220,7 @@ impl<Def: GraphDefinition> Graph<Def> {
     }
 
     pub fn process(
-        &mut self,
+        &self,
         context: &mut <Def::NodeKind as NodeKind<Def>>::ProcessingContext,
     ) -> Result<(), GraphError> {
         for node_id in &self.graph_ends {

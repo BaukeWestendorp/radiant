@@ -56,7 +56,9 @@ pub struct AttributeValue {
 
 impl AttributeValue {
     pub fn new(value: f32) -> Self {
-        Self { value }
+        Self {
+            value: value.clamp(0.0, 1.0),
+        }
     }
 
     pub fn relative_value(&self) -> f32 {

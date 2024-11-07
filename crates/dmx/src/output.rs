@@ -13,22 +13,22 @@ impl DmxOutput {
         }
     }
 
-    pub fn get_universe(&self, universe: u16) -> Option<&DmxUniverse> {
+    pub fn universe(&self, universe: u16) -> Option<&DmxUniverse> {
         self.universes.get(&universe)
     }
 
-    pub fn get_channel_value(&self, universe: u16, channel: DmxChannel) -> Option<u8> {
-        Some(self.get_universe(universe)?.get_channel_value(channel))
+    pub fn channel_value(&self, universe: u16, channel: DmxChannel) -> Option<u8> {
+        Some(self.universe(universe)?.get_channel_value(channel))
     }
 
     pub fn set_channel_value(&mut self, universe: u16, channel: DmxChannel, value: u8) {
-        if self.get_universe(universe).is_none() {
+        if self.universe(universe).is_none() {
             self.create_universe(universe);
         }
 
         self.universes
             .get_mut(&universe)
-            .unwrap()
+            .expect("universe should have been created")
             .set_channel_value(channel, value);
     }
 

@@ -1,61 +1,77 @@
+use std::{io, time::Duration};
+
 use artnet::ArtnetNode;
 use dmx::DmxOutput;
-use gpui::{AppContext, Global, Model, Timer, UpdateGlobal};
-use show::effect_graph::EffectGraphProcessingContext;
-use show::fixture::FixtureId;
-use show::{FixtureGroup, Show};
-use std::time::Duration;
+use gpui::{EventEmitter, ModelContext, Timer};
+use show::DmxProtocols;
 
 pub mod artnet;
 
-pub fn init(show: Model<Show>, cx: &mut AppContext) {
-    cx.set_global(IoManager::new());
-
-    cx.spawn(|cx| async move {
-        loop {
-            Timer::after(Duration::from_millis(40)).await;
-
-            // FIXME: This is kind of ad-hoc and should not be in this task. We might need to do something similar to cursor blink thing in Zed.
-            cx.update(|cx| {
-                let mut context = EffectGraphProcessingContext::default();
-                context.set_group(FixtureGroup::new(vec![FixtureId(0), FixtureId(1)]));
-                show.update(cx, |show, _cx| {
-                    context.process_frame(show.effect_graph_mut()).unwrap();
-                });
-
-                IoManager::update_global(cx, |io_manager, _cx| {
-                    io_manager.set_output(context.dmx_output)
-                });
-            })
-            .unwrap();
-
-            cx.read_global::<IoManager, _>(|io_manager, _cx| {
-                if let Some(universe) = io_manager.output.get_universe(0) {
-                    io_manager.artnet_node.send_dmx(universe.bytes().to_vec());
-                }
-            })
-            .unwrap();
-        }
-    })
-    .detach();
-}
+const ARTNET_INTERVAL: Duration = Duration::from_millis(40);
 
 pub struct IoManager {
-    output: DmxOutput,
-    artnet_node: ArtnetNode,
+    artnet_nodes: Vec<ArtnetNode>,
+
+    dmx_output: DmxOutput,
 }
 
 impl IoManager {
-    fn new() -> Self {
-        Self {
-            output: DmxOutput::new(),
-            artnet_node: ArtnetNode::bind(),
-        }
+    pub fn new(dmx_protocols: &DmxProtocols) -> io::Result<Self> {
+        let artnet_nodes = dmx_protocols
+            .artnet()
+            .iter()
+            .map(|settings| ArtnetNode::bind(settings.clone()))
+            .collect::<io::Result<Vec<_>>>()?;
+
+        Ok(Self {
+            artnet_nodes,
+            dmx_output: DmxOutput::default(),
+        })
     }
 
-    pub fn set_output(&mut self, output: DmxOutput) {
-        self.output = output;
+    pub fn start_emitting(&self, cx: &ModelContext<Self>) {
+        self.spawn_artnet_task(cx);
+    }
+
+    pub fn set_dmx_output(&mut self, dmx_output: DmxOutput) {
+        self.dmx_output = dmx_output;
+    }
+
+    fn spawn_artnet_task(&self, cx: &ModelContext<Self>) {
+        cx.spawn::<_, anyhow::Result<()>>({
+            |this, mut cx| async move {
+                loop {
+                    Timer::after(ARTNET_INTERVAL).await;
+
+                    this.update(&mut cx, |this, cx| -> anyhow::Result<()> {
+                        cx.emit(IoManagerEvent::OutputRequested);
+
+                        for node in this.artnet_nodes.iter() {
+                            let Some(universe) = this.dmx_output.universe(node.settings.universe)
+                            else {
+                                log::warn!(
+                                    "DMX data not found for universe {}",
+                                    node.settings.universe
+                                );
+                                continue;
+                            };
+
+                            let universe_dmx = universe.bytes();
+                            node.send_dmx(universe_dmx.to_vec())?;
+                        }
+
+                        Ok(())
+                    })??;
+                }
+            }
+        })
+        .detach_and_log_err(cx);
     }
 }
 
-impl Global for IoManager {}
+#[derive(Debug, Clone, Copy)]
+pub enum IoManagerEvent {
+    OutputRequested,
+}
+
+impl EventEmitter<IoManagerEvent> for IoManager {}
