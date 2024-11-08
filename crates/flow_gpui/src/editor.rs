@@ -26,6 +26,7 @@ where
     graph_view: View<GraphView<Def>>,
     new_node_context_menu: View<NewNodeContextMenu<Def>>,
     graph_offset: Point<Pixels>,
+    prev_mouse_pos: Option<Point<Pixels>>,
 
     focus_handle: FocusHandle,
     bounds: Bounds<Pixels>,
@@ -48,6 +49,7 @@ where
                 graph_view,
                 new_node_context_menu,
                 graph_offset: Point::default(),
+                prev_mouse_pos: None,
                 focus_handle,
                 bounds: Bounds::default(),
             }
@@ -68,17 +70,17 @@ where
         });
     }
 
-    fn handle_editor_drag(
-        &mut self,
-        event: &DragMoveEvent<EditorDrag>,
-        cx: &mut ViewContext<Self>,
-    ) {
-        let editor_drag = event.drag(cx);
+    fn handle_drag_move(&mut self, _: &DragMoveEvent<()>, cx: &mut ViewContext<Self>) {
+        let diff = self
+            .prev_mouse_pos
+            .map_or(Point::default(), |prev| cx.mouse_position() - prev);
 
-        let new_offset =
-            editor_drag.start_offset + (cx.mouse_position() - editor_drag.start_mouse_position);
+        self.graph_offset += diff;
+        self.prev_mouse_pos = Some(cx.mouse_position());
+    }
 
-        self.graph_offset = new_offset;
+    fn handle_mouse_up(&mut self, _: &MouseUpEvent, _cx: &mut ViewContext<Self>) {
+        self.prev_mouse_pos = None;
     }
 }
 
@@ -102,14 +104,10 @@ where
                     .top(self.graph_offset.y)
                     .child(self.graph_view.clone()),
             )
-            .on_drag(
-                EditorDrag {
-                    start_offset: self.graph_offset,
-                    start_mouse_position: cx.mouse_position(),
-                },
-                |_, cx| cx.new_view(|_cx| EmptyView),
-            )
-            .on_drag_move(cx.listener(Self::handle_editor_drag));
+            .on_drag((), |_, cx| cx.new_view(|_cx| EmptyView))
+            .on_drag_move(cx.listener(Self::handle_drag_move))
+            .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
+            .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up));
 
         div()
             .key_context(CONTEXT)
@@ -139,11 +137,6 @@ where
     fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
         self.focus_handle.clone()
     }
-}
-
-struct EditorDrag {
-    pub start_offset: Point<Pixels>,
-    pub start_mouse_position: Point<Pixels>,
 }
 
 struct NewNodeContextMenu<Def: GraphDefinition>

@@ -128,7 +128,7 @@ impl ShowView {
                     bail!("Failed to get save-path: Dialog cancelled.")
                 };
 
-                // FIXME: GPUI adds an extra extension for some reason.
+                // FIXME: GPUI adds an extra extension sometimes for some reason.
 
                 cx.update(|cx| -> anyhow::Result<()> {
                     show.read(cx).save_to_file(&path)?;

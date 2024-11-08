@@ -44,3 +44,9 @@ impl From<gpui::Point<Pixels>> for Point {
         }
     }
 }
+
+impl From<Point> for gpui::Point<Pixels> {
+    fn from(value: Point) -> Self {
+        Self::new(value.x.into(), value.y.into())
+    }
+}

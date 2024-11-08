@@ -26,7 +26,7 @@ impl<Def: GraphDefinition> Node<Def> {
             .iter()
             .find(|i| i.label == label)
             .expect(&format!(
-                "Tried to get input parameter with nonexistent label: '{label}' not found on node"
+                "tried to get input parameter with nonexistent label: '{label}' not found on node"
             ))
     }
 
@@ -43,7 +43,7 @@ impl<Def: GraphDefinition> Node<Def> {
             .iter()
             .find(|o| o.label == label)
             .expect(&format!(
-                "Tried to get output parameter with nonexistent label: '{label}' not found on node"
+                "tried to get output parameter with nonexistent label: '{label}' not found on node"
             ))
     }
 

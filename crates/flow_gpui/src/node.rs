@@ -32,6 +32,7 @@ pub struct NodeView<Def: GraphDefinition> {
     inputs: Vec<View<InputView<Def>>>,
     outputs: Vec<View<OutputView<Def>>>,
     focus_handle: FocusHandle,
+    prev_mouse_pos: Option<Point<Pixels>>,
 }
 
 impl<Def: GraphDefinition + 'static> NodeView<Def>
@@ -48,6 +49,7 @@ where
             outputs: Self::build_outputs(node_id, &graph, cx),
             graph,
             focus_handle: cx.focus_handle().clone(),
+            prev_mouse_pos: None,
         })
     }
 
@@ -153,20 +155,28 @@ where
             .collect()
     }
 
-    fn handle_node_drag(&mut self, event: &DragMoveEvent<NodeDrag>, cx: &mut ViewContext<Self>) {
+    fn handle_drag_move(&mut self, event: &DragMoveEvent<NodeDrag>, cx: &mut ViewContext<Self>) {
         let node_drag = event.drag(cx);
-
         if self.node_id != node_drag.node_id {
             return;
         }
 
-        let new_pos = node_drag.start_node_position
-            + (geo::Point::from(cx.mouse_position()) - node_drag.start_mouse_position);
+        let diff = self
+            .prev_mouse_pos
+            .map_or(Point::default(), |prev| cx.mouse_position() - prev);
 
         self.graph.update(cx, |graph, cx| {
-            graph.node_mut(self.node_id).data.set_position(new_pos);
+            let node_data = &mut graph.node_mut(self.node_id).data;
+            let new_position = *node_data.position() + diff.into();
+            node_data.set_position(new_position);
             cx.notify();
         });
+
+        self.prev_mouse_pos = Some(cx.mouse_position());
+    }
+
+    fn handle_mouse_up(&mut self, _: &MouseUpEvent, _cx: &mut ViewContext<Self>) {
+        self.prev_mouse_pos = None;
     }
 }
 
@@ -210,7 +220,6 @@ where
             .key_context(CONTEXT)
             .id(ElementId::Name(format!("node-{:?}", self.node_id).into()))
             .track_focus(&self.focus_handle)
-            .hover(|e| e) // FIXME: This is a hack to make the node a little bit less spacy when dragging for some reason...
             .absolute()
             .left(px(position.x))
             .top(px(position.y))
@@ -233,12 +242,12 @@ where
             .on_drag(
                 NodeDrag {
                     node_id: self.node_id,
-                    start_node_position: *position,
-                    start_mouse_position: cx.mouse_position().into(),
                 },
                 |_, cx| cx.new_view(|_cx| EmptyView),
             )
-            .on_drag_move(cx.listener(Self::handle_node_drag))
+            .on_drag_move(cx.listener(Self::handle_drag_move))
+            .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
+            .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up))
     }
 }
 
@@ -271,9 +280,6 @@ pub enum SocketEvent {
 
 struct NodeDrag {
     pub node_id: NodeId,
-
-    pub start_node_position: geo::Point,
-    pub start_mouse_position: geo::Point,
 }
 
 pub struct InputView<Def: GraphDefinition> {
