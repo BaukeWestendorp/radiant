@@ -9,6 +9,7 @@ use flow::{InputParameterKind, NodeId, OutputParameterKind};
 use flow_gpui::node::ControlEvent;
 use flow_gpui::{VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
 use gpui::{rgb, AnyView, ElementId, EventEmitter, Hsla, ViewContext, VisualContext};
+use std::fmt::Display;
 use strum::IntoEnumIterator;
 use ui::input::{NumberField, Slider, SliderEvent};
 
@@ -452,15 +453,16 @@ impl flow_gpui::NodeCategory for NodeCategory {
     }
 }
 
-impl ToString for NodeCategory {
-    fn to_string(&self) -> String {
-        match self {
+impl Display for NodeCategory {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
             NodeCategory::NewValue => "New Value",
             NodeCategory::Math => "Math",
             NodeCategory::Context => "Context",
             NodeCategory::Output => "Output",
         }
-        .to_string()
+        .to_string();
+        write!(f, "{}", str)
     }
 }
 
@@ -545,6 +547,28 @@ impl Value<EffectGraphDefinition> for EffectGraphValue {
             (Self::DmxChannel(v), DT::Int) => Ok(Self::Int(v.value() as i32)),
             (Self::DmxChannel(v), DT::Float) => Ok(Self::Float(v.value() as f32)),
 
+            _ => Err(GraphError::CastFailed),
+        }
+    }
+}
+
+impl TryFrom<EffectGraphValue> for i32 {
+    type Error = GraphError;
+
+    fn try_from(value: EffectGraphValue) -> Result<Self, Self::Error> {
+        match value {
+            EffectGraphValue::Int(value) => Ok(value),
+            _ => Err(GraphError::CastFailed),
+        }
+    }
+}
+
+impl TryFrom<EffectGraphValue> for f32 {
+    type Error = GraphError;
+
+    fn try_from(value: EffectGraphValue) -> Result<Self, Self::Error> {
+        match value {
+            EffectGraphValue::Float(value) => Ok(value),
             _ => Err(GraphError::CastFailed),
         }
     }
@@ -641,7 +665,11 @@ impl VisualControl<EffectGraphDefinition> for EffectGraphControl {
         match self {
             Self::Int => {
                 let field = cx.new_view(|cx| {
-                    let field = NumberField::new(cx);
+                    let mut field = NumberField::new(cx);
+                    let value: i32 = initial_value
+                        .try_into()
+                        .expect("Int field expects an i32 value");
+                    field.set_value(value as f32, cx);
                     field.set_validate(Some(Box::new(|v| v.parse::<i32>().is_ok())), cx);
                     field
                 });
@@ -657,7 +685,11 @@ impl VisualControl<EffectGraphDefinition> for EffectGraphControl {
             }
             Self::Float => {
                 let field = cx.new_view(|cx| {
-                    let field = NumberField::new(cx);
+                    let mut field = NumberField::new(cx);
+                    let value: f32 = initial_value
+                        .try_into()
+                        .expect("Float field expects an f32 value");
+                    field.set_value(value, cx);
                     field.set_validate(Some(Box::new(|v| v.parse::<f32>().is_ok())), cx);
                     field
                 });
