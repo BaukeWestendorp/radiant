@@ -10,7 +10,7 @@ use ui::theme::ActiveTheme;
 
 use crate::io::{IoManager, IoManagerEvent};
 
-actions!(show, [Save, SaveAs]);
+actions!(show, [Save, SaveAs, Close]);
 
 const CONTEXT: &str = "Show";
 
@@ -18,6 +18,7 @@ pub fn init(cx: &mut AppContext) {
     cx.bind_keys([
         KeyBinding::new("cmd-s", Save, Some(CONTEXT)),
         KeyBinding::new("shift-cmd-s", SaveAs, Some(CONTEXT)),
+        KeyBinding::new("cmd-w", Close, Some(CONTEXT)),
     ]);
 }
 
@@ -48,48 +49,17 @@ pub fn open_show_window(
         };
 
         // FIXME: This is a hack to make sure the 'is edited' indicator is disabled on opening of window.
-        cx.spawn(|mut cx| async move {
+        cx.spawn::<_, Result<()>>(|mut cx| async move {
             Timer::after(Duration::from_millis(100)).await;
             cx.update(|cx| cx.set_window_edited(false))?;
-            Ok::<(), anyhow::Error>(())
+            Ok(())
         })
         .detach_and_log_err(cx);
 
         cx.on_window_should_close({
             let show_view = show_view.clone();
             move |cx| {
-                let answer_task = cx.prompt(
-                    PromptLevel::Warning,
-                    "You have unsaved changes",
-                    None,
-                    &["Save and close", "Close without saving", "Cancel"],
-                );
-
-                cx.spawn({
-                    let show_view = show_view.clone();
-                    move |mut cx| async move {
-                        let Ok(answer) = answer_task.await else {
-                            return Ok::<(), anyhow::Error>(());
-                        };
-
-                        if matches!(answer, 0 | 1) {
-                            cx.update(|cx| {
-                                if answer == 0 {
-                                    show_view.update(cx, |view, cx| {
-                                        view.handle_save(&Save, cx);
-                                        cx.remove_window();
-                                    });
-                                } else {
-                                    cx.remove_window();
-                                }
-                            })?;
-                        }
-
-                        Ok(())
-                    }
-                })
-                .detach_and_log_err(cx);
-
+                show_view.update(cx, |view, cx| view.close_window(cx));
                 false
             }
         });
@@ -231,6 +201,39 @@ impl ShowView {
         })
         .detach_and_log_err(cx);
     }
+
+    fn handle_close(&mut self, _: &Close, cx: &mut ViewContext<Self>) {
+        self.close_window(cx);
+    }
+
+    fn close_window(&self, cx: &mut ViewContext<Self>) {
+        let answer_task = cx.prompt(
+            PromptLevel::Warning,
+            "You have unsaved changes",
+            None,
+            &["Save and close", "Close without saving", "Cancel"],
+        );
+
+        cx.spawn::<_, Result<()>>(move |this, mut cx| async move {
+            let Ok(answer) = answer_task.await else {
+                return Ok(());
+            };
+
+            if matches!(answer, 0 | 1) {
+                cx.update(move |cx| -> Result<()> {
+                    this.update(cx, |this: &mut Self, cx| {
+                        if answer == 0 {
+                            this.handle_save(&Save, cx);
+                        }
+                        cx.remove_window();
+                    })
+                })??;
+            }
+
+            Ok(())
+        })
+        .detach_and_log_err(cx);
+    }
 }
 
 impl Render for ShowView {
@@ -247,6 +250,7 @@ impl Render for ShowView {
             .child(self.editor_view.clone())
             .on_action(cx.listener(Self::handle_save))
             .on_action(cx.listener(Self::handle_save_as))
+            .on_action(cx.listener(Self::handle_close))
     }
 }
 
