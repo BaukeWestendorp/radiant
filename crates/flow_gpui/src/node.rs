@@ -495,7 +495,6 @@ where
                         cx.emit(SocketEvent::StartNewEdge(parameter));
                     }
                 }))
-                // FIXME: Is there a way to do this in a single listener?
                 .on_mouse_up(
                     MouseButton::Left,
                     cx.listener(|_, _, cx| cx.emit(SocketEvent::EndNewEdge)),

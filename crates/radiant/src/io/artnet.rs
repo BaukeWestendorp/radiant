@@ -36,8 +36,6 @@ impl ArtnetNode {
         let addr = SocketAddr::new(self.settings.destination_ip.into(), PORT);
         self.socket.send_to(&bytes, addr)?;
 
-        log::debug!("Sent DMX to {}", addr);
-
         Ok(())
     }
 }

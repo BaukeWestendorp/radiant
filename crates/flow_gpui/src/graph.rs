@@ -380,7 +380,7 @@ where
             node::NODE_CONTENT_Y_PADDING.0 + // Move below the content's vertical padding.
             socket_index as f32 * (node::SOCKET_HEIGHT.0 + node::SOCKET_GAP.0) + // Move to the correct socket.
             node::SOCKET_HEIGHT.0 / 2.0 + // Move to the center of the socket.
-            1.0; // FIXME: Why do we need this to actually move it to the center?
+            1.0;
 
         point(
             px(node_position.x + x_offset),

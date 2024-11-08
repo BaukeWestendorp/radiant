@@ -18,13 +18,11 @@ pub trait VisualNodeKind {
 
     fn category(&self) -> Self::Category;
 
-    // FIXME: I don't know what this warning is about...
     #[allow(opaque_hidden_inferred_bound)]
     fn all() -> impl Iterator<Item = Self>;
 }
 
 pub trait NodeCategory: ToString + Copy + PartialEq {
-    // FIXME: I don't know what this warning is about...
     #[allow(opaque_hidden_inferred_bound)]
     fn all() -> impl Iterator<Item = Self>;
 }
