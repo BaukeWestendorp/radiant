@@ -8,15 +8,15 @@ use ui::theme::ActiveTheme;
 
 use crate::io::{IoManager, IoManagerEvent};
 
-actions!(show, [Save]);
+actions!(show, [SaveAs]);
 
 const CONTEXT: &str = "Show";
 
 pub fn init(cx: &mut AppContext) {
-    cx.bind_keys([KeyBinding::new("cmd-s", Save, Some(CONTEXT))]);
+    cx.bind_keys([KeyBinding::new("shift-cmd-s", SaveAs, Some(CONTEXT))]);
 }
 
-pub fn open_show_window(show: Show, cx: &mut AppContext) -> anyhow::Result<WindowHandle<ShowView>> {
+pub fn open_show_window(show: Show, cx: &mut AppContext) -> Result<WindowHandle<ShowView>> {
     let options = WindowOptions {
         window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
             None,
@@ -35,7 +35,7 @@ pub fn open_show_window(show: Show, cx: &mut AppContext) -> anyhow::Result<Windo
 }
 
 pub struct ShowView {
-    io_manager: Model<IoManager>,
+    _io_manager: Model<IoManager>,
     show: Model<Show>,
     editor_view: View<GraphEditorView<EffectGraphDefinition>>,
     focus_handle: FocusHandle,
@@ -69,7 +69,7 @@ impl ShowView {
             let focus_handle = cx.focus_handle().clone();
 
             Self {
-                io_manager,
+                _io_manager: io_manager,
                 show: cx.new_model(|_cx| show),
                 editor_view,
                 focus_handle,
@@ -112,7 +112,7 @@ impl ShowView {
             .border_color(cx.theme().border)
     }
 
-    fn handle_save(&mut self, _: &Save, cx: &mut ViewContext<Self>) {
+    fn handle_save(&mut self, _: &SaveAs, cx: &mut ViewContext<Self>) {
         let initial_directory = dirs::desktop_dir().unwrap_or_else(|| dirs::home_dir().unwrap());
 
         let path = cx.prompt_for_new_path(initial_directory.as_path());
@@ -130,7 +130,7 @@ impl ShowView {
 
                 // FIXME: GPUI adds an extra extension sometimes for some reason.
 
-                cx.update(|cx| -> anyhow::Result<()> {
+                cx.update(|cx| -> Result<()> {
                     show.read(cx).save_to_file(&path)?;
 
                     cx.set_window_edited(false);
