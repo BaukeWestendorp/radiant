@@ -38,7 +38,7 @@ impl Show {
         &self.dmx_protocols
     }
 
-    pub fn load_from_file(path: &Path) -> anyhow::Result<Self> {
+    pub fn read_from_file(path: &Path) -> anyhow::Result<Self> {
         let show_json = fs::read_to_string(path)?;
         let show: Self = serde_json::from_str(&show_json)?;
         Ok(show)

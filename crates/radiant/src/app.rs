@@ -1,6 +1,6 @@
 use anyhow::bail;
 use gpui::*;
-use show::Show;
+use std::path::PathBuf;
 use ui::theme::Theme;
 
 use crate::view;
@@ -15,7 +15,7 @@ impl RadiantApp {
         Self {}
     }
 
-    pub fn run(self, cx: &mut AppContext) {
+    pub fn run(&self, cx: &mut AppContext) {
         cx.set_global(Theme::default());
 
         self.init(cx);
@@ -23,10 +23,11 @@ impl RadiantApp {
         self.set_menus(cx);
         self.register_actions(cx);
 
-        view::show::open_show_window(Show::default(), None, cx)
-            .expect("failed to open Show Window");
-
         cx.activate(true);
+    }
+
+    pub fn open_show_window(&self, path: Option<PathBuf>, cx: &mut AppContext) {
+        view::show::open_show_window(path, cx).expect("failed to open Show Window");
     }
 
     fn init(&self, cx: &mut AppContext) {
@@ -82,10 +83,8 @@ impl RadiantApp {
                     Err(err) => bail!("Failed to open file: {err}"),
                 };
 
-                let show = Show::load_from_file(&path)?;
-
                 cx.update(|cx| -> Result<()> {
-                    view::show::open_show_window(show, Some(path.clone()), cx)?;
+                    view::show::open_show_window(Some(path.clone()), cx)?;
                     cx.add_recent_document(&path);
                     Ok(())
                 })??;
