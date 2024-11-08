@@ -23,7 +23,8 @@ impl RadiantApp {
         self.set_menus(cx);
         self.register_actions(cx);
 
-        view::show::open_show_window(Show::default(), cx).expect("failed to open Show Window");
+        view::show::open_show_window(Show::default(), None, cx)
+            .expect("failed to open Show Window");
 
         cx.activate(true);
     }
@@ -84,7 +85,7 @@ impl RadiantApp {
                 let show = Show::load_from_file(&path)?;
 
                 cx.update(|cx| -> Result<()> {
-                    view::show::open_show_window(show, cx)?;
+                    view::show::open_show_window(show, Some(path.clone()), cx)?;
                     cx.add_recent_document(&path);
                     Ok(())
                 })??;

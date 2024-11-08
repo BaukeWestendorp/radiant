@@ -4,19 +4,27 @@ use gpui::*;
 use show::effect_graph::{EffectGraphDefinition, EffectGraphProcessingContext};
 use show::fixture::FixtureId;
 use show::{FixtureGroup, Show};
+use std::path::PathBuf;
 use ui::theme::ActiveTheme;
 
 use crate::io::{IoManager, IoManagerEvent};
 
-actions!(show, [SaveAs]);
+actions!(show, [Save, SaveAs]);
 
 const CONTEXT: &str = "Show";
 
 pub fn init(cx: &mut AppContext) {
-    cx.bind_keys([KeyBinding::new("shift-cmd-s", SaveAs, Some(CONTEXT))]);
+    cx.bind_keys([
+        KeyBinding::new("cmd-s", Save, Some(CONTEXT)),
+        KeyBinding::new("shift-cmd-s", SaveAs, Some(CONTEXT)),
+    ]);
 }
 
-pub fn open_show_window(show: Show, cx: &mut AppContext) -> Result<WindowHandle<ShowView>> {
+pub fn open_show_window(
+    show: Show,
+    path: Option<PathBuf>,
+    cx: &mut AppContext,
+) -> Result<WindowHandle<ShowView>> {
     let options = WindowOptions {
         window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
             None,
@@ -31,7 +39,7 @@ pub fn open_show_window(show: Show, cx: &mut AppContext) -> Result<WindowHandle<
         ..Default::default()
     };
 
-    cx.open_window(options, |cx| ShowView::build(show, cx))
+    cx.open_window(options, |cx| ShowView::build(show, path, cx))
 }
 
 pub struct ShowView {
@@ -39,10 +47,11 @@ pub struct ShowView {
     show: Model<Show>,
     editor_view: View<GraphEditorView<EffectGraphDefinition>>,
     focus_handle: FocusHandle,
+    path: Option<PathBuf>,
 }
 
 impl ShowView {
-    pub fn build(show: Show, cx: &mut WindowContext) -> View<Self> {
+    pub fn build(show: Show, path: Option<PathBuf>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
             let effect_graph = show.effect_graph().clone();
             let effect_graph_model = cx.new_model(|_cx| effect_graph);
@@ -73,6 +82,7 @@ impl ShowView {
                 show: cx.new_model(|_cx| show),
                 editor_view,
                 focus_handle,
+                path,
             }
         })
     }
@@ -112,13 +122,28 @@ impl ShowView {
             .border_color(cx.theme().border)
     }
 
-    fn handle_save(&mut self, _: &SaveAs, cx: &mut ViewContext<Self>) {
+    fn handle_save(&mut self, _: &Save, cx: &mut ViewContext<Self>) {
+        if let Some(path) = &self.path {
+            self.show
+                .update(cx, |show, _cx| show.save_to_file(path.as_path()))
+                .map_err(|err| log::error!("{err}"))
+                .ok();
+
+            cx.set_window_edited(false);
+            cx.add_recent_document(&path);
+
+            return;
+        }
+
+        cx.dispatch_action(Box::new(SaveAs));
+    }
+
+    fn handle_save_as(&mut self, _: &SaveAs, cx: &mut ViewContext<Self>) {
         let initial_directory = dirs::desktop_dir().unwrap_or_else(|| dirs::home_dir().unwrap());
 
         let path = cx.prompt_for_new_path(initial_directory.as_path());
         cx.spawn({
-            let show = self.show.clone();
-            move |_, mut cx| async move {
+            move |this, mut cx| async move {
                 let path = match path.await? {
                     Ok(path) => path,
                     Err(err) => bail!("Failed to get save-path: {}", err),
@@ -128,14 +153,9 @@ impl ShowView {
                     bail!("Failed to get save-path: Dialog cancelled.")
                 };
 
-                // FIXME: GPUI adds an extra extension sometimes for some reason.
-
                 cx.update(|cx| -> Result<()> {
-                    show.read(cx).save_to_file(&path)?;
-
-                    cx.set_window_edited(false);
-                    cx.add_recent_document(&path);
-
+                    this.update(cx, |this, _cx| this.path = Some(path))?;
+                    cx.dispatch_action(Box::new(Save));
                     Ok(())
                 })??;
 
@@ -159,6 +179,7 @@ impl Render for ShowView {
             .child(self.render_sidebar(cx))
             .child(self.editor_view.clone())
             .on_action(cx.listener(Self::handle_save))
+            .on_action(cx.listener(Self::handle_save_as))
     }
 }
 
