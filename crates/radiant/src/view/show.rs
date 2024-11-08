@@ -40,7 +40,7 @@ pub fn open_show_window(
     };
 
     cx.open_window(options, |cx| {
-        let view = match path {
+        let show_view = match path {
             Some(path) => ShowView::read_from_file(path, cx)
                 .map_err(|err| log::error!("Failed to open show: {err}. Opening default show."))
                 .unwrap_or(ShowView::build(Show::default(), cx)),
@@ -55,7 +55,46 @@ pub fn open_show_window(
         })
         .detach_and_log_err(cx);
 
-        view
+        cx.on_window_should_close({
+            let show_view = show_view.clone();
+            move |cx| {
+                let answer_task = cx.prompt(
+                    PromptLevel::Warning,
+                    "You have unsaved changes",
+                    None,
+                    &["Save and close", "Close without saving", "Cancel"],
+                );
+
+                cx.spawn({
+                    let show_view = show_view.clone();
+                    move |mut cx| async move {
+                        let Ok(answer) = answer_task.await else {
+                            return Ok::<(), anyhow::Error>(());
+                        };
+
+                        if matches!(answer, 0 | 1) {
+                            cx.update(|cx| {
+                                if answer == 0 {
+                                    show_view.update(cx, |view, cx| {
+                                        view.handle_save(&Save, cx);
+                                        cx.remove_window();
+                                    });
+                                } else {
+                                    cx.remove_window();
+                                }
+                            })?;
+                        }
+
+                        Ok(())
+                    }
+                })
+                .detach_and_log_err(cx);
+
+                false
+            }
+        });
+
+        show_view
     })
 }
 
@@ -150,6 +189,8 @@ impl ShowView {
 
     fn handle_save(&mut self, _: &Save, cx: &mut ViewContext<Self>) {
         if let Some(path) = &self.path {
+            log::debug!("Saving {}", path.as_path().display());
+
             self.show
                 .update(cx, |show, _cx| show.save_to_file(path.as_path()))
                 .map_err(|err| log::error!("{err}"))
