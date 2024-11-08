@@ -4,6 +4,7 @@ use show::Show;
 use ui::theme::Theme;
 
 use crate::view;
+use crate::view::show::SaveAs;
 
 actions!(app, [Quit, Open]);
 
@@ -22,7 +23,8 @@ impl RadiantApp {
         self.set_menus(cx);
         self.register_actions(cx);
 
-        view::show::open_show_window(Show::default(), cx).expect("failed to open Show Window");
+        view::show::open_show_window(Show::default(), None, cx)
+            .expect("failed to open Show Window");
 
         cx.activate(true);
     }
@@ -41,13 +43,19 @@ impl RadiantApp {
     }
 
     fn set_menus(&self, cx: &mut AppContext) {
-        cx.set_menus(vec![Menu {
-            name: "Radiant".to_string().into(),
-            items: vec![
-                MenuItem::action("Quit", Quit),
-                MenuItem::action("File", Open),
-            ],
-        }]);
+        cx.set_menus(vec![
+            Menu {
+                name: "Radiant".to_string().into(),
+                items: vec![MenuItem::action("Quit", Quit)],
+            },
+            Menu {
+                name: "File".to_string().into(),
+                items: vec![
+                    MenuItem::action("Open", Open),
+                    MenuItem::action("Save As", SaveAs),
+                ],
+            },
+        ]);
     }
 
     fn register_actions(&self, cx: &mut AppContext) {
@@ -76,8 +84,8 @@ impl RadiantApp {
 
                 let show = Show::load_from_file(&path)?;
 
-                cx.update(|cx| -> anyhow::Result<()> {
-                    view::show::open_show_window(show, cx)?;
+                cx.update(|cx| -> Result<()> {
+                    view::show::open_show_window(show, Some(path.clone()), cx)?;
                     cx.add_recent_document(&path);
                     Ok(())
                 })??;
