@@ -5,6 +5,7 @@ use show::effect_graph::{EffectGraphDefinition, EffectGraphProcessingContext};
 use show::fixture::FixtureId;
 use show::{FixtureGroup, Show};
 use std::path::PathBuf;
+use std::time::Duration;
 use ui::theme::ActiveTheme;
 
 use crate::io::{IoManager, IoManagerEvent};
@@ -21,7 +22,6 @@ pub fn init(cx: &mut AppContext) {
 }
 
 pub fn open_show_window(
-    show: Show,
     path: Option<PathBuf>,
     cx: &mut AppContext,
 ) -> Result<WindowHandle<ShowView>> {
@@ -39,7 +39,24 @@ pub fn open_show_window(
         ..Default::default()
     };
 
-    cx.open_window(options, |cx| ShowView::build(show, path, cx))
+    cx.open_window(options, |cx| {
+        let view = match path {
+            Some(path) => ShowView::read_from_file(path, cx)
+                .map_err(|err| log::error!("Failed to open show: {err}. Opening default show."))
+                .unwrap_or(ShowView::build(Show::default(), cx)),
+            None => ShowView::build(Show::default(), cx),
+        };
+
+        // FIXME: This is a hack to make sure the 'is edited' indicator is disabled on opening of window.
+        cx.spawn(|mut cx| async move {
+            Timer::after(Duration::from_millis(100)).await;
+            cx.update(|cx| cx.set_window_edited(false))?;
+            Ok::<(), anyhow::Error>(())
+        })
+        .detach_and_log_err(cx);
+
+        view
+    })
 }
 
 pub struct ShowView {
@@ -51,14 +68,23 @@ pub struct ShowView {
 }
 
 impl ShowView {
-    pub fn build(show: Show, path: Option<PathBuf>, cx: &mut WindowContext) -> View<Self> {
+    pub fn read_from_file(path: PathBuf, cx: &mut WindowContext) -> Result<View<Self>> {
+        let show = Show::read_from_file(&path)?;
+        let this = Self::build(show, cx);
+        this.update(cx, |this, _cx| {
+            this.path = Some(path);
+        });
+        Ok(this)
+    }
+
+    pub fn build(show: Show, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
             let effect_graph = show.effect_graph().clone();
             let effect_graph_model = cx.new_model(|_cx| effect_graph);
 
-            cx.observe(&effect_graph_model, |this: &mut Self, model, cx| {
+            cx.observe(&effect_graph_model, |this: &mut Self, graph_model, cx| {
                 this.show.update(cx, |show, cx| {
-                    *show.effect_graph_mut() = model.read(cx).clone();
+                    *show.effect_graph_mut() = graph_model.read(cx).clone();
                 });
                 cx.set_window_edited(true);
                 cx.notify();
@@ -82,7 +108,7 @@ impl ShowView {
                 show: cx.new_model(|_cx| show),
                 editor_view,
                 focus_handle,
-                path,
+                path: None,
             }
         })
     }
