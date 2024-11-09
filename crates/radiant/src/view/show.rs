@@ -86,46 +86,26 @@ impl ShowView {
             let effect_graph = show.effect_graph().clone();
             let effect_graph_model = cx.new_model(|_cx| effect_graph);
 
-            cx.observe(&effect_graph_model, |this: &mut Self, graph_model, cx| {
-                this.show.update(cx, |show, cx| {
-                    *show.effect_graph_mut() = graph_model.read(cx).clone();
-                });
-                this.set_has_unsaved_changes(true, cx);
-                cx.notify();
-            })
-            .detach();
-
-            // FIXME: This is a hack to make sure the 'unsaved changes' indicator is not shown when a window is opened.
-            //        This happens because the observer on the graph_model fires initially.
-            cx.spawn::<_, Result<()>>(|this, mut cx| async move {
-                Timer::after(Duration::from_millis(100)).await;
-                cx.update(|cx| -> Result<()> {
-                    cx.set_window_edited(false);
-                    this.update(cx, |this, cx| this.set_has_unsaved_changes(false, cx))?;
-                    Ok(())
-                })??;
-                Ok(())
-            })
-            .detach_and_log_err(cx);
-
             let io_manager = cx.new_model(|cx| {
                 let io_manager = IoManager::new(show.dmx_protocols()).unwrap();
                 io_manager.start_emitting(cx);
                 io_manager
             });
 
+            let editor_view = GraphEditorView::build(effect_graph_model, cx);
+
             cx.subscribe(&io_manager, Self::handle_io_manager_event)
                 .detach();
 
-            let editor_view = GraphEditorView::build(effect_graph_model, cx);
-            let focus_handle = cx.focus_handle().clone();
+            // NOTE: This makes sure the 'unsaved changes' indicator is not shown when a window is opened.
+            cx.defer(|this: &mut Self, cx| this.set_has_unsaved_changes(false, cx));
 
             Self {
                 show: cx.new_model(|_cx| show),
                 _io_manager: io_manager,
 
                 editor_view,
-                focus_handle,
+                focus_handle: cx.focus_handle().clone(),
 
                 path: None,
                 has_unsaved_changes: false,
