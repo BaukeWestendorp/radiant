@@ -48,14 +48,6 @@ pub fn open_show_window(
             None => ShowView::build(Show::default(), cx),
         };
 
-        // FIXME: This is a hack to make sure the 'is edited' indicator is disabled on opening of window.
-        cx.spawn::<_, Result<()>>(|mut cx| async move {
-            Timer::after(Duration::from_millis(100)).await;
-            cx.update(|cx| cx.set_window_edited(false))?;
-            Ok(())
-        })
-        .detach_and_log_err(cx);
-
         cx.on_window_should_close({
             let show_view = show_view.clone();
             move |cx| {
@@ -69,11 +61,14 @@ pub fn open_show_window(
 }
 
 pub struct ShowView {
-    _io_manager: Model<IoManager>,
     show: Model<Show>,
+    _io_manager: Model<IoManager>,
+
     editor_view: View<GraphEditorView<EffectGraphDefinition>>,
     focus_handle: FocusHandle,
+
     path: Option<PathBuf>,
+    has_unsaved_changes: bool,
 }
 
 impl ShowView {
@@ -95,10 +90,23 @@ impl ShowView {
                 this.show.update(cx, |show, cx| {
                     *show.effect_graph_mut() = graph_model.read(cx).clone();
                 });
-                cx.set_window_edited(true);
+                this.set_has_unsaved_changes(true, cx);
                 cx.notify();
             })
             .detach();
+
+            // FIXME: This is a hack to make sure the 'unsaved changes' indicator is not shown when a window is opened.
+            //        This happens because the observer on the graph_model fires initially.
+            cx.spawn::<_, Result<()>>(|this, mut cx| async move {
+                Timer::after(Duration::from_millis(100)).await;
+                cx.update(|cx| -> Result<()> {
+                    cx.set_window_edited(false);
+                    this.update(cx, |this, cx| this.set_has_unsaved_changes(false, cx))?;
+                    Ok(())
+                })??;
+                Ok(())
+            })
+            .detach_and_log_err(cx);
 
             let io_manager = cx.new_model(|cx| {
                 let io_manager = IoManager::new(show.dmx_protocols()).unwrap();
@@ -113,11 +121,14 @@ impl ShowView {
             let focus_handle = cx.focus_handle().clone();
 
             Self {
-                _io_manager: io_manager,
                 show: cx.new_model(|_cx| show),
+                _io_manager: io_manager,
+
                 editor_view,
                 focus_handle,
+
                 path: None,
+                has_unsaved_changes: false,
             }
         })
     }
@@ -158,7 +169,7 @@ impl ShowView {
     }
 
     fn handle_save(&mut self, _: &Save, cx: &mut ViewContext<Self>) {
-        if let Some(path) = &self.path {
+        if let Some(path) = self.path.clone() {
             log::debug!("Saving {}", path.as_path().display());
 
             self.show
@@ -166,13 +177,11 @@ impl ShowView {
                 .map_err(|err| log::error!("{err}"))
                 .ok();
 
-            cx.set_window_edited(false);
+            self.set_has_unsaved_changes(false, cx);
             cx.add_recent_document(&path);
-
-            return;
+        } else {
+            cx.dispatch_action(Box::new(SaveAs));
         }
-
-        cx.dispatch_action(Box::new(SaveAs));
     }
 
     fn handle_save_as(&mut self, _: &SaveAs, cx: &mut ViewContext<Self>) {
@@ -207,6 +216,11 @@ impl ShowView {
     }
 
     fn close_window(&self, cx: &mut ViewContext<Self>) {
+        if !self.has_unsaved_changes {
+            cx.remove_window();
+            return;
+        }
+
         let answer_task = cx.prompt(
             PromptLevel::Warning,
             "You have unsaved changes",
@@ -233,6 +247,11 @@ impl ShowView {
             Ok(())
         })
         .detach_and_log_err(cx);
+    }
+
+    fn set_has_unsaved_changes(&mut self, state: bool, cx: &mut WindowContext) {
+        cx.set_window_edited(state);
+        self.has_unsaved_changes = state;
     }
 }
 
