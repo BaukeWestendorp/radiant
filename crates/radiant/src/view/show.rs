@@ -5,7 +5,6 @@ use show::effect_graph::{EffectGraphDefinition, EffectGraphProcessingContext};
 use show::fixture::FixtureId;
 use show::{FixtureGroup, Show};
 use std::path::PathBuf;
-use std::time::Duration;
 use ui::theme::ActiveTheme;
 
 use crate::io::{IoManager, IoManagerEvent};
@@ -44,7 +43,7 @@ pub fn open_show_window(
         let show_view = match path {
             Some(path) => ShowView::read_from_file(path, cx)
                 .map_err(|err| log::error!("Failed to open show: {err}. Opening default show."))
-                .unwrap_or(ShowView::build(Show::default(), cx)),
+                .unwrap_or_else(|_| ShowView::build(Show::default(), cx)),
             None => ShowView::build(Show::default(), cx),
         };
 

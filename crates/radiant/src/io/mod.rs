@@ -43,29 +43,30 @@ impl IoManager {
                 loop {
                     Timer::after(ARTNET_INTERVAL).await;
 
-                    this.update(&mut cx, |this, cx| -> anyhow::Result<()> {
+                    this.update(&mut cx, |this, cx| {
+                        // FIXME: Right now we're always one cycle behind, as the request does not directly get handled.
                         cx.emit(IoManagerEvent::OutputRequested);
-
-                        for node in this.artnet_nodes.iter() {
-                            let Some(universe) = this.dmx_output.universe(node.settings.universe)
-                            else {
-                                log::warn!(
-                                    "DMX data not found for universe {}",
-                                    node.settings.universe
-                                );
-                                continue;
-                            };
-
-                            let universe_dmx = universe.bytes();
-                            node.send_dmx(universe_dmx.to_vec())?;
-                        }
-
-                        Ok(())
-                    })??;
+                        this.send_output().map_err(|err| log::error!("{err:?}"))
+                    })
+                    .ok();
                 }
             }
         })
         .detach_and_log_err(cx);
+    }
+
+    fn send_output(&mut self) -> anyhow::Result<()> {
+        for node in self.artnet_nodes.iter() {
+            let Some(universe) = self.dmx_output.universe(node.settings.universe) else {
+                log::warn!("DMX data not found for universe {}", node.settings.universe);
+                continue;
+            };
+
+            let universe_dmx = universe.bytes();
+            node.send_dmx(universe_dmx.to_vec())?;
+        }
+
+        Ok(())
     }
 }
 
