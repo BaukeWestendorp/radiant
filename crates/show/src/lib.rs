@@ -9,11 +9,14 @@ pub mod effect_graph;
 pub mod fixture;
 pub mod patch;
 
-#[derive(Default, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct Show {
+    #[serde(default)]
     patch: Patch,
+    #[serde(default)]
     dmx_protocols: DmxProtocols,
 
+    #[serde(default)]
     effect_graph: EffectGraph,
 }
 

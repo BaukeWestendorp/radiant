@@ -1,5 +1,6 @@
 use crate::fixture::{AttributeValue, FixtureId};
-use crate::FixtureGroup;
+use crate::patch::PatchedFixture;
+use crate::{FixtureGroup, Show};
 use dmx::{DmxChannel, DmxOutput};
 use flow::error::GraphError;
 use flow::graph::Graph;
@@ -239,6 +240,13 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
                     EffectGraphDataType::Int,
                     OutputParameterKind::Computed,
                 );
+
+                graph.add_output(
+                    node_id,
+                    "id".to_string(),
+                    EffectGraphDataType::FixtureId,
+                    OutputParameterKind::Computed,
+                );
             }
 
             Self::SetChannelValue => {
@@ -374,6 +382,11 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
                     node.output("index").id,
                     EffectGraphValue::Int(context.current_fixture_index as i32),
                 );
+
+                processing_result.set_value(
+                    node.output("id").id,
+                    EffectGraphValue::FixtureId(context.current_fixture_id()),
+                );
             }
 
             Self::SetChannelValue => {
@@ -466,14 +479,25 @@ impl Display for NodeCategory {
     }
 }
 
-#[derive(Clone, Default)]
 pub struct EffectGraphProcessingContext {
     pub dmx_output: DmxOutput,
-    current_fixture_index: usize,
+
+    show: Show,
+
     group: FixtureGroup,
+    current_fixture_index: usize,
 }
 
 impl EffectGraphProcessingContext {
+    pub fn new(show: Show) -> Self {
+        Self {
+            dmx_output: DmxOutput::new(),
+            show,
+            group: FixtureGroup::default(),
+            current_fixture_index: 0,
+        }
+    }
+
     pub fn set_group(&mut self, group: FixtureGroup) {
         self.group = group;
     }
@@ -485,6 +509,17 @@ impl EffectGraphProcessingContext {
             self.current_fixture_index += 1;
         }
         Ok(())
+    }
+
+    pub fn current_fixture(&self) -> &PatchedFixture {
+        self.show
+            .patch()
+            .fixture(self.current_fixture_id())
+            .unwrap()
+    }
+
+    pub fn current_fixture_id(&self) -> FixtureId {
+        self.group.fixtures()[self.current_fixture_index]
     }
 }
 

@@ -120,7 +120,7 @@ impl ShowView {
     ) {
         match event {
             IoManagerEvent::OutputRequested => io_manager.update(cx, |io_manager, cx| {
-                let mut context = EffectGraphProcessingContext::default();
+                let mut context = EffectGraphProcessingContext::new(self.show.read(cx).clone());
                 context.set_group(FixtureGroup::new(vec![
                     FixtureId(0),
                     FixtureId(1),

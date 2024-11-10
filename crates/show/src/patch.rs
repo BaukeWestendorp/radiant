@@ -4,16 +4,21 @@ use gdtf::GdtfFile;
 use gpui::SharedString;
 use std::collections::HashMap;
 
-#[derive(Default, serde::Serialize)]
+#[derive(Clone, Default, serde::Serialize)]
 pub struct Patch {
     #[serde(skip_serializing)]
-    gdtf_files: HashMap<SharedString, GdtfFile>,
+    gdtf_descriptions: HashMap<SharedString, gdtf::Description>,
     fixtures: Vec<PatchedFixture>,
 }
 
 impl Patch {
     pub fn fixture(&self, id: FixtureId) -> Option<&PatchedFixture> {
         self.fixtures.iter().find(|f| f.id == id)
+    }
+
+    pub fn gdtf_description(&self, id: FixtureId) -> Option<&gdtf::Description> {
+        let fixture = self.fixture(id)?;
+        self.gdtf_descriptions.get(&fixture.gdtf_file_name)
     }
 
     pub fn patch_fixture(
@@ -29,8 +34,8 @@ impl Patch {
             .join(gdtf_file_name.to_string());
         log::debug!("Loading cached gdtf file {}", path.display());
         let file = std::fs::File::open(path)?;
-        self.gdtf_files
-            .insert(gdtf_file_name.clone(), GdtfFile::new(file)?);
+        self.gdtf_descriptions
+            .insert(gdtf_file_name.clone(), GdtfFile::new(file)?.description);
 
         let fixture = PatchedFixture {
             id,
