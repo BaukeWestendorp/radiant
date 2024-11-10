@@ -34,21 +34,6 @@ impl FixtureId {
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct Fixture {
-    id: FixtureId,
-}
-
-impl Fixture {
-    pub fn new(id: FixtureId) -> Self {
-        Self { id }
-    }
-
-    pub fn id(&self) -> &FixtureId {
-        &self.id
-    }
-}
-
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd, serde::Serialize, serde::Deserialize)]
 pub struct AttributeValue {
     value: f32,

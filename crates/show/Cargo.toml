@@ -17,3 +17,7 @@ strum.workspace = true
 log.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+dirs.workspace = true
+
+gdtf = "0.2.0"
+itertools = "0.13.0"

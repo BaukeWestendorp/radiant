@@ -1,29 +1,29 @@
+use crate::effect_graph::EffectGraph;
+use crate::fixture::FixtureId;
+use crate::patch::Patch;
 use std::fs;
 use std::net::Ipv4Addr;
 use std::path::Path;
 
-use crate::effect_graph::EffectGraph;
-use crate::fixture::{Fixture, FixtureId};
-
 pub mod effect_graph;
 pub mod fixture;
+pub mod patch;
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Default, serde::Serialize, serde::Deserialize)]
 pub struct Show {
+    patch: Patch,
     dmx_protocols: DmxProtocols,
-
-    fixtures: Vec<Fixture>,
 
     effect_graph: EffectGraph,
 }
 
 impl Show {
-    pub fn fixtures(&self) -> impl Iterator<Item = &Fixture> {
-        self.fixtures.iter()
+    pub fn patch(&self) -> &Patch {
+        &self.patch
     }
 
-    pub fn fixture(&self, id: &FixtureId) -> Option<&Fixture> {
-        self.fixtures.iter().find(|f| f.id() == id)
+    pub fn patch_mut(&mut self) -> &mut Patch {
+        &mut self.patch
     }
 
     pub fn effect_graph(&self) -> &EffectGraph {
@@ -50,16 +50,6 @@ impl Show {
         fs::write(path, show_json)?;
 
         Ok(())
-    }
-}
-
-impl Default for Show {
-    fn default() -> Self {
-        Self {
-            dmx_protocols: DmxProtocols::default(),
-            fixtures: vec![Fixture::new(FixtureId(0))],
-            effect_graph: EffectGraph::default(),
-        }
     }
 }
 

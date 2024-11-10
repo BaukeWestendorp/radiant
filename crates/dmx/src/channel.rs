@@ -1,4 +1,5 @@
 use anyhow::{anyhow, bail};
+use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
 #[derive(
@@ -48,5 +49,11 @@ impl FromStr for DmxChannel {
             s.parse()
                 .map_err(|_| anyhow!("Failed to parse DMX Channel"))?,
         )
+    }
+}
+
+impl Display for DmxChannel {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
