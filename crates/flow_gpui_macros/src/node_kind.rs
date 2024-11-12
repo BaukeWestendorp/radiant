@@ -59,14 +59,12 @@ pub fn derive(input: DeriveInput) -> syn::Result<TokenStream> {
     let processor_output_types = gen_processor_types(&variants);
     let impl_visual_node_kind = gen_impl_visual_node_kind(&variants);
 
-    let expansion = quote! {
+    Ok(quote! {
         #type_helpers
         #impl_node_kind
         #processor_output_types
         #impl_visual_node_kind
-    };
-
-    Ok(expansion)
+    })
 }
 
 fn gen_type_helpers(attrs: &Attrs) -> TokenStream {

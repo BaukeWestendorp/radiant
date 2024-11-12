@@ -1,7 +1,5 @@
-use std::fmt::Display;
-
 use flow::{Control, DataType, Graph, GraphDefinition, GraphError, InputParameterKind, Value};
-use flow_gpui::{ControlEvent, NodeCategory, VisualControl, VisualDataType, VisualNodeData};
+use flow_gpui::{ControlEvent, VisualControl, VisualDataType, VisualNodeData};
 use gpui::{rgb, AnyView, ElementId, EmptyView, EventEmitter, Hsla, ViewContext, VisualContext};
 
 #[derive(Clone)]
@@ -25,6 +23,21 @@ pub struct TestGraphProcessingContext {
 pub enum Category {
     Math,
     Output,
+}
+
+#[derive(Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+pub struct TestGraphNodeData {
+    position: geo::Point,
+}
+
+impl VisualNodeData for TestGraphNodeData {
+    fn position(&self) -> &geo::Point {
+        &self.position
+    }
+
+    fn set_position(&mut self, position: geo::Point) {
+        self.position = position
+    }
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, flow_gpui_macros::NodeKind)]
@@ -79,21 +92,6 @@ fn output_processor(
     let OutputProcessorInput { value } = input;
     context.output_float = value.try_into()?;
     Ok(OutputProcessorOutput {})
-}
-
-#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
-pub struct TestGraphNodeData {
-    pub position: geo::Point,
-}
-
-impl VisualNodeData for TestGraphNodeData {
-    fn position(&self) -> &geo::Point {
-        &self.position
-    }
-
-    fn set_position(&mut self, position: geo::Point) {
-        self.position = position;
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]

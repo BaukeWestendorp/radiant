@@ -20,13 +20,11 @@ pub fn derive(input: DeriveInput) -> syn::Result<TokenStream> {
     let impl_node_category = gen_impl_node_category(name, &variants);
     let impl_display = gen_impl_display(name, &variants);
 
-    let expansion = quote! {
+    Ok(quote! {
         #helper_types
         #impl_node_category
         #impl_display
-    };
-
-    Ok(expansion)
+    })
 }
 
 fn gen_helper_types(name: &Ident) -> TokenStream {
