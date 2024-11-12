@@ -1,10 +1,13 @@
-use crate::node::ControlEvent;
-use flow::graph_def::GraphDefinition;
+use flow::GraphDefinition;
 use gpui::*;
 
 pub mod editor;
 pub mod graph;
 pub mod node;
+
+pub use editor::*;
+pub use graph::*;
+pub use node::*;
 
 pub fn init(cx: &mut AppContext) {
     editor::init(cx);
@@ -14,7 +17,7 @@ pub fn init(cx: &mut AppContext) {
 pub trait VisualNodeKind {
     type Category: NodeCategory;
 
-    fn label(&self) -> &str;
+    fn name(&self) -> &str;
 
     fn category(&self) -> Self::Category;
 

@@ -213,7 +213,7 @@ impl<Def: GraphDefinition> Graph<Def> {
             OutputParameterKind::Computed => {
                 let node = self.node(output.node_id);
                 let result = node.process(context, self)?;
-                Ok(result.get_value(output_id).clone())
+                Ok(result.get_output_value(output_id).clone())
             }
             OutputParameterKind::Constant { value, .. } => Ok(value.clone()),
         }

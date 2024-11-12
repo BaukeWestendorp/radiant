@@ -36,13 +36,13 @@ impl<Def: GraphDefinition> ProcessingResult<Def> {
         }
     }
 
-    pub fn get_value(&self, id: &OutputId) -> &Def::Value {
+    pub fn get_output_value(&self, id: &OutputId) -> &Def::Value {
         self.values
             .get(id)
             .expect("output value should always be set after processing a node")
     }
 
-    pub fn set_value(&mut self, id: OutputId, value: Def::Value) {
+    pub fn set_output_value(&mut self, id: OutputId, value: Def::Value) {
         self.values.insert(id, value);
     }
 }

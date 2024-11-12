@@ -192,7 +192,7 @@ where
         let focused = self.focus_handle.is_focused(cx);
 
         let header = {
-            let label = node.kind().label().to_owned();
+            let label = node.kind().name().to_owned();
 
             div()
                 .h_flex()

@@ -248,7 +248,7 @@ where
         let filter = self.search_box.read(cx).value();
         let nodes = Def::NodeKind::all()
             .filter(|n| {
-                n.label().to_lowercase().contains(&filter.to_lowercase())
+                n.name().to_lowercase().contains(&filter.to_lowercase())
                     && match self.selected_category {
                         Some(category) => n.category() == category,
                         None => true,
@@ -303,7 +303,7 @@ where
                             render_list_item(item.into_any_element(), cx)
                         } else {
                             let node_kind = &nodes[ix];
-                            let label = node_kind.label().to_string();
+                            let label = node_kind.name().to_string();
 
                             let item = div().size_full().child(label).on_mouse_down(
                                 MouseButton::Left,

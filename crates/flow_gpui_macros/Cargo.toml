@@ -1,0 +1,21 @@
+[package]
+name = "flow_gpui_macros"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+flow.workspace = true
+
+quote = "1.0.37"
+syn = { version = "2.0.87", features = ["full"] }
+proc-macro2 = "1.0.89"
+darling = "0.20.10"
+
+[dev-dependencies]
+flow_gpui.workspace = true
+geo.workspace = true
+gpui.workspace = true
+serde.workspace = true
+
+[lib]
+proc-macro = true

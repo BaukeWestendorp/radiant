@@ -311,7 +311,8 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
                     return Err(GraphError::CastFailed);
                 };
 
-                processing_result.set_value(node.output("c").id, EffectGraphValue::Float(a + b));
+                processing_result
+                    .set_output_value(node.output("c").id, EffectGraphValue::Float(a + b));
             }
             Self::Subtract => {
                 let EffectGraphValue::Float(a) = value_for_input(node, "a")? else {
@@ -322,7 +323,8 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
                     return Err(GraphError::CastFailed);
                 };
 
-                processing_result.set_value(node.output("c").id, EffectGraphValue::Float(a - b));
+                processing_result
+                    .set_output_value(node.output("c").id, EffectGraphValue::Float(a - b));
             }
             Self::Multiply => {
                 let EffectGraphValue::Float(a) = value_for_input(node, "a")? else {
@@ -333,7 +335,8 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
                     return Err(GraphError::CastFailed);
                 };
 
-                processing_result.set_value(node.output("c").id, EffectGraphValue::Float(a * b));
+                processing_result
+                    .set_output_value(node.output("c").id, EffectGraphValue::Float(a * b));
             }
             Self::Divide => {
                 let EffectGraphValue::Float(a) = value_for_input(node, "a")? else {
@@ -344,14 +347,15 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
                     return Err(GraphError::CastFailed);
                 };
 
-                processing_result.set_value(node.output("c").id, EffectGraphValue::Float(a / b));
+                processing_result
+                    .set_output_value(node.output("c").id, EffectGraphValue::Float(a / b));
             }
             Self::Floor => {
                 let EffectGraphValue::Float(a) = value_for_input(node, "value")? else {
                     return Err(GraphError::CastFailed);
                 };
 
-                processing_result.set_value(
+                processing_result.set_output_value(
                     node.output("floored").id,
                     EffectGraphValue::Int(a.floor() as i32),
                 );
@@ -361,7 +365,7 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
                     return Err(GraphError::CastFailed);
                 };
 
-                processing_result.set_value(
+                processing_result.set_output_value(
                     node.output("rounded").id,
                     EffectGraphValue::Int(a.floor() as i32),
                 );
@@ -371,19 +375,19 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
                     return Err(GraphError::CastFailed);
                 };
 
-                processing_result.set_value(
+                processing_result.set_output_value(
                     node.output("ceiled").id,
                     EffectGraphValue::Int(a.floor() as i32),
                 );
             }
 
             Self::GetFixture => {
-                processing_result.set_value(
+                processing_result.set_output_value(
                     node.output("index").id,
                     EffectGraphValue::Int(context.current_fixture_index as i32),
                 );
 
-                processing_result.set_value(
+                processing_result.set_output_value(
                     node.output("id").id,
                     EffectGraphValue::FixtureId(context.current_fixture_id()),
                 );
@@ -413,7 +417,7 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
 impl VisualNodeKind for EffectGraphNodeKind {
     type Category = NodeCategory;
 
-    fn label(&self) -> &str {
+    fn name(&self) -> &str {
         match self {
             Self::NewFixtureId => "New Fixture Id",
             Self::NewAttributeValue => "New Attribute ",

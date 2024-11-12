@@ -6,6 +6,7 @@ edition.workspace = true
 [dependencies]
 flow.workspace = true
 flow_gpui.workspace = true
+flow_gpui_macros.workspace = true
 gpui.workspace = true
 ui.workspace = true
 dmx.workspace = true

@@ -3,8 +3,9 @@ members = [
     "crates/radiant",
     "crates/ui",
     "crates/show",
-    "crates/flow_gpui",
     "crates/flow",
+    "crates/flow_gpui",
+    "crates/flow_gpui_macros",
     "crates/dmx",
     "crates/geo",
 ]
@@ -18,6 +19,7 @@ edition = "2021"
 ui = { path = "crates/ui" }
 flow = { path = "crates/flow" }
 flow_gpui = { path = "crates/flow_gpui" }
+flow_gpui_macros = { path = "crates/flow_gpui_macros" }
 show = { path = "crates/show" }
 dmx = { path = "crates/dmx" }
 geo = { path = "crates/geo" }
