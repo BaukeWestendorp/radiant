@@ -24,6 +24,7 @@ pub struct TestGraphProcessingContext {
 #[derive(Clone, Copy, PartialEq, flow_gpui_macros::NodeCategory)]
 pub enum Category {
     Math,
+    Output,
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, flow_gpui_macros::NodeKind)]
@@ -47,11 +48,19 @@ pub enum TestGraphNodeKind {
     #[computed_output(label = "sum", data_type = "Float")]
     #[meta(name = "Add", category = "Math", processor = "add_processor")]
     Add,
+    #[input(
+        label = "value",
+        data_type = "Float",
+        default_value = "0.0",
+        control = "Float"
+    )]
+    #[meta(name = "Output", category = "Output", processor = "output_processor")]
+    Output,
 }
 
 fn add_processor(
     input: AddProcessorInput,
-    context: &mut TestGraphProcessingContext,
+    _context: &mut TestGraphProcessingContext,
 ) -> Result<AddProcessorOutput, GraphError> {
     let AddProcessorInput { a, b } = input;
 
@@ -61,6 +70,15 @@ fn add_processor(
     Ok(AddProcessorOutput {
         sum: TestGraphValue::Float(a + b),
     })
+}
+
+fn output_processor(
+    input: OutputProcessorInput,
+    context: &mut TestGraphProcessingContext,
+) -> Result<OutputProcessorOutput, GraphError> {
+    let OutputProcessorInput { value } = input;
+    context.output_float = value.try_into()?;
+    Ok(OutputProcessorOutput {})
 }
 
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
@@ -147,18 +165,27 @@ impl VisualControl<TestGraphDefinition> for TestGraphControl {
 #[test]
 fn test() {
     let mut graph = TestGraph::new();
-    let node_id = graph.add_node(TestGraphNodeKind::Add, TestGraphNodeData::default());
-    match &mut graph.input_mut(graph.node(node_id).input("a").id).kind {
+    let add_node_id = graph.add_node(TestGraphNodeKind::Add, TestGraphNodeData::default());
+    let output_node_id = graph.add_node(TestGraphNodeKind::Output, TestGraphNodeData::default());
+
+    match &mut graph.input_mut(graph.node(add_node_id).input("a").id).kind {
         InputParameterKind::EdgeOrConstant { value, .. } => {
             *value = TestGraphValue::Float(42.0);
         }
     };
 
-    match &mut graph.input_mut(graph.node(node_id).input("b").id).kind {
+    match &mut graph.input_mut(graph.node(add_node_id).input("b").id).kind {
         InputParameterKind::EdgeOrConstant { value, .. } => {
             *value = TestGraphValue::Float(2.0);
         }
     };
+
+    graph.add_edge(
+        graph.output(graph.node(add_node_id).output("sum").id).id(),
+        graph
+            .input(graph.node(output_node_id).input("value").id)
+            .id(),
+    );
 
     let mut context = TestGraphProcessingContext { output_float: 0.0 };
     graph.process(&mut context).unwrap();

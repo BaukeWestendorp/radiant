@@ -13,7 +13,7 @@ struct Attrs {
 #[derive(Debug, FromMeta)]
 struct VariantInput {
     label: String,
-    data_type: Type,
+    data_type: Ident,
 
     #[darling(default)]
     default_value: Option<Expr>,
@@ -24,13 +24,13 @@ struct VariantInput {
 #[derive(Debug, FromMeta)]
 struct VariantComputedOutput {
     label: String,
-    data_type: Type,
+    data_type: Ident,
 }
 
 #[derive(Debug, FromMeta)]
 struct VariantConstantOutput {
     label: String,
-    data_type: Type,
+    data_type: Ident,
 
     #[darling(default)]
     default_value: Option<Expr>,
@@ -188,18 +188,31 @@ fn gen_impl_node_kind(input: &DeriveInput, variants: &[Variant], attrs: &Attrs) 
             }
         });
 
-        let processor_input = processor_input_ident(variant);
-        let processor_output = processor_output_ident(variant);
+        let processor_input_ident = processor_input_ident(variant);
+
+        let processing_result_modifications =
+            parse_variant_output_labels(variant)
+                .into_iter()
+                .map(|label| {
+                    let label_ident = format_ident!("{}", label);
+                    quote! {
+                        processing_result.set_output_value(
+                            node.output(#label).id,
+                            output.#label_ident,
+                        );
+                    }
+                });
 
         quote! {
             Self::#name => {
-                let output: #processor_output = #processor(#processor_input {
+                let output = #processor(#processor_input_ident {
                    #(#input_declarations),*
                 }, context)?;
-                dbg!(&output);
+
+
 
                 let mut processing_result = flow::ProcessingResult::new();
-                // processing_result.set_output_value(node.output(#output_label).id(), todo!());
+                #(#processing_result_modifications)*
                 Ok(processing_result)
             }
         }
@@ -292,7 +305,7 @@ fn gen_processor_types(variants: &[Variant]) -> TokenStream {
 
     quote! {
         #(#input_types)*
-        #(#output_types),*
+        #(#output_types)*
     }
 }
 
