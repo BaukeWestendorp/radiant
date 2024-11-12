@@ -1,6 +1,10 @@
-use flow::{Control, DataType, Graph, GraphDefinition, GraphError, InputParameterKind, Value};
-use flow_gpui::{ControlEvent, VisualControl, VisualDataType, VisualNodeData};
-use gpui::{rgb, AnyView, ElementId, EmptyView, EventEmitter, Hsla, ViewContext, VisualContext};
+use flow::{Control, Graph, GraphDefinition, GraphError, InputParameterKind, Value};
+use flow_gpui::{ControlEvent, VisualControl, VisualNodeData};
+use gpui::{AnyView, ElementId, EmptyView, EventEmitter, ViewContext, VisualContext};
+
+//
+// GraphDefinition
+//
 
 #[derive(Clone)]
 pub struct TestGraphDefinition;
@@ -15,15 +19,17 @@ impl GraphDefinition for TestGraphDefinition {
 
 pub type TestGraph = Graph<TestGraphDefinition>;
 
+//
+// Processing Context
+//
+
 pub struct TestGraphProcessingContext {
     pub output_float: f32,
 }
 
-#[derive(Clone, Copy, PartialEq, flow_gpui_macros::NodeCategory)]
-pub enum Category {
-    Math,
-    Output,
-}
+//
+// NodeData
+//
 
 #[derive(Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct TestGraphNodeData {
@@ -39,6 +45,75 @@ impl VisualNodeData for TestGraphNodeData {
         self.position = position
     }
 }
+
+//
+// Value
+//
+
+#[derive(
+    Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, flow_gpui_macros::Value,
+)]
+#[value(
+    data_type = "TestGraphDataType",
+    graph_definition = "TestGraphDefinition"
+)]
+pub enum TestGraphValue {
+    #[meta(default_value = "0.0")]
+    Float(f32),
+}
+
+impl Value<TestGraphDefinition> for TestGraphValue {
+    fn try_cast_to(
+        &self,
+        target: &<TestGraphDefinition as GraphDefinition>::DataType,
+    ) -> Result<Self, GraphError>
+    where
+        Self: Sized,
+    {
+        type T = <TestGraphDefinition as GraphDefinition>::DataType;
+        match (&self, target) {
+            (Self::Float(_), T::Float) => Ok(self.clone()),
+        }
+    }
+}
+
+//
+// Control
+//
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub enum TestGraphControl {
+    Float,
+}
+
+impl Control<TestGraphDefinition> for TestGraphControl {}
+
+impl VisualControl<TestGraphDefinition> for TestGraphControl {
+    fn view<View: EventEmitter<ControlEvent<TestGraphDefinition>>>(
+        &self,
+        _id: impl Into<ElementId>,
+        _initial_value: TestGraphValue,
+        cx: &mut ViewContext<View>,
+    ) -> AnyView {
+        match self {
+            Self::Float => cx.new_view(|_cx| EmptyView).into(),
+        }
+    }
+}
+
+//
+// Category
+//
+
+#[derive(Clone, Copy, PartialEq, flow_gpui_macros::NodeCategory)]
+pub enum Category {
+    Math,
+    Output,
+}
+
+//
+// NodeKind
+//
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, flow_gpui_macros::NodeKind)]
 #[node_kind(
@@ -92,72 +167,6 @@ fn output_processor(
     let OutputProcessorInput { value } = input;
     context.output_float = value.try_into()?;
     Ok(OutputProcessorOutput {})
-}
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-pub enum TestGraphValue {
-    Float(f32),
-}
-
-impl Value<TestGraphDefinition> for TestGraphValue {
-    fn try_cast_to(&self, target: &TestGraphDataType) -> Result<Self, GraphError> {
-        use TestGraphDataType as DT;
-
-        match (self, target) {
-            (Self::Float(_), DT::Float) => Ok(self.clone()),
-        }
-    }
-}
-
-impl TryFrom<TestGraphValue> for f32 {
-    type Error = GraphError;
-
-    fn try_from(value: TestGraphValue) -> Result<Self, Self::Error> {
-        match value {
-            TestGraphValue::Float(value) => Ok(value),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-pub enum TestGraphDataType {
-    Float,
-}
-
-impl DataType<TestGraphDefinition> for TestGraphDataType {
-    fn default_value(&self) -> TestGraphValue {
-        match self {
-            Self::Float => TestGraphValue::Float(f32::default()),
-        }
-    }
-}
-
-impl VisualDataType for TestGraphDataType {
-    fn color(&self) -> Hsla {
-        match self {
-            Self::Float => rgb(0xFF3C59).into(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub enum TestGraphControl {
-    Float,
-}
-
-impl Control<TestGraphDefinition> for TestGraphControl {}
-
-impl VisualControl<TestGraphDefinition> for TestGraphControl {
-    fn view<View: EventEmitter<ControlEvent<TestGraphDefinition>>>(
-        &self,
-        _id: impl Into<ElementId>,
-        _initial_value: TestGraphValue,
-        cx: &mut ViewContext<View>,
-    ) -> AnyView {
-        match self {
-            Self::Float => cx.new_view(|_cx| EmptyView).into(),
-        }
-    }
 }
 
 #[test]

@@ -5,7 +5,7 @@ use syn::{Data, DeriveInput, Ident, Variant};
 
 #[derive(Debug, FromVariant)]
 #[darling(attributes(node_category))]
-struct NodeCategoryVariantArgs {
+struct Meta {
     name: Option<String>,
 }
 
@@ -54,7 +54,7 @@ fn gen_impl_display(name: &Ident, variants: &[Variant]) -> TokenStream {
     let cases = variants.iter().map(|variant| {
         let variant_name = &variant.ident;
 
-        let meta = NodeCategoryVariantArgs::from_variant(&variant).ok();
+        let meta = Meta::from_variant(&variant).ok();
         let name_value = match meta.map(|meta| meta.name).flatten() {
             Some(name) => name,
             None => variant_name.to_string(),
