@@ -1,6 +1,7 @@
 use proc_macro::TokenStream;
 use syn::parse_macro_input;
 
+mod node_category;
 mod node_kind;
 
 #[proc_macro_derive(
@@ -10,4 +11,10 @@ mod node_kind;
 pub fn node_kind_derive(input: TokenStream) -> TokenStream {
     let derive_input = parse_macro_input!(input as syn::DeriveInput);
     node_kind::derive(derive_input).unwrap().into()
+}
+
+#[proc_macro_derive(NodeCategory, attributes(node_category))]
+pub fn node_category_derive(input: TokenStream) -> TokenStream {
+    let derive_input = parse_macro_input!(input as syn::DeriveInput);
+    node_category::derive(derive_input).unwrap().into()
 }

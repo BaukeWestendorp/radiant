@@ -17,11 +17,19 @@ impl GraphDefinition for TestGraphDefinition {
 
 pub type TestGraph = Graph<TestGraphDefinition>;
 
+pub struct TestGraphProcessingContext {
+    pub output_float: f32,
+}
+
+#[derive(Clone, Copy, PartialEq, flow_gpui_macros::NodeCategory)]
+pub enum Category {
+    Math,
+}
+
 #[derive(Clone, serde::Serialize, serde::Deserialize, flow_gpui_macros::NodeKind)]
 #[node_kind(
     graph_definition = "TestGraphDefinition",
-    processing_context = "TestGraphProcessingContext",
-    category = "Category"
+    processing_context = "TestGraphProcessingContext"
 )]
 pub enum TestGraphNodeKind {
     #[input(
@@ -53,31 +61,6 @@ fn add_processor(
     Ok(AddProcessorOutput {
         sum: TestGraphValue::Float(a + b),
     })
-}
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum Category {
-    Math,
-}
-
-impl NodeCategory for Category {
-    fn all() -> impl Iterator<Item = Self> {
-        vec![Self::Math].into_iter()
-    }
-}
-
-impl Display for Category {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let str = match self {
-            Category::Math => "Math",
-        }
-        .to_string();
-        write!(f, "{}", str)
-    }
-}
-
-pub struct TestGraphProcessingContext {
-    pub output_float: f32,
 }
 
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]

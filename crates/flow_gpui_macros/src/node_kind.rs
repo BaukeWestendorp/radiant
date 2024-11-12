@@ -8,13 +8,12 @@ use syn::{Data, DeriveInput, Expr, Ident, Type, Variant};
 struct Attrs {
     graph_definition: Type,
     processing_context: Type,
-    category: Type,
 }
 
 #[derive(Debug, FromMeta)]
 struct VariantInput {
     label: String,
-    data_type: Ident,
+    data_type: Type,
 
     #[darling(default)]
     default_value: Option<Expr>,
@@ -25,13 +24,13 @@ struct VariantInput {
 #[derive(Debug, FromMeta)]
 struct VariantComputedOutput {
     label: String,
-    data_type: Ident,
+    data_type: Type,
 }
 
 #[derive(Debug, FromMeta)]
 struct VariantConstantOutput {
     label: String,
-    data_type: Ident,
+    data_type: Type,
 
     #[darling(default)]
     default_value: Option<Expr>,
@@ -58,7 +57,7 @@ pub fn derive(input: DeriveInput) -> syn::Result<TokenStream> {
     let type_helpers = gen_type_helpers(&attrs);
     let impl_node_kind = gen_impl_node_kind(&input, &variants, &attrs);
     let processor_output_types = gen_processor_types(&variants);
-    let impl_visual_node_kind = gen_impl_visual_node_kind(&attrs, &variants);
+    let impl_visual_node_kind = gen_impl_visual_node_kind(&variants);
 
     let expansion = quote! {
         #type_helpers
@@ -169,11 +168,10 @@ fn gen_impl_node_kind(input: &DeriveInput, variants: &[Variant], attrs: &Attrs) 
 
         let input_declarations = parse_input_attrs(variant).into_iter().map(|input| {
             let label = format_ident!("{}", input.label);
-            let label_string = label.to_string();
 
             quote! {
                 #label: {
-                    let input = graph.input(node.input(#label_string).id);
+                    let input = graph.input(node.input(stringify!(#label)).id);
                     let connection_id = graph.edge_source(input.id());
                     let value = match connection_id {
                         None => {
@@ -298,8 +296,7 @@ fn gen_processor_types(variants: &[Variant]) -> TokenStream {
     }
 }
 
-fn gen_impl_visual_node_kind(attrs: &Attrs, variants: &[Variant]) -> TokenStream {
-    let category = &attrs.category;
+fn gen_impl_visual_node_kind(variants: &[Variant]) -> TokenStream {
     let mut names = vec![];
     let mut categories = vec![];
     let mut all = vec![];
@@ -316,7 +313,7 @@ fn gen_impl_visual_node_kind(attrs: &Attrs, variants: &[Variant]) -> TokenStream
         });
 
         categories.push(quote! {
-            Self::#var => #category::#cat,
+            Self::#var => __GraphNodeCategory::#cat,
         });
 
         all.push(quote! {
@@ -326,7 +323,7 @@ fn gen_impl_visual_node_kind(attrs: &Attrs, variants: &[Variant]) -> TokenStream
 
     quote! {
         impl flow_gpui::VisualNodeKind for __GraphNodeKind {
-            type Category = #category;
+            type Category = __GraphNodeCategory;
 
             fn name(&self) -> &str {
                 match self {
