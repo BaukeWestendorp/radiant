@@ -7,7 +7,6 @@ use syn::{Data, DeriveInput, Expr, Ident, Type, Variant};
 #[darling(attributes(node_kind))]
 struct Attrs {
     graph_definition: Type,
-    processing_context: Type,
 }
 
 #[derive(Debug, FromMeta)]
@@ -223,23 +222,16 @@ fn gen_impl_node_kind(input: &DeriveInput, variants: &[Variant], attrs: &Attrs) 
         }
     }
 
-    let Attrs {
-        graph_definition,
-        processing_context,
-        ..
-    } = &attrs;
-
+    let graph_def = &attrs.graph_definition;
     let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();
     let name = &input.ident;
 
-    let builders = variants.iter().map(|v| gen_builder(v, graph_definition));
+    let builders = variants.iter().map(|v| gen_builder(v, graph_def));
     let processors = variants.iter().map(gen_processor);
 
     quote! {
-        impl #impl_generics flow::NodeKind<#graph_definition> for #name #type_generics #where_clause {
-            type ProcessingContext = #processing_context;
-
-            fn build(&self, graph: &mut flow::Graph<#graph_definition>, node_id: flow::NodeId) {
+        impl #impl_generics flow::NodeKind<#graph_def> for #name #type_generics #where_clause {
+            fn build(&self, graph: &mut flow::Graph<#graph_def>, node_id: flow::NodeId) {
                 match self {
                     #(#builders)*
                 }
@@ -248,9 +240,9 @@ fn gen_impl_node_kind(input: &DeriveInput, variants: &[Variant], attrs: &Attrs) 
             fn process(
                 &self,
                 node_id: flow::NodeId,
-                context: &mut Self::ProcessingContext,
-                graph: &flow::Graph<#graph_definition>,
-            ) -> Result<flow::ProcessingResult<#graph_definition>, flow::GraphError> {
+                context: &mut <#graph_def as flow::GraphDefinition>::ProcessingContext,
+                graph: &flow::Graph<#graph_def>,
+            ) -> Result<flow::ProcessingResult<#graph_def>, flow::GraphError> {
                 let node = graph.node(node_id);
                 match self {
                     #(#processors)*

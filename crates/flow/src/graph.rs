@@ -206,7 +206,7 @@ impl<Def: GraphDefinition> Graph<Def> {
     pub fn get_output_value(
         &self,
         output_id: &OutputId,
-        context: &mut <Def::NodeKind as NodeKind<Def>>::ProcessingContext,
+        context: &mut Def::ProcessingContext,
     ) -> Result<Def::Value, GraphError> {
         let output = self.output(*output_id);
         match &output.kind {
@@ -219,10 +219,7 @@ impl<Def: GraphDefinition> Graph<Def> {
         }
     }
 
-    pub fn process(
-        &self,
-        context: &mut <Def::NodeKind as NodeKind<Def>>::ProcessingContext,
-    ) -> Result<(), GraphError> {
+    pub fn process(&self, context: &mut Def::ProcessingContext) -> Result<(), GraphError> {
         for node_id in &self.graph_ends {
             let node = self.node(*node_id);
             node.kind.process(*node_id, context, self)?;

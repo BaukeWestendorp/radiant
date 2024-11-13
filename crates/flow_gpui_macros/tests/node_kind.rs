@@ -16,6 +16,7 @@ impl GraphDefinition for TestGraphDefinition {
     type DataType = TestGraphDataType;
     type Control = TestGraphControl;
     type NodeCategory = Category;
+    type ProcessingContext = TestGraphProcessingContext;
 }
 
 pub type TestGraph = Graph<TestGraphDefinition>;
@@ -119,10 +120,7 @@ pub enum Category {
 //
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, flow_gpui_macros::NodeKind)]
-#[node_kind(
-    graph_definition = "TestGraphDefinition",
-    processing_context = "TestGraphProcessingContext"
-)]
+#[node_kind(graph_definition = "TestGraphDefinition")]
 pub enum TestGraphNodeKind {
     #[input(label = "a", data_type = "Float", control = "Float")]
     #[input(label = "b", data_type = "Float", control = "Float")]

@@ -9,18 +9,18 @@ pub trait GraphDefinition: Sized + Clone {
     type Value: Value<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
     type DataType: DataType<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
     type Control: Control<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
-    type NodeCategory: Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
+
+    type NodeCategory;
+    type ProcessingContext;
 }
 
 pub trait NodeKind<Def: GraphDefinition> {
-    type ProcessingContext;
-
     fn build(&self, graph: &mut Graph<Def>, node_id: NodeId);
 
     fn process(
         &self,
         node_id: NodeId,
-        context: &mut Self::ProcessingContext,
+        context: &mut Def::ProcessingContext,
         graph: &Graph<Def>,
     ) -> Result<ProcessingResult<Def>, GraphError>;
 }

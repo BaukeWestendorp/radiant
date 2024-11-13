@@ -57,7 +57,7 @@ impl<Def: GraphDefinition> Node<Def> {
 
     pub fn process(
         &self,
-        context: &mut <Def::NodeKind as NodeKind<Def>>::ProcessingContext,
+        context: &mut Def::ProcessingContext,
         graph: &Graph<Def>,
     ) -> Result<ProcessingResult<Def>, GraphError> {
         self.kind.process(self.id, context, graph)
