@@ -1,4 +1,4 @@
-use super::NodeId;
+use crate::NodeId;
 
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum GraphError {

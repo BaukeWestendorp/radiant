@@ -1,5 +1,7 @@
-use flow::{Control, Graph, GraphDefinition, GraphError, InputParameterKind, Value};
-use flow_gpui::{ControlEvent, VisualControl, VisualNodeData};
+#![cfg(all(feature = "gpui", not(feature = "serde")))]
+
+use flow::gpui::ControlEvent;
+use flow::{Graph, GraphError, InputParameterKind};
 use gpui::{AnyView, ElementId, EmptyView, EventEmitter, ViewContext, VisualContext};
 
 //
@@ -7,25 +9,27 @@ use gpui::{AnyView, ElementId, EmptyView, EventEmitter, ViewContext, VisualConte
 //
 
 #[derive(Clone)]
-pub struct TestGraphDefinition;
+pub struct GraphDefinition;
 
-impl GraphDefinition for TestGraphDefinition {
-    type NodeKind = TestGraphNodeKind;
-    type NodeData = TestGraphNodeData;
-    type Value = TestGraphValue;
-    type DataType = TestGraphDataType;
-    type Control = TestGraphControl;
+impl flow::GraphDefinition for GraphDefinition {
+    type NodeKind = NodeKind;
+    type NodeData = NodeData;
+    type Value = Value;
+    type DataType = DataType;
+
+    type ProcessingContext = ProcessingContext;
+
     type NodeCategory = Category;
-    type ProcessingContext = TestGraphProcessingContext;
+    type Control = Control;
 }
 
-pub type TestGraph = Graph<TestGraphDefinition>;
+pub type TestGraph = Graph<GraphDefinition>;
 
 //
 // Processing Context
 //
 
-pub struct TestGraphProcessingContext {
+pub struct ProcessingContext {
     pub output_float: f32,
 }
 
@@ -33,12 +37,12 @@ pub struct TestGraphProcessingContext {
 // NodeData
 //
 
-#[derive(Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
-pub struct TestGraphNodeData {
+#[derive(Clone, PartialEq, Default)]
+pub struct NodeData {
     position: geo::Point,
 }
 
-impl VisualNodeData for TestGraphNodeData {
+impl flow::NodeData for NodeData {
     fn position(&self) -> &geo::Point {
         &self.position
     }
@@ -52,29 +56,20 @@ impl VisualNodeData for TestGraphNodeData {
 // Value
 //
 
-#[derive(
-    Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, flow_gpui_macros::Value,
-)]
-#[value(
-    data_type = "TestGraphDataType",
-    graph_definition = "TestGraphDefinition"
-)]
-pub enum TestGraphValue {
-    #[meta(default_value = "0.0")]
+#[derive(Debug, Clone, PartialEq, flow::Value)]
+#[value(data_type = "DataType", graph_definition = "GraphDefinition")]
+pub enum Value {
+    #[meta(default_value = "0.0", color = 0xff0000)]
     Float(f32),
 }
 
-impl Value<TestGraphDefinition> for TestGraphValue {
-    fn try_cast_to(
-        &self,
-        target: &<TestGraphDefinition as GraphDefinition>::DataType,
-    ) -> Result<Self, GraphError>
+impl flow::Value<GraphDefinition> for Value {
+    fn try_cast_to(&self, target: &DataType) -> Result<Self, GraphError>
     where
         Self: Sized,
     {
-        type T = <TestGraphDefinition as GraphDefinition>::DataType;
         match (&self, target) {
-            (Self::Float(_), T::Float) => Ok(self.clone()),
+            (Self::Float(_), DataType::Float) => Ok(self.clone()),
         }
     }
 }
@@ -83,18 +78,16 @@ impl Value<TestGraphDefinition> for TestGraphValue {
 // Control
 //
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub enum TestGraphControl {
+#[derive(Debug, Clone)]
+pub enum Control {
     Float,
 }
 
-impl Control<TestGraphDefinition> for TestGraphControl {}
-
-impl VisualControl<TestGraphDefinition> for TestGraphControl {
-    fn view<View: EventEmitter<ControlEvent<TestGraphDefinition>>>(
+impl flow::gpui::Control<GraphDefinition> for Control {
+    fn view<View: EventEmitter<ControlEvent<GraphDefinition>>>(
         &self,
         _id: impl Into<ElementId>,
-        _initial_value: TestGraphValue,
+        _initial_value: Value,
         cx: &mut ViewContext<View>,
     ) -> AnyView {
         match self {
@@ -107,9 +100,7 @@ impl VisualControl<TestGraphDefinition> for TestGraphControl {
 // Category
 //
 
-#[derive(
-    Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize, flow_gpui_macros::NodeCategory,
-)]
+#[derive(Clone, Copy, PartialEq, flow::gpui::NodeCategory)]
 pub enum Category {
     Math,
     Output,
@@ -119,9 +110,9 @@ pub enum Category {
 // NodeKind
 //
 
-#[derive(Clone, serde::Serialize, serde::Deserialize, flow_gpui_macros::NodeKind)]
-#[node_kind(graph_definition = "TestGraphDefinition")]
-pub enum TestGraphNodeKind {
+#[derive(Clone, flow::NodeKind)]
+#[node_kind(graph_definition = "GraphDefinition")]
+pub enum NodeKind {
     #[input(label = "a", data_type = "Float", control = "Float")]
     #[input(label = "b", data_type = "Float", control = "Float")]
     #[computed_output(label = "sum", data_type = "Float")]
@@ -135,7 +126,7 @@ pub enum TestGraphNodeKind {
 
 fn add_processor(
     input: AddProcessorInput,
-    _context: &mut TestGraphProcessingContext,
+    _context: &mut ProcessingContext,
 ) -> Result<AddProcessorOutput, GraphError> {
     let AddProcessorInput { a, b } = input;
 
@@ -143,13 +134,13 @@ fn add_processor(
     let b: f32 = b.try_into()?;
 
     Ok(AddProcessorOutput {
-        sum: TestGraphValue::Float(a + b),
+        sum: Value::Float(a + b),
     })
 }
 
 fn output_processor(
     input: OutputProcessorInput,
-    context: &mut TestGraphProcessingContext,
+    context: &mut ProcessingContext,
 ) -> Result<OutputProcessorOutput, GraphError> {
     let OutputProcessorInput { value } = input;
     context.output_float = value.try_into()?;
@@ -159,18 +150,18 @@ fn output_processor(
 #[test]
 fn test() {
     let mut graph = TestGraph::new();
-    let add_node_id = graph.add_node(TestGraphNodeKind::Add, TestGraphNodeData::default());
-    let output_node_id = graph.add_node(TestGraphNodeKind::Output, TestGraphNodeData::default());
+    let add_node_id = graph.add_node(NodeKind::Add, NodeData::default());
+    let output_node_id = graph.add_node(NodeKind::Output, NodeData::default());
 
     match &mut graph.input_mut(graph.node(add_node_id).input("a").id).kind {
         InputParameterKind::EdgeOrConstant { value, .. } => {
-            *value = TestGraphValue::Float(42.0);
+            *value = Value::Float(42.0);
         }
     };
 
     match &mut graph.input_mut(graph.node(add_node_id).input("b").id).kind {
         InputParameterKind::EdgeOrConstant { value, .. } => {
-            *value = TestGraphValue::Float(2.0);
+            *value = Value::Float(2.0);
         }
     };
 
@@ -181,7 +172,7 @@ fn test() {
             .id(),
     );
 
-    let mut context = TestGraphProcessingContext { output_float: 0.0 };
+    let mut context = ProcessingContext { output_float: 0.0 };
     graph.process(&mut context).unwrap();
 
     assert_eq!(context.output_float, 44.0);

@@ -1,9 +1,9 @@
-use crate::graph::GraphEvent;
-use crate::{VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
-use flow::graph::Graph;
-use flow::graph_def::GraphDefinition;
-use flow::node::Node;
-use flow::{InputId, InputParameterKind, NodeId, OutputId, OutputParameterKind, Parameter};
+use super::{Control, GraphEvent};
+use crate::{
+    DataType, Graph, GraphDefinition, InputId, InputParameterKind, Node, NodeData, NodeId,
+    NodeKind, OutputId, OutputParameterKind, Parameter,
+};
+
 use gpui::prelude::FluentBuilder;
 use gpui::*;
 use ui::theme::Colorize;
@@ -37,10 +37,10 @@ pub struct NodeView<Def: GraphDefinition> {
 
 impl<Def: GraphDefinition + 'static> NodeView<Def>
 where
-    Def::NodeKind: VisualNodeKind<Def>,
-    Def::NodeData: VisualNodeData,
-    Def::DataType: VisualDataType,
-    Def::Control: VisualControl<Def>,
+    Def::NodeKind: NodeKind<Def>,
+    Def::NodeData: NodeData,
+    Def::DataType: DataType<Def>,
+    Def::Control: Control<Def>,
 {
     pub fn build(node_id: NodeId, graph: Model<Graph<Def>>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| Self {
@@ -182,10 +182,10 @@ where
 
 impl<Def: GraphDefinition + 'static> Render for NodeView<Def>
 where
-    Def::NodeData: VisualNodeData,
-    Def::NodeKind: VisualNodeKind<Def>,
-    Def::DataType: VisualDataType,
-    Def::Control: VisualControl<Def>,
+    Def::NodeData: NodeData,
+    Def::NodeKind: NodeKind<Def>,
+    Def::DataType: DataType<Def>,
+    Def::Control: Control<Def>,
 {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let node = self.node(cx);
@@ -253,10 +253,10 @@ where
 
 impl<Def: GraphDefinition + 'static> FocusableView for NodeView<Def>
 where
-    Def::NodeKind: VisualNodeKind<Def>,
-    Def::NodeData: VisualNodeData,
-    Def::DataType: VisualDataType,
-    Def::Control: VisualControl<Def>,
+    Def::NodeKind: NodeKind<Def>,
+    Def::NodeData: NodeData,
+    Def::DataType: DataType<Def>,
+    Def::Control: Control<Def>,
 {
     fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
         self.focus_handle.clone()
@@ -290,11 +290,7 @@ pub struct InputView<Def: GraphDefinition> {
     hovering: bool,
 }
 
-impl<Def: GraphDefinition + 'static> InputView<Def>
-where
-    Def::DataType: VisualDataType,
-    Def::Control: VisualControl<Def>,
-{
+impl<Def: GraphDefinition + 'static> InputView<Def> {
     pub fn build(
         input_id: InputId,
         label: String,
@@ -325,11 +321,7 @@ where
     }
 }
 
-impl<Def: GraphDefinition + 'static> Render for InputView<Def>
-where
-    Def::DataType: VisualDataType,
-    Def::Control: VisualControl<Def>,
-{
+impl<Def: GraphDefinition + 'static> Render for InputView<Def> {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
             .h_flex()
@@ -367,11 +359,7 @@ pub struct OutputView<Def: GraphDefinition> {
     hovering: bool,
 }
 
-impl<Def: GraphDefinition + 'static> OutputView<Def>
-where
-    Def::DataType: VisualDataType,
-    Def::Control: VisualControl<Def>,
-{
+impl<Def: GraphDefinition + 'static> OutputView<Def> {
     pub fn build(
         output_id: OutputId,
         label: String,
@@ -401,7 +389,7 @@ where
 
 impl<Def: GraphDefinition + 'static> Render for OutputView<Def>
 where
-    Def::DataType: VisualDataType,
+    Def::DataType: DataType<Def>,
 {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
@@ -444,7 +432,7 @@ fn render_connector<Def, View>(
 ) -> impl IntoElement
 where
     Def: GraphDefinition + 'static,
-    Def::DataType: VisualDataType,
+    Def::DataType: DataType<Def>,
     View: EventEmitter<SocketEvent> + Hovering,
 {
     let width = px(3.0);

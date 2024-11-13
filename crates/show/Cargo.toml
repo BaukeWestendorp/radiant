@@ -4,9 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-flow.workspace = true
-flow_gpui.workspace = true
-flow_gpui_macros.workspace = true
+flow = { workspace = true, features = ["gpui"] }
 gpui.workspace = true
 ui.workspace = true
 dmx.workspace = true
@@ -16,9 +14,14 @@ slotmap.workspace = true
 anyhow.workspace = true
 strum.workspace = true
 log.workspace = true
-serde.workspace = true
-serde_json.workspace = true
 dirs.workspace = true
+
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 
 gdtf = "0.2.0"
 itertools = "0.13.0"
+
+[features]
+default = []
+serde = ["dep:serde", "dep:serde_json", "flow/serde"]

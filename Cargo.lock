@@ -1653,35 +1653,25 @@ checksum = "8ce81f49ae8a0482e4c55ea62ebbd7e5a686af544c00b9d090bba3ff9be97b3d"
 name = "flow"
 version = "0.1.0"
 dependencies = [
+ "flow_macros",
+ "geo",
+ "gpui",
  "serde",
  "slotmap",
  "thiserror",
-]
-
-[[package]]
-name = "flow_gpui"
-version = "0.1.0"
-dependencies = [
- "flow",
- "geo",
- "gpui",
- "log",
- "strum 0.26.3",
  "ui",
 ]
 
 [[package]]
-name = "flow_gpui_macros"
+name = "flow_macros"
 version = "0.1.0"
 dependencies = [
  "darling",
  "flow",
- "flow_gpui",
  "geo",
  "gpui",
  "proc-macro2",
  "quote",
- "serde",
  "syn 2.0.87",
 ]
 
@@ -3440,7 +3430,7 @@ dependencies = [
  "dirs 5.0.1",
  "dmx",
  "env_logger",
- "flow_gpui",
+ "flow",
  "gpui",
  "log",
  "rust-embed",
@@ -3980,8 +3970,6 @@ dependencies = [
  "dirs 5.0.1",
  "dmx",
  "flow",
- "flow_gpui",
- "flow_gpui_macros",
  "gdtf",
  "geo",
  "gpui",

@@ -1,4 +1,5 @@
-use flow::GraphDefinition;
+use crate::GraphDefinition;
+
 use gpui::*;
 
 pub mod editor;
@@ -9,31 +10,20 @@ pub use editor::*;
 pub use graph::*;
 pub use node::*;
 
+#[cfg(all(feature = "macros", feature = "gpui"))]
+pub use flow_macros::NodeCategory;
+
 pub fn init(cx: &mut AppContext) {
     editor::init(cx);
     node::init(cx);
 }
 
-pub trait VisualNodeKind<Def: GraphDefinition> {
-    fn name(&self) -> &str;
-
-    fn category(&self) -> Def::NodeCategory;
-
+pub trait NodeCategory: ToString + Copy + PartialEq {
     #[allow(opaque_hidden_inferred_bound)]
     fn all() -> impl Iterator<Item = Self>;
 }
 
-pub trait VisualDataType {
-    fn color(&self) -> Hsla;
-}
-
-pub trait VisualNodeData: Default {
-    fn position(&self) -> &geo::Point;
-
-    fn set_position(&mut self, position: geo::Point);
-}
-
-pub trait VisualControl<Def: GraphDefinition + 'static> {
+pub trait Control<Def: GraphDefinition> {
     fn view<View: EventEmitter<ControlEvent<Def>>>(
         &self,
         id: impl Into<ElementId>,

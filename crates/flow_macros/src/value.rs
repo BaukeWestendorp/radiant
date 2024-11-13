@@ -2,7 +2,7 @@ use darling::{FromDeriveInput, FromVariant};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::spanned::Spanned;
-use syn::{Data, DeriveInput, Expr, Fields, Ident, Type, Variant};
+use syn::{Data, DeriveInput, Expr, Fields, Ident, LitInt, Type, Variant};
 
 #[derive(Debug, FromDeriveInput)]
 #[darling(attributes(value))]
@@ -15,6 +15,7 @@ struct Attrs {
 #[darling(attributes(meta))]
 struct VariantMeta {
     default_value: Expr,
+    color: LitInt,
 }
 
 pub fn derive(input: DeriveInput) -> syn::Result<TokenStream> {
@@ -42,9 +43,7 @@ pub fn derive(input: DeriveInput) -> syn::Result<TokenStream> {
 
     Ok(quote! {
         #decl
-
         #impl_data_type
-
         #impl_try_froms
     })
 }
@@ -53,10 +52,17 @@ fn gen_decl(input: &DeriveInput, attrs: &Attrs, variants: &[Variant]) -> syn::Re
     let vis = &input.vis;
     let data_type = &attrs.data_type;
 
+    let derive_serde = if cfg!(feature = "serde") {
+        quote! { #[derive(serde::Serialize, serde::Deserialize)] }
+    } else {
+        TokenStream::default()
+    };
+
     let variant_idents = variants.iter().map(|variant| &variant.ident);
 
     Ok(quote! {
-        #[derive(Clone, serde::Serialize, serde::Deserialize)]
+        #derive_serde
+        #[derive(Clone)]
         #vis enum #data_type {
             #(#variant_idents)*,
         }
@@ -64,22 +70,20 @@ fn gen_decl(input: &DeriveInput, attrs: &Attrs, variants: &[Variant]) -> syn::Re
 }
 
 fn gen_impl_data_type(attrs: &Attrs, variants: &[Variant]) -> TokenStream {
-    let graph_def = &attrs.graph_definition;
-    let data_type = &attrs.data_type;
+    fn gen_default_value_fn(variants: &[Variant], graph_def: &Type) -> TokenStream {
+        let default_cases = variants.iter().map(|variant| {
+            let meta =
+                VariantMeta::from_variant(variant).expect("#[meta(...) is required on variant");
 
-    let default_cases = variants.iter().map(|variant| {
-        let meta = VariantMeta::from_variant(variant).expect("#[meta(...) is required on variant");
+            let var = &variant.ident;
+            let default_value = &meta.default_value;
 
-        let var = &variant.ident;
-        let default_value = &meta.default_value;
+            quote! {
+                Self::#var => __GraphValue::#var(#default_value)
+            }
+        });
 
         quote! {
-            Self::#var => __GraphValue::#var(#default_value)
-        }
-    });
-
-    quote! {
-        impl flow::DataType<#graph_def> for #data_type {
             fn default_value(&self) -> <#graph_def as flow::GraphDefinition>::Value {
                 type __GraphValue = <#graph_def as flow::GraphDefinition>::Value;
 
@@ -87,6 +91,45 @@ fn gen_impl_data_type(attrs: &Attrs, variants: &[Variant]) -> TokenStream {
                     #(#default_cases)*,
                 }
             }
+        }
+    }
+
+    fn gen_color_fn(variants: &[Variant]) -> TokenStream {
+        let color_cases = variants.iter().map(|variant| {
+            let meta =
+                VariantMeta::from_variant(variant).expect("#[meta(...) is required on variant");
+
+            let var = &variant.ident;
+            let color = &meta.color;
+
+            quote! {
+                Self::#var => gpui::rgb(#color).into()
+            }
+        });
+
+        quote! {
+            fn color(&self) -> gpui::Hsla {
+                match self {
+                    #(#color_cases)*,
+                }
+            }
+        }
+    }
+
+    let graph_def = &attrs.graph_definition;
+    let data_type = &attrs.data_type;
+
+    let default_value_fn = gen_default_value_fn(variants, graph_def);
+    let color_fn = if cfg!(feature = "gpui") {
+        gen_color_fn(variants)
+    } else {
+        TokenStream::default()
+    };
+
+    quote! {
+        impl flow::DataType<#graph_def> for #data_type {
+            #default_value_fn
+            #color_fn
         }
     }
 }

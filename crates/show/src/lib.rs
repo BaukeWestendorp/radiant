@@ -1,22 +1,21 @@
 use crate::effect_graph::EffectGraph;
 use crate::fixture::FixtureId;
 use crate::patch::Patch;
-use std::fs;
 use std::net::Ipv4Addr;
-use std::path::Path;
 
 pub mod effect_graph;
 pub mod fixture;
 pub mod patch;
 
-#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Default)]
 pub struct Show {
-    #[serde(default)]
+    #[cfg_attr(feature = "serde", serde(default))]
     patch: Patch,
-    #[serde(default)]
+    #[cfg_attr(feature = "serde", serde(default))]
     dmx_protocols: DmxProtocols,
 
-    #[serde(default)]
+    #[cfg_attr(feature = "serde", serde(default))]
     effect_graph: EffectGraph,
 }
 
@@ -41,22 +40,25 @@ impl Show {
         &self.dmx_protocols
     }
 
-    pub fn read_from_file(path: &Path) -> anyhow::Result<Self> {
-        let show_json = fs::read_to_string(path)?;
+    #[cfg(feature = "serde")]
+    pub fn read_from_file(path: &std::path::Path) -> anyhow::Result<Self> {
+        let show_json = std::fs::read_to_string(path)?;
         let show: Self = serde_json::from_str(&show_json)?;
         Ok(show)
     }
 
-    pub fn save_to_file(&self, path: &Path) -> anyhow::Result<()> {
+    #[cfg(feature = "serde")]
+    pub fn save_to_file(&self, path: &std::path::Path) -> anyhow::Result<()> {
         let show_json = serde_json::to_string_pretty(self)?;
 
-        fs::write(path, show_json)?;
+        std::fs::write(path, show_json)?;
 
         Ok(())
     }
 }
 
-#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone, Default)]
 pub struct DmxProtocols {
     artnet: Vec<ArtnetNodeSettings>,
 }
@@ -67,7 +69,8 @@ impl DmxProtocols {
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone)]
 pub struct ArtnetNodeSettings {
     pub destination_ip: Ipv4Addr,
     pub universe: u16,
@@ -93,5 +96,9 @@ impl FixtureGroup {
 
     pub fn len(&self) -> usize {
         self.fixtures.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.fixtures.is_empty()
     }
 }

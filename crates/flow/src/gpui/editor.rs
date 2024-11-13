@@ -1,8 +1,6 @@
-use crate::graph::{GraphEvent, GraphView};
-use crate::{VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
-use flow::graph::Graph;
-use flow::graph_def::GraphDefinition;
-use flow::NodeCategory;
+use super::{Control, GraphEvent, GraphView, NodeCategory};
+use crate::{DataType, Graph, GraphDefinition, NodeData, NodeKind};
+
 use gpui::*;
 use ui::input::TextField;
 use ui::theme::ActiveTheme;
@@ -20,10 +18,7 @@ pub(crate) fn init(cx: &mut AppContext) {
     )]);
 }
 
-pub struct GraphEditorView<Def: GraphDefinition>
-where
-    Def::NodeKind: VisualNodeKind<Def>,
-{
+pub struct GraphEditorView<Def: GraphDefinition> {
     graph_view: View<GraphView<Def>>,
     new_node_context_menu: View<NewNodeContextMenu<Def>>,
     graph_offset: Point<Pixels>,
@@ -35,10 +30,10 @@ where
 
 impl<Def: GraphDefinition + 'static> GraphEditorView<Def>
 where
-    Def::NodeData: VisualNodeData,
-    Def::NodeKind: VisualNodeKind<Def>,
-    Def::DataType: VisualDataType,
-    Def::Control: VisualControl<Def>,
+    Def::NodeData: NodeData,
+    Def::NodeKind: NodeKind<Def>,
+    Def::DataType: DataType<Def>,
+    Def::Control: Control<Def>,
 {
     pub fn build(graph: Model<Graph<Def>>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
@@ -87,10 +82,10 @@ where
 
 impl<Def: GraphDefinition + 'static> Render for GraphEditorView<Def>
 where
-    Def::NodeData: VisualNodeData,
-    Def::NodeKind: VisualNodeKind<Def>,
-    Def::DataType: VisualDataType,
-    Def::Control: VisualControl<Def>,
+    Def::NodeKind: NodeKind<Def>,
+    Def::NodeData: NodeData,
+    Def::DataType: DataType<Def>,
+    Def::Control: Control<Def>,
 {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let graph_viewer = div()
@@ -130,10 +125,10 @@ where
 
 impl<Def: GraphDefinition + 'static> FocusableView for GraphEditorView<Def>
 where
-    Def::DataType: VisualDataType,
-    Def::NodeKind: VisualNodeKind<Def>,
-    Def::NodeData: VisualNodeData,
-    Def::Control: VisualControl<Def>,
+    Def::NodeKind: NodeKind<Def>,
+    Def::NodeData: NodeData,
+    Def::DataType: DataType<Def>,
+    Def::Control: Control<Def>,
 {
     fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
         self.focus_handle.clone()
@@ -141,8 +136,6 @@ where
 }
 
 struct NewNodeContextMenu<Def: GraphDefinition>
-where
-    Def::NodeKind: VisualNodeKind<Def>,
 {
     graph: Model<Graph<Def>>,
     shown: bool,
@@ -153,8 +146,8 @@ where
 
 impl<Def: GraphDefinition + 'static> NewNodeContextMenu<Def>
 where
-    Def::NodeKind: VisualNodeKind<Def>,
-    Def::NodeData: VisualNodeData,
+    Def::NodeKind: NodeKind<Def>,
+    Def::NodeData: NodeData,
 {
     pub fn build(graph: Model<Graph<Def>>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
@@ -328,9 +321,9 @@ where
 }
 
 impl<Def: GraphDefinition + 'static> Render for NewNodeContextMenu<Def>
-where
-    Def::NodeKind: VisualNodeKind<Def>,
-    Def::NodeData: VisualNodeData,
+where 
+    Def::NodeKind: NodeKind<Def>,
+    Def::NodeData: NodeData,
 {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         if !self.shown {

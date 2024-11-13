@@ -1,17 +1,43 @@
-use crate::error::GraphError;
-use crate::graph::Graph;
-use crate::{NodeId, OutputId};
+use crate::{Graph, GraphError, NodeId, OutputId};
+
 use std::collections::HashMap;
 
-pub trait GraphDefinition: Sized + Clone {
+pub trait GraphDefinition: Sized + Clone
+where
+    Self: 'static,
+{
+    #[cfg(not(feature = "serde"))]
+    type NodeKind: NodeKind<Self> + Clone;
+    #[cfg(feature = "serde")]
     type NodeKind: NodeKind<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
-    type NodeData: Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
-    type Value: Value<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
-    type DataType: DataType<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
-    type Control: Control<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
 
-    type NodeCategory: NodeCategory;
+    #[cfg(not(feature = "serde"))]
+    type NodeData: NodeData + Clone;
+    #[cfg(feature = "serde")]
+    type NodeData: Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
+
+    #[cfg(not(feature = "serde"))]
+    type Value: Value<Self> + Clone;
+    #[cfg(feature = "serde")]
+    type Value: Value<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
+
+    #[cfg(not(feature = "serde"))]
+    type DataType: DataType<Self> + Clone;
+    #[cfg(feature = "serde")]
+    type DataType: DataType<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
+
     type ProcessingContext;
+
+    #[cfg(all(feature = "gpui"))]
+    type NodeCategory: crate::gpui::NodeCategory;
+
+    #[cfg(all(feature = "gpui", feature = "serde"))]
+    type Control: crate::gpui::Control<Self>
+        + Clone
+        + serde::Serialize
+        + for<'de> serde::Deserialize<'de>;
+    #[cfg(all(feature = "gpui", not(feature = "serde")))]
+    type Control: crate::gpui::Control<Self> + Clone;
 }
 
 pub trait NodeKind<Def: GraphDefinition> {
@@ -23,6 +49,16 @@ pub trait NodeKind<Def: GraphDefinition> {
         context: &mut Def::ProcessingContext,
         graph: &Graph<Def>,
     ) -> Result<ProcessingResult<Def>, GraphError>;
+
+    #[cfg(feature = "gpui")]
+    fn name(&self) -> &str;
+
+    #[cfg(feature = "gpui")]
+    fn category(&self) -> Def::NodeCategory;
+
+    #[cfg(feature = "gpui")]
+    #[allow(opaque_hidden_inferred_bound)]
+    fn all() -> impl Iterator<Item = Self>;
 }
 
 #[derive(Debug, Clone, Default)]
@@ -56,11 +92,15 @@ pub trait Value<Def: GraphDefinition> {
 
 pub trait DataType<Def: GraphDefinition> {
     fn default_value(&self) -> Def::Value;
+
+    #[cfg(feature = "gpui")]
+    fn color(&self) -> gpui::Hsla;
 }
 
-pub trait Control<Def: GraphDefinition> {}
+pub trait NodeData: Default {
+    #[cfg(feature = "gpui")]
+    fn position(&self) -> &geo::Point;
 
-pub trait NodeCategory: ToString + Copy + PartialEq {
-    #[allow(opaque_hidden_inferred_bound)]
-    fn all() -> impl Iterator<Item = Self>;
+    #[cfg(feature = "gpui")]
+    fn set_position(&mut self, position: geo::Point);
 }

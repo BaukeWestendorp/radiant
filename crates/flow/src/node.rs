@@ -1,9 +1,9 @@
-use crate::error::GraphError;
-use crate::graph::Graph;
-use crate::graph_def::{NodeKind, ProcessingResult};
-use crate::{GraphDefinition, InputId, NodeId, OutputId};
+use crate::{
+    Graph, GraphDefinition, GraphError, InputId, NodeId, NodeKind, OutputId, ProcessingResult,
+};
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone)]
 pub struct Node<Def: GraphDefinition> {
     pub id: NodeId,
     pub data: Def::NodeData,
@@ -25,9 +25,7 @@ impl<Def: GraphDefinition> Node<Def> {
         self.inputs
             .iter()
             .find(|i| i.label == label)
-            .expect(&format!(
-                "tried to get input parameter with nonexistent label: '{label}' not found on node"
-            ))
+            .unwrap_or_else(|| panic!("tried to get input parameter with nonexistent label: '{label}' not found on node"))
     }
 
     pub fn inputs(&self) -> &[NodeInputParameter] {
@@ -42,9 +40,7 @@ impl<Def: GraphDefinition> Node<Def> {
         self.outputs
             .iter()
             .find(|o| o.label == label)
-            .expect(&format!(
-                "tried to get output parameter with nonexistent label: '{label}' not found on node"
-            ))
+            .unwrap_or_else(|| panic!("tried to get output parameter with nonexistent label: '{label}' not found on node"))
     }
 
     pub fn outputs(&self) -> &[NodeOutputParameter] {
@@ -76,13 +72,15 @@ impl<Def: GraphDefinition> Node<Def> {
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone)]
 pub struct NodeInputParameter {
     pub label: String,
     pub id: InputId,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone)]
 pub struct NodeOutputParameter {
     pub label: String,
     pub id: OutputId,

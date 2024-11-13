@@ -34,7 +34,7 @@ fn gen_impl_node_category(name: &Ident, variants: &[Variant]) -> TokenStream {
     });
 
     quote! {
-        impl flow::NodeCategory for #name {
+        impl flow::gpui::NodeCategory for #name {
             fn all() -> impl Iterator<Item = Self> {
                 vec![#(#vars),*].into_iter()
             }
@@ -46,8 +46,8 @@ fn gen_impl_display(name: &Ident, variants: &[Variant]) -> TokenStream {
     let cases = variants.iter().map(|variant| {
         let variant_name = &variant.ident;
 
-        let meta = Meta::from_variant(&variant).ok();
-        let name_value = match meta.map(|meta| meta.name).flatten() {
+        let meta = Meta::from_variant(variant).ok();
+        let name_value = match meta.and_then(|meta| meta.name) {
             Some(name) => name,
             None => variant_name.to_string(),
         };

@@ -4,8 +4,7 @@ members = [
     "crates/ui",
     "crates/show",
     "crates/flow",
-    "crates/flow_gpui",
-    "crates/flow_gpui_macros",
+    "crates/flow_macros",
     "crates/dmx",
     "crates/geo",
 ]
@@ -18,8 +17,7 @@ edition = "2021"
 [workspace.dependencies]
 ui = { path = "crates/ui" }
 flow = { path = "crates/flow" }
-flow_gpui = { path = "crates/flow_gpui" }
-flow_gpui_macros = { path = "crates/flow_gpui_macros" }
+flow_macros = { path = "crates/flow_macros" }
 show = { path = "crates/show" }
 dmx = { path = "crates/dmx" }
 geo = { path = "crates/geo" }

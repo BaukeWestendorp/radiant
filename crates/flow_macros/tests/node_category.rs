@@ -1,7 +1,6 @@
-use flow::NodeCategory;
-use flow_gpui_macros::NodeCategory;
+#![cfg(all(feature = "gpui", not(feature = "serde")))]
 
-#[derive(Debug, Clone, Copy, PartialEq, NodeCategory)]
+#[derive(Debug, Clone, Copy, PartialEq, flow::gpui::NodeCategory)]
 pub enum Category {
     Math,
     Output,
@@ -18,6 +17,8 @@ fn name() {
 
 #[test]
 fn all() {
+    use flow::gpui::NodeCategory as _;
+
     let all = Category::all().collect::<Vec<_>>();
     assert_eq!(
         all,

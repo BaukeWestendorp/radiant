@@ -1,8 +1,8 @@
-use crate::node::{NodeEvent, NodeView, SocketEvent};
-use crate::{node, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
-use flow::graph::Graph;
-use flow::graph_def::GraphDefinition;
-use flow::{InputId, NodeId, OutputId, Parameter};
+use super::{node, Control, NodeEvent, NodeView, SocketEvent};
+use crate::{
+    DataType, Graph, GraphDefinition, InputId, NodeData, NodeId, NodeKind, OutputId, Parameter,
+};
+
 use gpui::*;
 use ui::{bounds_updater, z_stack};
 
@@ -17,10 +17,10 @@ pub struct GraphView<Def: GraphDefinition> {
 
 impl<Def: GraphDefinition + 'static> GraphView<Def>
 where
-    Def::NodeKind: VisualNodeKind<Def>,
-    Def::NodeData: VisualNodeData,
-    Def::DataType: VisualDataType,
-    Def::Control: VisualControl<Def>,
+    Def::NodeKind: NodeKind<Def>,
+    Def::NodeData: NodeData,
+    Def::DataType: DataType<Def>,
+    Def::Control: Control<Def>,
 {
     pub fn build(graph: Model<Graph<Def>>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
@@ -57,9 +57,12 @@ where
         })
         .detach();
 
-        cx.subscribe(&node_view, move |this, _, event: &GraphEvent<Def>, cx| {
-            this.handle_graph_event(graph.clone(), event, cx);
-        })
+        cx.subscribe(
+            &node_view,
+            move |this: &mut Self, _, event: &GraphEvent<Def>, cx| {
+                this.handle_graph_event(graph.clone(), event, cx);
+            },
+        )
         .detach();
 
         node_view
@@ -220,8 +223,8 @@ where
             self.render_edge(
                 &target_pos,
                 &source_pos,
-                &target.data_type(),
-                &source.data_type(),
+                target.data_type(),
+                source.data_type(),
             )
         }))
     }
@@ -391,10 +394,10 @@ where
 
 impl<Def: GraphDefinition + 'static> Render for GraphView<Def>
 where
-    Def::NodeKind: VisualNodeKind<Def>,
-    Def::NodeData: VisualNodeData,
-    Def::DataType: VisualDataType,
-    Def::Control: VisualControl<Def>,
+    Def::NodeKind: NodeKind<Def>,
+    Def::NodeData: NodeData,
+    Def::DataType: DataType<Def>,
+    Def::Control: Control<Def>,
 {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         z_stack([

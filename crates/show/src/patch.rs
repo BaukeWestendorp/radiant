@@ -4,9 +4,10 @@ use gdtf::GdtfFile;
 use gpui::SharedString;
 use std::collections::HashMap;
 
-#[derive(Clone, Default, serde::Serialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize))]
+#[derive(Clone, Default)]
 pub struct Patch {
-    #[serde(skip_serializing)]
+    #[cfg_attr(feature = "serde", serde(skip))]
     gdtf_descriptions: HashMap<SharedString, gdtf::Description>,
     fixtures: Vec<PatchedFixture>,
 }
@@ -48,6 +49,7 @@ impl Patch {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> serde::Deserialize<'de> for Patch {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -74,7 +76,8 @@ impl<'de> serde::Deserialize<'de> for Patch {
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, Clone)]
 pub struct PatchedFixture {
     id: FixtureId,
 

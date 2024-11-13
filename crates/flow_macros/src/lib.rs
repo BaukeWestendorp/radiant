@@ -1,7 +1,9 @@
 use proc_macro::TokenStream;
 use syn::parse_macro_input;
 
-mod node_category;
+#[cfg(feature = "gpui")]
+mod gpui;
+
 mod node_kind;
 mod value;
 
@@ -14,6 +16,7 @@ pub fn node_kind_derive(input: TokenStream) -> TokenStream {
     node_kind::derive(derive_input).unwrap().into()
 }
 
+#[cfg(feature = "gpui")]
 #[proc_macro_derive(NodeCategory, attributes(node_category))]
 pub fn node_category_derive(input: TokenStream) -> TokenStream {
     let derive_input = parse_macro_input!(input as syn::DeriveInput);

@@ -1,7 +1,7 @@
 use anyhow::bail;
-use flow_gpui::editor::GraphEditorView;
+use flow::gpui::editor::GraphEditorView;
 use gpui::*;
-use show::effect_graph::{EffectGraphDefinition, EffectGraphProcessingContext};
+use show::effect_graph::{EffectGraphDefinition, ProcessingContext};
 use show::fixture::FixtureId;
 use show::{FixtureGroup, Show};
 use std::path::PathBuf;
@@ -120,7 +120,7 @@ impl ShowView {
     ) {
         match event {
             IoManagerEvent::OutputRequested => io_manager.update(cx, |io_manager, cx| {
-                let mut context = EffectGraphProcessingContext::new(self.show.read(cx).clone());
+                let mut context = ProcessingContext::new(self.show.read(cx).clone());
                 context.set_group(FixtureGroup::new(vec![
                     FixtureId(0),
                     FixtureId(1),

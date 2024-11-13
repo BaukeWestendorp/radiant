@@ -55,12 +55,10 @@ pub fn derive(input: DeriveInput) -> syn::Result<TokenStream> {
 
     let impl_node_kind = gen_impl_node_kind(&input, &variants, &attrs);
     let processor_output_types = gen_processor_types(&variants, &attrs.graph_definition);
-    let impl_visual_node_kind = gen_impl_visual_node_kind(&variants, &attrs.graph_definition);
 
     Ok(quote! {
         #impl_node_kind
         #processor_output_types
-        #impl_visual_node_kind
     })
 }
 
@@ -143,15 +141,15 @@ fn gen_impl_node_kind(input: &DeriveInput, variants: &[Variant], attrs: &Attrs) 
 
         let name = &variant.ident;
 
-        let input_attrs = parse_input_attrs(&variant);
+        let input_attrs = parse_input_attrs(variant);
         let inputs = input_attrs.iter().map(|input| gen_input(input, graph_def));
 
-        let computed_output_attrs = parse_computed_output_attrs(&variant);
+        let computed_output_attrs = parse_computed_output_attrs(variant);
         let computed_outputs = computed_output_attrs
             .iter()
             .map(|output| gen_computed_output_for_builder(output, graph_def));
 
-        let constant_output_attrs = parse_constant_output_attrs(&variant);
+        let constant_output_attrs = parse_constant_output_attrs(variant);
         let constant_outputs = constant_output_attrs
             .iter()
             .map(|output| gen_constant_output_for_builder(output, graph_def));
@@ -186,6 +184,7 @@ fn gen_impl_node_kind(input: &DeriveInput, variants: &[Variant], attrs: &Attrs) 
                         Some(id) => graph.get_output_value(&id, context)?.clone(),
                     };
 
+                    use flow::Value;
                     let value = value.try_cast_to(&input.data_type())?;
                     Ok(value)
                 }?
@@ -194,18 +193,15 @@ fn gen_impl_node_kind(input: &DeriveInput, variants: &[Variant], attrs: &Attrs) 
 
         let processor_input_ident = processor_input_ident(variant);
 
-        let processing_result_modifications =
-            parse_variant_output_labels(variant)
-                .into_iter()
-                .map(|label| {
-                    let label_ident = format_ident!("{}", label);
-                    quote! {
-                        processing_result.set_output_value(
-                            node.output(#label).id,
-                            output.#label_ident,
-                        );
-                    }
-                });
+        let processing_result_modifications = parse_variant_output_labels(variant).map(|label| {
+            let label_ident = format_ident!("{}", label);
+            quote! {
+                processing_result.set_output_value(
+                    node.output(#label).id,
+                    output.#label_ident,
+                );
+            }
+        });
 
         quote! {
             Self::#name => {
@@ -222,12 +218,62 @@ fn gen_impl_node_kind(input: &DeriveInput, variants: &[Variant], attrs: &Attrs) 
         }
     }
 
+    fn gen_gpui_node_kind_functions(variants: &[Variant], graph_def: &Type) -> TokenStream {
+        let mut names = vec![];
+        let mut categories = vec![];
+        let mut all = vec![];
+
+        for variant in variants {
+            let meta = parse_variant_meta(variant);
+
+            let var = &variant.ident;
+            let name = &meta.name;
+            let cat = &meta.category;
+
+            names.push(quote! {
+                Self::#var => #name,
+            });
+
+            categories.push(quote! {
+                Self::#var => <#graph_def as flow::GraphDefinition>::NodeCategory::#cat,
+            });
+
+            all.push(quote! {
+                Self::#var
+            })
+        }
+
+        quote! {
+            fn name(&self) -> &str {
+                match self {
+                    #(#names)*
+                }
+            }
+
+            fn category(&self) -> <#graph_def as flow::GraphDefinition>::NodeCategory {
+                match self {
+                    #(#categories)*
+                }
+            }
+
+            fn all() -> impl Iterator<Item = Self> {
+                vec![#(#all),*].into_iter()
+            }
+        }
+    }
+
     let graph_def = &attrs.graph_definition;
     let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();
     let name = &input.ident;
 
     let builders = variants.iter().map(|v| gen_builder(v, graph_def));
     let processors = variants.iter().map(gen_processor);
+
+    let gpui_node_kind_functions = if cfg!(feature = "gpui") {
+        gen_gpui_node_kind_functions(&variants, &attrs.graph_definition)
+    } else {
+        TokenStream::new()
+    };
 
     quote! {
         impl #impl_generics flow::NodeKind<#graph_def> for #name #type_generics #where_clause {
@@ -248,6 +294,8 @@ fn gen_impl_node_kind(input: &DeriveInput, variants: &[Variant], attrs: &Attrs) 
                     #(#processors)*
                 }
             }
+
+            #gpui_node_kind_functions
         }
     }
 }
@@ -307,52 +355,6 @@ fn gen_processor_types(variants: &[Variant], graph_def: &Type) -> TokenStream {
     quote! {
         #(#input_types)*
         #(#output_types)*
-    }
-}
-
-fn gen_impl_visual_node_kind(variants: &[Variant], graph_def: &Type) -> TokenStream {
-    let mut names = vec![];
-    let mut categories = vec![];
-    let mut all = vec![];
-
-    for variant in variants {
-        let meta = parse_variant_meta(variant);
-
-        let var = &variant.ident;
-        let name = &meta.name;
-        let cat = &meta.category;
-
-        names.push(quote! {
-            Self::#var => #name,
-        });
-
-        categories.push(quote! {
-            Self::#var => <#graph_def as flow::GraphDefinition>::NodeCategory::#cat,
-        });
-
-        all.push(quote! {
-            Self::#var
-        })
-    }
-
-    quote! {
-        impl flow_gpui::VisualNodeKind<#graph_def> for <#graph_def as flow::GraphDefinition>::NodeKind {
-            fn name(&self) -> &str {
-                match self {
-                    #(#names)*
-                }
-            }
-
-            fn category(&self) -> <#graph_def as flow::GraphDefinition>::NodeCategory {
-                match self {
-                    #(#categories)*
-                }
-            }
-
-            fn all() -> impl Iterator<Item = Self> {
-                vec![#(#all),*].into_iter()
-            }
-        }
     }
 }
 
