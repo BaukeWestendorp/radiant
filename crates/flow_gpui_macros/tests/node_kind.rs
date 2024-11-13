@@ -15,6 +15,7 @@ impl GraphDefinition for TestGraphDefinition {
     type Value = TestGraphValue;
     type DataType = TestGraphDataType;
     type Control = TestGraphControl;
+    type NodeCategory = Category;
 }
 
 pub type TestGraph = Graph<TestGraphDefinition>;
@@ -105,7 +106,9 @@ impl VisualControl<TestGraphDefinition> for TestGraphControl {
 // Category
 //
 
-#[derive(Clone, Copy, PartialEq, flow_gpui_macros::NodeCategory)]
+#[derive(
+    Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize, flow_gpui_macros::NodeCategory,
+)]
 pub enum Category {
     Math,
     Output,

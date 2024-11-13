@@ -54,34 +54,20 @@ pub fn derive(input: DeriveInput) -> syn::Result<TokenStream> {
         _ => panic!("Only enums are supported"),
     };
 
-    let type_helpers = gen_type_helpers(&attrs);
     let impl_node_kind = gen_impl_node_kind(&input, &variants, &attrs);
-    let processor_output_types = gen_processor_types(&variants);
-    let impl_visual_node_kind = gen_impl_visual_node_kind(&variants);
+    let processor_output_types = gen_processor_types(&variants, &attrs.graph_definition);
+    let impl_visual_node_kind = gen_impl_visual_node_kind(&variants, &attrs.graph_definition);
 
     Ok(quote! {
-        #type_helpers
         #impl_node_kind
         #processor_output_types
         #impl_visual_node_kind
     })
 }
 
-fn gen_type_helpers(attrs: &Attrs) -> TokenStream {
-    let graph_definition = &attrs.graph_definition;
-
-    quote! {
-        type __GraphDefinition = #graph_definition;
-        type __GraphNodeKind = <#graph_definition as flow::GraphDefinition>::NodeKind;
-        type __GraphDataType = <#graph_definition as flow::GraphDefinition>::DataType;
-        type __GraphValue = <#graph_definition as flow::GraphDefinition>::Value;
-        type __GraphControl = <#graph_definition as flow::GraphDefinition>::Control;
-    }
-}
-
 fn gen_impl_node_kind(input: &DeriveInput, variants: &[Variant], attrs: &Attrs) -> TokenStream {
-    fn gen_builder(variant: &Variant) -> TokenStream {
-        fn gen_input(input_attr: &VariantInput) -> TokenStream {
+    fn gen_builder(variant: &Variant, graph_def: &Type) -> TokenStream {
+        fn gen_input(input_attr: &VariantInput, graph_def: &Type) -> TokenStream {
             let VariantInput {
                 label,
                 data_type,
@@ -90,37 +76,45 @@ fn gen_impl_node_kind(input: &DeriveInput, variants: &[Variant], attrs: &Attrs) 
             } = input_attr;
 
             let default_value = match default_value {
-                Some(default_value) => quote! { __GraphValue::#data_type(#default_value) },
-                None => default_value_for_data_type(data_type),
+                Some(default_value) => {
+                    quote! { <#graph_def as flow::GraphDefinition>::Value::#data_type(#default_value) }
+                }
+                None => default_value_for_data_type(data_type, graph_def),
             };
 
             quote! {
                 graph.add_input(
                     node_id,
                     #label.to_string(),
-                    __GraphDataType::#data_type,
+                    <#graph_def as flow::GraphDefinition>::DataType::#data_type,
                     flow::InputParameterKind::EdgeOrConstant {
                         value: #default_value,
-                        control: __GraphControl::#control,
+                        control: <#graph_def as flow::GraphDefinition>::Control::#control,
                     },
                 );
             }
         }
 
-        fn gen_computed_output_for_builder(output_attr: &VariantComputedOutput) -> TokenStream {
+        fn gen_computed_output_for_builder(
+            output_attr: &VariantComputedOutput,
+            graph_def: &Type,
+        ) -> TokenStream {
             let VariantComputedOutput { label, data_type } = output_attr;
 
             quote! {
                 graph.add_output(
                      node_id,
                      #label.to_string(),
-                    __GraphDataType::#data_type,
+                    <#graph_def as flow::GraphDefinition>::DataType::#data_type,
                     flow::OutputParameterKind::Computed,
                 );
             }
         }
 
-        fn gen_constant_output_for_builder(output_attr: &VariantConstantOutput) -> TokenStream {
+        fn gen_constant_output_for_builder(
+            output_attr: &VariantConstantOutput,
+            graph_def: &Type,
+        ) -> TokenStream {
             let VariantConstantOutput {
                 label,
                 data_type,
@@ -129,18 +123,20 @@ fn gen_impl_node_kind(input: &DeriveInput, variants: &[Variant], attrs: &Attrs) 
             } = output_attr;
 
             let default_value = match default_value {
-                Some(default_value) => quote! { __GraphValue::#data_type(#default_value) },
-                None => default_value_for_data_type(data_type),
+                Some(default_value) => {
+                    quote! { <#graph_def as flow::GraphDefinition>::Value::#data_type(#default_value) }
+                }
+                None => default_value_for_data_type(data_type, graph_def),
             };
 
             quote! {
                 graph.add_output(
                     node_id,
                     #label.to_string(),
-                    __GraphDataType::#data_type,
+                    <#graph_def as flow::GraphDefinition>::DataType::#data_type,
                     flow::OutputParameterKind::Constant {
                         value: #default_value,
-                        control: __GraphControl::#control,
+                        control: <#graph_def as flow::GraphDefinition>::Control::#control,
                     },
                 );
             }
@@ -149,17 +145,17 @@ fn gen_impl_node_kind(input: &DeriveInput, variants: &[Variant], attrs: &Attrs) 
         let name = &variant.ident;
 
         let input_attrs = parse_input_attrs(&variant);
-        let inputs = input_attrs.iter().map(gen_input);
+        let inputs = input_attrs.iter().map(|input| gen_input(input, graph_def));
 
         let computed_output_attrs = parse_computed_output_attrs(&variant);
         let computed_outputs = computed_output_attrs
             .iter()
-            .map(gen_computed_output_for_builder);
+            .map(|output| gen_computed_output_for_builder(output, graph_def));
 
         let constant_output_attrs = parse_constant_output_attrs(&variant);
         let constant_outputs = constant_output_attrs
             .iter()
-            .map(gen_constant_output_for_builder);
+            .map(|output| gen_constant_output_for_builder(output, graph_def));
 
         quote! {
             Self::#name => {
@@ -236,7 +232,7 @@ fn gen_impl_node_kind(input: &DeriveInput, variants: &[Variant], attrs: &Attrs) 
     let (impl_generics, type_generics, where_clause) = input.generics.split_for_impl();
     let name = &input.ident;
 
-    let builders = variants.iter().map(gen_builder);
+    let builders = variants.iter().map(|v| gen_builder(v, graph_definition));
     let processors = variants.iter().map(gen_processor);
 
     quote! {
@@ -264,8 +260,8 @@ fn gen_impl_node_kind(input: &DeriveInput, variants: &[Variant], attrs: &Attrs) 
     }
 }
 
-fn gen_processor_types(variants: &[Variant]) -> TokenStream {
-    fn gen_processor_input_type(variant: &Variant) -> TokenStream {
+fn gen_processor_types(variants: &[Variant], graph_def: &Type) -> TokenStream {
+    fn gen_processor_input_type(variant: &Variant, graph_def: &Type) -> TokenStream {
         let name = processor_input_ident(variant);
 
         let input_labels = parse_variant_input_labels(variant);
@@ -275,7 +271,7 @@ fn gen_processor_types(variants: &[Variant]) -> TokenStream {
             let ident = format_ident!("{}", label);
 
             fields.push(quote! {
-                pub #ident: __GraphValue,
+                pub #ident: <#graph_def as flow::GraphDefinition>::Value,
             })
         }
 
@@ -287,7 +283,7 @@ fn gen_processor_types(variants: &[Variant]) -> TokenStream {
         }
     }
 
-    fn gen_processor_output_type(variant: &Variant) -> TokenStream {
+    fn gen_processor_output_type(variant: &Variant, graph_def: &Type) -> TokenStream {
         let name = processor_output_ident(variant);
 
         let output_labels = parse_variant_output_labels(variant);
@@ -297,7 +293,7 @@ fn gen_processor_types(variants: &[Variant]) -> TokenStream {
             let ident = format_ident!("{}", label);
 
             fields.push(quote! {
-                pub #ident: __GraphValue,
+                pub #ident: <#graph_def as flow::GraphDefinition>::Value,
             })
         }
 
@@ -309,8 +305,12 @@ fn gen_processor_types(variants: &[Variant]) -> TokenStream {
         }
     }
 
-    let input_types = variants.iter().map(gen_processor_input_type);
-    let output_types = variants.iter().map(gen_processor_output_type);
+    let input_types = variants
+        .iter()
+        .map(|v| gen_processor_input_type(v, graph_def));
+    let output_types = variants
+        .iter()
+        .map(|v| gen_processor_output_type(v, graph_def));
 
     quote! {
         #(#input_types)*
@@ -318,7 +318,7 @@ fn gen_processor_types(variants: &[Variant]) -> TokenStream {
     }
 }
 
-fn gen_impl_visual_node_kind(variants: &[Variant]) -> TokenStream {
+fn gen_impl_visual_node_kind(variants: &[Variant], graph_def: &Type) -> TokenStream {
     let mut names = vec![];
     let mut categories = vec![];
     let mut all = vec![];
@@ -335,7 +335,7 @@ fn gen_impl_visual_node_kind(variants: &[Variant]) -> TokenStream {
         });
 
         categories.push(quote! {
-            Self::#var => __GraphNodeCategory::#cat,
+            Self::#var => <#graph_def as flow::GraphDefinition>::NodeCategory::#cat,
         });
 
         all.push(quote! {
@@ -344,8 +344,8 @@ fn gen_impl_visual_node_kind(variants: &[Variant]) -> TokenStream {
     }
 
     quote! {
-        impl flow_gpui::VisualNodeKind for __GraphNodeKind {
-            type Category = __GraphNodeCategory;
+        impl flow_gpui::VisualNodeKind for <#graph_def as flow::GraphDefinition>::NodeKind {
+            type Category = <#graph_def as flow::GraphDefinition>::NodeCategory;
 
             fn name(&self) -> &str {
                 match self {
@@ -423,9 +423,9 @@ fn processor_output_ident(variant: &Variant) -> Ident {
     format_ident!("{}ProcessorOutput", variant.ident)
 }
 
-fn default_value_for_data_type(data_type: &Ident) -> TokenStream {
+fn default_value_for_data_type(data_type: &Ident, graph_def: &Type) -> TokenStream {
     quote! {{
         use flow::DataType;
-        (__GraphDataType::#data_type).default_value()
+        (<#graph_def as flow::GraphDefinition>::DataType::#data_type).default_value()
     }}
 }

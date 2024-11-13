@@ -38,7 +38,7 @@ pub fn derive(input: DeriveInput) -> syn::Result<TokenStream> {
 
     let decl = gen_decl(&input, &attrs, &variants)?;
     let impl_data_type = gen_impl_data_type(&attrs, &variants);
-    let impl_try_froms = gen_impl_try_froms(&variants);
+    let impl_try_froms = gen_impl_try_froms(&variants, &attrs.graph_definition);
 
     Ok(quote! {
         #decl
@@ -64,7 +64,7 @@ fn gen_decl(input: &DeriveInput, attrs: &Attrs, variants: &[Variant]) -> syn::Re
 }
 
 fn gen_impl_data_type(attrs: &Attrs, variants: &[Variant]) -> TokenStream {
-    let graph_definition = &attrs.graph_definition;
+    let graph_def = &attrs.graph_definition;
     let data_type = &attrs.data_type;
 
     let default_cases = variants.iter().map(|variant| {
@@ -79,8 +79,10 @@ fn gen_impl_data_type(attrs: &Attrs, variants: &[Variant]) -> TokenStream {
     });
 
     quote! {
-        impl flow::DataType<#graph_definition> for #data_type {
-            fn default_value(&self) -> __GraphValue {
+        impl flow::DataType<#graph_def> for #data_type {
+            fn default_value(&self) -> <#graph_def as flow::GraphDefinition>::Value {
+                type __GraphValue = <#graph_def as flow::GraphDefinition>::Value;
+
                 match self {
                     #(#default_cases)*,
                 }
@@ -89,13 +91,20 @@ fn gen_impl_data_type(attrs: &Attrs, variants: &[Variant]) -> TokenStream {
     }
 }
 
-fn gen_impl_try_froms(variants: &[Variant]) -> TokenStream {
-    fn gen_impl_try_from_for_type(variant_ident: &Ident, ty: &Type) -> TokenStream {
+fn gen_impl_try_froms(variants: &[Variant], graph_def: &Type) -> TokenStream {
+    fn gen_impl_try_from_for_type(
+        variant_ident: &Ident,
+        ty: &Type,
+        graph_def: &Type,
+    ) -> TokenStream {
         quote! {
-            impl TryFrom<__GraphValue> for #ty {
+            impl TryFrom<<#graph_def as flow::GraphDefinition>::Value> for #ty {
                 type Error = flow::GraphError;
 
-                fn try_from(value: __GraphValue) -> Result<Self, Self::Error> {
+                fn try_from(value: <#graph_def as flow::GraphDefinition>::Value) -> Result<Self, Self::Error> {
+
+                    type __GraphValue = <#graph_def as flow::GraphDefinition>::Value;
+
                     match value {
                         __GraphValue::#variant_ident(value) => Ok(value),
                         _ => Err(flow::GraphError::CastFailed),
@@ -108,7 +117,7 @@ fn gen_impl_try_froms(variants: &[Variant]) -> TokenStream {
     let impls = variants.iter().map(|variant| match &variant.fields {
         Fields::Unnamed(field) => {
             let ty = field.unnamed.first().unwrap().ty.clone();
-            gen_impl_try_from_for_type(&variant.ident, &ty)
+            gen_impl_try_from_for_type(&variant.ident, &ty, graph_def)
         }
         _ => panic!("Only unnamed fields are supported"),
     });

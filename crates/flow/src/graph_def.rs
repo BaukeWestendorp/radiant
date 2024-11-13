@@ -9,6 +9,7 @@ pub trait GraphDefinition: Sized + Clone {
     type Value: Value<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
     type DataType: DataType<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
     type Control: Control<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
+    type NodeCategory: Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
 }
 
 pub trait NodeKind<Def: GraphDefinition> {

@@ -16,21 +16,13 @@ pub fn derive(input: DeriveInput) -> syn::Result<TokenStream> {
     };
 
     let name = &input.ident;
-    let helper_types = gen_helper_types(name);
     let impl_node_category = gen_impl_node_category(name, &variants);
     let impl_display = gen_impl_display(name, &variants);
 
     Ok(quote! {
-        #helper_types
         #impl_node_category
         #impl_display
     })
-}
-
-fn gen_helper_types(name: &Ident) -> TokenStream {
-    quote! {
-        type __GraphNodeCategory = #name;
-    }
 }
 
 fn gen_impl_node_category(name: &Ident, variants: &[Variant]) -> TokenStream {
