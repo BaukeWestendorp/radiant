@@ -121,27 +121,12 @@ pub enum Category {
     processing_context = "TestGraphProcessingContext"
 )]
 pub enum TestGraphNodeKind {
-    #[input(
-        label = "a",
-        data_type = "Float",
-        default_value = "0.0",
-        control = "Float"
-    )]
-    #[input(
-        label = "b",
-        data_type = "Float",
-        default_value = "0.0",
-        control = "Float"
-    )]
+    #[input(label = "a", data_type = "Float", control = "Float")]
+    #[input(label = "b", data_type = "Float", control = "Float")]
     #[computed_output(label = "sum", data_type = "Float")]
     #[meta(name = "Add", category = "Math", processor = "add_processor")]
     Add,
-    #[input(
-        label = "value",
-        data_type = "Float",
-        default_value = "0.0",
-        control = "Float"
-    )]
+    #[input(label = "value", data_type = "Float", control = "Float")]
     #[meta(name = "Output", category = "Output", processor = "output_processor")]
     Output,
 }

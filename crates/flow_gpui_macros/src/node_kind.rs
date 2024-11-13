@@ -71,6 +71,7 @@ fn gen_type_helpers(attrs: &Attrs) -> TokenStream {
     let graph_definition = &attrs.graph_definition;
 
     quote! {
+        type __GraphDefinition = #graph_definition;
         type __GraphNodeKind = <#graph_definition as flow::GraphDefinition>::NodeKind;
         type __GraphDataType = <#graph_definition as flow::GraphDefinition>::DataType;
         type __GraphValue = <#graph_definition as flow::GraphDefinition>::Value;
@@ -88,13 +89,18 @@ fn gen_impl_node_kind(input: &DeriveInput, variants: &[Variant], attrs: &Attrs) 
                 control,
             } = input_attr;
 
+            let default_value = match default_value {
+                Some(default_value) => quote! { __GraphValue::#data_type(#default_value) },
+                None => default_value_for_data_type(data_type),
+            };
+
             quote! {
                 graph.add_input(
                     node_id,
                     #label.to_string(),
                     __GraphDataType::#data_type,
                     flow::InputParameterKind::EdgeOrConstant {
-                        value: __GraphValue::#data_type(#default_value),
+                        value: #default_value,
                         control: __GraphControl::#control,
                     },
                 );
@@ -122,13 +128,18 @@ fn gen_impl_node_kind(input: &DeriveInput, variants: &[Variant], attrs: &Attrs) 
                 control,
             } = output_attr;
 
+            let default_value = match default_value {
+                Some(default_value) => quote! { __GraphValue::#data_type(#default_value) },
+                None => default_value_for_data_type(data_type),
+            };
+
             quote! {
                 graph.add_output(
                     node_id,
                     #label.to_string(),
                     __GraphDataType::#data_type,
                     flow::OutputParameterKind::Constant {
-                        value: __GraphValue::#data_type(#default_value),
+                        value: #default_value,
                         control: __GraphControl::#control,
                     },
                 );
@@ -410,4 +421,11 @@ fn processor_input_ident(variant: &Variant) -> Ident {
 
 fn processor_output_ident(variant: &Variant) -> Ident {
     format_ident!("{}ProcessorOutput", variant.ident)
+}
+
+fn default_value_for_data_type(data_type: &Ident) -> TokenStream {
+    quote! {{
+        use flow::DataType;
+        (__GraphDataType::#data_type).default_value()
+    }}
 }
