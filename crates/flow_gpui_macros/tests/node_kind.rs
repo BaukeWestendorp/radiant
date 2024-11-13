@@ -127,6 +127,7 @@ pub enum TestGraphNodeKind {
     #[computed_output(label = "sum", data_type = "Float")]
     #[meta(name = "Add", category = "Math", processor = "add_processor")]
     Add,
+
     #[input(label = "value", data_type = "Float", control = "Float")]
     #[meta(name = "Output", category = "Output", processor = "output_processor")]
     Output,

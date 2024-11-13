@@ -23,6 +23,9 @@ impl GraphDefinition for EffectGraphDefinition {
     type Value = EffectGraphValue;
     type DataType = EffectGraphDataType;
     type Control = EffectGraphControl;
+
+    type NodeCategory = EffectGraphProcessingContext;
+    type ProcessingContext = EffectGraphProcessingContext;
 }
 
 pub type EffectGraph = Graph<EffectGraphDefinition>;
@@ -50,8 +53,6 @@ pub enum EffectGraphNodeKind {
 }
 
 impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
-    type ProcessingContext = EffectGraphProcessingContext;
-
     fn build(&self, graph: &mut EffectGraph, node_id: NodeId) {
         match self {
             Self::NewFixtureId => {
@@ -275,7 +276,7 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
     fn process(
         &self,
         node_id: NodeId,
-        context: &mut Self::ProcessingContext,
+        context: &mut Def::ProcessingContext,
         graph: &EffectGraph,
     ) -> Result<ProcessingResult<EffectGraphDefinition>, GraphError> {
         let node = graph.node(node_id);
@@ -414,9 +415,7 @@ impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
     }
 }
 
-impl VisualNodeKind for EffectGraphNodeKind {
-    type Category = NodeCategory;
-
+impl VisualNodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
     fn name(&self) -> &str {
         match self {
             Self::NewFixtureId => "New Fixture Id",
@@ -436,18 +435,18 @@ impl VisualNodeKind for EffectGraphNodeKind {
         }
     }
 
-    fn category(&self) -> Self::Category {
+    fn category(&self) -> EffectGraphNodeCategory {
         match self {
-            Self::NewFixtureId | Self::NewAttributeValue => NodeCategory::NewValue,
+            Self::NewFixtureId | Self::NewAttributeValue => EffectGraphNodeCategory::NewValue,
             Self::Add
             | Self::Subtract
             | Self::Multiply
             | Self::Divide
             | Self::Floor
             | Self::Round
-            | Self::Ceil => NodeCategory::Math,
-            Self::GetFixture => NodeCategory::Context,
-            Self::SetChannelValue => NodeCategory::Output,
+            | Self::Ceil => EffectGraphNodeCategory::Math,
+            Self::GetFixture => EffectGraphNodeCategory::Context,
+            Self::SetChannelValue => EffectGraphNodeCategory::Output,
         }
     }
 
@@ -457,26 +456,26 @@ impl VisualNodeKind for EffectGraphNodeKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, strum::EnumIter)]
-pub enum NodeCategory {
+pub enum EffectGraphNodeCategory {
     NewValue,
     Math,
     Context,
     Output,
 }
 
-impl flow_gpui::NodeCategory for NodeCategory {
+impl flow_gpui::NodeCategory for EffectGraphProcessingContext {
     fn all() -> impl Iterator<Item = Self> {
         Self::iter()
     }
 }
 
-impl Display for NodeCategory {
+impl Display for EffectGraphProcessingContext {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
-            NodeCategory::NewValue => "New Value",
-            NodeCategory::Math => "Math",
-            NodeCategory::Context => "Context",
-            NodeCategory::Output => "Output",
+            EffectGraphProcessingContext::NewValue => "New Value",
+            EffectGraphProcessingContext::Math => "Math",
+            EffectGraphProcessingContext::Context => "Context",
+            EffectGraphProcessingContext::Output => "Output",
         }
         .to_string();
         write!(f, "{}", str)

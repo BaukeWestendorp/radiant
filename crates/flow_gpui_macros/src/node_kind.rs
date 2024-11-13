@@ -336,16 +336,14 @@ fn gen_impl_visual_node_kind(variants: &[Variant], graph_def: &Type) -> TokenStr
     }
 
     quote! {
-        impl flow_gpui::VisualNodeKind for <#graph_def as flow::GraphDefinition>::NodeKind {
-            type Category = <#graph_def as flow::GraphDefinition>::NodeCategory;
-
+        impl flow_gpui::VisualNodeKind<#graph_def> for <#graph_def as flow::GraphDefinition>::NodeKind {
             fn name(&self) -> &str {
                 match self {
                     #(#names)*
                 }
             }
 
-            fn category(&self) -> Self::Category {
+            fn category(&self) -> <#graph_def as flow::GraphDefinition>::NodeCategory {
                 match self {
                     #(#categories)*
                 }

@@ -34,7 +34,7 @@ fn gen_impl_node_category(name: &Ident, variants: &[Variant]) -> TokenStream {
     });
 
     quote! {
-        impl flow_gpui::NodeCategory for #name {
+        impl flow::NodeCategory for #name {
             fn all() -> impl Iterator<Item = Self> {
                 vec![#(#vars),*].into_iter()
             }

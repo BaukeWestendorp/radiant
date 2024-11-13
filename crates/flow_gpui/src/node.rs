@@ -37,7 +37,7 @@ pub struct NodeView<Def: GraphDefinition> {
 
 impl<Def: GraphDefinition + 'static> NodeView<Def>
 where
-    Def::NodeKind: VisualNodeKind,
+    Def::NodeKind: VisualNodeKind<Def>,
     Def::NodeData: VisualNodeData,
     Def::DataType: VisualDataType,
     Def::Control: VisualControl<Def>,
@@ -183,7 +183,7 @@ where
 impl<Def: GraphDefinition + 'static> Render for NodeView<Def>
 where
     Def::NodeData: VisualNodeData,
-    Def::NodeKind: VisualNodeKind,
+    Def::NodeKind: VisualNodeKind<Def>,
     Def::DataType: VisualDataType,
     Def::Control: VisualControl<Def>,
 {
@@ -253,7 +253,7 @@ where
 
 impl<Def: GraphDefinition + 'static> FocusableView for NodeView<Def>
 where
-    Def::NodeKind: VisualNodeKind,
+    Def::NodeKind: VisualNodeKind<Def>,
     Def::NodeData: VisualNodeData,
     Def::DataType: VisualDataType,
     Def::Control: VisualControl<Def>,

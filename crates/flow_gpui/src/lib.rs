@@ -14,18 +14,11 @@ pub fn init(cx: &mut AppContext) {
     node::init(cx);
 }
 
-pub trait VisualNodeKind {
-    type Category: NodeCategory;
-
+pub trait VisualNodeKind<Def: GraphDefinition> {
     fn name(&self) -> &str;
 
-    fn category(&self) -> Self::Category;
+    fn category(&self) -> Def::NodeCategory;
 
-    #[allow(opaque_hidden_inferred_bound)]
-    fn all() -> impl Iterator<Item = Self>;
-}
-
-pub trait NodeCategory: ToString + Copy + PartialEq {
     #[allow(opaque_hidden_inferred_bound)]
     fn all() -> impl Iterator<Item = Self>;
 }

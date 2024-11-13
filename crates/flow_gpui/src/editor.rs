@@ -1,7 +1,8 @@
 use crate::graph::{GraphEvent, GraphView};
-use crate::{NodeCategory, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
+use crate::{VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
 use flow::graph::Graph;
 use flow::graph_def::GraphDefinition;
+use flow::NodeCategory;
 use gpui::*;
 use ui::input::TextField;
 use ui::theme::ActiveTheme;
@@ -21,7 +22,7 @@ pub(crate) fn init(cx: &mut AppContext) {
 
 pub struct GraphEditorView<Def: GraphDefinition>
 where
-    Def::NodeKind: VisualNodeKind,
+    Def::NodeKind: VisualNodeKind<Def>,
 {
     graph_view: View<GraphView<Def>>,
     new_node_context_menu: View<NewNodeContextMenu<Def>>,
@@ -35,7 +36,7 @@ where
 impl<Def: GraphDefinition + 'static> GraphEditorView<Def>
 where
     Def::NodeData: VisualNodeData,
-    Def::NodeKind: VisualNodeKind,
+    Def::NodeKind: VisualNodeKind<Def>,
     Def::DataType: VisualDataType,
     Def::Control: VisualControl<Def>,
 {
@@ -87,7 +88,7 @@ where
 impl<Def: GraphDefinition + 'static> Render for GraphEditorView<Def>
 where
     Def::NodeData: VisualNodeData,
-    Def::NodeKind: VisualNodeKind,
+    Def::NodeKind: VisualNodeKind<Def>,
     Def::DataType: VisualDataType,
     Def::Control: VisualControl<Def>,
 {
@@ -130,7 +131,7 @@ where
 impl<Def: GraphDefinition + 'static> FocusableView for GraphEditorView<Def>
 where
     Def::DataType: VisualDataType,
-    Def::NodeKind: VisualNodeKind,
+    Def::NodeKind: VisualNodeKind<Def>,
     Def::NodeData: VisualNodeData,
     Def::Control: VisualControl<Def>,
 {
@@ -141,18 +142,18 @@ where
 
 struct NewNodeContextMenu<Def: GraphDefinition>
 where
-    Def::NodeKind: VisualNodeKind,
+    Def::NodeKind: VisualNodeKind<Def>,
 {
     graph: Model<Graph<Def>>,
     shown: bool,
     position: Point<Pixels>,
     search_box: View<TextField>,
-    selected_category: Option<<Def::NodeKind as VisualNodeKind>::Category>,
+    selected_category: Option<Def::NodeCategory>,
 }
 
 impl<Def: GraphDefinition + 'static> NewNodeContextMenu<Def>
 where
-    Def::NodeKind: VisualNodeKind,
+    Def::NodeKind: VisualNodeKind<Def>,
     Def::NodeData: VisualNodeData,
 {
     pub fn build(graph: Model<Graph<Def>>, cx: &mut WindowContext) -> View<Self> {
@@ -213,11 +214,7 @@ where
         });
     }
 
-    fn select_category(
-        &mut self,
-        category: <Def::NodeKind as VisualNodeKind>::Category,
-        cx: &mut WindowContext,
-    ) {
+    fn select_category(&mut self, category: Def::NodeCategory, cx: &mut WindowContext) {
         self.search_box.update(cx, |search_box, _cx| {
             search_box.set_placeholder(format!("Search in '{}'", category.to_string()).into());
         });
@@ -255,7 +252,7 @@ where
                     }
             })
             .collect::<Vec<_>>();
-        let categories = <Def::NodeKind as VisualNodeKind>::Category::all().collect::<Vec<_>>();
+        let categories = <Def::NodeCategory as NodeCategory>::all().collect::<Vec<_>>();
 
         let show_categories = filter.is_empty() && self.selected_category.is_none();
 
@@ -332,7 +329,7 @@ where
 
 impl<Def: GraphDefinition + 'static> Render for NewNodeContextMenu<Def>
 where
-    Def::NodeKind: VisualNodeKind,
+    Def::NodeKind: VisualNodeKind<Def>,
     Def::NodeData: VisualNodeData,
 {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {

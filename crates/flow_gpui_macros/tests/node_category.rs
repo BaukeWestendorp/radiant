@@ -1,4 +1,4 @@
-use flow_gpui::NodeCategory;
+use flow::NodeCategory;
 use flow_gpui_macros::NodeCategory;
 
 #[derive(Debug, Clone, Copy, PartialEq, NodeCategory)]

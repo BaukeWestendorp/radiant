@@ -10,7 +10,7 @@ pub trait GraphDefinition: Sized + Clone {
     type DataType: DataType<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
     type Control: Control<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
 
-    type NodeCategory;
+    type NodeCategory: NodeCategory;
     type ProcessingContext;
 }
 
@@ -59,3 +59,8 @@ pub trait DataType<Def: GraphDefinition> {
 }
 
 pub trait Control<Def: GraphDefinition> {}
+
+pub trait NodeCategory: ToString + Copy + PartialEq {
+    #[allow(opaque_hidden_inferred_bound)]
+    fn all() -> impl Iterator<Item = Self>;
+}

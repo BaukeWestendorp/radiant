@@ -17,7 +17,7 @@ pub struct GraphView<Def: GraphDefinition> {
 
 impl<Def: GraphDefinition + 'static> GraphView<Def>
 where
-    Def::NodeKind: VisualNodeKind,
+    Def::NodeKind: VisualNodeKind<Def>,
     Def::NodeData: VisualNodeData,
     Def::DataType: VisualDataType,
     Def::Control: VisualControl<Def>,
@@ -391,7 +391,7 @@ where
 
 impl<Def: GraphDefinition + 'static> Render for GraphView<Def>
 where
-    Def::NodeKind: VisualNodeKind,
+    Def::NodeKind: VisualNodeKind<Def>,
     Def::NodeData: VisualNodeData,
     Def::DataType: VisualDataType,
     Def::Control: VisualControl<Def>,
