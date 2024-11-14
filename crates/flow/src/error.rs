@@ -6,6 +6,4 @@ pub enum GraphError {
     NoSocketNamed(NodeId, String),
     #[error("Failed to cast to target type")]
     CastFailed,
-    #[error("Failed to parse value as a String")]
-    ParseFailed,
 }
