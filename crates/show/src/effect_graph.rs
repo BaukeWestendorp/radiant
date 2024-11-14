@@ -1,12 +1,12 @@
 use crate::fixture::{AttributeValue, FixtureId};
 use crate::patch::PatchedFixture;
 use crate::{FixtureGroup, Show};
+
 use dmx::{DmxChannel, DmxOutput};
-use flow::error::GraphError;
-use flow::graph::Graph;
-use flow::graph_def::{Control, DataType, GraphDefinition, NodeKind, ProcessingResult, Value};
-use flow::node::Node;
-use flow::{InputParameterKind, NodeId, OutputParameterKind};
+use flow::{
+    Control, DataType, Graph, GraphDefinition, GraphError, InputParameterKind, Node, NodeId,
+    NodeKind, OutputParameterKind, ProcessingResult, Value,
+};
 use flow_gpui::node::ControlEvent;
 use flow_gpui::{VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
 use gpui::{rgb, AnyView, ElementId, EventEmitter, Hsla, ViewContext, VisualContext};

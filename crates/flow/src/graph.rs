@@ -1,8 +1,9 @@
-use crate::graph_def::{DataType, GraphDefinition, NodeKind, Value};
-use crate::node::{Node, NodeInputParameter, NodeOutputParameter};
 use crate::{
-    GraphError, Input, InputId, InputParameterKind, NodeId, Output, OutputId, OutputParameterKind,
+    DataType, GraphDefinition, GraphError, Input, InputId, InputParameterKind, Node, NodeId,
+    NodeInputParameter, NodeKind, NodeOutputParameter, Output, OutputId, OutputParameterKind,
+    Value,
 };
+
 use slotmap::{SecondaryMap, SlotMap};
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]

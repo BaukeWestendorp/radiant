@@ -1,7 +1,6 @@
-use crate::error::GraphError;
-use crate::graph::Graph;
-use crate::graph_def::{NodeKind, ProcessingResult};
-use crate::{GraphDefinition, InputId, NodeId, OutputId};
+use crate::{
+    Graph, GraphDefinition, GraphError, InputId, NodeId, NodeKind, OutputId, ProcessingResult,
+};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Node<Def: GraphDefinition> {

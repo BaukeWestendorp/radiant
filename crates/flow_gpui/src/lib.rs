@@ -1,5 +1,6 @@
 use crate::node::ControlEvent;
-use flow::graph_def::GraphDefinition;
+
+use flow::GraphDefinition;
 use gpui::*;
 
 pub mod editor;

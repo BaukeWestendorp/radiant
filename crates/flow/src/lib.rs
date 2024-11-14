@@ -1,11 +1,12 @@
-use crate::graph_def::GraphDefinition;
-
 pub mod error;
 pub mod graph;
 pub mod graph_def;
 pub mod node;
 
 pub use error::*;
+pub use graph::*;
+pub use graph_def::*;
+pub use node::*;
 
 slotmap::new_key_type! {
     pub struct NodeId;

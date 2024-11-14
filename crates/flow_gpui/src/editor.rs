@@ -1,7 +1,7 @@
 use crate::graph::{GraphEvent, GraphView};
 use crate::{NodeCategory, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
-use flow::graph::Graph;
-use flow::graph_def::GraphDefinition;
+
+use flow::{Graph, GraphDefinition};
 use gpui::*;
 use ui::input::TextField;
 use ui::theme::ActiveTheme;

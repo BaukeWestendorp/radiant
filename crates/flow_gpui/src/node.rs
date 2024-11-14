@@ -1,9 +1,10 @@
 use crate::graph::GraphEvent;
 use crate::{VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
-use flow::graph::Graph;
-use flow::graph_def::GraphDefinition;
-use flow::node::Node;
-use flow::{InputId, InputParameterKind, NodeId, OutputId, OutputParameterKind, Parameter};
+
+use flow::{
+    Graph, GraphDefinition, InputId, InputParameterKind, Node, NodeId, OutputId,
+    OutputParameterKind, Parameter,
+};
 use gpui::prelude::FluentBuilder;
 use gpui::*;
 use ui::theme::Colorize;

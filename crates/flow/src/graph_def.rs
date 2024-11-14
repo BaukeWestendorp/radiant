@@ -1,6 +1,5 @@
-use crate::error::GraphError;
-use crate::graph::Graph;
-use crate::{NodeId, OutputId};
+use crate::{Graph, GraphError, NodeId, OutputId};
+
 use std::collections::HashMap;
 
 pub trait GraphDefinition: Sized + Clone {
