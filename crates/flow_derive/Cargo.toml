@@ -1,0 +1,9 @@
+[package]
+name = "flow_derive"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+
+[lib]
+proc-macro = true

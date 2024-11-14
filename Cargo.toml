@@ -6,6 +6,7 @@ members = [
     "crates/flow",
     "crates/dmx",
     "crates/geo",
+    "crates/flow_derive",
 ]
 resolver = "2"
 
@@ -16,6 +17,7 @@ edition = "2021"
 [workspace.dependencies]
 ui = { path = "crates/ui" }
 flow = { path = "crates/flow" }
+flow_derive = { path = "crates/flow_derive" }
 show = { path = "crates/show" }
 dmx = { path = "crates/dmx" }
 geo = { path = "crates/geo" }

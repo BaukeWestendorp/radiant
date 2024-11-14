@@ -1625,6 +1625,7 @@ checksum = "8ce81f49ae8a0482e4c55ea62ebbd7e5a686af544c00b9d090bba3ff9be97b3d"
 name = "flow"
 version = "0.1.0"
 dependencies = [
+ "flow_derive",
  "geo",
  "gpui",
  "serde",
@@ -1632,6 +1633,10 @@ dependencies = [
  "thiserror",
  "ui",
 ]
+
+[[package]]
+name = "flow_derive"
+version = "0.1.0"
 
 [[package]]
 name = "flume"
