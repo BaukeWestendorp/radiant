@@ -675,8 +675,6 @@ pub enum Control {
     DmxChannel,
 }
 
-impl flow::Control<GraphDefinition> for Control {}
-
 impl VisualControl<GraphDefinition> for Control {
     fn view<View: EventEmitter<ControlEvent<GraphDefinition>>>(
         &self,

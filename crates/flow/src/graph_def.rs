@@ -7,7 +7,7 @@ pub trait GraphDefinition: Sized + Clone {
     type NodeData: Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
     type Value: Value<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
     type DataType: DataType<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
-    type Control: Control<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
+    type Control: Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
 }
 
 pub trait NodeKind<Def: GraphDefinition> {
@@ -55,5 +55,3 @@ pub trait Value<Def: GraphDefinition> {
 pub trait DataType<Def: GraphDefinition> {
     fn default_value(&self) -> Def::Value;
 }
-
-pub trait Control<Def: GraphDefinition> {}
