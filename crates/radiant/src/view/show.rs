@@ -1,5 +1,5 @@
 use anyhow::bail;
-use flow_gpui::editor::GraphEditorView;
+use flow::gpui::GraphEditorView;
 use gpui::*;
 use show::effect_graph::{EffectGraphDefinition, EffectGraphProcessingContext};
 use show::fixture::FixtureId;

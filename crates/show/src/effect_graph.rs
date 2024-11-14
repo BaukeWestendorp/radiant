@@ -3,12 +3,11 @@ use crate::patch::PatchedFixture;
 use crate::{FixtureGroup, Show};
 
 use dmx::{DmxChannel, DmxOutput};
+use flow::gpui::{ControlEvent, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
 use flow::{
     Control, DataType, Graph, GraphDefinition, GraphError, InputParameterKind, Node, NodeId,
     NodeKind, OutputParameterKind, ProcessingResult, Value,
 };
-use flow_gpui::node::ControlEvent;
-use flow_gpui::{VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
 use gpui::{rgb, AnyView, ElementId, EventEmitter, Hsla, ViewContext, VisualContext};
 use std::fmt::Display;
 use strum::IntoEnumIterator;
@@ -460,7 +459,7 @@ pub enum NodeCategory {
     Output,
 }
 
-impl flow_gpui::NodeCategory for NodeCategory {
+impl flow::gpui::NodeCategory for NodeCategory {
     fn all() -> impl Iterator<Item = Self> {
         Self::iter()
     }

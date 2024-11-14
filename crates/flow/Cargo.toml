@@ -7,3 +7,10 @@ edition.workspace = true
 slotmap.workspace = true
 thiserror.workspace = true
 serde.workspace = true
+
+gpui = { workspace = true, optional = true }
+geo = { workspace = true, optional = true }
+ui = { workspace = true, optional = true }
+
+[features]
+gpui = ["dep:gpui", "dep:geo", "dep:ui"]

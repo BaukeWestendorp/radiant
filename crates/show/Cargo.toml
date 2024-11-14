@@ -4,8 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-flow.workspace = true
-flow_gpui.workspace = true
+flow = { workspace = true, features = ["gpui"] }
 gpui.workspace = true
 ui.workspace = true
 dmx.workspace = true

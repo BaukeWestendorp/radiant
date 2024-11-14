@@ -3,6 +3,9 @@ pub mod graph;
 pub mod graph_def;
 pub mod node;
 
+#[cfg(feature = "gpui")]
+pub mod gpui;
+
 pub use error::*;
 pub use graph::*;
 pub use graph_def::*;

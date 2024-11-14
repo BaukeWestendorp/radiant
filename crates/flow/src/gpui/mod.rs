@@ -1,11 +1,14 @@
-use crate::node::ControlEvent;
+use crate::GraphDefinition;
 
-use flow::GraphDefinition;
 use gpui::*;
 
 pub mod editor;
 pub mod graph;
 pub mod node;
+
+pub use editor::*;
+pub use graph::*;
+pub use node::*;
 
 pub fn init(cx: &mut AppContext) {
     editor::init(cx);
