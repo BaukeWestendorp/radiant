@@ -5,7 +5,7 @@ use crate::{FixtureGroup, Show};
 use dmx::{DmxChannel, DmxOutput};
 use flow::gpui::{ControlEvent, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
 use flow::{
-    Graph, GraphError, InputParameterKind, Node, NodeId, OutputParameterKind, ProcessingResult,
+    FlowError, Graph, InputParameterKind, Node, NodeId, OutputParameterKind, ProcessingResult,
     Value as _,
 };
 use gpui::{rgb, AnyView, ElementId, EventEmitter, Hsla, ViewContext, VisualContext};
@@ -491,7 +491,7 @@ impl ProcessingContext {
         self.group = group;
     }
 
-    pub fn process_frame(&mut self, graph: &EffectGraph) -> Result<(), GraphError> {
+    pub fn process_frame(&mut self, graph: &EffectGraph) -> Result<(), FlowError> {
         self.current_fixture_index = 0;
         while self.current_fixture_index < self.group.len() {
             graph.process(self)?;
@@ -537,14 +537,14 @@ pub enum Value {
 }
 
 impl flow::Value<GraphDefinition> for Value {
-    fn try_cast_to(&self, target: &DataType) -> Result<Self, GraphError> {
+    fn try_cast_to(&self, target: &DataType) -> Result<Self, FlowError> {
         use DataType as DT;
         match (self, target) {
             (Self::Int(_), DT::Int) => Ok(self.clone()),
             (Self::Int(v), DT::Float) => Ok(Self::Float(*v as f32)),
             (Self::Int(v), DT::FixtureId) => Ok(Self::FixtureId(FixtureId(*v as u32))),
             (Self::Int(v), DT::DmxChannel) => Ok(Self::DmxChannel(
-                DmxChannel::new(*v as u16).map_err(|_| GraphError::CastFailed)?,
+                DmxChannel::new(*v as u16).map_err(|_| FlowError::CastFailed)?,
             )),
             (Self::Int(v), DT::AttributeValue) => {
                 Ok(Self::AttributeValue(AttributeValue::new(*v as f32)))
@@ -560,7 +560,7 @@ impl flow::Value<GraphDefinition> for Value {
             (Self::FixtureId(v), DT::Int) => Ok(Self::Int(v.0 as i32)),
             (Self::FixtureId(v), DT::Float) => Ok(Self::Float(v.0 as f32)),
             (Self::FixtureId(v), DT::DmxChannel) => Ok(Self::DmxChannel(
-                DmxChannel::new(v.id() as u16).map_err(|_| GraphError::CastFailed)?,
+                DmxChannel::new(v.id() as u16).map_err(|_| FlowError::CastFailed)?,
             )),
 
             (Self::AttributeValue(_), DT::AttributeValue) => Ok(self.clone()),
@@ -571,62 +571,62 @@ impl flow::Value<GraphDefinition> for Value {
             (Self::DmxChannel(v), DT::Int) => Ok(Self::Int(v.value() as i32)),
             (Self::DmxChannel(v), DT::Float) => Ok(Self::Float(v.value() as f32)),
 
-            _ => Err(GraphError::CastFailed),
+            _ => Err(FlowError::CastFailed),
         }
     }
 }
 
 impl TryFrom<Value> for i32 {
-    type Error = GraphError;
+    type Error = FlowError;
 
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value {
             Value::Int(value) => Ok(value),
-            _ => Err(GraphError::CastFailed),
+            _ => Err(FlowError::CastFailed),
         }
     }
 }
 
 impl TryFrom<Value> for f32 {
-    type Error = GraphError;
+    type Error = FlowError;
 
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value {
             Value::Float(value) => Ok(value),
-            _ => Err(GraphError::CastFailed),
+            _ => Err(FlowError::CastFailed),
         }
     }
 }
 
 impl TryFrom<Value> for FixtureId {
-    type Error = GraphError;
+    type Error = FlowError;
 
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value {
             Value::FixtureId(value) => Ok(value),
-            _ => Err(GraphError::CastFailed),
+            _ => Err(FlowError::CastFailed),
         }
     }
 }
 
 impl TryFrom<Value> for AttributeValue {
-    type Error = GraphError;
+    type Error = FlowError;
 
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value {
             Value::AttributeValue(value) => Ok(value),
-            _ => Err(GraphError::CastFailed),
+            _ => Err(FlowError::CastFailed),
         }
     }
 }
 
 impl TryFrom<Value> for DmxChannel {
-    type Error = GraphError;
+    type Error = FlowError;
 
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value {
             Value::DmxChannel(value) => Ok(value),
-            _ => Err(GraphError::CastFailed),
+            _ => Err(FlowError::CastFailed),
         }
     }
 }

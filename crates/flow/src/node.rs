@@ -1,5 +1,5 @@
 use crate::{
-    Graph, GraphDefinition, GraphError, InputId, NodeId, NodeKind, OutputId, ProcessingResult,
+    FlowError, Graph, GraphDefinition, InputId, NodeId, NodeKind, OutputId, ProcessingResult,
 };
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -58,7 +58,7 @@ impl<Def: GraphDefinition> Node<Def> {
         &self,
         context: &mut <Def::NodeKind as NodeKind<Def>>::ProcessingContext,
         graph: &Graph<Def>,
-    ) -> Result<ProcessingResult<Def>, GraphError> {
+    ) -> Result<ProcessingResult<Def>, FlowError> {
         self.kind.process(self.id, context, graph)
     }
 }

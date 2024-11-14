@@ -1,4 +1,4 @@
-use crate::{Graph, GraphError, NodeId, OutputId};
+use crate::{FlowError, Graph, NodeId, OutputId};
 
 use std::collections::HashMap;
 
@@ -20,7 +20,7 @@ pub trait NodeKind<Def: GraphDefinition> {
         node_id: NodeId,
         context: &mut Self::ProcessingContext,
         graph: &Graph<Def>,
-    ) -> Result<ProcessingResult<Def>, GraphError>;
+    ) -> Result<ProcessingResult<Def>, FlowError>;
 }
 
 #[derive(Debug, Clone, Default)]
@@ -47,7 +47,7 @@ impl<Def: GraphDefinition> ProcessingResult<Def> {
 }
 
 pub trait Value<Def: GraphDefinition> {
-    fn try_cast_to(&self, target: &Def::DataType) -> Result<Self, GraphError>
+    fn try_cast_to(&self, target: &Def::DataType) -> Result<Self, FlowError>
     where
         Self: Sized;
 }
