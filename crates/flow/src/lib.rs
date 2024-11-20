@@ -6,6 +6,9 @@ pub mod node;
 #[cfg(feature = "gpui")]
 pub mod gpui;
 
+#[cfg(feature = "derive")]
+pub use flow_derive::*;
+
 pub use error::*;
 pub use graph::*;
 pub use graph_def::*;

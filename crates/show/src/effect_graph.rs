@@ -4,10 +4,7 @@ use crate::{FixtureGroup, Show};
 
 use dmx::{DmxChannel, DmxOutput};
 use flow::gpui::{ControlEvent, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
-use flow::{
-    FlowError, Graph, InputParameterKind, Node, NodeId, OutputParameterKind, ProcessingResult,
-    Value as _,
-};
+use flow::{FlowError, Graph};
 use gpui::{rgb, AnyView, ElementId, EventEmitter, Hsla, ViewContext, VisualContext};
 use std::fmt::Display;
 use strum::IntoEnumIterator;
@@ -26,376 +23,193 @@ impl flow::GraphDefinition for GraphDefinition {
 
 pub type EffectGraph = Graph<GraphDefinition>;
 
-#[derive(Debug, Clone, PartialEq, strum::EnumIter, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, PartialEq, strum::EnumIter, serde::Serialize, serde::Deserialize, flow::NodeKind,
+)]
+#[node_kind(
+    graph_definition = "GraphDefinition",
+    processing_context = "ProcessingContext"
+)]
 pub enum NodeKind {
     // New Values
+    #[node(name = "New Fixture Id", category = "Category::NewValue")]
+    #[constant_output(
+        label = "id",
+        data_type = "DataType::FixtureId",
+        control = "Control::FixtureId"
+    )]
     NewFixtureId,
+    #[node(name = "New Attribute Value", category = "Category::NewValue")]
+    #[constant_output(
+        label = "value",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
     NewAttributeValue,
 
     // Math
+    #[node(
+        name = "Add",
+        category = "Category::Math",
+        processor = "processor::add"
+    )]
+    #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
+    #[input(label = "b", data_type = "DataType::Float", control = "Control::Float")]
+    #[computed_output(label = "sum", data_type = "DataType::Float")]
     Add,
+    #[node(
+        name = "Subtract",
+        category = "Category::Math",
+        processor = "processor::subtract"
+    )]
+    #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
+    #[input(label = "b", data_type = "DataType::Float", control = "Control::Float")]
+    #[computed_output(label = "difference", data_type = "DataType::Float")]
     Subtract,
+    #[node(
+        name = "Multiply",
+        category = "Category::Math",
+        processor = "processor::multiply"
+    )]
+    #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
+    #[input(label = "b", data_type = "DataType::Float", control = "Control::Float")]
+    #[computed_output(label = "product", data_type = "DataType::Float")]
     Multiply,
+    #[node(
+        name = "Divide",
+        category = "Category::Math",
+        processor = "processor::divide"
+    )]
+    #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
+    #[input(label = "b", data_type = "DataType::Float", control = "Control::Float")]
+    #[computed_output(label = "quotient", data_type = "DataType::Float")]
     Divide,
+    #[node(
+        name = "Floor",
+        category = "Category::Math",
+        processor = "processor::floor"
+    )]
+    #[input(
+        label = "value",
+        data_type = "DataType::Float",
+        control = "Control::Float"
+    )]
+    #[computed_output(label = "floored", data_type = "DataType::Float")]
     Floor,
+    #[node(
+        name = "Round",
+        category = "Category::Math",
+        processor = "processor::round"
+    )]
+    #[input(
+        label = "value",
+        data_type = "DataType::Float",
+        control = "Control::Float"
+    )]
+    #[computed_output(label = "rounded", data_type = "DataType::Float")]
     Round,
+    #[node(
+        name = "Ceil",
+        category = "Category::Math",
+        processor = "processor::ceil"
+    )]
+    #[input(
+        label = "value",
+        data_type = "DataType::Float",
+        control = "Control::Float"
+    )]
+    #[computed_output(label = "ceiled", data_type = "DataType::Float")]
     Ceil,
 
     // Context
+    #[node(
+        name = "Get Fixture",
+        category = "Category::Context",
+        processor = "processor::get_fixture"
+    )]
+    #[computed_output(label = "index", data_type = "DataType::Int")]
+    #[computed_output(label = "id", data_type = "DataType::FixtureId")]
     GetFixture,
 
     // Output
+    #[node(
+        name = "Set Channel Value",
+        category = "Category::Output",
+        processor = "processor::set_channel_fixture"
+    )]
+    #[input(
+        label = "channel",
+        data_type = "DataType::DmxChannel",
+        control = "Control::DmxChannel"
+    )]
+    #[input(
+        label = "value",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
     SetChannelValue,
 }
 
-impl flow::NodeKind<GraphDefinition> for NodeKind {
-    type ProcessingContext = ProcessingContext;
+mod processor {
+    use super::*;
 
-    fn build(&self, graph: &mut EffectGraph, node_id: NodeId) {
-        match self {
-            Self::NewFixtureId => {
-                graph.add_output(
-                    node_id,
-                    "id".to_string(),
-                    DataType::FixtureId,
-                    OutputParameterKind::Constant {
-                        value: Value::FixtureId(FixtureId::default()),
-                        control: Control::FixtureId,
-                    },
-                );
-            }
-            Self::NewAttributeValue => {
-                graph.add_output(
-                    node_id,
-                    "value".to_string(),
-                    DataType::AttributeValue,
-                    OutputParameterKind::Constant {
-                        value: Value::AttributeValue(AttributeValue::default()),
-                        control: Control::AttributeValue,
-                    },
-                );
-            }
-
-            Self::Add => {
-                graph.add_input(
-                    node_id,
-                    "a".to_string(),
-                    DataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: Value::Float(0.0),
-                        control: Control::Float,
-                    },
-                );
-                graph.add_input(
-                    node_id,
-                    "b".to_string(),
-                    DataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: Value::Float(0.0),
-                        control: Control::Float,
-                    },
-                );
-                graph.add_output(
-                    node_id,
-                    "c".to_string(),
-                    DataType::Float,
-                    OutputParameterKind::Computed,
-                );
-            }
-            Self::Subtract => {
-                graph.add_input(
-                    node_id,
-                    "a".to_string(),
-                    DataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: Value::Float(0.0),
-                        control: Control::Float,
-                    },
-                );
-                graph.add_input(
-                    node_id,
-                    "b".to_string(),
-                    DataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: Value::Float(0.0),
-                        control: Control::Float,
-                    },
-                );
-                graph.add_output(
-                    node_id,
-                    "c".to_string(),
-                    DataType::Float,
-                    OutputParameterKind::Computed,
-                );
-            }
-            Self::Multiply => {
-                graph.add_input(
-                    node_id,
-                    "a".to_string(),
-                    DataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: Value::Float(0.0),
-                        control: Control::Float,
-                    },
-                );
-                graph.add_input(
-                    node_id,
-                    "b".to_string(),
-                    DataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: Value::Float(0.0),
-                        control: Control::Float,
-                    },
-                );
-                graph.add_output(
-                    node_id,
-                    "c".to_string(),
-                    DataType::Float,
-                    OutputParameterKind::Computed,
-                );
-            }
-            Self::Divide => {
-                graph.add_input(
-                    node_id,
-                    "a".to_string(),
-                    DataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: Value::Float(0.0),
-                        control: Control::Float,
-                    },
-                );
-                graph.add_input(
-                    node_id,
-                    "b".to_string(),
-                    DataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: Value::Float(0.0),
-                        control: Control::Float,
-                    },
-                );
-                graph.add_output(
-                    node_id,
-                    "c".to_string(),
-                    DataType::Float,
-                    OutputParameterKind::Computed,
-                );
-            }
-            Self::Floor => {
-                graph.add_input(
-                    node_id,
-                    "value".to_string(),
-                    DataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: Value::Float(0.0),
-                        control: Control::Float,
-                    },
-                );
-                graph.add_output(
-                    node_id,
-                    "floored".to_string(),
-                    DataType::Int,
-                    OutputParameterKind::Computed,
-                );
-            }
-            Self::Round => {
-                graph.add_input(
-                    node_id,
-                    "value".to_string(),
-                    DataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: Value::Float(0.0),
-                        control: Control::Float,
-                    },
-                );
-                graph.add_output(
-                    node_id,
-                    "rounded".to_string(),
-                    DataType::Int,
-                    OutputParameterKind::Computed,
-                );
-            }
-            Self::Ceil => {
-                graph.add_input(
-                    node_id,
-                    "value".to_string(),
-                    DataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: Value::Float(0.0),
-                        control: Control::Float,
-                    },
-                );
-                graph.add_output(
-                    node_id,
-                    "ceiled".to_string(),
-                    DataType::Int,
-                    OutputParameterKind::Computed,
-                );
-            }
-
-            Self::GetFixture => {
-                graph.add_output(
-                    node_id,
-                    "index".to_string(),
-                    DataType::Int,
-                    OutputParameterKind::Computed,
-                );
-
-                graph.add_output(
-                    node_id,
-                    "id".to_string(),
-                    DataType::FixtureId,
-                    OutputParameterKind::Computed,
-                );
-            }
-
-            Self::SetChannelValue => {
-                graph.add_input(
-                    node_id,
-                    "channel".to_string(),
-                    DataType::DmxChannel,
-                    InputParameterKind::EdgeOrConstant {
-                        value: Value::DmxChannel(DmxChannel::default()),
-                        control: Control::DmxChannel,
-                    },
-                );
-                graph.add_input(
-                    node_id,
-                    "value".to_string(),
-                    DataType::AttributeValue,
-                    InputParameterKind::EdgeOrConstant {
-                        value: Value::AttributeValue(AttributeValue::default()),
-                        control: Control::AttributeValue,
-                    },
-                );
-            }
+    pub fn add(a: f32, b: f32, _context: &mut ProcessingContext) -> AddProcessingOutput {
+        AddProcessingOutput {
+            sum: Value::from(a + b),
         }
     }
 
-    fn process(
-        &self,
-        node_id: NodeId,
-        context: &mut Self::ProcessingContext,
-        graph: &EffectGraph,
-    ) -> Result<ProcessingResult<GraphDefinition>, GraphError> {
-        let node = graph.node(node_id);
-        let mut processing_result = ProcessingResult::new();
-
-        let mut value_for_input =
-            |node: &Node<GraphDefinition>, input_name: &str| -> Result<Value, GraphError> {
-                let input = graph.input(node.input(input_name).id);
-                let connection_id = graph.edge_source(input.id());
-                let value = match connection_id {
-                    None => {
-                        let InputParameterKind::EdgeOrConstant { value, .. } =
-                            graph.input(input.id()).kind.clone();
-                        value
-                    }
-                    Some(id) => graph.get_output_value(&id, context)?.clone(),
-                };
-                let value = value.try_cast_to(&input.data_type())?;
-                Ok(value)
-            };
-
-        match node.kind() {
-            Self::NewFixtureId => {}
-            Self::NewAttributeValue => {}
-
-            Self::Add => {
-                let Value::Float(a) = value_for_input(node, "a")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                let Value::Float(b) = value_for_input(node, "b")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                processing_result.set_value(node.output("c").id, Value::Float(a + b));
-            }
-            Self::Subtract => {
-                let Value::Float(a) = value_for_input(node, "a")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                let Value::Float(b) = value_for_input(node, "b")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                processing_result.set_value(node.output("c").id, Value::Float(a - b));
-            }
-            Self::Multiply => {
-                let Value::Float(a) = value_for_input(node, "a")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                let Value::Float(b) = value_for_input(node, "b")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                processing_result.set_value(node.output("c").id, Value::Float(a * b));
-            }
-            Self::Divide => {
-                let Value::Float(a) = value_for_input(node, "a")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                let Value::Float(b) = value_for_input(node, "b")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                processing_result.set_value(node.output("c").id, Value::Float(a / b));
-            }
-            Self::Floor => {
-                let Value::Float(a) = value_for_input(node, "value")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                processing_result
-                    .set_value(node.output("floored").id, Value::Int(a.floor() as i32));
-            }
-            Self::Round => {
-                let Value::Float(a) = value_for_input(node, "value")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                processing_result
-                    .set_value(node.output("rounded").id, Value::Int(a.floor() as i32));
-            }
-            Self::Ceil => {
-                let Value::Float(a) = value_for_input(node, "value")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                processing_result.set_value(node.output("ceiled").id, Value::Int(a.floor() as i32));
-            }
-
-            Self::GetFixture => {
-                processing_result.set_value(
-                    node.output("index").id,
-                    Value::Int(context.current_fixture_index as i32),
-                );
-
-                processing_result.set_value(
-                    node.output("id").id,
-                    Value::FixtureId(context.current_fixture_id()),
-                );
-            }
-
-            Self::SetChannelValue => {
-                let Value::DmxChannel(channel) = value_for_input(node, "channel")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                let Value::AttributeValue(value) = value_for_input(node, "value")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                context
-                    .dmx_output
-                    .set_channel_value(0, channel, value.byte());
-            }
+    pub fn subtract(a: f32, b: f32, _context: &mut ProcessingContext) -> SubtractProcessingOutput {
+        SubtractProcessingOutput {
+            difference: Value::from(a - b),
         }
+    }
 
-        Ok(processing_result)
+    pub fn multiply(a: f32, b: f32, _context: &mut ProcessingContext) -> MultiplyProcessingOutput {
+        MultiplyProcessingOutput {
+            product: Value::from(a * b),
+        }
+    }
+
+    pub fn divide(a: f32, b: f32, _context: &mut ProcessingContext) -> DivideProcessingOutput {
+        DivideProcessingOutput {
+            quotient: Value::from(a / b),
+        }
+    }
+
+    pub fn floor(value: f32, _context: &mut ProcessingContext) -> FloorProcessingOutput {
+        FloorProcessingOutput {
+            floored: Value::from(value.floor() as i32),
+        }
+    }
+
+    pub fn round(value: f32, _context: &mut ProcessingContext) -> RoundProcessingOutput {
+        RoundProcessingOutput {
+            rounded: Value::from(value.round() as i32),
+        }
+    }
+
+    pub fn ceil(value: f32, _context: &mut ProcessingContext) -> CeilProcessingOutput {
+        CeilProcessingOutput {
+            ceiled: Value::from(value.ceil() as i32),
+        }
+    }
+
+    pub fn get_fixture(context: &mut ProcessingContext) -> GetFixtureProcessingOutput {
+        GetFixtureProcessingOutput {
+            index: Value::from(context.current_fixture_index as i32),
+            id: Value::FixtureId(context.current_fixture_id()),
+        }
+    }
+
+    pub fn set_channel_fixture(
+        channel: DmxChannel,
+        value: AttributeValue,
+        ctx: &mut ProcessingContext,
+    ) -> SetChannelValueProcessingOutput {
+        ctx.dmx_output.set_channel_value(0, channel, value.byte());
+
+        SetChannelValueProcessingOutput {}
     }
 }
 
@@ -406,7 +220,6 @@ impl VisualNodeKind for NodeKind {
         match self {
             Self::NewFixtureId => "New Fixture Id",
             Self::NewAttributeValue => "New Attribute ",
-
             Self::Add => "Add",
             Self::Subtract => "Subtract",
             Self::Multiply => "Multiply",
@@ -573,6 +386,18 @@ impl flow::Value<GraphDefinition> for Value {
 
             _ => Err(FlowError::CastFailed),
         }
+    }
+}
+
+impl From<f32> for Value {
+    fn from(value: f32) -> Self {
+        Value::Float(value)
+    }
+}
+
+impl From<i32> for Value {
+    fn from(value: i32) -> Self {
+        Value::Int(value)
     }
 }
 
