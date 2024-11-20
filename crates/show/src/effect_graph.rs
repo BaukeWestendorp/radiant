@@ -27,19 +27,20 @@ pub type EffectGraph = Graph<GraphDefinition>;
     Debug, Clone, PartialEq, strum::EnumIter, serde::Serialize, serde::Deserialize, flow::NodeKind,
 )]
 #[node_kind(
+    category = "NodeCategory",
     graph_definition = "GraphDefinition",
     processing_context = "ProcessingContext"
 )]
 pub enum NodeKind {
     // New Values
-    #[node(name = "New Fixture Id", category = "Category::NewValue")]
+    #[node(name = "New Fixture Id", category = "NodeCategory::NewValue")]
     #[constant_output(
         label = "id",
         data_type = "DataType::FixtureId",
         control = "Control::FixtureId"
     )]
     NewFixtureId,
-    #[node(name = "New Attribute Value", category = "Category::NewValue")]
+    #[node(name = "New Attribute Value", category = "NodeCategory::NewValue")]
     #[constant_output(
         label = "value",
         data_type = "DataType::AttributeValue",
@@ -50,7 +51,7 @@ pub enum NodeKind {
     // Math
     #[node(
         name = "Add",
-        category = "Category::Math",
+        category = "NodeCategory::Math",
         processor = "processor::add"
     )]
     #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
@@ -59,7 +60,7 @@ pub enum NodeKind {
     Add,
     #[node(
         name = "Subtract",
-        category = "Category::Math",
+        category = "NodeCategory::Math",
         processor = "processor::subtract"
     )]
     #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
@@ -68,7 +69,7 @@ pub enum NodeKind {
     Subtract,
     #[node(
         name = "Multiply",
-        category = "Category::Math",
+        category = "NodeCategory::Math",
         processor = "processor::multiply"
     )]
     #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
@@ -77,7 +78,7 @@ pub enum NodeKind {
     Multiply,
     #[node(
         name = "Divide",
-        category = "Category::Math",
+        category = "NodeCategory::Math",
         processor = "processor::divide"
     )]
     #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
@@ -86,7 +87,7 @@ pub enum NodeKind {
     Divide,
     #[node(
         name = "Floor",
-        category = "Category::Math",
+        category = "NodeCategory::Math",
         processor = "processor::floor"
     )]
     #[input(
@@ -98,7 +99,7 @@ pub enum NodeKind {
     Floor,
     #[node(
         name = "Round",
-        category = "Category::Math",
+        category = "NodeCategory::Math",
         processor = "processor::round"
     )]
     #[input(
@@ -110,7 +111,7 @@ pub enum NodeKind {
     Round,
     #[node(
         name = "Ceil",
-        category = "Category::Math",
+        category = "NodeCategory::Math",
         processor = "processor::ceil"
     )]
     #[input(
@@ -124,7 +125,7 @@ pub enum NodeKind {
     // Context
     #[node(
         name = "Get Fixture",
-        category = "Category::Context",
+        category = "NodeCategory::Context",
         processor = "processor::get_fixture"
     )]
     #[computed_output(label = "index", data_type = "DataType::Int")]
@@ -134,7 +135,7 @@ pub enum NodeKind {
     // Output
     #[node(
         name = "Set Channel Value",
-        category = "Category::Output",
+        category = "NodeCategory::Output",
         processor = "processor::set_channel_fixture"
     )]
     #[input(
@@ -213,47 +214,6 @@ mod processor {
     }
 }
 
-impl VisualNodeKind for NodeKind {
-    type Category = NodeCategory;
-
-    fn label(&self) -> &str {
-        match self {
-            Self::NewFixtureId => "New Fixture Id",
-            Self::NewAttributeValue => "New Attribute ",
-            Self::Add => "Add",
-            Self::Subtract => "Subtract",
-            Self::Multiply => "Multiply",
-            Self::Divide => "Divide",
-            Self::Floor => "Floor",
-            Self::Round => "Round",
-            Self::Ceil => "Ceil",
-
-            Self::GetFixture => "Get Fixture",
-
-            Self::SetChannelValue => "Set Channel Value",
-        }
-    }
-
-    fn category(&self) -> Self::Category {
-        match self {
-            Self::NewFixtureId | Self::NewAttributeValue => NodeCategory::NewValue,
-            Self::Add
-            | Self::Subtract
-            | Self::Multiply
-            | Self::Divide
-            | Self::Floor
-            | Self::Round
-            | Self::Ceil => NodeCategory::Math,
-            Self::GetFixture => NodeCategory::Context,
-            Self::SetChannelValue => NodeCategory::Output,
-        }
-    }
-
-    fn all() -> impl Iterator<Item = Self> {
-        Self::iter()
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, strum::EnumIter)]
 pub enum NodeCategory {
     NewValue,
@@ -278,50 +238,6 @@ impl Display for NodeCategory {
         }
         .to_string();
         write!(f, "{}", str)
-    }
-}
-
-pub struct ProcessingContext {
-    pub dmx_output: DmxOutput,
-
-    show: Show,
-
-    group: FixtureGroup,
-    current_fixture_index: usize,
-}
-
-impl ProcessingContext {
-    pub fn new(show: Show) -> Self {
-        Self {
-            dmx_output: DmxOutput::new(),
-            show,
-            group: FixtureGroup::default(),
-            current_fixture_index: 0,
-        }
-    }
-
-    pub fn set_group(&mut self, group: FixtureGroup) {
-        self.group = group;
-    }
-
-    pub fn process_frame(&mut self, graph: &EffectGraph) -> Result<(), FlowError> {
-        self.current_fixture_index = 0;
-        while self.current_fixture_index < self.group.len() {
-            graph.process(self)?;
-            self.current_fixture_index += 1;
-        }
-        Ok(())
-    }
-
-    pub fn current_fixture(&self) -> &PatchedFixture {
-        self.show
-            .patch()
-            .fixture(self.current_fixture_id())
-            .unwrap()
-    }
-
-    pub fn current_fixture_id(&self) -> FixtureId {
-        self.group.fixtures()[self.current_fixture_index]
     }
 }
 
@@ -614,5 +530,49 @@ impl VisualControl<GraphDefinition> for Control {
                 field.into()
             }
         }
+    }
+}
+
+pub struct ProcessingContext {
+    pub dmx_output: DmxOutput,
+
+    show: Show,
+
+    group: FixtureGroup,
+    current_fixture_index: usize,
+}
+
+impl ProcessingContext {
+    pub fn new(show: Show) -> Self {
+        Self {
+            dmx_output: DmxOutput::new(),
+            show,
+            group: FixtureGroup::default(),
+            current_fixture_index: 0,
+        }
+    }
+
+    pub fn set_group(&mut self, group: FixtureGroup) {
+        self.group = group;
+    }
+
+    pub fn process_frame(&mut self, graph: &EffectGraph) -> Result<(), FlowError> {
+        self.current_fixture_index = 0;
+        while self.current_fixture_index < self.group.len() {
+            graph.process(self)?;
+            self.current_fixture_index += 1;
+        }
+        Ok(())
+    }
+
+    pub fn current_fixture(&self) -> &PatchedFixture {
+        self.show
+            .patch()
+            .fixture(self.current_fixture_id())
+            .unwrap()
+    }
+
+    pub fn current_fixture_id(&self) -> FixtureId {
+        self.group.fixtures()[self.current_fixture_index]
     }
 }

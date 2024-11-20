@@ -8,6 +8,7 @@ use syn::{parse_macro_input, Attribute, Data, DataEnum, DeriveInput, Ident, Path
 #[darling(supports(enum_any), attributes(node_kind))]
 struct Attrs {
     graph_definition: Type,
+    category: Type,
     processing_context: Type,
 }
 
@@ -90,9 +91,12 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         }
     };
 
-    let graph_def = &attrs.graph_definition;
+    let Attrs {
+        graph_definition,
+        category,
+        processing_context,
+    } = &attrs;
     let name = &input.ident;
-    let proc_ctx = attrs.processing_context;
 
     let variants = match input.data {
         Data::Enum(DataEnum { variants, .. }) => {
@@ -113,14 +117,15 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     };
 
     let builders = gen_builders(&variants);
-    let processing_output_types = gen_processing_output_types(&variants, &graph_def);
-    let processors = gen_processors(&variants, graph_def.clone());
+    let processing_output_types = gen_processing_output_types(&variants, graph_definition);
+    let processors = gen_processors(&variants, graph_definition);
+    let visual_node_kind_impl = gen_visual_node_kind_impl(&variants, graph_definition, category);
 
     let extracted = quote! {
-        impl flow::NodeKind<#graph_def> for #name {
-            type ProcessingContext = #proc_ctx;
+        impl flow::NodeKind<#graph_definition> for #name {
+            type ProcessingContext = #processing_context;
 
-            fn build(&self, graph: &mut flow::Graph<#graph_def>, node_id: flow::NodeId) {
+            fn build(&self, graph: &mut flow::Graph<#graph_definition>, node_id: flow::NodeId) {
                 match self {
                     #(#builders)*
                 }
@@ -130,15 +135,15 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
                 &self,
                 node_id: flow::NodeId,
                 context: &mut Self::ProcessingContext,
-                graph: &flow::Graph<#graph_def>,
-            ) -> flow::Result<flow::ProcessingResult<#graph_def>> {
+                graph: &flow::Graph<#graph_definition>,
+            ) -> flow::Result<flow::ProcessingResult<#graph_definition>> {
                 use flow::Value as _;
 
                 let node = graph.node(node_id);
                 let mut processing_result = flow::ProcessingResult::new();
 
                 let mut value_for_input =
-                    |node: &flow::Node<#graph_def>, input_name: &str| -> flow::Result<Value> {
+                    |node: &flow::Node<#graph_definition>, input_name: &str| -> flow::Result<Value> {
                         let input = graph.input(node.input(input_name).id);
                         let connection_id = graph.edge_source(input.id());
                         let value = match connection_id {
@@ -162,6 +167,8 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
         }
 
         #(#processing_output_types)*
+
+        #visual_node_kind_impl
     };
 
     extracted.into()
@@ -236,7 +243,7 @@ fn gen_builders(variants: &[NodeKindVariant]) -> Vec<TokenStream> {
         .collect()
 }
 
-fn gen_processors(variants: &[NodeKindVariant], graph_def: Type) -> Vec<TokenStream> {
+fn gen_processors(variants: &[NodeKindVariant], graph_def: &Type) -> Vec<TokenStream> {
     variants
         .into_iter()
         .map(move |variant| {
@@ -316,6 +323,49 @@ fn gen_processing_output_types(variants: &[NodeKindVariant], graph_def: &Type) -
             }
         })
         .collect()
+}
+
+fn gen_visual_node_kind_impl(
+    variants: &[NodeKindVariant],
+    graph_def: &Type,
+    category: &Type,
+) -> TokenStream {
+    let name_arms = variants.iter().map(|variant| {
+        let var = &variant.variant.ident;
+        let name = &variant.meta.name;
+        quote! {
+            Self::#var => #name,
+        }
+    });
+    let category_arms = variants.iter().map(|variant| {
+        let var = &variant.variant.ident;
+        let category = &variant.meta.category;
+        quote! {
+            Self::#var => #category,
+        }
+    });
+
+    quote! {
+        impl VisualNodeKind for <#graph_def as flow::GraphDefinition>::NodeKind {
+            type Category = #category;
+
+            fn label(&self) -> &str {
+                match self {
+                    #(#name_arms)*
+                }
+            }
+
+            fn category(&self) -> Self::Category {
+                match self {
+                    #(#category_arms)*
+                }
+            }
+
+            fn all() -> impl Iterator<Item = Self> {
+                Self::iter()
+            }
+        }
+    }
 }
 
 fn parse_input_attrs(variant: &Variant) -> darling::Result<Vec<Input>> {
