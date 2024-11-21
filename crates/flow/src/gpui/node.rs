@@ -243,7 +243,7 @@ where
                 NodeDrag {
                     node_id: self.node_id,
                 },
-                |_, cx| cx.new_view(|_cx| EmptyView),
+                |_, _point, cx| cx.new_view(|_cx| EmptyView),
             )
             .on_drag_move(cx.listener(Self::handle_drag_move))
             .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
@@ -483,7 +483,7 @@ where
                     SocketDrag {
                         parameter: *parameter,
                     },
-                    |_, cx| cx.new_view(|_cx| EmptyView),
+                    |_, _point, cx| cx.new_view(|_cx| EmptyView),
                 )
                 .on_drag_move(cx.listener({
                     let parameter = *parameter;

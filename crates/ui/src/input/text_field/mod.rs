@@ -367,9 +367,11 @@ impl TextField {
 
         let mut start = self.offset_to_utf16(offset);
         let mut end = start;
-        let prev_text = self.text_for_range(0..start, cx).unwrap_or_default();
+        let prev_text = self
+            .text_for_range(0..start, &mut None, cx)
+            .unwrap_or_default();
         let next_text = self
-            .text_for_range(end..self.value.len(), cx)
+            .text_for_range(end..self.value.len(), &mut None, cx)
             .unwrap_or_default();
 
         let prev_chars = prev_text.chars().rev().peekable();
@@ -559,6 +561,7 @@ impl ViewInputHandler for TextField {
     fn text_for_range(
         &mut self,
         range_utf16: Range<usize>,
+        _adjusted_range: &mut Option<Range<usize>>,
         _cx: &mut ViewContext<Self>,
     ) -> Option<String> {
         let range = self.range_from_utf16(&range_utf16);
@@ -724,7 +727,7 @@ impl Render for TextField {
                     .flex_grow()
                     .overflow_x_hidden()
                     .cursor_text()
-                    .on_drag((), |_, cx| cx.new_view(|_cx| EmptyView)) // This makes sure the events from the field are preferred.
+                    .on_drag((), |_, _point, cx| cx.new_view(|_cx| EmptyView)) // This makes sure the events from the field are preferred.
                     .child(element::TextElement {
                         field: cx.view().clone(),
                     }),

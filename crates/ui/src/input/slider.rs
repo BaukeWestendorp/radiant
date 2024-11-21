@@ -132,7 +132,7 @@ impl Render for Slider {
                 Drag {
                     id: self.id.clone(),
                 },
-                |_, cx| cx.new_view(|_cx| EmptyView),
+                |_, _point, cx| cx.new_view(|_cx| EmptyView),
             )
             .on_drag_move(cx.listener(Self::on_drag_move));
 

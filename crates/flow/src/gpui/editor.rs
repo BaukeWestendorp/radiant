@@ -106,7 +106,7 @@ where
                     .top(self.graph_offset.y)
                     .child(self.graph_view.clone()),
             )
-            .on_drag((), |_, cx| cx.new_view(|_cx| EmptyView))
+            .on_drag((), |_, _point, cx| cx.new_view(|_cx| EmptyView))
             .on_drag_move(cx.listener(Self::handle_drag_move))
             .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
             .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up));
