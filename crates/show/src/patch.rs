@@ -4,7 +4,7 @@ use gdtf::GdtfFile;
 use gpui::SharedString;
 use std::collections::HashMap;
 
-#[derive(Clone, Default, serde::Serialize)]
+#[derive(Debug, Clone, Default, serde::Serialize)]
 pub struct Patch {
     #[serde(skip_serializing)]
     gdtf_descriptions: HashMap<SharedString, gdtf::Description>,

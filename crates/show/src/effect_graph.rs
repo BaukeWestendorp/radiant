@@ -258,9 +258,6 @@ impl VisualNodeData for NodeData {
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, flow::Value)]
 pub enum Value {
-    #[value(
-        castable_to = "DataType::Float, DataType::FixtureId, DataType::DmxChannel, DataType::AttributeValue"
-    )]
     Int(i32),
     Float(f32),
     FixtureId(FixtureId),

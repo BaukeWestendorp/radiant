@@ -49,7 +49,6 @@ impl Show {
 
     pub fn save_to_file(&self, path: &Path) -> anyhow::Result<()> {
         let show_json = serde_json::to_string_pretty(self)?;
-
         fs::write(path, show_json)?;
 
         Ok(())

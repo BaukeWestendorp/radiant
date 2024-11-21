@@ -60,7 +60,7 @@ pub fn open_show_window(
 }
 
 pub struct ShowView {
-    show: Model<Show>,
+    show: Show,
     _io_manager: Model<IoManager>,
 
     editor_view: View<GraphEditorView<GraphDefinition>>,
@@ -82,15 +82,21 @@ impl ShowView {
 
     pub fn build(show: Show, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
-            let effect_graph = show.effect_graph().clone();
-            let effect_graph_model = cx.new_model(|_cx| effect_graph);
-
             let io_manager = cx.new_model(|cx| {
                 let io_manager = IoManager::new(show.dmx_protocols()).unwrap();
                 io_manager.start_emitting(cx);
                 io_manager
             });
 
+            let effect_graph = show.effect_graph().clone();
+            let effect_graph_model = cx.new_model(|_cx| effect_graph);
+            cx.observe(
+                &effect_graph_model,
+                |this: &mut Self, effect_graph_model, cx| {
+                    *this.show.effect_graph_mut() = effect_graph_model.read(cx).clone();
+                },
+            )
+            .detach();
             let editor_view = GraphEditorView::build(effect_graph_model, cx);
 
             cx.subscribe(&io_manager, Self::handle_io_manager_event)
@@ -100,7 +106,7 @@ impl ShowView {
             cx.defer(|this: &mut Self, cx| this.set_has_unsaved_changes(false, cx));
 
             Self {
-                show: cx.new_model(|_cx| show),
+                show,
                 _io_manager: io_manager,
 
                 editor_view,
@@ -119,8 +125,8 @@ impl ShowView {
         cx: &mut ViewContext<Self>,
     ) {
         match event {
-            IoManagerEvent::OutputRequested => io_manager.update(cx, |io_manager, cx| {
-                let mut context = ProcessingContext::new(self.show.read(cx).clone());
+            IoManagerEvent::OutputRequested => io_manager.update(cx, |io_manager, _cx| {
+                let mut context = ProcessingContext::new(self.show.clone());
                 context.set_group(FixtureGroup::new(vec![
                     FixtureId(0),
                     FixtureId(1),
@@ -129,9 +135,7 @@ impl ShowView {
                     FixtureId(4),
                     FixtureId(5),
                 ]));
-                context
-                    .process_frame(self.show.read(cx).effect_graph())
-                    .unwrap();
+                context.process_frame(self.show.effect_graph()).unwrap();
                 io_manager.set_dmx_output(context.dmx_output);
             }),
         }
@@ -152,7 +156,7 @@ impl ShowView {
             log::debug!("Saving {}", path.as_path().display());
 
             self.show
-                .update(cx, |show, _cx| show.save_to_file(path.as_path()))
+                .save_to_file(path.as_path())
                 .map_err(|err| log::error!("{err}"))
                 .ok();
 
