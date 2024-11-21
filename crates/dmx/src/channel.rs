@@ -9,17 +9,7 @@ use crate::DmxError;
 
 /// A [DmxChannel] is a channel in a DMX universe, and has a value between 1 and 512.
 #[derive(
-    Debug,
-    Copy,
-    Clone,
-    Ord,
-    PartialOrd,
-    Eq,
-    PartialEq,
-    Hash,
-    Default,
-    serde::Serialize,
-    serde::Deserialize,
+    Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, serde::Serialize, serde::Deserialize,
 )]
 pub struct DmxChannel(u16);
 
@@ -50,6 +40,12 @@ impl DmxChannel {
     /// Get the value of the [DmxChannel]. The value is between 1 and 512.
     pub fn value(&self) -> u16 {
         self.0
+    }
+}
+
+impl Default for DmxChannel {
+    fn default() -> Self {
+        Self(1)
     }
 }
 

@@ -1,7 +1,7 @@
 //! This module contains the [DmxOutput] struct, which represents the output that can be sent to an interface.
 //! It contains a collection of [DmxUniverse]s, where each universe has 512 channels, and each channel has a value between 0 and 255, represented as a [u8].
 
-use crate::{DmxChannel, DmxUniverse};
+use crate::{DmxAddress, DmxChannel, DmxUniverse};
 use std::collections::HashMap;
 
 /// A [DmxOutput] represents the output that can be sent to an interface. It contains a collection of [DmxUniverse]s.
@@ -29,17 +29,17 @@ impl DmxOutput {
         Some(self.universe(universe)?.get_channel_value(channel))
     }
 
-    /// Set the value at a specific `channel` in the given `universe`.
+    /// Set the value at a specific [DmxAddress].
     /// If the universe does not exist, it will be created.
-    pub fn set_channel_value(&mut self, universe: u16, channel: DmxChannel, value: u8) {
-        if self.universe(universe).is_none() {
-            self.create_universe(universe);
+    pub fn set_channel_value(&mut self, address: DmxAddress, value: u8) {
+        if self.universe(address.universe).is_none() {
+            self.create_universe(address.universe);
         }
 
         self.universes
-            .get_mut(&universe)
+            .get_mut(&address.universe)
             .expect("universe should have been created")
-            .set_channel_value(channel, value);
+            .set_channel_value(address.channel, value);
     }
 
     /// Create a new, empty [DmxUniverse] with the given `universe` number.

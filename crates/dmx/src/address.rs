@@ -38,6 +38,15 @@ impl DmxAddress {
     }
 }
 
+impl Default for DmxAddress {
+    fn default() -> Self {
+        Self {
+            universe: 1,
+            channel: DmxChannel::default(),
+        }
+    }
+}
+
 impl FromStr for DmxAddress {
     type Err = DmxError;
 

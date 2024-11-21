@@ -2,13 +2,13 @@ use crate::fixture::{AttributeValue, FixtureId};
 use crate::patch::PatchedFixture;
 use crate::{FixtureGroup, Show};
 
-use dmx::{DmxChannel, DmxOutput};
+use dmx::{DmxAddress, DmxChannel, DmxOutput};
 use flow::gpui::{ControlEvent, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
 use flow::{FlowError, Graph};
 use gpui::{rgb, AnyView, ElementId, EventEmitter, Hsla, ViewContext, VisualContext};
 use std::fmt::Display;
 use strum::IntoEnumIterator;
-use ui::input::{NumberField, Slider, SliderEvent};
+use ui::input::{NumberField, Slider, SliderEvent, TextField, TextFieldEvent};
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct GraphDefinition;
@@ -47,6 +47,13 @@ pub enum NodeKind {
         control = "Control::AttributeValue"
     )]
     NewAttributeValue,
+    #[node(name = "New DMX Address", category = "NodeCategory::NewValue")]
+    #[constant_output(
+        label = "address",
+        data_type = "DataType::DmxAddress",
+        control = "Control::DmxAddress"
+    )]
+    NewDmxAddress,
 
     // Math
     #[node(
@@ -134,14 +141,14 @@ pub enum NodeKind {
 
     // Output
     #[node(
-        name = "Set Channel Value",
+        name = "Set Address Value",
         category = "NodeCategory::Output",
-        processor = "processor::set_channel_fixture"
+        processor = "processor::set_address_value"
     )]
     #[input(
-        label = "channel",
-        data_type = "DataType::DmxChannel",
-        control = "Control::DmxChannel"
+        label = "address",
+        data_type = "DataType::DmxAddress",
+        control = "Control::DmxAddress"
     )]
     #[input(
         label = "value",
@@ -152,6 +159,8 @@ pub enum NodeKind {
 }
 
 mod processor {
+    use dmx::DmxAddress;
+
     use super::*;
 
     pub fn add(a: f32, b: f32, _context: &mut ProcessingContext) -> AddProcessingOutput {
@@ -203,12 +212,12 @@ mod processor {
         }
     }
 
-    pub fn set_channel_fixture(
-        channel: DmxChannel,
+    pub fn set_address_value(
+        address: DmxAddress,
         value: AttributeValue,
         ctx: &mut ProcessingContext,
     ) -> SetChannelValueProcessingOutput {
-        ctx.dmx_output.set_channel_value(0, channel, value.byte());
+        ctx.dmx_output.set_channel_value(address, value.byte());
 
         SetChannelValueProcessingOutput {}
     }
@@ -263,6 +272,7 @@ pub enum Value {
     FixtureId(FixtureId),
     AttributeValue(AttributeValue),
     DmxChannel(DmxChannel),
+    DmxAddress(DmxAddress),
 }
 
 impl flow::Value<GraphDefinition> for Value {
@@ -300,6 +310,8 @@ impl flow::Value<GraphDefinition> for Value {
             (Self::DmxChannel(v), DT::Int) => Ok(Self::Int(v.value() as i32)),
             (Self::DmxChannel(v), DT::Float) => Ok(Self::Float(v.value() as f32)),
 
+            (Self::DmxAddress(_), DT::DmxAddress) => Ok(self.clone()),
+
             _ => Err(FlowError::CastFailed),
         }
     }
@@ -313,6 +325,7 @@ pub enum DataType {
     FixtureId,
     AttributeValue,
     DmxChannel,
+    DmxAddress,
 }
 
 impl flow::DataType<GraphDefinition> for DataType {
@@ -323,6 +336,7 @@ impl flow::DataType<GraphDefinition> for DataType {
             Self::FixtureId => Value::FixtureId(FixtureId::default()),
             Self::AttributeValue => Value::AttributeValue(AttributeValue::default()),
             Self::DmxChannel => Value::DmxChannel(DmxChannel::default()),
+            Self::DmxAddress => Value::DmxAddress(DmxAddress::default()),
         }
     }
 }
@@ -336,6 +350,7 @@ impl VisualDataType for DataType {
             Self::FixtureId => rgb(0x080AFF).into(),
             Self::AttributeValue => rgb(0xFFAE18).into(),
             Self::DmxChannel => rgb(0xFF0000).into(),
+            Self::DmxAddress => rgb(0x00FF00).into(),
         }
     }
 }
@@ -347,6 +362,7 @@ pub enum Control {
     FixtureId,
     AttributeValue,
     DmxChannel,
+    DmxAddress,
 }
 
 impl VisualControl<GraphDefinition> for Control {
@@ -457,6 +473,28 @@ impl VisualControl<GraphDefinition> for Control {
                     let value =
                         Value::DmxChannel(DmxChannel::new(*float_value as u16).unwrap_or_default());
                     cx.emit(ControlEvent::Change(value));
+                })
+                .detach();
+
+                field.into()
+            }
+            Self::DmxAddress => {
+                let field = cx.new_view(|cx| {
+                    let mut field = TextField::new(cx);
+                    let address: DmxAddress = initial_value
+                        .try_into()
+                        .expect("DmxAddress field expects a DmxAddress value");
+                    field.set_value(address.to_string().into(), cx);
+                    field.set_validate(Some(Box::new(|v| v.parse::<DmxAddress>().is_ok())));
+                    field
+                });
+
+                cx.subscribe(&field, |_this, _field, event: &TextFieldEvent, cx| {
+                    if let TextFieldEvent::Change(string_value) = event {
+                        let address: DmxAddress = string_value.parse().unwrap_or_default();
+                        let value = Value::DmxAddress(address);
+                        cx.emit(ControlEvent::Change(value));
+                    }
                 })
                 .detach();
 
