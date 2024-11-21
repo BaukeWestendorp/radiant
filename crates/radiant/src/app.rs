@@ -32,7 +32,7 @@ impl RadiantApp {
 
     fn init(&self, cx: &mut AppContext) {
         ui::init(cx);
-        flow_gpui::init(cx);
+        flow::gpui::init(cx);
         view::show::init(cx);
     }
 

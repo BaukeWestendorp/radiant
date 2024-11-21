@@ -1,11 +1,18 @@
-use crate::graph_def::GraphDefinition;
-
 pub mod error;
 pub mod graph;
 pub mod graph_def;
 pub mod node;
 
+#[cfg(feature = "gpui")]
+pub mod gpui;
+
+#[cfg(feature = "derive")]
+pub use flow_derive::*;
+
 pub use error::*;
+pub use graph::*;
+pub use graph_def::*;
+pub use node::*;
 
 slotmap::new_key_type! {
     pub struct NodeId;

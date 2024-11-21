@@ -1,454 +1,216 @@
 use crate::fixture::{AttributeValue, FixtureId};
 use crate::patch::PatchedFixture;
 use crate::{FixtureGroup, Show};
+
 use dmx::{DmxChannel, DmxOutput};
-use flow::error::GraphError;
-use flow::graph::Graph;
-use flow::graph_def::{Control, DataType, GraphDefinition, NodeKind, ProcessingResult, Value};
-use flow::node::Node;
-use flow::{InputParameterKind, NodeId, OutputParameterKind};
-use flow_gpui::node::ControlEvent;
-use flow_gpui::{VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
+use flow::gpui::{ControlEvent, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
+use flow::{FlowError, Graph};
 use gpui::{rgb, AnyView, ElementId, EventEmitter, Hsla, ViewContext, VisualContext};
 use std::fmt::Display;
 use strum::IntoEnumIterator;
 use ui::input::{NumberField, Slider, SliderEvent};
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
-pub struct EffectGraphDefinition;
+pub struct GraphDefinition;
 
-impl GraphDefinition for EffectGraphDefinition {
-    type NodeKind = EffectGraphNodeKind;
-    type NodeData = EffectGraphNodeData;
-    type Value = EffectGraphValue;
-    type DataType = EffectGraphDataType;
-    type Control = EffectGraphControl;
+impl flow::GraphDefinition for GraphDefinition {
+    type NodeKind = NodeKind;
+    type NodeData = NodeData;
+    type Value = Value;
+    type DataType = DataType;
+    type Control = Control;
 }
 
-pub type EffectGraph = Graph<EffectGraphDefinition>;
+pub type EffectGraph = Graph<GraphDefinition>;
 
-#[derive(Debug, Clone, PartialEq, strum::EnumIter, serde::Serialize, serde::Deserialize)]
-pub enum EffectGraphNodeKind {
+#[derive(
+    Debug, Clone, PartialEq, strum::EnumIter, serde::Serialize, serde::Deserialize, flow::NodeKind,
+)]
+#[node_kind(
+    category = "NodeCategory",
+    graph_definition = "GraphDefinition",
+    processing_context = "ProcessingContext"
+)]
+pub enum NodeKind {
     // New Values
+    #[node(name = "New Fixture Id", category = "NodeCategory::NewValue")]
+    #[constant_output(
+        label = "id",
+        data_type = "DataType::FixtureId",
+        control = "Control::FixtureId"
+    )]
     NewFixtureId,
+    #[node(name = "New Attribute Value", category = "NodeCategory::NewValue")]
+    #[constant_output(
+        label = "value",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
     NewAttributeValue,
 
     // Math
+    #[node(
+        name = "Add",
+        category = "NodeCategory::Math",
+        processor = "processor::add"
+    )]
+    #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
+    #[input(label = "b", data_type = "DataType::Float", control = "Control::Float")]
+    #[computed_output(label = "sum", data_type = "DataType::Float")]
     Add,
+    #[node(
+        name = "Subtract",
+        category = "NodeCategory::Math",
+        processor = "processor::subtract"
+    )]
+    #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
+    #[input(label = "b", data_type = "DataType::Float", control = "Control::Float")]
+    #[computed_output(label = "difference", data_type = "DataType::Float")]
     Subtract,
+    #[node(
+        name = "Multiply",
+        category = "NodeCategory::Math",
+        processor = "processor::multiply"
+    )]
+    #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
+    #[input(label = "b", data_type = "DataType::Float", control = "Control::Float")]
+    #[computed_output(label = "product", data_type = "DataType::Float")]
     Multiply,
+    #[node(
+        name = "Divide",
+        category = "NodeCategory::Math",
+        processor = "processor::divide"
+    )]
+    #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
+    #[input(label = "b", data_type = "DataType::Float", control = "Control::Float")]
+    #[computed_output(label = "quotient", data_type = "DataType::Float")]
     Divide,
+    #[node(
+        name = "Floor",
+        category = "NodeCategory::Math",
+        processor = "processor::floor"
+    )]
+    #[input(
+        label = "value",
+        data_type = "DataType::Float",
+        control = "Control::Float"
+    )]
+    #[computed_output(label = "floored", data_type = "DataType::Float")]
     Floor,
+    #[node(
+        name = "Round",
+        category = "NodeCategory::Math",
+        processor = "processor::round"
+    )]
+    #[input(
+        label = "value",
+        data_type = "DataType::Float",
+        control = "Control::Float"
+    )]
+    #[computed_output(label = "rounded", data_type = "DataType::Float")]
     Round,
+    #[node(
+        name = "Ceil",
+        category = "NodeCategory::Math",
+        processor = "processor::ceil"
+    )]
+    #[input(
+        label = "value",
+        data_type = "DataType::Float",
+        control = "Control::Float"
+    )]
+    #[computed_output(label = "ceiled", data_type = "DataType::Float")]
     Ceil,
 
     // Context
+    #[node(
+        name = "Get Fixture",
+        category = "NodeCategory::Context",
+        processor = "processor::get_fixture"
+    )]
+    #[computed_output(label = "index", data_type = "DataType::Int")]
+    #[computed_output(label = "id", data_type = "DataType::FixtureId")]
     GetFixture,
 
     // Output
+    #[node(
+        name = "Set Channel Value",
+        category = "NodeCategory::Output",
+        processor = "processor::set_channel_fixture"
+    )]
+    #[input(
+        label = "channel",
+        data_type = "DataType::DmxChannel",
+        control = "Control::DmxChannel"
+    )]
+    #[input(
+        label = "value",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
     SetChannelValue,
 }
 
-impl NodeKind<EffectGraphDefinition> for EffectGraphNodeKind {
-    type ProcessingContext = EffectGraphProcessingContext;
+mod processor {
+    use super::*;
 
-    fn build(&self, graph: &mut EffectGraph, node_id: NodeId) {
-        match self {
-            Self::NewFixtureId => {
-                graph.add_output(
-                    node_id,
-                    "id".to_string(),
-                    EffectGraphDataType::FixtureId,
-                    OutputParameterKind::Constant {
-                        value: EffectGraphValue::FixtureId(FixtureId::default()),
-                        control: EffectGraphControl::FixtureId,
-                    },
-                );
-            }
-            Self::NewAttributeValue => {
-                graph.add_output(
-                    node_id,
-                    "value".to_string(),
-                    EffectGraphDataType::AttributeValue,
-                    OutputParameterKind::Constant {
-                        value: EffectGraphValue::AttributeValue(AttributeValue::default()),
-                        control: EffectGraphControl::AttributeValue,
-                    },
-                );
-            }
-
-            Self::Add => {
-                graph.add_input(
-                    node_id,
-                    "a".to_string(),
-                    EffectGraphDataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: EffectGraphValue::Float(0.0),
-                        control: EffectGraphControl::Float,
-                    },
-                );
-                graph.add_input(
-                    node_id,
-                    "b".to_string(),
-                    EffectGraphDataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: EffectGraphValue::Float(0.0),
-                        control: EffectGraphControl::Float,
-                    },
-                );
-                graph.add_output(
-                    node_id,
-                    "c".to_string(),
-                    EffectGraphDataType::Float,
-                    OutputParameterKind::Computed,
-                );
-            }
-            Self::Subtract => {
-                graph.add_input(
-                    node_id,
-                    "a".to_string(),
-                    EffectGraphDataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: EffectGraphValue::Float(0.0),
-                        control: EffectGraphControl::Float,
-                    },
-                );
-                graph.add_input(
-                    node_id,
-                    "b".to_string(),
-                    EffectGraphDataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: EffectGraphValue::Float(0.0),
-                        control: EffectGraphControl::Float,
-                    },
-                );
-                graph.add_output(
-                    node_id,
-                    "c".to_string(),
-                    EffectGraphDataType::Float,
-                    OutputParameterKind::Computed,
-                );
-            }
-            Self::Multiply => {
-                graph.add_input(
-                    node_id,
-                    "a".to_string(),
-                    EffectGraphDataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: EffectGraphValue::Float(0.0),
-                        control: EffectGraphControl::Float,
-                    },
-                );
-                graph.add_input(
-                    node_id,
-                    "b".to_string(),
-                    EffectGraphDataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: EffectGraphValue::Float(0.0),
-                        control: EffectGraphControl::Float,
-                    },
-                );
-                graph.add_output(
-                    node_id,
-                    "c".to_string(),
-                    EffectGraphDataType::Float,
-                    OutputParameterKind::Computed,
-                );
-            }
-            Self::Divide => {
-                graph.add_input(
-                    node_id,
-                    "a".to_string(),
-                    EffectGraphDataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: EffectGraphValue::Float(0.0),
-                        control: EffectGraphControl::Float,
-                    },
-                );
-                graph.add_input(
-                    node_id,
-                    "b".to_string(),
-                    EffectGraphDataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: EffectGraphValue::Float(0.0),
-                        control: EffectGraphControl::Float,
-                    },
-                );
-                graph.add_output(
-                    node_id,
-                    "c".to_string(),
-                    EffectGraphDataType::Float,
-                    OutputParameterKind::Computed,
-                );
-            }
-            Self::Floor => {
-                graph.add_input(
-                    node_id,
-                    "value".to_string(),
-                    EffectGraphDataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: EffectGraphValue::Float(0.0),
-                        control: EffectGraphControl::Float,
-                    },
-                );
-                graph.add_output(
-                    node_id,
-                    "floored".to_string(),
-                    EffectGraphDataType::Int,
-                    OutputParameterKind::Computed,
-                );
-            }
-            Self::Round => {
-                graph.add_input(
-                    node_id,
-                    "value".to_string(),
-                    EffectGraphDataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: EffectGraphValue::Float(0.0),
-                        control: EffectGraphControl::Float,
-                    },
-                );
-                graph.add_output(
-                    node_id,
-                    "rounded".to_string(),
-                    EffectGraphDataType::Int,
-                    OutputParameterKind::Computed,
-                );
-            }
-            Self::Ceil => {
-                graph.add_input(
-                    node_id,
-                    "value".to_string(),
-                    EffectGraphDataType::Float,
-                    InputParameterKind::EdgeOrConstant {
-                        value: EffectGraphValue::Float(0.0),
-                        control: EffectGraphControl::Float,
-                    },
-                );
-                graph.add_output(
-                    node_id,
-                    "ceiled".to_string(),
-                    EffectGraphDataType::Int,
-                    OutputParameterKind::Computed,
-                );
-            }
-
-            Self::GetFixture => {
-                graph.add_output(
-                    node_id,
-                    "index".to_string(),
-                    EffectGraphDataType::Int,
-                    OutputParameterKind::Computed,
-                );
-
-                graph.add_output(
-                    node_id,
-                    "id".to_string(),
-                    EffectGraphDataType::FixtureId,
-                    OutputParameterKind::Computed,
-                );
-            }
-
-            Self::SetChannelValue => {
-                graph.add_input(
-                    node_id,
-                    "channel".to_string(),
-                    EffectGraphDataType::DmxChannel,
-                    InputParameterKind::EdgeOrConstant {
-                        value: EffectGraphValue::DmxChannel(DmxChannel::default()),
-                        control: EffectGraphControl::DmxChannel,
-                    },
-                );
-                graph.add_input(
-                    node_id,
-                    "value".to_string(),
-                    EffectGraphDataType::AttributeValue,
-                    InputParameterKind::EdgeOrConstant {
-                        value: EffectGraphValue::AttributeValue(AttributeValue::default()),
-                        control: EffectGraphControl::AttributeValue,
-                    },
-                );
-            }
+    pub fn add(a: f32, b: f32, _context: &mut ProcessingContext) -> AddProcessingOutput {
+        AddProcessingOutput {
+            sum: Value::from(a + b),
         }
     }
 
-    fn process(
-        &self,
-        node_id: NodeId,
-        context: &mut Self::ProcessingContext,
-        graph: &EffectGraph,
-    ) -> Result<ProcessingResult<EffectGraphDefinition>, GraphError> {
-        let node = graph.node(node_id);
-        let mut processing_result = ProcessingResult::new();
-
-        let mut value_for_input = |node: &Node<EffectGraphDefinition>,
-                                   input_name: &str|
-         -> Result<EffectGraphValue, GraphError> {
-            let input = graph.input(node.input(input_name).id);
-            let connection_id = graph.edge_source(input.id());
-            let value = match connection_id {
-                None => {
-                    let InputParameterKind::EdgeOrConstant { value, .. } =
-                        graph.input(input.id()).kind.clone();
-                    value
-                }
-                Some(id) => graph.get_output_value(&id, context)?.clone(),
-            };
-            let value = value.try_cast_to(&input.data_type())?;
-            Ok(value)
-        };
-
-        match node.kind() {
-            Self::NewFixtureId => {}
-            Self::NewAttributeValue => {}
-
-            Self::Add => {
-                let EffectGraphValue::Float(a) = value_for_input(node, "a")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                let EffectGraphValue::Float(b) = value_for_input(node, "b")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                processing_result.set_value(node.output("c").id, EffectGraphValue::Float(a + b));
-            }
-            Self::Subtract => {
-                let EffectGraphValue::Float(a) = value_for_input(node, "a")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                let EffectGraphValue::Float(b) = value_for_input(node, "b")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                processing_result.set_value(node.output("c").id, EffectGraphValue::Float(a - b));
-            }
-            Self::Multiply => {
-                let EffectGraphValue::Float(a) = value_for_input(node, "a")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                let EffectGraphValue::Float(b) = value_for_input(node, "b")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                processing_result.set_value(node.output("c").id, EffectGraphValue::Float(a * b));
-            }
-            Self::Divide => {
-                let EffectGraphValue::Float(a) = value_for_input(node, "a")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                let EffectGraphValue::Float(b) = value_for_input(node, "b")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                processing_result.set_value(node.output("c").id, EffectGraphValue::Float(a / b));
-            }
-            Self::Floor => {
-                let EffectGraphValue::Float(a) = value_for_input(node, "value")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                processing_result.set_value(
-                    node.output("floored").id,
-                    EffectGraphValue::Int(a.floor() as i32),
-                );
-            }
-            Self::Round => {
-                let EffectGraphValue::Float(a) = value_for_input(node, "value")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                processing_result.set_value(
-                    node.output("rounded").id,
-                    EffectGraphValue::Int(a.floor() as i32),
-                );
-            }
-            Self::Ceil => {
-                let EffectGraphValue::Float(a) = value_for_input(node, "value")? else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                processing_result.set_value(
-                    node.output("ceiled").id,
-                    EffectGraphValue::Int(a.floor() as i32),
-                );
-            }
-
-            Self::GetFixture => {
-                processing_result.set_value(
-                    node.output("index").id,
-                    EffectGraphValue::Int(context.current_fixture_index as i32),
-                );
-
-                processing_result.set_value(
-                    node.output("id").id,
-                    EffectGraphValue::FixtureId(context.current_fixture_id()),
-                );
-            }
-
-            Self::SetChannelValue => {
-                let EffectGraphValue::DmxChannel(channel) = value_for_input(node, "channel")?
-                else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                let EffectGraphValue::AttributeValue(value) = value_for_input(node, "value")?
-                else {
-                    return Err(GraphError::CastFailed);
-                };
-
-                context
-                    .dmx_output
-                    .set_channel_value(0, channel, value.byte());
-            }
-        }
-
-        Ok(processing_result)
-    }
-}
-
-impl VisualNodeKind for EffectGraphNodeKind {
-    type Category = NodeCategory;
-
-    fn label(&self) -> &str {
-        match self {
-            Self::NewFixtureId => "New Fixture Id",
-            Self::NewAttributeValue => "New Attribute ",
-
-            Self::Add => "Add",
-            Self::Subtract => "Subtract",
-            Self::Multiply => "Multiply",
-            Self::Divide => "Divide",
-            Self::Floor => "Floor",
-            Self::Round => "Round",
-            Self::Ceil => "Ceil",
-
-            Self::GetFixture => "Get Fixture",
-
-            Self::SetChannelValue => "Set Channel Value",
+    pub fn subtract(a: f32, b: f32, _context: &mut ProcessingContext) -> SubtractProcessingOutput {
+        SubtractProcessingOutput {
+            difference: Value::from(a - b),
         }
     }
 
-    fn category(&self) -> Self::Category {
-        match self {
-            Self::NewFixtureId | Self::NewAttributeValue => NodeCategory::NewValue,
-            Self::Add
-            | Self::Subtract
-            | Self::Multiply
-            | Self::Divide
-            | Self::Floor
-            | Self::Round
-            | Self::Ceil => NodeCategory::Math,
-            Self::GetFixture => NodeCategory::Context,
-            Self::SetChannelValue => NodeCategory::Output,
+    pub fn multiply(a: f32, b: f32, _context: &mut ProcessingContext) -> MultiplyProcessingOutput {
+        MultiplyProcessingOutput {
+            product: Value::from(a * b),
         }
     }
 
-    fn all() -> impl Iterator<Item = Self> {
-        Self::iter()
+    pub fn divide(a: f32, b: f32, _context: &mut ProcessingContext) -> DivideProcessingOutput {
+        DivideProcessingOutput {
+            quotient: Value::from(a / b),
+        }
+    }
+
+    pub fn floor(value: f32, _context: &mut ProcessingContext) -> FloorProcessingOutput {
+        FloorProcessingOutput {
+            floored: Value::from(value.floor() as i32),
+        }
+    }
+
+    pub fn round(value: f32, _context: &mut ProcessingContext) -> RoundProcessingOutput {
+        RoundProcessingOutput {
+            rounded: Value::from(value.round() as i32),
+        }
+    }
+
+    pub fn ceil(value: f32, _context: &mut ProcessingContext) -> CeilProcessingOutput {
+        CeilProcessingOutput {
+            ceiled: Value::from(value.ceil() as i32),
+        }
+    }
+
+    pub fn get_fixture(context: &mut ProcessingContext) -> GetFixtureProcessingOutput {
+        GetFixtureProcessingOutput {
+            index: Value::from(context.current_fixture_index as i32),
+            id: Value::FixtureId(context.current_fixture_id()),
+        }
+    }
+
+    pub fn set_channel_fixture(
+        channel: DmxChannel,
+        value: AttributeValue,
+        ctx: &mut ProcessingContext,
+    ) -> SetChannelValueProcessingOutput {
+        ctx.dmx_output.set_channel_value(0, channel, value.byte());
+
+        SetChannelValueProcessingOutput {}
     }
 }
 
@@ -460,7 +222,7 @@ pub enum NodeCategory {
     Output,
 }
 
-impl flow_gpui::NodeCategory for NodeCategory {
+impl flow::gpui::NodeCategory for NodeCategory {
     fn all() -> impl Iterator<Item = Self> {
         Self::iter()
     }
@@ -479,56 +241,12 @@ impl Display for NodeCategory {
     }
 }
 
-pub struct EffectGraphProcessingContext {
-    pub dmx_output: DmxOutput,
-
-    show: Show,
-
-    group: FixtureGroup,
-    current_fixture_index: usize,
-}
-
-impl EffectGraphProcessingContext {
-    pub fn new(show: Show) -> Self {
-        Self {
-            dmx_output: DmxOutput::new(),
-            show,
-            group: FixtureGroup::default(),
-            current_fixture_index: 0,
-        }
-    }
-
-    pub fn set_group(&mut self, group: FixtureGroup) {
-        self.group = group;
-    }
-
-    pub fn process_frame(&mut self, graph: &EffectGraph) -> Result<(), GraphError> {
-        self.current_fixture_index = 0;
-        while self.current_fixture_index < self.group.len() {
-            graph.process(self)?;
-            self.current_fixture_index += 1;
-        }
-        Ok(())
-    }
-
-    pub fn current_fixture(&self) -> &PatchedFixture {
-        self.show
-            .patch()
-            .fixture(self.current_fixture_id())
-            .unwrap()
-    }
-
-    pub fn current_fixture_id(&self) -> FixtureId {
-        self.group.fixtures()[self.current_fixture_index]
-    }
-}
-
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
-pub struct EffectGraphNodeData {
+pub struct NodeData {
     pub position: geo::Point,
 }
 
-impl VisualNodeData for EffectGraphNodeData {
+impl VisualNodeData for NodeData {
     fn position(&self) -> &geo::Point {
         &self.position
     }
@@ -538,8 +256,11 @@ impl VisualNodeData for EffectGraphNodeData {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-pub enum EffectGraphValue {
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, flow::Value)]
+pub enum Value {
+    #[value(
+        castable_to = "DataType::Float, DataType::FixtureId, DataType::DmxChannel, DataType::AttributeValue"
+    )]
     Int(i32),
     Float(f32),
     FixtureId(FixtureId),
@@ -547,15 +268,15 @@ pub enum EffectGraphValue {
     DmxChannel(DmxChannel),
 }
 
-impl Value<EffectGraphDefinition> for EffectGraphValue {
-    fn try_cast_to(&self, target: &EffectGraphDataType) -> Result<Self, GraphError> {
-        use EffectGraphDataType as DT;
+impl flow::Value<GraphDefinition> for Value {
+    fn try_cast_to(&self, target: &DataType) -> Result<Self, FlowError> {
+        use DataType as DT;
         match (self, target) {
             (Self::Int(_), DT::Int) => Ok(self.clone()),
             (Self::Int(v), DT::Float) => Ok(Self::Float(*v as f32)),
             (Self::Int(v), DT::FixtureId) => Ok(Self::FixtureId(FixtureId(*v as u32))),
             (Self::Int(v), DT::DmxChannel) => Ok(Self::DmxChannel(
-                DmxChannel::new(*v as u16).map_err(|_| GraphError::CastFailed)?,
+                DmxChannel::new(*v as u16).map_err(|_| FlowError::CastFailed)?,
             )),
             (Self::Int(v), DT::AttributeValue) => {
                 Ok(Self::AttributeValue(AttributeValue::new(*v as f32)))
@@ -571,7 +292,7 @@ impl Value<EffectGraphDefinition> for EffectGraphValue {
             (Self::FixtureId(v), DT::Int) => Ok(Self::Int(v.0 as i32)),
             (Self::FixtureId(v), DT::Float) => Ok(Self::Float(v.0 as f32)),
             (Self::FixtureId(v), DT::DmxChannel) => Ok(Self::DmxChannel(
-                DmxChannel::new(v.id() as u16).map_err(|_| GraphError::CastFailed)?,
+                DmxChannel::new(v.id() as u16).map_err(|_| FlowError::CastFailed)?,
             )),
 
             (Self::AttributeValue(_), DT::AttributeValue) => Ok(self.clone()),
@@ -582,68 +303,13 @@ impl Value<EffectGraphDefinition> for EffectGraphValue {
             (Self::DmxChannel(v), DT::Int) => Ok(Self::Int(v.value() as i32)),
             (Self::DmxChannel(v), DT::Float) => Ok(Self::Float(v.value() as f32)),
 
-            _ => Err(GraphError::CastFailed),
-        }
-    }
-}
-
-impl TryFrom<EffectGraphValue> for i32 {
-    type Error = GraphError;
-
-    fn try_from(value: EffectGraphValue) -> Result<Self, Self::Error> {
-        match value {
-            EffectGraphValue::Int(value) => Ok(value),
-            _ => Err(GraphError::CastFailed),
-        }
-    }
-}
-
-impl TryFrom<EffectGraphValue> for f32 {
-    type Error = GraphError;
-
-    fn try_from(value: EffectGraphValue) -> Result<Self, Self::Error> {
-        match value {
-            EffectGraphValue::Float(value) => Ok(value),
-            _ => Err(GraphError::CastFailed),
-        }
-    }
-}
-
-impl TryFrom<EffectGraphValue> for FixtureId {
-    type Error = GraphError;
-
-    fn try_from(value: EffectGraphValue) -> Result<Self, Self::Error> {
-        match value {
-            EffectGraphValue::FixtureId(value) => Ok(value),
-            _ => Err(GraphError::CastFailed),
-        }
-    }
-}
-
-impl TryFrom<EffectGraphValue> for AttributeValue {
-    type Error = GraphError;
-
-    fn try_from(value: EffectGraphValue) -> Result<Self, Self::Error> {
-        match value {
-            EffectGraphValue::AttributeValue(value) => Ok(value),
-            _ => Err(GraphError::CastFailed),
-        }
-    }
-}
-
-impl TryFrom<EffectGraphValue> for DmxChannel {
-    type Error = GraphError;
-
-    fn try_from(value: EffectGraphValue) -> Result<Self, Self::Error> {
-        match value {
-            EffectGraphValue::DmxChannel(value) => Ok(value),
-            _ => Err(GraphError::CastFailed),
+            _ => Err(FlowError::CastFailed),
         }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-pub enum EffectGraphDataType {
+pub enum DataType {
     Int,
     Float,
 
@@ -652,19 +318,19 @@ pub enum EffectGraphDataType {
     DmxChannel,
 }
 
-impl DataType<EffectGraphDefinition> for EffectGraphDataType {
-    fn default_value(&self) -> EffectGraphValue {
+impl flow::DataType<GraphDefinition> for DataType {
+    fn default_value(&self) -> Value {
         match self {
-            Self::Int => EffectGraphValue::Int(i32::default()),
-            Self::Float => EffectGraphValue::Float(f32::default()),
-            Self::FixtureId => EffectGraphValue::FixtureId(FixtureId::default()),
-            Self::AttributeValue => EffectGraphValue::AttributeValue(AttributeValue::default()),
-            Self::DmxChannel => EffectGraphValue::DmxChannel(DmxChannel::default()),
+            Self::Int => Value::Int(i32::default()),
+            Self::Float => Value::Float(f32::default()),
+            Self::FixtureId => Value::FixtureId(FixtureId::default()),
+            Self::AttributeValue => Value::AttributeValue(AttributeValue::default()),
+            Self::DmxChannel => Value::DmxChannel(DmxChannel::default()),
         }
     }
 }
 
-impl VisualDataType for EffectGraphDataType {
+impl VisualDataType for DataType {
     fn color(&self) -> Hsla {
         match self {
             Self::Int => rgb(0xC741FF).into(),
@@ -678,7 +344,7 @@ impl VisualDataType for EffectGraphDataType {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub enum EffectGraphControl {
+pub enum Control {
     Int,
     Float,
     FixtureId,
@@ -686,13 +352,11 @@ pub enum EffectGraphControl {
     DmxChannel,
 }
 
-impl Control<EffectGraphDefinition> for EffectGraphControl {}
-
-impl VisualControl<EffectGraphDefinition> for EffectGraphControl {
-    fn view<View: EventEmitter<ControlEvent<EffectGraphDefinition>>>(
+impl VisualControl<GraphDefinition> for Control {
+    fn view<View: EventEmitter<ControlEvent<GraphDefinition>>>(
         &self,
         id: impl Into<ElementId>,
-        initial_value: EffectGraphValue,
+        initial_value: Value,
         cx: &mut ViewContext<View>,
     ) -> AnyView {
         use ui::input::NumberFieldEvent;
@@ -711,7 +375,7 @@ impl VisualControl<EffectGraphDefinition> for EffectGraphControl {
 
                 cx.subscribe(&field, |_this, _field, event: &NumberFieldEvent, cx| {
                     let NumberFieldEvent::Change(float_value) = event;
-                    let value = EffectGraphValue::Int(*float_value as i32);
+                    let value = Value::Int(*float_value as i32);
                     cx.emit(ControlEvent::Change(value));
                 })
                 .detach();
@@ -731,7 +395,7 @@ impl VisualControl<EffectGraphDefinition> for EffectGraphControl {
 
                 cx.subscribe(&field, |_this, _field, event: &NumberFieldEvent, cx| {
                     let NumberFieldEvent::Change(float_value) = event;
-                    let value = EffectGraphValue::Float(*float_value);
+                    let value = Value::Float(*float_value);
                     cx.emit(ControlEvent::Change(value));
                 })
                 .detach();
@@ -751,7 +415,7 @@ impl VisualControl<EffectGraphDefinition> for EffectGraphControl {
 
                 cx.subscribe(&field, |_this, _field, event: &NumberFieldEvent, cx| {
                     let NumberFieldEvent::Change(float_value) = event;
-                    let value = EffectGraphValue::FixtureId(FixtureId(*float_value as u32));
+                    let value = Value::FixtureId(FixtureId(*float_value as u32));
                     cx.emit(ControlEvent::Change(value));
                 })
                 .detach();
@@ -772,7 +436,7 @@ impl VisualControl<EffectGraphDefinition> for EffectGraphControl {
 
                 cx.subscribe(&slider, |_this, _slider, event: &SliderEvent, cx| {
                     let SliderEvent::Change(float_value) = event;
-                    cx.emit(ControlEvent::Change(EffectGraphValue::AttributeValue(
+                    cx.emit(ControlEvent::Change(Value::AttributeValue(
                         AttributeValue::new(*float_value),
                     )));
                 })
@@ -793,9 +457,8 @@ impl VisualControl<EffectGraphDefinition> for EffectGraphControl {
 
                 cx.subscribe(&field, |_this, _field, event: &NumberFieldEvent, cx| {
                     let NumberFieldEvent::Change(float_value) = event;
-                    let value = EffectGraphValue::DmxChannel(
-                        DmxChannel::new(*float_value as u16).unwrap_or_default(),
-                    );
+                    let value =
+                        Value::DmxChannel(DmxChannel::new(*float_value as u16).unwrap_or_default());
                     cx.emit(ControlEvent::Change(value));
                 })
                 .detach();
@@ -803,5 +466,49 @@ impl VisualControl<EffectGraphDefinition> for EffectGraphControl {
                 field.into()
             }
         }
+    }
+}
+
+pub struct ProcessingContext {
+    pub dmx_output: DmxOutput,
+
+    show: Show,
+
+    group: FixtureGroup,
+    current_fixture_index: usize,
+}
+
+impl ProcessingContext {
+    pub fn new(show: Show) -> Self {
+        Self {
+            dmx_output: DmxOutput::new(),
+            show,
+            group: FixtureGroup::default(),
+            current_fixture_index: 0,
+        }
+    }
+
+    pub fn set_group(&mut self, group: FixtureGroup) {
+        self.group = group;
+    }
+
+    pub fn process_frame(&mut self, graph: &EffectGraph) -> Result<(), FlowError> {
+        self.current_fixture_index = 0;
+        while self.current_fixture_index < self.group.len() {
+            graph.process(self)?;
+            self.current_fixture_index += 1;
+        }
+        Ok(())
+    }
+
+    pub fn current_fixture(&self) -> &PatchedFixture {
+        self.show
+            .patch()
+            .fixture(self.current_fixture_id())
+            .unwrap()
+    }
+
+    pub fn current_fixture_id(&self) -> FixtureId {
+        self.group.fixtures()[self.current_fixture_index]
     }
 }

@@ -1,7 +1,6 @@
-use crate::error::GraphError;
-use crate::graph::Graph;
-use crate::graph_def::{NodeKind, ProcessingResult};
-use crate::{GraphDefinition, InputId, NodeId, OutputId};
+use crate::{
+    FlowError, Graph, GraphDefinition, InputId, NodeId, NodeKind, OutputId, ProcessingResult,
+};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Node<Def: GraphDefinition> {
@@ -59,7 +58,7 @@ impl<Def: GraphDefinition> Node<Def> {
         &self,
         context: &mut <Def::NodeKind as NodeKind<Def>>::ProcessingContext,
         graph: &Graph<Def>,
-    ) -> Result<ProcessingResult<Def>, GraphError> {
+    ) -> Result<ProcessingResult<Def>, FlowError> {
         self.kind.process(self.id, context, graph)
     }
 }

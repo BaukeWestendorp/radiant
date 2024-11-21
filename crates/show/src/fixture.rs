@@ -1,4 +1,3 @@
-use flow::error::GraphError;
 use std::str::FromStr;
 
 #[derive(
@@ -17,10 +16,10 @@ use std::str::FromStr;
 pub struct FixtureId(pub u32);
 
 impl FromStr for FixtureId {
-    type Err = GraphError;
+    type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Self(s.parse().map_err(|_| GraphError::ParseFailed)?))
+        Ok(Self(s.parse()?))
     }
 }
 

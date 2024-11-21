@@ -1,8 +1,9 @@
-use crate::graph_def::{DataType, GraphDefinition, NodeKind, Value};
-use crate::node::{Node, NodeInputParameter, NodeOutputParameter};
 use crate::{
-    GraphError, Input, InputId, InputParameterKind, NodeId, Output, OutputId, OutputParameterKind,
+    DataType, FlowError, GraphDefinition, Input, InputId, InputParameterKind, Node, NodeId,
+    NodeInputParameter, NodeKind, NodeOutputParameter, Output, OutputId, OutputParameterKind,
+    Value,
 };
+
 use slotmap::{SecondaryMap, SlotMap};
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
@@ -207,7 +208,7 @@ impl<Def: GraphDefinition> Graph<Def> {
         &self,
         output_id: &OutputId,
         context: &mut <Def::NodeKind as NodeKind<Def>>::ProcessingContext,
-    ) -> Result<Def::Value, GraphError> {
+    ) -> Result<Def::Value, FlowError> {
         let output = self.output(*output_id);
         match &output.kind {
             OutputParameterKind::Computed => {
@@ -222,7 +223,7 @@ impl<Def: GraphDefinition> Graph<Def> {
     pub fn process(
         &self,
         context: &mut <Def::NodeKind as NodeKind<Def>>::ProcessingContext,
-    ) -> Result<(), GraphError> {
+    ) -> Result<(), FlowError> {
         for node_id in &self.graph_ends {
             let node = self.node(*node_id);
             node.kind.process(*node_id, context, self)?;

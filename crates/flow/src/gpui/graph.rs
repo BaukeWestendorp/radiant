@@ -1,8 +1,9 @@
-use crate::node::{NodeEvent, NodeView, SocketEvent};
-use crate::{node, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
-use flow::graph::Graph;
-use flow::graph_def::GraphDefinition;
-use flow::{InputId, NodeId, OutputId, Parameter};
+use super::{
+    node, NodeEvent, NodeView, SocketEvent, VisualControl, VisualDataType, VisualNodeData,
+    VisualNodeKind,
+};
+use crate::{Graph, GraphDefinition, InputId, NodeId, OutputId, Parameter};
+
 use gpui::*;
 use ui::{bounds_updater, z_stack};
 

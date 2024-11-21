@@ -1,6 +1,5 @@
-use crate::error::GraphError;
-use crate::graph::Graph;
-use crate::{NodeId, OutputId};
+use crate::{FlowError, Graph, NodeId, OutputId};
+
 use std::collections::HashMap;
 
 pub trait GraphDefinition: Sized + Clone {
@@ -8,7 +7,7 @@ pub trait GraphDefinition: Sized + Clone {
     type NodeData: Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
     type Value: Value<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
     type DataType: DataType<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
-    type Control: Control<Self> + Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
+    type Control: Clone + serde::Serialize + for<'de> serde::Deserialize<'de>;
 }
 
 pub trait NodeKind<Def: GraphDefinition> {
@@ -21,7 +20,7 @@ pub trait NodeKind<Def: GraphDefinition> {
         node_id: NodeId,
         context: &mut Self::ProcessingContext,
         graph: &Graph<Def>,
-    ) -> Result<ProcessingResult<Def>, GraphError>;
+    ) -> Result<ProcessingResult<Def>, FlowError>;
 }
 
 #[derive(Debug, Clone, Default)]
@@ -48,7 +47,7 @@ impl<Def: GraphDefinition> ProcessingResult<Def> {
 }
 
 pub trait Value<Def: GraphDefinition> {
-    fn try_cast_to(&self, target: &Def::DataType) -> Result<Self, GraphError>
+    fn try_cast_to(&self, target: &Def::DataType) -> Result<Self, FlowError>
     where
         Self: Sized;
 }
@@ -56,5 +55,3 @@ pub trait Value<Def: GraphDefinition> {
 pub trait DataType<Def: GraphDefinition> {
     fn default_value(&self) -> Def::Value;
 }
-
-pub trait Control<Def: GraphDefinition> {}
