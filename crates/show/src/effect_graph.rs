@@ -256,8 +256,11 @@ impl VisualNodeData for NodeData {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, flow::Value)]
 pub enum Value {
+    #[value(
+        castable_to = "DataType::Float, DataType::FixtureId, DataType::DmxChannel, DataType::AttributeValue"
+    )]
     Int(i32),
     Float(f32),
     FixtureId(FixtureId),
@@ -300,73 +303,6 @@ impl flow::Value<GraphDefinition> for Value {
             (Self::DmxChannel(v), DT::Int) => Ok(Self::Int(v.value() as i32)),
             (Self::DmxChannel(v), DT::Float) => Ok(Self::Float(v.value() as f32)),
 
-            _ => Err(FlowError::CastFailed),
-        }
-    }
-}
-
-impl From<f32> for Value {
-    fn from(value: f32) -> Self {
-        Value::Float(value)
-    }
-}
-
-impl From<i32> for Value {
-    fn from(value: i32) -> Self {
-        Value::Int(value)
-    }
-}
-
-impl TryFrom<Value> for i32 {
-    type Error = FlowError;
-
-    fn try_from(value: Value) -> Result<Self, Self::Error> {
-        match value {
-            Value::Int(value) => Ok(value),
-            _ => Err(FlowError::CastFailed),
-        }
-    }
-}
-
-impl TryFrom<Value> for f32 {
-    type Error = FlowError;
-
-    fn try_from(value: Value) -> Result<Self, Self::Error> {
-        match value {
-            Value::Float(value) => Ok(value),
-            _ => Err(FlowError::CastFailed),
-        }
-    }
-}
-
-impl TryFrom<Value> for FixtureId {
-    type Error = FlowError;
-
-    fn try_from(value: Value) -> Result<Self, Self::Error> {
-        match value {
-            Value::FixtureId(value) => Ok(value),
-            _ => Err(FlowError::CastFailed),
-        }
-    }
-}
-
-impl TryFrom<Value> for AttributeValue {
-    type Error = FlowError;
-
-    fn try_from(value: Value) -> Result<Self, Self::Error> {
-        match value {
-            Value::AttributeValue(value) => Ok(value),
-            _ => Err(FlowError::CastFailed),
-        }
-    }
-}
-
-impl TryFrom<Value> for DmxChannel {
-    type Error = FlowError;
-
-    fn try_from(value: Value) -> Result<Self, Self::Error> {
-        match value {
-            Value::DmxChannel(value) => Ok(value),
             _ => Err(FlowError::CastFailed),
         }
     }
