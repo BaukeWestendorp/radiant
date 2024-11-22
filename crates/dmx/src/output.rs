@@ -1,14 +1,14 @@
 //! This module contains the [DmxOutput] struct, which represents the output that can be sent to an interface.
 //! It contains a collection of [DmxUniverse]s, where each universe has 512 channels, and each channel has a value between 0 and 255, represented as a [u8].
 
-use crate::{DmxAddress, DmxChannel, DmxUniverse};
+use crate::{DmxAddress, DmxChannel, DmxUniverse, DmxUniverseId};
 use std::collections::HashMap;
 
 /// A [DmxOutput] represents the output that can be sent to an interface. It contains a collection of [DmxUniverse]s.
 /// Each universe has 512 channels, where each channel has a value between 0 and 255, represented as a [u8].
 #[derive(Debug, Clone, Default)]
 pub struct DmxOutput {
-    universes: HashMap<u16, DmxUniverse>,
+    universes: HashMap<DmxUniverseId, DmxUniverse>,
 }
 
 impl DmxOutput {
@@ -20,12 +20,12 @@ impl DmxOutput {
     }
 
     /// Get the [DmxUniverse] with the given `universe` number if it exists.
-    pub fn universe(&self, universe: u16) -> Option<&DmxUniverse> {
+    pub fn universe(&self, universe: DmxUniverseId) -> Option<&DmxUniverse> {
         self.universes.get(&universe)
     }
 
     /// Get the value at a specific `channel` in the given `universe` if that universe exists.
-    pub fn channel_value(&self, universe: u16, channel: DmxChannel) -> Option<u8> {
+    pub fn channel_value(&self, universe: DmxUniverseId, channel: DmxChannel) -> Option<u8> {
         Some(self.universe(universe)?.get_channel_value(channel))
     }
 
@@ -43,7 +43,7 @@ impl DmxOutput {
     }
 
     /// Create a new, empty [DmxUniverse] with the given `universe` number.
-    pub fn create_universe(&mut self, universe: u16) {
+    pub fn create_universe(&mut self, universe: DmxUniverseId) {
         self.universes.insert(universe, DmxUniverse::new());
     }
 }

@@ -2,7 +2,7 @@ use crate::fixture::{AttributeValue, FixtureId};
 use crate::patch::PatchedFixture;
 use crate::{FixtureGroup, Show};
 
-use dmx::{DmxAddress, DmxChannel, DmxOutput};
+use dmx::{DmxAddress, DmxChannel, DmxOutput, DmxUniverseId};
 use flow::gpui::{ControlEvent, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
 use flow::{FlowError, Graph};
 use gpui::{rgb, AnyView, ElementId, EventEmitter, Hsla, ViewContext, VisualContext};
@@ -40,6 +40,7 @@ pub enum NodeKind {
         control = "Control::FixtureId"
     )]
     NewFixtureId,
+
     #[node(name = "New Attribute Value", category = "NodeCategory::NewValue")]
     #[constant_output(
         label = "value",
@@ -47,6 +48,7 @@ pub enum NodeKind {
         control = "Control::AttributeValue"
     )]
     NewAttributeValue,
+
     #[node(
         name = "New DMX Address",
         category = "NodeCategory::NewValue",
@@ -54,13 +56,13 @@ pub enum NodeKind {
     )]
     #[input(
         label = "universe",
-        data_type = "DataType::Int",
-        control = "Control::Int"
+        data_type = "DataType::DmxUniverse",
+        control = "Control::DmxUniverse"
     )]
     #[input(
         label = "channel",
-        data_type = "DataType::Int",
-        control = "Control::Int"
+        data_type = "DataType::DmxChannel",
+        control = "Control::DmxChannel"
     )]
     #[computed_output(label = "address", data_type = "DataType::DmxAddress")]
     NewDmxAddress,
@@ -75,6 +77,7 @@ pub enum NodeKind {
     #[input(label = "b", data_type = "DataType::Float", control = "Control::Float")]
     #[computed_output(label = "sum", data_type = "DataType::Float")]
     Add,
+
     #[node(
         name = "Subtract",
         category = "NodeCategory::Math",
@@ -84,6 +87,7 @@ pub enum NodeKind {
     #[input(label = "b", data_type = "DataType::Float", control = "Control::Float")]
     #[computed_output(label = "difference", data_type = "DataType::Float")]
     Subtract,
+
     #[node(
         name = "Multiply",
         category = "NodeCategory::Math",
@@ -93,6 +97,7 @@ pub enum NodeKind {
     #[input(label = "b", data_type = "DataType::Float", control = "Control::Float")]
     #[computed_output(label = "product", data_type = "DataType::Float")]
     Multiply,
+
     #[node(
         name = "Divide",
         category = "NodeCategory::Math",
@@ -102,6 +107,7 @@ pub enum NodeKind {
     #[input(label = "b", data_type = "DataType::Float", control = "Control::Float")]
     #[computed_output(label = "quotient", data_type = "DataType::Float")]
     Divide,
+
     #[node(
         name = "Floor",
         category = "NodeCategory::Math",
@@ -112,8 +118,9 @@ pub enum NodeKind {
         data_type = "DataType::Float",
         control = "Control::Float"
     )]
-    #[computed_output(label = "floored", data_type = "DataType::Float")]
+    #[computed_output(label = "floored", data_type = "DataType::Int")]
     Floor,
+
     #[node(
         name = "Round",
         category = "NodeCategory::Math",
@@ -124,8 +131,9 @@ pub enum NodeKind {
         data_type = "DataType::Float",
         control = "Control::Float"
     )]
-    #[computed_output(label = "rounded", data_type = "DataType::Float")]
+    #[computed_output(label = "rounded", data_type = "DataType::Int")]
     Round,
+
     #[node(
         name = "Ceil",
         category = "NodeCategory::Math",
@@ -136,7 +144,7 @@ pub enum NodeKind {
         data_type = "DataType::Float",
         control = "Control::Float"
     )]
-    #[computed_output(label = "ceiled", data_type = "DataType::Float")]
+    #[computed_output(label = "ceiled", data_type = "DataType::Int")]
     Ceil,
 
     // Context
@@ -161,8 +169,8 @@ pub enum NodeKind {
         data_type = "DataType::DmxAddress",
         control = "Control::DmxAddress"
     )]
-    #[computed_output(label = "universe", data_type = "DataType::Int")]
-    #[computed_output(label = "channel", data_type = "DataType::Int")]
+    #[computed_output(label = "universe", data_type = "DataType::DmxUniverse")]
+    #[computed_output(label = "channel", data_type = "DataType::DmxChannel")]
     SplitAddress,
 
     // Output
@@ -190,15 +198,12 @@ mod processor {
     use super::*;
 
     pub fn new_dmx_address(
-        universe: i32,
-        channel: i32,
+        universe: DmxUniverseId,
+        channel: DmxChannel,
         _context: &mut ProcessingContext,
     ) -> NewDmxAddressProcessingOutput {
         NewDmxAddressProcessingOutput {
-            address: Value::from(DmxAddress::new(
-                universe as u16,
-                DmxChannel::new(channel as u16).unwrap_or_default(),
-            )),
+            address: Value::from(DmxAddress::new(universe, channel)),
         }
     }
 
@@ -257,7 +262,7 @@ mod processor {
         _context: &mut ProcessingContext,
     ) -> SplitAddressProcessingOutput {
         SplitAddressProcessingOutput {
-            universe: Value::from(address.universe as i32),
+            universe: Value::from(address.universe.value() as i32),
             channel: Value::from(address.channel.value() as i32),
         }
     }
@@ -324,25 +329,36 @@ pub enum Value {
     FixtureId(FixtureId),
     AttributeValue(AttributeValue),
     DmxChannel(DmxChannel),
+    DmxUniverse(DmxUniverseId),
     DmxAddress(DmxAddress),
 }
 
 impl flow::Value<GraphDefinition> for Value {
     fn try_cast_to(&self, target: &DataType) -> Result<Self, FlowError> {
         use DataType as DT;
-        match (self, target) {
+        let result = match (self, target) {
             (Self::Int(_), DT::Int) => Ok(self.clone()),
             (Self::Int(v), DT::Float) => Ok(Self::Float(*v as f32)),
             (Self::Int(v), DT::FixtureId) => Ok(Self::FixtureId(FixtureId(*v as u32))),
-            (Self::Int(v), DT::DmxChannel) => Ok(Self::DmxChannel(
-                DmxChannel::new(*v as u16).map_err(|_| FlowError::CastFailed)?,
-            )),
+            (Self::Int(v), DT::DmxChannel) => {
+                Ok(Self::DmxChannel(DmxChannel::new_clamped(*v as u16)))
+            }
+            (Self::Int(v), DT::DmxUniverse) => {
+                Ok(Self::DmxUniverse(DmxUniverseId::new_clamped(*v as u16)))
+            }
             (Self::Int(v), DT::AttributeValue) => {
                 Ok(Self::AttributeValue(AttributeValue::new(*v as f32)))
             }
 
             (Self::Float(_), DT::Float) => Ok(self.clone()),
             (Self::Float(v), DT::Int) => Ok(Self::Int(*v as i32)),
+            (Self::Float(v), DT::FixtureId) => Ok(Self::FixtureId(FixtureId(*v as u32))),
+            (Self::Float(v), DT::DmxChannel) => {
+                Ok(Self::DmxChannel(DmxChannel::new_clamped(*v as u16)))
+            }
+            (Self::Float(v), DT::DmxUniverse) => {
+                Ok(Self::DmxUniverse(DmxUniverseId::new_clamped(*v as u16)))
+            }
             (Self::Float(v), DT::AttributeValue) => {
                 Ok(Self::AttributeValue(AttributeValue::new(*v)))
             }
@@ -350,9 +366,12 @@ impl flow::Value<GraphDefinition> for Value {
             (Self::FixtureId(_), DT::FixtureId) => Ok(self.clone()),
             (Self::FixtureId(v), DT::Int) => Ok(Self::Int(v.0 as i32)),
             (Self::FixtureId(v), DT::Float) => Ok(Self::Float(v.0 as f32)),
-            (Self::FixtureId(v), DT::DmxChannel) => Ok(Self::DmxChannel(
-                DmxChannel::new(v.id() as u16).map_err(|_| FlowError::CastFailed)?,
-            )),
+            (Self::FixtureId(v), DT::DmxChannel) => {
+                Ok(Self::DmxChannel(DmxChannel::new_clamped(v.id() as u16)))
+            }
+            (Self::FixtureId(v), DT::DmxUniverse) => {
+                Ok(Self::DmxUniverse(DmxUniverseId::new_clamped(v.id() as u16)))
+            }
 
             (Self::AttributeValue(_), DT::AttributeValue) => Ok(self.clone()),
             (Self::AttributeValue(v), DT::Int) => Ok(Self::Int(v.byte() as i32)),
@@ -361,10 +380,31 @@ impl flow::Value<GraphDefinition> for Value {
             (Self::DmxChannel(_), DT::DmxChannel) => Ok(self.clone()),
             (Self::DmxChannel(v), DT::Int) => Ok(Self::Int(v.value() as i32)),
             (Self::DmxChannel(v), DT::Float) => Ok(Self::Float(v.value() as f32)),
+            (Self::DmxChannel(v), DT::DmxUniverse) => Ok(Self::DmxUniverse(
+                DmxUniverseId::new_clamped(v.value() as u16),
+            )),
 
             (Self::DmxAddress(_), DT::DmxAddress) => Ok(self.clone()),
+            (Self::DmxAddress(v), DT::DmxChannel) => Ok(Self::DmxChannel(v.channel)),
+            (Self::DmxAddress(v), DT::DmxUniverse) => Ok(Self::DmxUniverse(v.universe)),
+
+            (Self::DmxUniverse(v), DT::DmxUniverse) => Ok(Self::DmxUniverse(*v)),
+            (Self::DmxUniverse(v), DT::Int) => Ok(Self::Int(v.value() as i32)),
+            (Self::DmxUniverse(v), DT::Float) => Ok(Self::Float(v.value() as f32)),
 
             _ => Err(FlowError::CastFailed),
+        };
+        match result {
+            Ok(v) => Ok(v),
+            Err(err) => {
+                log::warn!(
+                    "Failed to cast value '{:?}' to type '{:?}': {:?}",
+                    self,
+                    target,
+                    err
+                );
+                Err(err)
+            }
         }
     }
 }
@@ -378,6 +418,7 @@ pub enum DataType {
     AttributeValue,
     DmxChannel,
     DmxAddress,
+    DmxUniverse,
 }
 
 impl flow::DataType<GraphDefinition> for DataType {
@@ -388,6 +429,7 @@ impl flow::DataType<GraphDefinition> for DataType {
             Self::FixtureId => Value::FixtureId(FixtureId::default()),
             Self::AttributeValue => Value::AttributeValue(AttributeValue::default()),
             Self::DmxChannel => Value::DmxChannel(DmxChannel::default()),
+            Self::DmxUniverse => Value::DmxUniverse(DmxUniverseId::default()),
             Self::DmxAddress => Value::DmxAddress(DmxAddress::default()),
         }
     }
@@ -402,6 +444,7 @@ impl VisualDataType for DataType {
             Self::FixtureId => rgb(0x080AFF).into(),
             Self::AttributeValue => rgb(0xFFAE18).into(),
             Self::DmxChannel => rgb(0xFF0000).into(),
+            Self::DmxUniverse => rgb(0x00FFFF).into(),
             Self::DmxAddress => rgb(0x00FF00).into(),
         }
     }
@@ -414,6 +457,7 @@ pub enum Control {
     FixtureId,
     AttributeValue,
     DmxChannel,
+    DmxUniverse,
     DmxAddress,
 }
 
@@ -524,6 +568,28 @@ impl VisualControl<GraphDefinition> for Control {
                     let NumberFieldEvent::Change(float_value) = event;
                     let value =
                         Value::DmxChannel(DmxChannel::new(*float_value as u16).unwrap_or_default());
+                    cx.emit(ControlEvent::Change(value));
+                })
+                .detach();
+
+                field.into()
+            }
+            Self::DmxUniverse => {
+                let field = cx.new_view(|cx| {
+                    let mut field = NumberField::new(cx);
+                    let universe: DmxUniverseId = initial_value
+                        .try_into()
+                        .expect("DmxUniverse field expects a DmxUniverse value");
+                    field.set_value(universe.value() as f32, cx);
+                    field.set_validate(Some(Box::new(|v| v.parse::<DmxUniverseId>().is_ok())), cx);
+                    field
+                });
+
+                cx.subscribe(&field, |_this, _field, event: &NumberFieldEvent, cx| {
+                    let NumberFieldEvent::Change(float_value) = event;
+                    let value = Value::DmxUniverse(
+                        DmxUniverseId::new(*float_value as u16).unwrap_or_default(),
+                    );
                     cx.emit(ControlEvent::Change(value));
                 })
                 .detach();

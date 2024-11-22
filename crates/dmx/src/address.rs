@@ -1,24 +1,24 @@
 //! This module contains the [DmxAddress] struct, which represents a DMX address.
-//! A DMX address consists of a universe and a channel where the universe is a [u16] value and the channel is a value between 1 and 512.
+//! A DMX address consists of a universe and a channel where the universe is a value between 1 and 65535 and the channel is a value between 1 and 512.
 
-use crate::{DmxChannel, DmxError};
+use crate::{DmxChannel, DmxError, DmxUniverseId};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
 /// A [DmxAddress] is the starting point for the channels a device listens to.
 /// It has a `universe` and a `channel`, where the `universe` is a [u16] value and the `channel`
 /// is a value between 1 and 512, represented as a [DmxChannel].
-#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash, Default)]
 pub struct DmxAddress {
     /// The universe of the DMX address.
-    pub universe: u16,
+    pub universe: DmxUniverseId,
     /// The channel of the DMX address.
     pub channel: DmxChannel,
 }
 
 impl DmxAddress {
     /// Create a new [DmxAddress] with the given `universe` and `channel`.
-    pub fn new(universe: u16, channel: DmxChannel) -> Self {
+    pub fn new(universe: DmxUniverseId, channel: DmxChannel) -> Self {
         Self { universe, channel }
     }
 
@@ -34,16 +34,7 @@ impl DmxAddress {
     /// assert_eq!(address.absolute_address(), 1030);
     /// ```
     pub fn absolute_address(&self) -> u32 {
-        (self.universe * 512 + self.channel.value()) as u32
-    }
-}
-
-impl Default for DmxAddress {
-    fn default() -> Self {
-        Self {
-            universe: 1,
-            channel: DmxChannel::default(),
-        }
+        (self.universe.value() * 512 + self.channel.value()) as u32
     }
 }
 
@@ -60,17 +51,17 @@ impl FromStr for DmxAddress {
         }
 
         let universe = parts[0]
-            .parse::<u16>()
+            .parse::<DmxUniverseId>()
             .map_err(|err| DmxError::ParseFailed {
                 message: err.to_string(),
             })?;
         let channel = parts[1]
-            .parse::<u16>()
+            .parse::<DmxChannel>()
             .map_err(|err| DmxError::ParseFailed {
                 message: err.to_string(),
             })?;
 
-        Ok(DmxAddress::new(universe, DmxChannel::new(channel)?))
+        Ok(DmxAddress::new(universe, channel))
     }
 }
 
@@ -105,7 +96,7 @@ mod tests {
 
     #[test]
     fn test_dmx_address_from_str() {
-        let address = DmxAddress::new(2, DmxChannel::new(6).unwrap());
+        let address = DmxAddress::new(DmxUniverseId::new(2).unwrap(), DmxChannel::new(6).unwrap());
         assert_eq!("2.6".parse::<DmxAddress>().unwrap(), address);
     }
 
@@ -119,7 +110,7 @@ mod tests {
 
     #[test]
     fn test_dmx_address_display() {
-        let address = DmxAddress::new(2, DmxChannel::new(6).unwrap());
+        let address = DmxAddress::new(DmxUniverseId::new(2).unwrap(), DmxChannel::new(6).unwrap());
         assert_eq!(address.to_string(), "2.6");
     }
 }

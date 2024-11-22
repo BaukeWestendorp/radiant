@@ -28,7 +28,7 @@ impl ArtnetNode {
     pub fn send_dmx(&self, data: Vec<u8>) -> anyhow::Result<()> {
         let command = ArtCommand::Output(Output {
             data: data.into(),
-            port_address: self.settings.universe.try_into()?,
+            port_address: self.settings.universe.value().try_into()?,
             ..Default::default()
         });
 

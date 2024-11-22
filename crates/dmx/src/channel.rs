@@ -17,7 +17,7 @@ impl DmxChannel {
     /// Create a new [DmxChannel] with the given `value`.
     ///
     /// # Errors
-    /// Returns an error if the value is not between 1 and 512.
+    /// Returns a [DmxError::InvalidChannel] if the `value` is not between 1 and 512.
     pub fn new(value: u16) -> crate::Result<Self> {
         if !(1..=512).contains(&value) {
             return Err(DmxError::InvalidChannel(value));
@@ -25,10 +25,15 @@ impl DmxChannel {
         Ok(Self(value))
     }
 
+    /// Create a new [DmxChannel] with the given `value`, clamped to the range 1..=512.
+    pub fn new_clamped(value: u16) -> Self {
+        Self(value.clamp(1, 512))
+    }
+
     /// Set the value of the [DmxChannel].
     ///
     /// # Errors
-    /// Returns an error if the value is not between 1 and 512.
+    /// Returns a [DmxError::InvalidChannel] if the value is not between 1 and 512.
     pub fn set_value(&mut self, value: u16) -> crate::Result<()> {
         if !(1..=512).contains(&value) {
             return Err(DmxError::InvalidChannel(value));

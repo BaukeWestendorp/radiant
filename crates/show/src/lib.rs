@@ -1,3 +1,5 @@
+use dmx::DmxUniverseId;
+
 use crate::effect_graph::EffectGraph;
 use crate::fixture::FixtureId;
 use crate::patch::Patch;
@@ -69,7 +71,7 @@ impl DmxProtocols {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ArtnetNodeSettings {
     pub destination_ip: Ipv4Addr,
-    pub universe: u16,
+    pub universe: DmxUniverseId,
 }
 
 #[derive(Clone, Default)]

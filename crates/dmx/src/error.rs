@@ -12,6 +12,9 @@ pub enum DmxError {
         /// The error message.
         message: String,
     },
+    /// The universe ID is invalid.
+    #[error("Invalid universe ID: {0}. The universe ID must be between 1 and 65535.")]
+    InvalidUniverseId(u16),
 }
 
 /// The result type for DMX operations.

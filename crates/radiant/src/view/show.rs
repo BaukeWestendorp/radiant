@@ -135,7 +135,10 @@ impl ShowView {
                     FixtureId(4),
                     FixtureId(5),
                 ]));
-                context.process_frame(self.show.effect_graph()).unwrap();
+                context
+                    .process_frame(self.show.effect_graph())
+                    .map_err(|err| log::warn!("Failed to process frame: {err}"))
+                    .ok();
                 io_manager.set_dmx_output(context.dmx_output);
             }),
         }
