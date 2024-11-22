@@ -158,6 +158,14 @@ pub enum NodeKind {
     #[computed_output(label = "address", data_type = "DataType::DmxAddress")]
     GetFixture,
 
+    #[node(
+        name = "Get Group",
+        category = "NodeCategory::Context",
+        processor = "processor::get_group"
+    )]
+    #[computed_output(label = "size", data_type = "DataType::Int")]
+    GetGroup,
+
     // Utilities
     #[node(
         name = "Split Address",
@@ -254,6 +262,12 @@ mod processor {
             index: Value::from(context.current_fixture_index as i32),
             id: Value::FixtureId(context.current_fixture_id()),
             address: Value::DmxAddress(context.current_fixture().dmx_address),
+        }
+    }
+
+    pub fn get_group(context: &mut ProcessingContext) -> GetGroupProcessingOutput {
+        GetGroupProcessingOutput {
+            size: Value::from(context.group().fixtures().len() as i32),
         }
     }
 
@@ -639,6 +653,10 @@ impl ProcessingContext {
             group: FixtureGroup::default(),
             current_fixture_index: 0,
         }
+    }
+
+    pub fn group(&self) -> &FixtureGroup {
+        &self.group
     }
 
     pub fn set_group(&mut self, group: FixtureGroup) {
