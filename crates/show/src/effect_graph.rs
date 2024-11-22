@@ -47,12 +47,22 @@ pub enum NodeKind {
         control = "Control::AttributeValue"
     )]
     NewAttributeValue,
-    #[node(name = "New DMX Address", category = "NodeCategory::NewValue")]
-    #[constant_output(
-        label = "address",
-        data_type = "DataType::DmxAddress",
-        control = "Control::DmxAddress"
+    #[node(
+        name = "New DMX Address",
+        category = "NodeCategory::NewValue",
+        processor = "processor::new_dmx_address"
     )]
+    #[input(
+        label = "universe",
+        data_type = "DataType::Int",
+        control = "Control::Int"
+    )]
+    #[input(
+        label = "channel",
+        data_type = "DataType::Int",
+        control = "Control::Int"
+    )]
+    #[computed_output(label = "address", data_type = "DataType::DmxAddress")]
     NewDmxAddress,
 
     // Math
@@ -140,6 +150,21 @@ pub enum NodeKind {
     #[computed_output(label = "address", data_type = "DataType::DmxAddress")]
     GetFixture,
 
+    // Utilities
+    #[node(
+        name = "Split Address",
+        category = "NodeCategory::Utilities",
+        processor = "processor::split_address"
+    )]
+    #[input(
+        label = "address",
+        data_type = "DataType::DmxAddress",
+        control = "Control::DmxAddress"
+    )]
+    #[computed_output(label = "universe", data_type = "DataType::Int")]
+    #[computed_output(label = "channel", data_type = "DataType::Int")]
+    SplitAddress,
+
     // Output
     #[node(
         name = "Set Address Value",
@@ -163,6 +188,19 @@ mod processor {
     use dmx::DmxAddress;
 
     use super::*;
+
+    pub fn new_dmx_address(
+        universe: i32,
+        channel: i32,
+        _context: &mut ProcessingContext,
+    ) -> NewDmxAddressProcessingOutput {
+        NewDmxAddressProcessingOutput {
+            address: Value::from(DmxAddress::new(
+                universe as u16,
+                DmxChannel::new(channel as u16).unwrap_or_default(),
+            )),
+        }
+    }
 
     pub fn add(a: f32, b: f32, _context: &mut ProcessingContext) -> AddProcessingOutput {
         AddProcessingOutput {
@@ -214,6 +252,16 @@ mod processor {
         }
     }
 
+    pub fn split_address(
+        address: DmxAddress,
+        _context: &mut ProcessingContext,
+    ) -> SplitAddressProcessingOutput {
+        SplitAddressProcessingOutput {
+            universe: Value::from(address.universe as i32),
+            channel: Value::from(address.channel.value() as i32),
+        }
+    }
+
     pub fn set_address_value(
         address: DmxAddress,
         value: AttributeValue,
@@ -231,6 +279,7 @@ pub enum NodeCategory {
     Math,
     Context,
     Output,
+    Utilities,
 }
 
 impl flow::gpui::NodeCategory for NodeCategory {
@@ -246,6 +295,7 @@ impl Display for NodeCategory {
             NodeCategory::Math => "Math",
             NodeCategory::Context => "Context",
             NodeCategory::Output => "Output",
+            NodeCategory::Utilities => "Utilities",
         }
         .to_string();
         write!(f, "{}", str)
