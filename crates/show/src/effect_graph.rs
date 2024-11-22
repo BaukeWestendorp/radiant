@@ -137,6 +137,7 @@ pub enum NodeKind {
     )]
     #[computed_output(label = "index", data_type = "DataType::Int")]
     #[computed_output(label = "id", data_type = "DataType::FixtureId")]
+    #[computed_output(label = "address", data_type = "DataType::DmxAddress")]
     GetFixture,
 
     // Output
@@ -209,6 +210,7 @@ mod processor {
         GetFixtureProcessingOutput {
             index: Value::from(context.current_fixture_index as i32),
             id: Value::FixtureId(context.current_fixture_id()),
+            address: Value::DmxAddress(context.current_fixture().dmx_address),
         }
     }
 
@@ -530,6 +532,17 @@ impl ProcessingContext {
     pub fn process_frame(&mut self, graph: &EffectGraph) -> Result<(), FlowError> {
         self.current_fixture_index = 0;
         while self.current_fixture_index < self.group.len() {
+            if self
+                .show
+                .patch()
+                .fixture(self.current_fixture_id())
+                .is_none()
+            {
+                log::warn!("Tried to process effect graph with invalid FixtureId. Skipping frame.");
+                self.current_fixture_index += 1;
+                continue;
+            }
+
             graph.process(self)?;
             self.current_fixture_index += 1;
         }
