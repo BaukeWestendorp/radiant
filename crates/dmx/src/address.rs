@@ -36,6 +36,13 @@ impl DmxAddress {
     pub fn absolute_address(&self) -> u32 {
         (self.universe.value() * 512 + self.channel.value()) as u32
     }
+
+    /// Create a new [DmxAddress] with the given `offset` added to the current channel value.
+    pub fn with_channel_offset(&self, offset: u16) -> Self {
+        let mut new = *self;
+        new.channel = new.channel.with_offset(offset);
+        new
+    }
 }
 
 impl FromStr for DmxAddress {

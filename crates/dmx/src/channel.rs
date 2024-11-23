@@ -46,6 +46,13 @@ impl DmxChannel {
     pub fn value(&self) -> u16 {
         self.0
     }
+
+    /// Create a new [DmxChannel] with the given `offset` added to the current value.
+    pub fn with_offset(&self, offset: u16) -> Self {
+        let mut new = *self;
+        new.0 += offset;
+        new
+    }
 }
 
 impl Default for DmxChannel {

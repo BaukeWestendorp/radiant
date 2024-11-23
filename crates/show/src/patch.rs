@@ -1,6 +1,6 @@
 use crate::fixture::FixtureId;
 use dmx::DmxAddress;
-use gdtf::GdtfFile;
+use gdtf::{dmx_mode::DmxMode, fixture_type::FixtureType, GdtfFile};
 use gpui::SharedString;
 use std::collections::HashMap;
 
@@ -18,7 +18,11 @@ impl Patch {
 
     pub fn gdtf_description(&self, id: FixtureId) -> Option<&gdtf::Description> {
         let fixture = self.fixture(id)?;
-        self.gdtf_descriptions.get(&fixture.gdtf_file_name)
+        let description = self
+            .gdtf_descriptions
+            .get(&fixture.gdtf_file_name)
+            .expect("A GDTF Description should exist for every fixture");
+        Some(description)
     }
 
     pub fn patch_fixture(
@@ -26,6 +30,7 @@ impl Patch {
         id: FixtureId,
         dmx_address: DmxAddress,
         gdtf_file_name: SharedString,
+        dmx_mode: SharedString,
     ) -> anyhow::Result<()> {
         let path = dirs::cache_dir()
             .unwrap()
@@ -41,6 +46,7 @@ impl Patch {
             id,
             dmx_address,
             gdtf_file_name,
+            dmx_mode,
         };
         self.fixtures.push(fixture);
 
@@ -64,7 +70,12 @@ impl<'de> serde::Deserialize<'de> for Patch {
 
         for fixture in fixtures {
             patch
-                .patch_fixture(fixture.id(), fixture.dmx_address, fixture.gdtf_file_name)
+                .patch_fixture(
+                    fixture.id(),
+                    fixture.dmx_address,
+                    fixture.gdtf_file_name,
+                    fixture.dmx_mode,
+                )
                 .map_err(|err| {
                     serde::de::Error::custom(format!("Failed to patch fixture: {err}"))
                 })?;
@@ -79,11 +90,49 @@ pub struct PatchedFixture {
     id: FixtureId,
 
     pub dmx_address: DmxAddress,
-    pub gdtf_file_name: SharedString,
+    gdtf_file_name: SharedString,
+    dmx_mode: SharedString,
 }
 
 impl PatchedFixture {
     pub fn id(&self) -> FixtureId {
         self.id
+    }
+
+    pub fn fixture_type<'p>(&self, patch: &'p Patch) -> &'p FixtureType {
+        patch
+            .gdtf_description(self.id)
+            .expect("A GDTF Description should exist for every fixture")
+            .fixture_types
+            .first()
+            .unwrap()
+    }
+
+    pub fn dmx_mode<'p>(&self, patch: &'p Patch) -> &'p DmxMode {
+        self.fixture_type(patch).dmx_mode(&self.dmx_mode).unwrap()
+    }
+
+    pub fn channel_offset_for_attribute<'p>(
+        &self,
+        attribute_name: &str,
+        patch: &'p Patch,
+    ) -> Option<&'p Vec<i32>> {
+        let fixture_type = self.fixture_type(patch);
+
+        for channel in &fixture_type.dmx_mode(&self.dmx_mode).unwrap().dmx_channels {
+            let (logical_channel, _) = channel.initial_function().unwrap();
+
+            if logical_channel
+                .attribute(fixture_type)
+                .unwrap()
+                .name
+                .as_deref()
+                .is_some_and(|name| name == attribute_name)
+            {
+                return channel.offset.as_ref();
+            }
+        }
+
+        return None;
     }
 }

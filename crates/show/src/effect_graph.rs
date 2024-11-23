@@ -185,7 +185,7 @@ pub enum NodeKind {
     #[node(
         name = "Set Address Value",
         category = "NodeCategory::Output",
-        processor = "processor::set_address_value"
+        processor = "processor::set_channel_value"
     )]
     #[input(
         label = "address",
@@ -198,6 +198,22 @@ pub enum NodeKind {
         control = "Control::AttributeValue"
     )]
     SetChannelValue,
+    #[node(
+        name = "Set Fixture Attribute",
+        category = "NodeCategory::Output",
+        processor = "processor::set_fixture_attribute"
+    )]
+    #[input(
+        label = "fixture",
+        data_type = "DataType::FixtureId",
+        control = "Control::FixtureId"
+    )]
+    #[input(
+        label = "value",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    SetFixtureAttribute,
 }
 
 mod processor {
@@ -215,65 +231,65 @@ mod processor {
         }
     }
 
-    pub fn add(a: f32, b: f32, _context: &mut ProcessingContext) -> AddProcessingOutput {
+    pub fn add(a: f32, b: f32, _ctx: &mut ProcessingContext) -> AddProcessingOutput {
         AddProcessingOutput {
             sum: Value::from(a + b),
         }
     }
 
-    pub fn subtract(a: f32, b: f32, _context: &mut ProcessingContext) -> SubtractProcessingOutput {
+    pub fn subtract(a: f32, b: f32, _ctx: &mut ProcessingContext) -> SubtractProcessingOutput {
         SubtractProcessingOutput {
             difference: Value::from(a - b),
         }
     }
 
-    pub fn multiply(a: f32, b: f32, _context: &mut ProcessingContext) -> MultiplyProcessingOutput {
+    pub fn multiply(a: f32, b: f32, _ctx: &mut ProcessingContext) -> MultiplyProcessingOutput {
         MultiplyProcessingOutput {
             product: Value::from(a * b),
         }
     }
 
-    pub fn divide(a: f32, b: f32, _context: &mut ProcessingContext) -> DivideProcessingOutput {
+    pub fn divide(a: f32, b: f32, _ctx: &mut ProcessingContext) -> DivideProcessingOutput {
         DivideProcessingOutput {
             quotient: Value::from(a / b),
         }
     }
 
-    pub fn floor(value: f32, _context: &mut ProcessingContext) -> FloorProcessingOutput {
+    pub fn floor(value: f32, _ctx: &mut ProcessingContext) -> FloorProcessingOutput {
         FloorProcessingOutput {
             floored: Value::from(value.floor() as i32),
         }
     }
 
-    pub fn round(value: f32, _context: &mut ProcessingContext) -> RoundProcessingOutput {
+    pub fn round(value: f32, _ctx: &mut ProcessingContext) -> RoundProcessingOutput {
         RoundProcessingOutput {
             rounded: Value::from(value.round() as i32),
         }
     }
 
-    pub fn ceil(value: f32, _context: &mut ProcessingContext) -> CeilProcessingOutput {
+    pub fn ceil(value: f32, _ctx: &mut ProcessingContext) -> CeilProcessingOutput {
         CeilProcessingOutput {
             ceiled: Value::from(value.ceil() as i32),
         }
     }
 
-    pub fn get_fixture(context: &mut ProcessingContext) -> GetFixtureProcessingOutput {
+    pub fn get_fixture(ctx: &mut ProcessingContext) -> GetFixtureProcessingOutput {
         GetFixtureProcessingOutput {
-            index: Value::from(context.current_fixture_index as i32),
-            id: Value::FixtureId(context.current_fixture_id()),
-            address: Value::DmxAddress(context.current_fixture().dmx_address),
+            index: Value::from(ctx.current_fixture_index as i32),
+            id: Value::FixtureId(ctx.current_fixture_id()),
+            address: Value::DmxAddress(ctx.current_fixture().dmx_address),
         }
     }
 
-    pub fn get_group(context: &mut ProcessingContext) -> GetGroupProcessingOutput {
+    pub fn get_group(ctx: &mut ProcessingContext) -> GetGroupProcessingOutput {
         GetGroupProcessingOutput {
-            size: Value::from(context.group().fixtures().len() as i32),
+            size: Value::from(ctx.group().fixtures().len() as i32),
         }
     }
 
     pub fn split_address(
         address: DmxAddress,
-        _context: &mut ProcessingContext,
+        _ctx: &mut ProcessingContext,
     ) -> SplitAddressProcessingOutput {
         SplitAddressProcessingOutput {
             universe: Value::from(address.universe.value() as i32),
@@ -281,7 +297,7 @@ mod processor {
         }
     }
 
-    pub fn set_address_value(
+    pub fn set_channel_value(
         address: DmxAddress,
         value: AttributeValue,
         ctx: &mut ProcessingContext,
@@ -289,6 +305,28 @@ mod processor {
         ctx.dmx_output.set_channel_value(address, value.byte());
 
         SetChannelValueProcessingOutput {}
+    }
+
+    pub fn set_fixture_attribute(
+        fixture: FixtureId,
+        value: AttributeValue,
+        ctx: &mut ProcessingContext,
+    ) -> SetFixtureAttributeProcessingOutput {
+        let patch = ctx.show.patch();
+        let offset = patch
+            .fixture(fixture)
+            .unwrap()
+            .channel_offset_for_attribute("Dimmer", patch)
+            .unwrap();
+
+        let address = ctx
+            .current_fixture()
+            .dmx_address
+            .with_channel_offset(offset[0] as u16 - 1);
+
+        set_channel_value(address, value, ctx);
+
+        SetFixtureAttributeProcessingOutput {}
     }
 }
 
@@ -672,7 +710,9 @@ impl ProcessingContext {
                 .fixture(self.current_fixture_id())
                 .is_none()
             {
-                log::warn!("Tried to process effect graph with invalid FixtureId. Skipping frame.");
+                log::warn!(
+                    "Tried to process effect graph with invalid FixtureId. Skipping fixture."
+                );
                 self.current_fixture_index += 1;
                 continue;
             }

@@ -10,7 +10,7 @@ use ui::theme::Colorize;
 use ui::{theme::ActiveTheme, StyledExt};
 
 pub(crate) const NODE_CONTENT_Y_PADDING: Pixels = px(6.0);
-pub(crate) const NODE_WIDTH: Pixels = px(200.0);
+pub(crate) const NODE_WIDTH: Pixels = px(150.0);
 pub(crate) const HEADER_HEIGHT: Pixels = px(24.0);
 pub(crate) const SOCKET_HEIGHT: Pixels = px(22.0); // cx.theme().input_height;
 pub(crate) const SOCKET_GAP: Pixels = px(12.0);
