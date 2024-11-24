@@ -1,3 +1,4 @@
+use crate::attr_def::AttributeDefinition;
 use crate::fixture::{AttributeValue, FixtureId};
 use crate::patch::PatchedFixture;
 use crate::{FixtureGroup, Show};
@@ -209,6 +210,11 @@ pub enum NodeKind {
         control = "Control::FixtureId"
     )]
     #[input(
+        label = "attribute",
+        data_type = "DataType::Attribute",
+        control = "Control::Attribute"
+    )]
+    #[input(
         label = "value",
         data_type = "DataType::AttributeValue",
         control = "Control::AttributeValue"
@@ -218,6 +224,8 @@ pub enum NodeKind {
 
 mod processor {
     use dmx::DmxAddress;
+
+    use crate::attr_def::AttributeDefinition;
 
     use super::*;
 
@@ -309,6 +317,7 @@ mod processor {
 
     pub fn set_fixture_attribute(
         fixture: FixtureId,
+        attribute: AttributeDefinition,
         value: AttributeValue,
         ctx: &mut ProcessingContext,
     ) -> SetFixtureAttributeProcessingOutput {
@@ -316,7 +325,7 @@ mod processor {
         let offset = patch
             .fixture(fixture)
             .unwrap()
-            .channel_offset_for_attribute("Dimmer", patch)
+            .channel_offset_for_attribute(&attribute.to_string(), patch)
             .unwrap();
 
         let address = ctx
@@ -379,6 +388,7 @@ pub enum Value {
     Int(i32),
     Float(f32),
     FixtureId(FixtureId),
+    Attribute(AttributeDefinition),
     AttributeValue(AttributeValue),
     DmxChannel(DmxChannel),
     DmxUniverse(DmxUniverseId),
@@ -425,6 +435,8 @@ impl flow::Value<GraphDefinition> for Value {
                 Ok(Self::DmxUniverse(DmxUniverseId::new_clamped(v.id() as u16)))
             }
 
+            (Self::Attribute(_), DT::Attribute) => Ok(self.clone()),
+
             (Self::AttributeValue(_), DT::AttributeValue) => Ok(self.clone()),
             (Self::AttributeValue(v), DT::Int) => Ok(Self::Int(v.byte() as i32)),
             (Self::AttributeValue(v), DT::Float) => Ok(Self::Float(v.byte() as f32)),
@@ -467,6 +479,7 @@ pub enum DataType {
     Float,
 
     FixtureId,
+    Attribute,
     AttributeValue,
     DmxChannel,
     DmxAddress,
@@ -479,6 +492,7 @@ impl flow::DataType<GraphDefinition> for DataType {
             Self::Int => Value::Int(i32::default()),
             Self::Float => Value::Float(f32::default()),
             Self::FixtureId => Value::FixtureId(FixtureId::default()),
+            Self::Attribute => Value::Attribute(AttributeDefinition::default()),
             Self::AttributeValue => Value::AttributeValue(AttributeValue::default()),
             Self::DmxChannel => Value::DmxChannel(DmxChannel::default()),
             Self::DmxUniverse => Value::DmxUniverse(DmxUniverseId::default()),
@@ -494,6 +508,7 @@ impl VisualDataType for DataType {
             Self::Float => rgb(0xFF3C59).into(),
 
             Self::FixtureId => rgb(0x080AFF).into(),
+            Self::Attribute => rgb(0xFF6E1B).into(),
             Self::AttributeValue => rgb(0xFFAE18).into(),
             Self::DmxChannel => rgb(0xFF0000).into(),
             Self::DmxUniverse => rgb(0x00FFFF).into(),
@@ -507,6 +522,7 @@ pub enum Control {
     Int,
     Float,
     FixtureId,
+    Attribute,
     AttributeValue,
     DmxChannel,
     DmxUniverse,
@@ -578,6 +594,29 @@ impl VisualControl<GraphDefinition> for Control {
                     let NumberFieldEvent::Change(float_value) = event;
                     let value = Value::FixtureId(FixtureId(*float_value as u32));
                     cx.emit(ControlEvent::Change(value));
+                })
+                .detach();
+
+                field.into()
+            }
+            Self::Attribute => {
+                let field = cx.new_view(|cx| {
+                    let mut field = TextField::new(cx);
+                    let attribute: AttributeDefinition = initial_value
+                        .try_into()
+                        .expect("Attribute field expects a Attribute value");
+                    field.set_value(attribute.to_string().into(), cx);
+                    field
+                        .set_validate(Some(Box::new(|v| v.parse::<AttributeDefinition>().is_ok())));
+                    field
+                });
+
+                cx.subscribe(&field, |_this, _field, event: &TextFieldEvent, cx| {
+                    if let TextFieldEvent::Change(string_value) = event {
+                        let address: AttributeDefinition = string_value.parse().unwrap_or_default();
+                        let value = Value::Attribute(address);
+                        cx.emit(ControlEvent::Change(value));
+                    }
                 })
                 .detach();
 

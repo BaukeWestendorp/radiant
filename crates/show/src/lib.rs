@@ -7,6 +7,7 @@ use std::fs;
 use std::net::Ipv4Addr;
 use std::path::Path;
 
+pub mod attr_def;
 pub mod effect_graph;
 pub mod fixture;
 pub mod patch;
