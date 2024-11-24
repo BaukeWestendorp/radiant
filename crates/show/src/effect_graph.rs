@@ -324,14 +324,18 @@ mod processor {
             .unwrap()
             .channel_offset_for_attribute(&attribute.to_string(), patch)
         else {
-            log::warn!("No channel offset found for attribute with name `{attribute}`");
+            log::debug!("No channel offset found for attribute with name `{attribute}`");
             return SetFixtureAttributeProcessingOutput {};
         };
 
-        let address = ctx
-            .current_fixture()
+        let Some(fixture) = ctx.show.patch().fixture(fixture) else {
+            log::debug!("Fixture with id `{fixture}` not found");
+            return SetFixtureAttributeProcessingOutput {};
+        };
+
+        let address = fixture
             .dmx_address
-            .with_channel_offset(offset[0] as u16 - 1);
+            .with_channel_offset(*offset.first().unwrap() as u16 - 1);
 
         set_channel_value(address, value, ctx);
 
