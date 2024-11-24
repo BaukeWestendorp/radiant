@@ -4,7 +4,7 @@ use anyhow::bail;
     Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize,
 )]
 /// To describe the fixture types attributes are used. Attributes define the function. (n) and (m) are wildcards for the enumeration of attributes like Gobo(n) - Gobo1 and Gobo2 or VideoEffect(n)Parameter(m) - VideoEffect1Parameter1 and VideoEffect1Parameter2. Fixture Type Attributes without wildcards (n) or (m) are not enumerated. The enumeration starts with 1.
-pub enum SharedString {
+pub enum AttributeDefinition {
     #[default]
     /// Controls the intensity of a fixture.
     Dimmer,
@@ -564,7 +564,7 @@ pub enum SharedString {
     FieldOfView,
 }
 
-impl std::fmt::Display for SharedString {
+impl std::fmt::Display for AttributeDefinition {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Dimmer => write!(f, "Dimmer"),
@@ -853,7 +853,7 @@ impl std::fmt::Display for SharedString {
     }
 }
 
-impl std::str::FromStr for SharedString {
+impl std::str::FromStr for AttributeDefinition {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -1382,1082 +1382,1211 @@ impl std::str::FromStr for SharedString {
 
 #[cfg(test)]
 mod tests {
-    use crate::attr_def::SharedString;
+    use crate::attr_def::AttributeDefinition;
 
     #[test]
     fn test_attribute_definition_from_str() {
         assert_eq!(
-            "Dimmer".parse::<SharedString>().unwrap(),
-            SharedString::Dimmer
-        );
-        assert_eq!("Pan".parse::<SharedString>().unwrap(), SharedString::Pan);
-        assert_eq!("Tilt".parse::<SharedString>().unwrap(), SharedString::Tilt);
-        assert_eq!(
-            "PanRotate".parse::<SharedString>().unwrap(),
-            SharedString::PanRotate
+            "Dimmer".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Dimmer
         );
         assert_eq!(
-            "TiltRotate".parse::<SharedString>().unwrap(),
-            SharedString::TiltRotate
+            "Pan".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Pan
         );
         assert_eq!(
-            "PositionEffect".parse::<SharedString>().unwrap(),
-            SharedString::PositionEffect
+            "Tilt".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Tilt
         );
         assert_eq!(
-            "PositionEffectRate".parse::<SharedString>().unwrap(),
-            SharedString::PositionEffectRate
+            "PanRotate".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PanRotate
         );
         assert_eq!(
-            "PositionEffectFade".parse::<SharedString>().unwrap(),
-            SharedString::PositionEffectFade
-        );
-        assert_eq!("XYZ_X".parse::<SharedString>().unwrap(), SharedString::XyzX);
-        assert_eq!("XYZ_Y".parse::<SharedString>().unwrap(), SharedString::XyzY);
-        assert_eq!("XYZ_Z".parse::<SharedString>().unwrap(), SharedString::XyzZ);
-        assert_eq!("Rot_X".parse::<SharedString>().unwrap(), SharedString::RotX);
-        assert_eq!("Rot_Y".parse::<SharedString>().unwrap(), SharedString::RotY);
-        assert_eq!("Rot_Z".parse::<SharedString>().unwrap(), SharedString::RotZ);
-        assert_eq!(
-            "Scale_X".parse::<SharedString>().unwrap(),
-            SharedString::ScaleX
+            "TiltRotate".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::TiltRotate
         );
         assert_eq!(
-            "Scale_Y".parse::<SharedString>().unwrap(),
-            SharedString::ScaleY
+            "PositionEffect".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PositionEffect
         );
         assert_eq!(
-            "Scale_Z".parse::<SharedString>().unwrap(),
-            SharedString::ScaleZ
+            "PositionEffectRate".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PositionEffectRate
         );
         assert_eq!(
-            "Scale_XYZ".parse::<SharedString>().unwrap(),
-            SharedString::ScaleXyz
+            "PositionEffectFade".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PositionEffectFade
         );
         assert_eq!(
-            "Gobo4".parse::<SharedString>().unwrap(),
-            SharedString::Gobo { n: 4 }
+            "XYZ_X".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::XyzX
         );
         assert_eq!(
-            "Gobo4SelectSpin".parse::<SharedString>().unwrap(),
-            SharedString::GoboSelectSpin { n: 4 }
+            "XYZ_Y".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::XyzY
         );
         assert_eq!(
-            "Gobo4SelectShake".parse::<SharedString>().unwrap(),
-            SharedString::GoboSelectShake { n: 4 }
+            "XYZ_Z".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::XyzZ
         );
         assert_eq!(
-            "Gobo4SelectEffects".parse::<SharedString>().unwrap(),
-            SharedString::GoboSelectEffects { n: 4 }
+            "Rot_X".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::RotX
         );
         assert_eq!(
-            "Gobo4WheelIndex".parse::<SharedString>().unwrap(),
-            SharedString::GoboWheelIndex { n: 4 }
+            "Rot_Y".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::RotY
         );
         assert_eq!(
-            "Gobo4WheelSpin".parse::<SharedString>().unwrap(),
-            SharedString::GoboWheelSpin { n: 4 }
+            "Rot_Z".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::RotZ
         );
         assert_eq!(
-            "Gobo4WheelShake".parse::<SharedString>().unwrap(),
-            SharedString::GoboWheelShake { n: 4 }
+            "Scale_X".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ScaleX
         );
         assert_eq!(
-            "Gobo4WheelRandom".parse::<SharedString>().unwrap(),
-            SharedString::GoboWheelRandom { n: 4 }
+            "Scale_Y".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ScaleY
         );
         assert_eq!(
-            "Gobo4WheelAudio".parse::<SharedString>().unwrap(),
-            SharedString::GoboWheelAudio { n: 4 }
+            "Scale_Z".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ScaleZ
         );
         assert_eq!(
-            "Gobo4Pos".parse::<SharedString>().unwrap(),
-            SharedString::GoboPos { n: 4 }
+            "Scale_XYZ".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ScaleXyz
         );
         assert_eq!(
-            "Gobo4PosRotate".parse::<SharedString>().unwrap(),
-            SharedString::GoboPosRotate { n: 4 }
+            "Gobo4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Gobo { n: 4 }
         );
         assert_eq!(
-            "Gobo4PosShake".parse::<SharedString>().unwrap(),
-            SharedString::GoboPosShake { n: 4 }
+            "Gobo4SelectSpin".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::GoboSelectSpin { n: 4 }
         );
         assert_eq!(
-            "AnimationWheel4".parse::<SharedString>().unwrap(),
-            SharedString::AnimationWheel { n: 4 }
+            "Gobo4SelectShake".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::GoboSelectShake { n: 4 }
         );
         assert_eq!(
-            "AnimationWheel4Audio".parse::<SharedString>().unwrap(),
-            SharedString::AnimationWheelAudio { n: 4 }
+            "Gobo4SelectEffects".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::GoboSelectEffects { n: 4 }
         );
         assert_eq!(
-            "AnimationWheel4Macro".parse::<SharedString>().unwrap(),
-            SharedString::AnimationWheelMacro { n: 4 }
+            "Gobo4WheelIndex".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::GoboWheelIndex { n: 4 }
         );
         assert_eq!(
-            "AnimationWheel4Random".parse::<SharedString>().unwrap(),
-            SharedString::AnimationWheelRandom { n: 4 }
+            "Gobo4WheelSpin".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::GoboWheelSpin { n: 4 }
+        );
+        assert_eq!(
+            "Gobo4WheelShake".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::GoboWheelShake { n: 4 }
+        );
+        assert_eq!(
+            "Gobo4WheelRandom".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::GoboWheelRandom { n: 4 }
+        );
+        assert_eq!(
+            "Gobo4WheelAudio".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::GoboWheelAudio { n: 4 }
+        );
+        assert_eq!(
+            "Gobo4Pos".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::GoboPos { n: 4 }
+        );
+        assert_eq!(
+            "Gobo4PosRotate".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::GoboPosRotate { n: 4 }
+        );
+        assert_eq!(
+            "Gobo4PosShake".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::GoboPosShake { n: 4 }
+        );
+        assert_eq!(
+            "AnimationWheel4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::AnimationWheel { n: 4 }
+        );
+        assert_eq!(
+            "AnimationWheel4Audio"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationWheelAudio { n: 4 }
+        );
+        assert_eq!(
+            "AnimationWheel4Macro"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationWheelMacro { n: 4 }
+        );
+        assert_eq!(
+            "AnimationWheel4Random"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationWheelRandom { n: 4 }
         );
         assert_eq!(
             "AnimationWheel4SelectEffects"
-                .parse::<SharedString>()
+                .parse::<AttributeDefinition>()
                 .unwrap(),
-            SharedString::AnimationWheelSelectEffects { n: 4 }
+            AttributeDefinition::AnimationWheelSelectEffects { n: 4 }
         );
         assert_eq!(
             "AnimationWheel4SelectShake"
-                .parse::<SharedString>()
+                .parse::<AttributeDefinition>()
                 .unwrap(),
-            SharedString::AnimationWheelSelectShake { n: 4 }
+            AttributeDefinition::AnimationWheelSelectShake { n: 4 }
         );
         assert_eq!(
-            "AnimationWheel4SelectSpin".parse::<SharedString>().unwrap(),
-            SharedString::AnimationWheelSelectSpin { n: 4 }
+            "AnimationWheel4SelectSpin"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationWheelSelectSpin { n: 4 }
         );
         assert_eq!(
-            "AnimationWheel4Pos".parse::<SharedString>().unwrap(),
-            SharedString::AnimationWheelPos { n: 4 }
+            "AnimationWheel4Pos".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::AnimationWheelPos { n: 4 }
         );
         assert_eq!(
-            "AnimationWheel4PosRotate".parse::<SharedString>().unwrap(),
-            SharedString::AnimationWheelPosRotate { n: 4 }
+            "AnimationWheel4PosRotate"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationWheelPosRotate { n: 4 }
         );
         assert_eq!(
-            "AnimationWheel4PosShake".parse::<SharedString>().unwrap(),
-            SharedString::AnimationWheelPosShake { n: 4 }
+            "AnimationWheel4PosShake"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationWheelPosShake { n: 4 }
         );
         assert_eq!(
-            "AnimationSystem4".parse::<SharedString>().unwrap(),
-            SharedString::AnimationSystem { n: 4 }
+            "AnimationSystem4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::AnimationSystem { n: 4 }
         );
         assert_eq!(
-            "AnimationSystem4Ramp".parse::<SharedString>().unwrap(),
-            SharedString::AnimationSystemRamp { n: 4 }
+            "AnimationSystem4Ramp"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationSystemRamp { n: 4 }
         );
         assert_eq!(
-            "AnimationSystem4Shake".parse::<SharedString>().unwrap(),
-            SharedString::AnimationSystemShake { n: 4 }
+            "AnimationSystem4Shake"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationSystemShake { n: 4 }
         );
         assert_eq!(
-            "AnimationSystem4Audio".parse::<SharedString>().unwrap(),
-            SharedString::AnimationSystemAudio { n: 4 }
+            "AnimationSystem4Audio"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationSystemAudio { n: 4 }
         );
         assert_eq!(
-            "AnimationSystem4Random".parse::<SharedString>().unwrap(),
-            SharedString::AnimationSystemRandom { n: 4 }
+            "AnimationSystem4Random"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationSystemRandom { n: 4 }
         );
         assert_eq!(
-            "AnimationSystem4Pos".parse::<SharedString>().unwrap(),
-            SharedString::AnimationSystemPos { n: 4 }
+            "AnimationSystem4Pos"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationSystemPos { n: 4 }
         );
         assert_eq!(
-            "AnimationSystem4PosRotate".parse::<SharedString>().unwrap(),
-            SharedString::AnimationSystemPosRotate { n: 4 }
+            "AnimationSystem4PosRotate"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationSystemPosRotate { n: 4 }
         );
         assert_eq!(
-            "AnimationSystem4PosShake".parse::<SharedString>().unwrap(),
-            SharedString::AnimationSystemPosShake { n: 4 }
+            "AnimationSystem4PosShake"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationSystemPosShake { n: 4 }
         );
         assert_eq!(
-            "AnimationSystem4PosRandom".parse::<SharedString>().unwrap(),
-            SharedString::AnimationSystemPosRandom { n: 4 }
+            "AnimationSystem4PosRandom"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationSystemPosRandom { n: 4 }
         );
         assert_eq!(
-            "AnimationSystem4PosAudio".parse::<SharedString>().unwrap(),
-            SharedString::AnimationSystemPosAudio { n: 4 }
+            "AnimationSystem4PosAudio"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationSystemPosAudio { n: 4 }
         );
         assert_eq!(
-            "AnimationSystem4Macro".parse::<SharedString>().unwrap(),
-            SharedString::AnimationSystemMacro { n: 4 }
+            "AnimationSystem4Macro"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationSystemMacro { n: 4 }
         );
         assert_eq!(
-            "MediaFolder4".parse::<SharedString>().unwrap(),
-            SharedString::MediaFolder { n: 4 }
+            "MediaFolder4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::MediaFolder { n: 4 }
         );
         assert_eq!(
-            "MediaContent4".parse::<SharedString>().unwrap(),
-            SharedString::MediaContent { n: 4 }
+            "MediaContent4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::MediaContent { n: 4 }
         );
         assert_eq!(
-            "ModelFolder4".parse::<SharedString>().unwrap(),
-            SharedString::ModelFolder { n: 4 }
+            "ModelFolder4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ModelFolder { n: 4 }
         );
         assert_eq!(
-            "ModelContent4".parse::<SharedString>().unwrap(),
-            SharedString::ModelContent { n: 4 }
+            "ModelContent4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ModelContent { n: 4 }
         );
         assert_eq!(
-            "PlayMode".parse::<SharedString>().unwrap(),
-            SharedString::PlayMode
+            "PlayMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PlayMode
         );
         assert_eq!(
-            "PlayBegin".parse::<SharedString>().unwrap(),
-            SharedString::PlayBegin
+            "PlayBegin".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PlayBegin
         );
         assert_eq!(
-            "PlayEnd".parse::<SharedString>().unwrap(),
-            SharedString::PlayEnd
+            "PlayEnd".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PlayEnd
         );
         assert_eq!(
-            "PlaySpeed".parse::<SharedString>().unwrap(),
-            SharedString::PlaySpeed
+            "PlaySpeed".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PlaySpeed
         );
         assert_eq!(
-            "ColorEffects4".parse::<SharedString>().unwrap(),
-            SharedString::ColorEffects { n: 4 }
+            "ColorEffects4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorEffects { n: 4 }
         );
         assert_eq!(
-            "Color4".parse::<SharedString>().unwrap(),
-            SharedString::Color { n: 4 }
+            "Color4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Color { n: 4 }
         );
         assert_eq!(
-            "Color4WheelIndex".parse::<SharedString>().unwrap(),
-            SharedString::ColorWheelIndex { n: 4 }
+            "Color4WheelIndex".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorWheelIndex { n: 4 }
         );
         assert_eq!(
-            "Color4WheelSpin".parse::<SharedString>().unwrap(),
-            SharedString::ColorWheelSpin { n: 4 }
+            "Color4WheelSpin".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorWheelSpin { n: 4 }
         );
         assert_eq!(
-            "Color4WheelRandom".parse::<SharedString>().unwrap(),
-            SharedString::ColorWheelRandom { n: 4 }
+            "Color4WheelRandom".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorWheelRandom { n: 4 }
         );
         assert_eq!(
-            "Color4WheelAudio".parse::<SharedString>().unwrap(),
-            SharedString::ColorWheelAudio { n: 4 }
+            "Color4WheelAudio".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorWheelAudio { n: 4 }
         );
         assert_eq!(
-            "ColorAdd_R".parse::<SharedString>().unwrap(),
-            SharedString::ColorAddR
+            "ColorAdd_R".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorAddR
         );
         assert_eq!(
-            "ColorAdd_G".parse::<SharedString>().unwrap(),
-            SharedString::ColorAddG
+            "ColorAdd_G".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorAddG
         );
         assert_eq!(
-            "ColorAdd_B".parse::<SharedString>().unwrap(),
-            SharedString::ColorAddB
+            "ColorAdd_B".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorAddB
         );
         assert_eq!(
-            "ColorAdd_C".parse::<SharedString>().unwrap(),
-            SharedString::ColorAddC
+            "ColorAdd_C".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorAddC
         );
         assert_eq!(
-            "ColorAdd_M".parse::<SharedString>().unwrap(),
-            SharedString::ColorAddM
+            "ColorAdd_M".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorAddM
         );
         assert_eq!(
-            "ColorAdd_Y".parse::<SharedString>().unwrap(),
-            SharedString::ColorAddY
+            "ColorAdd_Y".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorAddY
         );
         assert_eq!(
-            "ColorAdd_RY".parse::<SharedString>().unwrap(),
-            SharedString::ColorAddRY
+            "ColorAdd_RY".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorAddRY
         );
         assert_eq!(
-            "ColorAdd_GY".parse::<SharedString>().unwrap(),
-            SharedString::ColorAddGY
+            "ColorAdd_GY".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorAddGY
         );
         assert_eq!(
-            "ColorAdd_GC".parse::<SharedString>().unwrap(),
-            SharedString::ColorAddGC
+            "ColorAdd_GC".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorAddGC
         );
         assert_eq!(
-            "ColorAdd_BC".parse::<SharedString>().unwrap(),
-            SharedString::ColorAddBC
+            "ColorAdd_BC".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorAddBC
         );
         assert_eq!(
-            "ColorAdd_BM".parse::<SharedString>().unwrap(),
-            SharedString::ColorAddBM
+            "ColorAdd_BM".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorAddBM
         );
         assert_eq!(
-            "ColorAdd_RM".parse::<SharedString>().unwrap(),
-            SharedString::ColorAddRM
+            "ColorAdd_RM".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorAddRM
         );
         assert_eq!(
-            "ColorAdd_W".parse::<SharedString>().unwrap(),
-            SharedString::ColorAddW
+            "ColorAdd_W".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorAddW
         );
         assert_eq!(
-            "ColorAdd_WW".parse::<SharedString>().unwrap(),
-            SharedString::ColorAddWW
+            "ColorAdd_WW".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorAddWW
         );
         assert_eq!(
-            "ColorAdd_CW".parse::<SharedString>().unwrap(),
-            SharedString::ColorAddCW
+            "ColorAdd_CW".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorAddCW
         );
         assert_eq!(
-            "ColorAdd_UV".parse::<SharedString>().unwrap(),
-            SharedString::ColorAddUV
+            "ColorAdd_UV".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorAddUV
         );
         assert_eq!(
-            "ColorSub_R".parse::<SharedString>().unwrap(),
-            SharedString::ColorSubR
+            "ColorSub_R".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorSubR
         );
         assert_eq!(
-            "ColorSub_G".parse::<SharedString>().unwrap(),
-            SharedString::ColorSubG
+            "ColorSub_G".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorSubG
         );
         assert_eq!(
-            "ColorSub_B".parse::<SharedString>().unwrap(),
-            SharedString::ColorSubB
+            "ColorSub_B".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorSubB
         );
         assert_eq!(
-            "ColorSub_C".parse::<SharedString>().unwrap(),
-            SharedString::ColorSubC
+            "ColorSub_C".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorSubC
         );
         assert_eq!(
-            "ColorSub_M".parse::<SharedString>().unwrap(),
-            SharedString::ColorSubM
+            "ColorSub_M".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorSubM
         );
         assert_eq!(
-            "ColorSub_Y".parse::<SharedString>().unwrap(),
-            SharedString::ColorSubY
+            "ColorSub_Y".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorSubY
         );
         assert_eq!(
-            "ColorMacro4".parse::<SharedString>().unwrap(),
-            SharedString::ColorMacro { n: 4 }
+            "ColorMacro4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorMacro { n: 4 }
         );
         assert_eq!(
-            "ColorMacro4Rate".parse::<SharedString>().unwrap(),
-            SharedString::ColorMacroRate { n: 4 }
+            "ColorMacro4Rate".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorMacroRate { n: 4 }
         );
-        assert_eq!("CTO".parse::<SharedString>().unwrap(), SharedString::Cto);
-        assert_eq!("CTC".parse::<SharedString>().unwrap(), SharedString::Ctc);
-        assert_eq!("CTB".parse::<SharedString>().unwrap(), SharedString::Ctb);
-        assert_eq!("Tint".parse::<SharedString>().unwrap(), SharedString::Tint);
         assert_eq!(
-            "HSB_Hue".parse::<SharedString>().unwrap(),
-            SharedString::HsbHue
+            "CTO".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Cto
         );
         assert_eq!(
-            "HSB_Saturation".parse::<SharedString>().unwrap(),
-            SharedString::HsbSaturation
+            "CTC".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Ctc
         );
         assert_eq!(
-            "HSB_Brightness".parse::<SharedString>().unwrap(),
-            SharedString::HsbBrightness
+            "CTB".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Ctb
         );
         assert_eq!(
-            "HSB_Quality".parse::<SharedString>().unwrap(),
-            SharedString::HsbQuality
+            "Tint".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Tint
         );
-        assert_eq!("CIE_X".parse::<SharedString>().unwrap(), SharedString::CieX);
-        assert_eq!("CIE_Y".parse::<SharedString>().unwrap(), SharedString::CieY);
         assert_eq!(
-            "CIE_Brightness".parse::<SharedString>().unwrap(),
-            SharedString::CieBrightness
+            "HSB_Hue".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::HsbHue
         );
         assert_eq!(
-            "ColorRGB_Red".parse::<SharedString>().unwrap(),
-            SharedString::ColorRgbRed
+            "HSB_Saturation".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::HsbSaturation
         );
         assert_eq!(
-            "ColorRGB_Green".parse::<SharedString>().unwrap(),
-            SharedString::ColorRgbGreen
+            "HSB_Brightness".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::HsbBrightness
         );
         assert_eq!(
-            "ColorRGB_Blue".parse::<SharedString>().unwrap(),
-            SharedString::ColorRgbBlue
+            "HSB_Quality".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::HsbQuality
         );
         assert_eq!(
-            "ColorRGB_Cyan".parse::<SharedString>().unwrap(),
-            SharedString::ColorRgbCyan
+            "CIE_X".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::CieX
         );
         assert_eq!(
-            "ColorRGB_Magenta".parse::<SharedString>().unwrap(),
-            SharedString::ColorRgbMagenta
+            "CIE_Y".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::CieY
         );
         assert_eq!(
-            "ColorRGB_Yellow".parse::<SharedString>().unwrap(),
-            SharedString::ColorRgbYellow
+            "CIE_Brightness".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::CieBrightness
         );
         assert_eq!(
-            "ColorRGB_Quality".parse::<SharedString>().unwrap(),
-            SharedString::ColorRgbQuality
+            "ColorRGB_Red".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorRgbRed
         );
         assert_eq!(
-            "VideoBoost_R".parse::<SharedString>().unwrap(),
-            SharedString::VideoBoostR
+            "ColorRGB_Green".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorRgbGreen
         );
         assert_eq!(
-            "VideoBoost_G".parse::<SharedString>().unwrap(),
-            SharedString::VideoBoostG
+            "ColorRGB_Blue".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorRgbBlue
         );
         assert_eq!(
-            "VideoBoost_B".parse::<SharedString>().unwrap(),
-            SharedString::VideoBoostB
+            "ColorRGB_Cyan".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorRgbCyan
         );
         assert_eq!(
-            "VideoHueShift".parse::<SharedString>().unwrap(),
-            SharedString::VideoHueShift
+            "ColorRGB_Magenta".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorRgbMagenta
         );
         assert_eq!(
-            "VideoSaturation".parse::<SharedString>().unwrap(),
-            SharedString::VideoSaturation
+            "ColorRGB_Yellow".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorRgbYellow
         );
         assert_eq!(
-            "VideoBrightness".parse::<SharedString>().unwrap(),
-            SharedString::VideoBrightness
+            "ColorRGB_Quality".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorRgbQuality
         );
         assert_eq!(
-            "VideoContrast".parse::<SharedString>().unwrap(),
-            SharedString::VideoContrast
+            "VideoBoost_R".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::VideoBoostR
         );
         assert_eq!(
-            "VideoKeyColor_R".parse::<SharedString>().unwrap(),
-            SharedString::VideoKeyColorR
+            "VideoBoost_G".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::VideoBoostG
         );
         assert_eq!(
-            "VideoKeyColor_G".parse::<SharedString>().unwrap(),
-            SharedString::VideoKeyColorG
+            "VideoBoost_B".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::VideoBoostB
         );
         assert_eq!(
-            "VideoKeyColor_B".parse::<SharedString>().unwrap(),
-            SharedString::VideoKeyColorB
+            "VideoHueShift".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::VideoHueShift
         );
         assert_eq!(
-            "VideoKeyIntensity".parse::<SharedString>().unwrap(),
-            SharedString::VideoKeyIntensity
+            "VideoSaturation".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::VideoSaturation
         );
         assert_eq!(
-            "VideoKeyTolerance".parse::<SharedString>().unwrap(),
-            SharedString::VideoKeyTolerance
+            "VideoBrightness".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::VideoBrightness
         );
         assert_eq!(
-            "StrobeDuration".parse::<SharedString>().unwrap(),
-            SharedString::StrobeDuration
+            "VideoContrast".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::VideoContrast
         );
         assert_eq!(
-            "StrobeRate".parse::<SharedString>().unwrap(),
-            SharedString::StrobeRate
+            "VideoKeyColor_R".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::VideoKeyColorR
         );
         assert_eq!(
-            "StrobeFrequency".parse::<SharedString>().unwrap(),
-            SharedString::StrobeFrequency
+            "VideoKeyColor_G".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::VideoKeyColorG
         );
         assert_eq!(
-            "StrobeModeShutter".parse::<SharedString>().unwrap(),
-            SharedString::StrobeModeShutter
+            "VideoKeyColor_B".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::VideoKeyColorB
         );
         assert_eq!(
-            "StrobeModeStrobe".parse::<SharedString>().unwrap(),
-            SharedString::StrobeModeStrobe
+            "VideoKeyIntensity".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::VideoKeyIntensity
         );
         assert_eq!(
-            "StrobeModePulse".parse::<SharedString>().unwrap(),
-            SharedString::StrobeModePulse
+            "VideoKeyTolerance".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::VideoKeyTolerance
         );
         assert_eq!(
-            "StrobeModePulseOpen".parse::<SharedString>().unwrap(),
-            SharedString::StrobeModePulseOpen
+            "StrobeDuration".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::StrobeDuration
         );
         assert_eq!(
-            "StrobeModePulseClose".parse::<SharedString>().unwrap(),
-            SharedString::StrobeModePulseClose
+            "StrobeRate".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::StrobeRate
         );
         assert_eq!(
-            "StrobeModeRandom".parse::<SharedString>().unwrap(),
-            SharedString::StrobeModeRandom
+            "StrobeFrequency".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::StrobeFrequency
         );
         assert_eq!(
-            "StrobeModeRandomPulse".parse::<SharedString>().unwrap(),
-            SharedString::StrobeModeRandomPulse
+            "StrobeModeShutter".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::StrobeModeShutter
         );
         assert_eq!(
-            "StrobeModeRandomPulseOpen".parse::<SharedString>().unwrap(),
-            SharedString::StrobeModeRandomPulseOpen
+            "StrobeModeStrobe".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::StrobeModeStrobe
+        );
+        assert_eq!(
+            "StrobeModePulse".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::StrobeModePulse
+        );
+        assert_eq!(
+            "StrobeModePulseOpen"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::StrobeModePulseOpen
+        );
+        assert_eq!(
+            "StrobeModePulseClose"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::StrobeModePulseClose
+        );
+        assert_eq!(
+            "StrobeModeRandom".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::StrobeModeRandom
+        );
+        assert_eq!(
+            "StrobeModeRandomPulse"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::StrobeModeRandomPulse
+        );
+        assert_eq!(
+            "StrobeModeRandomPulseOpen"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::StrobeModeRandomPulseOpen
         );
         assert_eq!(
             "StrobeModeRandomPulseClose"
-                .parse::<SharedString>()
+                .parse::<AttributeDefinition>()
                 .unwrap(),
-            SharedString::StrobeModeRandomPulseClose
+            AttributeDefinition::StrobeModeRandomPulseClose
         );
         assert_eq!(
-            "StrobeModeEffect".parse::<SharedString>().unwrap(),
-            SharedString::StrobeModeEffect
+            "StrobeModeEffect".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::StrobeModeEffect
         );
         assert_eq!(
-            "Shutter4".parse::<SharedString>().unwrap(),
-            SharedString::Shutter { n: 4 }
+            "Shutter4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Shutter { n: 4 }
         );
         assert_eq!(
-            "Shutter4Strobe".parse::<SharedString>().unwrap(),
-            SharedString::ShutterStrobe { n: 4 }
+            "Shutter4Strobe".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ShutterStrobe { n: 4 }
         );
         assert_eq!(
-            "Shutter4StrobePulse".parse::<SharedString>().unwrap(),
-            SharedString::ShutterStrobePulse { n: 4 }
+            "Shutter4StrobePulse"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::ShutterStrobePulse { n: 4 }
         );
         assert_eq!(
-            "Shutter4StrobePulseClose".parse::<SharedString>().unwrap(),
-            SharedString::ShutterStrobePulseClose { n: 4 }
+            "Shutter4StrobePulseClose"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::ShutterStrobePulseClose { n: 4 }
         );
         assert_eq!(
-            "Shutter4StrobePulseOpen".parse::<SharedString>().unwrap(),
-            SharedString::ShutterStrobePulseOpen { n: 4 }
+            "Shutter4StrobePulseOpen"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::ShutterStrobePulseOpen { n: 4 }
         );
         assert_eq!(
-            "Shutter4StrobeRandom".parse::<SharedString>().unwrap(),
-            SharedString::ShutterStrobeRandom { n: 4 }
+            "Shutter4StrobeRandom"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::ShutterStrobeRandom { n: 4 }
         );
         assert_eq!(
-            "Shutter4StrobeRandomPulse".parse::<SharedString>().unwrap(),
-            SharedString::ShutterStrobeRandomPulse { n: 4 }
+            "Shutter4StrobeRandomPulse"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::ShutterStrobeRandomPulse { n: 4 }
         );
         assert_eq!(
             "Shutter4StrobeRandomPulseClose"
-                .parse::<SharedString>()
+                .parse::<AttributeDefinition>()
                 .unwrap(),
-            SharedString::ShutterStrobeRandomPulseClose { n: 4 }
+            AttributeDefinition::ShutterStrobeRandomPulseClose { n: 4 }
         );
         assert_eq!(
             "Shutter4StrobeRandomPulseOpen"
-                .parse::<SharedString>()
+                .parse::<AttributeDefinition>()
                 .unwrap(),
-            SharedString::ShutterStrobeRandomPulseOpen { n: 4 }
+            AttributeDefinition::ShutterStrobeRandomPulseOpen { n: 4 }
         );
         assert_eq!(
-            "Shutter4StrobeEffect".parse::<SharedString>().unwrap(),
-            SharedString::ShutterStrobeEffect { n: 4 }
-        );
-        assert_eq!("Iris".parse::<SharedString>().unwrap(), SharedString::Iris);
-        assert_eq!(
-            "IrisStrobe".parse::<SharedString>().unwrap(),
-            SharedString::IrisStrobe
+            "Shutter4StrobeEffect"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::ShutterStrobeEffect { n: 4 }
         );
         assert_eq!(
-            "IrisStrobeRandom".parse::<SharedString>().unwrap(),
-            SharedString::IrisStrobeRandom
+            "Iris".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Iris
         );
         assert_eq!(
-            "IrisPulseClose".parse::<SharedString>().unwrap(),
-            SharedString::IrisPulseClose
+            "IrisStrobe".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::IrisStrobe
         );
         assert_eq!(
-            "IrisPulseOpen".parse::<SharedString>().unwrap(),
-            SharedString::IrisPulseOpen
+            "IrisStrobeRandom".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::IrisStrobeRandom
         );
         assert_eq!(
-            "IrisRandomPulseClose".parse::<SharedString>().unwrap(),
-            SharedString::IrisRandomPulseClose
+            "IrisPulseClose".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::IrisPulseClose
         );
         assert_eq!(
-            "IrisRandomPulseOpen".parse::<SharedString>().unwrap(),
-            SharedString::IrisRandomPulseOpen
+            "IrisPulseOpen".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::IrisPulseOpen
         );
         assert_eq!(
-            "Frost4".parse::<SharedString>().unwrap(),
-            SharedString::Frost { n: 4 }
+            "IrisRandomPulseClose"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::IrisRandomPulseClose
         );
         assert_eq!(
-            "Frost4PulseOpen".parse::<SharedString>().unwrap(),
-            SharedString::FrostPulseOpen { n: 4 }
+            "IrisRandomPulseOpen"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::IrisRandomPulseOpen
         );
         assert_eq!(
-            "Frost4PulseClose".parse::<SharedString>().unwrap(),
-            SharedString::FrostPulseClose { n: 4 }
+            "Frost4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Frost { n: 4 }
         );
         assert_eq!(
-            "Frost4Ramp".parse::<SharedString>().unwrap(),
-            SharedString::FrostRamp { n: 4 }
+            "Frost4PulseOpen".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::FrostPulseOpen { n: 4 }
         );
         assert_eq!(
-            "Prism4".parse::<SharedString>().unwrap(),
-            SharedString::Prism { n: 4 }
+            "Frost4PulseClose".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::FrostPulseClose { n: 4 }
         );
         assert_eq!(
-            "Prism4SelectSpin".parse::<SharedString>().unwrap(),
-            SharedString::PrismSelectSpin { n: 4 }
+            "Frost4Ramp".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::FrostRamp { n: 4 }
         );
         assert_eq!(
-            "Prism4Macro".parse::<SharedString>().unwrap(),
-            SharedString::PrismMacro { n: 4 }
+            "Prism4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Prism { n: 4 }
         );
         assert_eq!(
-            "Prism4Pos".parse::<SharedString>().unwrap(),
-            SharedString::PrismPos { n: 4 }
+            "Prism4SelectSpin".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PrismSelectSpin { n: 4 }
         );
         assert_eq!(
-            "Prism4PosRotate".parse::<SharedString>().unwrap(),
-            SharedString::PrismPosRotate { n: 4 }
+            "Prism4Macro".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PrismMacro { n: 4 }
         );
         assert_eq!(
-            "Effects4".parse::<SharedString>().unwrap(),
-            SharedString::Effects { n: 4 }
+            "Prism4Pos".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PrismPos { n: 4 }
         );
         assert_eq!(
-            "Effects4Rate".parse::<SharedString>().unwrap(),
-            SharedString::EffectsRate { n: 4 }
+            "Prism4PosRotate".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PrismPosRotate { n: 4 }
         );
         assert_eq!(
-            "Effects4Fade".parse::<SharedString>().unwrap(),
-            SharedString::EffectsFade { n: 4 }
+            "Effects4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Effects { n: 4 }
         );
         assert_eq!(
-            "Effects4Adjust7".parse::<SharedString>().unwrap(),
-            SharedString::EffectsAdjust { n: 4, m: 7 }
+            "Effects4Rate".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::EffectsRate { n: 4 }
         );
         assert_eq!(
-            "Effects4Pos".parse::<SharedString>().unwrap(),
-            SharedString::EffectsPos { n: 4 }
+            "Effects4Fade".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::EffectsFade { n: 4 }
         );
         assert_eq!(
-            "Effects4PosRotate".parse::<SharedString>().unwrap(),
-            SharedString::EffectsPosRotate { n: 4 }
+            "Effects4Adjust7".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::EffectsAdjust { n: 4, m: 7 }
         );
         assert_eq!(
-            "EffectsSync".parse::<SharedString>().unwrap(),
-            SharedString::EffectsSync
+            "Effects4Pos".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::EffectsPos { n: 4 }
         );
         assert_eq!(
-            "BeamShaper".parse::<SharedString>().unwrap(),
-            SharedString::BeamShaper
+            "Effects4PosRotate".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::EffectsPosRotate { n: 4 }
         );
         assert_eq!(
-            "BeamShaperMacro".parse::<SharedString>().unwrap(),
-            SharedString::BeamShaperMacro
+            "EffectsSync".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::EffectsSync
         );
         assert_eq!(
-            "BeamShaperPos".parse::<SharedString>().unwrap(),
-            SharedString::BeamShaperPos
+            "BeamShaper".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::BeamShaper
         );
         assert_eq!(
-            "BeamShaperPosRotate".parse::<SharedString>().unwrap(),
-            SharedString::BeamShaperPosRotate
-        );
-        assert_eq!("Zoom".parse::<SharedString>().unwrap(), SharedString::Zoom);
-        assert_eq!(
-            "ZoomModeSpot".parse::<SharedString>().unwrap(),
-            SharedString::ZoomModeSpot
+            "BeamShaperMacro".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::BeamShaperMacro
         );
         assert_eq!(
-            "ZoomModeBeam".parse::<SharedString>().unwrap(),
-            SharedString::ZoomModeBeam
+            "BeamShaperPos".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::BeamShaperPos
         );
         assert_eq!(
-            "DigitalZoom".parse::<SharedString>().unwrap(),
-            SharedString::DigitalZoom
+            "BeamShaperPosRotate"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::BeamShaperPosRotate
         );
         assert_eq!(
-            "Focus4".parse::<SharedString>().unwrap(),
-            SharedString::Focus { n: 4 }
+            "Zoom".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Zoom
         );
         assert_eq!(
-            "Focus4Adjust".parse::<SharedString>().unwrap(),
-            SharedString::FocusAdjust { n: 4 }
+            "ZoomModeSpot".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ZoomModeSpot
         );
         assert_eq!(
-            "Focus4Distance".parse::<SharedString>().unwrap(),
-            SharedString::FocusDistance { n: 4 }
+            "ZoomModeBeam".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ZoomModeBeam
         );
         assert_eq!(
-            "Control4".parse::<SharedString>().unwrap(),
-            SharedString::Control { n: 4 }
+            "DigitalZoom".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::DigitalZoom
         );
         assert_eq!(
-            "DimmerMode".parse::<SharedString>().unwrap(),
-            SharedString::DimmerMode
+            "Focus4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Focus { n: 4 }
         );
         assert_eq!(
-            "DimmerCurve".parse::<SharedString>().unwrap(),
-            SharedString::DimmerCurve
+            "Focus4Adjust".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::FocusAdjust { n: 4 }
         );
         assert_eq!(
-            "BlackoutMode".parse::<SharedString>().unwrap(),
-            SharedString::BlackoutMode
+            "Focus4Distance".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::FocusDistance { n: 4 }
         );
         assert_eq!(
-            "LEDFrequency".parse::<SharedString>().unwrap(),
-            SharedString::LedFrequency
+            "Control4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Control { n: 4 }
         );
         assert_eq!(
-            "LEDZoneMode".parse::<SharedString>().unwrap(),
-            SharedString::LedZoneMode
+            "DimmerMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::DimmerMode
         );
         assert_eq!(
-            "PixelMode".parse::<SharedString>().unwrap(),
-            SharedString::PixelMode
+            "DimmerCurve".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::DimmerCurve
         );
         assert_eq!(
-            "PanMode".parse::<SharedString>().unwrap(),
-            SharedString::PanMode
+            "BlackoutMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::BlackoutMode
         );
         assert_eq!(
-            "TiltMode".parse::<SharedString>().unwrap(),
-            SharedString::TiltMode
+            "LEDFrequency".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::LedFrequency
         );
         assert_eq!(
-            "PanTiltMode".parse::<SharedString>().unwrap(),
-            SharedString::PanTiltMode
+            "LEDZoneMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::LedZoneMode
         );
         assert_eq!(
-            "PositionModes".parse::<SharedString>().unwrap(),
-            SharedString::PositionModes
+            "PixelMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PixelMode
         );
         assert_eq!(
-            "Gobo4WheelMode".parse::<SharedString>().unwrap(),
-            SharedString::GoboWheelMode { n: 4 }
+            "PanMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PanMode
         );
         assert_eq!(
-            "GoboWheelShortcutMode".parse::<SharedString>().unwrap(),
-            SharedString::GoboWheelShortcutMode
+            "TiltMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::TiltMode
         );
         assert_eq!(
-            "AnimationWheel4Mode".parse::<SharedString>().unwrap(),
-            SharedString::AnimationWheelMode { n: 4 }
+            "PanTiltMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PanTiltMode
+        );
+        assert_eq!(
+            "PositionModes".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PositionModes
+        );
+        assert_eq!(
+            "Gobo4WheelMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::GoboWheelMode { n: 4 }
+        );
+        assert_eq!(
+            "GoboWheelShortcutMode"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::GoboWheelShortcutMode
+        );
+        assert_eq!(
+            "AnimationWheel4Mode"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationWheelMode { n: 4 }
         );
         assert_eq!(
             "AnimationWheelShortcutMode"
-                .parse::<SharedString>()
+                .parse::<AttributeDefinition>()
                 .unwrap(),
-            SharedString::AnimationWheelShortcutMode
+            AttributeDefinition::AnimationWheelShortcutMode
         );
         assert_eq!(
-            "Color4Mode".parse::<SharedString>().unwrap(),
-            SharedString::ColorMode { n: 4 }
+            "Color4Mode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorMode { n: 4 }
         );
         assert_eq!(
-            "ColorWheelShortcutMode".parse::<SharedString>().unwrap(),
-            SharedString::ColorWheelShortcutMode
+            "ColorWheelShortcutMode"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::ColorWheelShortcutMode
         );
         assert_eq!(
-            "CyanMode".parse::<SharedString>().unwrap(),
-            SharedString::CyanMode
+            "CyanMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::CyanMode
         );
         assert_eq!(
-            "MagentaMode".parse::<SharedString>().unwrap(),
-            SharedString::MagentaMode
+            "MagentaMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::MagentaMode
         );
         assert_eq!(
-            "YellowMode".parse::<SharedString>().unwrap(),
-            SharedString::YellowMode
+            "YellowMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::YellowMode
         );
         assert_eq!(
-            "ColorMixMode".parse::<SharedString>().unwrap(),
-            SharedString::ColorMixMode
+            "ColorMixMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorMixMode
         );
         assert_eq!(
-            "ChromaticMode".parse::<SharedString>().unwrap(),
-            SharedString::ChromaticMode
+            "ChromaticMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ChromaticMode
         );
         assert_eq!(
-            "ColorCalibrationMode".parse::<SharedString>().unwrap(),
-            SharedString::ColorCalibrationMode
+            "ColorCalibrationMode"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::ColorCalibrationMode
         );
         assert_eq!(
-            "ColorConsistency".parse::<SharedString>().unwrap(),
-            SharedString::ColorConsistency
+            "ColorConsistency".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorConsistency
         );
         assert_eq!(
-            "ColorControl".parse::<SharedString>().unwrap(),
-            SharedString::ColorControl
+            "ColorControl".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorControl
         );
         assert_eq!(
-            "ColorModelMode".parse::<SharedString>().unwrap(),
-            SharedString::ColorModelMode
+            "ColorModelMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorModelMode
         );
         assert_eq!(
-            "ColorSettingsReset".parse::<SharedString>().unwrap(),
-            SharedString::ColorSettingsReset
+            "ColorSettingsReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorSettingsReset
         );
         assert_eq!(
-            "ColorUniformity".parse::<SharedString>().unwrap(),
-            SharedString::ColorUniformity
+            "ColorUniformity".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorUniformity
         );
         assert_eq!(
-            "CRIMode".parse::<SharedString>().unwrap(),
-            SharedString::CriMode
+            "CRIMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::CriMode
         );
         assert_eq!(
-            "CustomColor".parse::<SharedString>().unwrap(),
-            SharedString::CustomColor
+            "CustomColor".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::CustomColor
         );
         assert_eq!(
-            "UVStability".parse::<SharedString>().unwrap(),
-            SharedString::UvStability
+            "UVStability".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::UvStability
         );
         assert_eq!(
-            "WavelengthCorrection".parse::<SharedString>().unwrap(),
-            SharedString::WavelengthCorrection
+            "WavelengthCorrection"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::WavelengthCorrection
         );
         assert_eq!(
-            "WhiteCount".parse::<SharedString>().unwrap(),
-            SharedString::WhiteCount
+            "WhiteCount".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::WhiteCount
         );
         assert_eq!(
-            "StrobeMode".parse::<SharedString>().unwrap(),
-            SharedString::StrobeMode
+            "StrobeMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::StrobeMode
         );
         assert_eq!(
-            "ZoomMode".parse::<SharedString>().unwrap(),
-            SharedString::ZoomMode
+            "ZoomMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ZoomMode
         );
         assert_eq!(
-            "FocusMode".parse::<SharedString>().unwrap(),
-            SharedString::FocusMode
+            "FocusMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::FocusMode
         );
         assert_eq!(
-            "IrisMode".parse::<SharedString>().unwrap(),
-            SharedString::IrisMode
+            "IrisMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::IrisMode
         );
         assert_eq!(
-            "Fan4Mode".parse::<SharedString>().unwrap(),
-            SharedString::FanMode { n: 4 }
+            "Fan4Mode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::FanMode { n: 4 }
         );
         assert_eq!(
-            "FollowSpotMode".parse::<SharedString>().unwrap(),
-            SharedString::FollowSpotMode
+            "FollowSpotMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::FollowSpotMode
         );
         assert_eq!(
-            "BeamEffectIndexRotateMode".parse::<SharedString>().unwrap(),
-            SharedString::BeamEffectIndexRotateMode
+            "BeamEffectIndexRotateMode"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::BeamEffectIndexRotateMode
         );
         assert_eq!(
-            "IntensityMSpeed".parse::<SharedString>().unwrap(),
-            SharedString::IntensityMSpeed
+            "IntensityMSpeed".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::IntensityMSpeed
         );
         assert_eq!(
-            "PositionMSpeed".parse::<SharedString>().unwrap(),
-            SharedString::PositionMSpeed
+            "PositionMSpeed".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PositionMSpeed
         );
         assert_eq!(
-            "ColorMixMSpeed".parse::<SharedString>().unwrap(),
-            SharedString::ColorMixMSpeed
+            "ColorMixMSpeed".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorMixMSpeed
         );
         assert_eq!(
-            "ColorWheelSelectMSpeed".parse::<SharedString>().unwrap(),
-            SharedString::ColorWheelSelectMSpeed
+            "ColorWheelSelectMSpeed"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::ColorWheelSelectMSpeed
         );
         assert_eq!(
-            "GoboWheel4MSpeed".parse::<SharedString>().unwrap(),
-            SharedString::GoboWheelMSpeed { n: 4 }
+            "GoboWheel4MSpeed".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::GoboWheelMSpeed { n: 4 }
         );
         assert_eq!(
-            "IrisMSpeed".parse::<SharedString>().unwrap(),
-            SharedString::IrisMSpeed
+            "IrisMSpeed".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::IrisMSpeed
         );
         assert_eq!(
-            "Prism4MSpeed".parse::<SharedString>().unwrap(),
-            SharedString::PrismMSpeed { n: 4 }
+            "Prism4MSpeed".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PrismMSpeed { n: 4 }
         );
         assert_eq!(
-            "FocusMSpeed".parse::<SharedString>().unwrap(),
-            SharedString::FocusMSpeed
+            "FocusMSpeed".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::FocusMSpeed
         );
         assert_eq!(
-            "Frost4MSpeed".parse::<SharedString>().unwrap(),
-            SharedString::FrostMSpeed { n: 4 }
+            "Frost4MSpeed".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::FrostMSpeed { n: 4 }
         );
         assert_eq!(
-            "ZoomMSpeed".parse::<SharedString>().unwrap(),
-            SharedString::ZoomMSpeed
+            "ZoomMSpeed".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ZoomMSpeed
         );
         assert_eq!(
-            "FrameMSpeed".parse::<SharedString>().unwrap(),
-            SharedString::FrameMSpeed
+            "FrameMSpeed".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::FrameMSpeed
         );
         assert_eq!(
-            "GlobalMSpeed".parse::<SharedString>().unwrap(),
-            SharedString::GlobalMSpeed
+            "GlobalMSpeed".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::GlobalMSpeed
         );
         assert_eq!(
-            "ReflectorAdjust".parse::<SharedString>().unwrap(),
-            SharedString::ReflectorAdjust
+            "ReflectorAdjust".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ReflectorAdjust
         );
         assert_eq!(
-            "FixtureGlobalReset".parse::<SharedString>().unwrap(),
-            SharedString::FixtureGlobalReset
+            "FixtureGlobalReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::FixtureGlobalReset
         );
         assert_eq!(
-            "DimmerReset".parse::<SharedString>().unwrap(),
-            SharedString::DimmerReset
+            "DimmerReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::DimmerReset
         );
         assert_eq!(
-            "ShutterReset".parse::<SharedString>().unwrap(),
-            SharedString::ShutterReset
+            "ShutterReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ShutterReset
         );
         assert_eq!(
-            "BeamReset".parse::<SharedString>().unwrap(),
-            SharedString::BeamReset
+            "BeamReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::BeamReset
         );
         assert_eq!(
-            "ColorMixReset".parse::<SharedString>().unwrap(),
-            SharedString::ColorMixReset
+            "ColorMixReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorMixReset
         );
         assert_eq!(
-            "ColorWheelReset".parse::<SharedString>().unwrap(),
-            SharedString::ColorWheelReset
+            "ColorWheelReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ColorWheelReset
         );
         assert_eq!(
-            "FocusReset".parse::<SharedString>().unwrap(),
-            SharedString::FocusReset
+            "FocusReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::FocusReset
         );
         assert_eq!(
-            "FrameReset".parse::<SharedString>().unwrap(),
-            SharedString::FrameReset
+            "FrameReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::FrameReset
         );
         assert_eq!(
-            "GoboWheelReset".parse::<SharedString>().unwrap(),
-            SharedString::GoboWheelReset
+            "GoboWheelReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::GoboWheelReset
         );
         assert_eq!(
-            "IntensityReset".parse::<SharedString>().unwrap(),
-            SharedString::IntensityReset
+            "IntensityReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::IntensityReset
         );
         assert_eq!(
-            "IrisReset".parse::<SharedString>().unwrap(),
-            SharedString::IrisReset
+            "IrisReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::IrisReset
         );
         assert_eq!(
-            "PositionReset".parse::<SharedString>().unwrap(),
-            SharedString::PositionReset
+            "PositionReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PositionReset
         );
         assert_eq!(
-            "PanReset".parse::<SharedString>().unwrap(),
-            SharedString::PanReset
+            "PanReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::PanReset
         );
         assert_eq!(
-            "TiltReset".parse::<SharedString>().unwrap(),
-            SharedString::TiltReset
+            "TiltReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::TiltReset
         );
         assert_eq!(
-            "ZoomReset".parse::<SharedString>().unwrap(),
-            SharedString::ZoomReset
+            "ZoomReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ZoomReset
         );
         assert_eq!(
-            "CTBReset".parse::<SharedString>().unwrap(),
-            SharedString::CtbReset
+            "CTBReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::CtbReset
         );
         assert_eq!(
-            "CTOReset".parse::<SharedString>().unwrap(),
-            SharedString::CtoReset
+            "CTOReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::CtoReset
         );
         assert_eq!(
-            "CTCReset".parse::<SharedString>().unwrap(),
-            SharedString::CtcReset
+            "CTCReset".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::CtcReset
         );
         assert_eq!(
-            "AnimationSystemReset".parse::<SharedString>().unwrap(),
-            SharedString::AnimationSystemReset
+            "AnimationSystemReset"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::AnimationSystemReset
         );
         assert_eq!(
-            "FixtureCalibrationReset".parse::<SharedString>().unwrap(),
-            SharedString::FixtureCalibrationReset
+            "FixtureCalibrationReset"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::FixtureCalibrationReset
         );
         assert_eq!(
-            "Function".parse::<SharedString>().unwrap(),
-            SharedString::Function
+            "Function".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Function
         );
         assert_eq!(
-            "LampControl".parse::<SharedString>().unwrap(),
-            SharedString::LampControl
+            "LampControl".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::LampControl
         );
         assert_eq!(
-            "DisplayIntensity".parse::<SharedString>().unwrap(),
-            SharedString::DisplayIntensity
+            "DisplayIntensity".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::DisplayIntensity
         );
         assert_eq!(
-            "DMXInput".parse::<SharedString>().unwrap(),
-            SharedString::DmxInput
+            "DMXInput".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::DmxInput
         );
         assert_eq!(
-            "NoFeature".parse::<SharedString>().unwrap(),
-            SharedString::NoFeature
+            "NoFeature".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::NoFeature
         );
         assert_eq!(
-            "Blower4".parse::<SharedString>().unwrap(),
-            SharedString::Blower { n: 4 }
+            "Blower4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Blower { n: 4 }
         );
         assert_eq!(
-            "Fan4".parse::<SharedString>().unwrap(),
-            SharedString::Fan { n: 4 }
+            "Fan4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Fan { n: 4 }
         );
         assert_eq!(
-            "Fog4".parse::<SharedString>().unwrap(),
-            SharedString::Fog { n: 4 }
+            "Fog4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Fog { n: 4 }
         );
         assert_eq!(
-            "Haze4".parse::<SharedString>().unwrap(),
-            SharedString::Haze { n: 4 }
+            "Haze4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Haze { n: 4 }
         );
         assert_eq!(
-            "LampPowerMode".parse::<SharedString>().unwrap(),
-            SharedString::LampPowerMode
+            "LampPowerMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::LampPowerMode
         );
-        assert_eq!("Fans".parse::<SharedString>().unwrap(), SharedString::Fans);
         assert_eq!(
-            "Blade4A".parse::<SharedString>().unwrap(),
-            SharedString::BladeA { n: 4 }
+            "Fans".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Fans
         );
         assert_eq!(
-            "Blade4B".parse::<SharedString>().unwrap(),
-            SharedString::BladeB { n: 4 }
+            "Blade4A".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::BladeA { n: 4 }
         );
         assert_eq!(
-            "Blade4Rot".parse::<SharedString>().unwrap(),
-            SharedString::BladeRot { n: 4 }
+            "Blade4B".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::BladeB { n: 4 }
         );
         assert_eq!(
-            "ShaperRot".parse::<SharedString>().unwrap(),
-            SharedString::ShaperRot
+            "Blade4Rot".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::BladeRot { n: 4 }
         );
         assert_eq!(
-            "ShaperMacros".parse::<SharedString>().unwrap(),
-            SharedString::ShaperMacros
+            "ShaperRot".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ShaperRot
         );
         assert_eq!(
-            "ShaperMacrosSpeed".parse::<SharedString>().unwrap(),
-            SharedString::ShaperMacrosSpeed
+            "ShaperMacros".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ShaperMacros
         );
         assert_eq!(
-            "BladeSoft4A".parse::<SharedString>().unwrap(),
-            SharedString::BladeSoftA { n: 4 }
+            "ShaperMacrosSpeed".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::ShaperMacrosSpeed
         );
         assert_eq!(
-            "BladeSoft4B".parse::<SharedString>().unwrap(),
-            SharedString::BladeSoftB { n: 4 }
+            "BladeSoft4A".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::BladeSoftA { n: 4 }
         );
         assert_eq!(
-            "KeyStone4A".parse::<SharedString>().unwrap(),
-            SharedString::KeyStoneA { n: 4 }
+            "BladeSoft4B".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::BladeSoftB { n: 4 }
         );
         assert_eq!(
-            "KeyStone4B".parse::<SharedString>().unwrap(),
-            SharedString::KeyStoneB { n: 4 }
+            "KeyStone4A".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::KeyStoneA { n: 4 }
         );
         assert_eq!(
-            "Video".parse::<SharedString>().unwrap(),
-            SharedString::Video
+            "KeyStone4B".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::KeyStoneB { n: 4 }
         );
         assert_eq!(
-            "VideoEffect4Type".parse::<SharedString>().unwrap(),
-            SharedString::VideoEffectType { n: 4 }
+            "Video".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::Video
         );
         assert_eq!(
-            "VideoEffect4Parameter7".parse::<SharedString>().unwrap(),
-            SharedString::VideoEffectParameter { n: 4, m: 7 }
+            "VideoEffect4Type".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::VideoEffectType { n: 4 }
         );
         assert_eq!(
-            "VideoCamera4".parse::<SharedString>().unwrap(),
-            SharedString::VideoCamera { n: 4 }
+            "VideoEffect4Parameter7"
+                .parse::<AttributeDefinition>()
+                .unwrap(),
+            AttributeDefinition::VideoEffectParameter { n: 4, m: 7 }
         );
         assert_eq!(
-            "VideoSoundVolume4".parse::<SharedString>().unwrap(),
-            SharedString::VideoSoundVolume { n: 4 }
+            "VideoCamera4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::VideoCamera { n: 4 }
         );
         assert_eq!(
-            "VideoBlendMode".parse::<SharedString>().unwrap(),
-            SharedString::VideoBlendMode
+            "VideoSoundVolume4".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::VideoSoundVolume { n: 4 }
         );
         assert_eq!(
-            "InputSource".parse::<SharedString>().unwrap(),
-            SharedString::InputSource
+            "VideoBlendMode".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::VideoBlendMode
         );
         assert_eq!(
-            "FieldOfView".parse::<SharedString>().unwrap(),
-            SharedString::FieldOfView
+            "InputSource".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::InputSource
+        );
+        assert_eq!(
+            "FieldOfView".parse::<AttributeDefinition>().unwrap(),
+            AttributeDefinition::FieldOfView
         );
     }
 }

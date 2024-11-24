@@ -58,6 +58,10 @@ impl AttributeValue {
     pub fn byte(&self) -> u8 {
         (self.value * 255f32) as u8
     }
+
+    pub fn inverted(&self) -> AttributeValue {
+        Self::new(1.0 - self.relative_value())
+    }
 }
 
 impl Default for AttributeValue {

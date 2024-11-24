@@ -1,3 +1,4 @@
+use crate::attr_def::AttributeDefinition;
 use crate::fixture::{AttributeValue, FixtureId};
 use crate::patch::PatchedFixture;
 use crate::{FixtureGroup, Show};
@@ -198,6 +199,7 @@ pub enum NodeKind {
         control = "Control::AttributeValue"
     )]
     SetChannelValue,
+
     #[node(
         name = "Set Fixture Attribute",
         category = "NodeCategory::Output",
@@ -219,6 +221,50 @@ pub enum NodeKind {
         control = "Control::AttributeValue"
     )]
     SetFixtureAttribute,
+
+    #[node(
+        name = "Set Dimmer",
+        category = "NodeCategory::Output",
+        processor = "processor::set_dimmer"
+    )]
+    #[input(
+        label = "Fixture",
+        data_type = "DataType::FixtureId",
+        control = "Control::FixtureId"
+    )]
+    #[input(
+        label = "dimmer",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    SetDimmer,
+
+    #[node(
+        name = "Set Color",
+        category = "NodeCategory::Output",
+        processor = "processor::set_color"
+    )]
+    #[input(
+        label = "Fixture",
+        data_type = "DataType::FixtureId",
+        control = "Control::FixtureId"
+    )]
+    #[input(
+        label = "red",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    #[input(
+        label = "green",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    #[input(
+        label = "blue",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    SetColor,
 }
 
 mod processor {
@@ -319,17 +365,14 @@ mod processor {
         ctx: &mut ProcessingContext,
     ) -> SetFixtureAttributeProcessingOutput {
         let patch = ctx.show.patch();
-        let Some(offset) = patch
-            .fixture(fixture)
-            .unwrap()
-            .channel_offset_for_attribute(&attribute.to_string(), patch)
-        else {
-            log::debug!("No channel offset found for attribute with name `{attribute}`");
-            return SetFixtureAttributeProcessingOutput {};
-        };
 
         let Some(fixture) = ctx.show.patch().fixture(fixture) else {
             log::debug!("Fixture with id `{fixture}` not found");
+            return SetFixtureAttributeProcessingOutput {};
+        };
+
+        let Some(offset) = fixture.channel_offset_for_attribute(&attribute.to_string(), patch)
+        else {
             return SetFixtureAttributeProcessingOutput {};
         };
 
@@ -340,6 +383,55 @@ mod processor {
         set_channel_value(address, value, ctx);
 
         SetFixtureAttributeProcessingOutput {}
+    }
+
+    pub fn set_dimmer(
+        fixture: FixtureId,
+        dimmer: AttributeValue,
+        ctx: &mut ProcessingContext,
+    ) -> SetDimmerProcessingOutput {
+        use AttributeDefinition as AD;
+
+        set_fixture_attribute(fixture, AD::Dimmer.to_string().into(), dimmer, ctx);
+
+        SetDimmerProcessingOutput {}
+    }
+
+    pub fn set_color(
+        fixture: FixtureId,
+        red: AttributeValue,
+        green: AttributeValue,
+        blue: AttributeValue,
+        ctx: &mut ProcessingContext,
+    ) -> SetColorProcessingOutput {
+        use AttributeDefinition as AD;
+
+        set_fixture_attribute(fixture, AD::ColorAddR.to_string().into(), red, ctx);
+        set_fixture_attribute(
+            fixture,
+            AD::ColorSubC.to_string().into(),
+            red.inverted(),
+            ctx,
+        );
+        set_fixture_attribute(fixture, AD::ColorRgbRed.to_string().into(), red, ctx);
+        set_fixture_attribute(fixture, AD::ColorAddG.to_string().into(), green, ctx);
+        set_fixture_attribute(
+            fixture,
+            AD::ColorSubM.to_string().into(),
+            green.inverted(),
+            ctx,
+        );
+        set_fixture_attribute(fixture, AD::ColorRgbGreen.to_string().into(), green, ctx);
+        set_fixture_attribute(fixture, AD::ColorAddB.to_string().into(), blue, ctx);
+        set_fixture_attribute(
+            fixture,
+            AD::ColorSubY.to_string().into(),
+            blue.inverted(),
+            ctx,
+        );
+        set_fixture_attribute(fixture, AD::ColorRgbBlue.to_string().into(), blue, ctx);
+
+        SetColorProcessingOutput {}
     }
 }
 
