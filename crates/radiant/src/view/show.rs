@@ -2,7 +2,6 @@ use anyhow::bail;
 use flow::gpui::GraphEditorView;
 use gpui::*;
 use show::effect_graph::{GraphDefinition, ProcessingContext};
-use show::fixture::FixtureId;
 use show::{FixtureGroup, Show};
 use std::path::PathBuf;
 use ui::theme::ActiveTheme;
@@ -127,14 +126,14 @@ impl ShowView {
         match event {
             IoManagerEvent::OutputRequested => io_manager.update(cx, |io_manager, _cx| {
                 let mut context = ProcessingContext::new(self.show.clone());
-                context.set_group(FixtureGroup::new(vec![
-                    FixtureId(0),
-                    FixtureId(1),
-                    FixtureId(2),
-                    FixtureId(3),
-                    FixtureId(4),
-                    FixtureId(5),
-                ]));
+                context.set_group(FixtureGroup::new(
+                    self.show
+                        .patch()
+                        .fixtures()
+                        .iter()
+                        .map(|f| f.id())
+                        .collect(),
+                ));
                 context
                     .process_frame(self.show.effect_graph())
                     .map_err(|err| log::warn!("Failed to process frame: {err}"))

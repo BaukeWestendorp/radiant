@@ -12,6 +12,10 @@ pub struct Patch {
 }
 
 impl Patch {
+    pub fn fixtures(&self) -> &[PatchedFixture] {
+        &self.fixtures
+    }
+
     pub fn fixture(&self, id: FixtureId) -> Option<&PatchedFixture> {
         self.fixtures.iter().find(|f| f.id == id)
     }
