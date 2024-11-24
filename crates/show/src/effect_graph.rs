@@ -1,4 +1,3 @@
-use crate::attr_def::AttributeDefinition;
 use crate::fixture::{AttributeValue, FixtureId};
 use crate::patch::PatchedFixture;
 use crate::{FixtureGroup, Show};
@@ -6,7 +5,7 @@ use crate::{FixtureGroup, Show};
 use dmx::{DmxAddress, DmxChannel, DmxOutput, DmxUniverseId};
 use flow::gpui::{ControlEvent, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
 use flow::{FlowError, Graph};
-use gpui::{rgb, AnyView, ElementId, EventEmitter, Hsla, ViewContext, VisualContext};
+use gpui::{rgb, AnyView, ElementId, EventEmitter, Hsla, SharedString, ViewContext, VisualContext};
 use std::fmt::Display;
 use strum::IntoEnumIterator;
 use ui::input::{NumberField, Slider, SliderEvent, TextField, TextFieldEvent};
@@ -211,8 +210,8 @@ pub enum NodeKind {
     )]
     #[input(
         label = "attribute",
-        data_type = "DataType::Attribute",
-        control = "Control::Attribute"
+        data_type = "DataType::String",
+        control = "Control::String"
     )]
     #[input(
         label = "value",
@@ -224,8 +223,6 @@ pub enum NodeKind {
 
 mod processor {
     use dmx::DmxAddress;
-
-    use crate::attr_def::AttributeDefinition;
 
     use super::*;
 
@@ -317,16 +314,19 @@ mod processor {
 
     pub fn set_fixture_attribute(
         fixture: FixtureId,
-        attribute: AttributeDefinition,
+        attribute: SharedString,
         value: AttributeValue,
         ctx: &mut ProcessingContext,
     ) -> SetFixtureAttributeProcessingOutput {
         let patch = ctx.show.patch();
-        let offset = patch
+        let Some(offset) = patch
             .fixture(fixture)
             .unwrap()
             .channel_offset_for_attribute(&attribute.to_string(), patch)
-            .unwrap();
+        else {
+            log::warn!("No channel offset found for attribute with name `{attribute}`");
+            return SetFixtureAttributeProcessingOutput {};
+        };
 
         let address = ctx
             .current_fixture()
@@ -387,8 +387,9 @@ impl VisualNodeData for NodeData {
 pub enum Value {
     Int(i32),
     Float(f32),
+    String(SharedString),
+
     FixtureId(FixtureId),
-    Attribute(AttributeDefinition),
     AttributeValue(AttributeValue),
     DmxChannel(DmxChannel),
     DmxUniverse(DmxUniverseId),
@@ -425,6 +426,8 @@ impl flow::Value<GraphDefinition> for Value {
                 Ok(Self::AttributeValue(AttributeValue::new(*v)))
             }
 
+            (Self::String(_), DT::String) => Ok(self.clone()),
+
             (Self::FixtureId(_), DT::FixtureId) => Ok(self.clone()),
             (Self::FixtureId(v), DT::Int) => Ok(Self::Int(v.0 as i32)),
             (Self::FixtureId(v), DT::Float) => Ok(Self::Float(v.0 as f32)),
@@ -434,8 +437,6 @@ impl flow::Value<GraphDefinition> for Value {
             (Self::FixtureId(v), DT::DmxUniverse) => {
                 Ok(Self::DmxUniverse(DmxUniverseId::new_clamped(v.id() as u16)))
             }
-
-            (Self::Attribute(_), DT::Attribute) => Ok(self.clone()),
 
             (Self::AttributeValue(_), DT::AttributeValue) => Ok(self.clone()),
             (Self::AttributeValue(v), DT::Int) => Ok(Self::Int(v.byte() as i32)),
@@ -477,9 +478,9 @@ impl flow::Value<GraphDefinition> for Value {
 pub enum DataType {
     Int,
     Float,
+    String,
 
     FixtureId,
-    Attribute,
     AttributeValue,
     DmxChannel,
     DmxAddress,
@@ -492,7 +493,7 @@ impl flow::DataType<GraphDefinition> for DataType {
             Self::Int => Value::Int(i32::default()),
             Self::Float => Value::Float(f32::default()),
             Self::FixtureId => Value::FixtureId(FixtureId::default()),
-            Self::Attribute => Value::Attribute(AttributeDefinition::default()),
+            Self::String => Value::String(SharedString::default()),
             Self::AttributeValue => Value::AttributeValue(AttributeValue::default()),
             Self::DmxChannel => Value::DmxChannel(DmxChannel::default()),
             Self::DmxUniverse => Value::DmxUniverse(DmxUniverseId::default()),
@@ -506,9 +507,9 @@ impl VisualDataType for DataType {
         match self {
             Self::Int => rgb(0xC741FF).into(),
             Self::Float => rgb(0xFF3C59).into(),
+            Self::String => rgb(0xFF6E1B).into(),
 
             Self::FixtureId => rgb(0x080AFF).into(),
-            Self::Attribute => rgb(0xFF6E1B).into(),
             Self::AttributeValue => rgb(0xFFAE18).into(),
             Self::DmxChannel => rgb(0xFF0000).into(),
             Self::DmxUniverse => rgb(0x00FFFF).into(),
@@ -521,8 +522,9 @@ impl VisualDataType for DataType {
 pub enum Control {
     Int,
     Float,
+    String,
+
     FixtureId,
-    Attribute,
     AttributeValue,
     DmxChannel,
     DmxUniverse,
@@ -579,6 +581,26 @@ impl VisualControl<GraphDefinition> for Control {
 
                 field.into()
             }
+            Self::String => {
+                let field = cx.new_view(|cx| {
+                    let mut field = TextField::new(cx);
+                    let value: SharedString = initial_value
+                        .try_into()
+                        .expect("String field expects a String value");
+                    field.set_value(value, cx);
+                    field
+                });
+
+                cx.subscribe(&field, |_this, _field, event: &TextFieldEvent, cx| {
+                    if let TextFieldEvent::Change(string_value) = event {
+                        let value = Value::String(string_value.clone());
+                        cx.emit(ControlEvent::Change(value));
+                    }
+                })
+                .detach();
+
+                field.into()
+            }
             Self::FixtureId => {
                 let field = cx.new_view(|cx| {
                     let mut field = NumberField::new(cx);
@@ -594,29 +616,6 @@ impl VisualControl<GraphDefinition> for Control {
                     let NumberFieldEvent::Change(float_value) = event;
                     let value = Value::FixtureId(FixtureId(*float_value as u32));
                     cx.emit(ControlEvent::Change(value));
-                })
-                .detach();
-
-                field.into()
-            }
-            Self::Attribute => {
-                let field = cx.new_view(|cx| {
-                    let mut field = TextField::new(cx);
-                    let attribute: AttributeDefinition = initial_value
-                        .try_into()
-                        .expect("Attribute field expects a Attribute value");
-                    field.set_value(attribute.to_string().into(), cx);
-                    field
-                        .set_validate(Some(Box::new(|v| v.parse::<AttributeDefinition>().is_ok())));
-                    field
-                });
-
-                cx.subscribe(&field, |_this, _field, event: &TextFieldEvent, cx| {
-                    if let TextFieldEvent::Change(string_value) = event {
-                        let address: AttributeDefinition = string_value.parse().unwrap_or_default();
-                        let value = Value::Attribute(address);
-                        cx.emit(ControlEvent::Change(value));
-                    }
                 })
                 .detach();
 
