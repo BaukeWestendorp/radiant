@@ -221,8 +221,8 @@ where
             self.render_edge(
                 &target_pos,
                 &source_pos,
-                &target.data_type(),
-                &source.data_type(),
+                target.data_type(),
+                source.data_type(),
             )
         }))
     }

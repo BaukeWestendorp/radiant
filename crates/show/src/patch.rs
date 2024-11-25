@@ -137,6 +137,6 @@ impl PatchedFixture {
             }
         }
 
-        return None;
+        None
     }
 }

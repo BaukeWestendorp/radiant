@@ -377,6 +377,8 @@ pub enum NodeKind {
 }
 
 mod processor {
+    #![allow(clippy::too_many_arguments)]
+
     use dmx::DmxAddress;
 
     use super::*;
@@ -480,8 +482,7 @@ mod processor {
             return SetFixtureAttributeProcessingOutput {};
         };
 
-        let Some(offset) = fixture.channel_offset_for_attribute(&attribute.to_string(), patch)
-        else {
+        let Some(offset) = fixture.channel_offset_for_attribute(attribute.as_ref(), patch) else {
             return SetFixtureAttributeProcessingOutput {};
         };
 
@@ -719,9 +720,9 @@ impl flow::Value<GraphDefinition> for Value {
             (Self::DmxChannel(_), DT::DmxChannel) => Ok(self.clone()),
             (Self::DmxChannel(v), DT::Int) => Ok(Self::Int(v.value() as i32)),
             (Self::DmxChannel(v), DT::Float) => Ok(Self::Float(v.value() as f32)),
-            (Self::DmxChannel(v), DT::DmxUniverse) => Ok(Self::DmxUniverse(
-                DmxUniverseId::new_clamped(v.value() as u16),
-            )),
+            (Self::DmxChannel(v), DT::DmxUniverse) => {
+                Ok(Self::DmxUniverse(DmxUniverseId::new_clamped(v.value())))
+            }
 
             (Self::DmxAddress(_), DT::DmxAddress) => Ok(self.clone()),
             (Self::DmxAddress(v), DT::DmxChannel) => Ok(Self::DmxChannel(v.channel)),

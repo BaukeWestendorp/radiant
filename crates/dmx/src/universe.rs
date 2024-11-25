@@ -18,7 +18,7 @@ impl DmxUniverseId {
     /// # Errors
     /// Returns a [DmxError::InvalidUniverseId] if the `id` is not between 1 and 65535.
     pub fn new(id: u16) -> crate::Result<Self> {
-        if id > 0 && id <= u16::MAX {
+        if id > 0 {
             Ok(Self(id))
         } else {
             Err(DmxError::InvalidUniverseId(id))
@@ -108,7 +108,7 @@ mod tests {
     fn test_new_dmx_universe() {
         let universe = DmxUniverse::new();
         assert_eq!(universe.0.len(), 512);
-        assert_eq!(universe.0.iter().all(|&x| x == 0), true);
+        assert!(universe.0.iter().all(|&x| x == 0));
     }
 
     #[test]

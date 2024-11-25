@@ -859,7 +859,7 @@ impl std::str::FromStr for AttributeDefinition {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let re = regex::Regex::new(r"([a-zA-Z_]+|\d+)").unwrap();
         let split: Vec<&str> = re.find_iter(s).map(|m| m.as_str()).collect();
-        let first = split.get(0).ok_or(anyhow::anyhow!("No first element"))?;
+        let first = split.first().ok_or(anyhow::anyhow!("No first element"))?;
         match *first {
             "Dimmer" => Ok(Self::Dimmer),
             "Pan" => Ok(Self::Pan),

@@ -245,7 +245,7 @@ fn gen_builders(variants: &[NodeKindVariant]) -> Vec<TokenStream> {
 
 fn gen_processors(variants: &[NodeKindVariant], graph_def: &Type) -> Vec<TokenStream> {
     variants
-        .into_iter()
+        .iter()
         .map(move |variant| {
             let variant_ident = &variant.variant.ident;
 
@@ -371,19 +371,18 @@ fn gen_visual_node_kind_impl(
 
 fn parse_input_attrs(variant: &Variant) -> darling::Result<Vec<Input>> {
     get_attrs_with_ident(variant, "input")
-        .into_iter()
         .map(|a| Input::from_meta(&a.meta))
         .collect()
 }
 
 fn parse_computed_output_attrs(variant: &Variant) -> darling::Result<Vec<ComputedOutput>> {
-    get_attrs_with_ident(&variant, "computed_output")
+    get_attrs_with_ident(variant, "computed_output")
         .map(|a| ComputedOutput::from_meta(&a.meta))
         .collect()
 }
 
 fn parse_constant_output_attrs(variant: &Variant) -> darling::Result<Vec<ConstantOutput>> {
-    get_attrs_with_ident(&variant, "constant_output")
+    get_attrs_with_ident(variant, "constant_output")
         .map(|a| ConstantOutput::from_meta(&a.meta))
         .collect()
 }
