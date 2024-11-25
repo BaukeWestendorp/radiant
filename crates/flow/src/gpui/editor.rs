@@ -5,11 +5,13 @@ use super::{
 use crate::{Graph, GraphDefinition};
 
 use gpui::*;
-use ui::input::TextField;
+use prelude::FluentBuilder;
+use ui::input::{TextField, TextFieldEvent};
 use ui::theme::ActiveTheme;
 use ui::{bounds_updater, StyledExt};
 
 actions!(graph_editor, [CloseNodeContextMenu]);
+actions!(new_node_context_menu, [SelectNode]);
 
 const CONTEXT: &str = "GraphEditor";
 
@@ -168,6 +170,20 @@ where
                 field
             });
 
+            cx.subscribe(
+                &search_box,
+                |this: &mut Self, _, event: &TextFieldEvent, cx| match event {
+                    TextFieldEvent::PressEnter => {
+                        let node_kind = Def::NodeKind::all().next().unwrap().clone();
+                        let data = <Def::NodeData as Default>::default();
+                        this.create_new_node(node_kind.clone(), data, cx);
+                        this.hide(cx);
+                    }
+                    _ => {}
+                },
+            )
+            .detach();
+
             Self {
                 graph,
                 shown: false,
@@ -316,19 +332,23 @@ where
                             let node_kind = &nodes[ix];
                             let label = node_kind.label().to_string();
 
-                            let item = div().size_full().child(label).on_mouse_down(
-                                MouseButton::Left,
-                                cx.listener({
-                                    let node_kind = node_kind.clone();
-                                    move |this, _, cx| {
-                                        cx.prevent_default();
+                            let item = div()
+                                .size_full()
+                                .child(label)
+                                .when(ix == 0, |e| e.border_1().border_color(cx.theme().accent))
+                                .on_mouse_down(
+                                    MouseButton::Left,
+                                    cx.listener({
+                                        let node_kind = node_kind.clone();
+                                        move |this, _, cx| {
+                                            cx.prevent_default();
 
-                                        let data = <Def::NodeData as Default>::default();
-                                        this.create_new_node(node_kind.clone(), data, cx);
-                                        this.hide(cx);
-                                    }
-                                }),
-                            );
+                                            let data = <Def::NodeData as Default>::default();
+                                            this.create_new_node(node_kind.clone(), data, cx);
+                                            this.hide(cx);
+                                        }
+                                    }),
+                                );
 
                             render_list_item(item.into_any_element(), cx)
                         }
