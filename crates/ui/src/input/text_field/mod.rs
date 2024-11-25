@@ -161,13 +161,12 @@ impl TextField {
     }
 
     pub fn set_value(&mut self, value: SharedString, cx: &mut ViewContext<Self>) {
-        self.value = value.clone();
+        self.replace_text(value.clone(), cx);
         cx.emit(TextFieldEvent::Change(value));
     }
 
     pub fn clear(&mut self, cx: &mut ViewContext<Self>) {
-        self.value = "".into();
-        cx.emit(TextFieldEvent::Change(self.value.clone()))
+        self.replace_text("", cx);
     }
 
     pub fn set_placeholder(&mut self, placeholder: SharedString) {
@@ -554,6 +553,12 @@ impl TextField {
             .as_ref()
             .map(|p| p.is_match(new_text))
             .unwrap_or(true)
+    }
+
+    fn replace_text(&mut self, text: impl Into<SharedString>, cx: &mut ViewContext<Self>) {
+        let text: SharedString = text.into();
+        let range = 0..self.value.chars().map(|c| c.len_utf16()).sum();
+        self.replace_text_in_range(Some(range), &text, cx);
     }
 }
 
