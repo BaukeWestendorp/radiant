@@ -40,11 +40,11 @@ impl NumberField {
         }
     }
 
-    pub fn value(&self, cx: &AppContext) -> f32 {
+    pub fn value(&self, cx: &AppContext) -> f64 {
         self.text_field.read(cx).value().parse().unwrap_or_default()
     }
 
-    pub fn set_value(&mut self, value: f32, cx: &mut ViewContext<Self>) {
+    pub fn set_value(&mut self, value: f64, cx: &mut ViewContext<Self>) {
         self.text_field.update(cx, |field, cx| {
             field.set_value(value.to_string().into(), cx)
         });
@@ -100,5 +100,5 @@ impl EventEmitter<NumberFieldEvent> for NumberField {}
 
 #[derive(Debug, Clone, Copy)]
 pub enum NumberFieldEvent {
-    Change(f32),
+    Change(f64),
 }

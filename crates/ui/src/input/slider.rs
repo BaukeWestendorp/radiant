@@ -13,8 +13,8 @@ pub struct Slider {
 
     slider_bounds: Bounds<Pixels>,
 
-    range: RangeInclusive<f32>,
-    step: Option<f32>,
+    range: RangeInclusive<f64>,
+    step: Option<f64>,
     strict: bool,
 }
 
@@ -40,11 +40,11 @@ impl Slider {
         }
     }
 
-    pub fn value(&self, cx: &AppContext) -> f32 {
+    pub fn value(&self, cx: &AppContext) -> f64 {
         self.number_field.read(cx).value(cx)
     }
 
-    pub fn set_value(&mut self, value: f32, cx: &mut ViewContext<Self>) {
+    pub fn set_value(&mut self, value: f64, cx: &mut ViewContext<Self>) {
         let stepped_value = self
             .step
             .map_or(value, |step| (value / step).round() * step);
@@ -54,20 +54,20 @@ impl Slider {
         cx.emit(SliderEvent::Change(value));
     }
 
-    pub fn range(&self) -> &RangeInclusive<f32> {
+    pub fn range(&self) -> &RangeInclusive<f64> {
         &self.range
     }
 
-    pub fn set_range(&mut self, range: RangeInclusive<f32>, cx: &mut ViewContext<Self>) {
+    pub fn set_range(&mut self, range: RangeInclusive<f64>, cx: &mut ViewContext<Self>) {
         self.range = range;
         self.set_value(self.value(cx), cx);
     }
 
-    pub fn step(&self) -> Option<f32> {
+    pub fn step(&self) -> Option<f64> {
         self.step
     }
 
-    pub fn set_step(&mut self, step: Option<f32>, cx: &mut ViewContext<Self>) {
+    pub fn set_step(&mut self, step: Option<f64>, cx: &mut ViewContext<Self>) {
         self.step = step;
         self.set_value(self.value(cx), cx);
     }
@@ -93,7 +93,7 @@ impl Slider {
 
         let relative =
             (cx.mouse_position().x - self.slider_bounds.left()) / self.slider_bounds.size.width;
-        let value = self.range.start() + (self.range.end() - self.range.start()) * relative;
+        let value = self.range.start() + (self.range.end() - self.range.start()) * relative as f64;
 
         self.set_value(value, cx);
         cx.notify();
@@ -110,7 +110,7 @@ impl Render for Slider {
         let relative_value = (self.value(cx) / diff).clamp(0.0, 1.0);
         let slider_background = div()
             .h_full()
-            .w(relative(relative_value))
+            .w(relative(relative_value as f32))
             .bg(cx.theme().tertriary);
 
         let slider = div()
@@ -154,5 +154,5 @@ impl EventEmitter<SliderEvent> for Slider {}
 
 #[derive(Debug, Clone, Copy)]
 pub enum SliderEvent {
-    Change(f32),
+    Change(f64),
 }

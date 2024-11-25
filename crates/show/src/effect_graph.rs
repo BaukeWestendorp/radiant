@@ -405,45 +405,45 @@ mod processor {
 
     // Math
 
-    pub fn add(a: f32, b: f32, _ctx: &mut ProcessingContext) -> AddProcessingOutput {
+    pub fn add(a: f64, b: f64, _ctx: &mut ProcessingContext) -> AddProcessingOutput {
         AddProcessingOutput {
             sum: Value::from(a + b),
         }
     }
 
-    pub fn subtract(a: f32, b: f32, _ctx: &mut ProcessingContext) -> SubtractProcessingOutput {
+    pub fn subtract(a: f64, b: f64, _ctx: &mut ProcessingContext) -> SubtractProcessingOutput {
         SubtractProcessingOutput {
             difference: Value::from(a - b),
         }
     }
 
-    pub fn multiply(a: f32, b: f32, _ctx: &mut ProcessingContext) -> MultiplyProcessingOutput {
+    pub fn multiply(a: f64, b: f64, _ctx: &mut ProcessingContext) -> MultiplyProcessingOutput {
         MultiplyProcessingOutput {
             product: Value::from(a * b),
         }
     }
 
-    pub fn divide(a: f32, b: f32, _ctx: &mut ProcessingContext) -> DivideProcessingOutput {
+    pub fn divide(a: f64, b: f64, _ctx: &mut ProcessingContext) -> DivideProcessingOutput {
         DivideProcessingOutput {
             quotient: Value::from(a / b),
         }
     }
 
-    pub fn floor(value: f32, _ctx: &mut ProcessingContext) -> FloorProcessingOutput {
+    pub fn floor(value: f64, _ctx: &mut ProcessingContext) -> FloorProcessingOutput {
         FloorProcessingOutput {
-            floored: Value::from(value.floor() as i32),
+            floored: Value::from(value.floor() as i64),
         }
     }
 
-    pub fn round(value: f32, _ctx: &mut ProcessingContext) -> RoundProcessingOutput {
+    pub fn round(value: f64, _ctx: &mut ProcessingContext) -> RoundProcessingOutput {
         RoundProcessingOutput {
-            rounded: Value::from(value.round() as i32),
+            rounded: Value::from(value.round() as i64),
         }
     }
 
-    pub fn ceil(value: f32, _ctx: &mut ProcessingContext) -> CeilProcessingOutput {
+    pub fn ceil(value: f64, _ctx: &mut ProcessingContext) -> CeilProcessingOutput {
         CeilProcessingOutput {
-            ceiled: Value::from(value.ceil() as i32),
+            ceiled: Value::from(value.ceil() as i64),
         }
     }
 
@@ -451,7 +451,7 @@ mod processor {
 
     pub fn get_fixture(ctx: &mut ProcessingContext) -> GetFixtureProcessingOutput {
         GetFixtureProcessingOutput {
-            index: Value::from(ctx.current_fixture_index as i32),
+            index: Value::from(ctx.current_fixture_index as i64),
             id: Value::FixtureId(ctx.current_fixture_id()),
             address: Value::DmxAddress(ctx.current_fixture().dmx_address),
         }
@@ -459,7 +459,7 @@ mod processor {
 
     pub fn get_group(ctx: &mut ProcessingContext) -> GetGroupProcessingOutput {
         GetGroupProcessingOutput {
-            size: Value::from(ctx.group().fixtures().len() as i32),
+            size: Value::from(ctx.group().fixtures().len() as i64),
         }
     }
 
@@ -470,14 +470,14 @@ mod processor {
         _ctx: &mut ProcessingContext,
     ) -> SplitAddressProcessingOutput {
         SplitAddressProcessingOutput {
-            universe: Value::from(address.universe.value() as i32),
-            channel: Value::from(address.channel.value() as i32),
+            universe: Value::from(address.universe.value() as i64),
+            channel: Value::from(address.channel.value() as i64),
         }
     }
 
     pub fn random_float(_ctx: &mut ProcessingContext) -> RandomProcessingOutput {
         RandomProcessingOutput {
-            value: Value::from(rand::random::<f32>()),
+            value: Value::from(rand::random::<f64>()),
         }
     }
 
@@ -684,8 +684,8 @@ impl VisualNodeData for NodeData {
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, flow::Value)]
 pub enum Value {
-    Int(i32),
-    Float(f32),
+    Int(i64),
+    Float(f64),
     String(SharedString),
 
     FixtureId(FixtureId),
@@ -700,7 +700,7 @@ impl flow::Value<GraphDefinition> for Value {
         use DataType as DT;
         let result = match (self, target) {
             (Self::Int(_), DT::Int) => Ok(self.clone()),
-            (Self::Int(v), DT::Float) => Ok(Self::Float(*v as f32)),
+            (Self::Int(v), DT::Float) => Ok(Self::Float(*v as f64)),
             (Self::Int(v), DT::FixtureId) => Ok(Self::FixtureId(FixtureId(*v as u32))),
             (Self::Int(v), DT::DmxChannel) => {
                 Ok(Self::DmxChannel(DmxChannel::new_clamped(*v as u16)))
@@ -713,7 +713,7 @@ impl flow::Value<GraphDefinition> for Value {
             }
 
             (Self::Float(_), DT::Float) => Ok(self.clone()),
-            (Self::Float(v), DT::Int) => Ok(Self::Int(*v as i32)),
+            (Self::Float(v), DT::Int) => Ok(Self::Int(*v as i64)),
             (Self::Float(v), DT::FixtureId) => Ok(Self::FixtureId(FixtureId(*v as u32))),
             (Self::Float(v), DT::DmxChannel) => {
                 Ok(Self::DmxChannel(DmxChannel::new_clamped(*v as u16)))
@@ -722,14 +722,14 @@ impl flow::Value<GraphDefinition> for Value {
                 Ok(Self::DmxUniverse(DmxUniverseId::new_clamped(*v as u16)))
             }
             (Self::Float(v), DT::AttributeValue) => {
-                Ok(Self::AttributeValue(AttributeValue::new(*v)))
+                Ok(Self::AttributeValue(AttributeValue::new(*v as f32)))
             }
 
             (Self::String(_), DT::String) => Ok(self.clone()),
 
             (Self::FixtureId(_), DT::FixtureId) => Ok(self.clone()),
-            (Self::FixtureId(v), DT::Int) => Ok(Self::Int(v.0 as i32)),
-            (Self::FixtureId(v), DT::Float) => Ok(Self::Float(v.0 as f32)),
+            (Self::FixtureId(v), DT::Int) => Ok(Self::Int(v.0 as i64)),
+            (Self::FixtureId(v), DT::Float) => Ok(Self::Float(v.0 as f64)),
             (Self::FixtureId(v), DT::DmxChannel) => {
                 Ok(Self::DmxChannel(DmxChannel::new_clamped(v.id() as u16)))
             }
@@ -738,12 +738,12 @@ impl flow::Value<GraphDefinition> for Value {
             }
 
             (Self::AttributeValue(_), DT::AttributeValue) => Ok(self.clone()),
-            (Self::AttributeValue(v), DT::Int) => Ok(Self::Int(v.byte() as i32)),
-            (Self::AttributeValue(v), DT::Float) => Ok(Self::Float(v.byte() as f32)),
+            (Self::AttributeValue(v), DT::Int) => Ok(Self::Int(v.byte() as i64)),
+            (Self::AttributeValue(v), DT::Float) => Ok(Self::Float(v.byte() as f64)),
 
             (Self::DmxChannel(_), DT::DmxChannel) => Ok(self.clone()),
-            (Self::DmxChannel(v), DT::Int) => Ok(Self::Int(v.value() as i32)),
-            (Self::DmxChannel(v), DT::Float) => Ok(Self::Float(v.value() as f32)),
+            (Self::DmxChannel(v), DT::Int) => Ok(Self::Int(v.value() as i64)),
+            (Self::DmxChannel(v), DT::Float) => Ok(Self::Float(v.value() as f64)),
             (Self::DmxChannel(v), DT::DmxUniverse) => {
                 Ok(Self::DmxUniverse(DmxUniverseId::new_clamped(v.value())))
             }
@@ -753,8 +753,8 @@ impl flow::Value<GraphDefinition> for Value {
             (Self::DmxAddress(v), DT::DmxUniverse) => Ok(Self::DmxUniverse(v.universe)),
 
             (Self::DmxUniverse(v), DT::DmxUniverse) => Ok(Self::DmxUniverse(*v)),
-            (Self::DmxUniverse(v), DT::Int) => Ok(Self::Int(v.value() as i32)),
-            (Self::DmxUniverse(v), DT::Float) => Ok(Self::Float(v.value() as f32)),
+            (Self::DmxUniverse(v), DT::Int) => Ok(Self::Int(v.value() as i64)),
+            (Self::DmxUniverse(v), DT::Float) => Ok(Self::Float(v.value() as f64)),
 
             _ => Err(FlowError::CastFailed),
         };
@@ -789,8 +789,8 @@ pub enum DataType {
 impl flow::DataType<GraphDefinition> for DataType {
     fn default_value(&self) -> Value {
         match self {
-            Self::Int => Value::Int(i32::default()),
-            Self::Float => Value::Float(f32::default()),
+            Self::Int => Value::Int(i64::default()),
+            Self::Float => Value::Float(f64::default()),
             Self::FixtureId => Value::FixtureId(FixtureId::default()),
             Self::String => Value::String(SharedString::default()),
             Self::AttributeValue => Value::AttributeValue(AttributeValue::default()),
@@ -843,17 +843,17 @@ impl VisualControl<GraphDefinition> for Control {
             Self::Int => {
                 let field = cx.new_view(|cx| {
                     let mut field = NumberField::new(cx);
-                    let value: i32 = initial_value
+                    let value: i64 = initial_value
                         .try_into()
-                        .expect("Int field expects an i32 value");
-                    field.set_value(value as f32, cx);
-                    field.set_validate(Some(Box::new(|v| v.parse::<i32>().is_ok())), cx);
+                        .expect("Int field expects an i64 value");
+                    field.set_value(value as f64, cx);
+                    field.set_validate(Some(Box::new(|v| v.parse::<i64>().is_ok())), cx);
                     field
                 });
 
                 cx.subscribe(&field, |_this, _field, event: &NumberFieldEvent, cx| {
                     let NumberFieldEvent::Change(float_value) = event;
-                    let value = Value::Int(*float_value as i32);
+                    let value = Value::Int(*float_value as i64);
                     cx.emit(ControlEvent::Change(value));
                 })
                 .detach();
@@ -863,17 +863,17 @@ impl VisualControl<GraphDefinition> for Control {
             Self::Float => {
                 let field = cx.new_view(|cx| {
                     let mut field = NumberField::new(cx);
-                    let value: f32 = initial_value
+                    let value: f64 = initial_value
                         .try_into()
-                        .expect("Float field expects an f32 value");
+                        .expect("Float field expects an f64 value");
                     field.set_value(value, cx);
-                    field.set_validate(Some(Box::new(|v| v.parse::<f32>().is_ok())), cx);
+                    field.set_validate(Some(Box::new(|v| v.parse::<f64>().is_ok())), cx);
                     field
                 });
 
                 cx.subscribe(&field, |_this, _field, event: &NumberFieldEvent, cx| {
                     let NumberFieldEvent::Change(float_value) = event;
-                    let value = Value::Float(*float_value);
+                    let value = Value::Float(*float_value as f64);
                     cx.emit(ControlEvent::Change(value));
                 })
                 .detach();
@@ -906,7 +906,7 @@ impl VisualControl<GraphDefinition> for Control {
                     let value: FixtureId = initial_value
                         .try_into()
                         .expect("FixtureId field expects a FixtureId value");
-                    field.set_value(value.0 as f32, cx);
+                    field.set_value(value.0 as f64, cx);
                     field.set_validate(Some(Box::new(|v| v.parse::<FixtureId>().is_ok())), cx);
                     field
                 });
@@ -926,7 +926,7 @@ impl VisualControl<GraphDefinition> for Control {
                     let value: AttributeValue = initial_value
                         .try_into()
                         .expect("AttributeValue field expects a AttributeValue value");
-                    slider.set_value(value.relative_value(), cx);
+                    slider.set_value(value.relative_value() as f64, cx);
                     slider.set_range(0.0..=1.0, cx);
                     slider.set_strict(true);
                     slider
@@ -935,7 +935,7 @@ impl VisualControl<GraphDefinition> for Control {
                 cx.subscribe(&slider, |_this, _slider, event: &SliderEvent, cx| {
                     let SliderEvent::Change(float_value) = event;
                     cx.emit(ControlEvent::Change(Value::AttributeValue(
-                        AttributeValue::new(*float_value),
+                        AttributeValue::new(*float_value as f32),
                     )));
                 })
                 .detach();
@@ -948,7 +948,7 @@ impl VisualControl<GraphDefinition> for Control {
                     let channel: DmxChannel = initial_value
                         .try_into()
                         .expect("DmxChannel field expects a DmxChannel value");
-                    field.set_value(channel.value() as f32, cx);
+                    field.set_value(channel.value() as f64, cx);
                     field.set_validate(Some(Box::new(|v| v.parse::<DmxChannel>().is_ok())), cx);
                     field
                 });
@@ -969,7 +969,7 @@ impl VisualControl<GraphDefinition> for Control {
                     let universe: DmxUniverseId = initial_value
                         .try_into()
                         .expect("DmxUniverse field expects a DmxUniverse value");
-                    field.set_value(universe.value() as f32, cx);
+                    field.set_value(universe.value() as f64, cx);
                     field.set_validate(Some(Box::new(|v| v.parse::<DmxUniverseId>().is_ok())), cx);
                     field
                 });
