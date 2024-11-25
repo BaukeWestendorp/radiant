@@ -1,6 +1,6 @@
 use super::{
     GraphEvent, GraphView, NodeCategory, VisualControl, VisualDataType, VisualNodeData,
-    VisualNodeKind,
+    VisualNodeKind, SNAP_GRID_SIZE,
 };
 use crate::{Graph, GraphDefinition};
 
@@ -8,9 +8,11 @@ use gpui::*;
 use prelude::FluentBuilder;
 use ui::input::{TextField, TextFieldEvent};
 use ui::theme::ActiveTheme;
-use ui::{bounds_updater, StyledExt};
+use ui::{bounds_updater, z_stack, StyledExt};
 
 actions!(graph_editor, [CloseNodeContextMenu]);
+
+const GRID_SIZE: f32 = SNAP_GRID_SIZE;
 
 const CONTEXT: &str = "GraphEditor";
 
@@ -97,6 +99,35 @@ where
     Def::Control: VisualControl<Def>,
 {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        let background_grid = canvas(|_, _| {}, {
+            let graph_offset = self.graph_offset;
+            move |bounds, _, cx| {
+                let w = bounds.size.width.0 + 2.0 * GRID_SIZE as f32;
+                let h = bounds.size.height.0 + 2.0 * GRID_SIZE as f32;
+                let x_offset =
+                    bounds.origin.x.0 + (graph_offset.x.0 % GRID_SIZE as f32) - GRID_SIZE;
+                let y_offset =
+                    bounds.origin.y.0 + (graph_offset.y.0 % GRID_SIZE as f32) - GRID_SIZE;
+
+                for rel_x in (0..w as i32).step_by(GRID_SIZE as usize) {
+                    let x = x_offset + rel_x as f32;
+                    cx.paint_quad(fill(
+                        Bounds::new(point(px(x), px(y_offset)), size(px(1.0), px(h))),
+                        cx.theme().primary,
+                    ));
+                }
+
+                for rel_y in (0..h as i32).step_by(GRID_SIZE as usize) {
+                    let y = y_offset + rel_y as f32;
+                    cx.paint_quad(fill(
+                        Bounds::new(point(px(x_offset), px(y)), size(px(w), px(1.0))),
+                        cx.theme().primary,
+                    ));
+                }
+            }
+        })
+        .size_full();
+
         let graph_viewer = div()
             .id("editor-graph")
             .size_full()
@@ -114,21 +145,24 @@ where
             .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
             .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up));
 
-        div()
-            .key_context(CONTEXT)
-            .track_focus(&self.focus_handle)
-            .size_full()
-            .child(graph_viewer)
-            .child(self.new_node_context_menu.clone())
-            .child(bounds_updater(
-                cx.view().clone(),
-                |this: &mut Self, bounds, _cx| this.bounds = bounds,
-            ))
-            .on_action(cx.listener(Self::close_node_context_menu))
-            .on_mouse_down(
-                MouseButton::Right,
-                cx.listener(|this, _, cx| this.open_node_context_menu(cx)),
-            )
+        z_stack([
+            background_grid.into_any_element(),
+            graph_viewer.into_any_element(),
+            self.new_node_context_menu.clone().into_any_element(),
+            bounds_updater(cx.view().clone(), |this: &mut Self, bounds, _cx| {
+                this.bounds = bounds
+            })
+            .into_any_element(),
+        ])
+        .key_context(CONTEXT)
+        .track_focus(&self.focus_handle)
+        .size_full()
+        .overflow_hidden()
+        .on_action(cx.listener(Self::close_node_context_menu))
+        .on_mouse_down(
+            MouseButton::Right,
+            cx.listener(|this, _, cx| this.open_node_context_menu(cx)),
+        )
     }
 }
 

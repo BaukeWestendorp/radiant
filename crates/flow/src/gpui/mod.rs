@@ -39,6 +39,13 @@ pub trait VisualNodeData: Default {
     fn position(&self) -> &geo::Point;
 
     fn set_position(&mut self, position: geo::Point);
+
+    fn snapped_position(&self, snap_grid_size: f32) -> geo::Point {
+        geo::Point::new(
+            (self.position().x / snap_grid_size).floor() * snap_grid_size,
+            (self.position().y / snap_grid_size).floor() * snap_grid_size,
+        )
+    }
 }
 
 pub trait VisualControl<Def: GraphDefinition + 'static> {

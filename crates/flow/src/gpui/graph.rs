@@ -1,6 +1,6 @@
 use super::{
     node, NodeEvent, NodeView, SocketEvent, VisualControl, VisualDataType, VisualNodeData,
-    VisualNodeKind,
+    VisualNodeKind, SNAP_GRID_SIZE,
 };
 use crate::{Graph, GraphDefinition, InputId, NodeId, OutputId, Parameter};
 
@@ -359,7 +359,12 @@ where
         // FIXME: This is a bit hacky. It might be possible to get the node position from the layout.
         //        Just trying to get it working for now...
 
-        let node_position = self.graph.read(cx).node(node_id).data.position();
+        let node_position = self
+            .graph
+            .read(cx)
+            .node(node_id)
+            .data
+            .snapped_position(SNAP_GRID_SIZE);
         let node = self.graph.read(cx).node(node_id);
         let socket_index = match socket {
             Parameter::Input(id) => node

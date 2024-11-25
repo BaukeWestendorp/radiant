@@ -10,10 +10,11 @@ use ui::theme::Colorize;
 use ui::{theme::ActiveTheme, StyledExt};
 
 pub(crate) const NODE_CONTENT_Y_PADDING: Pixels = px(6.0);
-pub(crate) const NODE_WIDTH: Pixels = px(200.0);
+pub(crate) const NODE_WIDTH: Pixels = px(204.0);
 pub(crate) const HEADER_HEIGHT: Pixels = px(24.0);
-pub(crate) const SOCKET_HEIGHT: Pixels = px(22.0); // cx.theme().input_height;
+pub(crate) const SOCKET_HEIGHT: Pixels = px(24.0); // cx.theme().input_height;
 pub(crate) const SOCKET_GAP: Pixels = px(12.0);
+pub(crate) const SNAP_GRID_SIZE: f32 = 12.0;
 
 actions!(graph_editor, [RemoveNode]);
 
@@ -215,7 +216,8 @@ where
                 .children(self.outputs.clone())
         };
 
-        let position = node.data.position();
+        let position = node.data.snapped_position(SNAP_GRID_SIZE);
+
         div()
             .key_context(CONTEXT)
             .id(ElementId::Name(format!("node-{:?}", self.node_id).into()))
