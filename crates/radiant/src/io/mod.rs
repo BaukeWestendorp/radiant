@@ -58,7 +58,6 @@ impl IoManager {
     fn send_output(&mut self) -> anyhow::Result<()> {
         for node in self.artnet_nodes.iter() {
             let Some(universe) = self.dmx_output.universe(node.settings.universe) else {
-                log::warn!("DMX data not found for universe {}", node.settings.universe);
                 continue;
             };
 
