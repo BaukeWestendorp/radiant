@@ -60,7 +60,7 @@ where
 
     fn open_node_context_menu(&mut self, cx: &mut ViewContext<Self>) {
         self.new_node_context_menu.update(cx, |menu, cx| {
-            menu.show(cx);
+            menu.show(self.graph_offset, cx);
             let position = cx.mouse_position()
                 - self.bounds.origin // Offset by the editor's position
                 - point(px(12.0), cx.theme().input_height / 2.0 + px(6.0)); // Offset to the start of the input
@@ -149,6 +149,7 @@ where
 {
     graph: Model<Graph<Def>>,
     shown: bool,
+    editor_graph_offset: Point<Pixels>,
     position: Point<Pixels>,
     search_box: View<TextField>,
     selected_category: Option<<Def::NodeKind as VisualNodeKind>::Category>,
@@ -170,6 +171,7 @@ where
             Self {
                 graph,
                 shown: false,
+                editor_graph_offset: Point::default(),
                 position: cx.mouse_position(),
                 search_box,
                 selected_category: None,
@@ -177,8 +179,13 @@ where
         })
     }
 
-    pub fn show<View: 'static>(&mut self, cx: &mut ViewContext<View>) {
+    pub fn show<View: 'static>(
+        &mut self,
+        editor_graph_offset: Point<Pixels>,
+        cx: &mut ViewContext<View>,
+    ) {
         self.shown = true;
+        self.editor_graph_offset = editor_graph_offset;
         self.deselect_category(cx);
         self.search_box.update(cx, |search_box, cx| {
             search_box.focus(cx);
@@ -208,7 +215,7 @@ where
         mut data: Def::NodeData,
         cx: &mut WindowContext,
     ) {
-        data.set_position(self.position.into());
+        data.set_position((self.position - self.editor_graph_offset).into());
         self.graph.update(cx, |_graph, cx| {
             cx.emit(GraphEvent::AddNode {
                 kind: node_kind,
