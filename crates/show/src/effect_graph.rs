@@ -27,6 +27,7 @@ pub type EffectGraph = Graph<GraphDefinition>;
 #[derive(
     Debug, Clone, PartialEq, strum::EnumIter, serde::Serialize, serde::Deserialize, flow::NodeKind,
 )]
+#[rustfmt::skip::attributes(node, input, constant_output, computed_output)]
 #[node_kind(
     category = "NodeCategory",
     graph_definition = "GraphDefinition",
@@ -35,357 +36,158 @@ pub type EffectGraph = Graph<GraphDefinition>;
 pub enum NodeKind {
     // New Values
     #[node(name = "New Fixture Id", category = "NodeCategory::NewValue")]
-    #[constant_output(
-        label = "id",
-        data_type = "DataType::FixtureId",
-        control = "Control::FixtureId"
-    )]
+    #[constant_output(label = "id", data_type = "DataType::FixtureId", control = "Control::FixtureId")]
     NewFixtureId,
 
     #[node(name = "New Attribute Value", category = "NodeCategory::NewValue")]
-    #[constant_output(
-        label = "value",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
+    #[constant_output(label = "value", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
     NewAttributeValue,
 
-    #[node(
-        name = "New DMX Address",
-        category = "NodeCategory::NewValue",
-        processor = "processor::new_dmx_address"
-    )]
-    #[input(
-        label = "universe",
-        data_type = "DataType::DmxUniverse",
-        control = "Control::DmxUniverse"
-    )]
-    #[input(
-        label = "channel",
-        data_type = "DataType::DmxChannel",
-        control = "Control::DmxChannel"
-    )]
+    #[node(name = "New DMX Address", category = "NodeCategory::NewValue", processor = "processor::new_dmx_address")]
+    #[input(label = "universe", data_type = "DataType::DmxUniverse", control = "Control::DmxUniverse")]
+    #[input(label = "channel", data_type = "DataType::DmxChannel", control = "Control::DmxChannel")]
     #[computed_output(label = "address", data_type = "DataType::DmxAddress")]
     NewDmxAddress,
 
     // Math
-    #[node(
-        name = "Add",
-        category = "NodeCategory::Math",
-        processor = "processor::add"
-    )]
+    #[node(name = "Add", category = "NodeCategory::Math", processor = "processor::add")]
     #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
     #[input(label = "b", data_type = "DataType::Float", control = "Control::Float")]
     #[computed_output(label = "sum", data_type = "DataType::Float")]
     Add,
 
-    #[node(
-        name = "Subtract",
-        category = "NodeCategory::Math",
-        processor = "processor::subtract"
-    )]
+    #[node(name = "Subtract", category = "NodeCategory::Math", processor = "processor::subtract")]
     #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
     #[input(label = "b", data_type = "DataType::Float", control = "Control::Float")]
     #[computed_output(label = "difference", data_type = "DataType::Float")]
     Subtract,
 
-    #[node(
-        name = "Multiply",
-        category = "NodeCategory::Math",
-        processor = "processor::multiply"
-    )]
+    #[node(name = "Multiply", category = "NodeCategory::Math", processor = "processor::multiply")]
     #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
     #[input(label = "b", data_type = "DataType::Float", control = "Control::Float")]
     #[computed_output(label = "product", data_type = "DataType::Float")]
     Multiply,
 
-    #[node(
-        name = "Divide",
-        category = "NodeCategory::Math",
-        processor = "processor::divide"
-    )]
+    #[node(name = "Divide", category = "NodeCategory::Math", processor = "processor::divide")]
     #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
     #[input(label = "b", data_type = "DataType::Float", control = "Control::Float")]
     #[computed_output(label = "quotient", data_type = "DataType::Float")]
     Divide,
 
-    #[node(
-        name = "Floor",
-        category = "NodeCategory::Math",
-        processor = "processor::floor"
-    )]
-    #[input(
-        label = "value",
-        data_type = "DataType::Float",
-        control = "Control::Float"
-    )]
+    #[node(name = "Sine", category = "NodeCategory::Math", processor = "processor::sine")]
+    #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
+    #[computed_output(label = "b", data_type = "DataType::Float")]
+    Sine,
+
+    #[node(name = "Cosine", category = "NodeCategory::Math", processor = "processor::cosine")]
+    #[input(label = "a", data_type = "DataType::Float", control = "Control::Float")]
+    #[computed_output(label = "b", data_type = "DataType::Float")]
+    Cosine,
+
+    #[node(name = "Floor", category = "NodeCategory::Math", processor = "processor::floor")]
+    #[input(label = "value", data_type = "DataType::Float", control = "Control::Float")]
     #[computed_output(label = "floored", data_type = "DataType::Int")]
     Floor,
 
-    #[node(
-        name = "Round",
-        category = "NodeCategory::Math",
-        processor = "processor::round"
-    )]
-    #[input(
-        label = "value",
-        data_type = "DataType::Float",
-        control = "Control::Float"
-    )]
+    #[node(name = "Round", category = "NodeCategory::Math", processor = "processor::round")]
+    #[input(label = "value", data_type = "DataType::Float", control = "Control::Float")]
     #[computed_output(label = "rounded", data_type = "DataType::Int")]
     Round,
 
-    #[node(
-        name = "Ceil",
-        category = "NodeCategory::Math",
-        processor = "processor::ceil"
-    )]
-    #[input(
-        label = "value",
-        data_type = "DataType::Float",
-        control = "Control::Float"
-    )]
+    #[node(name = "Ceil", category = "NodeCategory::Math", processor = "processor::ceil")]
+    #[input(label = "value", data_type = "DataType::Float", control = "Control::Float")]
     #[computed_output(label = "ceiled", data_type = "DataType::Int")]
     Ceil,
 
     // Context
-    #[node(
-        name = "Get Fixture",
-        category = "NodeCategory::Context",
-        processor = "processor::get_fixture"
-    )]
+    #[node(name = "Get Fixture", category = "NodeCategory::Context", processor = "processor::get_fixture")]
     #[computed_output(label = "index", data_type = "DataType::Int")]
     #[computed_output(label = "id", data_type = "DataType::FixtureId")]
     #[computed_output(label = "address", data_type = "DataType::DmxAddress")]
     GetFixture,
 
-    #[node(
-        name = "Get Group",
-        category = "NodeCategory::Context",
-        processor = "processor::get_group"
-    )]
+    #[node(name = "Get Group", category = "NodeCategory::Context", processor = "processor::get_group")]
     #[computed_output(label = "size", data_type = "DataType::Int")]
     GetGroup,
 
     // Utilities
-    #[node(
-        name = "Split Address",
-        category = "NodeCategory::Utilities",
-        processor = "processor::split_address"
-    )]
-    #[input(
-        label = "address",
-        data_type = "DataType::DmxAddress",
-        control = "Control::DmxAddress"
-    )]
+    #[node(name = "Split Address", category = "NodeCategory::Utilities", processor = "processor::split_address")]
+    #[input(label = "address", data_type = "DataType::DmxAddress", control = "Control::DmxAddress")]
     #[computed_output(label = "universe", data_type = "DataType::DmxUniverse")]
     #[computed_output(label = "channel", data_type = "DataType::DmxChannel")]
     SplitAddress,
 
-    #[node(
-        name = "Random Float",
-        category = "NodeCategory::Utilities",
-        processor = "processor::random_float"
-    )]
+    #[node(name = "Random Float", category = "NodeCategory::Utilities", processor = "processor::random_float")]
     #[computed_output(label = "value", data_type = "DataType::Float")]
     Random,
 
+    #[node(name = "Time", category = "NodeCategory::Utilities", processor = "processor::time")]
+    #[computed_output(label = "seconds", data_type = "DataType::Float")]
+    Time,
+
+    #[node(name = "remap", category = "NodeCategory::Utilities", processor = "processor::remap")]
+    #[input(label = "value", data_type = "DataType::Float", control = "Control::Float")]
+    #[input(label = "from min", data_type = "DataType::Float", control = "Control::Float")]
+    #[input(label = "from max", data_type = "DataType::Float", control = "Control::Float")]
+    #[input(label = "to min", data_type = "DataType::Float", control = "Control::Float")]
+    #[input(label = "to max", data_type = "DataType::Float", control = "Control::Float")]
+    #[computed_output(label = "remapped", data_type = "DataType::Float")]
+    Remap,
+
     // Output
-    #[node(
-        name = "Set Address Value",
-        category = "NodeCategory::Output",
-        processor = "processor::set_channel_value"
-    )]
-    #[input(
-        label = "address",
-        data_type = "DataType::DmxAddress",
-        control = "Control::DmxAddress"
-    )]
-    #[input(
-        label = "value",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
+    #[node(name = "Set Address Value", category = "NodeCategory::Output", processor = "processor::set_channel_value")]
+    #[input(label = "address", data_type = "DataType::DmxAddress", control = "Control::DmxAddress")]
+    #[input(label = "value", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
     SetChannelValue,
 
-    #[node(
-        name = "Set Fixture Attribute",
-        category = "NodeCategory::Output",
-        processor = "processor::set_fixture_attribute"
-    )]
-    #[input(
-        label = "fixture",
-        data_type = "DataType::FixtureId",
-        control = "Control::FixtureId"
-    )]
-    #[input(
-        label = "attribute",
-        data_type = "DataType::String",
-        control = "Control::String"
-    )]
-    #[input(
-        label = "value",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
+    #[node(name = "Set Fixture Attribute", category = "NodeCategory::Output", processor = "processor::set_fixture_attribute")]
+    #[input(label = "fixture", data_type = "DataType::FixtureId", control = "Control::FixtureId")]
+    #[input(label = "attribute", data_type = "DataType::String", control = "Control::String")]
+    #[input(label = "value", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
     SetFixtureAttribute,
 
-    #[node(
-        name = "Set Dimmer",
-        category = "NodeCategory::Output",
-        processor = "processor::set_dimmer"
-    )]
-    #[input(
-        label = "Fixture",
-        data_type = "DataType::FixtureId",
-        control = "Control::FixtureId"
-    )]
-    #[input(
-        label = "dimmer",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
+    #[node(name = "Set Dimmer", category = "NodeCategory::Output", processor = "processor::set_dimmer")]
+    #[input(label = "Fixture", data_type = "DataType::FixtureId", control = "Control::FixtureId")]
+    #[input(label = "dimmer", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
     SetDimmer,
 
-    #[node(
-        name = "Set Color",
-        category = "NodeCategory::Output",
-        processor = "processor::set_color"
-    )]
-    #[input(
-        label = "Fixture",
-        data_type = "DataType::FixtureId",
-        control = "Control::FixtureId"
-    )]
-    #[input(
-        label = "red",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
-    #[input(
-        label = "green",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
-    #[input(
-        label = "blue",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
+    #[node(name = "Set Color", category = "NodeCategory::Output", processor = "processor::set_color")]
+    #[input(label = "Fixture", data_type = "DataType::FixtureId", control = "Control::FixtureId")]
+    #[input(label = "red", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
+    #[input(label = "green", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
+    #[input(label = "blue", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
     SetColor,
 
-    #[node(
-        name = "Set Pan & Tilt",
-        category = "NodeCategory::Output",
-        processor = "processor::set_pan_tilt"
-    )]
-    #[input(
-        label = "Fixture",
-        data_type = "DataType::FixtureId",
-        control = "Control::FixtureId"
-    )]
-    #[input(
-        label = "pan",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
-    #[input(
-        label = "tilt",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
-    #[input(
-        label = "pan rot",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
-    #[input(
-        label = "tilt rot",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
-    #[input(
-        label = "pos fx",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
-    #[input(
-        label = "pos fx rate",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
-    #[input(
-        label = "pos fx fade",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
+    #[node(name = "Set Pan & Tilt", category = "NodeCategory::Output", processor = "processor::set_pan_tilt")]
+    #[input(label = "Fixture", data_type = "DataType::FixtureId", control = "Control::FixtureId")]
+    #[input(label = "pan", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
+    #[input(label = "tilt", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
+    #[input(label = "pan rot", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
+    #[input(label = "tilt rot", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
+    #[input(label = "pos fx", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
+    #[input(label = "pos fx rate", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
+    #[input(label = "pos fx fade", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
     SetPanTilt,
 
-    #[node(
-        name = "Set XYZ",
-        category = "NodeCategory::Output",
-        processor = "processor::set_xyz"
-    )]
-    #[input(
-        label = "Fixture",
-        data_type = "DataType::FixtureId",
-        control = "Control::FixtureId"
-    )]
-    #[input(
-        label = "x",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
-    #[input(
-        label = "y",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
-    #[input(
-        label = "z",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
-    #[input(
-        label = "x rot",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
-    #[input(
-        label = "y rot",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
-    #[input(
-        label = "z rot",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
-    #[input(
-        label = "x scale",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
-    #[input(
-        label = "y scale",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
-    #[input(
-        label = "z scale",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
-    #[input(
-        label = "xyz scale",
-        data_type = "DataType::AttributeValue",
-        control = "Control::AttributeValue"
-    )]
+    #[node(name = "Set XYZ",    category = "NodeCategory::Output", processor = "processor::set_xyz")]
+    #[input(label = "Fixture", data_type = "DataType::FixtureId", control = "Control::FixtureId")]
+    #[input(label = "x", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
+    #[input(label = "y", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
+    #[input(label = "z", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
+    #[input(label = "x rot", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
+    #[input(label = "y rot", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
+    #[input(label = "z rot", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
+    #[input(label = "x scale", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
+    #[input(label = "y scale", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
+    #[input(label = "z scale", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
+    #[input(label = "xyz scale", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
     SetXyz,
 }
 
 mod processor {
     #![allow(clippy::too_many_arguments)]
+
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     use dmx::DmxAddress;
 
@@ -426,6 +228,18 @@ mod processor {
     pub fn divide(a: f64, b: f64, _ctx: &mut ProcessingContext) -> DivideProcessingOutput {
         DivideProcessingOutput {
             quotient: Value::from(a / b),
+        }
+    }
+
+    pub fn sine(a: f64, _ctx: &mut ProcessingContext) -> SineProcessingOutput {
+        SineProcessingOutput {
+            b: Value::from(a.sin()),
+        }
+    }
+
+    pub fn cosine(a: f64, _ctx: &mut ProcessingContext) -> CosineProcessingOutput {
+        CosineProcessingOutput {
+            b: Value::from(a.cos()),
         }
     }
 
@@ -478,6 +292,27 @@ mod processor {
     pub fn random_float(_ctx: &mut ProcessingContext) -> RandomProcessingOutput {
         RandomProcessingOutput {
             value: Value::from(rand::random::<f64>()),
+        }
+    }
+
+    pub fn time(_ctx: &mut ProcessingContext) -> TimeProcessingOutput {
+        let time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+        TimeProcessingOutput {
+            seconds: Value::from(time.as_secs_f64()),
+        }
+    }
+
+    pub fn remap(
+        value: f64,
+        from_min: f64,
+        from_max: f64,
+        to_min: f64,
+        to_max: f64,
+        _ctx: &mut ProcessingContext,
+    ) -> RemapProcessingOutput {
+        let remapped = (value - from_min) / (from_max - from_min) * (to_max - to_min) + to_min;
+        RemapProcessingOutput {
+            remapped: Value::from(remapped),
         }
     }
 
