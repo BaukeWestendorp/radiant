@@ -305,17 +305,17 @@ pub enum NodeKind {
         control = "Control::AttributeValue"
     )]
     #[input(
-        label = "position fx",
+        label = "pos fx",
         data_type = "DataType::AttributeValue",
         control = "Control::AttributeValue"
     )]
     #[input(
-        label = "position fx rate",
+        label = "pos fx rate",
         data_type = "DataType::AttributeValue",
         control = "Control::AttributeValue"
     )]
     #[input(
-        label = "position fx fade",
+        label = "pos fx fade",
         data_type = "DataType::AttributeValue",
         control = "Control::AttributeValue"
     )]
