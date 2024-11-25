@@ -11,7 +11,6 @@ use ui::theme::ActiveTheme;
 use ui::{bounds_updater, StyledExt};
 
 actions!(graph_editor, [CloseNodeContextMenu]);
-actions!(new_node_context_menu, [SelectNode]);
 
 const CONTEXT: &str = "GraphEditor";
 
