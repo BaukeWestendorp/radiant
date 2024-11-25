@@ -255,7 +255,8 @@ fn gen_processors(variants: &[NodeKindVariant], graph_def: &Type) -> Vec<TokenSt
 
             let parameters = variant.inputs.iter().map(|input| {
                 let label = &input.label;
-                let ident = format_ident!("{}", &label);
+                let ident = format_ident!("{}", label.to_ascii_lowercase().replace(' ', "_"));
+
                 let data_type = &input
                     .data_type
                     .segments
@@ -310,7 +311,7 @@ fn gen_processing_output_types(variants: &[NodeKindVariant], graph_def: &Type) -
             let name = processing_output_type_name(&variant.variant);
 
             let fields = variant.output_labels().into_iter().map(|label| {
-                let field_name = format_ident!("{}", label);
+                let field_name = format_ident!("{}", label.to_ascii_lowercase().replace(' ', "_"));
                 quote! {
                     pub #field_name: <#graph_def as flow::GraphDefinition>::Value,
                 }

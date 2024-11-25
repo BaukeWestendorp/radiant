@@ -265,6 +265,115 @@ pub enum NodeKind {
         control = "Control::AttributeValue"
     )]
     SetColor,
+
+    #[node(
+        name = "Set Pan & Tilt",
+        category = "NodeCategory::Output",
+        processor = "processor::set_pan_tilt"
+    )]
+    #[input(
+        label = "Fixture",
+        data_type = "DataType::FixtureId",
+        control = "Control::FixtureId"
+    )]
+    #[input(
+        label = "pan",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    #[input(
+        label = "tilt",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    #[input(
+        label = "pan rot",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    #[input(
+        label = "tilt rot",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    #[input(
+        label = "position fx",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    #[input(
+        label = "position fx rate",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    #[input(
+        label = "position fx fade",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    SetPanTilt,
+
+    #[node(
+        name = "Set XYZ",
+        category = "NodeCategory::Output",
+        processor = "processor::set_xyz"
+    )]
+    #[input(
+        label = "Fixture",
+        data_type = "DataType::FixtureId",
+        control = "Control::FixtureId"
+    )]
+    #[input(
+        label = "x",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    #[input(
+        label = "y",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    #[input(
+        label = "z",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    #[input(
+        label = "x rot",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    #[input(
+        label = "y rot",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    #[input(
+        label = "z rot",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    #[input(
+        label = "x scale",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    #[input(
+        label = "y scale",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    #[input(
+        label = "z scale",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    #[input(
+        label = "xyz scale",
+        data_type = "DataType::AttributeValue",
+        control = "Control::AttributeValue"
+    )]
+    SetXyz,
 }
 
 mod processor {
@@ -432,6 +541,75 @@ mod processor {
         set_fixture_attribute(fixture, AD::ColorRgbBlue.to_string().into(), blue, ctx);
 
         SetColorProcessingOutput {}
+    }
+
+    pub fn set_pan_tilt(
+        fixture: FixtureId,
+        pan: AttributeValue,
+        tilt: AttributeValue,
+        pan_rotate: AttributeValue,
+        tilt_rotate: AttributeValue,
+        position_effect: AttributeValue,
+        position_effect_rate: AttributeValue,
+        position_effect_fade: AttributeValue,
+        ctx: &mut ProcessingContext,
+    ) -> SetPanTiltProcessingOutput {
+        use AttributeDefinition as AD;
+
+        set_fixture_attribute(fixture, AD::Pan.to_string().into(), pan, ctx);
+        set_fixture_attribute(fixture, AD::Tilt.to_string().into(), tilt, ctx);
+        set_fixture_attribute(fixture, AD::PanRotate.to_string().into(), pan_rotate, ctx);
+        set_fixture_attribute(fixture, AD::TiltRotate.to_string().into(), tilt_rotate, ctx);
+        set_fixture_attribute(
+            fixture,
+            AD::PositionEffect.to_string().into(),
+            position_effect,
+            ctx,
+        );
+        set_fixture_attribute(
+            fixture,
+            AD::PositionEffectRate.to_string().into(),
+            position_effect_rate,
+            ctx,
+        );
+        set_fixture_attribute(
+            fixture,
+            AD::PositionEffectFade.to_string().into(),
+            position_effect_fade,
+            ctx,
+        );
+
+        SetPanTiltProcessingOutput {}
+    }
+
+    pub fn set_xyz(
+        fixture: FixtureId,
+        x: AttributeValue,
+        y: AttributeValue,
+        z: AttributeValue,
+        x_rot: AttributeValue,
+        y_rot: AttributeValue,
+        z_rot: AttributeValue,
+        x_scale: AttributeValue,
+        y_scale: AttributeValue,
+        z_scale: AttributeValue,
+        xyz_scale: AttributeValue,
+        ctx: &mut ProcessingContext,
+    ) -> SetXyzProcessingOutput {
+        use AttributeDefinition as AD;
+
+        set_fixture_attribute(fixture, AD::XyzX.to_string().into(), x, ctx);
+        set_fixture_attribute(fixture, AD::XyzY.to_string().into(), y, ctx);
+        set_fixture_attribute(fixture, AD::XyzZ.to_string().into(), z, ctx);
+        set_fixture_attribute(fixture, AD::RotX.to_string().into(), x_rot, ctx);
+        set_fixture_attribute(fixture, AD::RotY.to_string().into(), y_rot, ctx);
+        set_fixture_attribute(fixture, AD::RotZ.to_string().into(), z_rot, ctx);
+        set_fixture_attribute(fixture, AD::ScaleX.to_string().into(), x_scale, ctx);
+        set_fixture_attribute(fixture, AD::ScaleY.to_string().into(), y_scale, ctx);
+        set_fixture_attribute(fixture, AD::ScaleZ.to_string().into(), z_scale, ctx);
+        set_fixture_attribute(fixture, AD::ScaleXyz.to_string().into(), xyz_scale, ctx);
+
+        SetXyzProcessingOutput {}
     }
 }
 
