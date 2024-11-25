@@ -182,6 +182,14 @@ pub enum NodeKind {
     #[computed_output(label = "channel", data_type = "DataType::DmxChannel")]
     SplitAddress,
 
+    #[node(
+        name = "Random Float",
+        category = "NodeCategory::Utilities",
+        processor = "processor::random_float"
+    )]
+    #[computed_output(label = "value", data_type = "DataType::Float")]
+    Random,
+
     // Output
     #[node(
         name = "Set Address Value",
@@ -383,6 +391,8 @@ mod processor {
 
     use super::*;
 
+    // New Values
+
     pub fn new_dmx_address(
         universe: DmxUniverseId,
         channel: DmxChannel,
@@ -392,6 +402,8 @@ mod processor {
             address: Value::from(DmxAddress::new(universe, channel)),
         }
     }
+
+    // Math
 
     pub fn add(a: f32, b: f32, _ctx: &mut ProcessingContext) -> AddProcessingOutput {
         AddProcessingOutput {
@@ -435,6 +447,8 @@ mod processor {
         }
     }
 
+    // Context
+
     pub fn get_fixture(ctx: &mut ProcessingContext) -> GetFixtureProcessingOutput {
         GetFixtureProcessingOutput {
             index: Value::from(ctx.current_fixture_index as i32),
@@ -449,6 +463,8 @@ mod processor {
         }
     }
 
+    // Utilities
+
     pub fn split_address(
         address: DmxAddress,
         _ctx: &mut ProcessingContext,
@@ -458,6 +474,14 @@ mod processor {
             channel: Value::from(address.channel.value() as i32),
         }
     }
+
+    pub fn random_float(_ctx: &mut ProcessingContext) -> RandomProcessingOutput {
+        RandomProcessingOutput {
+            value: Value::from(rand::random::<f32>()),
+        }
+    }
+
+    // Output
 
     pub fn set_channel_value(
         address: DmxAddress,

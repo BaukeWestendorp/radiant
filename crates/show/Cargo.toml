@@ -21,3 +21,4 @@ dirs.workspace = true
 gdtf = "0.2.0"
 itertools = "0.13.0"
 regex = "1.11.1"
+rand = "0.8.5"

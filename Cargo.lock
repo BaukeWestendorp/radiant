@@ -3972,6 +3972,7 @@ dependencies = [
  "gpui",
  "itertools 0.13.0",
  "log",
+ "rand",
  "regex",
  "serde",
  "serde_json",
