@@ -61,7 +61,9 @@ where
     fn open_node_context_menu(&mut self, cx: &mut ViewContext<Self>) {
         self.new_node_context_menu.update(cx, |menu, cx| {
             menu.show(cx);
-            let position = cx.mouse_position() - self.bounds.origin;
+            let position = cx.mouse_position()
+                - self.bounds.origin // Offset by the editor's position
+                - point(px(12.0), cx.theme().input_height / 2.0 + px(6.0)); // Offset to the start of the input
             menu.set_position(position, cx);
         });
     }
