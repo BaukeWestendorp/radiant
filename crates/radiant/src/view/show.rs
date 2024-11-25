@@ -1,4 +1,5 @@
 use anyhow::bail;
+use dmx::DmxOutput;
 use flow::gpui::GraphEditorView;
 use gpui::*;
 use show::effect_graph::{GraphDefinition, ProcessingContext};
@@ -125,20 +126,8 @@ impl ShowView {
     ) {
         match event {
             IoManagerEvent::OutputRequested => io_manager.update(cx, |io_manager, _cx| {
-                let mut context = ProcessingContext::new(self.show.clone());
-                context.set_group(FixtureGroup::new(
-                    self.show
-                        .patch()
-                        .fixtures()
-                        .iter()
-                        .map(|f| f.id())
-                        .collect(),
-                ));
-                context
-                    .process_frame(self.show.effect_graph())
-                    .map_err(|err| log::warn!("Failed to process frame: {err}"))
-                    .ok();
-                io_manager.set_dmx_output(context.dmx_output);
+                let dmx_output = compute_dmx_output(&self.show);
+                io_manager.set_dmx_output(dmx_output);
             }),
         }
     }
@@ -262,4 +251,41 @@ impl FocusableView for ShowView {
     fn focus_handle(&self, _cx: &AppContext) -> FocusHandle {
         self.focus_handle.clone()
     }
+}
+
+fn compute_dmx_output(show: &Show) -> DmxOutput {
+    // Initialize context
+    let mut context = ProcessingContext::new(show.clone());
+    context.set_group(FixtureGroup::new(
+        show.patch().fixtures().iter().map(|f| f.id()).collect(),
+    ));
+
+    // Set default DMX values
+    for fixture in show.patch().fixtures() {
+        for channel in &fixture.dmx_mode(show.patch()).dmx_channels {
+            if let Some((_, channel_function)) = channel.initial_function() {
+                if let Some(offsets) = &channel.offset {
+                    let default_bytes = match &channel_function.default.bytes().get() {
+                        1 => channel_function.default.to_u8().to_be_bytes().to_vec(),
+                        2 => channel_function.default.to_u16().to_be_bytes().to_vec(),
+                        _ => panic!("Unsupported default value size"),
+                    };
+
+                    for (i, offset) in offsets.iter().enumerate() {
+                        let default = default_bytes[i];
+                        let address = fixture.dmx_address.with_channel_offset(*offset as u16 - 1);
+                        context.dmx_output.set_channel_value(address, default)
+                    }
+                }
+            }
+        }
+    }
+
+    // Process frame
+    context
+        .process_frame(show.effect_graph())
+        .map_err(|err| log::warn!("Failed to process frame: {err}"))
+        .ok();
+
+    context.dmx_output
 }
