@@ -3,7 +3,7 @@ use dmx::DmxOutput;
 use flow::gpui::GraphEditorView;
 use gpui::*;
 use show::effect_graph::{GraphDefinition, ProcessingContext};
-use show::{FixtureGroup, Show};
+use show::{Group, Show};
 use std::path::PathBuf;
 use ui::theme::ActiveTheme;
 
@@ -88,12 +88,13 @@ impl ShowView {
                 io_manager
             });
 
-            let effect_graph = show.effect_graph().clone();
+            let effect_graph = show.assets().effect_graph().clone();
             let effect_graph_model = cx.new_model(|_cx| effect_graph);
             cx.observe(
                 &effect_graph_model,
                 |this: &mut Self, effect_graph_model, cx| {
-                    *this.show.effect_graph_mut() = effect_graph_model.read(cx).clone();
+                    *this.show.assets_mut().effect_graph_mut() =
+                        effect_graph_model.read(cx).clone();
                 },
             )
             .detach();
@@ -256,7 +257,7 @@ impl FocusableView for ShowView {
 fn compute_dmx_output(show: &Show) -> DmxOutput {
     // Initialize context
     let mut context = ProcessingContext::new(show.clone());
-    context.set_group(FixtureGroup::new(
+    context.set_group(Group::new(
         show.patch().fixtures().iter().map(|f| f.id()).collect(),
     ));
 
@@ -283,7 +284,7 @@ fn compute_dmx_output(show: &Show) -> DmxOutput {
 
     // Process frame
     context
-        .process_frame(show.effect_graph())
+        .process_frame(show.assets().effect_graph())
         .map_err(|err| log::warn!("Failed to process frame: {err}"))
         .ok();
 

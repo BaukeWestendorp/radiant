@@ -1,7 +1,7 @@
 use crate::attr_def::AttributeDefinition;
 use crate::fixture::{AttributeValue, FixtureId};
 use crate::patch::PatchedFixture;
-use crate::{FixtureGroup, Show};
+use crate::{Group, Show};
 
 use dmx::{DmxAddress, DmxChannel, DmxOutput, DmxUniverseId};
 use flow::gpui::{ControlEvent, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
@@ -851,7 +851,7 @@ pub struct ProcessingContext {
 
     show: Show,
 
-    group: FixtureGroup,
+    group: Group,
     current_fixture_index: usize,
 }
 
@@ -860,16 +860,16 @@ impl ProcessingContext {
         Self {
             dmx_output: DmxOutput::new(),
             show,
-            group: FixtureGroup::default(),
+            group: Group::default(),
             current_fixture_index: 0,
         }
     }
 
-    pub fn group(&self) -> &FixtureGroup {
+    pub fn group(&self) -> &Group {
         &self.group
     }
 
-    pub fn set_group(&mut self, group: FixtureGroup) {
+    pub fn set_group(&mut self, group: Group) {
         self.group = group;
     }
 

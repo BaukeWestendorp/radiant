@@ -17,10 +17,9 @@ pub struct Show {
     #[serde(default)]
     patch: Patch,
     #[serde(default)]
-    dmx_protocols: DmxProtocols,
-
+    assets: Assets,
     #[serde(default)]
-    effect_graph: EffectGraph,
+    dmx_protocols: DmxProtocols,
 }
 
 impl Show {
@@ -32,12 +31,12 @@ impl Show {
         &mut self.patch
     }
 
-    pub fn effect_graph(&self) -> &EffectGraph {
-        &self.effect_graph
+    pub fn assets(&self) -> &Assets {
+        &self.assets
     }
 
-    pub fn effect_graph_mut(&mut self) -> &mut EffectGraph {
-        &mut self.effect_graph
+    pub fn assets_mut(&mut self) -> &mut Assets {
+        &mut self.assets
     }
 
     pub fn dmx_protocols(&self) -> &DmxProtocols {
@@ -58,29 +57,35 @@ impl Show {
     }
 }
 
-#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
-pub struct DmxProtocols {
-    artnet: Vec<ArtnetNodeSettings>,
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct Assets {
+    #[serde(default)]
+    groups: Vec<Group>,
+
+    #[serde(default)]
+    effect_graph: EffectGraph,
 }
 
-impl DmxProtocols {
-    pub fn artnet(&self) -> &[ArtnetNodeSettings] {
-        &self.artnet
+impl Assets {
+    pub fn groups(&self) -> &[Group] {
+        &self.groups
+    }
+
+    pub fn effect_graph(&self) -> &EffectGraph {
+        &self.effect_graph
+    }
+
+    pub fn effect_graph_mut(&mut self) -> &mut EffectGraph {
+        &mut self.effect_graph
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct ArtnetNodeSettings {
-    pub destination_ip: Ipv4Addr,
-    pub universe: DmxUniverseId,
-}
-
-#[derive(Clone, Default)]
-pub struct FixtureGroup {
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct Group {
     fixtures: Vec<FixtureId>,
 }
 
-impl FixtureGroup {
+impl Group {
     pub fn new(fixtures: Vec<FixtureId>) -> Self {
         Self { fixtures }
     }
@@ -100,4 +105,21 @@ impl FixtureGroup {
     pub fn is_empty(&self) -> bool {
         self.fixtures.is_empty()
     }
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct DmxProtocols {
+    artnet: Vec<ArtnetNodeSettings>,
+}
+
+impl DmxProtocols {
+    pub fn artnet(&self) -> &[ArtnetNodeSettings] {
+        &self.artnet
+    }
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ArtnetNodeSettings {
+    pub destination_ip: Ipv4Addr,
+    pub universe: DmxUniverseId,
 }
