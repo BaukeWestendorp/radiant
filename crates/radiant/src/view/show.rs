@@ -2,7 +2,7 @@ use anyhow::bail;
 use dmx::DmxOutput;
 use flow::gpui::GraphEditorView;
 use gpui::*;
-use show::effect::{EffectId, GraphDefinition, ProcessingContext};
+use show::effect::{GraphDefinition, ProcessingContext};
 use show::Show;
 use std::path::PathBuf;
 use ui::theme::ActiveTheme;
@@ -127,7 +127,7 @@ impl ShowView {
     ) {
         match event {
             IoManagerEvent::OutputRequested => io_manager.update(cx, |io_manager, _cx| {
-                let dmx_output = compute_dmx_output(&self.show, &1);
+                let dmx_output = compute_dmx_output(&self.show);
                 io_manager.set_dmx_output(dmx_output);
             }),
         }
@@ -254,11 +254,11 @@ impl FocusableView for ShowView {
     }
 }
 
-fn compute_dmx_output(show: &Show, effect: &EffectId) -> DmxOutput {
+fn compute_dmx_output(show: &Show) -> DmxOutput {
     // Initialize context
-    let effect = show.assets().effect(effect).unwrap();
     let mut context = ProcessingContext::new(show.clone());
-    context.set_group(show.assets().group(&effect.group).unwrap().clone());
+    let group = 1;
+    context.set_group(show.assets().group(&group).unwrap().clone());
 
     // Set default DMX values
     for fixture in show.patch().fixtures() {

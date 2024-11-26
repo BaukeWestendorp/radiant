@@ -86,8 +86,8 @@ impl Assets {
         self.groups.get_mut(id)
     }
 
-    pub fn new_effect(&mut self, id: EffectId, group: GroupId, graph: EffectGraph) -> EffectId {
-        let effect = Effect::new(id, group, graph);
+    pub fn new_effect(&mut self, id: EffectId, graph: EffectGraph) -> EffectId {
+        let effect = Effect::new(id, graph);
         self.effects.insert(id, effect);
         id
     }
