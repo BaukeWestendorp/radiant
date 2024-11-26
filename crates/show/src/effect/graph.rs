@@ -11,6 +11,8 @@ use std::fmt::Display;
 use strum::IntoEnumIterator;
 use ui::input::{NumberField, Slider, SliderEvent, TextField, TextFieldEvent};
 
+use super::{Effect, EffectId, EffectKind};
+
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct GraphDefinition;
 
@@ -21,6 +23,8 @@ impl flow::GraphDefinition for GraphDefinition {
     type DataType = DataType;
     type Control = Control;
 }
+
+pub type EffectGraphId = u32;
 
 pub type EffectGraph = Graph<GraphDefinition>;
 
@@ -849,33 +853,40 @@ impl VisualControl<GraphDefinition> for Control {
 pub struct ProcessingContext {
     pub dmx_output: DmxOutput,
 
+    effect: EffectId,
     show: Show,
 
-    group: Group,
     current_fixture_index: usize,
 }
 
 impl ProcessingContext {
-    pub fn new(show: Show) -> Self {
+    pub fn new(show: Show, effect: EffectId) -> Self {
         Self {
             dmx_output: DmxOutput::new(),
+
+            effect,
             show,
-            group: Group::default(),
+
             current_fixture_index: 0,
         }
     }
 
+    pub fn effect(&self) -> &Effect {
+        self.show.assets().effect(&self.effect).unwrap()
+    }
+
     pub fn group(&self) -> &Group {
-        &self.group
+        self.show.assets().group(&self.effect().group).unwrap()
     }
 
-    pub fn set_group(&mut self, group: Group) {
-        self.group = group;
+    pub fn graph(&self) -> &EffectGraph {
+        let EffectKind::Graph(graph) = &self.effect().kind;
+        graph
     }
 
-    pub fn process_frame(&mut self, graph: &EffectGraph) -> Result<(), FlowError> {
+    pub fn process_frame(&mut self) -> Result<(), FlowError> {
         self.current_fixture_index = 0;
-        while self.current_fixture_index < self.group.len() {
+        while self.current_fixture_index < self.group().len() {
             if self
                 .show
                 .patch()
@@ -889,7 +900,7 @@ impl ProcessingContext {
                 continue;
             }
 
-            graph.process(self)?;
+            self.graph().clone().process(self)?;
             self.current_fixture_index += 1;
         }
         Ok(())
@@ -903,6 +914,6 @@ impl ProcessingContext {
     }
 
     pub fn current_fixture_id(&self) -> FixtureId {
-        self.group.fixtures()[self.current_fixture_index]
+        self.group().fixtures()[self.current_fixture_index]
     }
 }

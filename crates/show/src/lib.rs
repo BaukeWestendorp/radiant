@@ -1,5 +1,5 @@
 use dmx::DmxUniverseId;
-use effect::{Effect, EffectGraph, EffectId};
+use effect::{Effect, EffectId, EffectKind};
 
 use crate::fixture::FixtureId;
 use crate::patch::Patch;
@@ -86,8 +86,8 @@ impl Assets {
         self.groups.get_mut(id)
     }
 
-    pub fn new_effect(&mut self, id: EffectId, graph: EffectGraph) -> EffectId {
-        let effect = Effect::new(id, graph);
+    pub fn new_effect(&mut self, id: EffectId, group: GroupId, kind: EffectKind) -> EffectId {
+        let effect = Effect::new(id, group, kind);
         self.effects.insert(id, effect);
         id
     }

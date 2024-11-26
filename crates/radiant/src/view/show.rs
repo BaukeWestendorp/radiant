@@ -88,13 +88,15 @@ impl ShowView {
                 io_manager
             });
 
-            let effect_graph = show.assets().effect(&1).unwrap().graph.clone();
+            let show::effect::EffectKind::Graph(effect_graph) =
+                show.assets().effect(&1).unwrap().kind.clone();
             let effect_graph_model = cx.new_model(|_cx| effect_graph);
             cx.observe(
                 &effect_graph_model,
                 |this: &mut Self, effect_graph_model, cx| {
-                    this.show.assets_mut().effect_mut(&1).unwrap().graph =
-                        effect_graph_model.read(cx).clone();
+                    let show::effect::EffectKind::Graph(graph) =
+                        &mut this.show.assets_mut().effect_mut(&1).unwrap().kind;
+                    *graph = effect_graph_model.read(cx).clone();
                 },
             )
             .detach();
@@ -256,9 +258,8 @@ impl FocusableView for ShowView {
 
 fn compute_dmx_output(show: &Show) -> DmxOutput {
     // Initialize context
-    let mut context = ProcessingContext::new(show.clone());
-    let group = 1;
-    context.set_group(show.assets().group(&group).unwrap().clone());
+    let effect = 1;
+    let mut context = ProcessingContext::new(show.clone(), effect);
 
     // Set default DMX values
     for fixture in show.patch().fixtures() {
@@ -283,7 +284,7 @@ fn compute_dmx_output(show: &Show) -> DmxOutput {
 
     // Process frame
     context
-        .process_frame(&show.assets().effect(&1).unwrap().graph)
+        .process_frame()
         .map_err(|err| log::warn!("Failed to process frame: {err}"))
         .ok();
 
