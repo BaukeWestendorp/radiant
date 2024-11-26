@@ -1,6 +1,6 @@
 use dmx::DmxUniverseId;
+use effect::EffectGraph;
 
-use crate::effect_graph::EffectGraph;
 use crate::fixture::FixtureId;
 use crate::patch::Patch;
 use std::fs;
@@ -8,7 +8,7 @@ use std::net::Ipv4Addr;
 use std::path::Path;
 
 pub mod attr_def;
-pub mod effect_graph;
+pub mod effect;
 pub mod fixture;
 pub mod patch;
 

@@ -2,7 +2,7 @@ use anyhow::bail;
 use dmx::DmxOutput;
 use flow::gpui::GraphEditorView;
 use gpui::*;
-use show::effect_graph::{GraphDefinition, ProcessingContext};
+use show::effect::{GraphDefinition, ProcessingContext};
 use show::{Group, Show};
 use std::path::PathBuf;
 use ui::theme::ActiveTheme;
