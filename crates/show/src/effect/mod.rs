@@ -1,4 +1,5 @@
 pub mod graph;
+
 pub use graph::*;
 
 use crate::GroupId;
@@ -20,5 +21,5 @@ impl Effect {
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub enum EffectKind {
-    Graph(EffectGraph),
+    Graph(EffectGraphId),
 }

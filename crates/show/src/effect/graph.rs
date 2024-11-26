@@ -880,8 +880,8 @@ impl ProcessingContext {
     }
 
     pub fn graph(&self) -> &EffectGraph {
-        let EffectKind::Graph(graph) = &self.effect().kind;
-        graph
+        let EffectKind::Graph(id) = &self.effect().kind;
+        self.show.assets().effect_graph(id).unwrap()
     }
 
     pub fn process_frame(&mut self) -> Result<(), FlowError> {

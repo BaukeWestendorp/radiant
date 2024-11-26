@@ -88,15 +88,22 @@ impl ShowView {
                 io_manager
             });
 
-            let show::effect::EffectKind::Graph(effect_graph) =
+            let show::effect::EffectKind::Graph(effect_graph_id) =
                 show.assets().effect(&1).unwrap().kind.clone();
+            let effect_graph = show
+                .assets()
+                .effect_graph(&effect_graph_id)
+                .unwrap()
+                .clone();
             let effect_graph_model = cx.new_model(|_cx| effect_graph);
             cx.observe(
                 &effect_graph_model,
                 |this: &mut Self, effect_graph_model, cx| {
-                    let show::effect::EffectKind::Graph(graph) =
-                        &mut this.show.assets_mut().effect_mut(&1).unwrap().kind;
-                    *graph = effect_graph_model.read(cx).clone();
+                    let show::effect::EffectKind::Graph(graph_id) =
+                        this.show.assets_mut().effect_mut(&1).unwrap().kind;
+
+                    *this.show.assets_mut().effect_graph_mut(&graph_id).unwrap() =
+                        effect_graph_model.read(cx).clone();
                 },
             )
             .detach();

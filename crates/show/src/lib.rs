@@ -1,5 +1,5 @@
 use dmx::DmxUniverseId;
-use effect::{Effect, EffectId, EffectKind};
+use effect::{Effect, EffectGraph, EffectGraphId, EffectId, EffectKind};
 
 use crate::fixture::FixtureId;
 use crate::patch::Patch;
@@ -65,6 +65,9 @@ pub struct Assets {
 
     #[serde(default)]
     effects: HashMap<EffectId, Effect>,
+
+    #[serde(default)]
+    effect_graphs: HashMap<EffectGraphId, EffectGraph>,
 }
 
 impl Assets {
@@ -92,12 +95,24 @@ impl Assets {
         id
     }
 
+    pub fn effects(&self) -> impl Iterator<Item = &Effect> {
+        self.effects.values()
+    }
+
     pub fn effect(&self, id: &EffectId) -> Option<&Effect> {
         self.effects.get(id)
     }
 
     pub fn effect_mut(&mut self, id: &EffectId) -> Option<&mut Effect> {
         self.effects.get_mut(id)
+    }
+
+    pub fn effect_graph(&self, id: &EffectGraphId) -> Option<&EffectGraph> {
+        self.effect_graphs.get(id)
+    }
+
+    pub fn effect_graph_mut(&mut self, id: &EffectGraphId) -> Option<&mut EffectGraph> {
+        self.effect_graphs.get_mut(id)
     }
 }
 
