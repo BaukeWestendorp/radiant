@@ -1,8 +1,9 @@
 use dmx::DmxUniverseId;
-use effect::EffectGraph;
+use effect::{Effect, EffectGraph, EffectId};
 
 use crate::fixture::FixtureId;
 use crate::patch::Patch;
+use std::collections::HashMap;
 use std::fs;
 use std::net::Ipv4Addr;
 use std::path::Path;
@@ -60,34 +61,57 @@ impl Show {
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct Assets {
     #[serde(default)]
-    groups: Vec<Group>,
+    groups: HashMap<GroupId, Group>,
 
     #[serde(default)]
-    effect_graph: EffectGraph,
+    effects: HashMap<EffectId, Effect>,
 }
 
 impl Assets {
-    pub fn groups(&self) -> &[Group] {
-        &self.groups
+    pub fn new_group(&mut self, id: GroupId, fixtures: Vec<FixtureId>) -> GroupId {
+        let group = Group::new(id, fixtures);
+        self.groups.insert(id, group);
+        id
     }
 
-    pub fn effect_graph(&self) -> &EffectGraph {
-        &self.effect_graph
+    pub fn groups(&self) -> impl Iterator<Item = &Group> {
+        self.groups.values()
     }
 
-    pub fn effect_graph_mut(&mut self) -> &mut EffectGraph {
-        &mut self.effect_graph
+    pub fn group(&self, id: &GroupId) -> Option<&Group> {
+        self.groups.get(id)
+    }
+
+    pub fn group_mut(&mut self, id: &GroupId) -> Option<&mut Group> {
+        self.groups.get_mut(id)
+    }
+
+    pub fn new_effect(&mut self, id: EffectId, group: GroupId, graph: EffectGraph) -> EffectId {
+        let effect = Effect::new(id, group, graph);
+        self.effects.insert(id, effect);
+        id
+    }
+
+    pub fn effect(&self, id: &EffectId) -> Option<&Effect> {
+        self.effects.get(id)
+    }
+
+    pub fn effect_mut(&mut self, id: &EffectId) -> Option<&mut Effect> {
+        self.effects.get_mut(id)
     }
 }
 
+pub type GroupId = u32;
+
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct Group {
+    id: GroupId,
     fixtures: Vec<FixtureId>,
 }
 
 impl Group {
-    pub fn new(fixtures: Vec<FixtureId>) -> Self {
-        Self { fixtures }
+    pub(crate) fn new(id: GroupId, fixtures: Vec<FixtureId>) -> Self {
+        Self { id, fixtures }
     }
 
     pub fn fixtures(&self) -> &[FixtureId] {

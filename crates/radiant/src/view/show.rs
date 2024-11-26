@@ -2,8 +2,8 @@ use anyhow::bail;
 use dmx::DmxOutput;
 use flow::gpui::GraphEditorView;
 use gpui::*;
-use show::effect::{GraphDefinition, ProcessingContext};
-use show::{Group, Show};
+use show::effect::{EffectId, GraphDefinition, ProcessingContext};
+use show::Show;
 use std::path::PathBuf;
 use ui::theme::ActiveTheme;
 
@@ -88,12 +88,12 @@ impl ShowView {
                 io_manager
             });
 
-            let effect_graph = show.assets().effect_graph().clone();
+            let effect_graph = show.assets().effect(&1).unwrap().graph.clone();
             let effect_graph_model = cx.new_model(|_cx| effect_graph);
             cx.observe(
                 &effect_graph_model,
                 |this: &mut Self, effect_graph_model, cx| {
-                    *this.show.assets_mut().effect_graph_mut() =
+                    this.show.assets_mut().effect_mut(&1).unwrap().graph =
                         effect_graph_model.read(cx).clone();
                 },
             )
@@ -127,7 +127,7 @@ impl ShowView {
     ) {
         match event {
             IoManagerEvent::OutputRequested => io_manager.update(cx, |io_manager, _cx| {
-                let dmx_output = compute_dmx_output(&self.show);
+                let dmx_output = compute_dmx_output(&self.show, &1);
                 io_manager.set_dmx_output(dmx_output);
             }),
         }
@@ -254,12 +254,11 @@ impl FocusableView for ShowView {
     }
 }
 
-fn compute_dmx_output(show: &Show) -> DmxOutput {
+fn compute_dmx_output(show: &Show, effect: &EffectId) -> DmxOutput {
     // Initialize context
+    let effect = show.assets().effect(effect).unwrap();
     let mut context = ProcessingContext::new(show.clone());
-    context.set_group(Group::new(
-        show.patch().fixtures().iter().map(|f| f.id()).collect(),
-    ));
+    context.set_group(show.assets().group(&effect.group).unwrap().clone());
 
     // Set default DMX values
     for fixture in show.patch().fixtures() {
@@ -284,7 +283,7 @@ fn compute_dmx_output(show: &Show) -> DmxOutput {
 
     // Process frame
     context
-        .process_frame(show.assets().effect_graph())
+        .process_frame(&show.assets().effect(&1).unwrap().graph)
         .map_err(|err| log::warn!("Failed to process frame: {err}"))
         .ok();
 
