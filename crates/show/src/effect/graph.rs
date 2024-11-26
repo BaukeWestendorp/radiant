@@ -7,7 +7,9 @@ use dmx::{DmxAddress, DmxChannel, DmxOutput, DmxUniverseId};
 use flow::gpui::{ControlEvent, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
 use flow::{FlowError, Graph};
 use gpui::{rgb, AnyView, ElementId, EventEmitter, Hsla, SharedString, ViewContext, VisualContext};
+use std::cell::RefCell;
 use std::fmt::Display;
+use std::rc::Rc;
 use strum::IntoEnumIterator;
 use ui::input::{NumberField, Slider, SliderEvent, TextField, TextFieldEvent};
 
@@ -327,7 +329,9 @@ mod processor {
         value: AttributeValue,
         ctx: &mut ProcessingContext,
     ) -> SetChannelValueProcessingOutput {
-        ctx.dmx_output.set_channel_value(address, value.byte());
+        ctx.dmx_output
+            .borrow_mut()
+            .set_channel_value(address, value.byte());
 
         SetChannelValueProcessingOutput {}
     }
@@ -851,7 +855,7 @@ impl VisualControl<GraphDefinition> for Control {
 }
 
 pub struct ProcessingContext {
-    pub dmx_output: DmxOutput,
+    pub dmx_output: Rc<RefCell<DmxOutput>>,
 
     effect: EffectId,
     show: Show,
@@ -860,9 +864,9 @@ pub struct ProcessingContext {
 }
 
 impl ProcessingContext {
-    pub fn new(show: Show, effect: EffectId) -> Self {
+    pub fn new(show: Show, effect: EffectId, dmx_output: Rc<RefCell<DmxOutput>>) -> Self {
         Self {
-            dmx_output: DmxOutput::new(),
+            dmx_output,
 
             effect,
             show,
@@ -891,16 +895,15 @@ impl ProcessingContext {
                 .show
                 .patch()
                 .fixture(self.current_fixture_id())
-                .is_none()
+                .is_some()
             {
+                self.graph().clone().process(self)?;
+            } else {
                 log::warn!(
                     "Tried to process effect graph with invalid FixtureId. Skipping fixture."
                 );
-                self.current_fixture_index += 1;
-                continue;
             }
 
-            self.graph().clone().process(self)?;
             self.current_fixture_index += 1;
         }
         Ok(())

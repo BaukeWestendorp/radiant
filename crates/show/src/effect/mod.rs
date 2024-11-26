@@ -17,6 +17,10 @@ impl Effect {
     pub(crate) fn new(id: EffectId, group: GroupId, kind: EffectKind) -> Self {
         Self { id, group, kind }
     }
+
+    pub fn id(&self) -> EffectId {
+        self.id
+    }
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
