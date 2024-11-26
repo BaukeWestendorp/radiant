@@ -3970,7 +3970,6 @@ dependencies = [
  "gdtf",
  "geo",
  "gpui",
- "itertools 0.13.0",
  "log",
  "rand",
  "regex",

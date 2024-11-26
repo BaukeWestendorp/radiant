@@ -113,7 +113,18 @@ impl PatchedFixture {
     }
 
     pub fn dmx_mode<'p>(&self, patch: &'p Patch) -> &'p DmxMode {
-        self.fixture_type(patch).dmx_mode(&self.dmx_mode).unwrap()
+        self.fixture_type(patch)
+            .dmx_mode(&self.dmx_mode)
+            .unwrap_or_else(|| {
+                panic!(
+                    "Invalid DMX Mode: {}. valid modes are: [{:?}]",
+                    self.dmx_mode,
+                    self.fixture_type(patch)
+                        .dmx_modes
+                        .iter()
+                        .filter_map(|m| m.name.as_ref().map(|n| n.to_string()))
+                )
+            })
     }
 
     pub fn channel_offset_for_attribute<'p>(
@@ -123,7 +134,7 @@ impl PatchedFixture {
     ) -> Option<&'p Vec<i32>> {
         let fixture_type = self.fixture_type(patch);
 
-        for channel in &fixture_type.dmx_mode(&self.dmx_mode).unwrap().dmx_channels {
+        for channel in &self.dmx_mode(patch).dmx_channels {
             let (logical_channel, _) = channel.initial_function().unwrap();
 
             if logical_channel
