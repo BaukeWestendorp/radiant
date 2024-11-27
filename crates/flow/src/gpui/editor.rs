@@ -207,10 +207,11 @@ where
                 &search_box,
                 |this: &mut Self, _, event: &TextFieldEvent, cx| match event {
                     TextFieldEvent::PressEnter => {
-                        let node_kind = Def::NodeKind::all().next().unwrap().clone();
-                        let data = <Def::NodeData as Default>::default();
-                        this.create_new_node(node_kind.clone(), data, cx);
-                        this.hide(cx);
+                        if let Some(node_kind) = this.filtered_nodes(cx).first() {
+                            let data = <Def::NodeData as Default>::default();
+                            this.create_new_node(node_kind.clone(), data, cx);
+                            this.hide(cx);
+                        }
                     }
                     _ => {}
                 },
@@ -293,6 +294,24 @@ where
         self.selected_category = None;
     }
 
+    fn filtered_nodes(&self, cx: &AppContext) -> Vec<Def::NodeKind> {
+        Def::NodeKind::all()
+            .filter(|n| {
+                n.label()
+                    .to_lowercase()
+                    .contains(&self.filter(cx).to_lowercase())
+                    && match self.selected_category {
+                        Some(category) => n.category() == category,
+                        None => true,
+                    }
+            })
+            .collect()
+    }
+
+    fn filter<'a>(&self, cx: &'a AppContext) -> &'a str {
+        self.search_box.read(cx).value()
+    }
+
     fn render_header(&self, cx: &AppContext) -> impl IntoElement {
         div()
             .h_flex()
@@ -305,19 +324,10 @@ where
     }
 
     fn render_node_list(&self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let filter = self.search_box.read(cx).value();
-        let nodes = Def::NodeKind::all()
-            .filter(|n| {
-                n.label().to_lowercase().contains(&filter.to_lowercase())
-                    && match self.selected_category {
-                        Some(category) => n.category() == category,
-                        None => true,
-                    }
-            })
-            .collect::<Vec<_>>();
+        let nodes = self.filtered_nodes(cx);
         let categories = <Def::NodeKind as VisualNodeKind>::Category::all().collect::<Vec<_>>();
 
-        let show_categories = filter.is_empty() && self.selected_category.is_none();
+        let show_categories = self.filter(cx).is_empty() && self.selected_category.is_none();
 
         let render_list_item = move |item: AnyElement, cx: &ViewContext<Self>| -> AnyElement {
             div()

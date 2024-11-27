@@ -1,15 +1,19 @@
 use crate::attr_def::AttributeDefinition;
 use crate::fixture::{AttributeValue, FixtureId};
 use crate::patch::PatchedFixture;
-use crate::{FixtureGroup, Show};
+use crate::{Group, Show};
 
 use dmx::{DmxAddress, DmxChannel, DmxOutput, DmxUniverseId};
 use flow::gpui::{ControlEvent, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
 use flow::{FlowError, Graph};
 use gpui::{rgb, AnyView, ElementId, EventEmitter, Hsla, SharedString, ViewContext, VisualContext};
+use std::cell::RefCell;
 use std::fmt::Display;
+use std::rc::Rc;
 use strum::IntoEnumIterator;
 use ui::input::{NumberField, Slider, SliderEvent, TextField, TextFieldEvent};
+
+use super::{Effect, EffectId, EffectKind};
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct GraphDefinition;
@@ -21,6 +25,8 @@ impl flow::GraphDefinition for GraphDefinition {
     type DataType = DataType;
     type Control = Control;
 }
+
+pub type EffectGraphId = u32;
 
 pub type EffectGraph = Graph<GraphDefinition>;
 
@@ -323,7 +329,9 @@ mod processor {
         value: AttributeValue,
         ctx: &mut ProcessingContext,
     ) -> SetChannelValueProcessingOutput {
-        ctx.dmx_output.set_channel_value(address, value.byte());
+        ctx.dmx_output
+            .borrow_mut()
+            .set_channel_value(address, value.byte());
 
         SetChannelValueProcessingOutput {}
     }
@@ -847,49 +855,55 @@ impl VisualControl<GraphDefinition> for Control {
 }
 
 pub struct ProcessingContext {
-    pub dmx_output: DmxOutput,
+    pub dmx_output: Rc<RefCell<DmxOutput>>,
 
+    effect: EffectId,
     show: Show,
 
-    group: FixtureGroup,
     current_fixture_index: usize,
 }
 
 impl ProcessingContext {
-    pub fn new(show: Show) -> Self {
+    pub fn new(show: Show, effect: EffectId, dmx_output: Rc<RefCell<DmxOutput>>) -> Self {
         Self {
-            dmx_output: DmxOutput::new(),
+            dmx_output,
+
+            effect,
             show,
-            group: FixtureGroup::default(),
+
             current_fixture_index: 0,
         }
     }
 
-    pub fn group(&self) -> &FixtureGroup {
-        &self.group
+    pub fn effect(&self) -> &Effect {
+        self.show.assets().effect(&self.effect).unwrap()
     }
 
-    pub fn set_group(&mut self, group: FixtureGroup) {
-        self.group = group;
+    pub fn group(&self) -> &Group {
+        self.show.assets().group(&self.effect().group).unwrap()
     }
 
-    pub fn process_frame(&mut self, graph: &EffectGraph) -> Result<(), FlowError> {
+    pub fn graph(&self) -> &EffectGraph {
+        let EffectKind::Graph(id) = &self.effect().kind;
+        self.show.assets().effect_graph(id).unwrap()
+    }
+
+    pub fn process_frame(&mut self) -> Result<(), FlowError> {
         self.current_fixture_index = 0;
-        while self.current_fixture_index < self.group.len() {
+        while self.current_fixture_index < self.group().len() {
             if self
                 .show
                 .patch()
                 .fixture(self.current_fixture_id())
-                .is_none()
+                .is_some()
             {
+                self.graph().clone().process(self)?;
+            } else {
                 log::warn!(
                     "Tried to process effect graph with invalid FixtureId. Skipping fixture."
                 );
-                self.current_fixture_index += 1;
-                continue;
             }
 
-            graph.process(self)?;
             self.current_fixture_index += 1;
         }
         Ok(())
@@ -903,6 +917,6 @@ impl ProcessingContext {
     }
 
     pub fn current_fixture_id(&self) -> FixtureId {
-        self.group.fixtures()[self.current_fixture_index]
+        self.group().fixtures()[self.current_fixture_index]
     }
 }

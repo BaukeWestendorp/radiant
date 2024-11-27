@@ -1,14 +1,15 @@
 use dmx::DmxUniverseId;
+use effect::{Effect, EffectGraph, EffectGraphId, EffectId, EffectKind};
 
-use crate::effect_graph::EffectGraph;
 use crate::fixture::FixtureId;
 use crate::patch::Patch;
+use std::collections::HashMap;
 use std::fs;
 use std::net::Ipv4Addr;
 use std::path::Path;
 
 pub mod attr_def;
-pub mod effect_graph;
+pub mod effect;
 pub mod fixture;
 pub mod patch;
 
@@ -17,10 +18,9 @@ pub struct Show {
     #[serde(default)]
     patch: Patch,
     #[serde(default)]
-    dmx_protocols: DmxProtocols,
-
+    assets: Assets,
     #[serde(default)]
-    effect_graph: EffectGraph,
+    dmx_protocols: DmxProtocols,
 }
 
 impl Show {
@@ -32,12 +32,12 @@ impl Show {
         &mut self.patch
     }
 
-    pub fn effect_graph(&self) -> &EffectGraph {
-        &self.effect_graph
+    pub fn assets(&self) -> &Assets {
+        &self.assets
     }
 
-    pub fn effect_graph_mut(&mut self) -> &mut EffectGraph {
-        &mut self.effect_graph
+    pub fn assets_mut(&mut self) -> &mut Assets {
+        &mut self.assets
     }
 
     pub fn dmx_protocols(&self) -> &DmxProtocols {
@@ -58,31 +58,75 @@ impl Show {
     }
 }
 
-#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
-pub struct DmxProtocols {
-    artnet: Vec<ArtnetNodeSettings>,
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct Assets {
+    #[serde(default)]
+    groups: HashMap<GroupId, Group>,
+
+    #[serde(default)]
+    effects: HashMap<EffectId, Effect>,
+
+    #[serde(default)]
+    effect_graphs: HashMap<EffectGraphId, EffectGraph>,
 }
 
-impl DmxProtocols {
-    pub fn artnet(&self) -> &[ArtnetNodeSettings] {
-        &self.artnet
+impl Assets {
+    pub fn new_group(&mut self, id: GroupId, fixtures: Vec<FixtureId>) -> GroupId {
+        let group = Group::new(id, fixtures);
+        self.groups.insert(id, group);
+        id
+    }
+
+    pub fn groups(&self) -> impl Iterator<Item = &Group> {
+        self.groups.values()
+    }
+
+    pub fn group(&self, id: &GroupId) -> Option<&Group> {
+        self.groups.get(id)
+    }
+
+    pub fn group_mut(&mut self, id: &GroupId) -> Option<&mut Group> {
+        self.groups.get_mut(id)
+    }
+
+    pub fn new_effect(&mut self, id: EffectId, group: GroupId, kind: EffectKind) -> EffectId {
+        let effect = Effect::new(id, group, kind);
+        self.effects.insert(id, effect);
+        id
+    }
+
+    pub fn effects(&self) -> impl Iterator<Item = &Effect> {
+        self.effects.values()
+    }
+
+    pub fn effect(&self, id: &EffectId) -> Option<&Effect> {
+        self.effects.get(id)
+    }
+
+    pub fn effect_mut(&mut self, id: &EffectId) -> Option<&mut Effect> {
+        self.effects.get_mut(id)
+    }
+
+    pub fn effect_graph(&self, id: &EffectGraphId) -> Option<&EffectGraph> {
+        self.effect_graphs.get(id)
+    }
+
+    pub fn effect_graph_mut(&mut self, id: &EffectGraphId) -> Option<&mut EffectGraph> {
+        self.effect_graphs.get_mut(id)
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct ArtnetNodeSettings {
-    pub destination_ip: Ipv4Addr,
-    pub universe: DmxUniverseId,
-}
+pub type GroupId = u32;
 
-#[derive(Clone, Default)]
-pub struct FixtureGroup {
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct Group {
+    id: GroupId,
     fixtures: Vec<FixtureId>,
 }
 
-impl FixtureGroup {
-    pub fn new(fixtures: Vec<FixtureId>) -> Self {
-        Self { fixtures }
+impl Group {
+    pub(crate) fn new(id: GroupId, fixtures: Vec<FixtureId>) -> Self {
+        Self { id, fixtures }
     }
 
     pub fn fixtures(&self) -> &[FixtureId] {
@@ -100,4 +144,21 @@ impl FixtureGroup {
     pub fn is_empty(&self) -> bool {
         self.fixtures.is_empty()
     }
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct DmxProtocols {
+    artnet: Vec<ArtnetNodeSettings>,
+}
+
+impl DmxProtocols {
+    pub fn artnet(&self) -> &[ArtnetNodeSettings] {
+        &self.artnet
+    }
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ArtnetNodeSettings {
+    pub destination_ip: Ipv4Addr,
+    pub universe: DmxUniverseId,
 }
