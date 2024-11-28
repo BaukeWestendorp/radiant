@@ -1,10 +1,12 @@
 pub mod assets;
 pub mod dmx_protocols;
 pub mod patch;
+pub mod windows;
 
 pub use assets::*;
 pub use dmx_protocols::*;
 pub use patch::*;
+pub use windows::*;
 
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct Showfile {
@@ -14,6 +16,8 @@ pub struct Showfile {
     assets: Assets,
     #[serde(default)]
     dmx_protocols: DmxProtocols,
+    #[serde(default)]
+    windows: Windows,
 }
 
 impl Showfile {
@@ -39,6 +43,14 @@ impl Showfile {
 
     pub fn dmx_protocols_mut(&mut self) -> &mut DmxProtocols {
         &mut self.dmx_protocols
+    }
+
+    pub fn windows(&self) -> &Windows {
+        &self.windows
+    }
+
+    pub fn windows_mut(&mut self) -> &mut Windows {
+        &mut self.windows
     }
 }
 
