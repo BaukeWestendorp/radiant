@@ -1,25 +1,25 @@
 use anyhow::bail;
 use dmx::DmxOutput;
-use flow::gpui::GraphEditorView;
 use gpui::*;
-use show::effect::{GraphDefinition, ProcessingContext};
-use show::Show;
+use show::{EffectGraphProcessingContext, Show};
+use ui::theme::ActiveTheme;
+
 use std::cell::RefCell;
+use std::fs;
 use std::path::PathBuf;
 use std::rc::Rc;
-use ui::theme::ActiveTheme;
 
 use crate::io::{IoManager, IoManagerEvent};
 
 actions!(show, [Save, SaveAs, Close]);
 
-const CONTEXT: &str = "Show";
+const KEY_CONTEXT: &str = "Show";
 
 pub fn init(cx: &mut AppContext) {
     cx.bind_keys([
-        KeyBinding::new("cmd-s", Save, Some(CONTEXT)),
-        KeyBinding::new("shift-cmd-s", SaveAs, Some(CONTEXT)),
-        KeyBinding::new("cmd-w", Close, Some(CONTEXT)),
+        KeyBinding::new("cmd-s", Save, Some(KEY_CONTEXT)),
+        KeyBinding::new("shift-cmd-s", SaveAs, Some(KEY_CONTEXT)),
+        KeyBinding::new("cmd-w", Close, Some(KEY_CONTEXT)),
     ]);
 }
 
@@ -65,7 +65,6 @@ pub struct ShowView {
     show: Show,
     _io_manager: Model<IoManager>,
 
-    editor_view: View<GraphEditorView<GraphDefinition>>,
     focus_handle: FocusHandle,
 
     path: Option<PathBuf>,
@@ -74,7 +73,9 @@ pub struct ShowView {
 
 impl ShowView {
     pub fn read_from_file(path: PathBuf, cx: &mut WindowContext) -> Result<View<Self>> {
-        let show = Show::read_from_file(&path)?;
+        let show_json = fs::read_to_string(&path)?;
+        let show: Show = serde_json::from_str(&show_json)?;
+
         let this = Self::build(show, cx);
         this.update(cx, |this, _cx| {
             this.path = Some(path);
@@ -90,28 +91,6 @@ impl ShowView {
                 io_manager
             });
 
-            let effect = 1;
-            let show::effect::EffectKind::Graph(effect_graph_id) =
-                show.assets().effect(&effect).unwrap().kind.clone();
-            let effect_graph = show
-                .assets()
-                .effect_graph(&effect_graph_id)
-                .unwrap()
-                .clone();
-            let effect_graph_model = cx.new_model(|_cx| effect_graph);
-            cx.observe(
-                &effect_graph_model,
-                |this: &mut Self, effect_graph_model, cx| {
-                    let show::effect::EffectKind::Graph(graph_id) =
-                        this.show.assets_mut().effect_mut(&1).unwrap().kind;
-
-                    *this.show.assets_mut().effect_graph_mut(&graph_id).unwrap() =
-                        effect_graph_model.read(cx).clone();
-                },
-            )
-            .detach();
-            let editor_view = GraphEditorView::build(effect_graph_model, cx);
-
             cx.subscribe(&io_manager, Self::handle_io_manager_event)
                 .detach();
 
@@ -122,7 +101,6 @@ impl ShowView {
                 show,
                 _io_manager: io_manager,
 
-                editor_view,
                 focus_handle: cx.focus_handle().clone(),
 
                 path: None,
@@ -145,22 +123,22 @@ impl ShowView {
         }
     }
 
-    fn render_sidebar(&self, cx: &AppContext) -> impl IntoElement {
-        div()
-            .max_w_40()
-            .min_w_40()
-            .h_full()
-            .bg(cx.theme().secondary)
-            .border_r_1()
-            .border_color(cx.theme().border)
-    }
-
     fn handle_save(&mut self, _: &Save, cx: &mut ViewContext<Self>) {
         if let Some(path) = self.path.clone() {
             log::debug!("Saving {}", path.as_path().display());
 
-            self.show
-                .save_to_file(path.as_path())
+            let Some(show_json) = serde_json::to_string_pretty(&self.show)
+                .map_err(|err| {
+                    log::error!("Failed to serialize show: {err}");
+                    err
+                })
+                .ok()
+            else {
+                log::error!("Failed to save show");
+                return;
+            };
+
+            fs::write(&path, show_json)
                 .map_err(|err| log::error!("{err}"))
                 .ok();
 
@@ -245,15 +223,13 @@ impl ShowView {
 impl Render for ShowView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
-            .key_context(CONTEXT)
+            .key_context(KEY_CONTEXT)
             .flex()
             .size_full()
             .bg(cx.theme().background)
             .text_color(cx.theme().foreground)
             .text_size(cx.theme().font_size)
             .font_family(cx.theme().font_family.clone())
-            .child(self.render_sidebar(cx))
-            .child(self.editor_view.clone())
             .on_action(cx.listener(Self::handle_save))
             .on_action(cx.listener(Self::handle_save_as))
             .on_action(cx.listener(Self::handle_close))
@@ -293,7 +269,8 @@ fn compute_dmx_output(show: &Show) -> DmxOutput {
 
     for effect in show.assets().effects() {
         // Initialize context
-        let mut context = ProcessingContext::new(show.clone(), effect.id(), dmx_output.clone());
+        let mut context =
+            EffectGraphProcessingContext::new(show.clone(), effect.id(), dmx_output.clone());
 
         // Process frame
         context

@@ -1,8 +1,15 @@
 pub mod graph;
 
-pub use graph::*;
+pub use graph::{
+    Control as EffectGraphControl, DataType as EffectGraphDataType,
+    GraphDefinition as EffectGraphDefinition, NodeData as EffectGraphNodeData,
+    NodeKind as EffectGraphNodeKind, ProcessingContext as EffectGraphProcessingContext,
+    Value as EffectGraphValue,
+};
 
-use crate::GroupId;
+use graph::EffectGraphId;
+
+use super::GroupId;
 
 pub type EffectId = u32;
 

@@ -18,12 +18,12 @@ pub(crate) const SNAP_GRID_SIZE: f32 = 12.0;
 
 actions!(graph_editor, [RemoveNode]);
 
-const CONTEXT: &str = "GraphNode";
+const KEY_CONTEXT: &str = "GraphNode";
 
 pub(crate) fn init(cx: &mut AppContext) {
     cx.bind_keys([
-        KeyBinding::new("backspace", RemoveNode, Some(CONTEXT)),
-        KeyBinding::new("delete", RemoveNode, Some(CONTEXT)),
+        KeyBinding::new("backspace", RemoveNode, Some(KEY_CONTEXT)),
+        KeyBinding::new("delete", RemoveNode, Some(KEY_CONTEXT)),
     ]);
 }
 
@@ -219,7 +219,7 @@ where
         let position = node.data.snapped_position(SNAP_GRID_SIZE);
 
         div()
-            .key_context(CONTEXT)
+            .key_context(KEY_CONTEXT)
             .id(ElementId::Name(format!("node-{:?}", self.node_id).into()))
             .track_focus(&self.focus_handle)
             .absolute()

@@ -1,5 +1,6 @@
 use gpui::Pixels;
 
+/// A point in 2D space.
 #[derive(
     Debug, Clone, Copy, PartialEq, PartialOrd, Default, serde::Serialize, serde::Deserialize,
 )]

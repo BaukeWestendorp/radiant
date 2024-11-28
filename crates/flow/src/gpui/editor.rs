@@ -14,13 +14,13 @@ actions!(graph_editor, [CloseNodeContextMenu]);
 
 const GRID_SIZE: f32 = SNAP_GRID_SIZE;
 
-const CONTEXT: &str = "GraphEditor";
+const KEY_CONTEXT: &str = "GraphEditor";
 
 pub(crate) fn init(cx: &mut AppContext) {
     cx.bind_keys([KeyBinding::new(
         "escape",
         CloseNodeContextMenu,
-        Some(CONTEXT),
+        Some(KEY_CONTEXT),
     )]);
 }
 
@@ -154,7 +154,7 @@ where
             })
             .into_any_element(),
         ])
-        .key_context(CONTEXT)
+        .key_context(KEY_CONTEXT)
         .track_focus(&self.focus_handle)
         .size_full()
         .overflow_hidden()

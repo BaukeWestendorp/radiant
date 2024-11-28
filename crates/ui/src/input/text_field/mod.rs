@@ -37,59 +37,59 @@ actions!(
     ]
 );
 
-const CONTEXT: &str = "Input";
+const KEY_CONTEXT: &str = "Input";
 
 pub fn init(cx: &mut AppContext) {
     cx.bind_keys([
-        KeyBinding::new("backspace", Backspace, Some(CONTEXT)),
-        KeyBinding::new("delete", Delete, Some(CONTEXT)),
-        KeyBinding::new("enter", Enter, Some(CONTEXT)),
-        KeyBinding::new("left", Left, Some(CONTEXT)),
-        KeyBinding::new("right", Right, Some(CONTEXT)),
-        KeyBinding::new("shift-left", SelectLeft, Some(CONTEXT)),
-        KeyBinding::new("shift-right", SelectRight, Some(CONTEXT)),
-        KeyBinding::new("home", Home, Some(CONTEXT)),
-        KeyBinding::new("end", End, Some(CONTEXT)),
-        KeyBinding::new("shift-home", SelectToHome, Some(CONTEXT)),
-        KeyBinding::new("shift-end", SelectToEnd, Some(CONTEXT)),
+        KeyBinding::new("backspace", Backspace, Some(KEY_CONTEXT)),
+        KeyBinding::new("delete", Delete, Some(KEY_CONTEXT)),
+        KeyBinding::new("enter", Enter, Some(KEY_CONTEXT)),
+        KeyBinding::new("left", Left, Some(KEY_CONTEXT)),
+        KeyBinding::new("right", Right, Some(KEY_CONTEXT)),
+        KeyBinding::new("shift-left", SelectLeft, Some(KEY_CONTEXT)),
+        KeyBinding::new("shift-right", SelectRight, Some(KEY_CONTEXT)),
+        KeyBinding::new("home", Home, Some(KEY_CONTEXT)),
+        KeyBinding::new("end", End, Some(KEY_CONTEXT)),
+        KeyBinding::new("shift-home", SelectToHome, Some(KEY_CONTEXT)),
+        KeyBinding::new("shift-end", SelectToEnd, Some(KEY_CONTEXT)),
         #[cfg(target_os = "macos")]
-        KeyBinding::new("shift-cmd-left", SelectToHome, Some(CONTEXT)),
+        KeyBinding::new("shift-cmd-left", SelectToHome, Some(KEY_CONTEXT)),
         #[cfg(target_os = "macos")]
-        KeyBinding::new("shift-cmd-right", SelectToEnd, Some(CONTEXT)),
+        KeyBinding::new("shift-cmd-right", SelectToEnd, Some(KEY_CONTEXT)),
         #[cfg(target_os = "macos")]
-        KeyBinding::new("ctrl-cmd-space", ShowCharacterPalette, Some(CONTEXT)),
+        KeyBinding::new("ctrl-cmd-space", ShowCharacterPalette, Some(KEY_CONTEXT)),
         #[cfg(target_os = "macos")]
-        KeyBinding::new("cmd-a", SelectAll, Some(CONTEXT)),
+        KeyBinding::new("cmd-a", SelectAll, Some(KEY_CONTEXT)),
         #[cfg(not(target_os = "macos"))]
-        KeyBinding::new("ctrl-a", SelectAll, Some(CONTEXT)),
+        KeyBinding::new("ctrl-a", SelectAll, Some(KEY_CONTEXT)),
         #[cfg(target_os = "macos")]
-        KeyBinding::new("cmd-c", Copy, Some(CONTEXT)),
+        KeyBinding::new("cmd-c", Copy, Some(KEY_CONTEXT)),
         #[cfg(not(target_os = "macos"))]
-        KeyBinding::new("ctrl-c", Copy, Some(CONTEXT)),
+        KeyBinding::new("ctrl-c", Copy, Some(KEY_CONTEXT)),
         #[cfg(target_os = "macos")]
-        KeyBinding::new("cmd-x", Cut, Some(CONTEXT)),
+        KeyBinding::new("cmd-x", Cut, Some(KEY_CONTEXT)),
         #[cfg(not(target_os = "macos"))]
-        KeyBinding::new("ctrl-x", Cut, Some(CONTEXT)),
+        KeyBinding::new("ctrl-x", Cut, Some(KEY_CONTEXT)),
         #[cfg(target_os = "macos")]
-        KeyBinding::new("cmd-v", Paste, Some(CONTEXT)),
+        KeyBinding::new("cmd-v", Paste, Some(KEY_CONTEXT)),
         #[cfg(not(target_os = "macos"))]
-        KeyBinding::new("ctrl-v", Paste, Some(CONTEXT)),
+        KeyBinding::new("ctrl-v", Paste, Some(KEY_CONTEXT)),
         #[cfg(target_os = "macos")]
-        KeyBinding::new("ctrl-a", Home, Some(CONTEXT)),
+        KeyBinding::new("ctrl-a", Home, Some(KEY_CONTEXT)),
         #[cfg(target_os = "macos")]
-        KeyBinding::new("cmd-left", Home, Some(CONTEXT)),
+        KeyBinding::new("cmd-left", Home, Some(KEY_CONTEXT)),
         #[cfg(target_os = "macos")]
-        KeyBinding::new("ctrl-e", End, Some(CONTEXT)),
+        KeyBinding::new("ctrl-e", End, Some(KEY_CONTEXT)),
         #[cfg(target_os = "macos")]
-        KeyBinding::new("cmd-right", End, Some(CONTEXT)),
+        KeyBinding::new("cmd-right", End, Some(KEY_CONTEXT)),
         #[cfg(target_os = "macos")]
-        KeyBinding::new("cmd-z", Undo, Some(CONTEXT)),
+        KeyBinding::new("cmd-z", Undo, Some(KEY_CONTEXT)),
         #[cfg(target_os = "macos")]
-        KeyBinding::new("cmd-shift-z", Redo, Some(CONTEXT)),
+        KeyBinding::new("cmd-shift-z", Redo, Some(KEY_CONTEXT)),
         #[cfg(not(target_os = "macos"))]
-        KeyBinding::new("ctrl-z", Undo, Some(CONTEXT)),
+        KeyBinding::new("ctrl-z", Undo, Some(KEY_CONTEXT)),
         #[cfg(not(target_os = "macos"))]
-        KeyBinding::new("ctrl-y", Redo, Some(CONTEXT)),
+        KeyBinding::new("ctrl-y", Redo, Some(KEY_CONTEXT)),
     ]);
 }
 
@@ -691,7 +691,7 @@ impl Render for TextField {
 
         div()
             .track_focus(&self.focus_handle)
-            .key_context(CONTEXT)
+            .key_context(KEY_CONTEXT)
             .on_action(cx.listener(Self::backspace))
             .on_action(cx.listener(Self::delete))
             .on_action(cx.listener(Self::enter))

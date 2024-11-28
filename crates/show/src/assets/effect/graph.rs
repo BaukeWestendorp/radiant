@@ -1,7 +1,9 @@
+use crate::assets::Group;
 use crate::attr_def::AttributeDefinition;
-use crate::fixture::{AttributeValue, FixtureId};
-use crate::patch::PatchedFixture;
-use crate::{Group, Show};
+use crate::patch::{AttributeValue, FixtureId, PatchedFixture};
+use crate::Show;
+
+use super::{Effect, EffectId, EffectKind};
 
 use dmx::{DmxAddress, DmxChannel, DmxOutput, DmxUniverseId};
 use flow::gpui::{ControlEvent, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
@@ -12,8 +14,6 @@ use std::fmt::Display;
 use std::rc::Rc;
 use strum::IntoEnumIterator;
 use ui::input::{NumberField, Slider, SliderEvent, TextField, TextFieldEvent};
-
-use super::{Effect, EffectId, EffectKind};
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct GraphDefinition;
@@ -196,6 +196,8 @@ mod processor {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use dmx::DmxAddress;
+
+    use crate::patch::{AttributeValue, FixtureId};
 
     use super::*;
 

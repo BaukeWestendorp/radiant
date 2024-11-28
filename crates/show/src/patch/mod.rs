@@ -1,4 +1,7 @@
-use crate::fixture::FixtureId;
+pub mod fixture;
+
+pub use fixture::*;
+
 use dmx::DmxAddress;
 use gdtf::{dmx_mode::DmxMode, fixture_type::FixtureType, GdtfFile};
 use gpui::SharedString;
