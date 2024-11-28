@@ -718,7 +718,7 @@ impl VisualControl<GraphDefinition> for Control {
 
                 cx.subscribe(&field, |_this, _field, event: &NumberFieldEvent, cx| {
                     let NumberFieldEvent::Change(float_value) = event;
-                    let value = Value::Float(*float_value as f64);
+                    let value = Value::Float(*float_value);
                     cx.emit(ControlEvent::Change(value));
                 })
                 .detach();
