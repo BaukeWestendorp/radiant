@@ -3,9 +3,11 @@ use std::{io, path::PathBuf};
 use gpui::*;
 
 use crate::{dmx_io::DmxIo, showfile::Showfile};
-use main_window::MainWindow;
 
+pub mod frame;
 pub mod main_window;
+
+pub use main_window::*;
 
 pub struct Workspace {
     #[allow(unused)]
