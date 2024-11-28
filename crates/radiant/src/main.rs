@@ -4,8 +4,11 @@ use gpui::App;
 
 mod app;
 mod assets;
-mod io;
-mod view;
+mod dmx_io;
+mod showfile;
+mod workspace;
+
+mod attr_def;
 
 /// Radiant
 #[derive(clap::Parser, Debug)]
@@ -22,8 +25,7 @@ fn main() {
     let args = Args::parse();
 
     App::new().with_assets(assets::Assets).run(|cx| {
-        let app = RadiantApp::new();
-        app.run(cx);
-        app.open_show_window(args.path, cx);
+        let mut app = RadiantApp::new();
+        app.run(args.path, cx).unwrap();
     })
 }

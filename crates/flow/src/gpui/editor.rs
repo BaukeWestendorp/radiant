@@ -104,10 +104,8 @@ where
             move |bounds, _, cx| {
                 let w = bounds.size.width.0 + 2.0 * GRID_SIZE;
                 let h = bounds.size.height.0 + 2.0 * GRID_SIZE;
-                let x_offset =
-                    bounds.origin.x.0 + (graph_offset.x.0 % GRID_SIZE) - GRID_SIZE;
-                let y_offset =
-                    bounds.origin.y.0 + (graph_offset.y.0 % GRID_SIZE) - GRID_SIZE;
+                let x_offset = bounds.origin.x.0 + (graph_offset.x.0 % GRID_SIZE) - GRID_SIZE;
+                let y_offset = bounds.origin.y.0 + (graph_offset.y.0 % GRID_SIZE) - GRID_SIZE;
 
                 for rel_x in (0..w as i32).step_by(GRID_SIZE as usize) {
                     let x = x_offset + rel_x as f32;
@@ -205,11 +203,13 @@ where
 
             cx.subscribe(
                 &search_box,
-                |this: &mut Self, _, event: &TextFieldEvent, cx| if let TextFieldEvent::PressEnter = event {
-                    if let Some(node_kind) = this.filtered_nodes(cx).first() {
-                        let data = <Def::NodeData as Default>::default();
-                        this.create_new_node(node_kind.clone(), data, cx);
-                        this.hide(cx);
+                |this: &mut Self, _, event: &TextFieldEvent, cx| {
+                    if let TextFieldEvent::PressEnter = event {
+                        if let Some(node_kind) = this.filtered_nodes(cx).first() {
+                            let data = <Def::NodeData as Default>::default();
+                            this.create_new_node(node_kind.clone(), data, cx);
+                            this.hide(cx);
+                        }
                     }
                 },
             )

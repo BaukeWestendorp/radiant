@@ -2,7 +2,7 @@ pub mod effect;
 
 pub use effect::*;
 
-use crate::patch::FixtureId;
+use super::patch::FixtureId;
 
 use graph::{EffectGraph, EffectGraphId};
 

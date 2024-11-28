@@ -1382,7 +1382,7 @@ impl std::str::FromStr for AttributeDefinition {
 
 #[cfg(test)]
 mod tests {
-    use crate::attr_def::AttributeDefinition;
+    use super::AttributeDefinition;
 
     #[test]
     fn test_attribute_definition_from_str() {

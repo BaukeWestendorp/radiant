@@ -1,15 +1,13 @@
 pub mod assets;
-pub mod attr_def;
 pub mod dmx_protocols;
 pub mod patch;
 
 pub use assets::*;
-pub use attr_def::*;
 pub use dmx_protocols::*;
 pub use patch::*;
 
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
-pub struct Show {
+pub struct Showfile {
     #[serde(default)]
     patch: Patch,
     #[serde(default)]
@@ -18,7 +16,7 @@ pub struct Show {
     dmx_protocols: DmxProtocols,
 }
 
-impl Show {
+impl Showfile {
     pub fn patch(&self) -> &Patch {
         &self.patch
     }
@@ -43,3 +41,5 @@ impl Show {
         &mut self.dmx_protocols
     }
 }
+
+impl gpui::Global for Showfile {}

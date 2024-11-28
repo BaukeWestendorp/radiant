@@ -1,7 +1,5 @@
-use crate::assets::Group;
 use crate::attr_def::AttributeDefinition;
-use crate::patch::{AttributeValue, FixtureId, PatchedFixture};
-use crate::Show;
+use crate::showfile::{AttributeValue, FixtureId, Group, PatchedFixture, Showfile};
 
 use super::{Effect, EffectId, EffectKind};
 
@@ -197,7 +195,7 @@ mod processor {
 
     use dmx::DmxAddress;
 
-    use crate::patch::{AttributeValue, FixtureId};
+    use crate::showfile::patch::{AttributeValue, FixtureId};
 
     use super::*;
 
@@ -344,9 +342,9 @@ mod processor {
         value: AttributeValue,
         ctx: &mut ProcessingContext,
     ) -> SetFixtureAttributeProcessingOutput {
-        let patch = ctx.show.patch();
+        let patch = ctx.showfile.patch();
 
-        let Some(fixture) = ctx.show.patch().fixture(fixture) else {
+        let Some(fixture) = ctx.showfile.patch().fixture(fixture) else {
             log::debug!("Fixture with id `{fixture}` not found");
             return SetFixtureAttributeProcessingOutput {};
         };
@@ -860,41 +858,41 @@ pub struct ProcessingContext {
     pub dmx_output: Rc<RefCell<DmxOutput>>,
 
     effect: EffectId,
-    show: Show,
+    showfile: Showfile,
 
     current_fixture_index: usize,
 }
 
 impl ProcessingContext {
-    pub fn new(show: Show, effect: EffectId, dmx_output: Rc<RefCell<DmxOutput>>) -> Self {
+    pub fn new(showfile: Showfile, effect: EffectId, dmx_output: Rc<RefCell<DmxOutput>>) -> Self {
         Self {
             dmx_output,
 
             effect,
-            show,
+            showfile,
 
             current_fixture_index: 0,
         }
     }
 
     pub fn effect(&self) -> &Effect {
-        self.show.assets().effect(&self.effect).unwrap()
+        self.showfile.assets().effect(&self.effect).unwrap()
     }
 
     pub fn group(&self) -> &Group {
-        self.show.assets().group(&self.effect().group).unwrap()
+        self.showfile.assets().group(&self.effect().group).unwrap()
     }
 
     pub fn graph(&self) -> &EffectGraph {
         let EffectKind::Graph(id) = &self.effect().kind;
-        self.show.assets().effect_graph(id).unwrap()
+        self.showfile.assets().effect_graph(id).unwrap()
     }
 
     pub fn process_frame(&mut self) -> Result<(), FlowError> {
         self.current_fixture_index = 0;
         while self.current_fixture_index < self.group().len() {
             if self
-                .show
+                .showfile
                 .patch()
                 .fixture(self.current_fixture_id())
                 .is_some()
@@ -912,7 +910,7 @@ impl ProcessingContext {
     }
 
     pub fn current_fixture(&self) -> &PatchedFixture {
-        self.show
+        self.showfile
             .patch()
             .fixture(self.current_fixture_id())
             .unwrap()

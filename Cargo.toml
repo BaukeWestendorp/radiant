@@ -2,7 +2,6 @@
 members = [
     "crates/radiant",
     "crates/ui",
-    "crates/show",
     "crates/flow",
     "crates/dmx",
     "crates/geo",
@@ -18,7 +17,6 @@ edition = "2021"
 ui = { path = "crates/ui" }
 flow = { path = "crates/flow" }
 flow_derive = { path = "crates/flow_derive" }
-show = { path = "crates/show" }
 dmx = { path = "crates/dmx" }
 geo = { path = "crates/geo" }
 
@@ -29,7 +27,6 @@ slotmap = { version = "1.0.7", features = ["serde"] }
 thiserror = "1.0.61"
 log = "0.4.22"
 env_logger = "0.11.5"
-strum = { version = "0.26.3", features = ["derive"] }
 dirs = "5.0.1"
 
 serde = { version = "1.0.214", features = ["derive"] }

@@ -1,7 +1,6 @@
 use anyhow::bail;
 use dmx::DmxOutput;
 use gpui::*;
-use show::{EffectGraphProcessingContext, Show};
 use ui::theme::ActiveTheme;
 
 use std::cell::RefCell;
@@ -9,7 +8,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::rc::Rc;
 
-use crate::io::{IoManager, IoManagerEvent};
+use crate::dmx_io::DmxIo;
 
 actions!(show, [Save, SaveAs, Close]);
 
@@ -63,7 +62,7 @@ pub fn open_show_window(
 
 pub struct ShowView {
     show: Show,
-    _io_manager: Model<IoManager>,
+    _io_manager: Model<DmxIo>,
 
     focus_handle: FocusHandle,
 
@@ -86,7 +85,7 @@ impl ShowView {
     pub fn build(show: Show, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
             let io_manager = cx.new_model(|cx| {
-                let io_manager = IoManager::new(show.dmx_protocols()).unwrap();
+                let io_manager = DmxIo::new(show.dmx_protocols()).unwrap();
                 io_manager.start_emitting(cx);
                 io_manager
             });
@@ -111,7 +110,7 @@ impl ShowView {
 
     fn handle_io_manager_event(
         &mut self,
-        io_manager: Model<IoManager>,
+        io_manager: Model<DmxIo>,
         event: &IoManagerEvent,
         cx: &mut ViewContext<Self>,
     ) {
@@ -242,42 +241,4 @@ impl FocusableView for ShowView {
     }
 }
 
-fn compute_dmx_output(show: &Show) -> DmxOutput {
-    let dmx_output = Rc::new(RefCell::new(DmxOutput::new()));
-
-    // Set default DMX values
-    for fixture in show.patch().fixtures() {
-        for channel in &fixture.dmx_mode(show.patch()).dmx_channels {
-            if let Some((_, channel_function)) = channel.initial_function() {
-                if let Some(offsets) = &channel.offset {
-                    let default_bytes = match &channel_function.default.bytes().get() {
-                        1 => channel_function.default.to_u8().to_be_bytes().to_vec(),
-                        2 => channel_function.default.to_u16().to_be_bytes().to_vec(),
-                        _ => panic!("Unsupported default value size"),
-                    };
-
-                    for (i, offset) in offsets.iter().enumerate() {
-                        let default = default_bytes[i];
-                        let address = fixture.dmx_address.with_channel_offset(*offset as u16 - 1);
-
-                        dmx_output.borrow_mut().set_channel_value(address, default)
-                    }
-                }
-            }
-        }
-    }
-
-    for effect in show.assets().effects() {
-        // Initialize context
-        let mut context =
-            EffectGraphProcessingContext::new(show.clone(), effect.id(), dmx_output.clone());
-
-        // Process frame
-        context
-            .process_frame()
-            .map_err(|err| log::warn!("Failed to process frame: {err}"))
-            .ok();
-    }
-
-    dmx_output.take()
-}
+fn compute_dmx_output(show: &Show) -> DmxOutput {}
