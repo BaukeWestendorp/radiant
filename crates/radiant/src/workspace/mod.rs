@@ -63,7 +63,7 @@ fn window_options(cx: &AppContext) -> WindowOptions {
     WindowOptions {
         window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
             None,
-            size(px(1200.0), px(800.0)),
+            size(px(1280.0), px(800.0)),
             cx,
         ))),
         titlebar: Some(TitlebarOptions {

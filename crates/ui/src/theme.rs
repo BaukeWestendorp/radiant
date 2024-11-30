@@ -129,6 +129,8 @@ pub struct Theme {
     pub cursor_width: Pixels,
     pub cursor_blink_interval_ms: u64,
     pub cursor_blink_pause_delay_ms: u64,
+
+    pub window_header_color: Hsla,
 }
 
 impl Default for Theme {
@@ -164,6 +166,8 @@ impl Default for Theme {
             cursor_width: px(2.0),
             cursor_blink_interval_ms: 750,
             cursor_blink_pause_delay_ms: 500,
+
+            window_header_color: hsl(239.0, 80.0, 47.0),
         }
     }
 }

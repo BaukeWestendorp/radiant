@@ -1,10 +1,11 @@
+pub mod effect_graph_editor_frame;
 pub mod frame_grid;
-pub mod test_frame;
 
+pub use effect_graph_editor_frame::*;
 pub use frame_grid::*;
-pub use test_frame::*;
 
 use gpui::*;
+use ui::theme::ActiveTheme;
 
 pub struct Frame<D: FrameDelegate> {
     delegate: D,
@@ -18,7 +19,12 @@ impl<D: FrameDelegate + 'static> Frame<D> {
 
 impl<D: FrameDelegate + 'static> Render for Frame<D> {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        div().size_full().child(self.delegate.render(cx))
+        div()
+            .flex()
+            .flex_col()
+            .size_full()
+            .children(self.delegate.render_titlebar(cx))
+            .child(self.delegate.render_content(cx))
     }
 }
 
@@ -27,7 +33,34 @@ pub trait FrameDelegate {
     where
         Self: Sized;
 
-    fn render(&mut self, cx: &mut ViewContext<Frame<Self>>) -> impl IntoElement
+    fn render_titlebar(&mut self, cx: &mut ViewContext<Frame<Self>>) -> Option<impl IntoElement>
+    where
+        Self: Sized,
+    {
+        let title = self.title(cx).to_string();
+
+        Some(
+            div()
+                .w_full()
+                .h(px(GRID_SIZE / 2.0))
+                .bg(cx.theme().window_header_color)
+                .border_1()
+                .border_color(black().opacity(0.4))
+                .rounded(cx.theme().radius)
+                .px_2()
+                .child(
+                    div()
+                        .size_full()
+                        .flex()
+                        .items_center()
+                        .text_sm()
+                        .font_weight(FontWeight::SEMIBOLD)
+                        .child(title),
+                ),
+        )
+    }
+
+    fn render_content(&mut self, cx: &mut ViewContext<Frame<Self>>) -> impl IntoElement
     where
         Self: Sized;
 }

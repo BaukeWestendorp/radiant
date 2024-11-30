@@ -155,6 +155,7 @@ where
         .key_context(KEY_CONTEXT)
         .track_focus(&self.focus_handle)
         .size_full()
+        .bg(cx.theme().background)
         .overflow_hidden()
         .on_action(cx.listener(Self::close_node_context_menu))
         .on_mouse_down(

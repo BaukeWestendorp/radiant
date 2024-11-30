@@ -60,9 +60,9 @@ impl Render for FrameGrid {
             div()
                 .absolute()
                 .left(px(0 as f32 * GRID_SIZE))
-                .top(px(1 as f32 * GRID_SIZE))
-                .w(px(16 as f32 * GRID_SIZE))
-                .h(px(2 as f32 * GRID_SIZE))
+                .top(px(0 as f32 * GRID_SIZE))
+                .w(px(15 as f32 * GRID_SIZE))
+                .h(px(8 as f32 * GRID_SIZE))
                 .child(frame)
                 .into_any_element()
         });

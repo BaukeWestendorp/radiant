@@ -1,6 +1,6 @@
 use gpui::{AnyView, WindowContext};
 
-use crate::workspace::frame::{Frame, TestFrameDelegate};
+use crate::workspace::frame::{EffectGraphEditorFrameDelegate, Frame};
 
 #[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct Windows {
@@ -14,13 +14,15 @@ pub struct Window {
 
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub enum FrameKind {
-    Test,
+    EffectGraphEditor,
 }
 
 impl FrameKind {
     pub fn to_frame_view(&self, cx: &mut WindowContext) -> AnyView {
         match self {
-            FrameKind::Test => Frame::build(TestFrameDelegate {}, cx),
+            FrameKind::EffectGraphEditor => {
+                Frame::build(EffectGraphEditorFrameDelegate::new(cx), cx)
+            }
         }
         .into()
     }
