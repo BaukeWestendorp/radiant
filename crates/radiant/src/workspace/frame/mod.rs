@@ -7,22 +7,30 @@ pub use frame_grid::*;
 use gpui::*;
 use ui::theme::ActiveTheme;
 
+use crate::showfile::BoundedFrame;
+
 pub struct Frame<D: FrameDelegate> {
+    frame: BoundedFrame,
     delegate: D,
 }
 
 impl<D: FrameDelegate + 'static> Frame<D> {
-    pub fn build(delegate: D, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|_cx| Self { delegate })
+    pub fn build(frame: BoundedFrame, delegate: D, cx: &mut WindowContext) -> View<Self> {
+        cx.new_view(|_cx| Self { frame, delegate })
     }
 }
 
 impl<D: FrameDelegate + 'static> Render for Frame<D> {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
+            .absolute()
             .flex()
             .flex_col()
             .size_full()
+            .w(px(self.frame.width as f32 * GRID_SIZE))
+            .h(px(self.frame.height as f32 * GRID_SIZE))
+            .left(px(self.frame.x as f32 * GRID_SIZE))
+            .top(px(self.frame.y as f32 * GRID_SIZE))
             .children(self.delegate.render_titlebar(cx))
             .child(self.delegate.render_content(cx))
     }

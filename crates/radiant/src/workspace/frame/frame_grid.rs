@@ -21,7 +21,7 @@ impl FrameGrid {
                 .frames
                 .clone()
                 .into_iter()
-                .map(|kind| kind.to_frame_view(cx))
+                .map(|frame| frame.to_frame_view(cx))
                 .collect();
 
             FrameGrid {
@@ -56,16 +56,11 @@ impl Render for FrameGrid {
         .size_full()
         .into_any_element();
 
-        let frame_elements = self.frames.clone().into_iter().map(|frame| {
-            div()
-                .absolute()
-                .left(px(0 as f32 * GRID_SIZE))
-                .top(px(0 as f32 * GRID_SIZE))
-                .w(px(15 as f32 * GRID_SIZE))
-                .h(px(8 as f32 * GRID_SIZE))
-                .child(frame)
-                .into_any_element()
-        });
+        let frame_elements = self
+            .frames
+            .clone()
+            .into_iter()
+            .map(|frame| frame.into_any_element());
 
         z_stack([background].into_iter().chain(frame_elements)).size_full()
     }
