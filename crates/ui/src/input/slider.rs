@@ -1,9 +1,8 @@
 use std::ops::RangeInclusive;
 
 use gpui::*;
-use prelude::FluentBuilder;
 
-use crate::{bounds_updater, theme::ActiveTheme, StyledExt};
+use crate::{bounds_updater, interactive_container, theme::ActiveTheme, StyledExt};
 
 use super::{NumberField, NumberFieldEvent};
 
@@ -20,10 +19,11 @@ pub struct Slider {
 
 impl Slider {
     pub fn new(id: impl Into<ElementId>, cx: &mut ViewContext<Self>) -> Self {
+        let id: ElementId = id.into();
         Self {
-            id: id.into(),
+            id: id.clone(),
             number_field: {
-                let field = cx.new_view(NumberField::new);
+                let field = cx.new_view(|cx| NumberField::new(id, cx));
 
                 cx.subscribe(&field, |_, _, event: &NumberFieldEvent, cx| {
                     let NumberFieldEvent::Change(value) = event;
@@ -108,23 +108,18 @@ impl Render for Slider {
 
         let diff = *self.range.end() - *self.range.start();
         let relative_value = (self.value(cx) / diff).clamp(0.0, 1.0);
-        let slider_background = div()
+        let bar = div()
             .h_full()
             .w(relative(relative_value as f32))
-            .bg(cx.theme().tertriary);
+            .bg(cx.theme().accent.opacity(0.2));
 
-        let slider = div()
+        let slider = interactive_container(self.id.clone(), false, focused, cx)
+            .bg(cx.theme().background)
             .track_focus(&focus_handle)
-            .id(self.id.clone())
             .w_2_3()
             .h_full()
-            .bg(cx.theme().primary)
-            .border_1()
-            .border_color(cx.theme().border)
-            .when(focused, |s| s.border_color(cx.theme().accent))
-            .rounded(cx.theme().radius)
             .cursor_ew_resize()
-            .child(slider_background)
+            .child(bar)
             .child(bounds_updater(cx.view().clone(), |this, bounds, _cx| {
                 this.slider_bounds = bounds
             }))

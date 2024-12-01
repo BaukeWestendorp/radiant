@@ -8,11 +8,11 @@ pub struct NumberField {
 }
 
 impl NumberField {
-    pub fn new(cx: &mut ViewContext<Self>) -> Self {
+    pub fn new(id: impl Into<ElementId>, cx: &mut ViewContext<Self>) -> Self {
         Self {
             text_field: {
                 let field = cx.new_view(|cx| {
-                    let mut field = TextField::new(cx);
+                    let mut field = TextField::new(id.into(), cx);
                     field.set_pattern(Some(
                         Regex::new(r"^-?\d*\.?\d*$").expect("regex should be valid"),
                     ));

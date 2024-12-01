@@ -1,10 +1,10 @@
 use flow::gpui::GraphEditorView;
 use gpui::*;
-use ui::theme::ActiveTheme;
+use ui::{container, theme::ActiveTheme, ContainerKind};
 
-use crate::showfile::{EffectGraphDefinition, Showfile};
+use crate::showfile::{EffectGraphDefinition, EffectGraphId, Showfile};
 
-use super::{Frame, FrameDelegate};
+use super::{FrameDelegate, FrameView};
 
 pub struct EffectGraphEditorFrameDelegate {
     graph_editor: View<GraphEditorView<EffectGraphDefinition>>,
@@ -15,8 +15,9 @@ impl EffectGraphEditorFrameDelegate {
         let graph_model = cx.new_model(|cx| {
             Showfile::global(cx)
                 .assets()
-                .effect_graph(&1)
+                .effect_graph(&EffectGraphId(1))
                 .unwrap()
+                .graph
                 .clone()
         });
 
@@ -27,22 +28,14 @@ impl EffectGraphEditorFrameDelegate {
 }
 
 impl FrameDelegate for EffectGraphEditorFrameDelegate {
-    fn title(&mut self, _cx: &mut ViewContext<Frame<Self>>) -> &str
-    where
-        Self: Sized,
-    {
+    fn title(&mut self, _cx: &mut ViewContext<FrameView<Self>>) -> &str {
         "Effect Graph Editor"
     }
 
-    fn render_content(&mut self, cx: &mut ViewContext<Frame<Self>>) -> impl IntoElement
-    where
-        Self: Sized,
-    {
-        div()
+    fn render_content(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> impl IntoElement {
+        container(ContainerKind::Element, cx)
             .size_full()
+            .border_color(cx.theme().frame_header_border)
             .child(self.graph_editor.clone())
-            .border_1()
-            .border_color(cx.theme().border)
-            .rounded(cx.theme().radius)
     }
 }

@@ -5,15 +5,15 @@ use crate::showfile::Showfile;
 
 pub const GRID_SIZE: f32 = 80.0;
 
-pub struct FrameGrid {
+pub struct FrameGridView {
     width: u32,
     height: u32,
 
     frames: Vec<AnyView>,
 }
 
-impl FrameGrid {
-    pub fn build(cx: &mut WindowContext) -> View<FrameGrid> {
+impl FrameGridView {
+    pub fn build(cx: &mut WindowContext) -> View<FrameGridView> {
         cx.new_view(|cx| {
             let frames = Showfile::global(cx)
                 .windows()
@@ -24,7 +24,7 @@ impl FrameGrid {
                 .map(|frame| frame.to_frame_view(cx))
                 .collect();
 
-            FrameGrid {
+            FrameGridView {
                 width: 16,
                 height: 10,
 
@@ -34,7 +34,7 @@ impl FrameGrid {
     }
 }
 
-impl Render for FrameGrid {
+impl Render for FrameGridView {
     fn render(&mut self, _cx: &mut gpui::ViewContext<Self>) -> impl gpui::IntoElement {
         let background = canvas(|_, _| {}, {
             let width = self.width;

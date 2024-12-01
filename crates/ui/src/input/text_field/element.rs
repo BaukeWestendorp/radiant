@@ -73,9 +73,9 @@ impl Element for TextElement {
         let style = cx.text_style();
 
         let (display_text, text_color) = if value.is_empty() {
-            (placeholder, cx.theme().muted_foreground)
+            (placeholder, cx.theme().text_placeholder)
         } else {
-            (value, cx.theme().foreground)
+            (value, cx.theme().text)
         };
 
         let run = TextRun {
@@ -181,7 +181,7 @@ impl Element for TextElement {
                             bounds.bottom() - inset,
                         ),
                     ),
-                    cx.theme().selection,
+                    cx.theme().text_accent,
                 )),
                 None,
             )

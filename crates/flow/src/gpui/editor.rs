@@ -8,7 +8,7 @@ use gpui::*;
 use prelude::FluentBuilder;
 use ui::input::{TextField, TextFieldEvent};
 use ui::theme::ActiveTheme;
-use ui::{bounds_updater, z_stack, StyledExt};
+use ui::{bounds_updater, container, z_stack, StyledExt};
 
 actions!(graph_editor, [CloseNodeContextMenu]);
 
@@ -101,6 +101,7 @@ where
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let background_grid = canvas(|_, _| {}, {
             let graph_offset = self.graph_offset;
+            let grid_color = cx.theme().border_variant;
             move |bounds, _, cx| {
                 let w = bounds.size.width.0 + 2.0 * GRID_SIZE;
                 let h = bounds.size.height.0 + 2.0 * GRID_SIZE;
@@ -111,7 +112,7 @@ where
                     let x = x_offset + rel_x as f32;
                     cx.paint_quad(fill(
                         Bounds::new(point(px(x), px(y_offset)), size(px(1.0), px(h))),
-                        cx.theme().primary,
+                        grid_color,
                     ));
                 }
 
@@ -119,7 +120,7 @@ where
                     let y = y_offset + rel_y as f32;
                     cx.paint_quad(fill(
                         Bounds::new(point(px(x_offset), px(y)), size(px(w), px(1.0))),
-                        cx.theme().primary,
+                        grid_color,
                     ));
                 }
             }
@@ -197,7 +198,7 @@ where
     pub fn build(graph: Model<Graph<Def>>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
             let search_box = cx.new_view(|cx| {
-                let mut field = TextField::new(cx);
+                let mut field = TextField::new("search-box", cx);
                 field.set_placeholder("Search".into());
                 field
             });
@@ -330,8 +331,8 @@ where
         let render_list_item = move |item: AnyElement, cx: &ViewContext<Self>| -> AnyElement {
             div()
                 .p_1()
-                .bg(cx.theme().primary)
-                .hover(|style| style.bg(cx.theme().primary_hover))
+                .bg(cx.theme().element_background)
+                .hover(|style| style.bg(white()))
                 .border_b_1()
                 .border_color(cx.theme().background)
                 .cursor_pointer()
@@ -412,15 +413,11 @@ where
             return div();
         }
 
-        div()
+        container(ui::ContainerKind::Element, cx)
             .absolute()
             .w(px(300.0))
             .left(self.position.x)
             .top(self.position.y)
-            .bg(cx.theme().secondary)
-            .border_1()
-            .border_color(cx.theme().border)
-            .rounded(cx.theme().radius)
             .child(self.render_header(cx))
             .child(self.render_node_list(cx))
             .on_mouse_down_out(cx.listener(|this, _, cx| {

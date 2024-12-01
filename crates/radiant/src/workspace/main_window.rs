@@ -1,16 +1,16 @@
 use gpui::*;
 use ui::theme::ActiveTheme;
 
-use super::frame::FrameGrid;
+use super::frame::FrameGridView;
 
 pub struct MainWindow {
-    frame_grid: View<FrameGrid>,
+    frame_grid: View<FrameGridView>,
 }
 
 impl MainWindow {
     pub fn build(cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| Self {
-            frame_grid: FrameGrid::build(cx),
+            frame_grid: FrameGridView::build(cx),
         })
     }
 }
@@ -21,7 +21,7 @@ impl Render for MainWindow {
             .flex()
             .size_full()
             .bg(cx.theme().background)
-            .text_color(cx.theme().foreground)
+            .text_color(cx.theme().text)
             .text_size(cx.theme().font_size)
             .font_family(cx.theme().font_family.clone())
             .child(self.frame_grid.clone())

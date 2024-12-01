@@ -6,7 +6,6 @@ use crate::{
 
 use gpui::prelude::FluentBuilder;
 use gpui::*;
-use ui::theme::Colorize;
 use ui::{theme::ActiveTheme, StyledExt};
 
 pub(crate) const NODE_CONTENT_Y_PADDING: Pixels = px(6.0);
@@ -203,6 +202,7 @@ where
                 .py_px()
                 .border_b_1()
                 .border_color(cx.theme().border)
+                .when(focused, |e| e.border_color(cx.theme().border_selected))
                 .child(label)
         };
 
@@ -226,14 +226,16 @@ where
             .left(px(position.x))
             .top(px(position.y))
             .w(NODE_WIDTH)
-            .bg(cx.theme().secondary)
+            .bg(cx.theme().element_background)
             .border_1()
             .border_color(cx.theme().border)
             .rounded(cx.theme().radius)
             .when(focused, |e| {
-                e.bg(cx.theme().secondary_active)
-                    .border_color(cx.theme().accent.darken(0.5))
+                e.bg(cx.theme().element_selected)
+                    .border_color(cx.theme().border_selected)
+                    .shadow_md()
             })
+            .shadow_sm()
             .child(header)
             .child(content)
             .on_action::<RemoveNode>(cx.listener(|this, _, cx| {

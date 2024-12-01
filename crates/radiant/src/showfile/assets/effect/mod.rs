@@ -1,29 +1,37 @@
+pub mod flow_graph;
 pub mod graph;
 
 #[allow(unused_imports)]
-pub use graph::{
+pub use flow_graph::{
     Control as EffectGraphControl, DataType as EffectGraphDataType,
     GraphDefinition as EffectGraphDefinition, NodeData as EffectGraphNodeData,
     NodeKind as EffectGraphNodeKind, ProcessingContext as EffectGraphProcessingContext,
     Value as EffectGraphValue,
 };
+pub use graph::*;
 
-use graph::EffectGraphId;
+use gpui::SharedString;
 
 use super::GroupId;
 
-pub type EffectId = u32;
+super::asset_id!(pub EffectId);
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Effect {
     id: EffectId,
+    pub label: SharedString,
     pub group: GroupId,
     pub kind: EffectKind,
 }
 
 impl Effect {
-    pub(crate) fn new(id: EffectId, group: GroupId, kind: EffectKind) -> Self {
-        Self { id, group, kind }
+    pub(crate) fn new(id: EffectId, label: SharedString, group: GroupId, kind: EffectKind) -> Self {
+        Self {
+            id,
+            label,
+            group,
+            kind,
+        }
     }
 
     pub fn id(&self) -> EffectId {

@@ -1,7 +1,5 @@
 use crate::GraphDefinition;
 
-use gpui::*;
-
 pub mod editor;
 pub mod graph;
 pub mod node;
@@ -9,6 +7,8 @@ pub mod node;
 pub use editor::*;
 pub use graph::*;
 pub use node::*;
+
+use gpui::{AnyView, AppContext, ElementId, EventEmitter, Hsla, ViewContext};
 
 pub fn init(cx: &mut AppContext) {
     editor::init(cx);

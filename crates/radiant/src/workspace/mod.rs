@@ -7,6 +7,7 @@ use crate::{dmx_io::DmxIo, showfile::Showfile};
 pub mod frame;
 pub mod main_window;
 
+pub use frame::*;
 pub use main_window::*;
 
 pub struct Workspace {
@@ -70,7 +71,7 @@ fn window_options(cx: &AppContext) -> WindowOptions {
             title: Some("Radiant".into()),
             ..Default::default()
         }),
-        window_min_size: Some(size(px(600.0), px(400.0))),
+        window_min_size: Some(size(px(640.0), px(400.0))),
         ..Default::default()
     }
 }

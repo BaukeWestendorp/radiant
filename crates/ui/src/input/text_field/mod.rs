@@ -2,10 +2,9 @@ use std::ops::Range;
 
 use blink::BlinkCursor;
 use gpui::*;
-use prelude::FluentBuilder;
 use unicode_segmentation::*;
 
-use crate::{theme::ActiveTheme, InteractiveElementExt, StyledExt};
+use crate::{interactive_container, theme::ActiveTheme, InteractiveElementExt, StyledExt};
 
 mod blink;
 mod element;
@@ -94,6 +93,7 @@ pub fn init(cx: &mut AppContext) {
 }
 
 pub struct TextField {
+    id: ElementId,
     value: SharedString,
     placeholder: SharedString,
     pattern: Option<regex::Regex>,
@@ -112,11 +112,12 @@ pub struct TextField {
 }
 
 impl TextField {
-    pub fn new(cx: &mut ViewContext<Self>) -> Self {
+    pub fn new(id: impl Into<ElementId>, cx: &mut ViewContext<Self>) -> Self {
         let focus_handle = cx.focus_handle();
         let blink_cursor = cx.new_model(|_| BlinkCursor::new());
 
         let field = Self {
+            id: id.into(),
             value: "".to_string().into(),
             placeholder: "".to_string().into(),
             pattern: None,
@@ -689,7 +690,8 @@ impl Render for TextField {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let focused = self.focus_handle.is_focused(cx);
 
-        div()
+        interactive_container(self.id.clone(), false, focused, cx)
+            .bg(cx.theme().background)
             .track_focus(&self.focus_handle)
             .key_context(KEY_CONTEXT)
             .on_action(cx.listener(Self::backspace))
@@ -718,12 +720,6 @@ impl Render for TextField {
             .px_1()
             .w_full()
             .h(cx.theme().input_height)
-            .bg(cx.theme().primary)
-            .hover(|e| e.bg(cx.theme().primary_hover))
-            .border_color(cx.theme().border)
-            .when(focused, |e| e.border_color(cx.theme().accent))
-            .border_1()
-            .rounded(cx.theme().radius)
             .overflow_hidden()
             .child(
                 div()
