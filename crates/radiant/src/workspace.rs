@@ -19,9 +19,6 @@ impl Workspace {
     pub fn new(showfile_path: Option<PathBuf>, cx: &mut AppContext) -> anyhow::Result<Self> {
         init_showfile(showfile_path, cx)?;
         init_dmx_io(cx)?;
-
-        cx.set_global(DmxIo::new());
-
         let main_window = open_main_window(cx)?;
 
         Ok(Self { main_window })
