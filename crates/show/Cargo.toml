@@ -1,0 +1,15 @@
+[package]
+name = "show"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+showfile.workspace = true
+dmx.workspace = true
+
+gpui.workspace = true
+gdtf.workspace = true
+
+anyhow.workspace = true
+dirs.workspace = true
+log.workspace = true

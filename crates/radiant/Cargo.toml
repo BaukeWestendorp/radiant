@@ -23,8 +23,8 @@ clap = { version = "4.5.20", features = ["derive"] }
 
 socket2 = { version = "0.5.7", features = ["all"] }
 artnet_protocol = "0.4.3"
-
 gdtf = "0.2.0"
+
 
 rust-embed = "8.5.0"
 regex = "1.11.1"
