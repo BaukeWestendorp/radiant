@@ -1,4 +1,5 @@
 use gpui::*;
+use show::Show;
 use ui::theme::ActiveTheme;
 
 use super::frame::FrameGridView;
@@ -8,9 +9,9 @@ pub struct MainWindow {
 }
 
 impl MainWindow {
-    pub fn build(cx: &mut WindowContext) -> View<Self> {
+    pub fn build(show: Model<Show>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| Self {
-            frame_grid: FrameGridView::build(cx),
+            frame_grid: FrameGridView::build(show, cx),
         })
     }
 }

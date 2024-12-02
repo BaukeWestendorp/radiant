@@ -1,7 +1,7 @@
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Layout {
     pub main_window: Window,
-    pub secondary_windows: Window,
+    pub secondary_window: Window,
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]

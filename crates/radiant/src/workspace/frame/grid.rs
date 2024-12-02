@@ -1,7 +1,11 @@
 use gpui::*;
+use show::{FrameKind, PoolKind, Show};
 use ui::{theme::ActiveTheme, z_stack};
 
-use crate::showfile::Showfile;
+use super::{
+    EffectGraphEditorFrameDelegate, EffectGraphPoolFrameDelegate, EffectPoolFrameDelegate,
+    FrameView, GroupPoolFrameDelegate, PoolFrameDelegate,
+};
 
 pub const GRID_SIZE: f32 = 80.0;
 
@@ -13,15 +17,18 @@ pub struct FrameGridView {
 }
 
 impl FrameGridView {
-    pub fn build(cx: &mut WindowContext) -> View<FrameGridView> {
+    pub fn build(show: Model<Show>, cx: &mut WindowContext) -> View<FrameGridView> {
         cx.new_view(|cx| {
-            let frames = Showfile::global(cx)
-                .windows()
+            // FIXME: .main_window should be a dynamic reference to any window.
+            let frames = show
+                .read(cx)
+                .layout
                 .main_window
+                .read(cx)
                 .frames
                 .clone()
                 .into_iter()
-                .map(|frame| frame.to_frame_view(cx))
+                .map(|frame| frame_to_view(frame, show.clone(), cx))
                 .collect();
 
             FrameGridView {
@@ -63,5 +70,47 @@ impl Render for FrameGridView {
             .map(|frame| frame.into_any_element());
 
         z_stack([background].into_iter().chain(frame_elements)).size_full()
+    }
+}
+
+pub fn frame_to_view(frame: show::Frame, show: Model<Show>, cx: &mut WindowContext) -> AnyView {
+    let assets = &show.read(cx).assets;
+
+    match frame.kind {
+        FrameKind::EffectGraphEditor => {
+            FrameView::build(frame.clone(), EffectGraphEditorFrameDelegate::new(cx), cx).into()
+        }
+        FrameKind::Pool(kind) => match kind {
+            PoolKind::EffectGraph => FrameView::build(
+                frame.clone(),
+                PoolFrameDelegate::new(
+                    frame.width,
+                    frame.height,
+                    EffectGraphPoolFrameDelegate::new(assets.effect_graphs.clone()),
+                ),
+                cx,
+            )
+            .into(),
+            PoolKind::Effect => FrameView::build(
+                frame.clone(),
+                PoolFrameDelegate::new(
+                    frame.width,
+                    frame.height,
+                    EffectPoolFrameDelegate::new(assets.effects.clone()),
+                ),
+                cx,
+            )
+            .into(),
+            PoolKind::Group => FrameView::build(
+                frame.clone(),
+                PoolFrameDelegate::new(
+                    frame.width,
+                    frame.height,
+                    GroupPoolFrameDelegate::new(assets.groups.clone()),
+                ),
+                cx,
+            )
+            .into(),
+        },
     }
 }

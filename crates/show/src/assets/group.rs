@@ -2,6 +2,7 @@ use crate::FixtureId;
 
 super::asset_id!(pub GroupId);
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Group {
     pub id: GroupId,
     pub label: String,

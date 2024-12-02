@@ -1,17 +1,21 @@
+use gpui::{AppContext, Context, Model};
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Layout {
-    pub main_window: Window,
-    pub secondary_windows: Window,
+    pub main_window: Model<Window>,
+    pub secondary_window: Model<Window>,
 }
 
-impl From<showfile::Layout> for Layout {
-    fn from(layout: showfile::Layout) -> Self {
+impl Layout {
+    pub fn from_showfile(layout: showfile::Layout, cx: &mut AppContext) -> Self {
         Self {
-            main_window: layout.main_window.into(),
-            secondary_windows: layout.secondary_windows.into(),
+            main_window: cx.new_model(|_| layout.main_window.into()),
+            secondary_window: cx.new_model(|_| layout.secondary_window.into()),
         }
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Window {
     pub frames: Vec<Frame>,
 }
@@ -24,6 +28,7 @@ impl From<showfile::Window> for Window {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Frame {
     pub x: u32,
     pub y: u32,
@@ -44,6 +49,7 @@ impl From<showfile::Frame> for Frame {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FrameKind {
     EffectGraphEditor,
     Pool(PoolKind),
@@ -58,6 +64,7 @@ impl From<showfile::FrameKind> for FrameKind {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PoolKind {
     EffectGraph,
     Effect,

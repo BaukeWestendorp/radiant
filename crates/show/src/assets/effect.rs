@@ -2,6 +2,7 @@ use super::{EffectGraphId, GroupId};
 
 super::asset_id!(pub EffectId);
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Effect {
     pub id: EffectId,
     pub label: String,
@@ -9,6 +10,7 @@ pub struct Effect {
     pub kind: EffectKind,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum EffectKind {
     Graph(EffectGraphId),
 }

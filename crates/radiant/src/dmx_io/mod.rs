@@ -1,9 +1,9 @@
-use std::{cell::RefCell, io, rc::Rc, time::Duration};
+use std::{io, time::Duration};
 
-use crate::showfile::{ArtnetNodeSettings, EffectGraphProcessingContext, Showfile};
 use artnet::ArtnetNode;
 use dmx::DmxOutput;
-use gpui::{AppContext, ReadGlobal, Timer};
+use gpui::{AppContext, Timer};
+use show::ArtnetNodeSettings;
 
 pub mod artnet;
 
@@ -32,14 +32,12 @@ impl DmxIo {
 
     fn spawn_artnet_task(&self, cx: &AppContext) {
         cx.spawn::<_, anyhow::Result<()>>({
-            |cx| async move {
+            |_cx| async move {
                 loop {
-                    cx.update_global(|this: &mut Self, cx| {
-                        let dmx_output = this.compute_dmx_output(cx);
-                        this.send_output(dmx_output)
-                            .expect("DMX output should have been sent");
-                    })
-                    .expect("DmxIo global should have been updated");
+                    // TODO: Reimplement
+                    // let dmx_output = this.compute_dmx_output(cx);
+                    // this.send_output(dmx_output)
+                    //     .expect("DMX output should have been sent");
 
                     Timer::after(ARTNET_INTERVAL).await;
                 }
@@ -61,50 +59,51 @@ impl DmxIo {
         Ok(())
     }
 
-    fn compute_dmx_output(&mut self, cx: &AppContext) -> DmxOutput {
-        let dmx_output = Rc::new(RefCell::new(DmxOutput::new()));
-        let showfile = Showfile::global(cx);
+    fn compute_dmx_output(&mut self, _cx: &AppContext) -> DmxOutput {
+        // let dmx_output = Rc::new(RefCell::new(DmxOutput::new()));
+        // let showfile = Showfile::global(cx);
 
-        // Set default DMX values
-        for fixture in showfile.patch().fixtures() {
-            for channel in &fixture.dmx_mode(showfile.patch()).dmx_channels {
-                if let Some((_, channel_function)) = channel.initial_function() {
-                    if let Some(offsets) = &channel.offset {
-                        let default_bytes = match &channel_function.default.bytes().get() {
-                            1 => channel_function.default.to_u8().to_be_bytes().to_vec(),
-                            2 => channel_function.default.to_u16().to_be_bytes().to_vec(),
-                            _ => panic!("Unsupported default value size"),
-                        };
+        // // Set default DMX values
+        // for fixture in showfile.patch().fixtures() {
+        //     for channel in &fixture.dmx_mode(showfile.patch()).dmx_channels {
+        //         if let Some((_, channel_function)) = channel.initial_function() {
+        //             if let Some(offsets) = &channel.offset {
+        //                 let default_bytes = match &channel_function.default.bytes().get() {
+        //                     1 => channel_function.default.to_u8().to_be_bytes().to_vec(),
+        //                     2 => channel_function.default.to_u16().to_be_bytes().to_vec(),
+        //                     _ => panic!("Unsupported default value size"),
+        //                 };
 
-                        for (i, offset) in offsets.iter().enumerate() {
-                            let default = default_bytes[i];
-                            let address =
-                                fixture.dmx_address.with_channel_offset(*offset as u16 - 1);
+        //                 for (i, offset) in offsets.iter().enumerate() {
+        //                     let default = default_bytes[i];
+        //                     let address =
+        //                         fixture.dmx_address.with_channel_offset(*offset as u16 - 1);
 
-                            dmx_output.borrow_mut().set_channel_value(address, default)
-                        }
-                    }
-                }
-            }
-        }
+        //                     dmx_output.borrow_mut().set_channel_value(address, default)
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
 
-        for effect in showfile.assets().effects() {
-            // Initialize context
-            let mut context = EffectGraphProcessingContext::new(
-                showfile.clone(),
-                effect.id(),
-                dmx_output.clone(),
-            );
+        // for effect in showfile.assets().effects() {
+        //     // Initialize context
+        //     let mut context = EffectGraphProcessingContext::new(
+        //         showfile.clone(),
+        //         effect.id(),
+        //         dmx_output.clone(),
+        //     );
 
-            // Process frame
-            context
-                .process_frame()
-                .map_err(|err| log::warn!("Failed to process frame: {err}"))
-                .ok();
-        }
+        //     // Process frame
+        //     context
+        //         .process_frame()
+        //         .map_err(|err| log::warn!("Failed to process frame: {err}"))
+        //         .ok();
+        // }
 
-        dmx_output.take()
+        // dmx_output.take()
+
+        // TODO: Reimplement
+        DmxOutput::new()
     }
 }
-
-impl gpui::Global for DmxIo {}

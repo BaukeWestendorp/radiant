@@ -5,7 +5,6 @@ use gpui::App;
 mod app;
 mod assets;
 mod dmx_io;
-mod showfile;
 mod workspace;
 
 mod attr_def;

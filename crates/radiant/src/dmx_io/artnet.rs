@@ -1,5 +1,5 @@
-use crate::showfile::ArtnetNodeSettings;
 use artnet_protocol::{ArtCommand, Output};
+use show::ArtnetNodeSettings;
 use socket2::{Domain, Protocol, Type};
 use std::{
     io,

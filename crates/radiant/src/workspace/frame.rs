@@ -7,9 +7,8 @@ pub use grid::*;
 pub use pool::*;
 
 use gpui::*;
+use show::Frame;
 use ui::{theme::ActiveTheme, StyledExt};
-
-use crate::showfile::Frame;
 
 pub trait FrameDelegate {
     fn title(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> &str

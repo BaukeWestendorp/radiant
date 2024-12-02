@@ -1,5 +1,6 @@
 super::asset_id!(pub EffectGraphId);
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct EffectGraph {
     pub id: EffectGraphId,
     pub label: String,

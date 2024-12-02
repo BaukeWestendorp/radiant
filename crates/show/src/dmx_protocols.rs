@@ -1,5 +1,12 @@
+#[derive(Debug, Clone, PartialEq)]
 pub struct DmxProtocols {
-    pub artnet: Vec<ArtnetNodeSettings>,
+    artnet: Vec<ArtnetNodeSettings>,
+}
+
+impl DmxProtocols {
+    pub fn artnet(&self) -> impl Iterator<Item = &ArtnetNodeSettings> {
+        self.artnet.iter()
+    }
 }
 
 impl From<showfile::DmxProtocols> for DmxProtocols {
@@ -14,6 +21,7 @@ impl From<showfile::DmxProtocols> for DmxProtocols {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct ArtnetNodeSettings {
     pub destination_ip: std::net::Ipv4Addr,
     pub universe: dmx::DmxUniverseId,

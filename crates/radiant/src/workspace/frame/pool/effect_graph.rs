@@ -1,15 +1,16 @@
 use gpui::*;
+use show::{AnyAssetId, AssetPool, EffectGraph};
 use ui::StyledExt;
-
-use crate::showfile::{AnyAssetId, Showfile};
 
 use super::PoolDelegate;
 
-pub struct EffectGraphPoolFrameDelegate;
+pub struct EffectGraphPoolFrameDelegate {
+    asset_pool: Model<AssetPool<EffectGraph>>,
+}
 
 impl EffectGraphPoolFrameDelegate {
-    pub fn new() -> Self {
-        Self
+    pub fn new(asset_pool: Model<AssetPool<EffectGraph>>) -> Self {
+        Self { asset_pool }
     }
 }
 
@@ -23,7 +24,7 @@ impl PoolDelegate for EffectGraphPoolFrameDelegate {
         id: AnyAssetId,
         cx: &mut WindowContext,
     ) -> Option<impl IntoElement> {
-        let Some(graph) = Showfile::global(cx).assets().effect_graph(&id.into()) else {
+        let Some(graph) = self.asset_pool.read(cx).get(&id.into()) else {
             return None;
         };
 
@@ -34,9 +35,5 @@ impl PoolDelegate for EffectGraphPoolFrameDelegate {
                 .child(div().my_auto().child(graph.label.clone()))
                 .overflow_hidden(),
         )
-    }
-
-    fn on_click_item(&mut self, _id: AnyAssetId, _cx: &mut WindowContext) {
-        // FIXME: All graph editors in current window and set them to the clicked graph.
     }
 }

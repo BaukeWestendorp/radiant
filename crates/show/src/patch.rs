@@ -5,6 +5,7 @@ use gdtf::{dmx_mode::DmxMode, fixture_type::FixtureType, GdtfFile};
 
 super::asset_id!(pub FixtureId);
 
+#[derive(Debug)]
 pub struct Patch {
     fixtures: Vec<Fixture>,
     gdtf_descriptions: HashMap<String, gdtf::Description>,
@@ -79,6 +80,7 @@ impl TryFrom<showfile::Patch> for Patch {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Fixture {
     id: FixtureId,
     dmx_address: dmx::DmxAddress,

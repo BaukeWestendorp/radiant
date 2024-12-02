@@ -38,12 +38,12 @@
     {
       "id": 0,
       "label": "Spot Graph",
-      "graph": {}
+      "graph": null
     },
     {
       "id": 1,
       "label": "Wash Graph",
-      "graph": {}
+      "graph": null
     }
   ]
 }

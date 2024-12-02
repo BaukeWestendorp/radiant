@@ -1,15 +1,16 @@
 use gpui::*;
+use show::{AnyAssetId, AssetPool, Effect};
 use ui::StyledExt;
-
-use crate::showfile::{AnyAssetId, Showfile};
 
 use super::PoolDelegate;
 
-pub struct EffectPoolFrameDelegate;
+pub struct EffectPoolFrameDelegate {
+    asset_pool: Model<AssetPool<Effect>>,
+}
 
 impl EffectPoolFrameDelegate {
-    pub fn new() -> Self {
-        Self
+    pub fn new(asset_pool: Model<AssetPool<Effect>>) -> Self {
+        Self { asset_pool }
     }
 }
 
@@ -23,7 +24,7 @@ impl PoolDelegate for EffectPoolFrameDelegate {
         id: AnyAssetId,
         cx: &mut WindowContext,
     ) -> Option<impl IntoElement> {
-        let Some(graph) = Showfile::global(cx).assets().effect(&id.into()) else {
+        let Some(effect) = self.asset_pool.read(cx).get(&id.into()) else {
             return None;
         };
 
@@ -31,7 +32,7 @@ impl PoolDelegate for EffectPoolFrameDelegate {
             div()
                 .size_full()
                 .center_flex()
-                .child(div().my_auto().child(graph.label.clone()))
+                .child(div().my_auto().child(effect.label.clone()))
                 .overflow_hidden(),
         )
     }

@@ -2,9 +2,10 @@ pub mod effect;
 pub mod effect_graph;
 pub mod group;
 
+use gpui::{AppContext, Context, Model};
+
 pub use effect::*;
 pub use effect_graph::*;
-use gpui::{AppContext, Context, Model};
 pub use group::*;
 
 #[derive(Clone, Copy, Default, PartialEq, Eq, Ord, PartialOrd, Hash)]
@@ -13,6 +14,7 @@ pub struct AnyAssetId(pub u32);
 macro_rules! asset_id {
     ($vis:vis $name:ident) => {
         #[derive(
+            Debug,
             Clone,
             Copy,
             Default,
@@ -66,6 +68,7 @@ macro_rules! asset_id {
 
 pub(crate) use asset_id;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Assets {
     pub groups: Model<AssetPool<Group>>,
     pub effects: Model<AssetPool<Effect>>,
@@ -121,20 +124,20 @@ impl<A: Asset> AssetPool<A> {
         self.assets.iter_mut()
     }
 
-    pub fn get(&self, id: A::Id) -> Option<&A> {
-        self.assets.iter().find(|asset| asset.id() == &id)
+    pub fn get(&self, id: &A::Id) -> Option<&A> {
+        self.assets.iter().find(|asset| asset.id() == id)
     }
 
-    pub fn get_mut(&mut self, id: A::Id) -> Option<&mut A> {
-        self.assets.iter_mut().find(|asset| asset.id() == &id)
+    pub fn get_mut(&mut self, id: &A::Id) -> Option<&mut A> {
+        self.assets.iter_mut().find(|asset| asset.id() == id)
     }
 
     pub fn insert(&mut self, asset: A) {
         self.assets.push(asset);
     }
 
-    pub fn remove(&mut self, id: A::Id) -> Option<A> {
-        let index = self.assets.iter().position(|asset| asset.id() == &id)?;
+    pub fn remove(&mut self, id: &A::Id) -> Option<A> {
+        let index = self.assets.iter().position(|asset| asset.id() == id)?;
         Some(self.assets.remove(index))
     }
 }

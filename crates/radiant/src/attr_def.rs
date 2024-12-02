@@ -1,8 +1,6 @@
 use anyhow::bail;
 
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 /// To describe the fixture types attributes are used. Attributes define the function. (n) and (m) are wildcards for the enumeration of attributes like Gobo(n) - Gobo1 and Gobo2 or VideoEffect(n)Parameter(m) - VideoEffect1Parameter1 and VideoEffect1Parameter2. Fixture Type Attributes without wildcards (n) or (m) are not enumerated. The enumeration starts with 1.
 pub enum AttributeDefinition {
     #[default]

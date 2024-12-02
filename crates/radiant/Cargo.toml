@@ -4,20 +4,17 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-flow = { workspace = true, features = ["gpui", "derive"] }
+flow = { workspace = true, features = ["derive", "gpui"] }
 ui.workspace = true
 dmx.workspace = true
-geo.workspace = true
+show.workspace = true
 
 gpui.workspace = true
-dirs.workspace = true
 
 anyhow.workspace = true
 log.workspace = true
 env_logger.workspace = true
-
-serde.workspace = true
-serde_json.workspace = true
+regex.workspace = true
 
 clap = { version = "4.5.20", features = ["derive"] }
 
@@ -27,6 +24,4 @@ gdtf = "0.2.0"
 
 
 rust-embed = "8.5.0"
-regex = "1.11.1"
-strum = { version = "0.26.3", features = ["derive"] }
 rand = "0.8.5"

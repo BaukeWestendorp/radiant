@@ -4,9 +4,8 @@ pub mod group;
 
 use gpui::*;
 use prelude::FluentBuilder;
+use show::AnyAssetId;
 use ui::{interactive_container, theme::ActiveTheme, z_stack, StyledExt};
-
-use crate::showfile::AnyAssetId;
 
 use super::{FrameDelegate, FrameView, GRID_SIZE};
 

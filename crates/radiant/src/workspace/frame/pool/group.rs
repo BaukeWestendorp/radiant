@@ -1,15 +1,16 @@
 use gpui::*;
+use show::{AnyAssetId, AssetPool, Group};
 use ui::StyledExt;
-
-use crate::showfile::{AnyAssetId, Showfile};
 
 use super::PoolDelegate;
 
-pub struct GroupPoolFrameDelegate;
+pub struct GroupPoolFrameDelegate {
+    asset_pool: Model<AssetPool<Group>>,
+}
 
 impl GroupPoolFrameDelegate {
-    pub fn new() -> Self {
-        Self
+    pub fn new(asset_pool: Model<AssetPool<Group>>) -> Self {
+        Self { asset_pool }
     }
 }
 
@@ -23,7 +24,7 @@ impl PoolDelegate for GroupPoolFrameDelegate {
         id: AnyAssetId,
         cx: &mut WindowContext,
     ) -> Option<impl IntoElement> {
-        let Some(graph) = Showfile::global(cx).assets().group(&id.into()) else {
+        let Some(group) = self.asset_pool.read(cx).get(&id.into()) else {
             return None;
         };
 
@@ -31,7 +32,7 @@ impl PoolDelegate for GroupPoolFrameDelegate {
             div()
                 .size_full()
                 .center_flex()
-                .child(div().my_auto().child(graph.label.clone()))
+                .child(div().my_auto().child(group.label.clone()))
                 .overflow_hidden(),
         )
     }
