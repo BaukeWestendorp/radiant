@@ -68,6 +68,8 @@ macro_rules! asset_id {
 
 pub(crate) use asset_id;
 
+use crate::showfile;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Assets {
     pub groups: Model<AssetPool<Group>>,

@@ -1,5 +1,7 @@
 use gpui::{AppContext, Context, Model};
 
+use crate::showfile;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Layout {
     pub main_window: Model<Window>,

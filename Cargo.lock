@@ -3966,19 +3966,9 @@ dependencies = [
  "anyhow",
  "dirs 5.0.1",
  "dmx",
+ "flow",
  "gdtf",
  "gpui",
- "log",
- "showfile",
-]
-
-[[package]]
-name = "showfile"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "dmx",
- "flow",
  "log",
  "serde",
  "serde_json",

@@ -1,3 +1,5 @@
+use crate::showfile;
+
 super::asset_id!(pub EffectGraphId);
 
 #[derive(Debug, Clone, PartialEq)]

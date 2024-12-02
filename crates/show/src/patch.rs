@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use dmx::DmxAddress;
 use gdtf::{dmx_mode::DmxMode, fixture_type::FixtureType, GdtfFile};
 
+use crate::showfile;
+
 super::asset_id!(pub FixtureId);
 
 #[derive(Debug)]

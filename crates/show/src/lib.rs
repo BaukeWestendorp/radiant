@@ -2,6 +2,7 @@ pub mod assets;
 pub mod dmx_protocols;
 pub mod layout;
 pub mod patch;
+mod showfile;
 
 use gpui::{AppContext, Context, Model};
 use std::path::PathBuf;

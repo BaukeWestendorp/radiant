@@ -4,8 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-showfile.workspace = true
 dmx.workspace = true
+flow = { workspace = true, features = ["derive", "gpui"] }
 
 gpui.workspace = true
 gdtf.workspace = true
@@ -13,3 +13,6 @@ gdtf.workspace = true
 anyhow.workspace = true
 dirs.workspace = true
 log.workspace = true
+
+serde.workspace = true
+serde_json.workspace = true

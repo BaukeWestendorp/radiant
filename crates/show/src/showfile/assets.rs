@@ -11,7 +11,7 @@ pub struct Assets {
 pub struct Group {
     pub id: AssetId,
     pub label: String,
-    pub fixtures: Vec<crate::patch::FixtureId>,
+    pub fixtures: Vec<super::FixtureId>,
 }
 
 #[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]

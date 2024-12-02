@@ -1,4 +1,4 @@
-use crate::FixtureId;
+use crate::{showfile, FixtureId};
 
 super::asset_id!(pub GroupId);
 

@@ -6,7 +6,6 @@ members = [
     "crates/dmx",
     "crates/geo",
     "crates/flow_derive",
-    "crates/showfile",
     "crates/show",
 ]
 resolver = "2"
@@ -22,7 +21,6 @@ flow_derive = { path = "crates/flow_derive" }
 dmx = { path = "crates/dmx" }
 geo = { path = "crates/geo" }
 show = { path = "crates/show" }
-showfile = { path = "crates/showfile" }
 
 gpui = { git = "https://github.com/zed-industries/zed.git" }
 gdtf = "0.2.0"
