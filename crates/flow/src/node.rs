@@ -54,8 +54,9 @@ impl<Def: GraphDefinition> Node<Def> {
         &self,
         context: &mut <Def::NodeKind as NodeKind<Def>>::ProcessingContext,
         graph: &Graph<Def>,
+        #[cfg(feature = "gpui")] cx: &mut gpui::AppContext,
     ) -> Result<ProcessingResult<Def>, FlowError> {
-        self.kind.process(self.id, context, graph)
+        self.kind.process(self.id, context, graph, cx)
     }
 }
 

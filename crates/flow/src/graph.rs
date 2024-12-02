@@ -208,12 +208,13 @@ impl<Def: GraphDefinition> Graph<Def> {
         &self,
         output_id: &OutputId,
         context: &mut <Def::NodeKind as NodeKind<Def>>::ProcessingContext,
+        #[cfg(feature = "gpui")] cx: &mut gpui::AppContext,
     ) -> Result<Def::Value, FlowError> {
         let output = self.output(*output_id);
         match &output.kind {
             OutputParameterKind::Computed => {
                 let node = self.node(output.node_id);
-                let result = node.process(context, self)?;
+                let result = node.process(context, self, cx)?;
                 Ok(result.get_value(output_id).clone())
             }
             OutputParameterKind::Constant { value, .. } => Ok(value.clone()),
@@ -223,10 +224,11 @@ impl<Def: GraphDefinition> Graph<Def> {
     pub fn process(
         &self,
         context: &mut <Def::NodeKind as NodeKind<Def>>::ProcessingContext,
+        #[cfg(feature = "gpui")] cx: &mut gpui::AppContext,
     ) -> Result<(), FlowError> {
         for node_id in &self.graph_ends {
             let node = self.node(*node_id);
-            node.kind.process(*node_id, context, self)?;
+            node.kind.process(*node_id, context, self, cx)?;
         }
 
         Ok(())

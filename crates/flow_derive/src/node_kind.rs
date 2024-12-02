@@ -121,6 +121,18 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let processors = gen_processors(&variants, graph_definition);
     let visual_node_kind_impl = gen_visual_node_kind_impl(&variants, graph_definition, category);
 
+    let cx_param = if cfg!(feature = "gpui") {
+        quote! { cx: &mut gpui::AppContext }
+    } else {
+        quote! { () }
+    };
+
+    let cx_argument = if cfg!(feature = "gpui") {
+        quote! { cx }
+    } else {
+        quote! {}
+    };
+
     let extracted = quote! {
         impl flow::NodeKind<#graph_definition> for #name {
             type ProcessingContext = #processing_context;
@@ -136,11 +148,14 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
                 node_id: flow::NodeId,
                 context: &mut Self::ProcessingContext,
                 graph: &flow::Graph<#graph_definition>,
+                #cx_param,
             ) -> flow::Result<flow::ProcessingResult<#graph_definition>> {
                 use flow::Value as _;
 
                 let node = graph.node(node_id);
                 let mut processing_result = flow::ProcessingResult::new();
+
+
 
                 let mut value_for_input =
                     |node: &flow::Node<#graph_definition>, input_name: &str| -> flow::Result<Value> {
@@ -152,7 +167,11 @@ pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
                                 graph.input(input.id()).kind.clone();
                                 value
                             }
-                            Some(id) => graph.get_output_value(&id, context)?.clone(),
+                            Some(id) => graph.get_output_value(
+                                &id,
+                                context,
+                                #cx_argument,
+                            )?.clone(),
                         };
                         let value = value.try_cast_to(&input.data_type())?;
                         Ok(value)
@@ -288,13 +307,20 @@ fn gen_processors(variants: &[NodeKindVariant], graph_def: &Type) -> Vec<TokenSt
                 }
             });
 
+            let cx_argument = if cfg!(feature = "gpui") {
+                quote! { cx }
+            } else {
+                quote! { () }
+            };
+
             quote! {
                 Self::#variant_ident => {
                     let #output_type_name {
                         #(#output_label_idents),*
                     } = #processor_path(
                         #(#parameters,)*
-                        context
+                        context,
+                        #cx_argument,
                     );
 
                     #(#value_setters)*

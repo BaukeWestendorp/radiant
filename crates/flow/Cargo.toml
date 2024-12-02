@@ -13,5 +13,5 @@ ui = { workspace = true, optional = true }
 flow_derive = { workspace = true, optional = true }
 
 [features]
-gpui = ["dep:gpui", "dep:ui"]
+gpui = ["dep:gpui", "dep:ui", "flow_derive/gpui"]
 derive = ["dep:flow_derive"]

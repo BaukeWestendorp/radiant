@@ -11,3 +11,8 @@ syn = "2.0.87"
 
 [lib]
 proc-macro = true
+
+
+[features]
+default = []
+gpui = []

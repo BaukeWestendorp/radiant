@@ -20,6 +20,7 @@ pub trait NodeKind<Def: GraphDefinition> {
         node_id: NodeId,
         context: &mut Self::ProcessingContext,
         graph: &Graph<Def>,
+        #[cfg(feature = "gpui")] cx: &mut gpui::AppContext,
     ) -> Result<ProcessingResult<Def>, FlowError>;
 }
 

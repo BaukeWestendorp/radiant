@@ -3,7 +3,10 @@ use crate::{AttributeValue, Effect, EffectId, EffectKind, Fixture, FixtureId, Gr
 use dmx::{DmxAddress, DmxChannel, DmxOutput, DmxUniverseId};
 use flow::gpui::{ControlEvent, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
 use flow::{FlowError, Graph};
-use gpui::{rgb, AnyView, ElementId, EventEmitter, Hsla, SharedString, ViewContext, VisualContext};
+use gpui::{
+    rgb, AnyView, AppContext, ElementId, EventEmitter, Hsla, Model, SharedString, ViewContext,
+    VisualContext,
+};
 use std::cell::RefCell;
 use std::fmt::Display;
 use std::rc::Rc;
@@ -197,7 +200,8 @@ mod processor {
     pub fn new_dmx_address(
         universe: DmxUniverseId,
         channel: DmxChannel,
-        _context: &mut ProcessingContext,
+        _pctx: &mut ProcessingContext,
+        _cx: &mut AppContext,
     ) -> NewDmxAddressProcessingOutput {
         NewDmxAddressProcessingOutput {
             address: Value::from(DmxAddress::new(universe, channel)),
@@ -206,55 +210,95 @@ mod processor {
 
     // Math
 
-    pub fn add(a: f64, b: f64, _ctx: &mut ProcessingContext) -> AddProcessingOutput {
+    pub fn add(
+        a: f64,
+        b: f64,
+        _pctx: &mut ProcessingContext,
+        _cx: &mut AppContext,
+    ) -> AddProcessingOutput {
         AddProcessingOutput {
             sum: Value::from(a + b),
         }
     }
 
-    pub fn subtract(a: f64, b: f64, _ctx: &mut ProcessingContext) -> SubtractProcessingOutput {
+    pub fn subtract(
+        a: f64,
+        b: f64,
+        _pctx: &mut ProcessingContext,
+        _cx: &mut AppContext,
+    ) -> SubtractProcessingOutput {
         SubtractProcessingOutput {
             difference: Value::from(a - b),
         }
     }
 
-    pub fn multiply(a: f64, b: f64, _ctx: &mut ProcessingContext) -> MultiplyProcessingOutput {
+    pub fn multiply(
+        a: f64,
+        b: f64,
+        _pctx: &mut ProcessingContext,
+        _cx: &mut AppContext,
+    ) -> MultiplyProcessingOutput {
         MultiplyProcessingOutput {
             product: Value::from(a * b),
         }
     }
 
-    pub fn divide(a: f64, b: f64, _ctx: &mut ProcessingContext) -> DivideProcessingOutput {
+    pub fn divide(
+        a: f64,
+        b: f64,
+        _pctx: &mut ProcessingContext,
+        _cx: &mut AppContext,
+    ) -> DivideProcessingOutput {
         DivideProcessingOutput {
             quotient: Value::from(a / b),
         }
     }
 
-    pub fn sine(a: f64, _ctx: &mut ProcessingContext) -> SineProcessingOutput {
+    pub fn sine(
+        a: f64,
+        _pctx: &mut ProcessingContext,
+        _cx: &mut AppContext,
+    ) -> SineProcessingOutput {
         SineProcessingOutput {
             b: Value::from(a.sin()),
         }
     }
 
-    pub fn cosine(a: f64, _ctx: &mut ProcessingContext) -> CosineProcessingOutput {
+    pub fn cosine(
+        a: f64,
+        _pctx: &mut ProcessingContext,
+        _cx: &mut AppContext,
+    ) -> CosineProcessingOutput {
         CosineProcessingOutput {
             b: Value::from(a.cos()),
         }
     }
 
-    pub fn floor(value: f64, _ctx: &mut ProcessingContext) -> FloorProcessingOutput {
+    pub fn floor(
+        value: f64,
+        _pctx: &mut ProcessingContext,
+        _cx: &mut AppContext,
+    ) -> FloorProcessingOutput {
         FloorProcessingOutput {
             floored: Value::from(value.floor() as i64),
         }
     }
 
-    pub fn round(value: f64, _ctx: &mut ProcessingContext) -> RoundProcessingOutput {
+    pub fn round(
+        value: f64,
+        _pctx: &mut ProcessingContext,
+        _cx: &mut AppContext,
+    ) -> RoundProcessingOutput {
         RoundProcessingOutput {
             rounded: Value::from(value.round() as i64),
         }
     }
 
-    pub fn ceil(value: f64, _ctx: &mut ProcessingContext) -> CeilProcessingOutput {
+    pub fn ceil(
+        value: f64,
+        _pctx: &mut ProcessingContext,
+        _cx: &mut AppContext,
+    ) -> CeilProcessingOutput {
         CeilProcessingOutput {
             ceiled: Value::from(value.ceil() as i64),
         }
@@ -262,17 +306,23 @@ mod processor {
 
     // Context
 
-    pub fn get_fixture(ctx: &mut ProcessingContext) -> GetFixtureProcessingOutput {
+    pub fn get_fixture(
+        pctx: &mut ProcessingContext,
+        cx: &mut AppContext,
+    ) -> GetFixtureProcessingOutput {
         GetFixtureProcessingOutput {
-            index: Value::from(ctx.current_fixture_index as i64),
-            id: Value::FixtureId(ctx.current_fixture_id()),
-            address: Value::DmxAddress(*ctx.current_fixture().dmx_address()),
+            index: Value::from(pctx.current_fixture_index as i64),
+            id: Value::FixtureId(pctx.current_fixture_id(cx)),
+            address: Value::DmxAddress(*pctx.current_fixture(cx).dmx_address()),
         }
     }
 
-    pub fn get_group(ctx: &mut ProcessingContext) -> GetGroupProcessingOutput {
+    pub fn get_group(
+        pctx: &mut ProcessingContext,
+        cx: &mut AppContext,
+    ) -> GetGroupProcessingOutput {
         GetGroupProcessingOutput {
-            size: Value::from(ctx.group().fixtures.len() as i64),
+            size: Value::from(pctx.group(cx).fixtures.len() as i64),
         }
     }
 
@@ -280,7 +330,8 @@ mod processor {
 
     pub fn split_address(
         address: DmxAddress,
-        _ctx: &mut ProcessingContext,
+        _pctx: &mut ProcessingContext,
+        _cx: &mut AppContext,
     ) -> SplitAddressProcessingOutput {
         SplitAddressProcessingOutput {
             universe: Value::from(address.universe.value() as i64),
@@ -288,13 +339,16 @@ mod processor {
         }
     }
 
-    pub fn random_float(_ctx: &mut ProcessingContext) -> RandomProcessingOutput {
+    pub fn random_float(
+        _pctx: &mut ProcessingContext,
+        _cx: &mut AppContext,
+    ) -> RandomProcessingOutput {
         RandomProcessingOutput {
             value: Value::from(rand::random::<f64>()),
         }
     }
 
-    pub fn time(_ctx: &mut ProcessingContext) -> TimeProcessingOutput {
+    pub fn time(_pctx: &mut ProcessingContext, _cx: &mut AppContext) -> TimeProcessingOutput {
         let time = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
         TimeProcessingOutput {
             seconds: Value::from(time.as_secs_f64()),
@@ -307,7 +361,8 @@ mod processor {
         from_max: f64,
         to_min: f64,
         to_max: f64,
-        _ctx: &mut ProcessingContext,
+        _pctx: &mut ProcessingContext,
+        _cx: &mut AppContext,
     ) -> RemapProcessingOutput {
         let remapped = (value - from_min) / (from_max - from_min) * (to_max - to_min) + to_min;
         RemapProcessingOutput {
@@ -320,9 +375,10 @@ mod processor {
     pub fn set_channel_value(
         address: DmxAddress,
         value: AttributeValue,
-        ctx: &mut ProcessingContext,
+        pctx: &mut ProcessingContext,
+        _cx: &mut AppContext,
     ) -> SetChannelValueProcessingOutput {
-        ctx.dmx_output
+        pctx.dmx_output
             .borrow_mut()
             .set_channel_value(address, value.byte());
 
@@ -333,9 +389,10 @@ mod processor {
         fixture: FixtureId,
         attribute: SharedString,
         value: AttributeValue,
-        ctx: &mut ProcessingContext,
+        pctx: &mut ProcessingContext,
+        cx: &mut AppContext,
     ) -> SetFixtureAttributeProcessingOutput {
-        let patch = &ctx.patch();
+        let patch = &pctx.patch(cx);
 
         let Some(fixture) = patch.fixture(fixture) else {
             log::debug!("Fixture with id `{fixture}` not found");
@@ -350,7 +407,7 @@ mod processor {
             .dmx_address()
             .with_channel_offset(*offset.first().unwrap() as u16 - 1);
 
-        set_channel_value(address, value, ctx);
+        set_channel_value(address, value, pctx, cx);
 
         SetFixtureAttributeProcessingOutput {}
     }
@@ -358,11 +415,12 @@ mod processor {
     pub fn set_dimmer(
         fixture: FixtureId,
         dimmer: AttributeValue,
-        ctx: &mut ProcessingContext,
+        pctx: &mut ProcessingContext,
+        cx: &mut AppContext,
     ) -> SetDimmerProcessingOutput {
         use crate::AttributeDefinition as AD;
 
-        set_fixture_attribute(fixture, AD::Dimmer.to_string().into(), dimmer, ctx);
+        set_fixture_attribute(fixture, AD::Dimmer.to_string().into(), dimmer, pctx, cx);
 
         SetDimmerProcessingOutput {}
     }
@@ -372,34 +430,44 @@ mod processor {
         red: AttributeValue,
         green: AttributeValue,
         blue: AttributeValue,
-        ctx: &mut ProcessingContext,
+        pctx: &mut ProcessingContext,
+        cx: &mut AppContext,
     ) -> SetColorProcessingOutput {
         use crate::AttributeDefinition as AD;
 
-        set_fixture_attribute(fixture, AD::ColorAddR.to_string().into(), red, ctx);
+        set_fixture_attribute(fixture, AD::ColorAddR.to_string().into(), red, pctx, cx);
         set_fixture_attribute(
             fixture,
             AD::ColorSubC.to_string().into(),
             red.inverted(),
-            ctx,
+            pctx,
+            cx,
         );
-        set_fixture_attribute(fixture, AD::ColorRgbRed.to_string().into(), red, ctx);
-        set_fixture_attribute(fixture, AD::ColorAddG.to_string().into(), green, ctx);
+        set_fixture_attribute(fixture, AD::ColorRgbRed.to_string().into(), red, pctx, cx);
+        set_fixture_attribute(fixture, AD::ColorAddG.to_string().into(), green, pctx, cx);
         set_fixture_attribute(
             fixture,
             AD::ColorSubM.to_string().into(),
             green.inverted(),
-            ctx,
+            pctx,
+            cx,
         );
-        set_fixture_attribute(fixture, AD::ColorRgbGreen.to_string().into(), green, ctx);
-        set_fixture_attribute(fixture, AD::ColorAddB.to_string().into(), blue, ctx);
+        set_fixture_attribute(
+            fixture,
+            AD::ColorRgbGreen.to_string().into(),
+            green,
+            pctx,
+            cx,
+        );
+        set_fixture_attribute(fixture, AD::ColorAddB.to_string().into(), blue, pctx, cx);
         set_fixture_attribute(
             fixture,
             AD::ColorSubY.to_string().into(),
             blue.inverted(),
-            ctx,
+            pctx,
+            cx,
         );
-        set_fixture_attribute(fixture, AD::ColorRgbBlue.to_string().into(), blue, ctx);
+        set_fixture_attribute(fixture, AD::ColorRgbBlue.to_string().into(), blue, pctx, cx);
 
         SetColorProcessingOutput {}
     }
@@ -413,31 +481,47 @@ mod processor {
         position_effect: AttributeValue,
         position_effect_rate: AttributeValue,
         position_effect_fade: AttributeValue,
-        ctx: &mut ProcessingContext,
+        pctx: &mut ProcessingContext,
+        cx: &mut AppContext,
     ) -> SetPanTiltProcessingOutput {
         use crate::AttributeDefinition as AD;
 
-        set_fixture_attribute(fixture, AD::Pan.to_string().into(), pan, ctx);
-        set_fixture_attribute(fixture, AD::Tilt.to_string().into(), tilt, ctx);
-        set_fixture_attribute(fixture, AD::PanRotate.to_string().into(), pan_rotate, ctx);
-        set_fixture_attribute(fixture, AD::TiltRotate.to_string().into(), tilt_rotate, ctx);
+        set_fixture_attribute(fixture, AD::Pan.to_string().into(), pan, pctx, cx);
+        set_fixture_attribute(fixture, AD::Tilt.to_string().into(), tilt, pctx, cx);
+        set_fixture_attribute(
+            fixture,
+            AD::PanRotate.to_string().into(),
+            pan_rotate,
+            pctx,
+            cx,
+        );
+        set_fixture_attribute(
+            fixture,
+            AD::TiltRotate.to_string().into(),
+            tilt_rotate,
+            pctx,
+            cx,
+        );
         set_fixture_attribute(
             fixture,
             AD::PositionEffect.to_string().into(),
             position_effect,
-            ctx,
+            pctx,
+            cx,
         );
         set_fixture_attribute(
             fixture,
             AD::PositionEffectRate.to_string().into(),
             position_effect_rate,
-            ctx,
+            pctx,
+            cx,
         );
         set_fixture_attribute(
             fixture,
             AD::PositionEffectFade.to_string().into(),
             position_effect_fade,
-            ctx,
+            pctx,
+            cx,
         );
 
         SetPanTiltProcessingOutput {}
@@ -455,20 +539,27 @@ mod processor {
         y_scale: AttributeValue,
         z_scale: AttributeValue,
         xyz_scale: AttributeValue,
-        ctx: &mut ProcessingContext,
+        pctx: &mut ProcessingContext,
+        cx: &mut AppContext,
     ) -> SetXyzProcessingOutput {
         use crate::AttributeDefinition as AD;
 
-        set_fixture_attribute(fixture, AD::XyzX.to_string().into(), x, ctx);
-        set_fixture_attribute(fixture, AD::XyzY.to_string().into(), y, ctx);
-        set_fixture_attribute(fixture, AD::XyzZ.to_string().into(), z, ctx);
-        set_fixture_attribute(fixture, AD::RotX.to_string().into(), x_rot, ctx);
-        set_fixture_attribute(fixture, AD::RotY.to_string().into(), y_rot, ctx);
-        set_fixture_attribute(fixture, AD::RotZ.to_string().into(), z_rot, ctx);
-        set_fixture_attribute(fixture, AD::ScaleX.to_string().into(), x_scale, ctx);
-        set_fixture_attribute(fixture, AD::ScaleY.to_string().into(), y_scale, ctx);
-        set_fixture_attribute(fixture, AD::ScaleZ.to_string().into(), z_scale, ctx);
-        set_fixture_attribute(fixture, AD::ScaleXyz.to_string().into(), xyz_scale, ctx);
+        set_fixture_attribute(fixture, AD::XyzX.to_string().into(), x, pctx, cx);
+        set_fixture_attribute(fixture, AD::XyzY.to_string().into(), y, pctx, cx);
+        set_fixture_attribute(fixture, AD::XyzZ.to_string().into(), z, pctx, cx);
+        set_fixture_attribute(fixture, AD::RotX.to_string().into(), x_rot, pctx, cx);
+        set_fixture_attribute(fixture, AD::RotY.to_string().into(), y_rot, pctx, cx);
+        set_fixture_attribute(fixture, AD::RotZ.to_string().into(), z_rot, pctx, cx);
+        set_fixture_attribute(fixture, AD::ScaleX.to_string().into(), x_scale, pctx, cx);
+        set_fixture_attribute(fixture, AD::ScaleY.to_string().into(), y_scale, pctx, cx);
+        set_fixture_attribute(fixture, AD::ScaleZ.to_string().into(), z_scale, pctx, cx);
+        set_fixture_attribute(
+            fixture,
+            AD::ScaleXyz.to_string().into(),
+            xyz_scale,
+            pctx,
+            cx,
+        );
 
         SetXyzProcessingOutput {}
     }
@@ -851,13 +942,13 @@ pub struct ProcessingContext {
     pub dmx_output: Rc<RefCell<DmxOutput>>,
 
     effect: EffectId,
-    show: Show,
+    show: Model<Show>,
 
     current_fixture_index: usize,
 }
 
 impl ProcessingContext {
-    pub fn new(show: Show, effect: EffectId, dmx_output: Rc<RefCell<DmxOutput>>) -> Self {
+    pub fn new(show: Model<Show>, effect: EffectId, dmx_output: Rc<RefCell<DmxOutput>>) -> Self {
         Self {
             dmx_output,
 
@@ -868,28 +959,53 @@ impl ProcessingContext {
         }
     }
 
-    pub fn effect(&self) -> &Effect {
-        todo!();
+    pub fn effect<'a>(&self, cx: &'a AppContext) -> &'a Effect {
+        self.show
+            .read(cx)
+            .assets
+            .effects
+            .read(cx)
+            .get(&self.effect)
+            .unwrap()
     }
 
-    pub fn group(&self) -> &Group {
-        todo!();
+    pub fn group<'a>(&self, cx: &'a AppContext) -> &'a Group {
+        let effect = self.effect(cx);
+        self.show
+            .read(cx)
+            .assets
+            .groups
+            .read(cx)
+            .get(&effect.group)
+            .unwrap()
     }
 
-    pub fn graph(&self) -> &FlowEffectGraph {
-        let EffectKind::Graph(id) = &self.effect().kind;
-        todo!();
+    pub fn graph<'a>(&self, cx: &'a AppContext) -> &'a FlowEffectGraph {
+        let EffectKind::Graph(id) = &self.effect(cx).kind;
+        &self
+            .show
+            .read(cx)
+            .assets
+            .effect_graphs
+            .read(cx)
+            .get(id)
+            .unwrap()
+            .graph
     }
 
-    pub fn patch(&self) -> &Patch {
-        todo!();
+    pub fn patch<'a>(&self, cx: &'a AppContext) -> &'a Patch {
+        self.show.read(cx).patch.read(cx)
     }
 
-    pub fn process_frame(&mut self) -> Result<(), FlowError> {
+    pub fn process_frame(&mut self, cx: &mut AppContext) -> Result<(), FlowError> {
         self.current_fixture_index = 0;
-        while self.current_fixture_index < self.group().len() {
-            if self.patch().fixture(self.current_fixture_id()).is_some() {
-                self.graph().clone().process(self)?;
+        while self.current_fixture_index < self.group(cx).len() {
+            if self
+                .patch(cx)
+                .fixture(self.current_fixture_id(cx))
+                .is_some()
+            {
+                self.graph(cx).clone().process(self, cx)?;
             } else {
                 log::warn!(
                     "Tried to process effect graph with invalid FixtureId. Skipping fixture."
@@ -901,11 +1017,11 @@ impl ProcessingContext {
         Ok(())
     }
 
-    pub fn current_fixture(&self) -> &Fixture {
-        self.patch().fixture(self.current_fixture_id()).unwrap()
+    pub fn current_fixture<'a>(&self, cx: &'a AppContext) -> &'a Fixture {
+        self.patch(cx).fixture(self.current_fixture_id(cx)).unwrap()
     }
 
-    pub fn current_fixture_id(&self) -> FixtureId {
-        self.group().fixtures[self.current_fixture_index]
+    pub fn current_fixture_id(&self, cx: &AppContext) -> FixtureId {
+        self.group(cx).fixtures[self.current_fixture_index]
     }
 }

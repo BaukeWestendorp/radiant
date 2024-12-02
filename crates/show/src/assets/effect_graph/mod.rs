@@ -2,7 +2,10 @@ use crate::showfile;
 
 mod flow_graph;
 
-pub use flow_graph::{FlowEffectGraph, GraphDefinition as EffectGraphDefinition};
+pub use flow_graph::{
+    FlowEffectGraph, GraphDefinition as EffectGraphDefinition,
+    ProcessingContext as EffectGraphProcessingContext,
+};
 
 super::asset_id!(pub EffectGraphId);
 
