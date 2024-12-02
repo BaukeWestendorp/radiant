@@ -1,0 +1,9 @@
+[package]
+name = "showfile"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+dmx.workspace = true
+
+serde.workspace = true

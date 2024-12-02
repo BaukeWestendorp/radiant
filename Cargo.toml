@@ -5,7 +5,7 @@ members = [
     "crates/flow",
     "crates/dmx",
     "crates/geo",
-    "crates/flow_derive",
+    "crates/flow_derive", "crates/showfile",
 ]
 resolver = "2"
 
