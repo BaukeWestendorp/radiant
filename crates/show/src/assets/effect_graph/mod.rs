@@ -1,12 +1,16 @@
 use crate::showfile;
 
+mod flow_graph;
+
+pub use flow_graph::{FlowEffectGraph, GraphDefinition as EffectGraphDefinition};
+
 super::asset_id!(pub EffectGraphId);
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone)]
 pub struct EffectGraph {
     pub id: EffectGraphId,
     pub label: String,
-    pub graph: (),
+    pub graph: FlowEffectGraph,
 }
 
 impl super::Asset for EffectGraph {
@@ -22,7 +26,7 @@ impl From<showfile::EffectGraph> for EffectGraph {
         Self {
             id: EffectGraphId(graph.id),
             label: graph.label,
-            graph: (),
+            graph: graph.graph,
         }
     }
 }

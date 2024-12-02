@@ -1,4 +1,5 @@
 pub mod assets;
+pub mod attr;
 pub mod dmx_protocols;
 pub mod layout;
 pub mod patch;
@@ -8,6 +9,7 @@ use gpui::{AppContext, Context, Model};
 use std::path::PathBuf;
 
 pub use assets::*;
+pub use attr::*;
 pub use dmx_protocols::*;
 pub use layout::*;
 pub use patch::*;

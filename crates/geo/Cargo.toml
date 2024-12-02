@@ -1,8 +1,0 @@
-[package]
-name = "geo"
-version.workspace = true
-edition.workspace = true
-
-[dependencies]
-serde.workspace = true
-gpui.workspace = true

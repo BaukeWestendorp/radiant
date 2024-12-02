@@ -15,7 +15,7 @@ const PATCH_FILE_PATH: &str = "patch.json";
 const DMX_PROTOCOLS_FILE_PATH: &str = "dmx_protocols.json";
 const LAYOUT_FILE_PATH: &str = "layout.json";
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Clone)]
 pub struct Showfile {
     pub assets: Assets,
     pub patch: Patch,

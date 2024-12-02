@@ -4,7 +4,6 @@ members = [
     "crates/ui",
     "crates/flow",
     "crates/dmx",
-    "crates/geo",
     "crates/flow_derive",
     "crates/show",
 ]
@@ -19,7 +18,6 @@ ui = { path = "crates/ui" }
 flow = { path = "crates/flow" }
 flow_derive = { path = "crates/flow_derive" }
 dmx = { path = "crates/dmx" }
-geo = { path = "crates/geo" }
 show = { path = "crates/show" }
 
 gpui = { git = "https://github.com/zed-industries/zed.git" }

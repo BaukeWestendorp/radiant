@@ -9,6 +9,16 @@ pub struct Group {
     pub fixtures: Vec<FixtureId>,
 }
 
+impl Group {
+    pub fn len(&self) -> usize {
+        self.fixtures.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.fixtures.is_empty()
+    }
+}
+
 impl super::Asset for Group {
     type Id = GroupId;
 

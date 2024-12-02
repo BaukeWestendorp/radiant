@@ -7,8 +7,6 @@ mod assets;
 mod dmx_io;
 mod workspace;
 
-mod attr_def;
-
 /// Radiant
 #[derive(clap::Parser, Debug)]
 #[command(version, about, long_about = None)]

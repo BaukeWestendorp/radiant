@@ -1,6 +1,8 @@
+use crate::FlowEffectGraph;
+
 pub type AssetId = u32;
 
-#[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct Assets {
     pub groups: Vec<Group>,
     pub effects: Vec<Effect>,
@@ -27,9 +29,9 @@ pub enum EffectKind {
     Graph(AssetId),
 }
 
-#[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct EffectGraph {
     pub id: AssetId,
     pub label: String,
-    pub graph: (),
+    pub graph: FlowEffectGraph,
 }

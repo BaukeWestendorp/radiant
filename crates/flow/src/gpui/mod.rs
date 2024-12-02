@@ -36,12 +36,12 @@ pub trait VisualDataType {
 }
 
 pub trait VisualNodeData: Default {
-    fn position(&self) -> &geo::Point;
+    fn position(&self) -> &crate::Point;
 
-    fn set_position(&mut self, position: geo::Point);
+    fn set_position(&mut self, position: crate::Point);
 
-    fn snapped_position(&self, snap_grid_size: f32) -> geo::Point {
-        geo::Point::new(
+    fn snapped_position(&self, snap_grid_size: f32) -> crate::Point {
+        crate::Point::new(
             (self.position().x / snap_grid_size).floor() * snap_grid_size,
             (self.position().y / snap_grid_size).floor() * snap_grid_size,
         )

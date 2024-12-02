@@ -1,4 +1,5 @@
 pub mod error;
+pub mod geo;
 pub mod graph;
 pub mod graph_def;
 pub mod node;
@@ -10,6 +11,7 @@ pub mod gpui;
 pub use flow_derive::*;
 
 pub use error::*;
+pub use geo::*;
 pub use graph::*;
 pub use graph_def::*;
 pub use node::*;

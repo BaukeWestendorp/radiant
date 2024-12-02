@@ -23,6 +23,8 @@ macro_rules! asset_id {
             Ord,
             PartialOrd,
             Hash,
+            serde::Serialize,
+            serde::Deserialize,
         )]
         $vis struct $name(pub u32);
 

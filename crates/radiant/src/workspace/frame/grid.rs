@@ -77,9 +77,12 @@ pub fn frame_to_view(frame: show::Frame, show: Model<Show>, cx: &mut WindowConte
     let assets = &show.read(cx).assets;
 
     match frame.kind {
-        FrameKind::EffectGraphEditor => {
-            FrameView::build(frame.clone(), EffectGraphEditorFrameDelegate::new(cx), cx).into()
-        }
+        FrameKind::EffectGraphEditor => FrameView::build(
+            frame.clone(),
+            EffectGraphEditorFrameDelegate::new(assets.effect_graphs.clone(), cx),
+            cx,
+        )
+        .into(),
         FrameKind::Pool(kind) => match kind {
             PoolKind::EffectGraph => FrameView::build(
                 frame.clone(),

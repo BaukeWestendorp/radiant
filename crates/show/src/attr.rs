@@ -1,5 +1,36 @@
 use anyhow::bail;
 
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, serde::Serialize, serde::Deserialize)]
+pub struct AttributeValue {
+    value: f32,
+}
+
+impl AttributeValue {
+    pub fn new(value: f32) -> Self {
+        Self {
+            value: value.clamp(0.0, 1.0),
+        }
+    }
+
+    pub fn relative_value(&self) -> f32 {
+        self.value
+    }
+
+    pub fn byte(&self) -> u8 {
+        (self.value * 255f32) as u8
+    }
+
+    pub fn inverted(&self) -> AttributeValue {
+        Self::new(1.0 - self.relative_value())
+    }
+}
+
+impl Default for AttributeValue {
+    fn default() -> Self {
+        Self { value: 0.0 }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 /// To describe the fixture types attributes are used. Attributes define the function. (n) and (m) are wildcards for the enumeration of attributes like Gobo(n) - Gobo1 and Gobo2 or VideoEffect(n)Parameter(m) - VideoEffect1Parameter1 and VideoEffect1Parameter2. Fixture Type Attributes without wildcards (n) or (m) are not enumerated. The enumeration starts with 1.
 pub enum AttributeDefinition {

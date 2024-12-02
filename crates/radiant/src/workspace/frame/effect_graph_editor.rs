@@ -1,27 +1,30 @@
+use flow::gpui::GraphEditorView;
 use gpui::*;
+use show::{AssetPool, EffectGraph, EffectGraphDefinition};
 use ui::{container, theme::ActiveTheme, ContainerKind};
 
 use super::{FrameDelegate, FrameView};
 
-// TODO: Reimplement
-
 pub struct EffectGraphEditorFrameDelegate {
-    // graph_editor: View<GraphEditorView<EffectGraphDefinition>>,
+    graph_editor: View<GraphEditorView<EffectGraphDefinition>>,
 }
 
 impl EffectGraphEditorFrameDelegate {
-    pub fn new(_cx: &mut WindowContext) -> Self {
-        // let graph_model = cx.new_model(|cx| {
-        //     Showfile::global(cx)
-        //         .assets()
-        //         .effect_graph(&EffectGraphId(1))
-        //         .unwrap()
-        //         .graph
-        //         .clone()
-        // });
+    pub fn new(
+        effect_graph_asset_pool: Model<AssetPool<EffectGraph>>,
+        cx: &mut WindowContext,
+    ) -> Self {
+        let graph_model = cx.new_model(|cx| {
+            effect_graph_asset_pool
+                .read(cx)
+                .get(&show::EffectGraphId(1))
+                .unwrap()
+                .clone()
+                .graph
+        });
 
         Self {
-            // graph_editor: GraphEditorView::build(graph_model, cx),
+            graph_editor: GraphEditorView::build(graph_model, cx),
         }
     }
 }
@@ -35,7 +38,6 @@ impl FrameDelegate for EffectGraphEditorFrameDelegate {
         container(ContainerKind::Element, cx)
             .size_full()
             .border_color(cx.theme().frame_header_border)
-            // .child(self.graph_editor.clone())
-            .child("editor")
+            .child(self.graph_editor.clone())
     }
 }

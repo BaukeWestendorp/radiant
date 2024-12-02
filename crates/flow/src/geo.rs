@@ -1,5 +1,3 @@
-use gpui::Pixels;
-
 /// A point in 2D space.
 #[derive(
     Debug, Clone, Copy, PartialEq, PartialOrd, Default, serde::Serialize, serde::Deserialize,
@@ -37,8 +35,9 @@ impl std::ops::Sub for Point {
     }
 }
 
-impl From<gpui::Point<Pixels>> for Point {
-    fn from(value: gpui::Point<Pixels>) -> Self {
+#[cfg(feature = "gpui")]
+impl From<gpui::Point<gpui::Pixels>> for Point {
+    fn from(value: gpui::Point<gpui::Pixels>) -> Self {
         Self {
             x: value.x.0,
             y: value.y.0,
@@ -46,7 +45,8 @@ impl From<gpui::Point<Pixels>> for Point {
     }
 }
 
-impl From<Point> for gpui::Point<Pixels> {
+#[cfg(feature = "gpui")]
+impl From<Point> for gpui::Point<gpui::Pixels> {
     fn from(value: Point) -> Self {
         Self::new(value.x.into(), value.y.into())
     }

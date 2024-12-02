@@ -6,6 +6,7 @@ edition.workspace = true
 [dependencies]
 dmx.workspace = true
 flow = { workspace = true, features = ["derive", "gpui"] }
+ui.workspace = true
 
 gpui.workspace = true
 gdtf.workspace = true
@@ -13,6 +14,10 @@ gdtf.workspace = true
 anyhow.workspace = true
 dirs.workspace = true
 log.workspace = true
+regex.workspace = true
 
 serde.workspace = true
 serde_json.workspace = true
+
+strum = { version = "0.26.3", features = ["derive"] }
+rand = "0.8.5"
