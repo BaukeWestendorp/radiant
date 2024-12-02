@@ -8,10 +8,10 @@ pub use dmx_protocols::*;
 pub use layout::*;
 pub use patch::*;
 
-#[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Showfile {
-    pub layout: Layout,
     pub assets: Assets,
-    pub dmx_protocols: DmxProtocols,
     pub patch: Patch,
+    pub dmx_protocols: DmxProtocols,
+    pub layout: Layout,
 }

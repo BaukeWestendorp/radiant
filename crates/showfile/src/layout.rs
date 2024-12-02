@@ -6,7 +6,7 @@ pub struct Layout {
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Window {
-    frames: Vec<Frame>,
+    pub frames: Vec<Frame>,
 }
 
 #[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]

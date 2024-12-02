@@ -9,12 +9,14 @@ pub struct Assets {
 
 #[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Group {
+    pub id: AssetId,
     pub label: String,
     pub fixtures: Vec<crate::patch::FixtureId>,
 }
 
 #[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Effect {
+    pub id: AssetId,
     pub label: String,
     pub group: AssetId,
     pub kind: EffectKind,
@@ -27,6 +29,7 @@ pub enum EffectKind {
 
 #[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
 pub struct EffectGraph {
+    pub id: AssetId,
     pub label: String,
     pub graph: (),
 }

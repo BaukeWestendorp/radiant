@@ -1,0 +1,25 @@
+{
+  "main_window": {
+    "frames": [
+      {
+        "x": 0,
+        "y": 0,
+        "width": 15,
+        "height": 10,
+        "kind": "EffectGraphEditor"
+      },
+      {
+        "x": 15,
+        "y": 0,
+        "width": 1,
+        "height": 10,
+        "kind": {
+          "Pool": {
+            "kind": "EffectGraph"
+          }
+        }
+      }
+    ]
+  },
+  "secondary_window": {}
+}

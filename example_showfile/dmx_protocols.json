@@ -1,0 +1,16 @@
+{
+  "artnet": [
+    {
+      "destination_ip": "127.0.0.1",
+      "universe": 1
+    },
+    {
+      "destination_ip": "127.0.0.1",
+      "universe": 2
+    },
+    {
+      "destination_ip": "127.0.0.1",
+      "universe": 3
+    }
+  ]
+}

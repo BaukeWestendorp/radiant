@@ -1,0 +1,49 @@
+{
+  "groups": [
+    {
+      "id": 0,
+      "label": "Spots",
+      "fixtures": [1, 2, 3, 4, 5, 6]
+    },
+    {
+      "id": 1,
+      "label": "Washes",
+      "fixtures": [101, 102, 103, 104, 105, 106]
+    },
+    {
+      "id": 2,
+      "label": "Beams",
+      "fixtures": [201, 202, 202, 204, 205, 206]
+    }
+  ],
+  "effects": [
+    {
+      "id": 1,
+      "label": "Wash Effect",
+      "group": 1,
+      "kind": {
+        "Graph": 1
+      }
+    },
+    {
+      "id": 0,
+      "label": "Spot Effect",
+      "group": 0,
+      "kind": {
+        "Graph": 0
+      }
+    }
+  ],
+  "effect_graphs": [
+    {
+      "id": 0,
+      "label": "Spot Graph",
+      "graph": {}
+    },
+    {
+      "id": 1,
+      "label": "Wash Graph",
+      "graph": {}
+    }
+  ]
+}
