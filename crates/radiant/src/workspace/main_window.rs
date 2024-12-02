@@ -11,7 +11,7 @@ pub struct MainWindow {
 impl MainWindow {
     pub fn build(show: Model<Show>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| Self {
-            frame_grid: FrameGridView::build(show, cx),
+            frame_grid: FrameGridView::build(show, show::WindowInstance::Main, cx),
         })
     }
 }

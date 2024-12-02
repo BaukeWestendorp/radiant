@@ -11,17 +11,33 @@ pub struct EffectGraphEditorFrameDelegate {
 
 impl EffectGraphEditorFrameDelegate {
     pub fn new(
+        window: Model<show::Window>,
         effect_graph_asset_pool: Model<AssetPool<EffectGraph>>,
         cx: &mut WindowContext,
     ) -> Self {
         let graph_model = cx.new_model(|cx| {
             effect_graph_asset_pool
                 .read(cx)
-                .get(&show::EffectGraphId(1))
+                .get(&window.read(cx).selected_effect_graph.unwrap())
                 .unwrap()
                 .clone()
                 .graph
         });
+
+        cx.observe(&window, {
+            let graph_model = graph_model.clone();
+            move |window, cx| {
+                graph_model.update(cx, |graph, cx| {
+                    *graph = effect_graph_asset_pool
+                        .read(cx)
+                        .get(&window.read(cx).selected_effect_graph.unwrap())
+                        .unwrap()
+                        .clone()
+                        .graph;
+                })
+            }
+        })
+        .detach();
 
         Self {
             graph_editor: GraphEditorView::build(graph_model, cx),

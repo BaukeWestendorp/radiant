@@ -6,6 +6,7 @@ pub struct Layout {
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Window {
+    pub selected_effect_graph: Option<super::AssetId>,
     pub frames: Vec<Frame>,
 }
 

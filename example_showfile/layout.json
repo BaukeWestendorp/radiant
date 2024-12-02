@@ -1,5 +1,6 @@
 {
   "main_window": {
+    "selected_effect_graph": 1,
     "frames": [
       {
         "x": 0,
@@ -20,6 +21,7 @@
     ]
   },
   "secondary_window": {
+    "selected_effect_graph": 2,
     "frames": []
   }
 }

@@ -5,12 +5,13 @@ use ui::StyledExt;
 use super::PoolDelegate;
 
 pub struct EffectGraphPoolFrameDelegate {
+    window: Model<show::Window>,
     asset_pool: Model<AssetPool<EffectGraph>>,
 }
 
 impl EffectGraphPoolFrameDelegate {
-    pub fn new(asset_pool: Model<AssetPool<EffectGraph>>) -> Self {
-        Self { asset_pool }
+    pub fn new(window: Model<show::Window>, asset_pool: Model<AssetPool<EffectGraph>>) -> Self {
+        Self { window, asset_pool }
     }
 }
 
@@ -35,5 +36,12 @@ impl PoolDelegate for EffectGraphPoolFrameDelegate {
                 .child(div().my_auto().child(graph.label.clone()))
                 .overflow_hidden(),
         )
+    }
+
+    fn on_click_item(&mut self, id: AnyAssetId, cx: &mut WindowContext) {
+        self.window.update(cx, |window, cx| {
+            window.selected_effect_graph = Some(id.into());
+            cx.notify();
+        })
     }
 }

@@ -1,6 +1,6 @@
 use gpui::{AppContext, Context, Model};
 
-use crate::showfile;
+use crate::{showfile, EffectGraphId};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Layout {
@@ -15,16 +15,31 @@ impl Layout {
             secondary_window: cx.new_model(|_| layout.secondary_window.into()),
         }
     }
+
+    pub fn window(&self, instace: WindowInstance) -> &Model<Window> {
+        match instace {
+            WindowInstance::Main => &self.main_window,
+            WindowInstance::Secondary => &self.secondary_window,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WindowInstance {
+    Main,
+    Secondary,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Window {
+    pub selected_effect_graph: Option<EffectGraphId>,
     pub frames: Vec<Frame>,
 }
 
 impl From<showfile::Window> for Window {
     fn from(window: showfile::Window) -> Self {
         Self {
+            selected_effect_graph: window.selected_effect_graph.map(EffectGraphId),
             frames: window.frames.into_iter().map(Frame::from).collect(),
         }
     }

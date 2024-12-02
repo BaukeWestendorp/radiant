@@ -1,5 +1,5 @@
 use gpui::*;
-use show::{FrameKind, PoolKind, Show};
+use show::{FrameKind, PoolKind, Show, WindowInstance};
 use ui::{theme::ActiveTheme, z_stack};
 
 use super::{
@@ -17,18 +17,19 @@ pub struct FrameGridView {
 }
 
 impl FrameGridView {
-    pub fn build(show: Model<Show>, cx: &mut WindowContext) -> View<FrameGridView> {
+    pub fn build(
+        show: Model<Show>,
+        window_instance: WindowInstance,
+        cx: &mut WindowContext,
+    ) -> View<FrameGridView> {
         cx.new_view(|cx| {
-            // FIXME: .main_window should be a dynamic reference to any window.
-            let frames = show
-                .read(cx)
-                .layout
-                .main_window
+            let window = show.read(cx).layout.window(window_instance);
+            let frames = window
                 .read(cx)
                 .frames
                 .clone()
                 .into_iter()
-                .map(|frame| frame_to_view(frame, show.clone(), cx))
+                .map(|frame| frame_to_view(frame, window_instance, show.clone(), cx))
                 .collect();
 
             FrameGridView {
@@ -73,13 +74,19 @@ impl Render for FrameGridView {
     }
 }
 
-pub fn frame_to_view(frame: show::Frame, show: Model<Show>, cx: &mut WindowContext) -> AnyView {
+pub fn frame_to_view(
+    frame: show::Frame,
+    window_instance: WindowInstance,
+    show: Model<Show>,
+    cx: &mut WindowContext,
+) -> AnyView {
+    let window = show.read(cx).layout.window(window_instance);
     let assets = &show.read(cx).assets;
 
     match frame.kind {
         FrameKind::EffectGraphEditor => FrameView::build(
             frame.clone(),
-            EffectGraphEditorFrameDelegate::new(assets.effect_graphs.clone(), cx),
+            EffectGraphEditorFrameDelegate::new(window.clone(), assets.effect_graphs.clone(), cx),
             cx,
         )
         .into(),
@@ -89,7 +96,7 @@ pub fn frame_to_view(frame: show::Frame, show: Model<Show>, cx: &mut WindowConte
                 PoolFrameDelegate::new(
                     frame.width,
                     frame.height,
-                    EffectGraphPoolFrameDelegate::new(assets.effect_graphs.clone()),
+                    EffectGraphPoolFrameDelegate::new(window.clone(), assets.effect_graphs.clone()),
                 ),
                 cx,
             )
