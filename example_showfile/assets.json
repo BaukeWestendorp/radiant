@@ -18,19 +18,27 @@
   ],
   "effects": [
     {
+      "id": 0,
+      "label": "Spot Effect",
+      "group": 0,
+      "kind": {
+        "Graph": 0
+      }
+    },
+    {
       "id": 1,
-      "label": "Wash Effect",
+      "label": "Beam Effect",
       "group": 1,
       "kind": {
         "Graph": 1
       }
     },
     {
-      "id": 0,
-      "label": "Spot Effect",
-      "group": 0,
+      "id": 2,
+      "label": "Wash Effect",
+      "group": 2,
       "kind": {
-        "Graph": 0
+        "Graph": 2
       }
     }
   ],
@@ -492,6 +500,461 @@
     },
     {
       "id": 1,
+      "label": "Beam Graph",
+      "graph": {
+        "nodes": [
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 1,
+                "version": 1
+              },
+              "data": {
+                "position": {
+                  "x": 100.03906,
+                  "y": 199.88672
+                }
+              },
+              "kind": "SetDimmer",
+              "inputs": [
+                {
+                  "label": "Fixture",
+                  "id": {
+                    "idx": 1,
+                    "version": 1
+                  }
+                },
+                {
+                  "label": "dimmer",
+                  "id": {
+                    "idx": 2,
+                    "version": 1
+                  }
+                }
+              ],
+              "outputs": []
+            },
+            "version": 1
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 9,
+                "version": 3
+              },
+              "data": {
+                "position": {
+                  "x": 243.41016,
+                  "y": 163.30078
+                }
+              },
+              "kind": "GetFixture",
+              "inputs": [],
+              "outputs": [
+                {
+                  "label": "index",
+                  "id": {
+                    "idx": 11,
+                    "version": 3
+                  }
+                },
+                {
+                  "label": "id",
+                  "id": {
+                    "idx": 10,
+                    "version": 3
+                  }
+                },
+                {
+                  "label": "address",
+                  "id": {
+                    "idx": 9,
+                    "version": 3
+                  }
+                }
+              ]
+            },
+            "version": 3
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          }
+        ],
+        "input_parameters": [
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 1,
+                "version": 1
+              },
+              "node_id": {
+                "idx": 1,
+                "version": 1
+              },
+              "data_type": "FixtureId",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "FixtureId": 0
+                  },
+                  "control": "FixtureId"
+                }
+              }
+            },
+            "version": 1
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 2,
+                "version": 1
+              },
+              "node_id": {
+                "idx": 1,
+                "version": 1
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 1.0
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 1
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          }
+        ],
+        "output_parameters": [
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 9,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 9,
+                "version": 3
+              },
+              "data_type": "DmxAddress",
+              "kind": "Computed"
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 10,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 9,
+                "version": 3
+              },
+              "data_type": "FixtureId",
+              "kind": "Computed"
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 11,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 9,
+                "version": 3
+              },
+              "data_type": "Int",
+              "kind": "Computed"
+            },
+            "version": 3
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          }
+        ],
+        "edges": [
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": {
+              "idx": 10,
+              "version": 3
+            },
+            "version": 1
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          }
+        ],
+        "graph_ends": [
+          {
+            "idx": 1,
+            "version": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
       "label": "Wash Graph",
       "graph": {
         "nodes": [
