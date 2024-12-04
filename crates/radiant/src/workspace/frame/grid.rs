@@ -93,6 +93,18 @@ pub fn frame_to_view(
                     .clone()
             });
 
+            cx.observe(&assets.effect_graphs, {
+                let graph_model = graph_model.clone();
+                move |pool, cx| {
+                    graph_model.update(cx, |graph, cx| {
+                        log::debug!("Updating effect graph model with new graph {}", graph.id);
+                        *graph = pool.read(cx).get(&graph.id).unwrap().clone();
+                        cx.notify();
+                    });
+                }
+            })
+            .detach();
+
             cx.subscribe(&window, {
                 let graph_model = graph_model.clone();
                 move |_, event, cx| match event {
@@ -113,7 +125,7 @@ pub fn frame_to_view(
 
             FrameView::build(
                 frame.clone(),
-                EffectGraphEditorFrameDelegate::new(graph_model, cx),
+                EffectGraphEditorFrameDelegate::new(show.clone(), graph_model, cx),
                 cx,
             )
             .into()

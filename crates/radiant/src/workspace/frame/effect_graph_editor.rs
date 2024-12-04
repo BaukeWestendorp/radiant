@@ -1,17 +1,18 @@
 use flow::gpui::GraphEditorView;
 use gpui::*;
-use show::{EffectGraph, EffectGraphDefinition};
+use show::{Asset, EffectGraph, EffectGraphDefinition, Show};
 use ui::{container, theme::ActiveTheme, ContainerKind};
 
 use super::{FrameDelegate, FrameView};
 
 pub struct EffectGraphEditorFrameDelegate {
+    show: Model<Show>,
     graph: Model<EffectGraph>,
     editor: View<GraphEditorView<EffectGraphDefinition>>,
 }
 
 impl EffectGraphEditorFrameDelegate {
-    pub fn new(graph: Model<EffectGraph>, cx: &mut WindowContext) -> Self {
+    pub fn new(show: Model<Show>, graph: Model<EffectGraph>, cx: &mut WindowContext) -> Self {
         let editor = cx.new_view(|cx| {
             // FIXME: We could create a helper for these 'model mappings'.
             let flow_graph = cx.new_model(|cx| graph.read(cx).graph.clone());
@@ -33,18 +34,25 @@ impl EffectGraphEditorFrameDelegate {
             GraphEditorView::new(flow_graph.clone(), cx)
         });
 
-        Self { graph, editor }
+        Self {
+            show,
+            graph,
+            editor,
+        }
     }
 
     fn save_graph(&self, cx: &mut WindowContext) {
-        let new_graph = self.graph.read(cx).clone();
+        let new_graph = self.editor.read(cx).graph().read(cx).clone();
 
-        log::info!(
-            "Saving effect graph '{}' ({})",
-            new_graph.label,
-            new_graph.id
-        );
-        todo!("Impelment saving");
+        let effect_graph_pool = self.show.read(cx).assets.effect_graphs.clone();
+        effect_graph_pool.update(cx, |pool, cx| {
+            let id = self.graph.read(cx).id();
+            if let Some(graph) = pool.get_mut(&id) {
+                graph.graph = new_graph;
+                cx.notify();
+                log::info!("Saved effect graph '{}' ({}).", graph.label, graph.id);
+            }
+        });
     }
 }
 
