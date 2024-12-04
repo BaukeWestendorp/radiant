@@ -83,8 +83,8 @@ pub fn frame_to_view(
     let window = show.read(cx).layout.window(window_instance).clone();
     let assets = show.read(cx).assets.clone();
 
-    match frame.kind {
-        FrameKind::EffectGraphEditor => {
+    match &frame.kind {
+        FrameKind::EffectGraphEditor { auto_save } => {
             let graph_model = cx.new_model(|cx| {
                 window
                     .read(cx)
@@ -125,7 +125,12 @@ pub fn frame_to_view(
 
             FrameView::build(
                 frame.clone(),
-                EffectGraphEditorFrameDelegate::new(show.clone(), graph_model, cx),
+                EffectGraphEditorFrameDelegate::new(
+                    show.clone(),
+                    graph_model,
+                    auto_save.clone(),
+                    cx,
+                ),
                 cx,
             )
             .into()

@@ -2,7 +2,10 @@ use super::{
     node, NodeEvent, NodeView, SocketEvent, VisualControl, VisualDataType, VisualNodeData,
     VisualNodeKind, SNAP_GRID_SIZE,
 };
-use crate::{Graph, GraphDefinition, InputId, NodeId, OutputId, Parameter};
+use crate::{
+    Graph, GraphDefinition, InputId, InputParameterKind, NodeId, OutputId, OutputParameterKind,
+    Parameter,
+};
 
 use gpui::*;
 use ui::{bounds_updater, z_stack};
@@ -34,6 +37,10 @@ where
                 bounds: Bounds::default(),
             }
         })
+    }
+
+    pub fn graph(&self) -> &Model<Graph<Def>> {
+        &self.graph
     }
 
     fn build_nodes(
@@ -72,14 +79,17 @@ where
         event: &GraphEvent<Def>,
         cx: &mut ViewContext<Self>,
     ) {
+        self.emit_should_save_event(event, cx);
+
         match event {
             GraphEvent::AddNode { kind, data } => {
-                let node_id = self
-                    .graph
-                    .update(cx, |graph, _cx| graph.add_node(kind.clone(), data.clone()));
+                let node_id = self.graph.update(cx, |graph, cx| {
+                    cx.notify();
+                    graph.add_node(kind.clone(), data.clone())
+                });
 
                 let node_view = Self::build_node(node_id, self.graph.clone(), cx);
-                self.nodes.push(node_view)
+                self.nodes.push(node_view);
             }
 
             GraphEvent::RemoveNode { node_id } => {
@@ -91,7 +101,46 @@ where
                 });
                 cx.notify();
             }
+            GraphEvent::ValueChanged {
+                parameter,
+                value: new_value,
+            } => {
+                self.graph.update(cx, |graph, cx| {
+                    match parameter {
+                        Parameter::Input(id) => {
+                            let InputParameterKind::EdgeOrConstant { value, .. } =
+                                &mut graph.input_mut(*id).kind;
+                            *value = new_value.clone();
+                        }
+                        Parameter::Output(id) => {
+                            if let OutputParameterKind::Constant { value, .. } =
+                                &mut graph.output_mut(*id).kind
+                            {
+                                *value = new_value.clone();
+                            }
+                        }
+                    }
+                    cx.notify();
+                });
+                cx.notify();
+            }
+            _ => {}
         }
+    }
+
+    fn emit_should_save_event(&mut self, event: &GraphEvent<Def>, cx: &mut AppContext) {
+        match &event {
+            GraphEvent::AddNode { .. }
+            | GraphEvent::RemoveNode { .. }
+            | GraphEvent::NodeMoveEnded { .. }
+            | GraphEvent::ValueChanged { .. } => {
+                self.graph.update(cx, |_graph, cx| {
+                    cx.emit(GraphEvent::ShouldSave);
+                    cx.notify();
+                });
+            }
+            _ => {}
+        };
     }
 
     fn handle_socket_event(&mut self, event: &SocketEvent, cx: &mut ViewContext<Self>) {
@@ -177,6 +226,7 @@ where
                 let update_graph = |output_id, input_id, cx: &mut ViewContext<Self>| {
                     self.graph.update(cx, |graph, cx| {
                         graph.add_edge(output_id, input_id);
+                        cx.emit(GraphEvent::ShouldSave);
                         cx.notify();
                     });
                     cx.notify();
@@ -423,6 +473,17 @@ pub enum GraphEvent<Def: GraphDefinition> {
     },
     RemoveNode {
         node_id: NodeId,
+    },
+    ShouldSave,
+    NodeMoved {
+        node_id: NodeId,
+    },
+    NodeMoveEnded {
+        node_id: NodeId,
+    },
+    ValueChanged {
+        parameter: Parameter,
+        value: Def::Value,
     },
 }
 

@@ -28,7 +28,6 @@ pub struct GraphEditorView<Def: GraphDefinition>
 where
     Def::NodeKind: VisualNodeKind,
 {
-    graph: Model<Graph<Def>>,
     graph_view: View<GraphView<Def>>,
     new_node_context_menu: View<NewNodeContextMenu<Def>>,
     graph_offset: Point<Pixels>,
@@ -51,7 +50,6 @@ where
         let focus_handle = cx.focus_handle().clone();
 
         Self {
-            graph,
             graph_view,
             new_node_context_menu,
             graph_offset: Point::default(),
@@ -61,8 +59,12 @@ where
         }
     }
 
-    pub fn graph(&self) -> &Model<Graph<Def>> {
-        &self.graph
+    pub fn graph<'a>(&self, cx: &'a AppContext) -> &'a Model<Graph<Def>> {
+        self.graph_view().read(cx).graph()
+    }
+
+    pub fn graph_view(&self) -> &View<GraphView<Def>> {
+        &self.graph_view
     }
 
     fn open_node_context_menu(&mut self, cx: &mut ViewContext<Self>) {

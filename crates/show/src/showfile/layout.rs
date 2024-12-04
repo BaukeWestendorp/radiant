@@ -21,7 +21,7 @@ pub struct Frame {
 
 #[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
 pub enum FrameKind {
-    EffectGraphEditor,
+    EffectGraphEditor { auto_save: bool },
     Pool(PoolKind),
 }
 

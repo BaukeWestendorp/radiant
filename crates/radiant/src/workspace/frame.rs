@@ -11,6 +11,12 @@ use show::Frame;
 use ui::{theme::ActiveTheme, StyledExt};
 
 pub trait FrameDelegate {
+    fn init(&mut self, _cx: &mut ViewContext<FrameView<Self>>)
+    where
+        Self: Sized,
+    {
+    }
+
     fn title(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> String
     where
         Self: Sized;
@@ -62,8 +68,11 @@ pub struct FrameView<D: FrameDelegate> {
 }
 
 impl<D: FrameDelegate + 'static> FrameView<D> {
-    pub fn build(frame: Frame, delegate: D, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|_cx| Self { frame, delegate })
+    pub fn build(frame: Frame, mut delegate: D, cx: &mut WindowContext) -> View<Self> {
+        cx.new_view(|cx| {
+            delegate.init(cx);
+            Self { frame, delegate }
+        })
     }
 }
 

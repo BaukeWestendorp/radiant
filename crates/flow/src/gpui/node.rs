@@ -81,15 +81,14 @@ where
 
                     cx.subscribe(&input_view, {
                         let graph = graph.clone();
-                        move |_this, input_view, event, cx| {
-                            let input_id = input_view.read(cx).input_id;
+                        move |_this, output_view, event, cx| {
+                            let input_id = output_view.read(cx).input_id;
                             let ControlEvent::Change(new_value) = event;
-                            graph.update(cx, move |graph, cx| {
-                                let InputParameterKind::EdgeOrConstant { value, .. } =
-                                    &mut graph.input_mut(input_id).kind;
-                                *value = new_value.clone();
-
-                                cx.notify();
+                            graph.update(cx, move |_graph, cx| {
+                                cx.emit(GraphEvent::ValueChanged {
+                                    parameter: Parameter::Input(input_id),
+                                    value: new_value.clone(),
+                                });
                             });
                         }
                     })
@@ -130,14 +129,11 @@ where
                         move |_this, output_view, event, cx| {
                             let output_id = output_view.read(cx).output_id;
                             let ControlEvent::Change(new_value) = event;
-                            graph.update(cx, move |graph, cx| {
-                                if let OutputParameterKind::Constant { value, .. } =
-                                    &mut graph.output_mut(output_id).kind
-                                {
-                                    *value = new_value.clone();
-                                }
-
-                                cx.notify();
+                            graph.update(cx, move |_graph, cx| {
+                                cx.emit(GraphEvent::ValueChanged {
+                                    parameter: Parameter::Output(output_id),
+                                    value: new_value.clone(),
+                                });
                             });
                         }
                     })
@@ -172,11 +168,18 @@ where
             cx.notify();
         });
 
+        cx.emit(GraphEvent::NodeMoved {
+            node_id: self.node_id,
+        });
+
         self.prev_mouse_pos = Some(cx.mouse_position());
     }
 
-    fn handle_mouse_up(&mut self, _: &MouseUpEvent, _cx: &mut ViewContext<Self>) {
+    fn handle_mouse_up(&mut self, _: &MouseUpEvent, cx: &mut ViewContext<Self>) {
         self.prev_mouse_pos = None;
+        cx.emit(GraphEvent::NodeMoveEnded {
+            node_id: self.node_id,
+        });
     }
 }
 

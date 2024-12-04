@@ -7,7 +7,11 @@
         "y": 0,
         "width": 15,
         "height": 10,
-        "kind": "EffectGraphEditor"
+        "kind": {
+          "EffectGraphEditor": {
+            "auto_save": true
+          }
+        }
       },
       {
         "x": 15,

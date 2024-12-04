@@ -11,8 +11,8 @@ pub struct Layout {
 impl Layout {
     pub fn from_showfile(layout: showfile::Layout, cx: &mut AppContext) -> Self {
         Self {
-            main_window: cx.new_model(|_| Window::from_showfile(layout.main_window)),
-            secondary_window: cx.new_model(|_| Window::from_showfile(layout.secondary_window)),
+            main_window: cx.new_model(|cx| Window::from_showfile(layout.main_window, cx)),
+            secondary_window: cx.new_model(|cx| Window::from_showfile(layout.secondary_window, cx)),
         }
     }
 
@@ -37,10 +37,14 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn from_showfile(window: showfile::Window) -> Self {
+    pub fn from_showfile(window: showfile::Window, cx: &mut AppContext) -> Self {
         Self {
             selected_effect_graph: window.selected_effect_graph.map(EffectGraphId),
-            frames: window.frames.into_iter().map(Frame::from).collect(),
+            frames: window
+                .frames
+                .into_iter()
+                .map(|frame| Frame::from_showfile(frame, cx))
+                .collect(),
         }
     }
 
@@ -71,7 +75,7 @@ pub enum WindowEvent {
 
 impl EventEmitter<WindowEvent> for Window {}
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Frame {
     pub x: u32,
     pub y: u32,
@@ -80,28 +84,30 @@ pub struct Frame {
     pub kind: FrameKind,
 }
 
-impl From<showfile::Frame> for Frame {
-    fn from(frame: showfile::Frame) -> Self {
+impl Frame {
+    fn from_showfile(frame: showfile::Frame, cx: &mut AppContext) -> Self {
         Self {
             x: frame.x,
             y: frame.y,
             width: frame.width,
             height: frame.height,
-            kind: frame.kind.into(),
+            kind: FrameKind::from_showfile(frame.kind, cx),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FrameKind {
-    EffectGraphEditor,
+    EffectGraphEditor { auto_save: Model<bool> },
     Pool(PoolKind),
 }
 
-impl From<showfile::FrameKind> for FrameKind {
-    fn from(kind: showfile::FrameKind) -> Self {
+impl FrameKind {
+    pub fn from_showfile(kind: showfile::FrameKind, cx: &mut AppContext) -> Self {
         match kind {
-            showfile::FrameKind::EffectGraphEditor => Self::EffectGraphEditor,
+            showfile::FrameKind::EffectGraphEditor { auto_save } => Self::EffectGraphEditor {
+                auto_save: cx.new_model(|_| auto_save),
+            },
             showfile::FrameKind::Pool(kind) => Self::Pool(kind.into()),
         }
     }
