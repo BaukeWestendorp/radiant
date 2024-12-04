@@ -176,6 +176,11 @@ where
     }
 
     fn handle_mouse_up(&mut self, _: &MouseUpEvent, cx: &mut ViewContext<Self>) {
+        if self.prev_mouse_pos.is_none() {
+            // The node did not move.
+            return;
+        }
+
         self.prev_mouse_pos = None;
         cx.emit(GraphEvent::NodeMoveEnded {
             node_id: self.node_id,
