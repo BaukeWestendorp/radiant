@@ -1,4 +1,7 @@
-use flow::gpui::{GraphEditorView, GraphEvent};
+use flow::{
+    gpui::{GraphEditorView, GraphEvent},
+    Point,
+};
 use gpui::*;
 use prelude::FluentBuilder;
 use show::{Asset, EffectGraph, EffectGraphDefinition, Show};
@@ -18,6 +21,7 @@ impl EffectGraphEditorFrameDelegate {
         show: Model<Show>,
         graph: Model<EffectGraph>,
         auto_save: Model<bool>,
+        graph_offset: Model<Point>,
         cx: &mut WindowContext,
     ) -> Self {
         let editor = cx.new_view(|cx| {
@@ -25,6 +29,7 @@ impl EffectGraphEditorFrameDelegate {
             let flow_graph = cx.new_model(|cx| graph.read(cx).graph.clone());
             cx.observe(&graph, {
                 let flow_graph = flow_graph.clone();
+                let graph_offset = graph_offset.clone();
                 move |editor, graph, cx| {
                     log::debug!("Updating effect graph editor with new graph");
                     flow_graph.update(cx, |flow_graph, cx| {
@@ -32,13 +37,13 @@ impl EffectGraphEditorFrameDelegate {
                         cx.notify();
                     });
 
-                    *editor = GraphEditorView::new(flow_graph.clone(), cx);
+                    *editor = GraphEditorView::new(flow_graph.clone(), graph_offset.clone(), cx);
                     cx.notify();
                 }
             })
             .detach();
 
-            GraphEditorView::new(flow_graph.clone(), cx)
+            GraphEditorView::new(flow_graph.clone(), graph_offset.clone(), cx)
         });
 
         Self {

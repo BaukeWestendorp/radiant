@@ -84,7 +84,10 @@ pub fn frame_to_view(
     let assets = show.read(cx).assets.clone();
 
     match &frame.kind {
-        FrameKind::EffectGraphEditor { auto_save } => {
+        FrameKind::EffectGraphEditor {
+            auto_save,
+            graph_offset,
+        } => {
             let graph_model = cx.new_model(|cx| {
                 window
                     .read(cx)
@@ -129,6 +132,7 @@ pub fn frame_to_view(
                     show.clone(),
                     graph_model,
                     auto_save.clone(),
+                    graph_offset.clone(),
                     cx,
                 ),
                 cx,

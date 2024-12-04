@@ -1,3 +1,4 @@
+use flow::Point;
 use gpui::{AppContext, Context, EventEmitter, Model, ModelContext};
 
 use crate::{showfile, AssetPool, EffectGraph, EffectGraphId};
@@ -98,15 +99,22 @@ impl Frame {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FrameKind {
-    EffectGraphEditor { auto_save: Model<bool> },
+    EffectGraphEditor {
+        auto_save: Model<bool>,
+        graph_offset: Model<Point>,
+    },
     Pool(PoolKind),
 }
 
 impl FrameKind {
     pub fn from_showfile(kind: showfile::FrameKind, cx: &mut AppContext) -> Self {
         match kind {
-            showfile::FrameKind::EffectGraphEditor { auto_save } => Self::EffectGraphEditor {
+            showfile::FrameKind::EffectGraphEditor {
+                auto_save,
+                graph_offset,
+            } => Self::EffectGraphEditor {
                 auto_save: cx.new_model(|_| auto_save),
+                graph_offset: cx.new_model(|_| graph_offset),
             },
             showfile::FrameKind::Pool(kind) => Self::Pool(kind.into()),
         }
