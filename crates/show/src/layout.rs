@@ -1,6 +1,6 @@
-use gpui::{AppContext, Context, Model};
+use gpui::{AppContext, Context, EventEmitter, Model, ModelContext};
 
-use crate::{showfile, EffectGraphId};
+use crate::{showfile, AssetPool, EffectGraph, EffectGraphId};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Layout {
@@ -11,8 +11,8 @@ pub struct Layout {
 impl Layout {
     pub fn from_showfile(layout: showfile::Layout, cx: &mut AppContext) -> Self {
         Self {
-            main_window: cx.new_model(|cx| Window::from_showfile(layout.main_window, cx)),
-            secondary_window: cx.new_model(|cx| Window::from_showfile(layout.secondary_window, cx)),
+            main_window: cx.new_model(|_| Window::from_showfile(layout.main_window)),
+            secondary_window: cx.new_model(|_| Window::from_showfile(layout.secondary_window)),
         }
     }
 
@@ -32,19 +32,44 @@ pub enum WindowInstance {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Window {
-    pub selected_effect_graph: Model<Option<EffectGraphId>>,
+    selected_effect_graph: Option<EffectGraphId>,
     pub frames: Vec<Frame>,
 }
 
 impl Window {
-    pub fn from_showfile(window: showfile::Window, cx: &mut AppContext) -> Self {
+    pub fn from_showfile(window: showfile::Window) -> Self {
         Self {
-            selected_effect_graph: cx
-                .new_model(|_| window.selected_effect_graph.map(EffectGraphId)),
+            selected_effect_graph: window.selected_effect_graph.map(EffectGraphId),
             frames: window.frames.into_iter().map(Frame::from).collect(),
         }
     }
+
+    pub fn selected_effect_graph<'a>(
+        &self,
+        pool: &Model<AssetPool<EffectGraph>>,
+        cx: &'a AppContext,
+    ) -> Option<&'a EffectGraph> {
+        self.selected_effect_graph
+            .and_then(|id| pool.read(cx).get(&id))
+    }
+
+    pub fn set_selected_effect_graph(
+        &mut self,
+        id: Option<EffectGraphId>,
+        cx: &mut ModelContext<Self>,
+    ) {
+        self.selected_effect_graph = id;
+        cx.emit(WindowEvent::SelectedEffectGraphChanged(id));
+        cx.notify();
+    }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum WindowEvent {
+    SelectedEffectGraphChanged(Option<EffectGraphId>),
+}
+
+impl EventEmitter<WindowEvent> for Window {}
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Frame {

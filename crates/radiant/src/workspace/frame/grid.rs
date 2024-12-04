@@ -1,5 +1,5 @@
 use gpui::*;
-use show::{FrameKind, PoolKind, Show, WindowInstance};
+use show::{FrameKind, PoolKind, Show, WindowEvent, WindowInstance};
 use ui::{theme::ActiveTheme, z_stack};
 
 use super::{
@@ -85,21 +85,28 @@ pub fn frame_to_view(
 
     match frame.kind {
         FrameKind::EffectGraphEditor => {
-            let selected_graph_id = window.read(cx).selected_effect_graph.clone();
-            let id = selected_graph_id.read(cx).unwrap();
-            let graph_model =
-                cx.new_model(|cx| assets.effect_graphs.read(cx).get(&id).unwrap().clone());
+            let graph_model = cx.new_model(|cx| {
+                window
+                    .read(cx)
+                    .selected_effect_graph(&assets.effect_graphs, cx)
+                    .unwrap()
+                    .clone()
+            });
 
-            cx.observe(&selected_graph_id, {
+            cx.subscribe(&window, {
                 let graph_model = graph_model.clone();
-                move |selected_graph_id, cx| {
-                    let id = selected_graph_id.read(cx).unwrap();
-                    log::debug!("Window's selected graph id changed to {id}");
-                    let effect_graph = assets.effect_graphs.read(cx).get(&id).unwrap().clone();
-                    graph_model.update(cx, |graph, cx| {
-                        *graph = effect_graph;
-                        cx.notify();
-                    });
+                move |_, event, cx| match event {
+                    WindowEvent::SelectedEffectGraphChanged(id) => {
+                        log::debug!("Window's selected graph id changed to {id:?}");
+                        if let Some(id) = id {
+                            let effect_graph =
+                                assets.effect_graphs.read(cx).get(id).unwrap().clone();
+                            graph_model.update(cx, |graph, cx| {
+                                *graph = effect_graph;
+                                cx.notify();
+                            });
+                        }
+                    }
                 }
             })
             .detach();
