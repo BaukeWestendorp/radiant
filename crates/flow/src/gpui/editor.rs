@@ -28,6 +28,7 @@ pub struct GraphEditorView<Def: GraphDefinition>
 where
     Def::NodeKind: VisualNodeKind,
 {
+    graph: Model<Graph<Def>>,
     graph_view: View<GraphView<Def>>,
     new_node_context_menu: View<NewNodeContextMenu<Def>>,
     graph_offset: Point<Pixels>,
@@ -50,6 +51,7 @@ where
         let focus_handle = cx.focus_handle().clone();
 
         Self {
+            graph,
             graph_view,
             new_node_context_menu,
             graph_offset: Point::default(),
@@ -57,6 +59,10 @@ where
             focus_handle,
             bounds: Bounds::default(),
         }
+    }
+
+    pub fn graph(&self) -> &Model<Graph<Def>> {
+        &self.graph
     }
 
     fn open_node_context_menu(&mut self, cx: &mut ViewContext<Self>) {

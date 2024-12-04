@@ -18,16 +18,14 @@ impl EffectGraphEditorFrameDelegate {
             cx.observe(&graph, {
                 let flow_graph = flow_graph.clone();
                 move |editor, graph, cx| {
-                    log::debug!(
-                        "Effect Graph Editor's graph changed. Updating the GraphEditorView's graph model."
-                    );
-
+                    log::debug!("Updating effect graph editor with new graph");
                     flow_graph.update(cx, |flow_graph, cx| {
                         *flow_graph = graph.read(cx).graph.clone();
                         cx.notify();
                     });
 
                     *editor = GraphEditorView::new(flow_graph.clone(), cx);
+                    cx.notify();
                 }
             })
             .detach();
@@ -36,6 +34,17 @@ impl EffectGraphEditorFrameDelegate {
         });
 
         Self { graph, editor }
+    }
+
+    fn save_graph(&self, cx: &mut WindowContext) {
+        let new_graph = self.graph.read(cx).clone();
+
+        log::info!(
+            "Saving effect graph '{}' ({})",
+            new_graph.label,
+            new_graph.id
+        );
+        todo!("Impelment saving");
     }
 }
 
@@ -46,6 +55,15 @@ impl FrameDelegate for EffectGraphEditorFrameDelegate {
             self.graph.read(cx).label,
             self.graph.read(cx).id,
         )
+    }
+
+    fn render_header_content(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> impl IntoElement {
+        div()
+            .id("save-button")
+            .on_click(cx.listener(|this, _, cx| this.delegate.save_graph(cx)))
+            .border_1()
+            .p_2()
+            .child("Save")
     }
 
     fn render_content(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> impl IntoElement {

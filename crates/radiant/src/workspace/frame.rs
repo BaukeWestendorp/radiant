@@ -20,6 +20,7 @@ pub trait FrameDelegate {
         Self: Sized,
     {
         let title = self.title(cx).to_string();
+        let header_content = self.render_header_content(cx).into_element();
 
         Some(
             div()
@@ -33,12 +34,21 @@ pub trait FrameDelegate {
                     div()
                         .size_full()
                         .h_flex()
+                        .justify_between()
                         .text_sm()
                         .text_color(cx.theme().frame_header_text_color)
                         .font_weight(FontWeight::SEMIBOLD)
-                        .child(title),
+                        .child(title)
+                        .child(header_content),
                 ),
         )
+    }
+
+    fn render_header_content(&mut self, _cx: &mut ViewContext<FrameView<Self>>) -> impl IntoElement
+    where
+        Self: Sized,
+    {
+        div().size_full()
     }
 
     fn render_content(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> impl IntoElement
