@@ -20,8 +20,8 @@ pub enum EffectKind {
 impl super::Asset for Effect {
     type Id = EffectId;
 
-    fn id(&self) -> &Self::Id {
-        &self.id
+    fn id(&self) -> Self::Id {
+        self.id
     }
 }
 

@@ -2,6 +2,8 @@ pub mod effect;
 pub mod effect_graph;
 pub mod group;
 
+use std::{collections::HashMap, hash::Hash};
+
 use gpui::{AppContext, Context, Model};
 
 pub use effect::*;
@@ -72,7 +74,7 @@ pub(crate) use asset_id;
 
 use crate::showfile;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone)]
 pub struct Assets {
     pub groups: Model<AssetPool<Group>>,
     pub effects: Model<AssetPool<Effect>>,
@@ -111,43 +113,54 @@ impl Assets {
 }
 
 pub trait Asset {
-    type Id: PartialEq;
-    fn id(&self) -> &Self::Id;
+    type Id: PartialEq + Eq + Hash;
+    fn id(&self) -> Self::Id;
 }
 
+#[derive(Debug, Clone)]
 pub struct AssetPool<A: Asset> {
-    assets: Vec<A>,
+    assets: HashMap<A::Id, A>,
 }
 
-impl<A: Asset> AssetPool<A> {
+impl<A: Asset + 'static> AssetPool<A> {
     pub fn iter(&self) -> impl Iterator<Item = &A> {
-        self.assets.iter()
+        self.assets.values()
     }
 
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut A> {
-        self.assets.iter_mut()
+        self.assets.values_mut()
     }
 
     pub fn get(&self, id: &A::Id) -> Option<&A> {
-        self.assets.iter().find(|asset| asset.id() == id)
+        self.assets
+            .iter()
+            .find(|(asset_id, _)| *asset_id == id)
+            .map(|(_, asset)| asset)
     }
 
     pub fn get_mut(&mut self, id: &A::Id) -> Option<&mut A> {
-        self.assets.iter_mut().find(|asset| asset.id() == id)
+        self.assets
+            .iter_mut()
+            .find(|(asset_id, _)| *asset_id == id)
+            .map(|(_, asset)| asset)
     }
 
-    pub fn insert(&mut self, asset: A) {
-        self.assets.push(asset);
+    pub fn insert(&mut self, id: A::Id, asset: A) {
+        self.assets.insert(id, asset);
     }
 
-    pub fn remove(&mut self, id: &A::Id) -> Option<A> {
-        let index = self.assets.iter().position(|asset| asset.id() == id)?;
-        Some(self.assets.remove(index))
+    pub fn remove<'b, 'a>(&mut self, id: &A::Id) {
+        self.assets.retain(|asset_id, _| asset_id != id);
     }
 }
 
 impl<A: Asset> From<Vec<A>> for AssetPool<A> {
     fn from(assets: Vec<A>) -> Self {
-        Self { assets }
+        Self {
+            assets: assets
+                .into_iter()
+                .map(|asset| (asset.id(), asset))
+                .collect(),
+        }
     }
 }

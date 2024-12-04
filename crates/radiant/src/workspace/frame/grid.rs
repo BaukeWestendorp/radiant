@@ -80,16 +80,37 @@ pub fn frame_to_view(
     show: Model<Show>,
     cx: &mut WindowContext,
 ) -> AnyView {
-    let window = show.read(cx).layout.window(window_instance);
-    let assets = &show.read(cx).assets;
+    let window = show.read(cx).layout.window(window_instance).clone();
+    let assets = show.read(cx).assets.clone();
 
     match frame.kind {
-        FrameKind::EffectGraphEditor => FrameView::build(
-            frame.clone(),
-            EffectGraphEditorFrameDelegate::new(window.clone(), assets.effect_graphs.clone(), cx),
-            cx,
-        )
-        .into(),
+        FrameKind::EffectGraphEditor => {
+            let selected_graph_id = window.read(cx).selected_effect_graph.clone();
+            let id = selected_graph_id.read(cx).unwrap();
+            let graph_model =
+                cx.new_model(|cx| assets.effect_graphs.read(cx).get(&id).unwrap().clone());
+
+            cx.observe(&selected_graph_id, {
+                let graph_model = graph_model.clone();
+                move |selected_graph_id, cx| {
+                    let id = selected_graph_id.read(cx).unwrap();
+                    log::debug!("Window's selected graph id changed to {id}");
+                    let effect_graph = assets.effect_graphs.read(cx).get(&id).unwrap().clone();
+                    graph_model.update(cx, |graph, cx| {
+                        *graph = effect_graph;
+                        cx.notify();
+                    });
+                }
+            })
+            .detach();
+
+            FrameView::build(
+                frame.clone(),
+                EffectGraphEditorFrameDelegate::new(graph_model, cx),
+                cx,
+            )
+            .into()
+        }
         FrameKind::Pool(kind) => match kind {
             PoolKind::EffectGraph => FrameView::build(
                 frame.clone(),

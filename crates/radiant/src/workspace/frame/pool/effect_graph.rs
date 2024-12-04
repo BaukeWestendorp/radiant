@@ -16,8 +16,8 @@ impl EffectGraphPoolFrameDelegate {
 }
 
 impl PoolDelegate for EffectGraphPoolFrameDelegate {
-    fn title(&self, _cx: &mut WindowContext) -> &str {
-        "Effect Graphs"
+    fn title(&self, _cx: &mut WindowContext) -> String {
+        "Effect Graphs".to_string()
     }
 
     fn render_pool_item(
@@ -29,19 +29,24 @@ impl PoolDelegate for EffectGraphPoolFrameDelegate {
             return None;
         };
 
+        let label = graph.label.clone();
+
         Some(
             div()
                 .size_full()
                 .center_flex()
-                .child(div().my_auto().child(graph.label.clone()))
+                .child(div().my_auto().child(label))
                 .overflow_hidden(),
         )
     }
 
     fn on_click_item(&mut self, id: AnyAssetId, cx: &mut WindowContext) {
         self.window.update(cx, |window, cx| {
-            window.selected_effect_graph = Some(id.into());
+            window.selected_effect_graph.update(cx, |graph_id, cx| {
+                *graph_id = Some(id.into());
+                cx.notify();
+            });
             cx.notify();
-        })
+        });
     }
 }

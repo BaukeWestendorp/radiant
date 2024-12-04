@@ -112,13 +112,13 @@ pub struct TextField {
 }
 
 impl TextField {
-    pub fn new(id: impl Into<ElementId>, cx: &mut ViewContext<Self>) -> Self {
+    pub fn new(id: impl Into<ElementId>, value: SharedString, cx: &mut ViewContext<Self>) -> Self {
         let focus_handle = cx.focus_handle();
         let blink_cursor = cx.new_model(|_| BlinkCursor::new());
 
         let field = Self {
             id: id.into(),
-            value: "".to_string().into(),
+            value,
             placeholder: "".to_string().into(),
             pattern: None,
             validate: None,

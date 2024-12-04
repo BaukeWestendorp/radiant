@@ -14,7 +14,7 @@ pub use effect_graph::*;
 pub use group::*;
 
 pub trait PoolDelegate {
-    fn title(&self, cx: &mut WindowContext) -> &str;
+    fn title(&self, cx: &mut WindowContext) -> String;
 
     fn render_pool_item(
         &mut self,
@@ -64,7 +64,7 @@ impl<D: PoolDelegate + 'static> PoolFrameDelegate<D> {
 }
 
 impl<D: PoolDelegate + 'static> FrameDelegate for PoolFrameDelegate<D> {
-    fn title(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> &str {
+    fn title(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> String {
         self.pool_delegate.title(cx)
     }
 
@@ -97,16 +97,17 @@ impl<D: PoolDelegate + 'static> FrameDelegate for PoolFrameDelegate<D> {
             z_stack([content.into_any_element(), overlay.into_any_element()])
                 .size(px(GRID_SIZE - 2.0))
                 .m_px()
-                .when(has_content, |e| e.cursor_pointer())
-                .on_mouse_down(
-                    MouseButton::Left,
-                    cx.listener(move |this, _event, cx| {
-                        this.delegate
-                            .pool_delegate
-                            .on_click_item(AnyAssetId(id), cx);
-                        cx.notify();
-                    }),
-                )
+                .when(has_content, |e| {
+                    e.cursor_pointer().on_mouse_down(
+                        MouseButton::Left,
+                        cx.listener(move |this, _event, cx| {
+                            this.delegate
+                                .pool_delegate
+                                .on_click_item(AnyAssetId(id), cx);
+                            cx.notify();
+                        }),
+                    )
+                })
         });
 
         z_stack([div()

@@ -11,8 +11,8 @@ pub struct Layout {
 impl Layout {
     pub fn from_showfile(layout: showfile::Layout, cx: &mut AppContext) -> Self {
         Self {
-            main_window: cx.new_model(|_| layout.main_window.into()),
-            secondary_window: cx.new_model(|_| layout.secondary_window.into()),
+            main_window: cx.new_model(|cx| Window::from_showfile(layout.main_window, cx)),
+            secondary_window: cx.new_model(|cx| Window::from_showfile(layout.secondary_window, cx)),
         }
     }
 
@@ -32,14 +32,15 @@ pub enum WindowInstance {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Window {
-    pub selected_effect_graph: Option<EffectGraphId>,
+    pub selected_effect_graph: Model<Option<EffectGraphId>>,
     pub frames: Vec<Frame>,
 }
 
-impl From<showfile::Window> for Window {
-    fn from(window: showfile::Window) -> Self {
+impl Window {
+    pub fn from_showfile(window: showfile::Window, cx: &mut AppContext) -> Self {
         Self {
-            selected_effect_graph: window.selected_effect_graph.map(EffectGraphId),
+            selected_effect_graph: cx
+                .new_model(|_| window.selected_effect_graph.map(EffectGraphId)),
             frames: window.frames.into_iter().map(Frame::from).collect(),
         }
     }

@@ -18,12 +18,12 @@ pub struct Slider {
 }
 
 impl Slider {
-    pub fn new(id: impl Into<ElementId>, cx: &mut ViewContext<Self>) -> Self {
+    pub fn new(id: impl Into<ElementId>, value: f64, cx: &mut ViewContext<Self>) -> Self {
         let id: ElementId = id.into();
         Self {
             id: id.clone(),
             number_field: {
-                let field = cx.new_view(|cx| NumberField::new(id, cx));
+                let field = cx.new_view(|cx| NumberField::new(id, value, cx));
 
                 cx.subscribe(&field, |_, _, event: &NumberFieldEvent, cx| {
                     let NumberFieldEvent::Change(value) = event;
@@ -58,18 +58,16 @@ impl Slider {
         &self.range
     }
 
-    pub fn set_range(&mut self, range: RangeInclusive<f64>, cx: &mut ViewContext<Self>) {
+    pub fn set_range(&mut self, range: RangeInclusive<f64>) {
         self.range = range;
-        self.set_value(self.value(cx), cx);
     }
 
     pub fn step(&self) -> Option<f64> {
         self.step
     }
 
-    pub fn set_step(&mut self, step: Option<f64>, cx: &mut ViewContext<Self>) {
+    pub fn set_step(&mut self, step: Option<f64>) {
         self.step = step;
-        self.set_value(self.value(cx), cx);
     }
 
     pub fn strict(&self) -> bool {

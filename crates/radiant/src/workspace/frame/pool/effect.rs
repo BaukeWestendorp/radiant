@@ -15,8 +15,8 @@ impl EffectPoolFrameDelegate {
 }
 
 impl PoolDelegate for EffectPoolFrameDelegate {
-    fn title(&self, _cx: &mut WindowContext) -> &str {
-        "Effects"
+    fn title(&self, _cx: &mut WindowContext) -> String {
+        "Effects".to_string()
     }
 
     fn render_pool_item(
@@ -28,11 +28,13 @@ impl PoolDelegate for EffectPoolFrameDelegate {
             return None;
         };
 
+        let label = effect.label.clone();
+
         Some(
             div()
                 .size_full()
                 .center_flex()
-                .child(div().my_auto().child(effect.label.clone()))
+                .child(div().my_auto().child(label))
                 .overflow_hidden(),
         )
     }

@@ -22,8 +22,8 @@ impl Group {
 impl super::Asset for Group {
     type Id = GroupId;
 
-    fn id(&self) -> &Self::Id {
-        &self.id
+    fn id(&self) -> Self::Id {
+        self.id
     }
 }
 

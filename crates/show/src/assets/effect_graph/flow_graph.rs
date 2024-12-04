@@ -171,7 +171,7 @@ pub enum NodeKind {
     #[input(label = "pos fx fade", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
     SetPanTilt,
 
-    #[node(name = "Set XYZ",    category = "NodeCategory::Output", processor = "processor::set_xyz")]
+    #[node(name = "Set XYZ", category = "NodeCategory::Output", processor = "processor::set_xyz")]
     #[input(label = "Fixture", data_type = "DataType::FixtureId", control = "Control::FixtureId")]
     #[input(label = "x", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
     #[input(label = "y", data_type = "DataType::AttributeValue", control = "Control::AttributeValue")]
@@ -769,11 +769,10 @@ impl VisualControl<GraphDefinition> for Control {
         match self {
             Self::Int => {
                 let field = cx.new_view(|cx| {
-                    let mut field = NumberField::new(id, cx);
                     let value: i64 = initial_value
                         .try_into()
                         .expect("Int field expects an i64 value");
-                    field.set_value(value as f64, cx);
+                    let field = NumberField::new(id, value as f64, cx);
                     field.set_validate(Some(Box::new(|v| v.parse::<i64>().is_ok())), cx);
                     field
                 });
@@ -789,11 +788,10 @@ impl VisualControl<GraphDefinition> for Control {
             }
             Self::Float => {
                 let field = cx.new_view(|cx| {
-                    let mut field = NumberField::new(id, cx);
                     let value: f64 = initial_value
                         .try_into()
                         .expect("Float field expects an f64 value");
-                    field.set_value(value, cx);
+                    let field = NumberField::new(id, value, cx);
                     field.set_validate(Some(Box::new(|v| v.parse::<f64>().is_ok())), cx);
                     field
                 });
@@ -809,12 +807,10 @@ impl VisualControl<GraphDefinition> for Control {
             }
             Self::String => {
                 let field = cx.new_view(|cx| {
-                    let mut field = TextField::new(id, cx);
                     let value: SharedString = initial_value
                         .try_into()
                         .expect("String field expects a String value");
-                    field.set_value(value, cx);
-                    field
+                    TextField::new(id, value, cx)
                 });
 
                 cx.subscribe(&field, |_this, _field, event: &TextFieldEvent, cx| {
@@ -829,11 +825,10 @@ impl VisualControl<GraphDefinition> for Control {
             }
             Self::FixtureId => {
                 let field = cx.new_view(|cx| {
-                    let mut field = NumberField::new(id, cx);
                     let value: FixtureId = initial_value
                         .try_into()
                         .expect("FixtureId field expects a FixtureId value");
-                    field.set_value(value.0 as f64, cx);
+                    let field = NumberField::new(id, value.0 as f64, cx);
                     field.set_validate(Some(Box::new(|v| v.parse::<FixtureId>().is_ok())), cx);
                     field
                 });
@@ -849,12 +844,11 @@ impl VisualControl<GraphDefinition> for Control {
             }
             Self::AttributeValue => {
                 let slider = cx.new_view(|cx| {
-                    let mut slider = Slider::new(id, cx);
                     let value: AttributeValue = initial_value
                         .try_into()
                         .expect("AttributeValue field expects a AttributeValue value");
-                    slider.set_value(value.relative_value() as f64, cx);
-                    slider.set_range(0.0..=1.0, cx);
+                    let mut slider = Slider::new(id, value.relative_value() as f64, cx);
+                    slider.set_range(0.0..=1.0);
                     slider.set_strict(true);
                     slider
                 });
@@ -871,11 +865,10 @@ impl VisualControl<GraphDefinition> for Control {
             }
             Self::DmxChannel => {
                 let field = cx.new_view(|cx| {
-                    let mut field = NumberField::new(id, cx);
                     let channel: DmxChannel = initial_value
                         .try_into()
                         .expect("DmxChannel field expects a DmxChannel value");
-                    field.set_value(channel.value() as f64, cx);
+                    let field = NumberField::new(id, channel.value() as f64, cx);
                     field.set_validate(Some(Box::new(|v| v.parse::<DmxChannel>().is_ok())), cx);
                     field
                 });
@@ -892,11 +885,10 @@ impl VisualControl<GraphDefinition> for Control {
             }
             Self::DmxUniverse => {
                 let field = cx.new_view(|cx| {
-                    let mut field = NumberField::new(id, cx);
                     let universe: DmxUniverseId = initial_value
                         .try_into()
                         .expect("DmxUniverse field expects a DmxUniverse value");
-                    field.set_value(universe.value() as f64, cx);
+                    let field = NumberField::new(id, universe.value() as f64, cx);
                     field.set_validate(Some(Box::new(|v| v.parse::<DmxUniverseId>().is_ok())), cx);
                     field
                 });
@@ -914,11 +906,10 @@ impl VisualControl<GraphDefinition> for Control {
             }
             Self::DmxAddress => {
                 let field = cx.new_view(|cx| {
-                    let mut field = TextField::new(id, cx);
                     let address: DmxAddress = initial_value
                         .try_into()
                         .expect("DmxAddress field expects a DmxAddress value");
-                    field.set_value(address.to_string().into(), cx);
+                    let mut field = TextField::new(id, address.to_string().into(), cx);
                     field.set_validate(Some(Box::new(|v| v.parse::<DmxAddress>().is_ok())));
                     field
                 });

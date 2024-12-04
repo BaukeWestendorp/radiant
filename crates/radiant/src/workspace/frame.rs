@@ -11,7 +11,7 @@ use show::Frame;
 use ui::{theme::ActiveTheme, StyledExt};
 
 pub trait FrameDelegate {
-    fn title(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> &str
+    fn title(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> String
     where
         Self: Sized;
 

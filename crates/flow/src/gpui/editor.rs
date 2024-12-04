@@ -44,21 +44,19 @@ where
     Def::DataType: VisualDataType,
     Def::Control: VisualControl<Def>,
 {
-    pub fn build(graph: Model<Graph<Def>>, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|cx| {
-            let graph_view = GraphView::build(graph.clone(), cx);
-            let new_node_context_menu = NewNodeContextMenu::build(graph, cx);
-            let focus_handle = cx.focus_handle().clone();
+    pub fn new(graph: Model<Graph<Def>>, cx: &mut WindowContext) -> Self {
+        let graph_view = GraphView::build(graph.clone(), cx);
+        let new_node_context_menu = NewNodeContextMenu::build(graph.clone(), cx);
+        let focus_handle = cx.focus_handle().clone();
 
-            Self {
-                graph_view,
-                new_node_context_menu,
-                graph_offset: Point::default(),
-                prev_mouse_pos: None,
-                focus_handle,
-                bounds: Bounds::default(),
-            }
-        })
+        Self {
+            graph_view,
+            new_node_context_menu,
+            graph_offset: Point::default(),
+            prev_mouse_pos: None,
+            focus_handle,
+            bounds: Bounds::default(),
+        }
     }
 
     fn open_node_context_menu(&mut self, cx: &mut ViewContext<Self>) {
@@ -198,7 +196,7 @@ where
     pub fn build(graph: Model<Graph<Def>>, cx: &mut WindowContext) -> View<Self> {
         cx.new_view(|cx| {
             let search_box = cx.new_view(|cx| {
-                let mut field = TextField::new("search-box", cx);
+                let mut field = TextField::new("search-box", "".into(), cx);
                 field.set_placeholder("Search".into());
                 field
             });

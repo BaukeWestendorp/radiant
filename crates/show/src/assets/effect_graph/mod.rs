@@ -19,8 +19,8 @@ pub struct EffectGraph {
 impl super::Asset for EffectGraph {
     type Id = EffectGraphId;
 
-    fn id(&self) -> &Self::Id {
-        &self.id
+    fn id(&self) -> Self::Id {
+        self.id
     }
 }
 

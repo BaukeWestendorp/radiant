@@ -15,8 +15,8 @@ impl GroupPoolFrameDelegate {
 }
 
 impl PoolDelegate for GroupPoolFrameDelegate {
-    fn title(&self, _cx: &mut WindowContext) -> &str {
-        "Groups"
+    fn title(&self, _cx: &mut WindowContext) -> String {
+        "Groups".to_string()
     }
 
     fn render_pool_item(
@@ -28,11 +28,13 @@ impl PoolDelegate for GroupPoolFrameDelegate {
             return None;
         };
 
+        let label = group.label.clone();
+
         Some(
             div()
                 .size_full()
                 .center_flex()
-                .child(div().my_auto().child(group.label.clone()))
+                .child(div().my_auto().child(label))
                 .overflow_hidden(),
         )
     }
