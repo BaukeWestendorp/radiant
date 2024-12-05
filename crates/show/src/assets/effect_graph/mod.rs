@@ -18,6 +18,17 @@ pub struct EffectGraph {
     pub offset: Point,
 }
 
+impl EffectGraph {
+    pub fn new(id: EffectGraphId) -> Self {
+        Self {
+            id,
+            label: "New Effect Graph".to_string(),
+            graph: FlowEffectGraph::default(),
+            offset: Point::default(),
+        }
+    }
+}
+
 impl super::Asset for EffectGraph {
     type Id = EffectGraphId;
 

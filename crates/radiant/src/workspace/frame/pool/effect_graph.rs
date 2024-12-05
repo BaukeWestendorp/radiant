@@ -40,10 +40,17 @@ impl PoolDelegate for EffectGraphPoolFrameDelegate {
         )
     }
 
-    fn on_click_item(&mut self, id: AnyAssetId, cx: &mut WindowContext) {
+    fn on_select(&mut self, id: AnyAssetId, cx: &mut WindowContext) {
         self.window.update(cx, |window, cx| {
             window.set_selected_effect_graph(Some(id.into()), cx);
             cx.notify();
         });
+    }
+
+    fn on_new(&mut self, id: AnyAssetId, cx: &mut WindowContext) {
+        self.asset_pool.update(cx, |pool, cx| {
+            pool.insert(id.into(), EffectGraph::new(id.into()));
+            cx.notify();
+        })
     }
 }

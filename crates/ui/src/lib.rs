@@ -99,7 +99,6 @@ pub fn interactive_container(
             .border_1()
             .border_color(cx.theme().border_disabled)
             .rounded(cx.theme().radius)
-            .cursor_not_allowed()
     }
 }
 

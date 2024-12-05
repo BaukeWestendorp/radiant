@@ -22,7 +22,9 @@ pub trait PoolDelegate {
         cx: &mut WindowContext,
     ) -> Option<impl IntoElement>;
 
-    fn on_click_item(&mut self, _id: AnyAssetId, _cx: &mut WindowContext) {}
+    fn on_select(&mut self, _id: AnyAssetId, _cx: &mut WindowContext) {}
+
+    fn on_new(&mut self, _id: AnyAssetId, _cx: &mut WindowContext) {}
 }
 
 pub struct PoolFrameDelegate<D: PoolDelegate> {
@@ -99,9 +101,16 @@ impl<D: PoolDelegate + 'static> FrameDelegate for PoolFrameDelegate<D> {
                     e.cursor_pointer().on_mouse_down(
                         MouseButton::Left,
                         cx.listener(move |this, _event, cx| {
-                            this.delegate
-                                .pool_delegate
-                                .on_click_item(AnyAssetId(id), cx);
+                            this.delegate.pool_delegate.on_select(AnyAssetId(id), cx);
+                            cx.notify();
+                        }),
+                    )
+                })
+                .when(!has_content, |e| {
+                    e.on_mouse_down(
+                        MouseButton::Right,
+                        cx.listener(move |this, _event, cx| {
+                            this.delegate.pool_delegate.on_new(AnyAssetId(id), cx);
                             cx.notify();
                         }),
                     )
