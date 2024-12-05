@@ -22,6 +22,7 @@ impl EffectGraphEditorFrameDelegate {
         show: Model<Show>,
         graph: Model<EffectGraph>,
         auto_save: Model<bool>,
+        graph_offset: Model<Point>,
         cx: &mut WindowContext,
     ) -> Self {
         let graph_offset = cx.new_model(|cx| graph.read(cx).offset);
