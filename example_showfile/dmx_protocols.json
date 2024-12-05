@@ -1,15 +1,15 @@
 {
   "artnet": [
     {
-      "destination_ip": "127.0.0.1",
+      "destination_ip": "192.168.178.255",
       "universe": 1
     },
     {
-      "destination_ip": "127.0.0.1",
+      "destination_ip": "192.168.178.255",
       "universe": 2
     },
     {
-      "destination_ip": "127.0.0.1",
+      "destination_ip": "192.168.178.255",
       "universe": 3
     }
   ]

@@ -11,8 +11,7 @@
           "EffectGraphEditor": {
             "settings": {
               "auto_save": true
-            },
-            "graph_offset": [0.0, 0.0]
+            }
           }
         }
       },
@@ -28,7 +27,7 @@
     ]
   },
   "secondary_window": {
-    "selected_effect_graph": 2,
+    "selected_effect_graph": 0,
     "frames": []
   }
 }

@@ -175,7 +175,7 @@ impl FrameKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PoolKind {
     EffectGraph,
-    Effect,
+    Cue,
     Group,
 }
 
@@ -183,7 +183,7 @@ impl PoolKind {
     pub(crate) fn from_showfile(kind: showfile::PoolKind) -> Self {
         match kind {
             showfile::PoolKind::EffectGraph => Self::EffectGraph,
-            showfile::PoolKind::Effect => Self::Effect,
+            showfile::PoolKind::Cue => Self::Cue,
             showfile::PoolKind::Group => Self::Group,
         }
     }
@@ -191,7 +191,7 @@ impl PoolKind {
     pub(crate) fn to_showfile(&self) -> showfile::PoolKind {
         match self {
             Self::EffectGraph => showfile::PoolKind::EffectGraph,
-            Self::Effect => showfile::PoolKind::Effect,
+            Self::Cue => showfile::PoolKind::Cue,
             Self::Group => showfile::PoolKind::Group,
         }
     }

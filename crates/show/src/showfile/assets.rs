@@ -7,8 +7,8 @@ pub type AssetId = u32;
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct Assets {
     pub groups: Vec<Group>,
-    pub effects: Vec<Effect>,
     pub effect_graphs: Vec<EffectGraph>,
+    pub cues: Vec<Cue>,
 }
 
 #[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
@@ -18,23 +18,33 @@ pub struct Group {
     pub fixtures: Vec<super::FixtureId>,
 }
 
-#[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
-pub struct Effect {
-    pub id: AssetId,
-    pub label: String,
-    pub group: AssetId,
-    pub kind: EffectKind,
-}
-
-#[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
-pub enum EffectKind {
-    Graph(AssetId),
-}
-
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct EffectGraph {
     pub id: AssetId,
     pub label: String,
     pub graph: FlowEffectGraph,
     pub offset: Point,
+}
+
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct Cue {
+    pub id: AssetId,
+    pub label: String,
+    pub lines: Vec<CueLine>,
+}
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+pub struct CueLine {
+    pub effects: Vec<EffectInstance>,
+}
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+pub struct EffectInstance {
+    pub group: AssetId,
+    pub effect: Effect,
+}
+
+#[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
+pub enum Effect {
+    Graph(AssetId),
 }

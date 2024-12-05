@@ -1,3 +1,4 @@
+pub mod cue;
 pub mod effect;
 pub mod effect_graph;
 pub mod group;
@@ -6,6 +7,7 @@ use std::{collections::HashMap, hash::Hash};
 
 use gpui::{AppContext, Context, Model};
 
+pub use cue::*;
 pub use effect::*;
 pub use effect_graph::*;
 pub use group::*;
@@ -77,7 +79,7 @@ use crate::showfile;
 #[derive(Debug, Clone)]
 pub struct Assets {
     pub groups: Model<AssetPool<Group>>,
-    pub effects: Model<AssetPool<Effect>>,
+    pub cues: Model<AssetPool<Cue>>,
     pub effect_graphs: Model<AssetPool<EffectGraph>>,
 }
 
@@ -92,11 +94,11 @@ impl Assets {
                     .collect::<Vec<_>>()
                     .into()
             }),
-            effects: cx.new_model(|_| {
+            cues: cx.new_model(|_| {
                 assets
-                    .effects
+                    .cues
                     .into_iter()
-                    .map(Effect::from_showfile)
+                    .map(Cue::from_showfile)
                     .collect::<Vec<_>>()
                     .into()
             }),
@@ -119,12 +121,7 @@ impl Assets {
                 .iter()
                 .map(Group::to_showfile)
                 .collect(),
-            effects: self
-                .effects
-                .read(cx)
-                .iter()
-                .map(Effect::to_showfile)
-                .collect(),
+            cues: self.cues.read(cx).iter().map(Cue::to_showfile).collect(),
             effect_graphs: self
                 .effect_graphs
                 .read(cx)

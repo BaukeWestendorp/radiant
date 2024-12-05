@@ -98,24 +98,28 @@ fn compute_dmx_output(show: Model<Show>, cx: &mut AppContext) -> DmxOutput {
         }
     }
 
-    let effect_ids = show
+    // FIXME: This is ad-hoc. We should use an executor system for getting the cues we should process.
+    let cue = show
         .read(cx)
         .assets
-        .effects
+        .cues
         .read(cx)
-        .iter()
-        .map(|e| e.id)
-        .collect::<Vec<_>>();
+        .get(&0.into())
+        .unwrap()
+        .clone();
 
-    for id in effect_ids {
-        // Initialize context
-        let mut context = EffectGraphProcessingContext::new(show.clone(), id, dmx_output.clone());
+    for line in cue.lines {
+        for effect in line.effects {
+            // Initialize context
+            let mut context =
+                EffectGraphProcessingContext::new(show.clone(), effect, dmx_output.clone());
 
-        // Process frame
-        context
-            .process_frame(cx)
-            .map_err(|err| log::warn!("Failed to process frame: {err}"))
-            .ok();
+            // Process frame
+            context
+                .process_frame(cx)
+                .map_err(|err| log::warn!("Failed to process frame: {err}"))
+                .ok();
+        }
     }
 
     dmx_output.take()

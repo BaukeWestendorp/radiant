@@ -3,50 +3,44 @@
     {
       "id": 0,
       "label": "Spots",
-      "fixtures": [1, 2, 3, 4, 5, 6]
+      "fixtures": [
+        101,
+        102,
+        103,
+        104,
+        105,
+        106
+      ]
     },
     {
       "id": 1,
-      "label": "Washes",
-      "fixtures": [101, 102, 103, 104, 105, 106]
-    },
-    {
-      "id": 2,
       "label": "Beams",
-      "fixtures": [201, 202, 202, 204, 205, 206]
-    }
-  ],
-  "effects": [
-    {
-      "id": 0,
-      "label": "Spot Effect",
-      "group": 0,
-      "kind": {
-        "Graph": 0
-      }
-    },
-    {
-      "id": 1,
-      "label": "Beam Effect",
-      "group": 1,
-      "kind": {
-        "Graph": 1
-      }
+      "fixtures": [
+        201,
+        202,
+        203,
+        204,
+        205,
+        206
+      ]
     },
     {
       "id": 2,
-      "label": "Wash Effect",
-      "group": 2,
-      "kind": {
-        "Graph": 2
-      }
+      "label": "Washes",
+      "fixtures": [
+        301,
+        302,
+        302,
+        304,
+        305,
+        306
+      ]
     }
   ],
   "effect_graphs": [
     {
       "id": 0,
-      "label": "Spot Graph",
-      "offset": { "x": 0, "y": 0 },
+      "label": "Wash Fill",
       "graph": {
         "nodes": [
           {
@@ -54,37 +48,8 @@
             "version": 0
           },
           {
-            "value": {
-              "id": {
-                "idx": 1,
-                "version": 1
-              },
-              "data": {
-                "position": {
-                  "x": 100.03906,
-                  "y": 199.88672
-                }
-              },
-              "kind": "SetDimmer",
-              "inputs": [
-                {
-                  "label": "Fixture",
-                  "id": {
-                    "idx": 1,
-                    "version": 1
-                  }
-                },
-                {
-                  "label": "dimmer",
-                  "id": {
-                    "idx": 2,
-                    "version": 1
-                  }
-                }
-              ],
-              "outputs": []
-            },
-            "version": 1
+            "value": null,
+            "version": 4
           },
           {
             "value": null,
@@ -92,38 +57,188 @@
           },
           {
             "value": null,
-            "version": 2
+            "version": 4
           },
           {
             "value": null,
-            "version": 2
+            "version": 6
           },
           {
             "value": null,
-            "version": 2
+            "version": 4
           },
           {
             "value": null,
-            "version": 2
+            "version": 6
           },
           {
             "value": null,
-            "version": 2
+            "version": 6
           },
           {
             "value": null,
-            "version": 2
+            "version": 4
           },
           {
             "value": {
               "id": {
                 "idx": 9,
-                "version": 3
+                "version": 7
               },
               "data": {
                 "position": {
-                  "x": 243.41016,
-                  "y": 163.30078
+                  "x": 944.3789,
+                  "y": -261.04297
+                }
+              },
+              "kind": "SetPanTilt",
+              "inputs": [
+                {
+                  "label": "Fixture",
+                  "id": {
+                    "idx": 14,
+                    "version": 5
+                  }
+                },
+                {
+                  "label": "pan",
+                  "id": {
+                    "idx": 13,
+                    "version": 5
+                  }
+                },
+                {
+                  "label": "tilt",
+                  "id": {
+                    "idx": 12,
+                    "version": 5
+                  }
+                },
+                {
+                  "label": "pan rot",
+                  "id": {
+                    "idx": 11,
+                    "version": 5
+                  }
+                },
+                {
+                  "label": "tilt rot",
+                  "id": {
+                    "idx": 10,
+                    "version": 5
+                  }
+                },
+                {
+                  "label": "pos fx",
+                  "id": {
+                    "idx": 9,
+                    "version": 5
+                  }
+                },
+                {
+                  "label": "pos fx rate",
+                  "id": {
+                    "idx": 8,
+                    "version": 5
+                  }
+                },
+                {
+                  "label": "pos fx fade",
+                  "id": {
+                    "idx": 7,
+                    "version": 7
+                  }
+                }
+              ],
+              "outputs": []
+            },
+            "version": 7
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 10,
+                "version": 9
+              },
+              "data": {
+                "position": {
+                  "x": 664.08984,
+                  "y": -213.04297
+                }
+              },
+              "kind": "SetPanTilt",
+              "inputs": [
+                {
+                  "label": "Fixture",
+                  "id": {
+                    "idx": 20,
+                    "version": 7
+                  }
+                },
+                {
+                  "label": "pan",
+                  "id": {
+                    "idx": 22,
+                    "version": 11
+                  }
+                },
+                {
+                  "label": "tilt",
+                  "id": {
+                    "idx": 21,
+                    "version": 9
+                  }
+                },
+                {
+                  "label": "pan rot",
+                  "id": {
+                    "idx": 19,
+                    "version": 5
+                  }
+                },
+                {
+                  "label": "tilt rot",
+                  "id": {
+                    "idx": 18,
+                    "version": 5
+                  }
+                },
+                {
+                  "label": "pos fx",
+                  "id": {
+                    "idx": 17,
+                    "version": 5
+                  }
+                },
+                {
+                  "label": "pos fx rate",
+                  "id": {
+                    "idx": 16,
+                    "version": 5
+                  }
+                },
+                {
+                  "label": "pos fx fade",
+                  "id": {
+                    "idx": 15,
+                    "version": 5
+                  }
+                }
+              ],
+              "outputs": []
+            },
+            "version": 9
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 11,
+                "version": 7
+              },
+              "data": {
+                "position": {
+                  "x": 335.0039,
+                  "y": -388.8125
                 }
               },
               "kind": "GetFixture",
@@ -132,39 +247,60 @@
                 {
                   "label": "index",
                   "id": {
-                    "idx": 11,
-                    "version": 3
+                    "idx": 14,
+                    "version": 7
                   }
                 },
                 {
                   "label": "id",
                   "id": {
-                    "idx": 10,
-                    "version": 3
+                    "idx": 13,
+                    "version": 7
                   }
                 },
                 {
                   "label": "address",
                   "id": {
-                    "idx": 9,
-                    "version": 3
+                    "idx": 12,
+                    "version": 7
                   }
                 }
               ]
             },
-            "version": 3
+            "version": 7
           },
           {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
+            "value": {
+              "id": {
+                "idx": 12,
+                "version": 7
+              },
+              "data": {
+                "position": {
+                  "x": 661.0742,
+                  "y": -352.73828
+                }
+              },
+              "kind": "SetDimmer",
+              "inputs": [
+                {
+                  "label": "Fixture",
+                  "id": {
+                    "idx": 24,
+                    "version": 7
+                  }
+                },
+                {
+                  "label": "dimmer",
+                  "id": {
+                    "idx": 23,
+                    "version": 7
+                  }
+                }
+              ],
+              "outputs": []
+            },
+            "version": 7
           }
         ],
         "input_parameters": [
@@ -173,36 +309,418 @@
             "version": 0
           },
           {
+            "value": null,
+            "version": 6
+          },
+          {
+            "value": null,
+            "version": 4
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 2
+          },
+          {
+            "value": null,
+            "version": 4
+          },
+          {
+            "value": null,
+            "version": 4
+          },
+          {
             "value": {
               "id": {
-                "idx": 1,
-                "version": 1
+                "idx": 7,
+                "version": 7
               },
               "node_id": {
-                "idx": 1,
-                "version": 1
+                "idx": 9,
+                "version": 7
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.0
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 7
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 8,
+                "version": 5
+              },
+              "node_id": {
+                "idx": 9,
+                "version": 7
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.0
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 5
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 9,
+                "version": 5
+              },
+              "node_id": {
+                "idx": 9,
+                "version": 7
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.0
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 5
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 10,
+                "version": 5
+              },
+              "node_id": {
+                "idx": 9,
+                "version": 7
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.0
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 5
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 11,
+                "version": 5
+              },
+              "node_id": {
+                "idx": 9,
+                "version": 7
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.0
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 5
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 12,
+                "version": 5
+              },
+              "node_id": {
+                "idx": 9,
+                "version": 7
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.22109374
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 5
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 13,
+                "version": 5
+              },
+              "node_id": {
+                "idx": 9,
+                "version": 7
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.22792968
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 5
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 14,
+                "version": 5
+              },
+              "node_id": {
+                "idx": 9,
+                "version": 7
               },
               "data_type": "FixtureId",
               "kind": {
                 "EdgeOrConstant": {
                   "value": {
-                    "FixtureId": 0
+                    "FixtureId": 304
                   },
                   "control": "FixtureId"
                 }
               }
             },
-            "version": 1
+            "version": 5
           },
           {
             "value": {
               "id": {
-                "idx": 2,
-                "version": 1
+                "idx": 15,
+                "version": 5
               },
               "node_id": {
-                "idx": 1,
-                "version": 1
+                "idx": 10,
+                "version": 9
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.0
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 5
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 16,
+                "version": 5
+              },
+              "node_id": {
+                "idx": 10,
+                "version": 9
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.0
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 5
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 17,
+                "version": 5
+              },
+              "node_id": {
+                "idx": 10,
+                "version": 9
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.0
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 5
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 18,
+                "version": 5
+              },
+              "node_id": {
+                "idx": 10,
+                "version": 9
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.0
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 5
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 19,
+                "version": 5
+              },
+              "node_id": {
+                "idx": 10,
+                "version": 9
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.0
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 5
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 20,
+                "version": 7
+              },
+              "node_id": {
+                "idx": 10,
+                "version": 9
+              },
+              "data_type": "FixtureId",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "FixtureId": 301
+                  },
+                  "control": "FixtureId"
+                }
+              }
+            },
+            "version": 7
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 21,
+                "version": 9
+              },
+              "node_id": {
+                "idx": 10,
+                "version": 9
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.22109374
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 9
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 22,
+                "version": 11
+              },
+              "node_id": {
+                "idx": 10,
+                "version": 9
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.43722656
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 11
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 23,
+                "version": 7
+              },
+              "node_id": {
+                "idx": 12,
+                "version": 7
               },
               "data_type": "AttributeValue",
               "kind": {
@@ -216,95 +734,29 @@
                 }
               }
             },
-            "version": 1
+            "version": 7
           },
           {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
+            "value": {
+              "id": {
+                "idx": 24,
+                "version": 7
+              },
+              "node_id": {
+                "idx": 12,
+                "version": 7
+              },
+              "data_type": "FixtureId",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "FixtureId": 0
+                  },
+                  "control": "FixtureId"
+                }
+              }
+            },
+            "version": 7
           }
         ],
         "output_parameters": [
@@ -338,68 +790,68 @@
           },
           {
             "value": null,
-            "version": 2
+            "version": 8
           },
           {
             "value": null,
-            "version": 2
+            "version": 4
+          },
+          {
+            "value": null,
+            "version": 6
+          },
+          {
+            "value": null,
+            "version": 6
+          },
+          {
+            "value": null,
+            "version": 8
           },
           {
             "value": {
               "id": {
-                "idx": 9,
-                "version": 3
+                "idx": 12,
+                "version": 7
               },
               "node_id": {
-                "idx": 9,
-                "version": 3
+                "idx": 11,
+                "version": 7
               },
               "data_type": "DmxAddress",
               "kind": "Computed"
             },
-            "version": 3
+            "version": 7
           },
           {
             "value": {
               "id": {
-                "idx": 10,
-                "version": 3
+                "idx": 13,
+                "version": 7
               },
               "node_id": {
-                "idx": 9,
-                "version": 3
+                "idx": 11,
+                "version": 7
               },
               "data_type": "FixtureId",
               "kind": "Computed"
             },
-            "version": 3
+            "version": 7
           },
           {
             "value": {
               "id": {
-                "idx": 11,
-                "version": 3
+                "idx": 14,
+                "version": 7
               },
               "node_id": {
-                "idx": 9,
-                "version": 3
+                "idx": 11,
+                "version": 7
               },
               "data_type": "Int",
               "kind": "Computed"
             },
-            "version": 3
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
+            "version": 7
           }
         ],
         "edges": [
@@ -408,101 +860,128 @@
             "version": 0
           },
           {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
             "value": {
-              "idx": 10,
-              "version": 3
+              "idx": 13,
+              "version": 7
             },
-            "version": 1
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
+            "version": 7
           }
         ],
         "graph_ends": [
           {
-            "idx": 1,
-            "version": 1
+            "idx": 12,
+            "version": 7
+          },
+          {
+            "idx": 10,
+            "version": 9
+          },
+          {
+            "idx": 9,
+            "version": 7
           }
         ]
+      },
+      "offset": {
+        "x": -24.921875,
+        "y": 518.0664
       }
     },
     {
       "id": 1,
-      "label": "Beam Graph",
-      "offset": { "x": 0, "y": 0 },
+      "label": "PT Jitter Front",
       "graph": {
         "nodes": [
           {
@@ -513,73 +992,12 @@
             "value": {
               "id": {
                 "idx": 1,
-                "version": 1
-              },
-              "data": {
-                "position": {
-                  "x": 100.03906,
-                  "y": 199.88672
-                }
-              },
-              "kind": "SetDimmer",
-              "inputs": [
-                {
-                  "label": "Fixture",
-                  "id": {
-                    "idx": 1,
-                    "version": 1
-                  }
-                },
-                {
-                  "label": "dimmer",
-                  "id": {
-                    "idx": 2,
-                    "version": 1
-                  }
-                }
-              ],
-              "outputs": []
-            },
-            "version": 1
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": {
-              "id": {
-                "idx": 9,
                 "version": 3
               },
               "data": {
                 "position": {
-                  "x": 243.41016,
-                  "y": 163.30078
+                  "x": 550.2969,
+                  "y": 346.54688
                 }
               },
               "kind": "GetFixture",
@@ -588,21 +1006,21 @@
                 {
                   "label": "index",
                   "id": {
-                    "idx": 11,
-                    "version": 3
+                    "idx": 10,
+                    "version": 5
                   }
                 },
                 {
                   "label": "id",
                   "id": {
-                    "idx": 10,
-                    "version": 3
+                    "idx": 11,
+                    "version": 5
                   }
                 },
                 {
                   "label": "address",
                   "id": {
-                    "idx": 9,
+                    "idx": 14,
                     "version": 3
                   }
                 }
@@ -615,12 +1033,326 @@
             "version": 2
           },
           {
-            "value": null,
-            "version": 2
+            "value": {
+              "id": {
+                "idx": 3,
+                "version": 3
+              },
+              "data": {
+                "position": {
+                  "x": 585.20703,
+                  "y": 897.7617
+                }
+              },
+              "kind": "Remap",
+              "inputs": [
+                {
+                  "label": "value",
+                  "id": {
+                    "idx": 26,
+                    "version": 1
+                  }
+                },
+                {
+                  "label": "from min",
+                  "id": {
+                    "idx": 27,
+                    "version": 1
+                  }
+                },
+                {
+                  "label": "from max",
+                  "id": {
+                    "idx": 28,
+                    "version": 1
+                  }
+                },
+                {
+                  "label": "to min",
+                  "id": {
+                    "idx": 29,
+                    "version": 1
+                  }
+                },
+                {
+                  "label": "to max",
+                  "id": {
+                    "idx": 30,
+                    "version": 1
+                  }
+                }
+              ],
+              "outputs": [
+                {
+                  "label": "remapped",
+                  "id": {
+                    "idx": 7,
+                    "version": 3
+                  }
+                }
+              ]
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 4,
+                "version": 3
+              },
+              "data": {
+                "position": {
+                  "x": 368.89062,
+                  "y": 896.1328
+                }
+              },
+              "kind": "Random",
+              "inputs": [],
+              "outputs": [
+                {
+                  "label": "value",
+                  "id": {
+                    "idx": 8,
+                    "version": 3
+                  }
+                }
+              ]
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 5,
+                "version": 3
+              },
+              "data": {
+                "position": {
+                  "x": 578.5508,
+                  "y": 634.7344
+                }
+              },
+              "kind": "Remap",
+              "inputs": [
+                {
+                  "label": "value",
+                  "id": {
+                    "idx": 6,
+                    "version": 3
+                  }
+                },
+                {
+                  "label": "from min",
+                  "id": {
+                    "idx": 5,
+                    "version": 3
+                  }
+                },
+                {
+                  "label": "from max",
+                  "id": {
+                    "idx": 4,
+                    "version": 3
+                  }
+                },
+                {
+                  "label": "to min",
+                  "id": {
+                    "idx": 3,
+                    "version": 3
+                  }
+                },
+                {
+                  "label": "to max",
+                  "id": {
+                    "idx": 25,
+                    "version": 1
+                  }
+                }
+              ],
+              "outputs": [
+                {
+                  "label": "remapped",
+                  "id": {
+                    "idx": 12,
+                    "version": 3
+                  }
+                }
+              ]
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 6,
+                "version": 3
+              },
+              "data": {
+                "position": {
+                  "x": 358.54688,
+                  "y": 627.84375
+                }
+              },
+              "kind": "Random",
+              "inputs": [],
+              "outputs": [
+                {
+                  "label": "value",
+                  "id": {
+                    "idx": 13,
+                    "version": 3
+                  }
+                }
+              ]
+            },
+            "version": 3
           },
           {
             "value": null,
-            "version": 2
+            "version": 4
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 8,
+                "version": 3
+              },
+              "data": {
+                "position": {
+                  "x": 861.1367,
+                  "y": 646.34375
+                }
+              },
+              "kind": "SetPanTilt",
+              "inputs": [
+                {
+                  "label": "Fixture",
+                  "id": {
+                    "idx": 18,
+                    "version": 3
+                  }
+                },
+                {
+                  "label": "pan",
+                  "id": {
+                    "idx": 17,
+                    "version": 3
+                  }
+                },
+                {
+                  "label": "tilt",
+                  "id": {
+                    "idx": 16,
+                    "version": 3
+                  }
+                },
+                {
+                  "label": "pan rot",
+                  "id": {
+                    "idx": 15,
+                    "version": 3
+                  }
+                },
+                {
+                  "label": "tilt rot",
+                  "id": {
+                    "idx": 14,
+                    "version": 3
+                  }
+                },
+                {
+                  "label": "pos fx",
+                  "id": {
+                    "idx": 13,
+                    "version": 3
+                  }
+                },
+                {
+                  "label": "pos fx rate",
+                  "id": {
+                    "idx": 12,
+                    "version": 3
+                  }
+                },
+                {
+                  "label": "pos fx fade",
+                  "id": {
+                    "idx": 11,
+                    "version": 3
+                  }
+                }
+              ],
+              "outputs": []
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 9,
+                "version": 5
+              },
+              "data": {
+                "position": {
+                  "x": 558.5039,
+                  "y": 155.48828
+                }
+              },
+              "kind": "Random",
+              "inputs": [],
+              "outputs": [
+                {
+                  "label": "value",
+                  "id": {
+                    "idx": 9,
+                    "version": 5
+                  }
+                }
+              ]
+            },
+            "version": 5
+          },
+          {
+            "value": null,
+            "version": 4
+          },
+          {
+            "value": null,
+            "version": 4
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 12,
+                "version": 5
+              },
+              "data": {
+                "position": {
+                  "x": 853.0703,
+                  "y": 195.9336
+                }
+              },
+              "kind": "SetDimmer",
+              "inputs": [
+                {
+                  "label": "Fixture",
+                  "id": {
+                    "idx": 10,
+                    "version": 5
+                  }
+                },
+                {
+                  "label": "dimmer",
+                  "id": {
+                    "idx": 9,
+                    "version": 5
+                  }
+                }
+              ],
+              "outputs": []
+            },
+            "version": 5
           }
         ],
         "input_parameters": [
@@ -629,36 +1361,118 @@
             "version": 0
           },
           {
-            "value": {
-              "id": {
-                "idx": 1,
-                "version": 1
-              },
-              "node_id": {
-                "idx": 1,
-                "version": 1
-              },
-              "data_type": "FixtureId",
-              "kind": {
-                "EdgeOrConstant": {
-                  "value": {
-                    "FixtureId": 0
-                  },
-                  "control": "FixtureId"
-                }
-              }
-            },
-            "version": 1
+            "value": null,
+            "version": 4
+          },
+          {
+            "value": null,
+            "version": 4
           },
           {
             "value": {
               "id": {
-                "idx": 2,
-                "version": 1
+                "idx": 3,
+                "version": 3
               },
               "node_id": {
-                "idx": 1,
-                "version": 1
+                "idx": 5,
+                "version": 3
+              },
+              "data_type": "Float",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "Float": 0.8
+                  },
+                  "control": "Float"
+                }
+              }
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 4,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 5,
+                "version": 3
+              },
+              "data_type": "Float",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "Float": 1.0
+                  },
+                  "control": "Float"
+                }
+              }
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 5,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 5,
+                "version": 3
+              },
+              "data_type": "Float",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "Float": 0.0
+                  },
+                  "control": "Float"
+                }
+              }
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 6,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 5,
+                "version": 3
+              },
+              "data_type": "Float",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "Float": 0.0
+                  },
+                  "control": "Float"
+                }
+              }
+            },
+            "version": 3
+          },
+          {
+            "value": null,
+            "version": 4
+          },
+          {
+            "value": null,
+            "version": 4
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 9,
+                "version": 5
+              },
+              "node_id": {
+                "idx": 12,
+                "version": 5
               },
               "data_type": "AttributeValue",
               "kind": {
@@ -672,95 +1486,375 @@
                 }
               }
             },
+            "version": 5
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 10,
+                "version": 5
+              },
+              "node_id": {
+                "idx": 12,
+                "version": 5
+              },
+              "data_type": "FixtureId",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "FixtureId": 0
+                  },
+                  "control": "FixtureId"
+                }
+              }
+            },
+            "version": 5
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 11,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 8,
+                "version": 3
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.0
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 12,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 8,
+                "version": 3
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.0
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 13,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 8,
+                "version": 3
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.0
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 14,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 8,
+                "version": 3
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.0
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 15,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 8,
+                "version": 3
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.0
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 16,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 8,
+                "version": 3
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.66278785
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 17,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 8,
+                "version": 3
+              },
+              "data_type": "AttributeValue",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "AttributeValue": {
+                      "value": 0.166666
+                    }
+                  },
+                  "control": "AttributeValue"
+                }
+              }
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 18,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 8,
+                "version": 3
+              },
+              "data_type": "FixtureId",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "FixtureId": 0
+                  },
+                  "control": "FixtureId"
+                }
+              }
+            },
+            "version": 3
+          },
+          {
+            "value": null,
+            "version": 4
+          },
+          {
+            "value": null,
+            "version": 4
+          },
+          {
+            "value": null,
+            "version": 4
+          },
+          {
+            "value": null,
+            "version": 4
+          },
+          {
+            "value": null,
+            "version": 4
+          },
+          {
+            "value": null,
+            "version": 4
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 25,
+                "version": 1
+              },
+              "node_id": {
+                "idx": 5,
+                "version": 3
+              },
+              "data_type": "Float",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "Float": 0.7
+                  },
+                  "control": "Float"
+                }
+              }
+            },
             "version": 1
           },
           {
-            "value": null,
-            "version": 2
+            "value": {
+              "id": {
+                "idx": 26,
+                "version": 1
+              },
+              "node_id": {
+                "idx": 3,
+                "version": 3
+              },
+              "data_type": "Float",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "Float": 0.0
+                  },
+                  "control": "Float"
+                }
+              }
+            },
+            "version": 1
           },
           {
-            "value": null,
-            "version": 2
+            "value": {
+              "id": {
+                "idx": 27,
+                "version": 1
+              },
+              "node_id": {
+                "idx": 3,
+                "version": 3
+              },
+              "data_type": "Float",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "Float": 0.0
+                  },
+                  "control": "Float"
+                }
+              }
+            },
+            "version": 1
           },
           {
-            "value": null,
-            "version": 2
+            "value": {
+              "id": {
+                "idx": 28,
+                "version": 1
+              },
+              "node_id": {
+                "idx": 3,
+                "version": 3
+              },
+              "data_type": "Float",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "Float": 1.0
+                  },
+                  "control": "Float"
+                }
+              }
+            },
+            "version": 1
           },
           {
-            "value": null,
-            "version": 2
+            "value": {
+              "id": {
+                "idx": 29,
+                "version": 1
+              },
+              "node_id": {
+                "idx": 3,
+                "version": 3
+              },
+              "data_type": "Float",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "Float": 0.1605
+                  },
+                  "control": "Float"
+                }
+              }
+            },
+            "version": 1
           },
           {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
+            "value": {
+              "id": {
+                "idx": 30,
+                "version": 1
+              },
+              "node_id": {
+                "idx": 3,
+                "version": 3
+              },
+              "data_type": "Float",
+              "kind": {
+                "EdgeOrConstant": {
+                  "value": {
+                    "Float": 0.1595
+                  },
+                  "control": "Float"
+                }
+              }
+            },
+            "version": 1
           }
         ],
         "output_parameters": [
@@ -793,69 +1887,124 @@
             "version": 2
           },
           {
-            "value": null,
-            "version": 2
+            "value": {
+              "id": {
+                "idx": 7,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 3,
+                "version": 3
+              },
+              "data_type": "Float",
+              "kind": "Computed"
+            },
+            "version": 3
           },
           {
-            "value": null,
-            "version": 2
+            "value": {
+              "id": {
+                "idx": 8,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 4,
+                "version": 3
+              },
+              "data_type": "Float",
+              "kind": "Computed"
+            },
+            "version": 3
           },
           {
             "value": {
               "id": {
                 "idx": 9,
-                "version": 3
+                "version": 5
               },
               "node_id": {
                 "idx": 9,
+                "version": 5
+              },
+              "data_type": "Float",
+              "kind": "Computed"
+            },
+            "version": 5
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 10,
+                "version": 5
+              },
+              "node_id": {
+                "idx": 1,
+                "version": 3
+              },
+              "data_type": "Int",
+              "kind": "Computed"
+            },
+            "version": 5
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 11,
+                "version": 5
+              },
+              "node_id": {
+                "idx": 1,
+                "version": 3
+              },
+              "data_type": "FixtureId",
+              "kind": "Computed"
+            },
+            "version": 5
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 12,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 5,
+                "version": 3
+              },
+              "data_type": "Float",
+              "kind": "Computed"
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 13,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 6,
+                "version": 3
+              },
+              "data_type": "Float",
+              "kind": "Computed"
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "id": {
+                "idx": 14,
+                "version": 3
+              },
+              "node_id": {
+                "idx": 1,
                 "version": 3
               },
               "data_type": "DmxAddress",
               "kind": "Computed"
             },
             "version": 3
-          },
-          {
-            "value": {
-              "id": {
-                "idx": 10,
-                "version": 3
-              },
-              "node_id": {
-                "idx": 9,
-                "version": 3
-              },
-              "data_type": "FixtureId",
-              "kind": "Computed"
-            },
-            "version": 3
-          },
-          {
-            "value": {
-              "id": {
-                "idx": 11,
-                "version": 3
-              },
-              "node_id": {
-                "idx": 9,
-                "version": 3
-              },
-              "data_type": "Int",
-              "kind": "Computed"
-            },
-            "version": 3
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
           }
         ],
         "edges": [
@@ -864,552 +2013,170 @@
             "version": 0
           },
           {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
             "value": {
-              "idx": 10,
+              "idx": 13,
+              "version": 3
+            },
+            "version": 3
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": {
+              "idx": 9,
+              "version": 5
+            },
+            "version": 5
+          },
+          {
+            "value": {
+              "idx": 11,
+              "version": 5
+            },
+            "version": 5
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": {
+              "idx": 12,
+              "version": 3
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "idx": 7,
+              "version": 3
+            },
+            "version": 3
+          },
+          {
+            "value": {
+              "idx": 11,
+              "version": 5
+            },
+            "version": 3
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": null,
+            "version": 0
+          },
+          {
+            "value": {
+              "idx": 8,
               "version": 3
             },
             "version": 1
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
           }
         ],
         "graph_ends": [
           {
-            "idx": 1,
-            "version": 1
+            "idx": 8,
+            "version": 3
+          },
+          {
+            "idx": 12,
+            "version": 5
           }
         ]
+      },
+      "offset": {
+        "x": -99.93359,
+        "y": -263.1797
       }
-    },
+    }
+  ],
+  "cues": [
     {
-      "id": 2,
-      "label": "Wash Graph",
-      "offset": { "x": 0, "y": 0 },
-      "graph": {
-        "nodes": [
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": {
-              "id": {
-                "idx": 1,
-                "version": 1
-              },
-              "data": {
-                "position": {
-                  "x": 477.03906,
-                  "y": 199.88672
-                }
-              },
-              "kind": "SetDimmer",
-              "inputs": [
-                {
-                  "label": "Fixture",
-                  "id": {
-                    "idx": 1,
-                    "version": 1
-                  }
-                },
-                {
-                  "label": "dimmer",
-                  "id": {
-                    "idx": 2,
-                    "version": 1
-                  }
-                }
-              ],
-              "outputs": []
-            },
-            "version": 1
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": {
-              "id": {
-                "idx": 9,
-                "version": 3
-              },
-              "data": {
-                "position": {
-                  "x": 243.41016,
-                  "y": 163.30078
-                }
-              },
-              "kind": "GetFixture",
-              "inputs": [],
-              "outputs": [
-                {
-                  "label": "index",
-                  "id": {
-                    "idx": 11,
-                    "version": 3
-                  }
-                },
-                {
-                  "label": "id",
-                  "id": {
-                    "idx": 10,
-                    "version": 3
-                  }
-                },
-                {
-                  "label": "address",
-                  "id": {
-                    "idx": 9,
-                    "version": 3
-                  }
-                }
-              ]
-            },
-            "version": 3
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          }
-        ],
-        "input_parameters": [
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": {
-              "id": {
-                "idx": 1,
-                "version": 1
-              },
-              "node_id": {
-                "idx": 1,
-                "version": 1
-              },
-              "data_type": "FixtureId",
-              "kind": {
-                "EdgeOrConstant": {
-                  "value": {
-                    "FixtureId": 0
-                  },
-                  "control": "FixtureId"
-                }
+      "id": 0,
+      "label": "Test Cue",
+      "lines": [
+        {
+          "effects": [
+            {
+              "group": 2,
+              "effect": {
+                "Graph": 0
               }
             },
-            "version": 1
-          },
-          {
-            "value": {
-              "id": {
-                "idx": 2,
-                "version": 1
-              },
-              "node_id": {
-                "idx": 1,
-                "version": 1
-              },
-              "data_type": "AttributeValue",
-              "kind": {
-                "EdgeOrConstant": {
-                  "value": {
-                    "AttributeValue": {
-                      "value": 1.0
-                    }
-                  },
-                  "control": "AttributeValue"
-                }
+            {
+              "group": 1,
+              "effect": {
+                "Graph": 1
               }
-            },
-            "version": 1
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          }
-        ],
-        "output_parameters": [
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": {
-              "id": {
-                "idx": 9,
-                "version": 3
-              },
-              "node_id": {
-                "idx": 9,
-                "version": 3
-              },
-              "data_type": "DmxAddress",
-              "kind": "Computed"
-            },
-            "version": 3
-          },
-          {
-            "value": {
-              "id": {
-                "idx": 10,
-                "version": 3
-              },
-              "node_id": {
-                "idx": 9,
-                "version": 3
-              },
-              "data_type": "FixtureId",
-              "kind": "Computed"
-            },
-            "version": 3
-          },
-          {
-            "value": {
-              "id": {
-                "idx": 11,
-                "version": 3
-              },
-              "node_id": {
-                "idx": 9,
-                "version": 3
-              },
-              "data_type": "Int",
-              "kind": "Computed"
-            },
-            "version": 3
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          },
-          {
-            "value": null,
-            "version": 2
-          }
-        ],
-        "edges": [
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": {
-              "idx": 10,
-              "version": 3
-            },
-            "version": 1
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          },
-          {
-            "value": null,
-            "version": 0
-          }
-        ],
-        "graph_ends": [
-          {
-            "idx": 1,
-            "version": 1
-          }
-        ]
-      }
+            }
+          ]
+        }
+      ]
     }
   ]
 }

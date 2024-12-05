@@ -3,8 +3,8 @@ use show::{FrameKind, PoolKind, Show, WindowEvent, WindowInstance};
 use ui::{theme::ActiveTheme, z_stack};
 
 use super::{
-    EffectGraphEditorFrameDelegate, EffectGraphPoolFrameDelegate, EffectPoolFrameDelegate,
-    FrameView, GroupPoolFrameDelegate, PoolFrameDelegate,
+    CuePoolFrameDelegate, EffectGraphEditorFrameDelegate, EffectGraphPoolFrameDelegate, FrameView,
+    GroupPoolFrameDelegate, PoolFrameDelegate,
 };
 
 pub const GRID_SIZE: f32 = 80.0;
@@ -141,11 +141,11 @@ pub fn frame_to_view(
                 cx,
             )
             .into(),
-            PoolKind::Effect => FrameView::build(
+            PoolKind::Cue => FrameView::build(
                 frame.clone(),
                 PoolFrameDelegate::new(
                     frame.bounds.size,
-                    EffectPoolFrameDelegate::new(assets.effects.clone()),
+                    CuePoolFrameDelegate::new(assets.cues.clone()),
                 ),
                 cx,
             )

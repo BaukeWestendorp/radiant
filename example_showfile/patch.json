@@ -1,112 +1,112 @@
 {
   "fixtures": [
     {
-      "id": 1,
-      "dmx_address": "1.1",
-      "gdtf_file_name": "Martin_Professional@MAC_Viper_Performance@20230516NoMeas.gdtf",
-      "dmx_mode": "Basic"
-    },
-    {
-      "id": 2,
-      "dmx_address": "1.33",
-      "gdtf_file_name": "Martin_Professional@MAC_Viper_Performance@20230516NoMeas.gdtf",
-      "dmx_mode": "Basic"
-    },
-    {
-      "id": 3,
-      "dmx_address": "1.65",
-      "gdtf_file_name": "Martin_Professional@MAC_Viper_Performance@20230516NoMeas.gdtf",
-      "dmx_mode": "Basic"
-    },
-    {
-      "id": 4,
-      "dmx_address": "1.97",
-      "gdtf_file_name": "Martin_Professional@MAC_Viper_Performance@20230516NoMeas.gdtf",
-      "dmx_mode": "Basic"
-    },
-    {
-      "id": 5,
-      "dmx_address": "1.129",
-      "gdtf_file_name": "Martin_Professional@MAC_Viper_Performance@20230516NoMeas.gdtf",
-      "dmx_mode": "Basic"
-    },
-    {
-      "id": 6,
-      "dmx_address": "1.161",
-      "gdtf_file_name": "Martin_Professional@MAC_Viper_Performance@20230516NoMeas.gdtf",
-      "dmx_mode": "Basic"
-    },
-    {
       "id": 101,
-      "dmx_address": "2.1",
-      "gdtf_file_name": "Martin_Professional@MAC_Quantum_Wash@20230316NoMeas.gdtf",
+      "dmx_address": "1.1",
+      "gdtf_file_name": "Martin_Professional@MAC_250@81523v2.gdtf",
       "dmx_mode": "Basic"
     },
     {
       "id": 102,
-      "dmx_address": "2.18",
-      "gdtf_file_name": "Martin_Professional@MAC_Quantum_Wash@20230316NoMeas.gdtf",
+      "dmx_address": "1.16",
+      "gdtf_file_name": "Martin_Professional@MAC_250@81523v2.gdtf",
       "dmx_mode": "Basic"
     },
     {
       "id": 103,
-      "dmx_address": "2.35",
-      "gdtf_file_name": "Martin_Professional@MAC_Quantum_Wash@20230316NoMeas.gdtf",
+      "dmx_address": "1.31",
+      "gdtf_file_name": "Martin_Professional@MAC_250@81523v2.gdtf",
       "dmx_mode": "Basic"
     },
     {
       "id": 104,
-      "dmx_address": "2.52",
-      "gdtf_file_name": "Martin_Professional@MAC_Quantum_Wash@20230316NoMeas.gdtf",
+      "dmx_address": "1.46",
+      "gdtf_file_name": "Martin_Professional@MAC_250@81523v2.gdtf",
       "dmx_mode": "Basic"
     },
     {
       "id": 105,
-      "dmx_address": "2.69",
-      "gdtf_file_name": "Martin_Professional@MAC_Quantum_Wash@20230316NoMeas.gdtf",
+      "dmx_address": "1.61",
+      "gdtf_file_name": "Martin_Professional@MAC_250@81523v2.gdtf",
       "dmx_mode": "Basic"
     },
     {
       "id": 106,
-      "dmx_address": "2.86",
-      "gdtf_file_name": "Martin_Professional@MAC_Quantum_Wash@20230316NoMeas.gdtf",
+      "dmx_address": "1.76",
+      "gdtf_file_name": "Martin_Professional@MAC_250@81523v2.gdtf",
       "dmx_mode": "Basic"
     },
     {
       "id": 201,
-      "dmx_address": "3.1",
-      "gdtf_file_name": "Robe_Lighting@Robin_iForte@2024-08-05__Pan_Tilt_acceleration_revision.gdtf",
-      "dmx_mode": "Mode 1 - Standard 16 bit"
+      "dmx_address": "2.1",
+      "gdtf_file_name": "Martin_Professional@MAC_250@81523v2.gdtf",
+      "dmx_mode": "Basic"
     },
     {
       "id": 202,
-      "dmx_address": "3.55",
-      "gdtf_file_name": "Robe_Lighting@Robin_iForte@2024-08-05__Pan_Tilt_acceleration_revision.gdtf",
-      "dmx_mode": "Mode 1 - Standard 16 bit"
+      "dmx_address": "2.16",
+      "gdtf_file_name": "Martin_Professional@MAC_250@81523v2.gdtf",
+      "dmx_mode": "Basic"
     },
     {
       "id": 203,
-      "dmx_address": "3.109",
-      "gdtf_file_name": "Robe_Lighting@Robin_iForte@2024-08-05__Pan_Tilt_acceleration_revision.gdtf",
-      "dmx_mode": "Mode 1 - Standard 16 bit"
+      "dmx_address": "2.31",
+      "gdtf_file_name": "Martin_Professional@MAC_250@81523v2.gdtf",
+      "dmx_mode": "Basic"
     },
     {
       "id": 204,
-      "dmx_address": "3.163",
-      "gdtf_file_name": "Robe_Lighting@Robin_iForte@2024-08-05__Pan_Tilt_acceleration_revision.gdtf",
-      "dmx_mode": "Mode 1 - Standard 16 bit"
+      "dmx_address": "2.46",
+      "gdtf_file_name": "Martin_Professional@MAC_250@81523v2.gdtf",
+      "dmx_mode": "Basic"
     },
     {
       "id": 205,
-      "dmx_address": "3.217",
-      "gdtf_file_name": "Robe_Lighting@Robin_iForte@2024-08-05__Pan_Tilt_acceleration_revision.gdtf",
-      "dmx_mode": "Mode 1 - Standard 16 bit"
+      "dmx_address": "2.61",
+      "gdtf_file_name": "Martin_Professional@MAC_250@81523v2.gdtf",
+      "dmx_mode": "Basic"
     },
     {
       "id": 206,
-      "dmx_address": "3.271",
-      "gdtf_file_name": "Robe_Lighting@Robin_iForte@2024-08-05__Pan_Tilt_acceleration_revision.gdtf",
-      "dmx_mode": "Mode 1 - Standard 16 bit"
+      "dmx_address": "2.76",
+      "gdtf_file_name": "Martin_Professional@MAC_250@81523v2.gdtf",
+      "dmx_mode": "Basic"
+    },
+    {
+      "id": 301,
+      "dmx_address": "3.1",
+      "gdtf_file_name": "Robe_Lighting@ColorWash_2500E_AT@2023-10-24_3D_models_revision__Wiring_revision.gdtf",
+      "dmx_mode": "Mode 1 - 8bit normal"
+    },
+    {
+      "id": 302,
+      "dmx_address": "3.18",
+      "gdtf_file_name": "Robe_Lighting@ColorWash_2500E_AT@2023-10-24_3D_models_revision__Wiring_revision.gdtf",
+      "dmx_mode": "Mode 1 - 8bit normal"
+    },
+    {
+      "id": 303,
+      "dmx_address": "3.35",
+      "gdtf_file_name": "Robe_Lighting@ColorWash_2500E_AT@2023-10-24_3D_models_revision__Wiring_revision.gdtf",
+      "dmx_mode": "Mode 1 - 8bit normal"
+    },
+    {
+      "id": 304,
+      "dmx_address": "3.52",
+      "gdtf_file_name": "Robe_Lighting@ColorWash_2500E_AT@2023-10-24_3D_models_revision__Wiring_revision.gdtf",
+      "dmx_mode": "Mode 1 - 8bit normal"
+    },
+    {
+      "id": 305,
+      "dmx_address": "3.69",
+      "gdtf_file_name": "Robe_Lighting@ColorWash_2500E_AT@2023-10-24_3D_models_revision__Wiring_revision.gdtf",
+      "dmx_mode": "Mode 1 - 8bit normal"
+    },
+    {
+      "id": 306,
+      "dmx_address": "3.86",
+      "gdtf_file_name": "Robe_Lighting@ColorWash_2500E_AT@2023-10-24_3D_models_revision__Wiring_revision.gdtf",
+      "dmx_mode": "Mode 1 - 8bit normal"
     }
   ]
 }

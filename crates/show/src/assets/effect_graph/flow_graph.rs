@@ -1,4 +1,4 @@
-use crate::{AttributeValue, Effect, EffectId, EffectKind, Fixture, FixtureId, Group, Patch, Show};
+use crate::{AttributeValue, Effect, EffectInstance, Fixture, FixtureId, Group, Patch, Show};
 
 use dmx::{DmxAddress, DmxChannel, DmxOutput, DmxUniverseId};
 use flow::gpui::{ControlEvent, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
@@ -932,47 +932,40 @@ impl VisualControl<GraphDefinition> for Control {
 pub struct ProcessingContext {
     pub dmx_output: Rc<RefCell<DmxOutput>>,
 
-    effect: EffectId,
+    fx_instance: EffectInstance,
     show: Model<Show>,
 
     current_fixture_index: usize,
 }
 
 impl ProcessingContext {
-    pub fn new(show: Model<Show>, effect: EffectId, dmx_output: Rc<RefCell<DmxOutput>>) -> Self {
+    pub fn new(
+        show: Model<Show>,
+        fx_instance: EffectInstance,
+        dmx_output: Rc<RefCell<DmxOutput>>,
+    ) -> Self {
         Self {
             dmx_output,
 
-            effect,
+            fx_instance,
             show,
 
             current_fixture_index: 0,
         }
     }
 
-    pub fn effect<'a>(&self, cx: &'a AppContext) -> &'a Effect {
-        self.show
-            .read(cx)
-            .assets
-            .effects
-            .read(cx)
-            .get(&self.effect)
-            .unwrap()
-    }
-
     pub fn group<'a>(&self, cx: &'a AppContext) -> &'a Group {
-        let effect = self.effect(cx);
         self.show
             .read(cx)
             .assets
             .groups
             .read(cx)
-            .get(&effect.group)
+            .get(&self.fx_instance.group)
             .unwrap()
     }
 
     pub fn graph<'a>(&self, cx: &'a AppContext) -> &'a FlowEffectGraph {
-        let EffectKind::Graph(id) = &self.effect(cx).kind;
+        let Effect::Graph(id) = &self.fx_instance.effect;
         &self
             .show
             .read(cx)

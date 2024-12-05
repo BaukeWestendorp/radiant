@@ -33,6 +33,6 @@ pub struct EffectGraphEditorSettings {
 #[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
 pub enum PoolKind {
     EffectGraph,
-    Effect,
+    Cue,
     Group,
 }
