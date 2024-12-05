@@ -26,8 +26,8 @@ impl super::Asset for EffectGraph {
     }
 }
 
-impl From<showfile::EffectGraph> for EffectGraph {
-    fn from(graph: showfile::EffectGraph) -> Self {
+impl EffectGraph {
+    pub(crate) fn from_showfile(graph: showfile::EffectGraph) -> Self {
         Self {
             id: EffectGraphId(graph.id),
             label: graph.label,

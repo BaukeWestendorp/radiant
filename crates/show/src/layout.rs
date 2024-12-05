@@ -1,5 +1,4 @@
-use flow::Point;
-use gpui::{AppContext, Context, EventEmitter, Model, ModelContext};
+use gpui::{point, size, AppContext, Bounds, Context, EventEmitter, Model, ModelContext};
 
 use crate::{showfile, AssetPool, EffectGraph, EffectGraphId};
 
@@ -10,7 +9,7 @@ pub struct Layout {
 }
 
 impl Layout {
-    pub fn from_showfile(layout: showfile::Layout, cx: &mut AppContext) -> Self {
+    pub(crate) fn from_showfile(layout: showfile::Layout, cx: &mut AppContext) -> Self {
         Self {
             main_window: cx.new_model(|cx| Window::from_showfile(layout.main_window, cx)),
             secondary_window: cx.new_model(|cx| Window::from_showfile(layout.secondary_window, cx)),
@@ -38,7 +37,7 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn from_showfile(window: showfile::Window, cx: &mut AppContext) -> Self {
+    pub(crate) fn from_showfile(window: showfile::Window, cx: &mut AppContext) -> Self {
         Self {
             selected_effect_graph: window.selected_effect_graph.map(EffectGraphId),
             frames: window
@@ -78,20 +77,17 @@ impl EventEmitter<WindowEvent> for Window {}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Frame {
-    pub x: u32,
-    pub y: u32,
-    pub width: u32,
-    pub height: u32,
+    pub bounds: Bounds<u32>,
     pub kind: FrameKind,
 }
 
 impl Frame {
     fn from_showfile(frame: showfile::Frame, cx: &mut AppContext) -> Self {
         Self {
-            x: frame.x,
-            y: frame.y,
-            width: frame.width,
-            height: frame.height,
+            bounds: Bounds {
+                origin: point(frame.x, frame.y),
+                size: size(frame.width, frame.height),
+            },
             kind: FrameKind::from_showfile(frame.kind, cx),
         }
     }
@@ -100,23 +96,31 @@ impl Frame {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FrameKind {
     EffectGraphEditor {
-        auto_save: Model<bool>,
-        graph_offset: Model<Point>,
+        settings: Model<EffectGraphEditorSettings>,
     },
     Pool(PoolKind),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EffectGraphEditorSettings {
+    pub auto_save: bool,
+}
+
+impl EffectGraphEditorSettings {
+    pub(crate) fn from_showfile(settings: showfile::EffectGraphEditorSettings) -> Self {
+        Self {
+            auto_save: settings.auto_save,
+        }
+    }
+}
+
 impl FrameKind {
-    pub fn from_showfile(kind: showfile::FrameKind, cx: &mut AppContext) -> Self {
+    pub(crate) fn from_showfile(kind: showfile::FrameKind, cx: &mut AppContext) -> Self {
         match kind {
-            showfile::FrameKind::EffectGraphEditor {
-                auto_save,
-                graph_offset,
-            } => Self::EffectGraphEditor {
-                auto_save: cx.new_model(|_| auto_save),
-                graph_offset: cx.new_model(|_| graph_offset),
+            showfile::FrameKind::EffectGraphEditor { settings } => Self::EffectGraphEditor {
+                settings: cx.new_model(|_| EffectGraphEditorSettings::from_showfile(settings)),
             },
-            showfile::FrameKind::Pool(kind) => Self::Pool(kind.into()),
+            showfile::FrameKind::Pool(kind) => Self::Pool(PoolKind::from_showfile(kind)),
         }
     }
 }
@@ -128,8 +132,8 @@ pub enum PoolKind {
     Group,
 }
 
-impl From<showfile::PoolKind> for PoolKind {
-    fn from(kind: showfile::PoolKind) -> Self {
+impl PoolKind {
+    pub(crate) fn from_showfile(kind: showfile::PoolKind) -> Self {
         match kind {
             showfile::PoolKind::EffectGraph => Self::EffectGraph,
             showfile::PoolKind::Effect => Self::Effect,

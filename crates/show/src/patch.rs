@@ -60,10 +60,8 @@ impl Patch {
     }
 }
 
-impl TryFrom<showfile::Patch> for Patch {
-    type Error = anyhow::Error;
-
-    fn try_from(patch: showfile::Patch) -> Result<Self, Self::Error> {
+impl Patch {
+    pub fn try_from_showfile(patch: showfile::Patch) -> anyhow::Result<Self> {
         let mut this = Self {
             fixtures: Vec::new(),
             gdtf_descriptions: HashMap::new(),

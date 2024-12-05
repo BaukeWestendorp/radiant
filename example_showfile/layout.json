@@ -9,7 +9,9 @@
         "height": 10,
         "kind": {
           "EffectGraphEditor": {
-            "auto_save": true,
+            "settings": {
+              "auto_save": true
+            },
             "graph_offset": [0.0, 0.0]
           }
         }

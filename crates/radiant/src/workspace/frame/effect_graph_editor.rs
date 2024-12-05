@@ -1,10 +1,7 @@
-use flow::{
-    gpui::{GraphEditorView, GraphEvent},
-    Point,
-};
+use flow::gpui::{GraphEditorView, GraphEvent};
 use gpui::*;
 use prelude::FluentBuilder;
-use show::{Asset, EffectGraph, EffectGraphDefinition, Show};
+use show::{Asset, EffectGraph, EffectGraphDefinition, EffectGraphEditorSettings, Show};
 use ui::{container, theme::ActiveTheme, ContainerKind, StyledExt};
 
 use super::{FrameDelegate, FrameView};
@@ -13,16 +10,14 @@ pub struct EffectGraphEditorFrameDelegate {
     show: Model<Show>,
     graph: Model<EffectGraph>,
     editor: View<GraphEditorView<EffectGraphDefinition>>,
-    auto_save: Model<bool>,
-    graph_offset: Model<Point>,
+    settings: Model<EffectGraphEditorSettings>,
 }
 
 impl EffectGraphEditorFrameDelegate {
     pub fn new(
         show: Model<Show>,
         graph: Model<EffectGraph>,
-        auto_save: Model<bool>,
-        graph_offset: Model<Point>,
+        settings: Model<EffectGraphEditorSettings>,
         cx: &mut WindowContext,
     ) -> Self {
         let graph_offset = cx.new_model(|cx| graph.read(cx).offset);
@@ -55,15 +50,14 @@ impl EffectGraphEditorFrameDelegate {
         Self {
             show,
             graph,
-            auto_save,
+            settings,
             editor,
-            graph_offset,
         }
     }
 
     fn save_graph(&self, cx: &mut WindowContext) {
         let new_graph = self.editor.read(cx).graph(cx).read(cx).clone();
-        let offset = *self.graph_offset.read(cx);
+        let offset = self.graph.read(cx).offset;
 
         let effect_graph_pool = self.show.read(cx).assets.effect_graphs.clone();
         effect_graph_pool.update(cx, |pool, cx| {
@@ -77,12 +71,16 @@ impl EffectGraphEditorFrameDelegate {
     }
 
     fn toggle_autosave(&self, cx: &mut WindowContext) {
-        self.auto_save.update(cx, |auto_save, cx| {
-            *auto_save = !*auto_save;
+        self.settings.update(cx, |settings, cx| {
+            settings.auto_save = !settings.auto_save;
             cx.notify();
             log::info!(
                 "Auto save is now {} for this Effect Graph Editor.",
-                if *auto_save { "enabled" } else { "disabled" }
+                if settings.auto_save {
+                    "enabled"
+                } else {
+                    "disabled"
+                }
             );
         });
     }
@@ -92,10 +90,10 @@ impl FrameDelegate for EffectGraphEditorFrameDelegate {
     fn init(&mut self, cx: &mut ViewContext<FrameView<Self>>) {
         let flow_graph = self.editor.read(cx).graph(cx).clone();
         cx.subscribe(&flow_graph, {
-            let auto_save = self.auto_save.clone();
+            let settings = self.settings.clone();
             move |this, _graph, event, cx| match event {
                 GraphEvent::ShouldSave => {
-                    if *auto_save.read(cx) {
+                    if settings.read(cx).auto_save {
                         this.delegate.save_graph(cx);
                         log::info!("Auto-saved effect graph.");
                     }
@@ -105,10 +103,10 @@ impl FrameDelegate for EffectGraphEditorFrameDelegate {
         })
         .detach();
 
-        cx.observe(&self.graph_offset, {
-            let auto_save = self.auto_save.clone();
+        cx.observe(&self.graph, {
+            let settings = self.settings.clone();
             move |this, _, cx| {
-                if *auto_save.read(cx) {
+                if settings.read(cx).auto_save {
                     this.delegate.save_graph(cx);
                     log::info!("Auto-saved effect graph.");
                 }
@@ -126,7 +124,7 @@ impl FrameDelegate for EffectGraphEditorFrameDelegate {
     }
 
     fn render_header_content(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> impl IntoElement {
-        let auto_save_enabled = *self.auto_save.read(cx);
+        let auto_save_enabled = self.settings.read(cx).auto_save;
 
         div().h_flex().gap_2().children([
             div()

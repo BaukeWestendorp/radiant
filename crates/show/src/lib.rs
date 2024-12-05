@@ -14,6 +14,7 @@ pub use dmx_protocols::*;
 pub use layout::*;
 pub use patch::*;
 
+#[derive(Debug, Clone)]
 pub struct Show {
     pub assets: Assets,
     pub patch: Model<Patch>,
@@ -26,11 +27,13 @@ impl Show {
         Self {
             assets: Assets::from_showfile(showfile::Assets::default(), cx),
             patch: cx.new_model(|_| {
-                showfile::Patch::default().try_into().expect(
+                Patch::try_from_showfile(showfile::Patch::default()).expect(
                     "empty showfile::Patch should always be possible to convert to a show::Patch",
                 )
             }),
-            dmx_protocols: cx.new_model(|_| showfile::DmxProtocols::default().into()),
+            dmx_protocols: cx
+                .new_model(|_| DmxProtocols::from_showfile(showfile::DmxProtocols::default())),
+
             layout: Layout::from_showfile(showfile::Layout::default(), cx),
         }
     }
@@ -41,10 +44,10 @@ impl Show {
         Ok(Self {
             assets: Assets::from_showfile(showfile.assets, cx),
             patch: {
-                let patch = showfile.patch.try_into()?;
+                let patch = Patch::try_from_showfile(showfile.patch)?;
                 cx.new_model(|_| patch)
             },
-            dmx_protocols: cx.new_model(|_| showfile.dmx_protocols.into()),
+            dmx_protocols: cx.new_model(|_| DmxProtocols::from_showfile(showfile.dmx_protocols)),
             layout: Layout::from_showfile(showfile.layout, cx),
         })
     }

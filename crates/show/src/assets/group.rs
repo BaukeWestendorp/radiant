@@ -27,8 +27,8 @@ impl super::Asset for Group {
     }
 }
 
-impl From<showfile::Group> for Group {
-    fn from(group: showfile::Group) -> Self {
+impl Group {
+    pub(crate) fn from_showfile(group: showfile::Group) -> Self {
         Self {
             id: GroupId(group.id),
             label: group.label,

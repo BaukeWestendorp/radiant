@@ -11,13 +11,13 @@ impl DmxProtocols {
     }
 }
 
-impl From<showfile::DmxProtocols> for DmxProtocols {
-    fn from(protocols: showfile::DmxProtocols) -> Self {
+impl DmxProtocols {
+    pub(crate) fn from_showfile(protocols: showfile::DmxProtocols) -> Self {
         Self {
             artnet: protocols
                 .artnet
                 .into_iter()
-                .map(ArtnetNodeSettings::from)
+                .map(ArtnetNodeSettings::from_showfile)
                 .collect(),
         }
     }
@@ -29,8 +29,8 @@ pub struct ArtnetNodeSettings {
     pub universe: dmx::DmxUniverseId,
 }
 
-impl From<showfile::ArtnetNodeSettings> for ArtnetNodeSettings {
-    fn from(settings: showfile::ArtnetNodeSettings) -> Self {
+impl ArtnetNodeSettings {
+    pub(crate) fn from_showfile(settings: showfile::ArtnetNodeSettings) -> Self {
         Self {
             destination_ip: settings.destination_ip,
             universe: settings.universe,

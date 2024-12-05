@@ -10,9 +10,7 @@ use super::{
 pub const GRID_SIZE: f32 = 80.0;
 
 pub struct FrameGridView {
-    width: u32,
-    height: u32,
-
+    size: Size<u32>,
     frames: Vec<AnyView>,
 }
 
@@ -33,9 +31,7 @@ impl FrameGridView {
                 .collect();
 
             FrameGridView {
-                width: 16,
-                height: 10,
-
+                size: size(16, 10),
                 frames,
             }
         })
@@ -45,8 +41,8 @@ impl FrameGridView {
 impl Render for FrameGridView {
     fn render(&mut self, _cx: &mut gpui::ViewContext<Self>) -> impl gpui::IntoElement {
         let background = canvas(|_, _| {}, {
-            let width = self.width;
-            let height = self.height;
+            let width = self.size.width;
+            let height = self.size.height;
             move |_, _, cx| {
                 for x in 0..(width + 1) {
                     for y in 0..(height + 1) {
@@ -55,7 +51,7 @@ impl Render for FrameGridView {
                                 point(px(x as f32 * GRID_SIZE), px(y as f32 * GRID_SIZE)),
                                 size(px(2.0), px(2.0)),
                             ),
-                            cx.theme().accent.opacity(0.5),
+                            cx.theme().border,
                         ));
                     }
                 }
@@ -84,10 +80,7 @@ pub fn frame_to_view(
     let assets = show.read(cx).assets.clone();
 
     match &frame.kind {
-        FrameKind::EffectGraphEditor {
-            auto_save,
-            graph_offset,
-        } => {
+        FrameKind::EffectGraphEditor { settings } => {
             let graph_model = cx.new_model(|cx| {
                 window
                     .read(cx)
@@ -131,8 +124,7 @@ pub fn frame_to_view(
                 EffectGraphEditorFrameDelegate::new(
                     show.clone(),
                     graph_model,
-                    auto_save.clone(),
-                    graph_offset.clone(),
+                    settings.clone(),
                     cx,
                 ),
                 cx,
@@ -143,8 +135,7 @@ pub fn frame_to_view(
             PoolKind::EffectGraph => FrameView::build(
                 frame.clone(),
                 PoolFrameDelegate::new(
-                    frame.width,
-                    frame.height,
+                    frame.bounds.size,
                     EffectGraphPoolFrameDelegate::new(window.clone(), assets.effect_graphs.clone()),
                 ),
                 cx,
@@ -153,8 +144,7 @@ pub fn frame_to_view(
             PoolKind::Effect => FrameView::build(
                 frame.clone(),
                 PoolFrameDelegate::new(
-                    frame.width,
-                    frame.height,
+                    frame.bounds.size,
                     EffectPoolFrameDelegate::new(assets.effects.clone()),
                 ),
                 cx,
@@ -163,8 +153,7 @@ pub fn frame_to_view(
             PoolKind::Group => FrameView::build(
                 frame.clone(),
                 PoolFrameDelegate::new(
-                    frame.width,
-                    frame.height,
+                    frame.bounds.size,
                     GroupPoolFrameDelegate::new(assets.groups.clone()),
                 ),
                 cx,

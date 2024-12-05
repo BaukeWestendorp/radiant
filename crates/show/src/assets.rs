@@ -74,7 +74,7 @@ pub(crate) use asset_id;
 
 use crate::showfile;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Assets {
     pub groups: Model<AssetPool<Group>>,
     pub effects: Model<AssetPool<Effect>>,
@@ -82,13 +82,13 @@ pub struct Assets {
 }
 
 impl Assets {
-    pub fn from_showfile(assets: showfile::Assets, cx: &mut AppContext) -> Self {
+    pub(crate) fn from_showfile(assets: showfile::Assets, cx: &mut AppContext) -> Self {
         Self {
             groups: cx.new_model(|_| {
                 assets
                     .groups
                     .into_iter()
-                    .map(Group::from)
+                    .map(Group::from_showfile)
                     .collect::<Vec<_>>()
                     .into()
             }),
@@ -96,7 +96,7 @@ impl Assets {
                 assets
                     .effects
                     .into_iter()
-                    .map(Effect::from)
+                    .map(Effect::from_showfile)
                     .collect::<Vec<_>>()
                     .into()
             }),
@@ -104,7 +104,7 @@ impl Assets {
                 assets
                     .effect_graphs
                     .into_iter()
-                    .map(EffectGraph::from)
+                    .map(EffectGraph::from_showfile)
                     .collect::<Vec<_>>()
                     .into()
             }),

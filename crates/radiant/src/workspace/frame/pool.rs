@@ -26,16 +26,14 @@ pub trait PoolDelegate {
 }
 
 pub struct PoolFrameDelegate<D: PoolDelegate> {
-    width: u32,
-    height: u32,
+    size: Size<u32>,
     pub pool_delegate: D,
 }
 
 impl<D: PoolDelegate + 'static> PoolFrameDelegate<D> {
-    pub fn new(width: u32, height: u32, pool_delegate: D) -> Self {
+    pub fn new(size: Size<u32>, pool_delegate: D) -> Self {
         Self {
-            width,
-            height,
+            size,
             pool_delegate,
         }
     }
@@ -71,7 +69,7 @@ impl<D: PoolDelegate + 'static> FrameDelegate for PoolFrameDelegate<D> {
     fn render_content(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> impl IntoElement {
         let header_cell = self.render_header_cell(cx);
 
-        let items = (0..self.width * self.height).map(|id| {
+        let items = (0..self.size.width * self.size.height).map(|id| {
             let pool_item = self
                 .pool_delegate
                 .render_pool_item(AnyAssetId(id), cx)
@@ -116,8 +114,8 @@ impl<D: PoolDelegate + 'static> FrameDelegate for PoolFrameDelegate<D> {
             .flex_wrap()
             .child(header_cell)
             .children(items)])
-        .w(px(self.width as f32 * GRID_SIZE))
-        .h(px(self.height as f32 * GRID_SIZE))
+        .w(px(self.size.width as f32 * GRID_SIZE))
+        .h(px(self.size.height as f32 * GRID_SIZE))
         .overflow_hidden()
     }
 

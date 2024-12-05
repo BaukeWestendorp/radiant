@@ -25,8 +25,8 @@ impl super::Asset for Effect {
     }
 }
 
-impl From<showfile::Effect> for Effect {
-    fn from(effect: showfile::Effect) -> Self {
+impl Effect {
+    pub(crate) fn from_showfile(effect: showfile::Effect) -> Self {
         Self {
             id: EffectId(effect.id),
             label: effect.label,

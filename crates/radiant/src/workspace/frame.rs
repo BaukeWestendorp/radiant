@@ -78,16 +78,17 @@ impl<D: FrameDelegate + 'static> FrameView<D> {
 
 impl<D: FrameDelegate + 'static> Render for FrameView<D> {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+        let bounds = self.frame.bounds;
         div()
             .absolute()
             .size_full()
             .v_flex()
             .bg(cx.theme().background)
             .rounded(cx.theme().radius)
-            .w(px(self.frame.width as f32 * GRID_SIZE))
-            .h(px(self.frame.height as f32 * GRID_SIZE))
-            .left(px(self.frame.x as f32 * GRID_SIZE))
-            .top(px(self.frame.y as f32 * GRID_SIZE))
+            .w(px(bounds.size.width as f32 * GRID_SIZE))
+            .h(px(bounds.size.height as f32 * GRID_SIZE))
+            .left(px(bounds.origin.x as f32 * GRID_SIZE))
+            .top(px(bounds.origin.y as f32 * GRID_SIZE))
             .shadow_sm()
             .children(self.delegate.render_header(cx))
             .child(self.delegate.render_content(cx))

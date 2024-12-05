@@ -1,5 +1,3 @@
-use flow::Point;
-
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Layout {
     pub main_window: Window,
@@ -23,11 +21,13 @@ pub struct Frame {
 
 #[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
 pub enum FrameKind {
-    EffectGraphEditor {
-        auto_save: bool,
-        graph_offset: Point,
-    },
+    EffectGraphEditor { settings: EffectGraphEditorSettings },
     Pool(PoolKind),
+}
+
+#[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
+pub struct EffectGraphEditorSettings {
+    pub auto_save: bool,
 }
 
 #[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
