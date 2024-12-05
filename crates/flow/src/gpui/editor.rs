@@ -30,8 +30,8 @@ where
 {
     graph_view: View<GraphView<Def>>,
     new_node_context_menu: View<NewNodeContextMenu<Def>>,
-    graph_offset: Point<Pixels>,
-    prev_mouse_pos: Option<Point<Pixels>>,
+    graph_offset: Model<crate::Point>,
+    prev_mouse_pos: Option<crate::Point>,
 
     focus_handle: FocusHandle,
     bounds: Bounds<Pixels>,
@@ -44,7 +44,11 @@ where
     Def::DataType: VisualDataType,
     Def::Control: VisualControl<Def>,
 {
-    pub fn new(graph: Model<Graph<Def>>, cx: &mut WindowContext) -> Self {
+    pub fn new(
+        graph: Model<Graph<Def>>,
+        graph_offset: Model<crate::Point>,
+        cx: &mut WindowContext,
+    ) -> Self {
         let graph_view = GraphView::build(graph.clone(), cx);
         let new_node_context_menu = NewNodeContextMenu::build(graph.clone(), cx);
         let focus_handle = cx.focus_handle().clone();
@@ -52,7 +56,7 @@ where
         Self {
             graph_view,
             new_node_context_menu,
-            graph_offset: Point::default(),
+            graph_offset,
             prev_mouse_pos: None,
             focus_handle,
             bounds: Bounds::default(),
@@ -69,7 +73,7 @@ where
 
     fn open_node_context_menu(&mut self, cx: &mut ViewContext<Self>) {
         self.new_node_context_menu.update(cx, |menu, cx| {
-            menu.show(self.graph_offset, cx);
+            menu.show(*self.graph_offset.read(cx), cx);
             let position = cx.mouse_position()
                 - self.bounds.origin // Offset by the editor's position
                 - point(px(12.0), cx.theme().input_height / 2.0 + px(6.0)); // Offset to the start of the input
@@ -84,12 +88,16 @@ where
     }
 
     fn handle_drag_move(&mut self, _: &DragMoveEvent<()>, cx: &mut ViewContext<Self>) {
-        let diff = self
-            .prev_mouse_pos
-            .map_or(Point::default(), |prev| cx.mouse_position() - prev);
+        let diff = self.prev_mouse_pos.map_or(crate::Point::default(), |prev| {
+            crate::Point::from(cx.mouse_position()) - prev
+        });
 
-        self.graph_offset += diff;
-        self.prev_mouse_pos = Some(cx.mouse_position());
+        self.graph_offset.update(cx, |offset, cx| {
+            *offset = *offset + diff.into();
+            cx.notify();
+        });
+
+        self.prev_mouse_pos = Some(cx.mouse_position().into());
     }
 
     fn handle_mouse_up(&mut self, _: &MouseUpEvent, _cx: &mut ViewContext<Self>) {
@@ -106,13 +114,13 @@ where
 {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let background_grid = canvas(|_, _| {}, {
-            let graph_offset = self.graph_offset;
+            let graph_offset = *self.graph_offset.read(cx);
             let grid_color = cx.theme().border_variant;
             move |bounds, _, cx| {
                 let w = bounds.size.width.0 + 2.0 * GRID_SIZE;
                 let h = bounds.size.height.0 + 2.0 * GRID_SIZE;
-                let x_offset = bounds.origin.x.0 + (graph_offset.x.0 % GRID_SIZE) - GRID_SIZE;
-                let y_offset = bounds.origin.y.0 + (graph_offset.y.0 % GRID_SIZE) - GRID_SIZE;
+                let x_offset = bounds.origin.x.0 + (graph_offset.x % GRID_SIZE) - GRID_SIZE;
+                let y_offset = bounds.origin.y.0 + (graph_offset.y % GRID_SIZE) - GRID_SIZE;
 
                 for rel_x in (0..w as i32).step_by(GRID_SIZE as usize) {
                     let x = x_offset + rel_x as f32;
@@ -133,6 +141,7 @@ where
         })
         .size_full();
 
+        let graph_offset = self.graph_offset.read(cx);
         let graph_viewer = div()
             .id("editor-graph")
             .size_full()
@@ -141,8 +150,8 @@ where
             .child(
                 div()
                     .size_full()
-                    .left(self.graph_offset.x)
-                    .top(self.graph_offset.y)
+                    .left(px(graph_offset.x))
+                    .top(px(graph_offset.y))
                     .child(self.graph_view.clone()),
             )
             .on_drag((), |_, _point, cx| cx.new_view(|_cx| EmptyView))
@@ -190,7 +199,7 @@ where
 {
     graph: Model<Graph<Def>>,
     shown: bool,
-    editor_graph_offset: Point<Pixels>,
+    editor_graph_offset: crate::Point,
     position: Point<Pixels>,
     search_box: View<TextField>,
     selected_category: Option<<Def::NodeKind as VisualNodeKind>::Category>,
@@ -226,7 +235,7 @@ where
             Self {
                 graph,
                 shown: false,
-                editor_graph_offset: Point::default(),
+                editor_graph_offset: crate::Point::default(),
                 position: cx.mouse_position(),
                 search_box,
                 selected_category: None,
@@ -236,7 +245,7 @@ where
 
     pub fn show<View: 'static>(
         &mut self,
-        editor_graph_offset: Point<Pixels>,
+        editor_graph_offset: crate::Point,
         cx: &mut ViewContext<View>,
     ) {
         self.shown = true;
@@ -270,7 +279,7 @@ where
         mut data: Def::NodeData,
         cx: &mut WindowContext,
     ) {
-        data.set_position((self.position - self.editor_graph_offset).into());
+        data.set_position(crate::Point::from(self.position) - self.editor_graph_offset);
         self.graph.update(cx, |_graph, cx| {
             cx.emit(GraphEvent::AddNode {
                 kind: node_kind,

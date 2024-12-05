@@ -2,6 +2,7 @@ use crate::showfile;
 
 mod flow_graph;
 
+use flow::Point;
 pub use flow_graph::{
     FlowEffectGraph, GraphDefinition as EffectGraphDefinition,
     ProcessingContext as EffectGraphProcessingContext,
@@ -14,6 +15,7 @@ pub struct EffectGraph {
     pub id: EffectGraphId,
     pub label: String,
     pub graph: FlowEffectGraph,
+    pub offset: Point,
 }
 
 impl super::Asset for EffectGraph {
@@ -30,6 +32,7 @@ impl From<showfile::EffectGraph> for EffectGraph {
             id: EffectGraphId(graph.id),
             label: graph.label,
             graph: graph.graph,
+            offset: graph.offset,
         }
     }
 }

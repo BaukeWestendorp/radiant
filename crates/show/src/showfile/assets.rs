@@ -1,3 +1,5 @@
+use flow::Point;
+
 use crate::FlowEffectGraph;
 
 pub type AssetId = u32;
@@ -34,4 +36,5 @@ pub struct EffectGraph {
     pub id: AssetId,
     pub label: String,
     pub graph: FlowEffectGraph,
+    pub offset: Point,
 }

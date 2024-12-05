@@ -46,6 +46,7 @@
     {
       "id": 0,
       "label": "Spot Graph",
+      "offset": { "x": 0, "y": 0 },
       "graph": {
         "nodes": [
           {
@@ -501,6 +502,7 @@
     {
       "id": 1,
       "label": "Beam Graph",
+      "offset": { "x": 0, "y": 0 },
       "graph": {
         "nodes": [
           {
@@ -956,6 +958,7 @@
     {
       "id": 2,
       "label": "Wash Graph",
+      "offset": { "x": 0, "y": 0 },
       "graph": {
         "nodes": [
           {
