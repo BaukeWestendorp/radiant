@@ -11,6 +11,7 @@ pub struct EffectGraphEditorFrameDelegate {
     graph: Model<EffectGraph>,
     editor: View<GraphEditorView<EffectGraphDefinition>>,
     settings: Model<EffectGraphEditorSettings>,
+    graph_offset: Model<flow::Point>,
 }
 
 impl EffectGraphEditorFrameDelegate {
@@ -52,12 +53,13 @@ impl EffectGraphEditorFrameDelegate {
             graph,
             settings,
             editor,
+            graph_offset,
         }
     }
 
     fn save_graph(&self, cx: &mut WindowContext) {
         let new_graph = self.editor.read(cx).graph(cx).read(cx).clone();
-        let offset = self.graph.read(cx).offset;
+        let offset = *self.graph_offset.read(cx);
 
         let effect_graph_pool = self.show.read(cx).assets.effect_graphs.clone();
         effect_graph_pool.update(cx, |pool, cx| {
@@ -103,7 +105,7 @@ impl FrameDelegate for EffectGraphEditorFrameDelegate {
         })
         .detach();
 
-        cx.observe(&self.graph, {
+        cx.observe(&self.graph_offset, {
             let settings = self.settings.clone();
             move |this, _, cx| {
                 if settings.read(cx).auto_save {
