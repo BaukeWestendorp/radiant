@@ -10,7 +10,6 @@ pub mod frame;
 pub mod main_window;
 
 pub struct Workspace {
-    #[allow(unused)]
     show: Model<Show>,
 }
 
@@ -24,6 +23,10 @@ impl Workspace {
         open_windows(show_model.clone(), cx)?;
 
         Ok(Self { show: show_model })
+    }
+
+    pub fn show(&self) -> Model<Show> {
+        self.show.clone()
     }
 }
 

@@ -35,4 +35,12 @@ impl Group {
             fixtures: group.fixtures.into_iter().map(FixtureId).collect(),
         }
     }
+
+    pub(crate) fn to_showfile(&self) -> showfile::Group {
+        showfile::Group {
+            id: self.id.0,
+            label: self.label.clone(),
+            fixtures: self.fixtures.iter().map(|f| f.0).collect(),
+        }
+    }
 }

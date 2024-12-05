@@ -73,4 +73,49 @@ impl Showfile {
             layout,
         })
     }
+
+    pub fn try_write(&self, showfile_path: &PathBuf) -> anyhow::Result<()> {
+        let assets_file = File::create(showfile_path.join(ASSETS_FILE_PATH)).map_err(|err| {
+            log::error!("Error creating assets file: {}", err);
+            err
+        })?;
+
+        serde_json::to_writer_pretty(assets_file, &self.assets).map_err(|err| {
+            log::error!("Error writing assets file: {}", err);
+            err
+        })?;
+
+        let patch_file = File::create(showfile_path.join(PATCH_FILE_PATH)).map_err(|err| {
+            log::error!("Error creating patch file: {}", err);
+            err
+        })?;
+
+        serde_json::to_writer_pretty(patch_file, &self.patch).map_err(|err| {
+            log::error!("Error writing patch file: {}", err);
+            err
+        })?;
+
+        let dmx_protocols_file = File::create(showfile_path.join(DMX_PROTOCOLS_FILE_PATH))
+            .map_err(|err| {
+                log::error!("Error creating dmx protocols file: {}", err);
+                err
+            })?;
+
+        serde_json::to_writer_pretty(dmx_protocols_file, &self.dmx_protocols).map_err(|err| {
+            log::error!("Error writing dmx protocols file: {}", err);
+            err
+        })?;
+
+        let layout_file = File::create(showfile_path.join(LAYOUT_FILE_PATH)).map_err(|err| {
+            log::error!("Error creating layout file: {}", err);
+            err
+        })?;
+
+        serde_json::to_writer_pretty(layout_file, &self.layout).map_err(|err| {
+            log::error!("Error writing layout file: {}", err);
+            err
+        })?;
+
+        Ok(())
+    }
 }

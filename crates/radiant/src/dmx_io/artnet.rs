@@ -4,6 +4,7 @@ use socket2::{Domain, Protocol, Type};
 use std::{
     io,
     net::{Ipv4Addr, SocketAddr, SocketAddrV4, UdpSocket},
+    str::FromStr,
 };
 
 pub const PORT: u16 = 6454;
@@ -18,7 +19,7 @@ impl ArtnetNode {
         let socket = socket2::Socket::new(Domain::IPV4, Type::DGRAM, Some(Protocol::UDP))?;
         socket.set_broadcast(true)?;
         socket.set_reuse_port(true)?;
-        let addr = SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, PORT);
+        let addr = SocketAddrV4::new(Ipv4Addr::from_str("192.168.178.159").unwrap(), PORT);
         socket.bind(&addr.into())?;
         let socket: UdpSocket = socket.into();
 
@@ -35,7 +36,6 @@ impl ArtnetNode {
         let bytes = command.write_to_buffer()?;
         let addr = SocketAddr::new(self.settings.destination_ip.into(), PORT);
         self.socket.send_to(&bytes, addr)?;
-
         Ok(())
     }
 }

@@ -6,9 +6,10 @@ pub mod theme;
 
 use gpui::*;
 use prelude::FluentBuilder;
-use theme::ActiveTheme;
+use theme::{ActiveTheme, Theme};
 
 pub fn init(cx: &mut AppContext) {
+    cx.set_global(Theme::default());
     input::text_field::init(cx);
 }
 

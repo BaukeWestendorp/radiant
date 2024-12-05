@@ -21,6 +21,16 @@ impl DmxProtocols {
                 .collect(),
         }
     }
+
+    pub(crate) fn to_showfile(&self) -> showfile::DmxProtocols {
+        showfile::DmxProtocols {
+            artnet: self
+                .artnet
+                .iter()
+                .map(ArtnetNodeSettings::to_showfile)
+                .collect(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -34,6 +44,13 @@ impl ArtnetNodeSettings {
         Self {
             destination_ip: settings.destination_ip,
             universe: settings.universe,
+        }
+    }
+
+    pub(crate) fn to_showfile(&self) -> showfile::ArtnetNodeSettings {
+        showfile::ArtnetNodeSettings {
+            destination_ip: self.destination_ip,
+            universe: self.universe,
         }
     }
 }

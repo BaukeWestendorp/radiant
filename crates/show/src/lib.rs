@@ -51,4 +51,15 @@ impl Show {
             layout: Layout::from_showfile(showfile.layout, cx),
         })
     }
+
+    pub fn try_write(&self, showfile_path: &PathBuf, cx: &mut AppContext) -> anyhow::Result<()> {
+        let showfile = showfile::Showfile {
+            assets: self.assets.to_showfile(cx),
+            patch: self.patch.read(cx).to_showfile(),
+            dmx_protocols: self.dmx_protocols.read(cx).to_showfile(),
+            layout: self.layout.to_showfile(cx),
+        };
+
+        showfile.try_write(showfile_path)
+    }
 }

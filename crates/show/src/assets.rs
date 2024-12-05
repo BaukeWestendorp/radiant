@@ -110,6 +110,29 @@ impl Assets {
             }),
         }
     }
+
+    pub(crate) fn to_showfile(&self, cx: &AppContext) -> showfile::Assets {
+        showfile::Assets {
+            groups: self
+                .groups
+                .read(cx)
+                .iter()
+                .map(Group::to_showfile)
+                .collect(),
+            effects: self
+                .effects
+                .read(cx)
+                .iter()
+                .map(Effect::to_showfile)
+                .collect(),
+            effect_graphs: self
+                .effect_graphs
+                .read(cx)
+                .iter()
+                .map(EffectGraph::to_showfile)
+                .collect(),
+        }
+    }
 }
 
 pub trait Asset {

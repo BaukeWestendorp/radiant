@@ -61,7 +61,7 @@ impl Patch {
 }
 
 impl Patch {
-    pub fn try_from_showfile(patch: showfile::Patch) -> anyhow::Result<Self> {
+    pub(crate) fn try_from_showfile(patch: showfile::Patch) -> anyhow::Result<Self> {
         let mut this = Self {
             fixtures: Vec::new(),
             gdtf_descriptions: HashMap::new(),
@@ -77,6 +77,21 @@ impl Patch {
         }
 
         Ok(this)
+    }
+
+    pub(crate) fn to_showfile(&self) -> showfile::Patch {
+        showfile::Patch {
+            fixtures: self
+                .fixtures
+                .iter()
+                .map(|f| showfile::Fixture {
+                    id: f.id.into(),
+                    dmx_address: f.dmx_address,
+                    gdtf_file_name: f.gdtf_file_name.clone(),
+                    dmx_mode: f.dmx_mode.clone(),
+                })
+                .collect(),
+        }
     }
 }
 

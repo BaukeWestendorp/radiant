@@ -1,35 +1,42 @@
 use std::path::PathBuf;
 
 use gpui::*;
-use ui::theme::Theme;
 
 use crate::workspace::Workspace;
 
-actions!(app, [Quit, Open]);
+actions!(app, [Save]);
 
 pub struct RadiantApp {
-    workspace: Option<Workspace>,
+    #[allow(unused)]
+    workspace: Model<Workspace>,
 }
 
 impl RadiantApp {
-    pub fn new() -> Self {
-        Self { workspace: None }
-    }
-
-    pub fn run(
-        &mut self,
-        showfile_path: Option<PathBuf>,
-        cx: &mut AppContext,
-    ) -> anyhow::Result<()> {
-        cx.set_global(Theme::default());
-
+    pub fn new(showfile_path: Option<PathBuf>, cx: &mut AppContext) -> anyhow::Result<Self> {
         ui::init(cx);
         flow::gpui::init(cx);
 
-        self.workspace = Some(Workspace::new(showfile_path, cx)?);
+        let workspace = cx.new_model(|cx| Workspace::new(showfile_path.clone(), cx).unwrap());
 
         cx.activate(true);
 
-        Ok(())
+        cx.bind_keys([KeyBinding::new("cmd-s", Save, None)]);
+
+        cx.on_action::<Save>({
+            let workspace = workspace.clone();
+            move |_, cx| {
+                let show = workspace.read(cx).show().read(cx).clone();
+
+                if let Some(path) = &showfile_path {
+                    show.try_write(path, cx).unwrap();
+                } else {
+                    log::error!("Show has no path");
+                }
+
+                log::info!("Saving show");
+            }
+        });
+
+        Ok(Self { workspace })
     }
 }

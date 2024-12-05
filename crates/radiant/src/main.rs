@@ -22,7 +22,6 @@ fn main() {
     let args = Args::parse();
 
     App::new().with_assets(assets::Assets).run(|cx| {
-        let mut app = RadiantApp::new();
-        app.run(args.path, cx).unwrap();
+        RadiantApp::new(args.path, cx).unwrap();
     })
 }

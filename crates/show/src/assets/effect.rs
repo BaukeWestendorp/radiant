@@ -36,4 +36,15 @@ impl Effect {
             },
         }
     }
+
+    pub(crate) fn to_showfile(&self) -> showfile::Effect {
+        showfile::Effect {
+            id: self.id.0,
+            label: self.label.clone(),
+            group: self.group.0,
+            kind: match self.kind {
+                EffectKind::Graph(graph_id) => showfile::EffectKind::Graph(graph_id.0),
+            },
+        }
+    }
 }

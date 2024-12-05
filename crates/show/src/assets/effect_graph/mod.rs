@@ -35,4 +35,13 @@ impl EffectGraph {
             offset: graph.offset,
         }
     }
+
+    pub(crate) fn to_showfile(&self) -> showfile::EffectGraph {
+        showfile::EffectGraph {
+            id: self.id.0,
+            label: self.label.clone(),
+            graph: self.graph.clone(),
+            offset: self.offset,
+        }
+    }
 }
