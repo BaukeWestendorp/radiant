@@ -102,10 +102,11 @@ fn compute_dmx_output(show: Model<Show>, cx: &mut AppContext) -> DmxOutput {
     let cue = show
         .read(cx)
         .assets
-        .cues
+        .cuelists
         .read(cx)
         .get(&0.into())
         .unwrap()
+        .cues[0]
         .clone();
 
     for line in cue.lines {

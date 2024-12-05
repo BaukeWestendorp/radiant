@@ -79,7 +79,7 @@ use crate::showfile;
 #[derive(Debug, Clone)]
 pub struct Assets {
     pub groups: Model<AssetPool<Group>>,
-    pub cues: Model<AssetPool<Cue>>,
+    pub cuelists: Model<AssetPool<CueList>>,
     pub effect_graphs: Model<AssetPool<EffectGraph>>,
 }
 
@@ -94,11 +94,11 @@ impl Assets {
                     .collect::<Vec<_>>()
                     .into()
             }),
-            cues: cx.new_model(|_| {
+            cuelists: cx.new_model(|_| {
                 assets
-                    .cues
+                    .cuelists
                     .into_iter()
-                    .map(Cue::from_showfile)
+                    .map(CueList::from_showfile)
                     .collect::<Vec<_>>()
                     .into()
             }),
@@ -121,7 +121,12 @@ impl Assets {
                 .iter()
                 .map(Group::to_showfile)
                 .collect(),
-            cues: self.cues.read(cx).iter().map(Cue::to_showfile).collect(),
+            cuelists: self
+                .cuelists
+                .read(cx)
+                .iter()
+                .map(CueList::to_showfile)
+                .collect(),
             effect_graphs: self
                 .effect_graphs
                 .read(cx)

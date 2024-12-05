@@ -8,7 +8,7 @@ pub type AssetId = u32;
 pub struct Assets {
     pub groups: Vec<Group>,
     pub effect_graphs: Vec<EffectGraph>,
-    pub cues: Vec<Cue>,
+    pub cuelists: Vec<CueList>,
 }
 
 #[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
@@ -27,8 +27,14 @@ pub struct EffectGraph {
 }
 
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
-pub struct Cue {
+pub struct CueList {
     pub id: AssetId,
+    pub label: String,
+    pub cues: Vec<Cue>,
+}
+
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+pub struct Cue {
     pub label: String,
     pub lines: Vec<CueLine>,
 }

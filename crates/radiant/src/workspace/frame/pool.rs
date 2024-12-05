@@ -1,4 +1,4 @@
-pub mod cue;
+pub mod cuelist;
 pub mod effect_graph;
 pub mod group;
 
@@ -9,7 +9,7 @@ use ui::{interactive_container, theme::ActiveTheme, z_stack, StyledExt};
 
 use super::{FrameDelegate, FrameView, GRID_SIZE};
 
-pub use cue::*;
+pub use cuelist::*;
 pub use effect_graph::*;
 pub use group::*;
 

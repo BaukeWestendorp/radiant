@@ -2,37 +2,69 @@ use crate::showfile;
 
 use super::{Effect, GroupId};
 
-super::asset_id!(pub CueId);
+super::asset_id!(pub CueListId);
 
-#[derive(Debug, Clone)]
-pub struct Cue {
-    pub id: CueId,
+#[derive(Clone)]
+pub struct CueList {
+    pub id: CueListId,
     pub label: String,
-    pub lines: Vec<CueLine>,
+    pub cues: Vec<Cue>,
 }
 
-impl Cue {
-    pub fn new(id: CueId) -> Self {
+impl CueList {
+    pub fn new(id: CueListId) -> Self {
         Self {
             id,
-            label: "New Cue".to_string(),
-            lines: Vec::new(),
+            label: "New Cue List".to_string(),
+            cues: Vec::new(),
         }
     }
 }
 
-impl super::Asset for Cue {
-    type Id = CueId;
+impl super::Asset for CueList {
+    type Id = CueListId;
 
     fn id(&self) -> Self::Id {
         self.id
     }
 }
 
+impl CueList {
+    pub(crate) fn from_showfile(list: showfile::CueList) -> Self {
+        Self {
+            id: CueListId(list.id),
+            label: list.label,
+            cues: list.cues.into_iter().map(Cue::from_showfile).collect(),
+        }
+    }
+
+    pub(crate) fn to_showfile(&self) -> showfile::CueList {
+        showfile::CueList {
+            id: self.id.0,
+            label: self.label.clone(),
+            cues: self.cues.iter().map(Cue::to_showfile).collect(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Cue {
+    pub label: String,
+    pub lines: Vec<CueLine>,
+}
+
+impl Cue {
+    pub fn new() -> Self {
+        Self {
+            label: "New Cue".to_string(),
+            lines: Vec::new(),
+        }
+    }
+}
+
 impl Cue {
     pub(crate) fn from_showfile(cue: showfile::Cue) -> Self {
         Self {
-            id: CueId(cue.id),
             label: cue.label,
             lines: cue.lines.into_iter().map(CueLine::from_showfile).collect(),
         }
@@ -40,7 +72,6 @@ impl Cue {
 
     pub(crate) fn to_showfile(&self) -> showfile::Cue {
         showfile::Cue {
-            id: self.id.0,
             label: self.label.clone(),
             lines: self.lines.iter().map(CueLine::to_showfile).collect(),
         }

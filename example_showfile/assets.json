@@ -3,38 +3,17 @@
     {
       "id": 0,
       "label": "Spots",
-      "fixtures": [
-        101,
-        102,
-        103,
-        104,
-        105,
-        106
-      ]
+      "fixtures": [101, 102, 103, 104, 105, 106]
     },
     {
       "id": 1,
       "label": "Beams",
-      "fixtures": [
-        201,
-        202,
-        203,
-        204,
-        205,
-        206
-      ]
+      "fixtures": [201, 202, 203, 204, 205, 206]
     },
     {
       "id": 2,
       "label": "Washes",
-      "fixtures": [
-        301,
-        302,
-        302,
-        304,
-        305,
-        306
-      ]
+      "fixtures": [301, 302, 302, 304, 305, 306]
     }
   ],
   "effect_graphs": [
@@ -2155,24 +2134,29 @@
       }
     }
   ],
-  "cues": [
+  "cuelists": [
     {
       "id": 0,
-      "label": "Test Cue",
-      "lines": [
+      "label": "Test Cue List",
+      "cues": [
         {
-          "effects": [
+          "label": "Cue 1",
+          "lines": [
             {
-              "group": 2,
-              "effect": {
-                "Graph": 0
-              }
-            },
-            {
-              "group": 1,
-              "effect": {
-                "Graph": 1
-              }
+              "effects": [
+                {
+                  "group": 2,
+                  "effect": {
+                    "Graph": 0
+                  }
+                },
+                {
+                  "group": 1,
+                  "effect": {
+                    "Graph": 1
+                  }
+                }
+              ]
             }
           ]
         }
