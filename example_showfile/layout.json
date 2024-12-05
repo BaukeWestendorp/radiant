@@ -1,19 +1,14 @@
 {
   "main_window": {
     "selected_effect_graph": 0,
+    "selected_cue": 0,
     "frames": [
       {
         "x": 0,
         "y": 0,
         "width": 15,
         "height": 10,
-        "kind": {
-          "EffectGraphEditor": {
-            "settings": {
-              "auto_save": true
-            }
-          }
-        }
+        "kind": "CueEditor"
       },
       {
         "x": 15,
@@ -37,6 +32,7 @@
   },
   "secondary_window": {
     "selected_effect_graph": 0,
+    "selected_cue": 0,
     "frames": []
   }
 }

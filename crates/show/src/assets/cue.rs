@@ -11,6 +11,16 @@ pub struct Cue {
     pub lines: Vec<CueLine>,
 }
 
+impl Cue {
+    pub fn new(id: CueId) -> Self {
+        Self {
+            id,
+            label: "New Cue".to_string(),
+            lines: Vec::new(),
+        }
+    }
+}
+
 impl super::Asset for Cue {
     type Id = CueId;
 

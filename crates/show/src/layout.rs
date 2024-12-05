@@ -1,6 +1,6 @@
 use gpui::{point, size, AppContext, Bounds, Context, EventEmitter, Model, ModelContext};
 
-use crate::{showfile, AssetPool, EffectGraph, EffectGraphId};
+use crate::{showfile, AssetPool, Cue, CueId, EffectGraph, EffectGraphId};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Layout {
@@ -42,6 +42,7 @@ pub enum WindowInstance {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Window {
     selected_effect_graph: Option<EffectGraphId>,
+    selected_cue: Option<CueId>,
     pub frames: Vec<Frame>,
 }
 
@@ -64,12 +65,27 @@ impl Window {
         cx.emit(WindowEvent::SelectedEffectGraphChanged(id));
         cx.notify();
     }
+
+    pub fn selected_cue<'a>(
+        &self,
+        pool: &Model<AssetPool<Cue>>,
+        cx: &'a AppContext,
+    ) -> Option<&'a Cue> {
+        self.selected_cue.and_then(|id| pool.read(cx).get(&id))
+    }
+
+    pub fn set_selected_cue(&mut self, id: Option<CueId>, cx: &mut ModelContext<Self>) {
+        self.selected_cue = id;
+        cx.emit(WindowEvent::SelectedCueChanged(id));
+        cx.notify();
+    }
 }
 
 impl Window {
     pub(crate) fn from_showfile(window: showfile::Window, cx: &mut AppContext) -> Self {
         Self {
             selected_effect_graph: window.selected_effect_graph.map(EffectGraphId),
+            selected_cue: window.selected_effect_graph.map(CueId),
             frames: window
                 .frames
                 .into_iter()
@@ -81,6 +97,7 @@ impl Window {
     pub(crate) fn to_showfile(&self, cx: &mut AppContext) -> showfile::Window {
         showfile::Window {
             selected_effect_graph: self.selected_effect_graph.map(|id| id.0),
+            selected_cue: self.selected_cue.map(|id| id.0),
             frames: self
                 .frames
                 .iter()
@@ -93,6 +110,7 @@ impl Window {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum WindowEvent {
     SelectedEffectGraphChanged(Option<EffectGraphId>),
+    SelectedCueChanged(Option<CueId>),
 }
 
 impl EventEmitter<WindowEvent> for Window {}
@@ -130,6 +148,7 @@ pub enum FrameKind {
     EffectGraphEditor {
         settings: Model<EffectGraphEditorSettings>,
     },
+    CueEditor,
     Pool(PoolKind),
 }
 
@@ -158,6 +177,7 @@ impl FrameKind {
             showfile::FrameKind::EffectGraphEditor { settings } => Self::EffectGraphEditor {
                 settings: cx.new_model(|_| EffectGraphEditorSettings::from_showfile(settings)),
             },
+            showfile::FrameKind::CueEditor => Self::CueEditor,
             showfile::FrameKind::Pool(kind) => Self::Pool(PoolKind::from_showfile(kind)),
         }
     }
@@ -167,6 +187,7 @@ impl FrameKind {
             Self::EffectGraphEditor { settings } => showfile::FrameKind::EffectGraphEditor {
                 settings: settings.read(cx).to_showfile(),
             },
+            Self::CueEditor => showfile::FrameKind::CueEditor,
             Self::Pool(kind) => showfile::FrameKind::Pool(kind.to_showfile()),
         }
     }

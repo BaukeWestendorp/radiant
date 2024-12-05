@@ -3,8 +3,8 @@ use show::{FrameKind, PoolKind, Show, WindowEvent, WindowInstance};
 use ui::{theme::ActiveTheme, z_stack};
 
 use super::{
-    CuePoolFrameDelegate, EffectGraphEditorFrameDelegate, EffectGraphPoolFrameDelegate, FrameView,
-    GroupPoolFrameDelegate, PoolFrameDelegate,
+    CueEditorFrameDelegate, CuePoolFrameDelegate, EffectGraphEditorFrameDelegate,
+    EffectGraphPoolFrameDelegate, FrameView, GroupPoolFrameDelegate, PoolFrameDelegate,
 };
 
 pub const GRID_SIZE: f32 = 80.0;
@@ -115,6 +115,7 @@ pub fn frame_to_view(
                             });
                         }
                     }
+                    _ => {}
                 }
             })
             .detach();
@@ -127,6 +128,52 @@ pub fn frame_to_view(
                     settings.clone(),
                     cx,
                 ),
+                cx,
+            )
+            .into()
+        }
+        FrameKind::CueEditor => {
+            let cue_model = cx.new_model(|cx| {
+                window
+                    .read(cx)
+                    .selected_cue(&assets.cues, cx)
+                    .unwrap()
+                    .clone()
+            });
+
+            cx.observe(&assets.cues, {
+                let cue_model = cue_model.clone();
+                move |pool, cx| {
+                    cue_model.update(cx, |cue, cx| {
+                        log::debug!("Updating effect cue model with new cue {}", cue.id);
+                        *cue = pool.read(cx).get(&cue.id).unwrap().clone();
+                        cx.notify();
+                    });
+                }
+            })
+            .detach();
+
+            cx.subscribe(&window, {
+                let cue_model = cue_model.clone();
+                move |_, event, cx| match event {
+                    WindowEvent::SelectedCueChanged(id) => {
+                        log::debug!("Window's selected cue id changed to {id:?}");
+                        if let Some(id) = id {
+                            let new_cue = assets.cues.read(cx).get(id).unwrap().clone();
+                            cue_model.update(cx, |cue, cx| {
+                                *cue = new_cue;
+                                cx.notify();
+                            });
+                        }
+                    }
+                    _ => {}
+                }
+            })
+            .detach();
+
+            FrameView::build(
+                frame.clone(),
+                CueEditorFrameDelegate::new(show.clone(), cue_model.clone(), cx),
                 cx,
             )
             .into()
@@ -145,7 +192,7 @@ pub fn frame_to_view(
                 frame.clone(),
                 PoolFrameDelegate::new(
                     frame.bounds.size,
-                    CuePoolFrameDelegate::new(assets.cues.clone()),
+                    CuePoolFrameDelegate::new(window.clone(), assets.cues.clone()),
                 ),
                 cx,
             )

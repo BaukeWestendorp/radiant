@@ -1,7 +1,9 @@
+pub mod cue_editor;
 pub mod effect_graph_editor;
 pub mod grid;
 pub mod pool;
 
+pub use cue_editor::*;
 pub use effect_graph_editor::*;
 pub use grid::*;
 pub use pool::*;

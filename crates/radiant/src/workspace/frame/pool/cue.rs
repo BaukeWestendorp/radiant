@@ -5,12 +5,13 @@ use ui::StyledExt;
 use super::PoolDelegate;
 
 pub struct CuePoolFrameDelegate {
+    window: Model<show::Window>,
     asset_pool: Model<AssetPool<Cue>>,
 }
 
 impl CuePoolFrameDelegate {
-    pub fn new(asset_pool: Model<AssetPool<Cue>>) -> Self {
-        Self { asset_pool }
+    pub fn new(window: Model<show::Window>, asset_pool: Model<AssetPool<Cue>>) -> Self {
+        Self { window, asset_pool }
     }
 }
 
@@ -37,5 +38,19 @@ impl PoolDelegate for CuePoolFrameDelegate {
                 .child(div().my_auto().child(label))
                 .overflow_hidden(),
         )
+    }
+
+    fn on_select(&mut self, id: AnyAssetId, cx: &mut WindowContext) {
+        self.window.update(cx, |window, cx| {
+            window.set_selected_cue(Some(id.into()), cx);
+            cx.notify();
+        });
+    }
+
+    fn on_new(&mut self, id: AnyAssetId, cx: &mut WindowContext) {
+        self.asset_pool.update(cx, |pool, cx| {
+            pool.insert(id.into(), Cue::new(id.into()));
+            cx.notify();
+        })
     }
 }
