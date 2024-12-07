@@ -11,7 +11,7 @@ use std::cell::RefCell;
 use std::fmt::Display;
 use std::rc::Rc;
 use strum::IntoEnumIterator;
-use ui::input::{NumberField, Slider, SliderEvent, TextField, TextFieldEvent};
+use ui::{NumberField, Slider, SliderEvent, TextField, TextFieldEvent};
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct GraphDefinition;
@@ -764,7 +764,7 @@ impl VisualControl<GraphDefinition> for Control {
         initial_value: Value,
         cx: &mut ViewContext<View>,
     ) -> AnyView {
-        use ui::input::NumberFieldEvent;
+        use ui::NumberFieldEvent;
 
         match self {
             Self::Int => {

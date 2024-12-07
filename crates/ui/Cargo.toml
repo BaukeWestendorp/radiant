@@ -6,5 +6,6 @@ edition.workspace = true
 [dependencies]
 gpui.workspace = true
 regex.workspace = true
+smallvec = "1.13.2"
 
 unicode-segmentation = "1.12.0"

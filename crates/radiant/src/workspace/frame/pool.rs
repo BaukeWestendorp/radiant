@@ -5,7 +5,7 @@ pub mod group;
 use gpui::*;
 use prelude::FluentBuilder;
 use show::AnyAssetId;
-use ui::{interactive_container, theme::ActiveTheme, z_stack, StyledExt};
+use ui::{z_stack, ActiveTheme, InteractiveContainer, StyledExt};
 
 use super::{FrameDelegate, FrameView, GRID_SIZE};
 
@@ -78,12 +78,12 @@ impl<D: PoolDelegate + 'static> FrameDelegate for PoolFrameDelegate<D> {
                 .map(|e| e.into_element());
             let has_content = pool_item.is_some();
 
-            let content = interactive_container(
+            let content = InteractiveContainer::new(
                 ElementId::NamedInteger("pool-item".into(), id as usize),
                 !has_content,
                 false,
-                cx,
             )
+            .inset(px(1.0))
             .size_full()
             .children(pool_item);
 
@@ -95,7 +95,7 @@ impl<D: PoolDelegate + 'static> FrameDelegate for PoolFrameDelegate<D> {
                 .child(id.to_string());
 
             z_stack([content.into_any_element(), overlay.into_any_element()])
-                .size(px(GRID_SIZE - 2.0))
+                .size(px(GRID_SIZE))
                 .m_px()
                 .when(has_content, |e| {
                     e.cursor_pointer().on_mouse_down(

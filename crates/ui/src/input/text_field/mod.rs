@@ -4,7 +4,7 @@ use blink::BlinkCursor;
 use gpui::*;
 use unicode_segmentation::*;
 
-use crate::{interactive_container, theme::ActiveTheme, InteractiveElementExt, StyledExt};
+use crate::{theme::ActiveTheme, InteractiveContainer, StyledExt};
 
 mod blink;
 mod element;
@@ -689,8 +689,7 @@ pub enum TextFieldEvent {
 impl Render for TextField {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let focused = self.focus_handle.is_focused(cx);
-
-        interactive_container(self.id.clone(), false, focused, cx)
+        InteractiveContainer::new(self.id.clone(), focused, false)
             .bg(cx.theme().background)
             .track_focus(&self.focus_handle)
             .key_context(KEY_CONTEXT)
@@ -710,9 +709,14 @@ impl Render for TextField {
             .on_action(cx.listener(Self::copy))
             .on_action(cx.listener(Self::paste))
             .on_action(cx.listener(Self::cut))
-            .on_double_click(cx.listener(|view, _, cx| {
-                view.select_all(&SelectAll, cx);
-            }))
+            .on_mouse_down(
+                MouseButton::Left,
+                cx.listener(|view, event: &MouseDownEvent, cx| {
+                    if event.click_count == 2 {
+                        view.select_all(&SelectAll, cx);
+                    }
+                }),
+            )
             .on_key_down(cx.listener(Self::on_key_down_for_blink_cursor))
             .on_mouse_down(MouseButton::Left, cx.listener(Self::on_mouse_down))
             .on_mouse_up(MouseButton::Left, cx.listener(Self::on_mouse_up))

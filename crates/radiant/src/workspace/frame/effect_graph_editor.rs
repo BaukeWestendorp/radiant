@@ -2,7 +2,7 @@ use flow::gpui::{GraphEditorView, GraphEvent};
 use gpui::*;
 use prelude::FluentBuilder;
 use show::{Asset, EffectGraph, EffectGraphDefinition, EffectGraphEditorSettings, Show};
-use ui::{container, theme::ActiveTheme, ContainerKind, StyledExt};
+use ui::{ActiveTheme, Container, ContainerKind, StyledExt};
 
 use super::{FrameDelegate, FrameView};
 
@@ -148,7 +148,7 @@ impl FrameDelegate for EffectGraphEditorFrameDelegate {
     }
 
     fn render_content(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> impl IntoElement {
-        container(ContainerKind::Element, px(0.0), cx)
+        Container::new(ContainerKind::Element)
             .size_full()
             .border_color(cx.theme().frame_header_border)
             .child(self.editor.clone())

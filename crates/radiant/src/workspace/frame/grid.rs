@@ -1,6 +1,6 @@
 use gpui::*;
 use show::{FrameKind, PoolKind, Show, WindowEvent, WindowInstance};
-use ui::{theme::ActiveTheme, z_stack};
+use ui::{z_stack, ActiveTheme};
 
 use super::{
     CueListEditorFrameDelegate, CueListPoolFrameDelegate, EffectGraphEditorFrameDelegate,

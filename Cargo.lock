@@ -4638,6 +4638,7 @@ version = "0.1.0"
 dependencies = [
  "gpui",
  "regex",
+ "smallvec",
  "unicode-segmentation",
 ]
 

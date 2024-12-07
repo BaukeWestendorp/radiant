@@ -6,9 +6,10 @@ use crate::{Graph, GraphDefinition};
 
 use gpui::*;
 use prelude::FluentBuilder;
-use ui::input::{TextField, TextFieldEvent};
-use ui::theme::ActiveTheme;
-use ui::{bounds_updater, container, z_stack, ContainerKind, StyledExt};
+use ui::{
+    bounds_updater, z_stack, ActiveTheme, Container, ContainerKind, StyledExt, TextField,
+    TextFieldEvent,
+};
 
 actions!(graph_editor, [CloseNodeContextMenu]);
 
@@ -425,10 +426,10 @@ where
 {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         if !self.shown {
-            return div();
+            return div().into_any_element();
         }
 
-        container(ContainerKind::Element, px(0.0), cx)
+        Container::new(ContainerKind::Element)
             .absolute()
             .w(px(300.0))
             .left(self.position.x)
@@ -438,5 +439,6 @@ where
             .on_mouse_down_out(cx.listener(|this, _, cx| {
                 this.hide(cx);
             }))
+            .into_any_element()
     }
 }

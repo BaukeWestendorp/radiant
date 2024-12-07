@@ -1,6 +1,6 @@
 use gpui::*;
 use show::{Cue, CueLine, CueList, Show};
-use ui::{button::button, container, theme::ActiveTheme, ContainerKind, StyledExt};
+use ui::{button, ActiveTheme, Container, ContainerKind, StyledExt};
 
 use super::{FrameDelegate, FrameView, GRID_SIZE};
 
@@ -45,7 +45,8 @@ impl CueListEditorFrameDelegate {
         .p_2()
         .size_full();
 
-        container(ContainerKind::Surface, px(1.0), cx)
+        Container::new(ContainerKind::Element)
+            .inset(px(1.0))
             .min_w(px(GRID_SIZE * 2.0))
             .max_w(px(GRID_SIZE * 2.0))
             .child(cues)
@@ -73,7 +74,8 @@ impl CueListEditorFrameDelegate {
         )
         .size_full();
 
-        container(ContainerKind::Element, px(1.0), cx)
+        Container::new(ContainerKind::Element)
+            .inset(px(1.0))
             .size_full()
             .child(lines)
     }
@@ -111,7 +113,7 @@ impl FrameDelegate for CueListEditorFrameDelegate {
     }
 
     fn render_content(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> impl IntoElement {
-        container(ContainerKind::Element, px(0.0), cx)
+        Container::new(ContainerKind::Element)
             .size_full()
             .border_color(cx.theme().frame_header_border)
             .h_flex()

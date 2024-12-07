@@ -6,7 +6,7 @@ use crate::{
 
 use gpui::prelude::FluentBuilder;
 use gpui::*;
-use ui::{theme::ActiveTheme, StyledExt};
+use ui::{ActiveTheme, StyledExt};
 
 pub(crate) const NODE_CONTENT_Y_PADDING: Pixels = px(6.0);
 pub(crate) const NODE_WIDTH: Pixels = px(204.0);

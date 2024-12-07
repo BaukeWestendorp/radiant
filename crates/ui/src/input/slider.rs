@@ -2,7 +2,7 @@ use std::ops::RangeInclusive;
 
 use gpui::*;
 
-use crate::{bounds_updater, interactive_container, theme::ActiveTheme, StyledExt};
+use crate::{bounds_updater, theme::ActiveTheme, InteractiveContainer, StyledExt};
 
 use super::{NumberField, NumberFieldEvent};
 
@@ -111,9 +111,8 @@ impl Render for Slider {
             .w(relative(relative_value as f32))
             .bg(cx.theme().accent.opacity(0.2));
 
-        let slider = interactive_container(self.id.clone(), false, focused, cx)
+        let slider = InteractiveContainer::new(self.id.clone(), false, focused)
             .bg(cx.theme().background)
-            .track_focus(&focus_handle)
             .w_2_3()
             .h_full()
             .cursor_ew_resize()

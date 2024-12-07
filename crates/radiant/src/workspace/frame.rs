@@ -10,7 +10,7 @@ pub use pool::*;
 
 use gpui::*;
 use show::Frame;
-use ui::{theme::ActiveTheme, StyledExt};
+use ui::{ActiveTheme, StyledExt};
 
 pub trait FrameDelegate {
     fn init(&mut self, _cx: &mut ViewContext<FrameView<Self>>)
