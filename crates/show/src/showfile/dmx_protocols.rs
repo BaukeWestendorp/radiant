@@ -1,4 +1,5 @@
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct DmxProtocols {
     pub artnet: Vec<ArtnetNodeSettings>,
 }

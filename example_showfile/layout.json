@@ -8,7 +8,9 @@
         "y": 0,
         "width": 15,
         "height": 10,
-        "kind": "CueListEditor"
+        "kind": {
+          "EffectGraphEditor": { "settings": { "auto_save": true } }
+        }
       },
       {
         "x": 15,

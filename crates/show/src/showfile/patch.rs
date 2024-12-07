@@ -1,6 +1,7 @@
 pub type FixtureId = u32;
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct Patch {
     pub fixtures: Vec<Fixture>,
 }

@@ -1,10 +1,12 @@
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct Layout {
     pub main_window: Window,
     pub secondary_window: Window,
 }
 
 #[derive(Debug, Clone, PartialEq, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct Window {
     pub selected_effect_graph: Option<super::AssetId>,
     pub selected_cue: Option<super::AssetId>,
@@ -27,7 +29,8 @@ pub enum FrameKind {
     Pool(PoolKind),
 }
 
-#[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, PartialEq, Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct EffectGraphEditorSettings {
     pub auto_save: bool,
 }

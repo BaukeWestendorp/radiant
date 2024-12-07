@@ -5,6 +5,7 @@ use crate::FlowEffectGraph;
 pub type AssetId = u32;
 
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+#[serde(default)]
 pub struct Assets {
     pub groups: Vec<Group>,
     pub effect_graphs: Vec<EffectGraph>,
@@ -26,14 +27,14 @@ pub struct EffectGraph {
     pub offset: Point,
 }
 
-#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct CueList {
     pub id: AssetId,
     pub label: String,
     pub cues: Vec<Cue>,
 }
 
-#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Cue {
     pub label: String,
     pub lines: Vec<CueLine>,
