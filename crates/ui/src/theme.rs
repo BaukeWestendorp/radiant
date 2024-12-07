@@ -216,7 +216,7 @@ impl Default for Theme {
             border_transparent: hsla(0.0, 0.0, 0.0, 0.0),
             border_disabled: hsl(214.0, 32.0, 82.0),
             elevated_surface_background: hsl(210.0, 10.0, 95.0),
-            surface_background: hsl(210.0, 10.0, 95.0),
+            surface_background: hsl(210.0, 10.0, 90.0),
             background: hsl(210.0, 15.0, 98.0),
             element_background: hsl(210.0, 15.0, 95.0),
             element_hover: hsl(210.0, 15.0, 97.0),

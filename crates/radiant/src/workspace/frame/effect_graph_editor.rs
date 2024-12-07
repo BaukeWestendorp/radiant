@@ -148,7 +148,7 @@ impl FrameDelegate for EffectGraphEditorFrameDelegate {
     }
 
     fn render_content(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> impl IntoElement {
-        container(ContainerKind::Element, cx)
+        container(ContainerKind::Element, px(0.0), cx)
             .size_full()
             .border_color(cx.theme().frame_header_border)
             .child(self.editor.clone())

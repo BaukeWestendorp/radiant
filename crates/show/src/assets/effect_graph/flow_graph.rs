@@ -1,4 +1,4 @@
-use crate::{AttributeValue, Effect, EffectInstance, Fixture, FixtureId, Group, Patch, Show};
+use crate::{AttributeValue, CueLine, Effect, Fixture, FixtureId, Group, Patch, Show};
 
 use dmx::{DmxAddress, DmxChannel, DmxOutput, DmxUniverseId};
 use flow::gpui::{ControlEvent, VisualControl, VisualDataType, VisualNodeData, VisualNodeKind};
@@ -932,22 +932,18 @@ impl VisualControl<GraphDefinition> for Control {
 pub struct ProcessingContext {
     pub dmx_output: Rc<RefCell<DmxOutput>>,
 
-    fx_instance: EffectInstance,
+    cue_line: CueLine,
     show: Model<Show>,
 
     current_fixture_index: usize,
 }
 
 impl ProcessingContext {
-    pub fn new(
-        show: Model<Show>,
-        fx_instance: EffectInstance,
-        dmx_output: Rc<RefCell<DmxOutput>>,
-    ) -> Self {
+    pub fn new(show: Model<Show>, cue_line: CueLine, dmx_output: Rc<RefCell<DmxOutput>>) -> Self {
         Self {
             dmx_output,
 
-            fx_instance,
+            cue_line,
             show,
 
             current_fixture_index: 0,
@@ -960,12 +956,12 @@ impl ProcessingContext {
             .assets
             .groups
             .read(cx)
-            .get(&self.fx_instance.group)
+            .get(&self.cue_line.group)
             .unwrap()
     }
 
     pub fn graph<'a>(&self, cx: &'a AppContext) -> &'a FlowEffectGraph {
-        let Effect::Graph(id) = &self.fx_instance.effect;
+        let Effect::Graph(id) = &self.cue_line.effect;
         &self
             .show
             .read(cx)

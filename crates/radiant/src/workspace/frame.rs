@@ -33,7 +33,8 @@ pub trait FrameDelegate {
         Some(
             div()
                 .w_full()
-                .h(px(GRID_SIZE / 2.0))
+                .min_h(px(GRID_SIZE / 2.0))
+                .max_h(px(GRID_SIZE / 2.0))
                 .bg(cx.theme().frame_header_background)
                 .border_color(cx.theme().frame_header_border)
                 .rounded(cx.theme().radius)

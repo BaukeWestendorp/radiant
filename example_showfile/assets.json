@@ -2143,20 +2143,30 @@
           "label": "Cue 1",
           "lines": [
             {
-              "effects": [
-                {
-                  "group": 2,
-                  "effect": {
-                    "Graph": 0
-                  }
-                },
-                {
-                  "group": 1,
-                  "effect": {
-                    "Graph": 1
-                  }
-                }
-              ]
+              "label": "Wash Fill",
+              "group": 2,
+              "effect": {
+                "Graph": 0
+              }
+            },
+            {
+              "label": "Something with beams",
+              "group": 1,
+              "effect": {
+                "Graph": 1
+              }
+            }
+          ]
+        },
+        {
+          "label": "Cue 2",
+          "lines": [
+            {
+              "label": "Something with beams",
+              "group": 1,
+              "effect": {
+                "Graph": 1
+              }
             }
           ]
         }

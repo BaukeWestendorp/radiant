@@ -1,6 +1,7 @@
 #![allow(clippy::type_complexity)]
 #![allow(clippy::option_as_ref_deref)]
 
+pub mod button;
 pub mod input;
 pub mod theme;
 
@@ -71,12 +72,20 @@ impl ContainerKind {
     }
 }
 
-pub fn container(kind: ContainerKind, cx: &AppContext) -> Div {
-    div()
+pub fn container(kind: ContainerKind, inset: Pixels, cx: &AppContext) -> Div {
+    let is_inset = inset != px(0.0);
+    let container = div()
+        .size_full()
         .bg(kind.bg(cx))
         .border_1()
         .border_color(kind.border_color(cx))
-        .rounded(cx.theme().radius)
+        .rounded(cx.theme().radius);
+
+    if is_inset {
+        z_stack([div().size_full().p(inset).child(container)])
+    } else {
+        container
+    }
 }
 
 pub fn interactive_container(
@@ -86,14 +95,14 @@ pub fn interactive_container(
     cx: &AppContext,
 ) -> Stateful<Div> {
     if !disabled {
-        container(ContainerKind::Element, cx)
+        container(ContainerKind::Element, px(0.0), cx)
             .id(id)
             .hover(|e| e.bg(cx.theme().element_hover))
             .active(|e| e.bg(cx.theme().element_active))
             .when(focused, |e| e.bg(cx.theme().element_selected))
             .cursor_pointer()
     } else {
-        container(ContainerKind::Element, cx)
+        container(ContainerKind::Element, px(0.0), cx)
             .id(id)
             .bg(cx.theme().element_disabled)
             .border_1()

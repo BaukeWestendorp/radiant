@@ -110,17 +110,14 @@ fn compute_dmx_output(show: Model<Show>, cx: &mut AppContext) -> DmxOutput {
         .clone();
 
     for line in cue.lines {
-        for effect in line.effects {
-            // Initialize context
-            let mut context =
-                EffectGraphProcessingContext::new(show.clone(), effect, dmx_output.clone());
+        // Initialize context
+        let mut context = EffectGraphProcessingContext::new(show.clone(), line, dmx_output.clone());
 
-            // Process frame
-            context
-                .process_frame(cx)
-                .map_err(|err| log::warn!("Failed to process frame: {err}"))
-                .ok();
-        }
+        // Process frame
+        context
+            .process_frame(cx)
+            .map_err(|err| log::warn!("Failed to process frame: {err}"))
+            .ok();
     }
 
     dmx_output.take()

@@ -8,7 +8,7 @@ use gpui::*;
 use prelude::FluentBuilder;
 use ui::input::{TextField, TextFieldEvent};
 use ui::theme::ActiveTheme;
-use ui::{bounds_updater, container, z_stack, StyledExt};
+use ui::{bounds_updater, container, z_stack, ContainerKind, StyledExt};
 
 actions!(graph_editor, [CloseNodeContextMenu]);
 
@@ -428,7 +428,7 @@ where
             return div();
         }
 
-        container(ui::ContainerKind::Element, cx)
+        container(ContainerKind::Element, px(0.0), cx)
             .absolute()
             .w(px(300.0))
             .left(self.position.x)

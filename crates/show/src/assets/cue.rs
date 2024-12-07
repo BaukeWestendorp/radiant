@@ -78,50 +78,26 @@ impl Cue {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct CueLine {
-    pub effects: Vec<EffectInstance>,
+    pub label: String,
+    pub group: GroupId,
+    pub effect: Effect,
 }
 
 impl CueLine {
     pub(crate) fn from_showfile(line: showfile::CueLine) -> Self {
         Self {
-            effects: line
-                .effects
-                .into_iter()
-                .map(EffectInstance::from_showfile)
-                .collect(),
+            label: line.label,
+            group: line.group.into(),
+            effect: Effect::from_showfile(line.effect),
         }
     }
 
     pub(crate) fn to_showfile(&self) -> showfile::CueLine {
         showfile::CueLine {
-            effects: self
-                .effects
-                .iter()
-                .map(EffectInstance::to_showfile)
-                .collect(),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct EffectInstance {
-    pub group: GroupId,
-    pub effect: Effect,
-}
-
-impl EffectInstance {
-    pub(crate) fn from_showfile(instance: showfile::EffectInstance) -> Self {
-        Self {
-            group: GroupId(instance.group),
-            effect: Effect::from_showfile(instance.effect),
-        }
-    }
-
-    pub(crate) fn to_showfile(&self) -> showfile::EffectInstance {
-        showfile::EffectInstance {
-            group: self.group.0,
+            label: self.label.clone(),
+            group: self.group.into(),
             effect: self.effect.to_showfile(),
         }
     }

@@ -41,11 +41,7 @@ pub struct Cue {
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct CueLine {
-    pub effects: Vec<EffectInstance>,
-}
-
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
-pub struct EffectInstance {
+    pub label: String,
     pub group: AssetId,
     pub effect: Effect,
 }
