@@ -92,7 +92,7 @@ impl ButtonKind {
     fn bg(&self, cx: &WindowContext) -> Hsla {
         match self {
             ButtonKind::Primary => cx.theme().element_background,
-            ButtonKind::Ghost => cx.theme().background,
+            ButtonKind::Ghost => transparent_white(),
             ButtonKind::Custom { bg, .. } => *bg,
         }
     }

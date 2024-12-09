@@ -132,7 +132,7 @@ pub fn frame_to_view(
             )
             .into()
         }
-        FrameKind::CueListEditor => {
+        FrameKind::CuelistEditor => {
             let cue_model = cx.new_model(|cx| {
                 window
                     .read(cx)
