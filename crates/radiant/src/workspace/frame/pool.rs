@@ -3,7 +3,6 @@ pub mod effect_graph;
 pub mod group;
 
 use gpui::*;
-use prelude::FluentBuilder;
 use show::AnyAssetId;
 use ui::{z_stack, ActiveTheme, Container, ContainerKind, InteractiveContainer, StyledExt};
 
@@ -23,8 +22,6 @@ pub trait PoolDelegate {
     ) -> Option<impl IntoElement>;
 
     fn on_select(&mut self, _id: AnyAssetId, _cx: &mut WindowContext) {}
-
-    fn on_new(&mut self, _id: AnyAssetId, _cx: &mut WindowContext) {}
 }
 
 pub struct PoolFrameDelegate<D: PoolDelegate> {
@@ -88,24 +85,11 @@ impl<D: PoolDelegate + 'static> PoolFrameDelegate<D> {
         )
         .inset(px(1.0))
         .size(px(GRID_SIZE))
-        .when(has_content, |e| {
-            e.cursor_pointer().on_mouse_down(
-                MouseButton::Left,
-                cx.listener(move |this, _event, cx| {
-                    this.delegate.pool_delegate.on_select(AnyAssetId(id), cx);
-                    cx.notify();
-                }),
-            )
-        })
-        .when(!has_content, |e| {
-            e.on_mouse_down(
-                MouseButton::Right,
-                cx.listener(move |this, _event, cx| {
-                    this.delegate.pool_delegate.on_new(AnyAssetId(id), cx);
-                    cx.notify();
-                }),
-            )
-        })
+        .cursor_pointer()
+        .on_click(cx.listener(move |this, _event, cx| {
+            this.delegate.pool_delegate.on_select(AnyAssetId(id), cx);
+            cx.notify();
+        }))
         .child(z_stack([cell_content.into_any_element(), overlay.into_any_element()]).size_full())
     }
 }

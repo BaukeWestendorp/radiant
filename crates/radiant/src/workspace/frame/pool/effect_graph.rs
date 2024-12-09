@@ -46,11 +46,4 @@ impl PoolDelegate for EffectGraphPoolFrameDelegate {
             cx.notify();
         });
     }
-
-    fn on_new(&mut self, id: AnyAssetId, cx: &mut WindowContext) {
-        self.asset_pool.update(cx, |pool, cx| {
-            pool.insert(id.into(), EffectGraph::new(id.into()));
-            cx.notify();
-        })
-    }
 }

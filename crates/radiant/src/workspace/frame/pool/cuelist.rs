@@ -46,11 +46,4 @@ impl PoolDelegate for CueListPoolFrameDelegate {
             cx.notify();
         });
     }
-
-    fn on_new(&mut self, id: AnyAssetId, cx: &mut WindowContext) {
-        self.asset_pool.update(cx, |pool, cx| {
-            pool.insert(id.into(), CueList::new(id.into()));
-            cx.notify();
-        })
-    }
 }

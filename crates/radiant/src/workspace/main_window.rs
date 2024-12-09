@@ -5,7 +5,7 @@ use ui::theme::ActiveTheme;
 use super::frame::FrameGridView;
 
 pub struct MainWindow {
-    frame_grid: View<FrameGridView>,
+    pub frame_grid: View<FrameGridView>,
 }
 
 impl MainWindow {

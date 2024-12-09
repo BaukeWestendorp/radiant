@@ -10,7 +10,7 @@ pub use pool::*;
 
 use gpui::*;
 use show::Frame;
-use ui::{ActiveTheme, StyledExt};
+use ui::{ActiveTheme, Container, ContainerKind, StyledExt};
 
 pub trait FrameDelegate {
     fn init(&mut self, _cx: &mut ViewContext<FrameView<Self>>)
@@ -31,24 +31,24 @@ pub trait FrameDelegate {
         let header_content = self.render_header_content(cx).into_element();
 
         Some(
-            div()
-                .w_full()
-                .min_h(px(GRID_SIZE / 2.0))
-                .max_h(px(GRID_SIZE / 2.0))
-                .bg(cx.theme().frame_header_background)
-                .border_color(cx.theme().frame_header_border)
-                .rounded(cx.theme().radius)
-                .px_2()
-                .child(
-                    div()
-                        .size_full()
-                        .h_flex()
-                        .justify_between()
-                        .text_sm()
-                        .text_color(cx.theme().frame_header_text_color)
-                        .child(div().font_weight(FontWeight::SEMIBOLD).child(title))
-                        .child(header_content),
-                ),
+            Container::new(ContainerKind::Custom {
+                bg: cx.theme().frame_header_background,
+                border_color: cx.theme().frame_header_border,
+            })
+            .w_full()
+            .min_h(px(GRID_SIZE / 2.0))
+            .max_h(px(GRID_SIZE / 2.0))
+            .child(
+                div()
+                    .size_full()
+                    .h_flex()
+                    .justify_between()
+                    .px_2()
+                    .text_sm()
+                    .text_color(cx.theme().frame_header_text_color)
+                    .child(div().font_weight(FontWeight::SEMIBOLD).child(title))
+                    .child(header_content),
+            ),
         )
     }
 

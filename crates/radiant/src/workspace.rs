@@ -39,15 +39,11 @@ fn init_show(showfile_path: Option<PathBuf>, cx: &mut AppContext) -> anyhow::Res
 
 fn init_dmx_io(show: &Model<Show>, cx: &mut AppContext) -> anyhow::Result<()> {
     let mut dmx_io = DmxIo::new(show.clone());
-
     for artnet_protocol in show.read(cx).dmx_protocols.read(cx).artnet() {
         dmx_io.add_artnet_node(artnet_protocol.clone())?;
     }
-
     dmx_io.start_emitting(cx);
-
     cx.set_global(dmx_io);
-
     Ok(())
 }
 
