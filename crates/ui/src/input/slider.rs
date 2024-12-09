@@ -2,7 +2,7 @@ use std::ops::RangeInclusive;
 
 use gpui::*;
 
-use crate::{bounds_updater, theme::ActiveTheme, InteractiveContainer, StyledExt};
+use crate::{bounds_updater, theme::ActiveTheme, ContainerKind, InteractiveContainer, StyledExt};
 
 use super::{NumberField, NumberFieldEvent};
 
@@ -111,22 +111,29 @@ impl Render for Slider {
             .w(relative(relative_value as f32))
             .bg(cx.theme().accent.opacity(0.2));
 
-        let slider = InteractiveContainer::new(self.id.clone(), false, focused)
-            .bg(cx.theme().background)
-            .w_2_3()
-            .h_full()
-            .cursor_ew_resize()
-            .child(bar)
-            .child(bounds_updater(cx.view().clone(), |this, bounds, _cx| {
-                this.slider_bounds = bounds
-            }))
-            .on_drag(
-                Drag {
-                    id: self.id.clone(),
-                },
-                |_, _point, cx| cx.new_view(|_cx| EmptyView),
-            )
-            .on_drag_move(cx.listener(Self::on_drag_move));
+        let slider = InteractiveContainer::new(
+            ContainerKind::Custom {
+                bg: cx.theme().background,
+                border_color: ContainerKind::Element.border_color(cx),
+            },
+            self.id.clone(),
+            false,
+            focused,
+        )
+        .w_2_3()
+        .h_full()
+        .cursor_ew_resize()
+        .child(bar)
+        .child(bounds_updater(cx.view().clone(), |this, bounds, _cx| {
+            this.slider_bounds = bounds
+        }))
+        .on_drag(
+            Drag {
+                id: self.id.clone(),
+            },
+            |_, _point, cx| cx.new_view(|_cx| EmptyView),
+        )
+        .on_drag_move(cx.listener(Self::on_drag_move));
 
         div()
             .h_flex()

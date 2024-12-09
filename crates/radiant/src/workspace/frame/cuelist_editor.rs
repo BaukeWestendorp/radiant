@@ -1,6 +1,6 @@
 use gpui::*;
 use show::{Cue, CueLine, CueList, Show};
-use ui::{button, ActiveTheme, Container, ContainerKind, StyledExt};
+use ui::{ActiveTheme, Button, ButtonKind, Container, ContainerKind, StyledExt};
 
 use super::{FrameDelegate, FrameView, GRID_SIZE};
 
@@ -32,12 +32,12 @@ impl CueListEditorFrameDelegate {
                     .map(|ix| {
                         let cue = cues[ix].clone();
                         let id = ElementId::NamedInteger(cue.label.clone().into(), ix);
-                        button(cue.label.into(), id, cx)
-                            .w_full()
-                            .on_click(cx.listener(move |this, _, _cx| {
+                        Button::new(ButtonKind::Primary, cue.label, id).on_click(cx.listener(
+                            move |this, _, _cx| {
                                 this.delegate.selected_cue = Some(ix);
                                 log::info!("Selected cue {ix}");
-                            }))
+                            },
+                        ))
                     })
                     .collect()
             },

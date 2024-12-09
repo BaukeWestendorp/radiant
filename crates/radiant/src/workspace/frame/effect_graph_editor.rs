@@ -1,8 +1,7 @@
 use flow::gpui::{GraphEditorView, GraphEvent};
 use gpui::*;
-use prelude::FluentBuilder;
 use show::{Asset, EffectGraph, EffectGraphDefinition, EffectGraphEditorSettings, Show};
-use ui::{ActiveTheme, Container, ContainerKind, StyledExt};
+use ui::{ActiveTheme, Button, ButtonKind, Container, ContainerKind, StyledExt};
 
 use super::{FrameDelegate, FrameView};
 
@@ -127,30 +126,35 @@ impl FrameDelegate for EffectGraphEditorFrameDelegate {
 
     fn render_header_content(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> impl IntoElement {
         let auto_save_enabled = self.settings.read(cx).auto_save;
+        let auto_save_label = if auto_save_enabled {
+            "Auto Save (on)"
+        } else {
+            "Auto Save (off)"
+        };
 
         div().h_flex().gap_2().children([
-            div()
-                .id("save-button")
-                .on_click(cx.listener(|this, _, cx| this.delegate.save_graph(cx)))
-                .border_1()
-                .border_color(white())
-                .p_1()
-                .child("Save"),
-            div()
-                .id("autosave-button")
-                .on_click(cx.listener(|this, _, cx| this.delegate.toggle_autosave(cx)))
-                .border_1()
-                .border_color(red())
-                .when(auto_save_enabled, |e| e.border_color(green()))
-                .p_1()
-                .child("Auto Save"),
+            Button::new(ButtonKind::Primary, "Save", "save-button").on_click(cx.listener(
+                |this, _, cx| {
+                    this.delegate.save_graph(cx);
+                    cx.notify()
+                },
+            )),
+            Button::new(ButtonKind::Primary, auto_save_label, "autosave-button").on_click(
+                cx.listener(|this, _, cx| {
+                    this.delegate.toggle_autosave(cx);
+                    cx.notify();
+                }),
+            ),
         ])
     }
 
     fn render_content(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> impl IntoElement {
-        Container::new(ContainerKind::Element)
-            .size_full()
-            .border_color(cx.theme().frame_header_border)
-            .child(self.editor.clone())
+        Container::new(ContainerKind::Custom {
+            bg: ContainerKind::Element.bg(cx),
+            border_color: cx.theme().frame_header_border,
+        })
+        .inset(px(1.0))
+        .size_full()
+        .child(self.editor.clone())
     }
 }

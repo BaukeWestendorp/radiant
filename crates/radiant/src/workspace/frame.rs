@@ -46,8 +46,7 @@ pub trait FrameDelegate {
                         .justify_between()
                         .text_sm()
                         .text_color(cx.theme().frame_header_text_color)
-                        .font_weight(FontWeight::SEMIBOLD)
-                        .child(title)
+                        .child(div().font_weight(FontWeight::SEMIBOLD).child(title))
                         .child(header_content),
                 ),
         )

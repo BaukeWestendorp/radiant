@@ -4,7 +4,7 @@ use blink::BlinkCursor;
 use gpui::*;
 use unicode_segmentation::*;
 
-use crate::{theme::ActiveTheme, InteractiveContainer, StyledExt};
+use crate::{theme::ActiveTheme, ContainerKind, InteractiveContainer, StyledExt};
 
 mod blink;
 mod element;
@@ -689,53 +689,60 @@ pub enum TextFieldEvent {
 impl Render for TextField {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let focused = self.focus_handle.is_focused(cx);
-        InteractiveContainer::new(self.id.clone(), focused, false)
-            .bg(cx.theme().background)
-            .track_focus(&self.focus_handle)
-            .key_context(KEY_CONTEXT)
-            .on_action(cx.listener(Self::backspace))
-            .on_action(cx.listener(Self::delete))
-            .on_action(cx.listener(Self::enter))
-            .on_action(cx.listener(Self::left))
-            .on_action(cx.listener(Self::right))
-            .on_action(cx.listener(Self::select_left))
-            .on_action(cx.listener(Self::select_right))
-            .on_action(cx.listener(Self::select_all))
-            .on_action(cx.listener(Self::select_to_home))
-            .on_action(cx.listener(Self::select_to_end))
-            .on_action(cx.listener(Self::home))
-            .on_action(cx.listener(Self::end))
-            .on_action(cx.listener(Self::show_character_palette))
-            .on_action(cx.listener(Self::copy))
-            .on_action(cx.listener(Self::paste))
-            .on_action(cx.listener(Self::cut))
-            .on_mouse_down(
-                MouseButton::Left,
-                cx.listener(|view, event: &MouseDownEvent, cx| {
-                    if event.click_count == 2 {
-                        view.select_all(&SelectAll, cx);
-                    }
+        InteractiveContainer::new(
+            ContainerKind::Custom {
+                bg: cx.theme().background,
+                border_color: ContainerKind::Element.border_color(cx),
+            },
+            self.id.clone(),
+            focused,
+            false,
+        )
+        .track_focus(&self.focus_handle)
+        .key_context(KEY_CONTEXT)
+        .on_action(cx.listener(Self::backspace))
+        .on_action(cx.listener(Self::delete))
+        .on_action(cx.listener(Self::enter))
+        .on_action(cx.listener(Self::left))
+        .on_action(cx.listener(Self::right))
+        .on_action(cx.listener(Self::select_left))
+        .on_action(cx.listener(Self::select_right))
+        .on_action(cx.listener(Self::select_all))
+        .on_action(cx.listener(Self::select_to_home))
+        .on_action(cx.listener(Self::select_to_end))
+        .on_action(cx.listener(Self::home))
+        .on_action(cx.listener(Self::end))
+        .on_action(cx.listener(Self::show_character_palette))
+        .on_action(cx.listener(Self::copy))
+        .on_action(cx.listener(Self::paste))
+        .on_action(cx.listener(Self::cut))
+        .on_mouse_down(
+            MouseButton::Left,
+            cx.listener(|view, event: &MouseDownEvent, cx| {
+                if event.click_count == 2 {
+                    view.select_all(&SelectAll, cx);
+                }
+            }),
+        )
+        .on_key_down(cx.listener(Self::on_key_down_for_blink_cursor))
+        .on_mouse_down(MouseButton::Left, cx.listener(Self::on_mouse_down))
+        .on_mouse_up(MouseButton::Left, cx.listener(Self::on_mouse_up))
+        .h_flex()
+        .w_full()
+        .h(cx.theme().input_height)
+        .overflow_hidden()
+        .child(
+            div()
+                .id("TextElement")
+                .py_px()
+                .px_1()
+                .flex_grow()
+                .overflow_x_hidden()
+                .cursor_text()
+                .on_drag((), |_, _point, cx| cx.new_view(|_cx| EmptyView)) // This makes sure the events from the field are preferred.
+                .child(element::TextElement {
+                    field: cx.view().clone(),
                 }),
-            )
-            .on_key_down(cx.listener(Self::on_key_down_for_blink_cursor))
-            .on_mouse_down(MouseButton::Left, cx.listener(Self::on_mouse_down))
-            .on_mouse_up(MouseButton::Left, cx.listener(Self::on_mouse_up))
-            .h_flex()
-            .px_1()
-            .w_full()
-            .h(cx.theme().input_height)
-            .overflow_hidden()
-            .child(
-                div()
-                    .id("TextElement")
-                    .py_px()
-                    .flex_grow()
-                    .overflow_x_hidden()
-                    .cursor_text()
-                    .on_drag((), |_, _point, cx| cx.new_view(|_cx| EmptyView)) // This makes sure the events from the field are preferred.
-                    .child(element::TextElement {
-                        field: cx.view().clone(),
-                    }),
-            )
+        )
     }
 }

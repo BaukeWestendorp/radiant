@@ -2,23 +2,23 @@ use gpui::*;
 use prelude::FluentBuilder;
 use smallvec::SmallVec;
 
-use crate::{z_stack, ActiveTheme};
+use crate::ActiveTheme;
 
 /// A styled container that can hold other elements.
 #[derive(IntoElement)]
 pub struct Container {
+    base: Div,
     kind: ContainerKind,
     inset: Option<Pixels>,
-    interactivity: Interactivity,
     children: SmallVec<[AnyElement; 2]>,
 }
 
 impl Container {
     pub fn new(kind: ContainerKind) -> Self {
         Self {
+            base: div(),
             kind,
             inset: None,
-            interactivity: Interactivity::default(),
             children: SmallVec::new(),
         }
     }
@@ -37,7 +37,7 @@ impl ParentElement for Container {
 
 impl Styled for Container {
     fn style(&mut self) -> &mut StyleRefinement {
-        &mut self.interactivity.base_style
+        self.base.style()
     }
 }
 
@@ -49,23 +49,22 @@ impl From<Container> for AnyElement {
 
 impl InteractiveElement for Container {
     fn interactivity(&mut self) -> &mut Interactivity {
-        &mut self.interactivity
+        self.base.interactivity()
     }
 }
 
 impl RenderOnce for Container {
-    fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let container = base_container(self.kind, cx);
-
-        if let Some(inset) = self.inset {
-            z_stack([div()
-                .size_full()
-                .child(container)
-                .child(div().size_full().children(self.children))])
-            .p(inset)
-        } else {
-            container
-        }
+    fn render(mut self, cx: &mut WindowContext) -> impl IntoElement {
+        let style = self.base.style().clone();
+        self.base
+            .max_w(style.size.width.unwrap_or_default())
+            .max_h(style.size.height.unwrap_or_default())
+            .when_some(self.inset, |e, inset| e.p(inset))
+            .child(
+                base_container(style, &self.kind, cx)
+                    .size_full()
+                    .children(self.children),
+            )
     }
 }
 
@@ -73,22 +72,25 @@ pub enum ContainerKind {
     Regular,
     Element,
     Surface,
+    Custom { bg: Hsla, border_color: Hsla },
 }
 
 impl ContainerKind {
-    fn bg(&self, cx: &AppContext) -> Hsla {
+    pub fn bg(&self, cx: &AppContext) -> Hsla {
         match self {
             Self::Regular => cx.theme().background,
             Self::Element => cx.theme().element_background,
             Self::Surface => cx.theme().surface_background,
+            Self::Custom { bg, .. } => *bg,
         }
     }
 
-    fn border_color(&self, cx: &AppContext) -> Hsla {
+    pub fn border_color(&self, cx: &AppContext) -> Hsla {
         match self {
             Self::Regular => cx.theme().border,
             Self::Element => cx.theme().border,
             Self::Surface => cx.theme().border,
+            Self::Custom { border_color, .. } => *border_color,
         }
     }
 }
@@ -96,22 +98,29 @@ impl ContainerKind {
 /// An interactive, styled container that can hold other elements..
 #[derive(IntoElement)]
 pub struct InteractiveContainer {
+    kind: ContainerKind,
+    base: Div,
     id: ElementId,
     disabled: bool,
     focused: bool,
-    interactivity: Interactivity,
     children: SmallVec<[AnyElement; 2]>,
     inset: Option<Pixels>,
 }
 
 impl InteractiveContainer {
-    pub fn new(id: impl Into<ElementId>, disabled: bool, focused: bool) -> Self {
+    pub fn new(
+        kind: ContainerKind,
+        id: impl Into<ElementId>,
+        disabled: bool,
+        focused: bool,
+    ) -> Self {
         Self {
+            kind,
+            base: div(),
             inset: None,
             id: id.into(),
             disabled,
             focused,
-            interactivity: Interactivity::default(),
             children: SmallVec::new(),
         }
     }
@@ -130,13 +139,13 @@ impl ParentElement for InteractiveContainer {
 
 impl Styled for InteractiveContainer {
     fn style(&mut self) -> &mut StyleRefinement {
-        &mut self.interactivity.base_style
+        self.base.style()
     }
 }
 
 impl InteractiveElement for InteractiveContainer {
     fn interactivity(&mut self) -> &mut Interactivity {
-        &mut self.interactivity
+        self.base.interactivity()
     }
 }
 
@@ -149,28 +158,43 @@ impl From<InteractiveContainer> for AnyElement {
 }
 
 impl RenderOnce for InteractiveContainer {
-    fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        base_container(ContainerKind::Element, cx)
-            .id(self.id)
-            .when(self.focused, |e| e.bg(cx.theme().element_selected))
-            .when(self.disabled, |e| {
-                e.bg(cx.theme().element_disabled)
-                    .border_color(cx.theme().border_disabled)
-            })
-            .when(!self.disabled, |e| {
-                e.hover(|e| e.bg(cx.theme().element_hover))
-                    .active(|e| e.bg(cx.theme().element_active))
-            })
-            .cursor_pointer()
-            .children(self.children)
+    fn render(mut self, cx: &mut WindowContext) -> impl IntoElement {
+        let style = self.base.style().clone();
+        self.base
+            .id(self.id.clone())
+            .max_w(style.size.width.unwrap_or_default())
+            .max_h(style.size.height.unwrap_or_default())
+            .when_some(self.inset, |e, inset| e.p(inset))
+            .group("interactive-container")
+            .child(
+                base_container(style, &self.kind, cx)
+                    .id(ElementId::Name(
+                        format!("{}-base", self.id.to_string()).into(),
+                    ))
+                    .size_full()
+                    .cursor_pointer()
+                    .when(self.focused, |e| e.bg(cx.theme().element_selected))
+                    .when(self.disabled, |e| {
+                        e.bg(cx.theme().element_disabled)
+                            .border_color(cx.theme().border_disabled)
+                    })
+                    .when(!self.disabled, |e| {
+                        e.group_active("interactive-container", |e| e.bg(cx.theme().element_active))
+                            .group_hover("interactive-container", |e| {
+                                e.bg(cx.theme().element_hover)
+                            })
+                    })
+                    .children(self.children),
+            )
     }
 }
 
-fn base_container(kind: ContainerKind, cx: &AppContext) -> Div {
-    div()
-        .size_full()
+fn base_container(base_style: StyleRefinement, kind: &ContainerKind, cx: &AppContext) -> Div {
+    let mut base = div();
+    base.style().size = base_style.size;
+
+    base.border_1()
         .bg(kind.bg(cx))
-        .border_1()
         .border_color(kind.border_color(cx))
         .rounded(cx.theme().radius)
 }

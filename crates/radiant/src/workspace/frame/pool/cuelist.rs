@@ -20,7 +20,7 @@ impl PoolDelegate for CueListPoolFrameDelegate {
         "Cue Lists".to_string()
     }
 
-    fn render_pool_item(
+    fn render_cell_content(
         &mut self,
         id: AnyAssetId,
         cx: &mut WindowContext,
