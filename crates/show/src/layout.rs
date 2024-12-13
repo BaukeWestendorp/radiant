@@ -148,7 +148,7 @@ pub enum FrameKind {
     EffectGraphEditor {
         settings: Model<EffectGraphEditorSettings>,
     },
-    CuelistEditor,
+    CueListEditor,
     Pool(PoolKind),
 }
 
@@ -177,7 +177,7 @@ impl FrameKind {
             showfile::FrameKind::EffectGraphEditor { settings } => Self::EffectGraphEditor {
                 settings: cx.new_model(|_| EffectGraphEditorSettings::from_showfile(settings)),
             },
-            showfile::FrameKind::CuelistEditor => Self::CuelistEditor,
+            showfile::FrameKind::CueListEditor => Self::CueListEditor,
             showfile::FrameKind::Pool(kind) => Self::Pool(PoolKind::from_showfile(kind)),
         }
     }
@@ -187,7 +187,7 @@ impl FrameKind {
             Self::EffectGraphEditor { settings } => showfile::FrameKind::EffectGraphEditor {
                 settings: settings.read(cx).to_showfile(),
             },
-            Self::CuelistEditor => showfile::FrameKind::CuelistEditor,
+            Self::CueListEditor => showfile::FrameKind::CueListEditor,
             Self::Pool(kind) => showfile::FrameKind::Pool(kind.to_showfile()),
         }
     }
