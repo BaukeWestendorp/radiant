@@ -1,21 +1,27 @@
 use gpui::*;
-use show::{Cue, CueList, Show};
-use ui::{ActiveTheme, Button, ButtonKind, Container, ContainerKind, StyledExt};
+use prelude::FluentBuilder;
+use show::{Cue, CueList, CueListId, GroupId, Show};
+use ui::{
+    ActiveTheme, Button, ButtonKind, Container, ContainerKind, NumberField, NumberFieldEvent,
+    StyledExt, Table, TableDelegate,
+};
 
 use super::{FrameDelegate, FrameView, GRID_SIZE};
 
 pub struct CueListEditorFrameDelegate {
-    _show: Model<Show>,
+    show: Model<Show>,
     cuelist: Model<CueList>,
     selected_cue: Option<usize>,
+    table: Option<View<Table<CueTableDelegate>>>,
 }
 
 impl CueListEditorFrameDelegate {
     pub fn new(show: Model<Show>, cuelist: Model<CueList>, _cx: &mut WindowContext) -> Self {
         Self {
-            _show: show,
+            show,
             cuelist,
             selected_cue: None,
+            table: None,
         }
     }
 
@@ -38,10 +44,7 @@ impl CueListEditorFrameDelegate {
                             .border_b_1()
                             .border_color(cx.theme().border_variant)
                             .child(Button::new(ButtonKind::Ghost, cue.label, id).on_click(
-                                cx.listener(move |this, _, _cx| {
-                                    this.delegate.selected_cue = Some(ix);
-                                    log::info!("Selected cue {ix}");
-                                }),
+                                cx.listener(move |this, _, cx| this.delegate.select_cue(ix, cx)),
                             ))
                     })
                     .collect()
@@ -70,48 +73,32 @@ impl CueListEditorFrameDelegate {
             .child(add_button)
     }
 
-    fn render_cue_line_editor(
-        &mut self,
-        cx: &mut ViewContext<FrameView<Self>>,
-    ) -> impl IntoElement {
-        let cue_lines = self
-            .selected_cue(cx)
-            .map(|cue| cue.lines.clone())
-            .unwrap_or_default();
-
-        let lines = uniform_list(
-            cx.view().clone(),
-            "cue-lines",
-            cue_lines.len(),
-            move |_this, visible_range, cx| {
-                visible_range
-                    .into_iter()
-                    .map(|ix| {
-                        let line = &cue_lines[ix];
-                        div()
-                            .w_full()
-                            .p_px()
-                            .border_b_1()
-                            .border_color(cx.theme().border_variant)
-                            .h_flex()
-                            .child(line.label.clone())
-                            .child("GROUP SELECTOR")
-                            .child("EFFECT SELECTOR")
-                    })
-                    .collect()
-            },
-        )
-        .size_full();
-
+    fn render_cue_editor(&mut self, _cx: &mut ViewContext<FrameView<Self>>) -> impl IntoElement {
         Container::new(ContainerKind::Element)
             .inset(px(1.0))
             .size_full()
-            .child(lines)
+            .when_some(self.table.clone(), |this, table| {
+                this.size_full().child(table)
+            })
     }
 
     fn selected_cue<'a>(&self, cx: &'a AppContext) -> Option<&'a Cue> {
         self.selected_cue
             .and_then(|ix| self.cuelist.read(cx).cues.get(ix))
+    }
+
+    fn select_cue(&mut self, ix: usize, cx: &mut ViewContext<FrameView<Self>>) {
+        self.selected_cue = Some(ix);
+        log::info!("Selected cue {ix}");
+        self.table = Some(cx.new_view(|cx| {
+            Table::new(CueTableDelegate::new(
+                self.cuelist.read(cx).clone(),
+                ix,
+                self.show.clone(),
+                cx,
+            ))
+        }));
+        cx.notify();
     }
 }
 
@@ -134,8 +121,117 @@ impl FrameDelegate for CueListEditorFrameDelegate {
                 .size_full()
                 .h_flex()
                 .child(self.render_cue_selector(cx))
-                .child(self.render_cue_line_editor(cx)),
+                .child(self.render_cue_editor(cx)),
         )
         .size_full()
+    }
+}
+
+pub struct CueTableDelegate {
+    cuelist: CueList,
+    cue_index: usize,
+    group_id_selectors: Vec<View<NumberField>>,
+}
+
+impl CueTableDelegate {
+    const COLUMN_LABELS: [&'static str; 4] = ["Id", "Label", "Group", "Effect"];
+
+    pub fn new(
+        cuelist: CueList,
+        cue_index: usize,
+        show: Model<Show>,
+        cx: &mut ViewContext<Table<Self>>,
+    ) -> Self {
+        let cue = &cuelist.cues[cue_index];
+        let group_id_selectors = cue
+            .lines
+            .clone()
+            .into_iter()
+            .enumerate()
+            .map(move |(line_ix, line)| {
+                let id = ElementId::NamedInteger(line.label.clone().into(), line_ix);
+                let field = cx.new_view(|cx| {
+                    let field = NumberField::new(id, line.group.0 as f64, cx);
+                    field.set_validate(Some(Box::new(|v| v.parse::<u32>().is_ok())), cx);
+                    field
+                });
+
+                let show = show.clone();
+                cx.subscribe(&field, move |_table, _field, event, cx| match event {
+                    NumberFieldEvent::Change(value) => {
+                        show.update(cx, |show, cx| {
+                            show.assets.cuelists.update(cx, |cuelists, _cx| {
+                                let new_group = GroupId(*value as u32);
+                                cuelists.get_mut(&cuelist.id).unwrap().cues[cue_index].lines
+                                    [line_ix]
+                                    .group = new_group;
+                                log::debug!("Updated cueline");
+                            })
+                        });
+                    }
+                })
+                .detach();
+
+                field
+            })
+            .collect();
+
+        Self {
+            cuelist,
+            cue_index,
+            group_id_selectors,
+        }
+    }
+
+    fn cue(&self) -> &Cue {
+        &self.cuelist.cues[self.cue_index]
+    }
+}
+
+impl TableDelegate for CueTableDelegate {
+    fn column_count(&self) -> usize {
+        Self::COLUMN_LABELS.len()
+    }
+
+    fn row_count(&self) -> usize {
+        self.cue().lines.len()
+    }
+
+    fn column_label(&self, col_ix: usize, _cx: &mut ViewContext<Table<Self>>) -> SharedString {
+        SharedString::from(Self::COLUMN_LABELS[col_ix])
+    }
+
+    fn col_width(&self, col_ix: usize) -> Pixels {
+        match col_ix {
+            0 => px(50.0),
+            1 => px(160.0),
+            2 => px(80.0),
+            3 => px(100.0),
+            _ => unreachable!(),
+        }
+    }
+
+    fn render_cell(
+        &self,
+        row_ix: usize,
+        col_ix: usize,
+        _cx: &ViewContext<Table<Self>>,
+    ) -> impl IntoElement {
+        let line = &self.cue().lines[row_ix];
+
+        let content = match col_ix {
+            0 => row_ix.to_string().into_any_element(),
+            1 => line.label.clone().into_any_element(),
+            2 => self
+                .group_id_selectors
+                .get(row_ix)
+                .unwrap()
+                .clone()
+                .into_any_element(),
+            3 => format!("{:?}", line.effect).into_any_element(),
+            _ => unreachable!(),
+        };
+
+        div().px_1().w_full().child(content)
     }
 }
