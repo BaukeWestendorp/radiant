@@ -8,6 +8,8 @@ use super::{
 };
 
 pub const GRID_SIZE: f32 = 80.0;
+pub const FRAME_GRID_WIDTH: u32 = 16;
+pub const FRAME_GRID_HEIGHT: u32 = 10;
 
 pub struct FrameGridView {
     size: Size<u32>,
@@ -31,7 +33,7 @@ impl FrameGridView {
                 .collect();
 
             FrameGridView {
-                size: size(16, 10),
+                size: size(FRAME_GRID_WIDTH, FRAME_GRID_HEIGHT),
                 frames,
             }
         })
@@ -39,7 +41,7 @@ impl FrameGridView {
 }
 
 impl Render for FrameGridView {
-    fn render(&mut self, _cx: &mut gpui::ViewContext<Self>) -> impl gpui::IntoElement {
+    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
         let background = canvas(|_, _| {}, {
             let width = self.size.width;
             let height = self.size.height;

@@ -5,6 +5,7 @@ use gpui::App;
 mod app;
 mod assets;
 mod dmx_io;
+mod ui;
 mod workspace;
 
 /// Radiant
