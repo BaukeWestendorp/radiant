@@ -148,6 +148,18 @@ pub struct AssetPool<A: Asset> {
 }
 
 impl<A: Asset + 'static> AssetPool<A> {
+    pub fn len(&self) -> usize {
+        self.assets.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.assets.is_empty()
+    }
+
+    pub fn ids(&self) -> impl Iterator<Item = &A::Id> {
+        self.assets.keys()
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = &A> {
         self.assets.values()
     }

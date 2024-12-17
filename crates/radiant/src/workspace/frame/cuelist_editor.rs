@@ -1,11 +1,13 @@
 use gpui::*;
 use prelude::FluentBuilder;
+
 use show::{Cue, CueList, Show};
 use ui::{
-    ActiveTheme, Button, ButtonKind, Container, ContainerKind, StyledExt, Table, TableDelegate,
+    ActiveTheme, Button, ButtonKind, Container, ContainerKind, Selector, SelectorEvent, StyledExt,
+    Table, TableDelegate,
 };
 
-use crate::ui::{group_selector::GroupSelector, AssetSelectorEvent};
+use crate::ui::GroupSelectorDelegate;
 
 use super::{FrameDelegate, FrameView, GRID_SIZE};
 
@@ -126,7 +128,7 @@ impl FrameDelegate for CueListEditorFrameDelegate {
 pub struct CueTableDelegate {
     cuelist: CueList,
     cue_index: usize,
-    group_id_selectors: Vec<View<GroupSelector>>,
+    group_id_selectors: Vec<View<Selector<GroupSelectorDelegate>>>,
 }
 
 impl CueTableDelegate {
@@ -145,18 +147,20 @@ impl CueTableDelegate {
             .into_iter()
             .enumerate()
             .map(move |(line_ix, _line)| {
-                let selector = cx.new_view(|cx| {
-                    GroupSelector::new("group-selector", show.read(cx).assets.groups.clone())
-                });
+                let selector = Selector::build(
+                    GroupSelectorDelegate::new(show.read(cx).assets.groups.clone()),
+                    "group-selector",
+                    cx,
+                );
 
                 let show = show.clone();
                 cx.subscribe(&selector, move |_table, _field, event, cx| match event {
-                    AssetSelectorEvent::Change(new_group) => {
+                    SelectorEvent::Change(new_group) => {
                         show.update(cx, |show, cx| {
                             show.assets.cuelists.update(cx, |cuelists, _cx| {
                                 cuelists.get_mut(&cuelist.id).unwrap().cues[cue_index].lines
                                     [line_ix]
-                                    .group = *new_group;
+                                    .group = new_group.unwrap();
                                 log::debug!("Updated cueline");
                             })
                         });
@@ -224,6 +228,6 @@ impl TableDelegate for CueTableDelegate {
             _ => unreachable!(),
         };
 
-        div().px_1().w_full().child(content)
+        div().h_flex().px_1().w_full().child(content)
     }
 }

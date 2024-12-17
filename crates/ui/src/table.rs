@@ -95,7 +95,7 @@ pub trait TableDelegate: Sized {
             .map(|col_ix| {
                 div()
                     .w(self.col_width(col_ix))
-                    .h(ROW_HEIGHT)
+                    .h_full()
                     .h_flex()
                     .overflow_hidden()
                     .text_ellipsis()
