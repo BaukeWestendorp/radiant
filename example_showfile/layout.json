@@ -7,8 +7,21 @@
         "x": 0,
         "y": 0,
         "width": 15,
-        "height": 10,
-        "kind": "CuelistEditor"
+        "height": 2,
+        "kind": "CueListEditor"
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "width": 15,
+        "height": 8,
+        "kind": {
+          "EffectGraphEditor": {
+            "settings": {
+              "auto_save": true
+            }
+          }
+        }
       },
       {
         "x": 15,
