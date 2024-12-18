@@ -28,17 +28,28 @@ pub struct Selector<D: SelectorDelegate> {
 }
 
 impl<D: SelectorDelegate + 'static> Selector<D> {
-    pub fn build(delegate: D, id: impl Into<ElementId>, cx: &mut WindowContext) -> View<Self> {
-        cx.new_view(|cx| Self {
-            items: delegate.items(cx),
-            delegate,
+    pub fn build(
+        delegate: D,
+        id: impl Into<ElementId>,
+        initial_value: Option<&D::Item>,
+        cx: &mut WindowContext,
+    ) -> View<Self> {
+        cx.new_view(|cx| {
+            let mut selector = Self {
+                items: delegate.items(cx),
+                delegate,
 
-            id: id.into(),
-            focus_handle: cx.focus_handle().clone(),
-            bounds: Bounds::default(),
+                id: id.into(),
+                focus_handle: cx.focus_handle().clone(),
+                bounds: Bounds::default(),
 
-            selected_ix: None,
-            open: false,
+                selected_ix: None,
+                open: false,
+            };
+
+            selector.set_selected_item(initial_value);
+
+            selector
         })
     }
 

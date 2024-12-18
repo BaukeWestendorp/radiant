@@ -1,13 +1,13 @@
 use gpui::*;
 use prelude::FluentBuilder;
 
-use show::{Cue, CueList, Show};
+use show::{Cue, CueLine, CueList, Effect, Show};
 use ui::{
     ActiveTheme, Button, ButtonKind, Container, ContainerKind, Selector, SelectorEvent, StyledExt,
     Table, TableDelegate,
 };
 
-use crate::ui::{AssetSelectorDelegate, GroupSelector};
+use crate::ui::{AssetSelectorDelegate, EffectGraphSelector, GroupSelector};
 
 use super::{FrameDelegate, FrameView, GRID_SIZE};
 
@@ -129,6 +129,7 @@ pub struct CueTableDelegate {
     cuelist: CueList,
     cue_index: usize,
     group_id_selectors: Vec<View<GroupSelector>>,
+    effect_id_selectors: Vec<View<EffectGraphSelector>>,
 }
 
 impl CueTableDelegate {
@@ -145,34 +146,16 @@ impl CueTableDelegate {
             .lines
             .clone()
             .into_iter()
-            .enumerate()
-            .map(move |(line_ix, _line)| {
-                let group_id = &cue.lines[line_ix].group;
-                let selector = Selector::build(
-                    AssetSelectorDelegate::new(show.read(cx).assets.groups.clone()),
-                    "group-selector",
-                    cx,
-                );
-                selector.update(cx, |selector, _cx| {
-                    selector.set_selected_item(Some(group_id));
-                });
-
-                let show = show.clone();
-                cx.subscribe(&selector, move |_table, _field, event, cx| match event {
-                    SelectorEvent::Change(new_group) => {
-                        show.update(cx, |show, cx| {
-                            show.assets.cuelists.update(cx, |cuelists, _cx| {
-                                cuelists.get_mut(&cuelist.id).unwrap().cues[cue_index].lines
-                                    [line_ix]
-                                    .group = new_group.unwrap();
-                                log::debug!("Updated cueline");
-                            })
-                        });
-                    }
-                })
-                .detach();
-
-                selector
+            .map(|cueline| {
+                Self::build_group_selector(&cuelist, cue_index, &cueline, show.clone(), cx)
+            })
+            .collect();
+        let effect_id_selectors = cue
+            .lines
+            .clone()
+            .into_iter()
+            .map(|cueline| {
+                Self::build_effect_selector(&cuelist, cue_index, &cueline, show.clone(), cx)
             })
             .collect();
 
@@ -180,7 +163,90 @@ impl CueTableDelegate {
             cuelist,
             cue_index,
             group_id_selectors,
+            effect_id_selectors,
         }
+    }
+
+    fn build_group_selector(
+        cuelist: &CueList,
+        cue_index: usize,
+        cueline: &CueLine,
+        show: Model<Show>,
+        cx: &mut ViewContext<Table<Self>>,
+    ) -> View<GroupSelector> {
+        let group_id = &cueline.group;
+
+        let selector = Selector::build(
+            AssetSelectorDelegate::new(show.read(cx).assets.groups.clone()),
+            "group-selector",
+            Some(group_id),
+            cx,
+        );
+
+        let show = show.clone();
+        let cuelist_id = cuelist.id;
+        let line_index = cueline.index;
+        cx.subscribe(&selector, move |_table, _field, event, cx| match event {
+            SelectorEvent::Change(new_group) => {
+                if let Some(new_group) = new_group {
+                    show.update(cx, |show, cx| {
+                        show.assets.cuelists.update(cx, |cuelists, _cx| {
+                            let cuelist = cuelists.get_mut(&cuelist_id).unwrap();
+                            let cue = cuelist.cues[cue_index]
+                                .line_at_index_mut(line_index)
+                                .unwrap();
+                            cue.group = *new_group;
+                        })
+                    });
+                } else {
+                    todo!("Handle empty group selector");
+                }
+            }
+        })
+        .detach();
+
+        selector
+    }
+
+    fn build_effect_selector(
+        cuelist: &CueList,
+        cue_index: usize,
+        cueline: &CueLine,
+        show: Model<Show>,
+        cx: &mut ViewContext<Table<Self>>,
+    ) -> View<EffectGraphSelector> {
+        let Effect::Graph(graph_id) = &cueline.effect;
+
+        let selector = Selector::build(
+            AssetSelectorDelegate::new(show.read(cx).assets.effect_graphs.clone()),
+            "effect-selector",
+            Some(graph_id),
+            cx,
+        );
+
+        let show = show.clone();
+        let cuelist_id = cuelist.id;
+        let line_index = cueline.index;
+        cx.subscribe(&selector, move |_table, _field, event, cx| match event {
+            SelectorEvent::Change(new_graph_id) => {
+                if let Some(new_graph_id) = new_graph_id {
+                    show.update(cx, |show, cx| {
+                        show.assets.cuelists.update(cx, |cuelists, _cx| {
+                            let cuelist = cuelists.get_mut(&cuelist_id).unwrap();
+                            let cue = cuelist.cues[cue_index]
+                                .line_at_index_mut(line_index)
+                                .unwrap();
+                            cue.effect = Effect::Graph(*new_graph_id);
+                        })
+                    });
+                } else {
+                    todo!("Handle empty effect selector");
+                }
+            }
+        })
+        .detach();
+
+        selector
     }
 
     fn cue(&self) -> &Cue {
@@ -228,7 +294,12 @@ impl TableDelegate for CueTableDelegate {
                 .unwrap()
                 .clone()
                 .into_any_element(),
-            3 => format!("{:?}", line.effect).into_any_element(),
+            3 => self
+                .effect_id_selectors
+                .get(row_ix)
+                .unwrap()
+                .clone()
+                .into_any_element(),
             _ => unreachable!(),
         };
 

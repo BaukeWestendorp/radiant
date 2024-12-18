@@ -64,6 +64,14 @@ impl Cue {
             lines: Vec::new(),
         }
     }
+
+    pub fn line_at_index(&self, index: usize) -> Option<&CueLine> {
+        self.lines.iter().find(|line| line.index == index)
+    }
+
+    pub fn line_at_index_mut(&mut self, index: usize) -> Option<&mut CueLine> {
+        self.lines.iter_mut().find(|line| line.index == index)
+    }
 }
 
 impl Cue {
@@ -87,6 +95,7 @@ pub struct CueLine {
     pub label: String,
     pub group: GroupId,
     pub effect: Effect,
+    pub index: usize,
 }
 
 impl CueLine {
@@ -95,6 +104,7 @@ impl CueLine {
             label: line.label,
             group: line.group.into(),
             effect: Effect::from_showfile(line.effect),
+            index: line.index,
         }
     }
 
@@ -103,6 +113,7 @@ impl CueLine {
             label: self.label.clone(),
             group: self.group.into(),
             effect: self.effect.to_showfile(),
+            index: self.index,
         }
     }
 }

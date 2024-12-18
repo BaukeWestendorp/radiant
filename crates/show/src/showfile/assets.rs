@@ -45,6 +45,7 @@ pub struct CueLine {
     pub label: String,
     pub group: AssetId,
     pub effect: Effect,
+    pub index: usize,
 }
 
 #[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
