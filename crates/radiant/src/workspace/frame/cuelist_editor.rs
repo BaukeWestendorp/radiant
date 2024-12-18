@@ -4,7 +4,7 @@ use prelude::FluentBuilder;
 use show::{Cue, CueLine, CueList, Effect, Show};
 use ui::{
     ActiveTheme, Button, ButtonKind, Container, ContainerKind, Selector, SelectorEvent, StyledExt,
-    Table, TableDelegate,
+    Table, TableDelegate, TextField, TextFieldEvent,
 };
 
 use crate::ui::{AssetSelectorDelegate, EffectGraphSelector, GroupSelector};
@@ -128,6 +128,7 @@ impl FrameDelegate for CueListEditorFrameDelegate {
 pub struct CueTableDelegate {
     cuelist: CueList,
     cue_index: usize,
+    label_fields: Vec<View<TextField>>,
     group_id_selectors: Vec<View<GroupSelector>>,
     effect_id_selectors: Vec<View<EffectGraphSelector>>,
 }
@@ -142,6 +143,12 @@ impl CueTableDelegate {
         cx: &mut ViewContext<Table<Self>>,
     ) -> Self {
         let cue = &cuelist.cues[cue_index];
+        let label_fields = cue
+            .lines
+            .clone()
+            .into_iter()
+            .map(|cueline| Self::build_label_field(&cuelist, cue_index, &cueline, show.clone(), cx))
+            .collect();
         let group_id_selectors = cue
             .lines
             .clone()
@@ -162,9 +169,43 @@ impl CueTableDelegate {
         Self {
             cuelist,
             cue_index,
+            label_fields,
             group_id_selectors,
             effect_id_selectors,
         }
+    }
+
+    fn build_label_field(
+        cuelist: &CueList,
+        cue_index: usize,
+        cueline: &CueLine,
+        show: Model<Show>,
+        cx: &mut ViewContext<Table<Self>>,
+    ) -> View<TextField> {
+        let label = &cueline.label;
+
+        let field = cx.new_view(|cx| TextField::new("label", label.into(), cx));
+
+        let show = show.clone();
+        let cuelist_id = cuelist.id;
+        let cueline_ix = cueline.index;
+        cx.subscribe(&field, move |_table, _field, event, cx| match event {
+            TextFieldEvent::Change(new_label) => {
+                show.update(cx, |show, cx| {
+                    show.assets.cuelists.update(cx, |cuelists, _cx| {
+                        let cuelist = cuelists.get_mut(&cuelist_id).unwrap();
+                        let cue = cuelist.cues[cue_index]
+                            .line_at_index_mut(cueline_ix)
+                            .unwrap();
+                        cue.label = new_label.to_string();
+                    })
+                });
+            }
+            _ => {}
+        })
+        .detach();
+
+        field
     }
 
     fn build_group_selector(
@@ -283,11 +324,14 @@ impl TableDelegate for CueTableDelegate {
         col_ix: usize,
         _cx: &ViewContext<Table<Self>>,
     ) -> impl IntoElement {
-        let line = &self.cue().lines[row_ix];
-
         let content = match col_ix {
             0 => row_ix.to_string().into_any_element(),
-            1 => line.label.clone().into_any_element(),
+            1 => self
+                .label_fields
+                .get(row_ix)
+                .unwrap()
+                .clone()
+                .into_any_element(),
             2 => self
                 .group_id_selectors
                 .get(row_ix)
