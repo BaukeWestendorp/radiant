@@ -147,11 +147,15 @@ impl CueTableDelegate {
             .into_iter()
             .enumerate()
             .map(move |(line_ix, _line)| {
+                let group_id = &cue.lines[line_ix].group;
                 let selector = Selector::build(
                     GroupSelectorDelegate::new(show.read(cx).assets.groups.clone()),
                     "group-selector",
                     cx,
                 );
+                selector.update(cx, |selector, _cx| {
+                    selector.set_selected_item(Some(group_id));
+                });
 
                 let show = show.clone();
                 cx.subscribe(&selector, move |_table, _field, event, cx| match event {

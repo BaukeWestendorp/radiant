@@ -1,4 +1,4 @@
-use crate::{bounds_updater, ActiveTheme, Container, ContainerKind, StyledExt};
+use crate::{bounds_updater, ActiveTheme, ContainerKind, InteractiveContainer, StyledExt};
 use gpui::*;
 use prelude::FluentBuilder;
 
@@ -42,6 +42,10 @@ impl<D: SelectorDelegate + 'static> Selector<D> {
         })
     }
 
+    pub fn set_selected_item(&mut self, item: Option<&D::Item>) {
+        self.selected_ix = item.and_then(|item| self.items.iter().position(|i| i == item));
+    }
+
     pub fn selected_item(&self) -> Option<&D::Item> {
         self.items.get(self.selected_ix?)
     }
@@ -58,6 +62,7 @@ impl<D: SelectorDelegate + 'static> Selector<D> {
 
     fn enter(&mut self, _event: &Enter, cx: &mut ViewContext<Self>) {
         self.open = false;
+        cx.emit(SelectorEvent::Change(self.selected_item().cloned()));
         cx.notify();
     }
 
@@ -88,23 +93,32 @@ impl<D: SelectorDelegate + 'static> Render for Selector<D> {
                     .map(|ix| {
                         let item = &this.items[ix];
                         let content = this.delegate.render_item(item, cx).into_element();
-                        div()
-                            .w_full()
-                            .h(cx.line_height())
-                            .child(content)
-                            .on_mouse_up(
-                                MouseButton::Left,
-                                cx.listener(move |this, _event, cx| {
-                                    this.selected_ix = Some(ix);
-                                    cx.emit(SelectorEvent::Change(this.selected_item().cloned()));
-                                    cx.notify();
-                                }),
-                            )
+                        InteractiveContainer::new(
+                            ContainerKind::Custom {
+                                bg: ContainerKind::Element.bg(cx),
+                                border_color: transparent_white(),
+                            },
+                            "list-button",
+                            false,
+                            false,
+                        )
+                        .w_full()
+                        .h(cx.line_height())
+                        .child(div().size_full().h_flex().p_1().child(content))
+                        .border_b_1()
+                        .border_color(cx.theme().border_variant)
+                        .on_mouse_up(
+                            MouseButton::Left,
+                            cx.listener(move |this, _event, cx| {
+                                this.selected_ix = Some(ix);
+                                cx.dispatch_action(Box::new(Enter));
+                            }),
+                        )
                     })
                     .collect()
             },
         )
-        .min_h_20()
+        .h(cx.line_height() * 4)
         .w_full();
 
         div()
@@ -118,26 +132,28 @@ impl<D: SelectorDelegate + 'static> Render for Selector<D> {
             .w_full()
             .relative()
             .child(
-                Container::new(ContainerKind::Element).size_full().child(
-                    div()
-                        .relative()
-                        .flex()
-                        .items_center()
-                        .justify_between()
-                        .rounded(cx.theme().radius)
-                        .overflow_hidden()
-                        .w_full()
-                        .on_mouse_down(MouseButton::Left, cx.listener(Self::toggle_menu))
-                        .child(
-                            div()
-                                .h_flex()
-                                .w_full()
-                                .items_center()
-                                .justify_between()
-                                .gap_1()
-                                .child(display_label),
-                        ),
-                ),
+                InteractiveContainer::new(ContainerKind::Element, "button", false, false)
+                    .size_full()
+                    .child(
+                        div()
+                            .relative()
+                            .flex()
+                            .items_center()
+                            .justify_between()
+                            .rounded(cx.theme().radius)
+                            .overflow_hidden()
+                            .w_full()
+                            .on_mouse_down(MouseButton::Left, cx.listener(Self::toggle_menu))
+                            .child(
+                                div()
+                                    .h_flex()
+                                    .w_full()
+                                    .items_center()
+                                    .justify_between()
+                                    .gap_1()
+                                    .child(display_label),
+                            ),
+                    ),
             )
             .child(div().absolute().size_full().child(bounds_updater(
                 cx.view().clone(),
@@ -183,7 +199,7 @@ pub enum SelectorEvent<D: SelectorDelegate> {
 }
 
 pub trait SelectorDelegate {
-    type Item: Clone;
+    type Item: Clone + PartialEq;
 
     fn len(&self, cx: &ViewContext<Selector<Self>>) -> usize
     where
