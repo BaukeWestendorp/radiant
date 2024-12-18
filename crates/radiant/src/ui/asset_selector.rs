@@ -1,29 +1,32 @@
 use gpui::*;
-use show::{AssetPool, Group, GroupId};
+use show::{AssetPool, EffectGraph, Group};
 use ui::{ActiveTheme, Selector, SelectorDelegate};
 
-pub struct GroupSelectorDelegate {
-    pool: Model<AssetPool<Group>>,
+pub type GroupSelector = Selector<AssetSelectorDelegate<Group>>;
+pub type EffectGraphSelector = Selector<AssetSelectorDelegate<EffectGraph>>;
+
+pub struct AssetSelectorDelegate<A: show::Asset> {
+    pool: Model<AssetPool<A>>,
 }
 
-impl GroupSelectorDelegate {
-    pub fn new(pool: Model<AssetPool<Group>>) -> Self {
+impl<A: show::Asset> AssetSelectorDelegate<A> {
+    pub fn new(pool: Model<AssetPool<A>>) -> Self {
         Self { pool }
     }
 }
 
-impl SelectorDelegate for GroupSelectorDelegate {
-    type Item = GroupId;
+impl<A: show::Asset + 'static> SelectorDelegate for AssetSelectorDelegate<A> {
+    type Item = A::Id;
 
     fn render_display_label(
         &self,
         item: Option<&Self::Item>,
-        cx: &mut ViewContext<Selector<Self>>,
+        cx: &ViewContext<Selector<Self>>,
     ) -> impl IntoElement {
         match item {
             Some(id) => {
-                let group = self.pool.read(cx).get(id).unwrap();
-                div().child(group.label.clone())
+                let asset = self.pool.read(cx).get(id).unwrap();
+                div().child(asset.label().to_string())
             }
             None => div()
                 .italic()
@@ -49,7 +52,7 @@ impl SelectorDelegate for GroupSelectorDelegate {
         item: &Self::Item,
         cx: &mut ViewContext<Selector<Self>>,
     ) -> impl IntoElement {
-        let group = self.pool.read(cx).get(item).unwrap();
-        div().child(group.label.clone())
+        let asset = self.pool.read(cx).get(item).unwrap();
+        div().child(asset.label().to_string())
     }
 }

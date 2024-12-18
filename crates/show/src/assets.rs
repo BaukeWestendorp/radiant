@@ -138,8 +138,11 @@ impl Assets {
 }
 
 pub trait Asset {
-    type Id: PartialEq + Eq + Hash;
+    type Id: Copy + PartialEq + Eq + Hash;
+
     fn id(&self) -> Self::Id;
+
+    fn label(&self) -> &str;
 }
 
 #[derive(Debug, Clone)]

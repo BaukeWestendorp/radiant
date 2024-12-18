@@ -27,6 +27,10 @@ impl super::Asset for CueList {
     fn id(&self) -> Self::Id {
         self.id
     }
+
+    fn label(&self) -> &str {
+        &self.label
+    }
 }
 
 impl CueList {

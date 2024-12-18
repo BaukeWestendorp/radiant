@@ -25,6 +25,10 @@ impl super::Asset for Group {
     fn id(&self) -> Self::Id {
         self.id
     }
+
+    fn label(&self) -> &str {
+        &self.label
+    }
 }
 
 impl Group {

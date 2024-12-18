@@ -220,7 +220,7 @@ pub trait SelectorDelegate {
     fn render_display_label(
         &self,
         item: Option<&Self::Item>,
-        cx: &mut ViewContext<Selector<Self>>,
+        cx: &ViewContext<Selector<Self>>,
     ) -> impl IntoElement
     where
         Self: Sized;

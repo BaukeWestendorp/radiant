@@ -7,7 +7,7 @@ use ui::{
     Table, TableDelegate,
 };
 
-use crate::ui::GroupSelectorDelegate;
+use crate::ui::{AssetSelectorDelegate, GroupSelector};
 
 use super::{FrameDelegate, FrameView, GRID_SIZE};
 
@@ -128,7 +128,7 @@ impl FrameDelegate for CueListEditorFrameDelegate {
 pub struct CueTableDelegate {
     cuelist: CueList,
     cue_index: usize,
-    group_id_selectors: Vec<View<Selector<GroupSelectorDelegate>>>,
+    group_id_selectors: Vec<View<GroupSelector>>,
 }
 
 impl CueTableDelegate {
@@ -149,7 +149,7 @@ impl CueTableDelegate {
             .map(move |(line_ix, _line)| {
                 let group_id = &cue.lines[line_ix].group;
                 let selector = Selector::build(
-                    GroupSelectorDelegate::new(show.read(cx).assets.groups.clone()),
+                    AssetSelectorDelegate::new(show.read(cx).assets.groups.clone()),
                     "group-selector",
                     cx,
                 );

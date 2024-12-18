@@ -1,3 +1,3 @@
-pub mod group_selector;
+pub mod asset_selector;
 
-pub use group_selector::*;
+pub use asset_selector::*;
