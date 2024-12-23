@@ -1,12 +1,12 @@
-pub mod cuelist_editor;
 pub mod effect_graph_editor;
 pub mod grid;
 pub mod pool;
+pub mod sequence_editor;
 
-pub use cuelist_editor::*;
 pub use effect_graph_editor::*;
 pub use grid::*;
 pub use pool::*;
+pub use sequence_editor::*;
 
 use gpui::*;
 use show::Frame;

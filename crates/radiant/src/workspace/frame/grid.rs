@@ -3,8 +3,9 @@ use show::{FrameKind, PoolKind, Show, WindowEvent, WindowInstance};
 use ui::{z_stack, ActiveTheme};
 
 use super::{
-    CueListEditorFrameDelegate, CueListPoolFrameDelegate, EffectGraphEditorFrameDelegate,
-    EffectGraphPoolFrameDelegate, FrameView, GroupPoolFrameDelegate, PoolFrameDelegate,
+    EffectGraphEditorFrameDelegate, EffectGraphPoolFrameDelegate, FrameView,
+    GroupPoolFrameDelegate, PoolFrameDelegate, SequenceEditorFrameDelegate,
+    SequencePoolFrameDelegate,
 };
 
 pub const GRID_SIZE: f32 = 80.0;
@@ -134,16 +135,16 @@ pub fn frame_to_view(
             )
             .into()
         }
-        FrameKind::CueListEditor => {
+        FrameKind::SequenceEditor => {
             let cue_model = cx.new_model(|cx| {
                 window
                     .read(cx)
-                    .selected_cuelist(&assets.cuelists, cx)
+                    .selected_sequence(&assets.sequences, cx)
                     .unwrap()
                     .clone()
             });
 
-            cx.observe(&assets.cuelists, {
+            cx.observe(&assets.sequences, {
                 let cue_model = cue_model.clone();
                 move |pool, cx| {
                     cue_model.update(cx, |cue, cx| {
@@ -158,10 +159,10 @@ pub fn frame_to_view(
             cx.subscribe(&window, {
                 let cue_model = cue_model.clone();
                 move |_, event, cx| match event {
-                    WindowEvent::SelectedCueListChanged(id) => {
+                    WindowEvent::SelectedSequenceChanged(id) => {
                         log::debug!("Window's selected cue id changed to {id:?}");
                         if let Some(id) = id {
-                            let new_cue = assets.cuelists.read(cx).get(id).unwrap().clone();
+                            let new_cue = assets.sequences.read(cx).get(id).unwrap().clone();
                             cue_model.update(cx, |cue, cx| {
                                 *cue = new_cue;
                                 cx.notify();
@@ -175,7 +176,7 @@ pub fn frame_to_view(
 
             FrameView::build(
                 frame.clone(),
-                CueListEditorFrameDelegate::new(show.clone(), cue_model.clone(), cx),
+                SequenceEditorFrameDelegate::new(show.clone(), cue_model.clone(), cx),
                 cx,
             )
             .into()
@@ -194,7 +195,7 @@ pub fn frame_to_view(
                 frame.clone(),
                 PoolFrameDelegate::new(
                     frame.bounds.size,
-                    CueListPoolFrameDelegate::new(window.clone(), assets.cuelists.clone()),
+                    SequencePoolFrameDelegate::new(window.clone(), assets.sequences.clone()),
                 ),
                 cx,
             )

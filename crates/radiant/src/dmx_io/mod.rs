@@ -102,7 +102,7 @@ fn compute_dmx_output(show: Model<Show>, cx: &mut AppContext) -> DmxOutput {
     let cue = show
         .read(cx)
         .assets
-        .cuelists
+        .sequences
         .read(cx)
         .get(&0.into())
         .unwrap()

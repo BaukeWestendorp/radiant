@@ -1,6 +1,6 @@
-pub mod cuelist;
 pub mod effect_graph;
 pub mod group;
+pub mod sequence;
 
 use gpui::*;
 use show::AnyAssetId;
@@ -8,9 +8,9 @@ use ui::{z_stack, ActiveTheme, Container, ContainerKind, InteractiveContainer, S
 
 use super::{FrameDelegate, FrameView, GRID_SIZE};
 
-pub use cuelist::*;
 pub use effect_graph::*;
 pub use group::*;
+pub use sequence::*;
 
 pub trait PoolDelegate {
     fn title(&self, cx: &mut WindowContext) -> String;

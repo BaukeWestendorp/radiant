@@ -1,7 +1,7 @@
 use gpui::*;
 use prelude::FluentBuilder;
 
-use show::{Cue, CueLine, CueList, Effect, Show};
+use show::{Cue, CueLine, Effect, Sequence, Show};
 use ui::{
     ActiveTheme, Button, ButtonKind, Container, ContainerKind, Selector, SelectorEvent, StyledExt,
     Table, TableDelegate, TextField, TextFieldEvent,
@@ -11,25 +11,25 @@ use crate::ui::{AssetSelectorDelegate, EffectGraphSelector, GroupSelector};
 
 use super::{FrameDelegate, FrameView, GRID_SIZE};
 
-pub struct CueListEditorFrameDelegate {
+pub struct SequenceEditorFrameDelegate {
     show: Model<Show>,
-    cuelist: Model<CueList>,
+    sequence: Model<Sequence>,
     selected_cue: Option<usize>,
     table: Option<View<Table<CueTableDelegate>>>,
 }
 
-impl CueListEditorFrameDelegate {
-    pub fn new(show: Model<Show>, cuelist: Model<CueList>, _cx: &mut WindowContext) -> Self {
+impl SequenceEditorFrameDelegate {
+    pub fn new(show: Model<Show>, sequence: Model<Sequence>, _cx: &mut WindowContext) -> Self {
         Self {
             show,
-            cuelist,
+            sequence,
             selected_cue: None,
             table: None,
         }
     }
 
     fn render_cue_selector(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> impl IntoElement {
-        let cues = self.cuelist.read(cx).cues.clone();
+        let cues = self.sequence.read(cx).cues.clone();
 
         let cues = uniform_list(
             cx.view().clone(),
@@ -90,7 +90,7 @@ impl CueListEditorFrameDelegate {
         log::info!("Selected cue {ix}");
         self.table = Some(cx.new_view(|cx| {
             Table::new(CueTableDelegate::new(
-                self.cuelist.read(cx).clone(),
+                self.sequence.read(cx).clone(),
                 ix,
                 self.show.clone(),
                 cx,
@@ -100,12 +100,12 @@ impl CueListEditorFrameDelegate {
     }
 }
 
-impl FrameDelegate for CueListEditorFrameDelegate {
+impl FrameDelegate for SequenceEditorFrameDelegate {
     fn title(&mut self, cx: &mut ViewContext<FrameView<Self>>) -> String {
         format!(
-            "Cue Editor ({}) [{}]",
-            self.cuelist.read(cx).label,
-            self.cuelist.read(cx).id
+            "Sequence Editor ({}) [{}]",
+            self.sequence.read(cx).label,
+            self.sequence.read(cx).id
         )
     }
 
@@ -126,7 +126,7 @@ impl FrameDelegate for CueListEditorFrameDelegate {
 }
 
 pub struct CueTableDelegate {
-    cuelist: CueList,
+    sequence: Sequence,
     cue_index: usize,
     label_fields: Vec<View<TextField>>,
     group_id_selectors: Vec<View<GroupSelector>>,
@@ -137,24 +137,26 @@ impl CueTableDelegate {
     const COLUMN_LABELS: [&'static str; 4] = ["Id", "Label", "Group", "Effect"];
 
     pub fn new(
-        cuelist: CueList,
+        sequence: Sequence,
         cue_index: usize,
         show: Model<Show>,
         cx: &mut ViewContext<Table<Self>>,
     ) -> Self {
-        let cue = &cuelist.cues[cue_index];
+        let cue = &sequence.cues[cue_index];
         let label_fields = cue
             .lines
             .clone()
             .into_iter()
-            .map(|cueline| Self::build_label_field(&cuelist, cue_index, &cueline, show.clone(), cx))
+            .map(|cueline| {
+                Self::build_label_field(&sequence, cue_index, &cueline, show.clone(), cx)
+            })
             .collect();
         let group_id_selectors = cue
             .lines
             .clone()
             .into_iter()
             .map(|cueline| {
-                Self::build_group_selector(&cuelist, cue_index, &cueline, show.clone(), cx)
+                Self::build_group_selector(&sequence, cue_index, &cueline, show.clone(), cx)
             })
             .collect();
         let effect_id_selectors = cue
@@ -162,12 +164,12 @@ impl CueTableDelegate {
             .clone()
             .into_iter()
             .map(|cueline| {
-                Self::build_effect_selector(&cuelist, cue_index, &cueline, show.clone(), cx)
+                Self::build_effect_selector(&sequence, cue_index, &cueline, show.clone(), cx)
             })
             .collect();
 
         Self {
-            cuelist,
+            sequence,
             cue_index,
             label_fields,
             group_id_selectors,
@@ -176,7 +178,7 @@ impl CueTableDelegate {
     }
 
     fn build_label_field(
-        cuelist: &CueList,
+        sequence: &Sequence,
         cue_index: usize,
         cueline: &CueLine,
         show: Model<Show>,
@@ -187,14 +189,14 @@ impl CueTableDelegate {
         let field = cx.new_view(|cx| TextField::new("label", label.into(), cx));
 
         let show = show.clone();
-        let cuelist_id = cuelist.id;
+        let sequence_id = sequence.id;
         let cueline_ix = cueline.index;
         cx.subscribe(&field, move |_table, _field, event, cx| match event {
             TextFieldEvent::Change(new_label) => {
                 show.update(cx, |show, cx| {
-                    show.assets.cuelists.update(cx, |cuelists, _cx| {
-                        let cuelist = cuelists.get_mut(&cuelist_id).unwrap();
-                        let cue = cuelist.cues[cue_index]
+                    show.assets.sequences.update(cx, |sequences, _cx| {
+                        let sequence = sequences.get_mut(&sequence_id).unwrap();
+                        let cue = sequence.cues[cue_index]
                             .line_at_index_mut(cueline_ix)
                             .unwrap();
                         cue.label = new_label.to_string();
@@ -209,7 +211,7 @@ impl CueTableDelegate {
     }
 
     fn build_group_selector(
-        cuelist: &CueList,
+        sequence: &Sequence,
         cue_index: usize,
         cueline: &CueLine,
         show: Model<Show>,
@@ -225,15 +227,15 @@ impl CueTableDelegate {
         );
 
         let show = show.clone();
-        let cuelist_id = cuelist.id;
+        let sequence_id = sequence.id;
         let line_index = cueline.index;
         cx.subscribe(&selector, move |_table, _field, event, cx| match event {
             SelectorEvent::Change(new_group) => {
                 if let Some(new_group) = new_group {
                     show.update(cx, |show, cx| {
-                        show.assets.cuelists.update(cx, |cuelists, _cx| {
-                            let cuelist = cuelists.get_mut(&cuelist_id).unwrap();
-                            let cue = cuelist.cues[cue_index]
+                        show.assets.sequences.update(cx, |sequences, _cx| {
+                            let sequence = sequences.get_mut(&sequence_id).unwrap();
+                            let cue = sequence.cues[cue_index]
                                 .line_at_index_mut(line_index)
                                 .unwrap();
                             cue.group = *new_group;
@@ -250,7 +252,7 @@ impl CueTableDelegate {
     }
 
     fn build_effect_selector(
-        cuelist: &CueList,
+        sequence: &Sequence,
         cue_index: usize,
         cueline: &CueLine,
         show: Model<Show>,
@@ -266,15 +268,15 @@ impl CueTableDelegate {
         );
 
         let show = show.clone();
-        let cuelist_id = cuelist.id;
+        let sequence_id = sequence.id;
         let line_index = cueline.index;
         cx.subscribe(&selector, move |_table, _field, event, cx| match event {
             SelectorEvent::Change(new_graph_id) => {
                 if let Some(new_graph_id) = new_graph_id {
                     show.update(cx, |show, cx| {
-                        show.assets.cuelists.update(cx, |cuelists, _cx| {
-                            let cuelist = cuelists.get_mut(&cuelist_id).unwrap();
-                            let cue = cuelist.cues[cue_index]
+                        show.assets.sequences.update(cx, |sequences, _cx| {
+                            let sequence = sequences.get_mut(&sequence_id).unwrap();
+                            let cue = sequence.cues[cue_index]
                                 .line_at_index_mut(line_index)
                                 .unwrap();
                             cue.effect = Effect::Graph(*new_graph_id);
@@ -291,7 +293,7 @@ impl CueTableDelegate {
     }
 
     fn cue(&self) -> &Cue {
-        &self.cuelist.cues[self.cue_index]
+        &self.sequence.cues[self.cue_index]
     }
 }
 
