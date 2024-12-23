@@ -1,7 +1,7 @@
 use gpui::*;
 use prelude::FluentBuilder;
 
-use show::{Cue, CueLine, Effect, Sequence, Show};
+use show::{Cue, Effect, Sequence, Show, Template};
 use ui::{
     ActiveTheme, Button, ButtonKind, Container, ContainerKind, Selector, SelectorEvent, StyledExt,
     Table, TableDelegate, TextField, TextFieldEvent,
@@ -144,27 +144,27 @@ impl CueTableDelegate {
     ) -> Self {
         let cue = &sequence.cues[cue_index];
         let label_fields = cue
-            .lines
+            .templates
             .clone()
             .into_iter()
-            .map(|cueline| {
-                Self::build_label_field(&sequence, cue_index, &cueline, show.clone(), cx)
+            .map(|template| {
+                Self::build_label_field(&sequence, cue_index, &template, show.clone(), cx)
             })
             .collect();
         let group_id_selectors = cue
-            .lines
+            .templates
             .clone()
             .into_iter()
-            .map(|cueline| {
-                Self::build_group_selector(&sequence, cue_index, &cueline, show.clone(), cx)
+            .map(|template| {
+                Self::build_group_selector(&sequence, cue_index, &template, show.clone(), cx)
             })
             .collect();
         let effect_id_selectors = cue
-            .lines
+            .templates
             .clone()
             .into_iter()
-            .map(|cueline| {
-                Self::build_effect_selector(&sequence, cue_index, &cueline, show.clone(), cx)
+            .map(|template| {
+                Self::build_effect_selector(&sequence, cue_index, &template, show.clone(), cx)
             })
             .collect();
 
@@ -180,24 +180,24 @@ impl CueTableDelegate {
     fn build_label_field(
         sequence: &Sequence,
         cue_index: usize,
-        cueline: &CueLine,
+        template: &Template,
         show: Model<Show>,
         cx: &mut ViewContext<Table<Self>>,
     ) -> View<TextField> {
-        let label = &cueline.label;
+        let label = &template.label;
 
         let field = cx.new_view(|cx| TextField::new("label", label.into(), cx));
 
         let show = show.clone();
         let sequence_id = sequence.id;
-        let cueline_ix = cueline.index;
+        let template_ix = template.index;
         cx.subscribe(&field, move |_table, _field, event, cx| match event {
             TextFieldEvent::Change(new_label) => {
                 show.update(cx, |show, cx| {
                     show.assets.sequences.update(cx, |sequences, _cx| {
                         let sequence = sequences.get_mut(&sequence_id).unwrap();
                         let cue = sequence.cues[cue_index]
-                            .line_at_index_mut(cueline_ix)
+                            .template_at_index_mut(template_ix)
                             .unwrap();
                         cue.label = new_label.to_string();
                     })
@@ -213,11 +213,11 @@ impl CueTableDelegate {
     fn build_group_selector(
         sequence: &Sequence,
         cue_index: usize,
-        cueline: &CueLine,
+        template: &Template,
         show: Model<Show>,
         cx: &mut ViewContext<Table<Self>>,
     ) -> View<GroupSelector> {
-        let group_id = &cueline.group;
+        let group_id = &template.group;
 
         let selector = Selector::build(
             AssetSelectorDelegate::new(show.read(cx).assets.groups.clone()),
@@ -228,7 +228,7 @@ impl CueTableDelegate {
 
         let show = show.clone();
         let sequence_id = sequence.id;
-        let line_index = cueline.index;
+        let template_ix = template.index;
         cx.subscribe(&selector, move |_table, _field, event, cx| match event {
             SelectorEvent::Change(new_group) => {
                 if let Some(new_group) = new_group {
@@ -236,7 +236,7 @@ impl CueTableDelegate {
                         show.assets.sequences.update(cx, |sequences, _cx| {
                             let sequence = sequences.get_mut(&sequence_id).unwrap();
                             let cue = sequence.cues[cue_index]
-                                .line_at_index_mut(line_index)
+                                .template_at_index_mut(template_ix)
                                 .unwrap();
                             cue.group = *new_group;
                         })
@@ -254,11 +254,11 @@ impl CueTableDelegate {
     fn build_effect_selector(
         sequence: &Sequence,
         cue_index: usize,
-        cueline: &CueLine,
+        template: &Template,
         show: Model<Show>,
         cx: &mut ViewContext<Table<Self>>,
     ) -> View<EffectGraphSelector> {
-        let Effect::Graph(graph_id) = &cueline.effect;
+        let Effect::Graph(graph_id) = &template.effect;
 
         let selector = Selector::build(
             AssetSelectorDelegate::new(show.read(cx).assets.effect_graphs.clone()),
@@ -269,7 +269,7 @@ impl CueTableDelegate {
 
         let show = show.clone();
         let sequence_id = sequence.id;
-        let line_index = cueline.index;
+        let template_ix = template.index;
         cx.subscribe(&selector, move |_table, _field, event, cx| match event {
             SelectorEvent::Change(new_graph_id) => {
                 if let Some(new_graph_id) = new_graph_id {
@@ -277,7 +277,7 @@ impl CueTableDelegate {
                         show.assets.sequences.update(cx, |sequences, _cx| {
                             let sequence = sequences.get_mut(&sequence_id).unwrap();
                             let cue = sequence.cues[cue_index]
-                                .line_at_index_mut(line_index)
+                                .template_at_index_mut(template_ix)
                                 .unwrap();
                             cue.effect = Effect::Graph(*new_graph_id);
                         })
@@ -303,7 +303,7 @@ impl TableDelegate for CueTableDelegate {
     }
 
     fn row_count(&self) -> usize {
-        self.cue().lines.len()
+        self.cue().templates.len()
     }
 
     fn column_label(&self, col_ix: usize, _cx: &mut ViewContext<Table<Self>>) -> SharedString {

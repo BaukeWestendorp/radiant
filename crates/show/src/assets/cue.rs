@@ -54,23 +54,27 @@ impl Sequence {
 #[derive(Debug, Clone)]
 pub struct Cue {
     pub label: String,
-    pub lines: Vec<CueLine>,
+    pub templates: Vec<Template>,
 }
 
 impl Cue {
     pub fn new() -> Self {
         Self {
             label: "New Cue".to_string(),
-            lines: Vec::new(),
+            templates: Vec::new(),
         }
     }
 
-    pub fn line_at_index(&self, index: usize) -> Option<&CueLine> {
-        self.lines.iter().find(|line| line.index == index)
+    pub fn template_at_index(&self, index: usize) -> Option<&Template> {
+        self.templates
+            .iter()
+            .find(|template| template.index == index)
     }
 
-    pub fn line_at_index_mut(&mut self, index: usize) -> Option<&mut CueLine> {
-        self.lines.iter_mut().find(|line| line.index == index)
+    pub fn template_at_index_mut(&mut self, index: usize) -> Option<&mut Template> {
+        self.templates
+            .iter_mut()
+            .find(|template| template.index == index)
     }
 }
 
@@ -78,38 +82,42 @@ impl Cue {
     pub(crate) fn from_showfile(cue: showfile::Cue) -> Self {
         Self {
             label: cue.label,
-            lines: cue.lines.into_iter().map(CueLine::from_showfile).collect(),
+            templates: cue
+                .templates
+                .into_iter()
+                .map(Template::from_showfile)
+                .collect(),
         }
     }
 
     pub(crate) fn to_showfile(&self) -> showfile::Cue {
         showfile::Cue {
             label: self.label.clone(),
-            lines: self.lines.iter().map(CueLine::to_showfile).collect(),
+            templates: self.templates.iter().map(Template::to_showfile).collect(),
         }
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct CueLine {
+pub struct Template {
     pub label: String,
     pub group: GroupId,
     pub effect: Effect,
     pub index: usize,
 }
 
-impl CueLine {
-    pub(crate) fn from_showfile(line: showfile::CueLine) -> Self {
+impl Template {
+    pub(crate) fn from_showfile(template: showfile::Template) -> Self {
         Self {
-            label: line.label,
-            group: line.group.into(),
-            effect: Effect::from_showfile(line.effect),
-            index: line.index,
+            label: template.label,
+            group: template.group.into(),
+            effect: Effect::from_showfile(template.effect),
+            index: template.index,
         }
     }
 
-    pub(crate) fn to_showfile(&self) -> showfile::CueLine {
-        showfile::CueLine {
+    pub(crate) fn to_showfile(&self) -> showfile::Template {
+        showfile::Template {
             label: self.label.clone(),
             group: self.group.into(),
             effect: self.effect.to_showfile(),

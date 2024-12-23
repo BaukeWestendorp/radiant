@@ -109,9 +109,10 @@ fn compute_dmx_output(show: Model<Show>, cx: &mut AppContext) -> DmxOutput {
         .cues[0]
         .clone();
 
-    for line in cue.lines {
+    for template in cue.templates {
         // Initialize context
-        let mut context = EffectGraphProcessingContext::new(show.clone(), line, dmx_output.clone());
+        let mut context =
+            EffectGraphProcessingContext::new(show.clone(), template, dmx_output.clone());
 
         // Process frame
         context

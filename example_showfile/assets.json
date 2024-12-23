@@ -2269,7 +2269,7 @@
       "cues": [
         {
           "label": "Cue 1",
-          "lines": [
+          "templates": [
             {
               "label": "Green Washasd",
               "group": 2,
@@ -2290,7 +2290,7 @@
         },
         {
           "label": "Cue 2",
-          "lines": [
+          "templates": [
             {
               "label": "Something with beams",
               "group": 1,

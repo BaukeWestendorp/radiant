@@ -37,11 +37,11 @@ pub struct Sequence {
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Cue {
     pub label: String,
-    pub lines: Vec<CueLine>,
+    pub templates: Vec<Template>,
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
-pub struct CueLine {
+pub struct Template {
     pub label: String,
     pub group: AssetId,
     pub effect: Effect,
