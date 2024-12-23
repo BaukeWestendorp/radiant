@@ -13,7 +13,7 @@ pub struct TemplateTableDelegate {
 }
 
 impl TemplateTableDelegate {
-    const COLUMN_LABELS: [&'static str; 4] = ["Id", "Label", "Group", "Effect"];
+    const COLUMN_LABELS: [&'static str; 3] = ["Label", "Group", "Effect"];
 
     pub fn new(
         sequence: Sequence,
@@ -191,10 +191,9 @@ impl TableDelegate for TemplateTableDelegate {
 
     fn col_width(&self, col_ix: usize) -> Pixels {
         match col_ix {
-            0 => px(50.0),
-            1 => px(160.0),
-            2 => px(80.0),
-            3 => px(100.0),
+            0 => px(160.0),
+            1 => px(80.0),
+            2 => px(100.0),
             _ => unreachable!(),
         }
     }
@@ -206,20 +205,19 @@ impl TableDelegate for TemplateTableDelegate {
         _cx: &ViewContext<Table<Self>>,
     ) -> impl IntoElement {
         let content = match col_ix {
-            0 => row_ix.to_string().into_any_element(),
-            1 => self
+            0 => self
                 .label_fields
                 .get(row_ix)
                 .unwrap()
                 .clone()
                 .into_any_element(),
-            2 => self
+            1 => self
                 .group_id_selectors
                 .get(row_ix)
                 .unwrap()
                 .clone()
                 .into_any_element(),
-            3 => self
+            2 => self
                 .effect_id_selectors
                 .get(row_ix)
                 .unwrap()
