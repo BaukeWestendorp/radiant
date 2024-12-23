@@ -176,7 +176,7 @@ pub fn frame_to_view(
 
             FrameView::build(
                 frame.clone(),
-                SequenceEditorFrameDelegate::new(show.clone(), cue_model.clone(), cx),
+                SequenceEditorFrameDelegate::new(show.clone(), cue_model.clone()),
                 cx,
             )
             .into()

@@ -64,18 +64,6 @@ impl Cue {
             templates: Vec::new(),
         }
     }
-
-    pub fn template_at_index(&self, index: usize) -> Option<&Template> {
-        self.templates
-            .iter()
-            .find(|template| template.index == index)
-    }
-
-    pub fn template_at_index_mut(&mut self, index: usize) -> Option<&mut Template> {
-        self.templates
-            .iter_mut()
-            .find(|template| template.index == index)
-    }
 }
 
 impl Cue {
