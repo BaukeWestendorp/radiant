@@ -28,11 +28,13 @@ impl TemplateRow {
             cx.subscribe(&field, move |_table, _field, event, cx| match event {
                 TextFieldEvent::Change(new_label) => {
                     show.update(cx, |show, cx| {
-                        show.assets.sequences.update(cx, |sequences, _cx| {
+                        show.assets.sequences.update(cx, |sequences, cx| {
                             let sequence = sequences.get_mut(&sequence_id).unwrap();
                             let cue = &mut sequence.cues[cue_ix].templates[template_ix];
                             cue.label = new_label.to_string();
-                        })
+                            cx.notify();
+                        });
+                        cx.notify();
                     });
                 }
                 _ => {}
@@ -57,11 +59,13 @@ impl TemplateRow {
                 SelectorEvent::Change(new_group) => {
                     if let Some(new_group) = new_group {
                         show.update(cx, |show, cx| {
-                            show.assets.sequences.update(cx, |sequences, _cx| {
+                            show.assets.sequences.update(cx, |sequences, cx| {
                                 let sequence = sequences.get_mut(&sequence_id).unwrap();
                                 let cue = &mut sequence.cues[cue_ix].templates[template_ix];
                                 cue.group = *new_group;
-                            })
+                                cx.notify();
+                            });
+                            cx.notify();
                         });
                     } else {
                         unimplemented!("Handle empty group selector");
@@ -88,11 +92,13 @@ impl TemplateRow {
                 SelectorEvent::Change(new_graph_id) => {
                     if let Some(new_graph_id) = new_graph_id {
                         show.update(cx, |show, cx| {
-                            show.assets.sequences.update(cx, |sequences, _cx| {
+                            show.assets.sequences.update(cx, |sequences, cx| {
                                 let sequence = sequences.get_mut(&sequence_id).unwrap();
                                 let cue = &mut sequence.cues[cue_ix].templates[template_ix];
                                 cue.effect = Effect::Graph(*new_graph_id);
-                            })
+                                cx.notify();
+                            });
+                            cx.notify();
                         });
                     } else {
                         todo!("Handle empty effect selector");

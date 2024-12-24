@@ -85,7 +85,6 @@ impl SequenceEditorFrameDelegate {
 
     fn select_cue(&mut self, ix: usize, cx: &mut ViewContext<FrameView<Self>>) {
         self.selected_cue = Some(ix);
-        log::info!("Selected cue {ix}");
         self.table = Some(cx.new_view(|cx| {
             Table::new(TemplateTableDelegate::new(
                 self.sequence.clone(),
