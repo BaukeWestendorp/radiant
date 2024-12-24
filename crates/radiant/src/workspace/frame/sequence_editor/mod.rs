@@ -88,7 +88,7 @@ impl SequenceEditorFrameDelegate {
         log::info!("Selected cue {ix}");
         self.table = Some(cx.new_view(|cx| {
             Table::new(TemplateTableDelegate::new(
-                self.sequence.read(cx).clone(),
+                self.sequence.clone(),
                 ix,
                 self.show.clone(),
                 cx,

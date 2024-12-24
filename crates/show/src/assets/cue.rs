@@ -91,7 +91,6 @@ pub struct Template {
     pub label: String,
     pub group: GroupId,
     pub effect: Effect,
-    pub index: usize,
 }
 
 impl Template {
@@ -100,7 +99,6 @@ impl Template {
             label: template.label,
             group: template.group.into(),
             effect: Effect::from_showfile(template.effect),
-            index: template.index,
         }
     }
 
@@ -109,7 +107,6 @@ impl Template {
             label: self.label.clone(),
             group: self.group.into(),
             effect: self.effect.to_showfile(),
-            index: self.index,
         }
     }
 }

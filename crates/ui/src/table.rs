@@ -34,7 +34,7 @@ impl<D: TableDelegate + 'static> Table<D> {
     }
 
     pub fn render_body(&self, cx: &ViewContext<Self>) -> impl IntoElement {
-        let row_count = self.delegate.row_count();
+        let row_count = self.delegate.row_count(cx);
         div()
             .h_flex()
             .id("table-content")
@@ -69,7 +69,7 @@ impl<D: TableDelegate + 'static> Render for Table<D> {
 pub trait TableDelegate: Sized {
     fn column_count(&self) -> usize;
 
-    fn row_count(&self) -> usize;
+    fn row_count(&self, cx: &AppContext) -> usize;
 
     fn column_label(&self, col_ix: usize, cx: &mut ViewContext<Table<Self>>) -> SharedString;
 
