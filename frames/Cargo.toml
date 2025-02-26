@@ -1,0 +1,9 @@
+[package]
+name = "frames"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+ui.workspace = true
+
+gpui.workspace = true

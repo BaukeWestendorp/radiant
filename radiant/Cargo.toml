@@ -1,0 +1,10 @@
+[package]
+name = "radiant3"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+frames.workspace = true
+ui.workspace = true
+
+gpui.workspace = true
