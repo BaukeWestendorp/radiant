@@ -1,0 +1,24 @@
+{
+  "new_number": {
+    "label": "New Number",
+    "inputs": {},
+    "outputs": {
+      "value": {
+        "label": "Value",
+        "data_type": "number",
+        "default": 0
+      }
+    }
+  },
+  "output": {
+    "label": "Output",
+    "inputs": {
+      "value": {
+        "label": "Value",
+        "data_type": "number",
+        "default": 0
+      }
+    },
+    "outputs": {}
+  }
+}

@@ -1,10 +1,14 @@
 [package]
-name = "radiant3"
+name = "radiant"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 frames.workspace = true
 ui.workspace = true
+flow = { workspace = true, features = ["serde"] }
+
+serde.workspace = true
+serde_json = "1"
 
 gpui.workspace = true

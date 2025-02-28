@@ -3,6 +3,7 @@ use gpui::*;
 
 mod app;
 mod frame;
+mod graph;
 
 fn main() {
     Application::new().run(|cx: &mut App| {

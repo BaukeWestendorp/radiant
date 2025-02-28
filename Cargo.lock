@@ -1400,6 +1400,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8bf7cc16383c4b8d58b9905a8509f02926ce3058053c056376248d958c9df1e8"
 
 [[package]]
+name = "flow"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "flume"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3365,11 +3372,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "radiant3"
+name = "radiant"
 version = "0.1.0"
 dependencies = [
+ "flow",
  "frames",
  "gpui",
+ "serde",
+ "serde_json",
  "ui",
 ]
 

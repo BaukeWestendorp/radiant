@@ -1,5 +1,5 @@
 [workspace]
-members = ["frames", "radiant", "ui"]
+members = ["flow", "flow_derive", "frames", "radiant", "ui"]
 resolver = "3"
 
 [workspace.package]
@@ -9,5 +9,8 @@ edition = "2024"
 [workspace.dependencies]
 frames = { path = "frames" }
 ui = { path = "ui" }
+flow = { path = "flow" }
+
+serde = "1"
 
 gpui = { git = "https://github.com/zed-industries/zed" }
