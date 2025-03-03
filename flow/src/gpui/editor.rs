@@ -1,14 +1,14 @@
 use gpui::*;
 
-use crate::Graph;
+use crate::{Graph, ValueImpl};
 
-use super::{graph::GraphView, graph_event::GraphEvent};
+use super::graph::{GraphEvent, GraphView};
 
-pub struct GraphEditorView<State: Default, Value: Clone> {
+pub struct GraphEditorView<State: Default, Value: ValueImpl> {
     pub graph_view: Entity<GraphView<State, Value>>,
 }
 
-impl<State: Default + 'static, Value: Clone + 'static> GraphEditorView<State, Value> {
+impl<State: Default + 'static, Value: ValueImpl + 'static> GraphEditorView<State, Value> {
     pub fn build(graph: Entity<Graph<State, Value>>, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {
             let graph_view = GraphView::build(graph, cx);
@@ -28,7 +28,9 @@ impl<State: Default + 'static, Value: Clone + 'static> GraphEditorView<State, Va
     }
 }
 
-impl<State: Default + 'static, Value: Clone + 'static> Render for GraphEditorView<State, Value> {
+impl<State: Default + 'static, Value: ValueImpl + 'static> Render
+    for GraphEditorView<State, Value>
+{
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<'_, Self>) -> impl IntoElement {
         div().child("Graph")
     }

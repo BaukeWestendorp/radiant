@@ -4,7 +4,12 @@
       "template_id": "new_number"
     },
     "1": {
-      "template_id": "output_number"
+      "template_id": "output_number",
+      "input_values": {
+        "number": {
+          "number": 69
+        }
+      }
     }
   },
   "edges": [

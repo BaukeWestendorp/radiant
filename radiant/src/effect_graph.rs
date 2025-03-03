@@ -1,9 +1,13 @@
 use flow::{Graph, Input, Output, ProcessingContext, Template};
 
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 #[derive(Debug, Clone)]
 pub enum Value {
     Number(f64),
 }
+
+impl flow::ValueImpl for Value {}
 
 impl Default for Value {
     fn default() -> Self {
@@ -37,7 +41,7 @@ pub fn get_graph() -> EffectGraph {
         vec![Input::new("number", "Number", Value::Number(0.0))],
         vec![],
         Box::new(|input_values, _, cx| {
-            let value = input_values.get_value("number");
+            let value = input_values.get_value("number").unwrap();
             cx.value = value.clone();
         }),
     ));
