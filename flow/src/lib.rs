@@ -231,7 +231,6 @@ impl<D: GraphDef> SocketValues<D> {
     pub fn new() -> Self {
         Self(HashMap::new())
     }
-
     pub fn set_value(&mut self, id: impl Into<String>, value: D::Value) {
         self.0.insert(id.into(), value);
     }
@@ -247,17 +246,17 @@ impl<D: GraphDef> SocketValues<D> {
 
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct TemplateId(pub ::gpui::SharedString);
+pub struct TemplateId(pub String);
 
 impl From<String> for TemplateId {
     fn from(id: String) -> Self {
-        TemplateId(::gpui::SharedString::new(id))
+        TemplateId(id)
     }
 }
 
 impl From<&str> for TemplateId {
     fn from(id: &str) -> Self {
-        TemplateId(::gpui::SharedString::new(id.to_string()))
+        TemplateId(id.to_string())
     }
 }
 
