@@ -5,8 +5,11 @@ edition.workspace = true
 
 [features]
 serde = ["dep:serde"]
-gpui = ["dep:gpui"]
+frontend_gpui = ["dep:gpui"]
 
 [dependencies]
-gpui = { workspace = true, optional = true }
+# feature = "serde"
 serde = { workspace = true, optional = true }
+
+# feature = "frontend_gpui"
+gpui = { workspace = true, optional = true }

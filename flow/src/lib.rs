@@ -3,8 +3,10 @@ use std::{
     sync::atomic::{AtomicU32, Ordering},
 };
 
-#[cfg(feature = "gpui")]
-pub mod gpui;
+use frontend::{Frontend, GraphEvent};
+
+pub mod frontend;
+
 #[cfg(feature = "serde")]
 pub mod serde;
 
@@ -63,16 +65,11 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.nodes.iter()
     }
 
-    pub fn add_node(
-        &mut self,
-        node: Node<D>,
-        #[cfg(feature = "gpui")] cx: &mut ::gpui::Context<Self>,
-    ) -> NodeId {
+    pub fn add_node<F: Frontend>(&mut self, node: Node<D>, frontend: &mut F) -> NodeId {
         let node_id = NodeId(self.next_node_id());
         self._add_node(node_id, node);
 
-        #[cfg(feature = "gpui")]
-        cx.emit(gpui::GraphEvent::NodeAdded(node_id));
+        frontend.emit_event(GraphEvent::NodeAdded(node_id));
 
         node_id
     }
@@ -82,11 +79,7 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.leaf_nodes.push(node_id);
     }
 
-    pub fn remove_node(
-        &mut self,
-        node_id: NodeId,
-        #[cfg(feature = "gpui")] cx: &mut ::gpui::Context<Self>,
-    ) {
+    pub fn remove_node<F: Frontend>(&mut self, node_id: NodeId, frontend: &mut F) {
         // Remove all edges that are connected to this node.
         self.edges.retain(|Edge { source, target }| {
             source.node_id != node_id && target.node_id != node_id
@@ -96,8 +89,7 @@ impl<D: GraphDef + 'static> Graph<D> {
 
         self.nodes.remove(&node_id);
 
-        #[cfg(feature = "gpui")]
-        cx.emit(gpui::GraphEvent::NodeRemoved(node_id));
+        frontend.emit_event(GraphEvent::NodeRemoved(node_id));
     }
 
     fn next_node_id(&self) -> u32 {
@@ -112,14 +104,9 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.edges.iter()
     }
 
-    pub fn add_edge(
-        &mut self,
-        edge: Edge,
-        #[cfg(feature = "gpui")] cx: &mut ::gpui::Context<Self>,
-    ) {
+    pub fn add_edge<F: Frontend>(&mut self, edge: Edge, frontend: &mut F) {
         self._add_edge(edge.clone());
-        #[cfg(feature = "gpui")]
-        cx.emit(gpui::GraphEvent::EdgeAdded { edge });
+        frontend.emit_event(GraphEvent::EdgeAdded { edge });
     }
 
     fn _add_edge(&mut self, edge: Edge) {
@@ -127,15 +114,10 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.edges.push(edge);
     }
 
-    pub fn remove_edge_from_source(
-        &mut self,
-        source: &Socket,
-        #[cfg(feature = "gpui")] cx: &mut ::gpui::Context<Self>,
-    ) {
+    pub fn remove_edge_from_source<F: Frontend>(&mut self, source: &Socket, frontend: &mut F) {
         self.edges.retain(|edge| &edge.source != source);
 
-        #[cfg(feature = "gpui")]
-        cx.emit(gpui::GraphEvent::EdgeRemoved { source: source.clone() });
+        frontend.emit_event(GraphEvent::EdgeRemoved { source: source.clone() });
     }
 
     pub fn process(&self, pcx: &mut ProcessingContext<D>) {

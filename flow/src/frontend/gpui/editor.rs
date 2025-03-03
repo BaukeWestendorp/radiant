@@ -1,8 +1,6 @@
+use super::graph::GraphView;
+use crate::{Graph, GraphDef, frontend::GraphEvent};
 use gpui::*;
-
-use crate::{Graph, GraphDef};
-
-use super::graph::{GraphEvent, GraphView};
 
 pub struct GraphEditorView<D: GraphDef> {
     pub graph_view: Entity<GraphView<D>>,
@@ -30,6 +28,6 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
 
 impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<'_, Self>) -> impl IntoElement {
-        div().child("Graph")
+        div().child(self.graph_view.clone())
     }
 }

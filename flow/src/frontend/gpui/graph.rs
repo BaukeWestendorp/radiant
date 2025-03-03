@@ -1,9 +1,8 @@
+use crate::{Graph, GraphDef};
 use gpui::*;
 
-use crate::{Edge, Graph, GraphDef, NodeId, Socket};
-
 pub struct GraphView<D: GraphDef> {
-    pub graph: Entity<Graph<D>>,
+    graph: Entity<Graph<D>>,
 }
 
 impl<D: GraphDef + 'static> GraphView<D> {
@@ -21,13 +20,3 @@ impl<D: GraphDef + 'static> Render for GraphView<D> {
         div().child("Graph")
     }
 }
-
-#[derive(Debug)]
-pub enum GraphEvent {
-    NodeAdded(NodeId),
-    NodeRemoved(NodeId),
-    EdgeAdded { edge: Edge },
-    EdgeRemoved { source: Socket },
-}
-
-impl<D: GraphDef + 'static> EventEmitter<GraphEvent> for Graph<D> {}

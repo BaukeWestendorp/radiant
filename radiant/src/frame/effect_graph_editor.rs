@@ -1,4 +1,4 @@
-use flow::gpui::editor::GraphEditorView;
+use flow::{Graph, frontend::gpui::GraphEditorView};
 
 use gpui::*;
 
@@ -14,6 +14,10 @@ impl EffectGraphEditor {
             let graph_editor_view = GraphEditorView::build(effect_graph, cx);
             Self { graph_editor_view }
         })
+    }
+
+    pub fn graph(&self, cx: &mut App) -> Entity<Graph<effect_graph::GraphDef>> {
+        self.graph_editor_view.read(cx).graph(cx).clone()
     }
 }
 
