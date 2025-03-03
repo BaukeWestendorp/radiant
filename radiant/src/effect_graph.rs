@@ -1,4 +1,4 @@
-use flow::{Graph, Input, Node, Output, Socket, Template};
+use flow::{Graph, Input, Output, ProcessingContext, Template};
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -19,34 +19,37 @@ pub struct State {
 pub type EffectGraph = Graph<State, Value>;
 
 pub fn get_graph() -> EffectGraph {
-    let mut graph = EffectGraph::default();
+    let mut graph = load_graph();
 
-    let new_value_id = graph.add_template(Template::new(
-        "New Value",
+    graph.add_template(Template::new(
+        "new_number",
+        "New Number",
         vec![],
-        vec![Output::new("value", "Value")],
+        vec![Output::new("number", "Number")],
         Box::new(|_, output_values, _| {
-            output_values.set_value("value", Value::Number(42.0));
+            output_values.set_value("number", Value::Number(42.0));
         }),
     ));
 
-    let output_value_id = graph.add_template(Template::new(
+    graph.add_template(Template::new(
+        "output_number",
         "Output Number",
-        vec![Input::new("value", "Value", Value::Number(0.0))],
+        vec![Input::new("number", "Number", Value::Number(0.0))],
         vec![],
         Box::new(|input_values, _, cx| {
-            let value = input_values.get_value("value");
+            let value = input_values.get_value("number");
             cx.value = value.clone();
         }),
     ));
 
-    let new_value_node_id = graph.add_node(Node::new(new_value_id));
-    let output_value_node_id = graph.add_node(Node::new(output_value_id));
-
-    graph.add_edge(
-        Socket::new(new_value_node_id, "value".to_string()),
-        Socket::new(output_value_node_id, "value".to_string()),
-    );
+    let mut pcx = ProcessingContext::default();
+    graph.process(&mut pcx);
+    dbg!(&pcx.value);
 
     graph
+}
+
+fn load_graph() -> EffectGraph {
+    let graph_json = include_str!("effect_graph.json");
+    serde_json::from_str(graph_json).unwrap()
 }

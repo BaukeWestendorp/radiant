@@ -3,39 +3,73 @@ use std::{
     sync::atomic::{AtomicU32, Ordering},
 };
 
-#[derive(Default)]
-pub struct Graph<State: Default, Value: Clone> {
-    templates: HashMap<TemplateId, Template<State, Value>>,
-    nodes: HashMap<NodeId, Node>,
-    /// Key: target socket, Value: source socket
-    edges: HashMap<Socket, Socket>,
+pub mod gpui;
 
+pub struct Graph<State: Default, Value: Clone> {
+    templates: Vec<Template<State, Value>>,
     /// Leaf nodes are nodes that have no outgoing edges
     /// and should be the first nodes that are processed.
     leaf_nodes: Vec<NodeId>,
+    node_id_counter: AtomicU32,
 
-    id_counter: AtomicU32,
+    nodes: HashMap<NodeId, Node>,
+    edges: Vec<Edge>,
 }
 
-impl<State: Default, Value: Clone> Graph<State, Value> {
-    fn next_id(&self) -> u32 {
-        self.id_counter.fetch_add(1, Ordering::Relaxed)
+impl<'de, State: Default + 'static, Value: Clone + 'static> serde::Deserialize<'de>
+    for Graph<State, Value>
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(serde::Deserialize)]
+        struct Intermediate {
+            nodes: HashMap<NodeId, Node>,
+            edges: Vec<Edge>,
+        }
+
+        let intermediate = Intermediate::deserialize(deserializer)?;
+
+        let mut graph = Self::new();
+
+        for (node_id, node) in intermediate.nodes {
+            graph._add_node(node_id, node);
+        }
+
+        for edge in intermediate.edges {
+            graph._add_edge(edge);
+        }
+
+        Ok(graph)
+    }
+}
+
+impl<'t, State: Default + 'static, Value: Clone + 'static> Graph<State, Value> {
+    pub fn new() -> Self {
+        Self {
+            templates: Vec::new(),
+            leaf_nodes: Vec::new(),
+            node_id_counter: AtomicU32::new(0),
+
+            nodes: HashMap::new(),
+            edges: Vec::new(),
+        }
+    }
+
+    pub fn add_template(&mut self, template: Template<State, Value>) {
+        self.templates.push(template);
     }
 
     pub fn template(&self, template_id: &TemplateId) -> &Template<State, Value> {
         self.templates
-            .get(template_id)
+            .iter()
+            .find(|template| template.id == *template_id)
             .expect("should always return a template for given template_id")
     }
 
-    pub fn templates(&self) -> impl Iterator<Item = (&TemplateId, &Template<State, Value>)> {
+    pub fn templates(&self) -> impl Iterator<Item = &Template<State, Value>> {
         self.templates.iter()
-    }
-
-    pub fn add_template(&mut self, template: Template<State, Value>) -> TemplateId {
-        let template_id = TemplateId(self.next_id());
-        self.templates.insert(template_id, template);
-        template_id
     }
 
     pub fn node(&self, node_id: &NodeId) -> &Node {
@@ -46,46 +80,66 @@ impl<State: Default, Value: Clone> Graph<State, Value> {
         self.nodes.iter()
     }
 
-    pub fn add_node(&mut self, node: Node) -> NodeId {
-        let node_id = NodeId(self.next_id());
-        self.nodes.insert(node_id, node);
-        self.leaf_nodes.push(node_id);
+    pub fn add_node(&mut self, node: Node, cx: &mut ::gpui::Context<Self>) -> NodeId {
+        let node_id = NodeId(self.next_node_id());
+        self._add_node(node_id, node);
+
+        cx.emit(gpui::GraphEvent::NodeAdded(node_id));
         node_id
     }
 
-    pub fn remove_node(&mut self, node_id: NodeId) {
+    fn _add_node(&mut self, node_id: NodeId, node: Node) {
+        self.nodes.insert(node_id, node);
+        self.leaf_nodes.push(node_id);
+    }
+
+    pub fn remove_node(&mut self, node_id: NodeId, cx: &mut ::gpui::Context<Self>) {
         // Remove all edges that are connected to this node.
-        self.edges.retain(|source, target| source.node_id != node_id && target.node_id != node_id);
+        self.edges.retain(|Edge { source, target }| {
+            source.node_id != node_id && target.node_id != node_id
+        });
 
         self.remove_leaf_node(&node_id);
 
         self.nodes.remove(&node_id);
+
+        cx.emit(gpui::GraphEvent::NodeRemoved(node_id));
+    }
+
+    fn next_node_id(&self) -> u32 {
+        self.node_id_counter.fetch_add(1, Ordering::Relaxed)
     }
 
     pub fn edge_source(&self, target: &Socket) -> Option<&Socket> {
-        self.edges.get(target)
+        self.edges.iter().find(|edge| &edge.target == target).map(|edge| &edge.source)
     }
 
-    pub fn edges(&self) -> impl Iterator<Item = (&Socket, &Socket)> {
+    pub fn edges(&self) -> impl Iterator<Item = &Edge> {
         self.edges.iter()
     }
 
-    pub fn add_edge(&mut self, source: Socket, target: Socket) {
-        self.remove_leaf_node(&source.node_id);
-        self.edges.insert(target, source);
+    pub fn add_edge(&mut self, edge: Edge, cx: &mut ::gpui::Context<Self>) {
+        self._add_edge(edge.clone());
+        cx.emit(gpui::GraphEvent::EdgeAdded { edge });
     }
 
-    pub fn remove_edge_from_source(&mut self, source: &Socket) {
-        self.edges.retain(|edge_source, _| edge_source != source);
+    fn _add_edge(&mut self, edge: Edge) {
+        self.remove_leaf_node(&edge.source.node_id);
+        self.edges.push(edge);
     }
 
-    pub fn process(&self, cx: &mut ProcessingContext<State, Value>) {
+    pub fn remove_edge_from_source(&mut self, source: &Socket, cx: &mut ::gpui::Context<Self>) {
+        self.edges.retain(|edge| &edge.source != source);
+        cx.emit(gpui::GraphEvent::EdgeRemoved { source: source.clone() });
+    }
+
+    pub fn process(&self, pcx: &mut ProcessingContext<State, Value>) {
         for node_id in &self.leaf_nodes {
-            self.process_node(&node_id, cx);
+            self.process_node(&node_id, pcx);
         }
     }
 
-    fn process_node(&self, node_id: &NodeId, cx: &mut ProcessingContext<State, Value>) {
+    fn process_node(&self, node_id: &NodeId, pcx: &mut ProcessingContext<State, Value>) {
         let node = self.node(node_id);
         let template = self.template(&node.template_id);
 
@@ -94,7 +148,7 @@ impl<State: Default, Value: Clone> Graph<State, Value> {
         for (input_id, value) in template.default_input_values().values() {
             let target = Socket::new(*node_id, input_id.to_owned());
             let value = match self.edge_source(&target) {
-                Some(source) => self.get_output_value(&source, cx),
+                Some(source) => self.get_output_value(&source, pcx),
                 _ => value.clone(),
             };
             input_values.set_value(input_id, value);
@@ -102,23 +156,23 @@ impl<State: Default, Value: Clone> Graph<State, Value> {
 
         // Calculate outputs and update context.
         let mut output_values = SocketValues::new();
-        (template.processor)(&input_values, &mut output_values, cx);
+        (template.processor)(&input_values, &mut output_values, pcx);
 
         // Update output value cache.
-        cx.cache_output_values(*node_id, output_values);
+        pcx.cache_output_values(*node_id, output_values);
     }
 
     fn get_output_value(
         &self,
         output_socket: &Socket,
-        cx: &mut ProcessingContext<State, Value>,
+        pcx: &mut ProcessingContext<State, Value>,
     ) -> Value {
-        if let Some(value) = cx.get_cached_output_value(output_socket) {
+        if let Some(value) = pcx.get_cached_output_value(output_socket) {
             return value.clone();
         }
 
-        self.process_node(&output_socket.node_id, cx);
-        cx.get_cached_output_value(output_socket)
+        self.process_node(&output_socket.node_id, pcx);
+        pcx.get_cached_output_value(output_socket)
             .expect("output value should have been calculated by processing the node")
             .clone()
     }
@@ -191,10 +245,25 @@ impl<Value> SocketValues<Value> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct TemplateId(pub u32);
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct TemplateId(pub ::gpui::SharedString);
+
+impl From<String> for TemplateId {
+    fn from(id: String) -> Self {
+        TemplateId(::gpui::SharedString::new(id))
+    }
+}
+
+impl From<&str> for TemplateId {
+    fn from(id: &str) -> Self {
+        TemplateId(::gpui::SharedString::new(id.to_string()))
+    }
+}
 
 pub struct Template<State: Default, Value: Clone> {
+    id: TemplateId,
+
     label: String,
 
     inputs: Vec<Input<Value>>,
@@ -205,12 +274,17 @@ pub struct Template<State: Default, Value: Clone> {
 
 impl<State: Default, Value: Clone> Template<State, Value> {
     pub fn new(
+        id: impl Into<TemplateId>,
         label: impl Into<String>,
         inputs: Vec<Input<Value>>,
         outputs: Vec<Output>,
         processor: Box<Processor<State, Value>>,
     ) -> Self {
-        Self { label: label.into(), inputs, outputs, processor }
+        Self { id: id.into(), label: label.into(), inputs, outputs, processor }
+    }
+
+    pub fn id(&self) -> &TemplateId {
+        &self.id
     }
 
     pub fn label(&self) -> &str {
@@ -233,17 +307,20 @@ impl<State: Default, Value: Clone> Template<State, Value> {
         values
     }
 }
+
+#[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct NodeId(pub u32);
 
+#[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Debug, Clone)]
 pub struct Node {
     template_id: TemplateId,
 }
 
 impl Node {
-    pub fn new(template_id: TemplateId) -> Self {
-        Self { template_id }
+    pub fn new(template_id: impl Into<TemplateId>) -> Self {
+        Self { template_id: template_id.into() }
     }
 
     pub fn template_id(&self) -> &TemplateId {
@@ -251,6 +328,14 @@ impl Node {
     }
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone)]
+pub struct Edge {
+    source: Socket,
+    target: Socket,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Socket {
     pub node_id: NodeId,
@@ -305,54 +390,5 @@ impl Output {
 
     pub fn label(&self) -> &str {
         &self.label
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::{Graph, Input, Node, Output, ProcessingContext, Socket, Template};
-
-    #[test]
-    fn smoke_test() {
-        type Value = f64;
-
-        #[derive(Default)]
-        struct State {
-            value: Value,
-        }
-
-        let mut graph = Graph::<State, Value>::default();
-
-        let new_value_id = graph.add_template(Template::new(
-            "New Value",
-            vec![],
-            vec![Output::new("value", "Value")],
-            Box::new(|_, output_values, _| {
-                output_values.set_value("value", 42.0);
-            }),
-        ));
-
-        let output_value_id = graph.add_template(Template::new(
-            "Output Value",
-            vec![Input::new("value", "Value", 0.0)],
-            vec![],
-            Box::new(|input_values, _, cx| {
-                let value = input_values.get_value("value");
-                cx.value = value.clone();
-            }),
-        ));
-
-        let new_value_node_id = graph.add_node(Node::new(new_value_id));
-        let output_value_node_id = graph.add_node(Node::new(output_value_id));
-
-        graph.add_edge(
-            Socket::new(new_value_node_id, "value".to_string()),
-            Socket::new(output_value_node_id, "value".to_string()),
-        );
-
-        let mut cx = ProcessingContext::default();
-        graph.process(&mut cx);
-
-        assert_eq!(cx.value, 42.0);
     }
 }

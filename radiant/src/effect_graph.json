@@ -1,0 +1,22 @@
+{
+  "nodes": {
+    "0": {
+      "template_id": "new_number"
+    },
+    "1": {
+      "template_id": "output_number"
+    }
+  },
+  "edges": [
+    {
+      "source": {
+        "node_id": 0,
+        "id": "number"
+      },
+      "target": {
+        "node_id": 1,
+        "id": "number"
+      }
+    }
+  ]
+}
