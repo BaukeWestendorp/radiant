@@ -1,11 +1,10 @@
+use crate::{
+    effect_graph,
+    frame::{GraphEditor, MainFrame},
+};
 use frames::FrameContainer;
 use gpui::*;
 use ui::theme::ActiveTheme;
-
-use crate::{
-    effect_graph,
-    frame::{EffectGraphEditor, MainFrame},
-};
 
 pub struct RadiantApp {
     frame_container: Entity<FrameContainer<MainFrame>>,
@@ -19,7 +18,7 @@ impl RadiantApp {
 
                 let mut container = FrameContainer::new(size(20, 12), px(80.0));
                 container.add_frame(
-                    MainFrame::EffectGraphEditor(EffectGraphEditor::build(effect_graph, cx)),
+                    MainFrame::EffectGraphEditor(GraphEditor::build(effect_graph, cx)),
                     bounds(point(0, 0), size(19, 12)),
                     cx,
                 );

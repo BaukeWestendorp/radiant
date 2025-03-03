@@ -1,12 +1,13 @@
+use crate::effect_graph;
 use frames::{Frame, FrameWrapper};
 use gpui::*;
 
-mod effect_graph_editor;
+pub use graph_editor::*;
 
-pub use effect_graph_editor::*;
+mod graph_editor;
 
 pub enum MainFrame {
-    EffectGraphEditor(Entity<EffectGraphEditor>),
+    EffectGraphEditor(Entity<GraphEditor<effect_graph::GraphDef>>),
 }
 
 impl Frame for MainFrame {
