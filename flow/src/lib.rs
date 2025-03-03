@@ -21,6 +21,12 @@ pub struct Graph<State: Default, Value: ValueImpl> {
     edges: Vec<Edge>,
 }
 
+impl<State: Default + 'static, Value: ValueImpl + 'static> Default for Graph<State, Value> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<State: Default + 'static, Value: ValueImpl + 'static> Graph<State, Value> {
     pub fn new() -> Self {
         Self {
@@ -133,7 +139,7 @@ impl<State: Default + 'static, Value: ValueImpl + 'static> Graph<State, Value> {
 
     pub fn process(&self, pcx: &mut ProcessingContext<State, Value>) {
         for node_id in &self.leaf_nodes {
-            self.process_node(&node_id, pcx);
+            self.process_node(node_id, pcx);
         }
     }
 
@@ -147,7 +153,7 @@ impl<State: Default + 'static, Value: ValueImpl + 'static> Graph<State, Value> {
             // If the input is connected to an edge, get the value from the edge source.
             let value =
                 if let Some(source) = self.edge_source(&Socket::new(*node_id, input_id.clone())) {
-                    self.get_output_value(&source, pcx)
+                    self.get_output_value(source, pcx)
                 }
                 // Else if the input has a value, use it.
                 else if let Some(value) = node.input_values().get_value(&input_id) {

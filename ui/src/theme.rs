@@ -40,7 +40,7 @@ pub trait ActiveTheme {
     fn theme(&self) -> &Theme;
 }
 
-impl<'a, E> ActiveTheme for gpui::Context<'a, E> {
+impl<E> ActiveTheme for gpui::Context<'_, E> {
     fn theme(&self) -> &Theme {
         self.global()
     }
