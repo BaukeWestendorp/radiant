@@ -5,7 +5,7 @@ use gpui::*;
 use crate::effect_graph;
 
 pub struct EffectGraphEditor {
-    graph_editor_view: Entity<GraphEditorView<effect_graph::State, effect_graph::Value>>,
+    graph_editor_view: Entity<GraphEditorView<effect_graph::GraphDef>>,
 }
 
 impl EffectGraphEditor {

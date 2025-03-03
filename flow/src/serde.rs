@@ -1,21 +1,24 @@
 use std::collections::HashMap;
 
-use crate::{Edge, Graph, Node, NodeId, ValueImpl};
+use serde::{Deserialize, Deserializer};
 
-impl<'de, State: Default + 'static, Value: ValueImpl + serde::Deserialize<'de> + 'static>
-    serde::Deserialize<'de> for Graph<State, Value>
+use crate::{Edge, Graph, GraphDef, Node, NodeId};
+
+impl<'de, D: GraphDef + Deserialize<'de> + 'static> Deserialize<'de> for Graph<D>
+where
+    D::Value: Deserialize<'de> + 'static,
 {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<De>(deserializer: De) -> Result<Self, De::Error>
     where
-        D: serde::Deserializer<'de>,
+        De: Deserializer<'de>,
     {
         #[derive(serde::Deserialize)]
-        struct GraphIntermediate<Value: ValueImpl> {
-            nodes: HashMap<NodeId, Node<Value>>,
+        struct GraphIntermediate<D: GraphDef> {
+            nodes: HashMap<NodeId, Node<D>>,
             edges: Vec<Edge>,
         }
 
-        let intermediate = GraphIntermediate::<Value>::deserialize(deserializer)?;
+        let intermediate = GraphIntermediate::<D>::deserialize(deserializer)?;
 
         let mut graph = Self::new();
 

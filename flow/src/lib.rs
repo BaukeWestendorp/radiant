@@ -8,26 +8,27 @@ pub mod gpui;
 #[cfg(feature = "serde")]
 pub mod serde;
 
-pub trait ValueImpl: Clone {}
+pub trait GraphDef {
+    #[cfg(not(feature = "serde"))]
+    type Value: Clone;
+    #[cfg(feature = "serde")]
+    type Value: Clone + ::serde::Serialize + for<'a> ::serde::Deserialize<'a>;
 
-pub struct Graph<State: Default, Value: ValueImpl> {
-    templates: Vec<Template<State, Value>>,
+    type State: Default;
+}
+
+pub struct Graph<D: GraphDef> {
+    templates: Vec<Template<D>>,
     /// Leaf nodes are nodes that have no outgoing edges
     /// and should be the first nodes that are processed.
     leaf_nodes: Vec<NodeId>,
     node_id_counter: AtomicU32,
 
-    nodes: HashMap<NodeId, Node<Value>>,
+    nodes: HashMap<NodeId, Node<D>>,
     edges: Vec<Edge>,
 }
 
-impl<State: Default + 'static, Value: ValueImpl + 'static> Default for Graph<State, Value> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<State: Default + 'static, Value: ValueImpl + 'static> Graph<State, Value> {
+impl<D: GraphDef + 'static> Graph<D> {
     pub fn new() -> Self {
         Self {
             templates: Vec::new(),
@@ -39,32 +40,32 @@ impl<State: Default + 'static, Value: ValueImpl + 'static> Graph<State, Value> {
         }
     }
 
-    pub fn add_template(&mut self, template: Template<State, Value>) {
+    pub fn add_template(&mut self, template: Template<D>) {
         self.templates.push(template);
     }
 
-    pub fn template(&self, template_id: &TemplateId) -> &Template<State, Value> {
+    pub fn template(&self, template_id: &TemplateId) -> &Template<D> {
         self.templates
             .iter()
             .find(|template| template.id == *template_id)
             .expect("should always return a template for given template_id")
     }
 
-    pub fn templates(&self) -> impl Iterator<Item = &Template<State, Value>> {
+    pub fn templates(&self) -> impl Iterator<Item = &Template<D>> {
         self.templates.iter()
     }
 
-    pub fn node(&self, node_id: &NodeId) -> &Node<Value> {
+    pub fn node(&self, node_id: &NodeId) -> &Node<D> {
         self.nodes.get(node_id).expect("should always return a node for given node_id")
     }
 
-    pub fn nodes(&self) -> impl Iterator<Item = (&NodeId, &Node<Value>)> {
+    pub fn nodes(&self) -> impl Iterator<Item = (&NodeId, &Node<D>)> {
         self.nodes.iter()
     }
 
     pub fn add_node(
         &mut self,
-        node: Node<Value>,
+        node: Node<D>,
         #[cfg(feature = "gpui")] cx: &mut ::gpui::Context<Self>,
     ) -> NodeId {
         let node_id = NodeId(self.next_node_id());
@@ -76,7 +77,7 @@ impl<State: Default + 'static, Value: ValueImpl + 'static> Graph<State, Value> {
         node_id
     }
 
-    fn _add_node(&mut self, node_id: NodeId, node: Node<Value>) {
+    fn _add_node(&mut self, node_id: NodeId, node: Node<D>) {
         self.nodes.insert(node_id, node);
         self.leaf_nodes.push(node_id);
     }
@@ -137,13 +138,13 @@ impl<State: Default + 'static, Value: ValueImpl + 'static> Graph<State, Value> {
         cx.emit(gpui::GraphEvent::EdgeRemoved { source: source.clone() });
     }
 
-    pub fn process(&self, pcx: &mut ProcessingContext<State, Value>) {
+    pub fn process(&self, pcx: &mut ProcessingContext<D>) {
         for node_id in &self.leaf_nodes {
             self.process_node(node_id, pcx);
         }
     }
 
-    fn process_node(&self, node_id: &NodeId, pcx: &mut ProcessingContext<State, Value>) {
+    fn process_node(&self, node_id: &NodeId, pcx: &mut ProcessingContext<D>) {
         let node = self.node(node_id);
         let template = self.template(&node.template_id);
 
@@ -175,11 +176,7 @@ impl<State: Default + 'static, Value: ValueImpl + 'static> Graph<State, Value> {
         pcx.cache_output_values(*node_id, output_values);
     }
 
-    fn get_output_value(
-        &self,
-        output_socket: &Socket,
-        pcx: &mut ProcessingContext<State, Value>,
-    ) -> Value {
+    fn get_output_value(&self, output_socket: &Socket, pcx: &mut ProcessingContext<D>) -> D::Value {
         if let Some(value) = pcx.get_cached_output_value(output_socket) {
             return value.clone();
         }
@@ -195,41 +192,50 @@ impl<State: Default + 'static, Value: ValueImpl + 'static> Graph<State, Value> {
     }
 }
 
-type Processor<State, Value> =
-    dyn Fn(&SocketValues<Value>, &mut SocketValues<Value>, &mut ProcessingContext<State, Value>);
-
-#[derive(Debug, Default, PartialEq)]
-pub struct ProcessingContext<State: Default, Value> {
-    state: State,
-    output_value_cache: HashMap<Socket, Value>,
+impl<D: GraphDef + 'static> Default for Graph<D> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
-impl<State: Default, Value: ValueImpl> ProcessingContext<State, Value> {
-    pub fn state(&self) -> &State {
+type Processor<D> = dyn Fn(&SocketValues<D>, &mut SocketValues<D>, &mut ProcessingContext<D>);
+
+#[derive(Debug, PartialEq)]
+pub struct ProcessingContext<D: GraphDef> {
+    state: D::State,
+    output_value_cache: HashMap<Socket, D::Value>,
+}
+
+impl<D: GraphDef> ProcessingContext<D> {
+    pub fn new() -> Self {
+        Self { state: D::State::default(), output_value_cache: HashMap::new() }
+    }
+
+    pub fn state(&self) -> &D::State {
         &self.state
     }
 
-    fn cache_output_values(&mut self, node_id: NodeId, output_values: SocketValues<Value>) {
+    fn cache_output_values(&mut self, node_id: NodeId, output_values: SocketValues<D>) {
         for (output_id, value) in output_values.values() {
             let socket = Socket::new(node_id, output_id.clone());
             self.output_value_cache.insert(socket, value.clone());
         }
     }
 
-    fn get_cached_output_value(&self, output_socket: &Socket) -> Option<&Value> {
+    fn get_cached_output_value(&self, output_socket: &Socket) -> Option<&D::Value> {
         self.output_value_cache.get(output_socket)
     }
 }
 
-impl<State: Default, Value> std::ops::Deref for ProcessingContext<State, Value> {
-    type Target = State;
+impl<D: GraphDef> std::ops::Deref for ProcessingContext<D> {
+    type Target = D::State;
 
     fn deref(&self) -> &Self::Target {
         &self.state
     }
 }
 
-impl<State: Default, Value> std::ops::DerefMut for ProcessingContext<State, Value> {
+impl<D: GraphDef> std::ops::DerefMut for ProcessingContext<D> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.state
     }
@@ -237,22 +243,22 @@ impl<State: Default, Value> std::ops::DerefMut for ProcessingContext<State, Valu
 
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 #[derive(Clone, Default)]
-pub struct SocketValues<Value: ValueImpl>(HashMap<String, Value>);
+pub struct SocketValues<D: GraphDef>(HashMap<String, D::Value>);
 
-impl<Value: ValueImpl> SocketValues<Value> {
+impl<D: GraphDef> SocketValues<D> {
     pub fn new() -> Self {
         Self(HashMap::new())
     }
 
-    pub fn set_value(&mut self, id: impl Into<String>, value: Value) {
+    pub fn set_value(&mut self, id: impl Into<String>, value: D::Value) {
         self.0.insert(id.into(), value);
     }
 
-    pub fn get_value(&self, id: &str) -> Option<&Value> {
+    pub fn get_value(&self, id: &str) -> Option<&D::Value> {
         self.0.get(id)
     }
 
-    pub fn values(&self) -> impl Iterator<Item = (&String, &Value)> {
+    pub fn values(&self) -> impl Iterator<Item = (&String, &D::Value)> {
         self.0.iter()
     }
 }
@@ -273,24 +279,24 @@ impl From<&str> for TemplateId {
     }
 }
 
-pub struct Template<State: Default, Value: ValueImpl> {
+pub struct Template<D: GraphDef> {
     id: TemplateId,
 
     label: String,
 
-    inputs: Vec<Input<Value>>,
+    inputs: Vec<Input<D>>,
     outputs: Vec<Output>,
 
-    processor: Box<Processor<State, Value>>,
+    processor: Box<Processor<D>>,
 }
 
-impl<State: Default, Value: ValueImpl> Template<State, Value> {
+impl<D: GraphDef> Template<D> {
     pub fn new(
         id: impl Into<TemplateId>,
         label: impl Into<String>,
-        inputs: Vec<Input<Value>>,
+        inputs: Vec<Input<D>>,
         outputs: Vec<Output>,
-        processor: Box<Processor<State, Value>>,
+        processor: Box<Processor<D>>,
     ) -> Self {
         Self { id: id.into(), label: label.into(), inputs, outputs, processor }
     }
@@ -303,7 +309,7 @@ impl<State: Default, Value: ValueImpl> Template<State, Value> {
         &self.label
     }
 
-    pub fn inputs(&self) -> &[Input<Value>] {
+    pub fn inputs(&self) -> &[Input<D>] {
         &self.inputs
     }
 
@@ -311,7 +317,7 @@ impl<State: Default, Value: ValueImpl> Template<State, Value> {
         &self.outputs
     }
 
-    pub fn default_input_values(&self) -> SocketValues<Value> {
+    pub fn default_input_values(&self) -> SocketValues<D> {
         let mut values = SocketValues::new();
         for input in &self.inputs {
             values.set_value(input.id.clone(), input.default.clone());
@@ -326,13 +332,13 @@ pub struct NodeId(pub u32);
 
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 #[derive(Clone)]
-pub struct Node<Value: ValueImpl> {
+pub struct Node<D: GraphDef> {
     template_id: TemplateId,
     #[serde(default = "SocketValues::new")]
-    input_values: SocketValues<Value>,
+    input_values: SocketValues<D>,
 }
 
-impl<Value: ValueImpl> Node<Value> {
+impl<D: GraphDef> Node<D> {
     pub fn new(template_id: impl Into<TemplateId>) -> Self {
         Self { template_id: template_id.into(), input_values: SocketValues::new() }
     }
@@ -341,11 +347,11 @@ impl<Value: ValueImpl> Node<Value> {
         &self.template_id
     }
 
-    pub fn input_values(&self) -> &SocketValues<Value> {
+    pub fn input_values(&self) -> &SocketValues<D> {
         &self.input_values
     }
 
-    pub fn input_values_mut(&mut self) -> &mut SocketValues<Value> {
+    pub fn input_values_mut(&mut self) -> &mut SocketValues<D> {
         &mut self.input_values
     }
 }
@@ -371,14 +377,14 @@ impl Socket {
 }
 
 #[derive(Debug, Clone)]
-pub struct Input<Value: ValueImpl> {
+pub struct Input<D: GraphDef> {
     id: String,
     label: String,
-    default: Value,
+    default: D::Value,
 }
 
-impl<Value: ValueImpl> Input<Value> {
-    pub fn new(id: impl Into<String>, label: impl Into<String>, default: Value) -> Self {
+impl<D: GraphDef> Input<D> {
+    pub fn new(id: impl Into<String>, label: impl Into<String>, default: D::Value) -> Self {
         Self { id: id.into(), label: label.into(), default }
     }
 
@@ -390,7 +396,7 @@ impl<Value: ValueImpl> Input<Value> {
         &self.label
     }
 
-    pub fn default(&self) -> &Value {
+    pub fn default(&self) -> &D::Value {
         &self.default
     }
 }

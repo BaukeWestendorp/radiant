@@ -1,15 +1,15 @@
 use gpui::*;
 
-use crate::{Graph, ValueImpl};
+use crate::{Graph, GraphDef};
 
 use super::graph::{GraphEvent, GraphView};
 
-pub struct GraphEditorView<State: Default, Value: ValueImpl> {
-    pub graph_view: Entity<GraphView<State, Value>>,
+pub struct GraphEditorView<D: GraphDef> {
+    pub graph_view: Entity<GraphView<D>>,
 }
 
-impl<State: Default + 'static, Value: ValueImpl + 'static> GraphEditorView<State, Value> {
-    pub fn build(graph: Entity<Graph<State, Value>>, cx: &mut App) -> Entity<Self> {
+impl<D: GraphDef + 'static> GraphEditorView<D> {
+    pub fn build(graph: Entity<Graph<D>>, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {
             let graph_view = GraphView::build(graph, cx);
 
@@ -23,14 +23,12 @@ impl<State: Default + 'static, Value: ValueImpl + 'static> GraphEditorView<State
         })
     }
 
-    pub fn graph<'a>(&'a self, cx: &'a App) -> &'a Entity<Graph<State, Value>> {
+    pub fn graph<'a>(&'a self, cx: &'a App) -> &'a Entity<Graph<D>> {
         self.graph_view.read(cx).graph()
     }
 }
 
-impl<State: Default + 'static, Value: ValueImpl + 'static> Render
-    for GraphEditorView<State, Value>
-{
+impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<'_, Self>) -> impl IntoElement {
         div().child("Graph")
     }

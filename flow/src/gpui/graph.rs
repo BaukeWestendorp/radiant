@@ -1,22 +1,22 @@
 use gpui::*;
 
-use crate::{Edge, Graph, NodeId, Socket, ValueImpl};
+use crate::{Edge, Graph, GraphDef, NodeId, Socket};
 
-pub struct GraphView<State: Default, Value: ValueImpl> {
-    pub graph: Entity<Graph<State, Value>>,
+pub struct GraphView<D: GraphDef> {
+    pub graph: Entity<Graph<D>>,
 }
 
-impl<State: Default + 'static, Value: ValueImpl + 'static> GraphView<State, Value> {
-    pub fn build(graph: Entity<Graph<State, Value>>, cx: &mut App) -> Entity<Self> {
+impl<D: GraphDef + 'static> GraphView<D> {
+    pub fn build(graph: Entity<Graph<D>>, cx: &mut App) -> Entity<Self> {
         cx.new(|_cx| Self { graph })
     }
 
-    pub fn graph(&self) -> &Entity<Graph<State, Value>> {
+    pub fn graph(&self) -> &Entity<Graph<D>> {
         &self.graph
     }
 }
 
-impl<State: Default + 'static, Value: ValueImpl + 'static> Render for GraphView<State, Value> {
+impl<D: GraphDef + 'static> Render for GraphView<D> {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<'_, Self>) -> impl IntoElement {
         div().child("Graph")
     }
@@ -30,7 +30,4 @@ pub enum GraphEvent {
     EdgeRemoved { source: Socket },
 }
 
-impl<State: Default + 'static, Value: ValueImpl + 'static> EventEmitter<GraphEvent>
-    for Graph<State, Value>
-{
-}
+impl<D: GraphDef + 'static> EventEmitter<GraphEvent> for Graph<D> {}

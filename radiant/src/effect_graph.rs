@@ -7,8 +7,6 @@ pub enum Value {
     Number(f64),
 }
 
-impl flow::ValueImpl for Value {}
-
 impl Default for Value {
     fn default() -> Self {
         Value::Number(0.0)
@@ -20,7 +18,15 @@ pub struct State {
     pub value: Value,
 }
 
-pub type EffectGraph = Graph<State, Value>;
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct GraphDef;
+
+impl flow::GraphDef for GraphDef {
+    type State = State;
+    type Value = Value;
+}
+
+pub type EffectGraph = Graph<GraphDef>;
 
 pub fn get_graph() -> EffectGraph {
     let mut graph = load_graph();
@@ -46,7 +52,7 @@ pub fn get_graph() -> EffectGraph {
         }),
     ));
 
-    let mut pcx = ProcessingContext::default();
+    let mut pcx = ProcessingContext::new();
     graph.process(&mut pcx);
     dbg!(&pcx.value);
 
