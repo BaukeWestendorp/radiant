@@ -1,15 +1,19 @@
-use flow::graph::Graph;
+use flow::ProcessingContext;
+
 use gpui::*;
 
+use crate::effect_graph::{self, EffectGraph};
+
 pub struct EffectGraphEditor {
-    _graph: Graph,
+    _graph: EffectGraph,
 }
 
 impl EffectGraphEditor {
     pub fn new() -> Self {
-        let graph = crate::graph::get_graph();
+        let graph = effect_graph::get_graph();
         eprintln!("processing...");
-        let cx = graph.process();
+        let mut cx = ProcessingContext::default();
+        graph.process(&mut cx);
         dbg!(cx);
 
         Self { _graph: graph }

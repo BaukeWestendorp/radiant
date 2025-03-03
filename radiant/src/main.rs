@@ -2,8 +2,8 @@ use app::RadiantApp;
 use gpui::*;
 
 mod app;
+mod effect_graph;
 mod frame;
-mod graph;
 
 fn main() {
     Application::new().run(|cx: &mut App| {

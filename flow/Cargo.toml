@@ -3,12 +3,9 @@ name = "flow"
 version.workspace = true
 edition.workspace = true
 
-[dependencies]
-serde.workspace = true
-
-gpui.workspace = true
-ui.workspace = true
-flow_derive = { workspace = true, optional = true }
-
 [features]
-derive = ["dep:flow_derive"]
+default = []
+serde = ["dep:serde"]
+
+[dependencies]
+serde = { workspace = true, optional = true }
