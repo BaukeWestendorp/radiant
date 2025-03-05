@@ -16,7 +16,7 @@ impl<D: flow::GraphDef + 'static> GraphEditor<D> {
 }
 
 impl<D: flow::GraphDef + 'static> Render for GraphEditor<D> {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<'_, Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         div().child(self.graph_editor_view.clone())
     }
 }

@@ -4,10 +4,14 @@ use crate::{Edge, NodeId, Socket};
 pub mod gpui;
 
 pub trait Frontend {
+    type VisualState: Default;
+
     fn emit_event(&mut self, event: GraphEvent);
 }
 
 impl Frontend for () {
+    type VisualState = ();
+
     fn emit_event(&mut self, _event: GraphEvent) {}
 }
 

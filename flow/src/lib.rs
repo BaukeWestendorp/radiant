@@ -65,7 +65,11 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.nodes.iter()
     }
 
-    pub fn add_node<F: Frontend>(&mut self, node: Node<D>, frontend: &mut F) -> NodeId {
+    pub fn node_ids(&self) -> impl Iterator<Item = &NodeId> {
+        self.nodes.keys()
+    }
+
+    pub fn add_node(&mut self, node: Node<D>, frontend: &mut F) -> NodeId {
         let node_id = NodeId(self.next_node_id());
         self._add_node(node_id, node);
 
@@ -79,7 +83,7 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.leaf_nodes.push(node_id);
     }
 
-    pub fn remove_node<F: Frontend>(&mut self, node_id: NodeId, frontend: &mut F) {
+    pub fn remove_node(&mut self, node_id: NodeId, frontend: &mut F) {
         // Remove all edges that are connected to this node.
         self.edges.retain(|Edge { source, target }| {
             source.node_id != node_id && target.node_id != node_id
@@ -104,7 +108,7 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.edges.iter()
     }
 
-    pub fn add_edge<F: Frontend>(&mut self, edge: Edge, frontend: &mut F) {
+    pub fn add_edge(&mut self, edge: Edge, frontend: &mut F) {
         self._add_edge(edge.clone());
         frontend.emit_event(GraphEvent::EdgeAdded { edge });
     }
@@ -114,7 +118,7 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.edges.push(edge);
     }
 
-    pub fn remove_edge_from_source<F: Frontend>(&mut self, source: &Socket, frontend: &mut F) {
+    pub fn remove_edge_from_source(&mut self, source: &Socket, frontend: &mut F) {
         self.edges.retain(|edge| &edge.source != source);
 
         frontend.emit_event(GraphEvent::EdgeRemoved { source: source.clone() });
@@ -138,7 +142,7 @@ impl<D: GraphDef + 'static> Graph<D> {
                 if let Some(source) = self.edge_source(&Socket::new(*node_id, input_id.clone())) {
                     self.get_output_value(source, pcx)
                 }
-                // Else if the input has a value, use it.
+                // Else, if the input has a value, use it.
                 else if let Some(value) = node.input_values().get_value(&input_id) {
                     value.clone()
                 }
@@ -231,6 +235,7 @@ impl<D: GraphDef> SocketValues<D> {
     pub fn new() -> Self {
         Self(HashMap::new())
     }
+
     pub fn set_value(&mut self, id: impl Into<String>, value: D::Value) {
         self.0.insert(id.into(), value);
     }
