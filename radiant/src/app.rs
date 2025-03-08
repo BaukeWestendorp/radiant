@@ -2,7 +2,7 @@ use crate::{
     effect_graph,
     frame::{GraphEditor, MainFrame},
 };
-use flow_gpui::EventEmittingGraph;
+use flow_gpui::GpuiGraph;
 use frames::FrameContainer;
 use gpui::*;
 use ui::theme::ActiveTheme;
@@ -15,7 +15,7 @@ impl RadiantApp {
     pub fn new(cx: &mut App) -> Self {
         Self {
             frame_container: cx.new(|cx| {
-                let effect_graph = cx.new(|_cx| EventEmittingGraph::new(effect_graph::get_graph()));
+                let effect_graph = cx.new(|_cx| GpuiGraph::new(effect_graph::get_graph()));
 
                 let mut container = FrameContainer::new(size(20, 12), px(80.0));
                 container.add_frame(

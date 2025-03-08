@@ -1,6 +1,5 @@
-use crate::{EventEmittingGraph, GpuiGraphState};
-
 use super::graph::GraphView;
+use crate::{GpuiGraph, GpuiGraphState};
 use flow::{GraphDef, frontend::GraphEvent};
 use gpui::*;
 
@@ -15,7 +14,7 @@ impl<D> GraphEditorView<D>
 where
     D: GraphDef<State = GpuiGraphState> + 'static,
 {
-    pub fn build(graph: Entity<EventEmittingGraph<D>>, cx: &mut App) -> Entity<Self> {
+    pub fn build(graph: Entity<GpuiGraph<D>>, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {
             let graph_view = GraphView::build(graph, cx);
 
@@ -29,7 +28,7 @@ where
         })
     }
 
-    pub fn graph<'a>(&'a self, cx: &'a App) -> &'a Entity<EventEmittingGraph<D>> {
+    pub fn graph<'a>(&'a self, cx: &'a App) -> &'a Entity<GpuiGraph<D>> {
         self.graph_view.read(cx).graph()
     }
 }

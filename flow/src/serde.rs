@@ -1,12 +1,11 @@
+use crate::{Edge, Graph, GraphDef, Node, NodeId};
+use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 
-use serde::{Deserialize, Deserializer};
-
-use crate::{Edge, Graph, GraphDef, Node, NodeId};
-
-impl<'de, D: GraphDef + Deserialize<'de> + 'static> Deserialize<'de> for Graph<D>
+impl<'de, D> Deserialize<'de> for Graph<D>
 where
     D::Value: Deserialize<'de> + 'static,
+    D: GraphDef + Deserialize<'de> + 'static,
 {
     fn deserialize<De>(deserializer: De) -> Result<Self, De::Error>
     where

@@ -1,9 +1,8 @@
+use frontend::{Frontend, GraphEvent};
 use std::{
     collections::HashMap,
     sync::atomic::{AtomicU32, Ordering},
 };
-
-use frontend::{Frontend, GraphEvent};
 
 pub mod frontend;
 

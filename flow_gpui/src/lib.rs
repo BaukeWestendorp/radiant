@@ -13,7 +13,7 @@ pub use state::*;
 
 /// A wrapper around the GPUI `Context`.
 pub struct GpuiFrontend<'a, 'cx, D: GraphDef + 'static> {
-    cx: &'a mut gpui::Context<'cx, EventEmittingGraph<D>>,
+    cx: &'a mut gpui::Context<'cx, GpuiGraph<D>>,
 }
 
 impl<'cx, D: GraphDef + 'static> Frontend for GpuiFrontend<'_, 'cx, D> {
@@ -22,26 +22,26 @@ impl<'cx, D: GraphDef + 'static> Frontend for GpuiFrontend<'_, 'cx, D> {
     }
 }
 
-impl<'a, 'cx, D: GraphDef + 'static> From<&'a mut gpui::Context<'cx, EventEmittingGraph<D>>>
+impl<'a, 'cx, D: GraphDef + 'static> From<&'a mut gpui::Context<'cx, GpuiGraph<D>>>
     for GpuiFrontend<'a, 'cx, D>
 {
-    fn from(cx: &'a mut gpui::Context<'cx, EventEmittingGraph<D>>) -> Self {
+    fn from(cx: &'a mut gpui::Context<'cx, GpuiGraph<D>>) -> Self {
         Self { cx }
     }
 }
 
 /// A wrapper around a `Graph` that can emit GPUI events.
-pub struct EventEmittingGraph<D: GraphDef> {
+pub struct GpuiGraph<D: GraphDef> {
     graph: Graph<D>,
 }
 
-impl<D: GraphDef> EventEmittingGraph<D> {
+impl<D: GraphDef> GpuiGraph<D> {
     pub fn new(graph: Graph<D>) -> Self {
         Self { graph }
     }
 }
 
-impl<D: GraphDef> std::ops::Deref for EventEmittingGraph<D> {
+impl<D: GraphDef> std::ops::Deref for GpuiGraph<D> {
     type Target = Graph<D>;
 
     fn deref(&self) -> &Self::Target {
@@ -49,10 +49,10 @@ impl<D: GraphDef> std::ops::Deref for EventEmittingGraph<D> {
     }
 }
 
-impl<D: GraphDef> std::ops::DerefMut for EventEmittingGraph<D> {
+impl<D: GraphDef> std::ops::DerefMut for GpuiGraph<D> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.graph
     }
 }
 
-impl<D> gpui::EventEmitter<GraphEvent> for EventEmittingGraph<D> where D: GraphDef + 'static {}
+impl<D> gpui::EventEmitter<GraphEvent> for GpuiGraph<D> where D: GraphDef + 'static {}

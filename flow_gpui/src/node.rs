@@ -2,33 +2,20 @@ use flow::{GraphDef, NodeId};
 use gpui::*;
 use ui::theme::ActiveTheme;
 
-use crate::{EventEmittingGraph, GpuiGraphState};
+use crate::{GpuiGraph, GpuiGraphState};
 
-pub struct NodeView<D>
-where
-    D: GraphDef<State = GpuiGraphState>,
-{
+pub struct NodeView<D: GraphDef<State = GpuiGraphState>> {
     node_id: NodeId,
-    graph: Entity<EventEmittingGraph<D>>,
+    graph: Entity<GpuiGraph<D>>,
 }
 
-impl<D> NodeView<D>
-where
-    D: GraphDef<State = GpuiGraphState> + 'static,
-{
-    pub fn build(
-        node_id: NodeId,
-        graph: Entity<EventEmittingGraph<D>>,
-        cx: &mut App,
-    ) -> Entity<Self> {
+impl<D: GraphDef<State = GpuiGraphState> + 'static> NodeView<D> {
+    pub fn build(node_id: NodeId, graph: Entity<GpuiGraph<D>>, cx: &mut App) -> Entity<Self> {
         cx.new(|_cx| Self { node_id, graph })
     }
 }
 
-impl<D> Render for NodeView<D>
-where
-    D: GraphDef<State = GpuiGraphState> + 'static,
-{
+impl<D: GraphDef<State = GpuiGraphState> + 'static> Render for NodeView<D> {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let node_position = self.graph.read(cx).state().node_position(&self.node_id);
         dbg!(node_position);
