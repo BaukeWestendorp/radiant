@@ -19,8 +19,13 @@ where
             let graph_view = GraphView::build(graph, cx);
 
             let graph = graph_view.read(cx).graph().clone();
-            cx.subscribe(&graph, |_editor, _graph, event: &GraphEvent, _cx| {
-                dbg!(&event);
+            cx.subscribe(&graph, |editor: &mut Self, _graph, event: &GraphEvent, cx| {
+                editor.graph_view.update(cx, |graph, cx| match event {
+                    GraphEvent::NodeAdded(node_id) => graph.add_node(*node_id, cx),
+                    GraphEvent::NodeRemoved(node_id) => graph.remove_node(*node_id, cx),
+                    GraphEvent::EdgeAdded { edge } => graph.add_edge(edge.clone(), cx),
+                    GraphEvent::EdgeRemoved { source } => graph.remove_edge(source, cx),
+                });
             })
             .detach();
 

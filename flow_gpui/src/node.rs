@@ -17,10 +17,13 @@ impl<D: GraphDef<State = GpuiGraphState> + 'static> NodeView<D> {
 
 impl<D: GraphDef<State = GpuiGraphState> + 'static> Render for NodeView<D> {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let node_position = self.graph.read(cx).state().node_position(&self.node_id);
-        dbg!(node_position);
+        let state = self.graph.read(cx).state();
+        let node_position = state.node_position(&self.node_id).copied().unwrap_or_default();
 
         div()
+            .absolute()
+            .left(px(node_position.x))
+            .top(px(node_position.y))
             .w(px(200.0))
             .h(px(100.0))
             .border_1()
