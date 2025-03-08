@@ -1,4 +1,5 @@
 use flow::{Graph, Input, Output, ProcessingContext, Template};
+use flow_gpui::GpuiGraphState;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -22,8 +23,9 @@ pub struct State {
 pub struct GraphDef;
 
 impl flow::GraphDef for GraphDef {
-    type State = State;
+    type ProcessingState = State;
     type Value = Value;
+    type State = GpuiGraphState;
 }
 
 pub type EffectGraph = Graph<GraphDef>;

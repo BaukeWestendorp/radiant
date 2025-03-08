@@ -1,0 +1,9 @@
+[package]
+name = "flow_gpui"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+flow.workspace = true
+gpui.workspace = true
+ui = { workspace = true }

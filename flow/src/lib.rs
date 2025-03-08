@@ -16,6 +16,7 @@ pub trait GraphDef {
     #[cfg(feature = "serde")]
     type Value: Clone + ::serde::Serialize + for<'a> ::serde::Deserialize<'a>;
 
+    type ProcessingState: Default;
     type State: Default;
 }
 
@@ -28,6 +29,8 @@ pub struct Graph<D: GraphDef> {
 
     nodes: HashMap<NodeId, Node<D>>,
     edges: Vec<Edge>,
+
+    state: D::State,
 }
 
 impl<D: GraphDef + 'static> Graph<D> {
@@ -39,6 +42,8 @@ impl<D: GraphDef + 'static> Graph<D> {
 
             nodes: HashMap::new(),
             edges: Vec::new(),
+
+            state: Default::default(),
         }
     }
 
@@ -69,7 +74,7 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.nodes.keys()
     }
 
-    pub fn add_node(&mut self, node: Node<D>, frontend: &mut F) -> NodeId {
+    pub fn add_node<F: Frontend>(&mut self, node: Node<D>, frontend: &mut F) -> NodeId {
         let node_id = NodeId(self.next_node_id());
         self._add_node(node_id, node);
 
@@ -83,7 +88,7 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.leaf_nodes.push(node_id);
     }
 
-    pub fn remove_node(&mut self, node_id: NodeId, frontend: &mut F) {
+    pub fn remove_node<F: Frontend>(&mut self, node_id: NodeId, frontend: &mut F) {
         // Remove all edges that are connected to this node.
         self.edges.retain(|Edge { source, target }| {
             source.node_id != node_id && target.node_id != node_id
@@ -108,7 +113,7 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.edges.iter()
     }
 
-    pub fn add_edge(&mut self, edge: Edge, frontend: &mut F) {
+    pub fn add_edge<F: Frontend>(&mut self, edge: Edge, frontend: &mut F) {
         self._add_edge(edge.clone());
         frontend.emit_event(GraphEvent::EdgeAdded { edge });
     }
@@ -118,10 +123,18 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.edges.push(edge);
     }
 
-    pub fn remove_edge_from_source(&mut self, source: &Socket, frontend: &mut F) {
+    pub fn remove_edge_from_source<F: Frontend>(&mut self, source: &Socket, frontend: &mut F) {
         self.edges.retain(|edge| &edge.source != source);
 
         frontend.emit_event(GraphEvent::EdgeRemoved { source: source.clone() });
+    }
+
+    pub fn state(&self) -> &D::State {
+        &self.state
+    }
+
+    pub fn state_mut(&mut self) -> &mut D::State {
+        &mut self.state
     }
 
     pub fn process(&self, pcx: &mut ProcessingContext<D>) {
@@ -188,16 +201,16 @@ type Processor<D> = dyn Fn(&SocketValues<D>, &mut SocketValues<D>, &mut Processi
 
 #[derive(Debug, PartialEq)]
 pub struct ProcessingContext<D: GraphDef> {
-    state: D::State,
+    state: D::ProcessingState,
     output_value_cache: HashMap<Socket, D::Value>,
 }
 
 impl<D: GraphDef> ProcessingContext<D> {
     pub fn new() -> Self {
-        Self { state: D::State::default(), output_value_cache: HashMap::new() }
+        Self { state: D::ProcessingState::default(), output_value_cache: HashMap::new() }
     }
 
-    pub fn state(&self) -> &D::State {
+    pub fn state(&self) -> &D::ProcessingState {
         &self.state
     }
 
@@ -214,7 +227,7 @@ impl<D: GraphDef> ProcessingContext<D> {
 }
 
 impl<D: GraphDef> std::ops::Deref for ProcessingContext<D> {
-    type Target = D::State;
+    type Target = D::ProcessingState;
 
     fn deref(&self) -> &Self::Target {
         &self.state
