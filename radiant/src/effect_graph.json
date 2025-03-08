@@ -1,33 +1,47 @@
 {
-  "nodes": {
-    "0": {
-      "template_id": "new_number"
+  "graph": {
+    "nodes": {
+      "0": {
+        "template_id": "number_new"
+      },
+      "1": {
+        "template_id": "number_add",
+        "input_values": {
+          "b": {
+            "number": 27
+          }
+        }
+      },
+      "2": {
+        "template_id": "output"
+      }
     },
-    "1": {
-      "template_id": "output_number",
-      "input_values": {
-        "number": {
-          "number": 69
+    "edges": [
+      {
+        "source": {
+          "node_id": 0,
+          "id": "value"
+        },
+        "target": {
+          "node_id": 1,
+          "id": "a"
+        }
+      },
+      {
+        "source": {
+          "node_id": 1,
+          "id": "sum"
+        },
+        "target": {
+          "node_id": 2,
+          "id": "value"
         }
       }
-    }
+    ]
   },
-  "edges": [
-    {
-      "source": {
-        "node_id": 0,
-        "id": "number"
-      },
-      "target": {
-        "node_id": 1,
-        "id": "number"
-      }
-    }
-  ],
-  "state": {
-    "node_positions": {
-      "0": [100, 100],
-      "1": [300, 100]
-    }
+  "node_positions": {
+    "0": [100, 100],
+    "1": [100, 400],
+    "2": [600, 250]
   }
 }

@@ -1,5 +1,7 @@
-use flow::{Graph, Input, Output, ProcessingContext, Template};
-use flow_gpui::GpuiGraphState;
+use flow_gpui::{
+    Graph,
+    flow::{self, Input, Output, ProcessingContext, Template},
+};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -25,7 +27,6 @@ pub struct GraphDef;
 impl flow::GraphDef for GraphDef {
     type ProcessingState = State;
     type Value = Value;
-    type State = GpuiGraphState;
 }
 
 pub type EffectGraph = Graph<GraphDef>;
@@ -33,30 +34,49 @@ pub type EffectGraph = Graph<GraphDef>;
 pub fn get_graph() -> EffectGraph {
     let mut graph = load_graph();
 
-    graph.add_template(Template::new(
-        "new_number",
-        "New Number",
-        vec![],
-        vec![Output::new("number", "Number")],
-        Box::new(|_, output_values, _| {
-            output_values.set_value("number", Value::Number(42.0));
-        }),
-    ));
+    graph.add_templates([
+        Template::new(
+            "number_new",
+            "New Number",
+            vec![],
+            vec![Output::new("value", "Value")],
+            Box::new(|_, output_values, _| {
+                output_values.set_value("value", Value::Number(42.0));
+            }),
+        ),
+        Template::new(
+            "number_add",
+            "Add Number",
+            vec![
+                Input::new("a", "A", Value::Number(0.0)),
+                Input::new("b", "B", Value::Number(0.0)),
+            ],
+            vec![Output::new("sum", "Sum")],
+            Box::new(|input_values, output_values, _| {
+                let Some(Value::Number(a)) = input_values.get_value("a") else {
+                    panic!("Invalid type for 'a'")
+                };
+                let Some(Value::Number(b)) = input_values.get_value("b") else {
+                    panic!("Invalid type for 'b'")
+                };
+                output_values.set_value("sum", Value::Number(a + b));
+            }),
+        ),
+        Template::new(
+            "output",
+            "Output",
+            vec![Input::new("value", "Value", Value::Number(0.0))],
+            vec![],
+            Box::new(|input_values, _, cx: &mut ProcessingContext<GraphDef>| {
+                let value = input_values.get_value("value").unwrap();
+                cx.value = value.clone();
+            }),
+        ),
+    ]);
 
-    graph.add_template(Template::new(
-        "output_number",
-        "Output Number",
-        vec![Input::new("number", "Number", Value::Number(0.0))],
-        vec![],
-        Box::new(|input_values, _, cx| {
-            let value = input_values.get_value("number").unwrap();
-            cx.value = value.clone();
-        }),
-    ));
-
-    let mut pcx = ProcessingContext::new();
-    graph.process(&mut pcx);
-    dbg!(&pcx.value);
+    let mut state = ProcessingContext::new();
+    graph.process(&mut state);
+    dbg!(&state.value);
 
     graph
 }

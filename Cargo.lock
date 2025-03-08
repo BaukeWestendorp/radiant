@@ -3385,7 +3385,6 @@ dependencies = [
 name = "radiant"
 version = "0.1.0"
 dependencies = [
- "flow",
  "flow_gpui",
  "frames",
  "gpui",
