@@ -7,10 +7,6 @@ pub mod ui;
 #[cfg(feature = "serde")]
 pub mod serde;
 
-/// Re-export the flow module.
 pub mod flow {
-    pub use flow::{
-        Edge, GraphDef, Input, Node, NodeId, Output, ProcessingContext, Socket, SocketValues,
-        Template,
-    };
+    pub use flow::export_prelude::*;
 }
