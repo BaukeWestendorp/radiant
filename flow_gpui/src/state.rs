@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use flow::NodeId;
 
 #[derive(Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct GpuiGraphState {
     pub node_positions: HashMap<NodeId, (f32, f32)>,
 }

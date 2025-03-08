@@ -5,6 +5,7 @@ use std::collections::HashMap;
 impl<'de, D> Deserialize<'de> for Graph<D>
 where
     D::Value: Deserialize<'de> + 'static,
+    D::State: Deserialize<'de> + 'static,
     D: GraphDef + Deserialize<'de> + 'static,
 {
     fn deserialize<De>(deserializer: De) -> Result<Self, De::Error>
@@ -15,6 +16,7 @@ where
         struct GraphIntermediate<D: GraphDef> {
             nodes: HashMap<NodeId, Node<D>>,
             edges: Vec<Edge>,
+            state: D::State,
         }
 
         let intermediate = GraphIntermediate::<D>::deserialize(deserializer)?;
@@ -28,6 +30,8 @@ where
         for edge in intermediate.edges {
             graph._add_edge(edge);
         }
+
+        graph.state = intermediate.state;
 
         Ok(graph)
     }

@@ -3,7 +3,13 @@ name = "flow_gpui"
 version.workspace = true
 edition.workspace = true
 
+[features]
+serde = ["dep:serde", "flow/serde"]
+
 [dependencies]
 flow.workspace = true
 gpui.workspace = true
 ui = { workspace = true }
+
+# feature = "serde"
+serde = { workspace = true, optional = true }

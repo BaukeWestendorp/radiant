@@ -5,7 +5,7 @@ edition = "2024"
 
 [dependencies]
 flow = { workspace = true, features = ["serde"] }
-flow_gpui.workspace = true
+flow_gpui = { workspace = true, features = ["serde"] }
 frames.workspace = true
 ui.workspace = true
 serde.workspace = true
