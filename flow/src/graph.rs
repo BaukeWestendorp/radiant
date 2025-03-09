@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use crate::{Edge, Node, NodeId, Socket, Template, TemplateId};
+use crate::{Edge, Input, Node, NodeId, Output, Socket, Template, TemplateId};
 
-pub trait GraphDef {
+pub trait GraphDef: Clone {
     #[cfg(feature = "serde")]
     type Value: Clone + ::serde::Serialize + for<'de> ::serde::Deserialize<'de>;
     #[cfg(not(feature = "serde"))]
@@ -44,10 +44,9 @@ impl<D: GraphDef> Graph<D> {
     }
 
     pub fn template(&self, template_id: &TemplateId) -> &Template<D> {
-        self.templates
-            .iter()
-            .find(|template| template.id() == template_id)
-            .expect("should always return a template for given template_id")
+        self.templates.iter().find(|template| template.id() == template_id).expect(&format!(
+            "should always return a template for given template_id: found '{template_id:?}'"
+        ))
     }
 
     pub fn templates(&self) -> impl Iterator<Item = &Template<D>> {
@@ -61,7 +60,9 @@ impl<D: GraphDef> Graph<D> {
     }
 
     pub fn node(&self, node_id: &NodeId) -> &Node<D> {
-        self.nodes.get(node_id).expect("should always return a node for given node_id")
+        self.nodes
+            .get(node_id)
+            .expect(&format!("should always return a node for given node_id: found '{node_id:?}'"))
     }
 
     pub fn nodes(&self) -> impl Iterator<Item = (&NodeId, &Node<D>)> {
@@ -111,6 +112,24 @@ impl<D: GraphDef> Graph<D> {
 
     pub fn remove_edge(&mut self, source: &Socket) {
         self.edges.retain(|edge| &edge.source != source);
+    }
+
+    pub fn input(&self, socket: &Socket) -> &Input<D> {
+        let template_id = self.node(&socket.node_id).template_id();
+        self.template(template_id)
+            .inputs()
+            .iter()
+            .find(|i| i.id() == socket.id)
+            .expect("should have found input")
+    }
+
+    pub fn output(&self, socket: &Socket) -> &Output {
+        let template_id = self.node(&socket.node_id).template_id();
+        self.template(template_id)
+            .outputs()
+            .iter()
+            .find(|o| o.id() == socket.id)
+            .expect("should have found output")
     }
 
     pub fn process(&self, pcx: &mut ProcessingContext<D>) {

@@ -51,6 +51,6 @@ impl<D: GraphDef + 'static> Render for GraphView<D> {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         let nodes = div().children(self.node_views.clone()).relative().size_full();
 
-        z_stack([nodes]).size_full()
+        z_stack([nodes]).size_full().text_sm()
     }
 }

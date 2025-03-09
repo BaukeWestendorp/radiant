@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use flow::{Edge, GraphDef, Node, NodeId, ProcessingContext, Socket, Template};
+use flow::{Edge, GraphDef, Node, NodeId, ProcessingContext, Socket, Template, TemplateId};
 
 use crate::GraphEvent;
 
@@ -23,6 +23,10 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.graph.add_templates(templates);
     }
 
+    pub fn template(&self, template_id: &TemplateId) -> &Template<D> {
+        self.graph.template(template_id)
+    }
+
     pub fn templates(&self) -> impl Iterator<Item = &Template<D>> {
         self.graph.templates()
     }
@@ -43,6 +47,10 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.graph.remove_node(node_id);
         self.node_positions.remove(node_id);
         cx.emit(GraphEvent::NodeRemoved(*node_id));
+    }
+
+    pub fn node(&self, node_id: &NodeId) -> &Node<D> {
+        self.graph.node(node_id)
     }
 
     pub fn nodes(&self) -> impl Iterator<Item = (&NodeId, &Node<D>)> {

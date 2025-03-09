@@ -22,6 +22,7 @@ pub struct State {
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone)]
 pub struct GraphDef;
 
 impl flow::GraphDef for GraphDef {
