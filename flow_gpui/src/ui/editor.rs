@@ -26,8 +26,8 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
             })
             .detach();
 
-            let pannable =
-                cx.new(|_cx| Pannable::new("graph", Point::default(), graph_view.clone()));
+            let graph_offset = graph.read(cx).offset().clone();
+            let pannable = cx.new(|_cx| Pannable::new("graph", graph_offset, graph_view.clone()));
 
             cx.subscribe(&pannable, |editor: &mut Self, _pannable, event: &PannableEvent, cx| {
                 editor.graph().update(cx, |graph, cx| {
