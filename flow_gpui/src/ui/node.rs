@@ -17,6 +17,8 @@ pub struct NodeView<D: GraphDef> {
 
     inputs: Vec<Entity<InputView<D>>>,
     outputs: Vec<Entity<OutputView<D>>>,
+
+    focus_handle: FocusHandle,
 }
 
 impl<D: GraphDef + 'static> NodeView<D> {
@@ -39,15 +41,17 @@ impl<D: GraphDef + 'static> NodeView<D> {
                 .map(|output| OutputView::build(output, node_id, graph.clone(), cx))
                 .collect();
 
-            Self { node_id, graph, inputs, outputs }
+            Self { node_id, graph, inputs, outputs, focus_handle: cx.focus_handle() }
         })
     }
 }
 
 impl<D: GraphDef + 'static> Render for NodeView<D> {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let graph = self.graph.read(cx);
         let template_id = graph.node(&self.node_id).template_id().clone();
+
+        let focused = self.focus_handle.is_focused(window);
 
         let header = {
             let label = graph.template(&template_id).label().to_string();
@@ -60,6 +64,7 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
                 .py_px()
                 .border_b_1()
                 .border_color(cx.theme().border_color)
+                .when(focused, |e| e.border_color(cx.theme().border_color_focused))
                 .child(label)
         };
 
@@ -71,13 +76,21 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
             .children(self.outputs.clone());
 
         div()
+            .track_focus(&self.focus_handle)
             .w(NODE_WIDTH)
             .min_h(SNAP_GRID_SIZE * 8)
             .bg(cx.theme().background)
             .border_1()
             .border_color(cx.theme().border_color)
+            .when(focused, |e| e.border_color(cx.theme().border_color_focused))
             .rounded(cx.theme().radius)
             .children([header, content])
+    }
+}
+
+impl<D: GraphDef + 'static> Focusable for NodeView<D> {
+    fn focus_handle(&self, _cx: &App) -> FocusHandle {
+        self.focus_handle.clone()
     }
 }
 

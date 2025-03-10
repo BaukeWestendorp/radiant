@@ -7,6 +7,7 @@ pub struct Theme {
     pub radius: Pixels,
     pub border_color: Hsla,
     pub border_color_muted: Hsla,
+    pub border_color_focused: Hsla,
 
     pub accent: Hsla,
 
@@ -28,6 +29,7 @@ impl Default for Theme {
             radius: gpui::px(4.0),
             border_color: gpui::hsla(0.0, 0.0, 0.5, 1.0),
             border_color_muted: gpui::hsla(0.0, 0.0, 0.15, 1.0),
+            border_color_focused: gpui::rgb(0xffc416).into(),
 
             accent: gpui::rgb(0xffc416).into(),
 
