@@ -4,6 +4,7 @@ pub struct Draggable {
     id: ElementId,
 
     position: Point<Pixels>,
+    snap_threshold: Option<Pixels>,
 
     prev_mouse_pos: Option<Point<Pixels>>,
 
@@ -14,13 +15,28 @@ impl Draggable {
     pub fn new(
         id: impl Into<ElementId>,
         position: Point<Pixels>,
+        snap_threshold: Option<Pixels>,
         child: impl Into<AnyView>,
     ) -> Self {
-        Self { id: id.into(), position, prev_mouse_pos: None, child: child.into() }
+        Self { id: id.into(), position, prev_mouse_pos: None, snap_threshold, child: child.into() }
     }
 
     pub fn position(&self) -> &Point<Pixels> {
         &self.position
+    }
+
+    pub fn snap_threshold(&self) -> Option<Pixels> {
+        self.snap_threshold
+    }
+
+    pub fn snapped_position(&self) -> Point<Pixels> {
+        match self.snap_threshold {
+            Some(threshold) => Point::new(
+                (self.position().x / threshold).floor() * threshold,
+                (self.position().y / threshold).floor() * threshold,
+            ),
+            None => self.position,
+        }
     }
 
     pub fn set_position(&mut self, position: Point<Pixels>, cx: &mut Context<Self>) {
@@ -54,12 +70,14 @@ impl Draggable {
 
 impl Render for Draggable {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let position = self.snapped_position();
+
         div()
             .flex()
             .flex_shrink()
             .absolute()
-            .left(self.position.x)
-            .top(self.position.y)
+            .left(position.x)
+            .top(position.y)
             .id(self.id.clone())
             .child(self.child.clone())
             .on_drag(self.id.clone(), |_, _, _, cx| cx.new(|_cx| EmptyView))

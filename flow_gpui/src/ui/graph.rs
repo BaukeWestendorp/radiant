@@ -7,7 +7,7 @@ use ui::{
     utils::z_stack,
 };
 
-use super::node::NodeView;
+use super::node::{NodeView, SNAP_GRID_SIZE};
 
 pub struct GraphView<D: GraphDef> {
     graph: Entity<crate::Graph<D>>,
@@ -33,6 +33,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
             Draggable::new(
                 ElementId::NamedInteger("node".into(), node_id.0 as usize),
                 self.graph.read(cx).node_position(&node_id).clone(),
+                Some(px(SNAP_GRID_SIZE)),
                 NodeView::build(node_id, self.graph.clone(), cx),
             )
         });
