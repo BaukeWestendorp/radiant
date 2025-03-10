@@ -73,12 +73,12 @@ impl Render for Draggable {
         let position = self.snapped_position();
 
         div()
+            .id(self.id.clone())
             .flex()
             .flex_shrink()
             .absolute()
             .left(position.x)
             .top(position.y)
-            .id(self.id.clone())
             .child(self.child.clone())
             .on_drag(self.id.clone(), |_, _, _, cx| cx.new(|_cx| EmptyView))
             .on_drag_move(cx.listener(Self::handle_drag_move))

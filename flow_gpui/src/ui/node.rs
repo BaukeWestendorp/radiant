@@ -64,7 +64,6 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
         };
 
         let content = div()
-            .min_h_10()
             .v_flex()
             .gap(SOCKET_GAP)
             .py(NODE_CONTENT_Y_PADDING)
@@ -86,6 +85,8 @@ struct InputView<D: GraphDef> {
     input: Input<D>,
     node_id: NodeId,
 
+    hovering: bool,
+
     graph: Entity<crate::Graph<D>>,
 }
 
@@ -96,7 +97,7 @@ impl<D: GraphDef + 'static> InputView<D> {
         graph: Entity<crate::Graph<D>>,
         cx: &mut App,
     ) -> Entity<Self> {
-        cx.new(|_cx| Self { input, node_id, graph })
+        cx.new(|_cx| Self { input, node_id, hovering: false, graph })
     }
 }
 
@@ -104,16 +105,32 @@ impl<D: GraphDef + 'static> Render for InputView<D> {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let socket = Socket::new(self.node_id, self.input.id().to_string());
         let socket_kind = SocketKind::Input(socket);
-        let connector = render_connector(&socket_kind, &self.graph, cx);
+        let connector = render_connector(&socket_kind, self.hovering, &self.graph, cx);
         let label = self.input.label().to_string();
 
-        div().h_flex().pr_1().h(SOCKET_HEIGHT).gap_2().child(connector).child(label)
+        let id = ElementId::Name(format!("input-{}-{}", self.node_id.0, self.input.id()).into());
+
+        div()
+            .id(id)
+            .on_drag_move::<()>(|_, _, _| {}) // FIXME: For some reason this on_drag_move is required to make on_hover work...
+            .on_hover(cx.listener(|this, hovering, _, cx| {
+                this.hovering = *hovering;
+                cx.notify();
+            }))
+            .h_flex()
+            .pr_1()
+            .h(SOCKET_HEIGHT)
+            .gap_2()
+            .child(connector)
+            .child(label)
     }
 }
 
 struct OutputView<D: GraphDef> {
     output: Output,
     node_id: NodeId,
+
+    hovering: bool,
 
     graph: Entity<crate::Graph<D>>,
 }
@@ -125,7 +142,7 @@ impl<D: GraphDef + 'static> OutputView<D> {
         graph: Entity<crate::Graph<D>>,
         cx: &mut App,
     ) -> Entity<Self> {
-        cx.new(|_cx| Self { output, node_id, graph })
+        cx.new(|_cx| Self { output, node_id, hovering: false, graph })
     }
 }
 
@@ -133,10 +150,18 @@ impl<D: GraphDef + 'static> Render for OutputView<D> {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let socket = Socket::new(self.node_id, self.output.id().to_string());
         let socket_kind = SocketKind::Output(socket);
-        let connector = render_connector(&socket_kind, &self.graph, cx);
+        let connector = render_connector(&socket_kind, self.hovering, &self.graph, cx);
         let label = self.output.label().to_string();
 
+        let id = ElementId::Name(format!("output-{}-{}", self.node_id.0, self.output.id()).into());
+
         div()
+            .id(id)
+            .on_drag_move::<()>(|_, _, _| {}) // FIXME: For some reason this on_drag_move is required to make on_hover work...
+            .on_hover(cx.listener(|this, hovering, _, cx| {
+                this.hovering = *hovering;
+                cx.notify();
+            }))
             .pl_1()
             .h_flex()
             .h(SOCKET_HEIGHT)
@@ -150,26 +175,30 @@ impl<D: GraphDef + 'static> Render for OutputView<D> {
 
 fn render_connector<D: GraphDef>(
     socket: &SocketKind,
+    hovering: bool,
     graph: &Entity<crate::Graph<D>>,
     cx: &App,
 ) -> impl IntoElement {
-    let width = px(3.0);
+    let width = px(5.0);
     let height = px(13.0);
-    let hover_box_size = px(35.0);
+    let hover_box_size = px(22.0);
 
     let left = match socket {
         SocketKind::Input(_) => false,
         SocketKind::Output(_) => true,
     };
 
-    let color = red();
+    let color = rgb(0xFF8B18);
 
     div()
         .w(width)
         .h(height)
         .bg(color)
         .rounded_r(cx.theme().radius)
+        .border_1()
+        .border_color(black().opacity(0.3))
         .when(left, |e| e.rounded_r_none().rounded_l(cx.theme().radius))
+        .when(hovering, |e| e.bg(white()))
         .child(
             div()
                 .size(hover_box_size)
