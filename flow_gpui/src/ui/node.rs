@@ -27,14 +27,14 @@ impl<D: GraphDef + 'static> NodeView<D> {
 
             let inputs = template
                 .inputs()
-                .into_iter()
+                .iter()
                 .cloned()
                 .map(|input| InputView::build(input, node_id, graph.clone(), cx))
                 .collect();
 
             let outputs = template
                 .outputs()
-                .into_iter()
+                .iter()
                 .cloned()
                 .map(|output| OutputView::build(output, node_id, graph.clone(), cx))
                 .collect();

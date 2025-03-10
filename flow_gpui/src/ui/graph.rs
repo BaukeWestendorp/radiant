@@ -32,7 +32,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
         let draggable = cx.new(|cx| {
             Draggable::new(
                 ElementId::NamedInteger("node".into(), node_id.0 as usize),
-                self.graph.read(cx).node_position(&node_id).clone(),
+                *self.graph.read(cx).node_position(&node_id),
                 Some(SNAP_GRID_SIZE),
                 NodeView::build(node_id, self.graph.clone(), cx),
             )

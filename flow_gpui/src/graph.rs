@@ -12,6 +12,12 @@ pub struct Graph<D: GraphDef> {
     pub(crate) offset: Point<Pixels>,
 }
 
+impl<D: GraphDef + 'static> Default for Graph<D> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<D: GraphDef + 'static> Graph<D> {
     pub fn new() -> Self {
         Self { graph: flow::Graph::new(), node_positions: HashMap::new(), offset: Point::default() }

@@ -23,6 +23,12 @@ pub struct Graph<D: GraphDef> {
     pub(crate) node_id_counter: u32,
 }
 
+impl<D: GraphDef> Default for Graph<D> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<D: GraphDef> Graph<D> {
     pub fn new() -> Self {
         Self {
@@ -44,9 +50,7 @@ impl<D: GraphDef> Graph<D> {
     }
 
     pub fn template(&self, template_id: &TemplateId) -> &Template<D> {
-        self.templates.iter().find(|template| template.id() == template_id).expect(&format!(
-            "should always return a template for given template_id: found '{template_id:?}'"
-        ))
+        self.templates.iter().find(|template| template.id() == template_id).unwrap_or_else(|| panic!("should always return a template for given template_id: found '{template_id:?}'"))
     }
 
     pub fn templates(&self) -> impl Iterator<Item = &Template<D>> {
@@ -62,7 +66,7 @@ impl<D: GraphDef> Graph<D> {
     pub fn node(&self, node_id: &NodeId) -> &Node<D> {
         self.nodes
             .get(node_id)
-            .expect(&format!("should always return a node for given node_id: found '{node_id:?}'"))
+            .unwrap_or_else(|| panic!("should always return a node for given node_id: found '{node_id:?}'"))
     }
 
     pub fn nodes(&self) -> impl Iterator<Item = (&NodeId, &Node<D>)> {
@@ -92,9 +96,9 @@ impl<D: GraphDef> Graph<D> {
             source.node_id != *node_id && target.node_id != *node_id
         });
 
-        self.remove_leaf_node(&node_id);
+        self.remove_leaf_node(node_id);
 
-        self.nodes.remove(&node_id);
+        self.nodes.remove(node_id);
     }
 
     pub fn edge_source(&self, target: &Socket) -> Option<&Socket> {
@@ -140,7 +144,7 @@ impl<D: GraphDef> Graph<D> {
 
     fn process_node(&self, node_id: &NodeId, pcx: &mut ProcessingContext<D>) {
         let node = self.node(node_id);
-        let template = self.template(&node.template_id());
+        let template = self.template(node.template_id());
 
         // Calculate inputs.
         let mut input_values = SocketValues::new();
@@ -190,6 +194,12 @@ impl<D: GraphDef> Graph<D> {
 pub struct ProcessingContext<D: GraphDef> {
     state: D::ProcessingState,
     output_value_cache: HashMap<Socket, D::Value>,
+}
+
+impl<D: GraphDef> Default for ProcessingContext<D> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<D: GraphDef> ProcessingContext<D> {
