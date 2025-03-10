@@ -7,7 +7,7 @@ pub(crate) const NODE_WIDTH: Pixels = px(204.0);
 pub(crate) const HEADER_HEIGHT: Pixels = px(24.0);
 pub(crate) const SOCKET_HEIGHT: Pixels = px(24.0); // cx.theme().input_height;
 pub(crate) const SOCKET_GAP: Pixels = px(12.0);
-pub(crate) const SNAP_GRID_SIZE: f32 = 12.0;
+pub(crate) const SNAP_GRID_SIZE: Pixels = px(12.0);
 
 pub struct NodeView<D: GraphDef> {
     node_id: NodeId,
@@ -73,6 +73,7 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
         div()
             .w(NODE_WIDTH)
             .h(px(150.0))
+            .bg(cx.theme().background)
             .border_1()
             .border_color(cx.theme().border_color)
             .rounded(cx.theme().radius)

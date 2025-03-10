@@ -1,5 +1,5 @@
 use gpui::*;
-use ui::{theme::ActiveTheme, utils::z_stack};
+use ui::{theme::ActiveTheme, z_stack};
 
 pub struct FrameContainer<F: Frame> {
     grid_size: Size<u32>,
@@ -23,32 +23,16 @@ impl<F: Frame + 'static> FrameContainer<F> {
     pub fn show_grid(&mut self, show: bool) {
         self.show_grid = show;
     }
-
-    fn render_grid(&self) -> impl IntoElement {
-        canvas(|_, _, _| {}, {
-            let width = self.grid_size.width;
-            let height = self.grid_size.height;
-            let cell_size = self.cell_size;
-            move |_, _, window, cx| {
-                for x in 0..(width + 1) {
-                    for y in 0..(height + 1) {
-                        window.paint_quad(fill(
-                            Bounds::centered_at(
-                                point(x as f32 * cell_size, y as f32 * cell_size),
-                                size(px(2.0), px(2.0)),
-                            ),
-                            cx.theme().grid_color,
-                        ));
-                    }
-                }
-            }
-        })
-    }
 }
 
 impl<F: Frame + 'static> Render for FrameContainer<F> {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        let grid = self.show_grid.then(|| self.render_grid().into_any_element());
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let grid = self.show_grid.then(|| {
+            ui::dot_grid(self.cell_size, cx.theme().grid_color)
+                .w(self.grid_size.width as f32 * self.cell_size)
+                .h(self.grid_size.height as f32 * self.cell_size)
+                .into_any_element()
+        });
         let frames = div().size_full().children(self.frames.clone()).into_any_element();
         z_stack([grid, Some(frames)].into_iter().flatten())
     }

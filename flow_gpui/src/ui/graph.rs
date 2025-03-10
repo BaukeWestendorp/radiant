@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use flow::{Edge, GraphDef, NodeId, Socket};
 use gpui::*;
 use ui::{
-    elements::{Draggable, DraggableEvent},
-    utils::z_stack,
+    element::{Draggable, DraggableEvent},
+    z_stack,
 };
 
 use super::node::{NodeView, SNAP_GRID_SIZE};
@@ -33,7 +33,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
             Draggable::new(
                 ElementId::NamedInteger("node".into(), node_id.0 as usize),
                 self.graph.read(cx).node_position(&node_id).clone(),
-                Some(px(SNAP_GRID_SIZE)),
+                Some(SNAP_GRID_SIZE),
                 NodeView::build(node_id, self.graph.clone(), cx),
             )
         });
@@ -71,6 +71,6 @@ impl<D: GraphDef + 'static> Render for GraphView<D> {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         let nodes = div().children(self.node_views.values().cloned()).relative().size_full();
 
-        z_stack([nodes]).size_full().text_sm()
+        z_stack([nodes.into_any_element()]).size_full().text_sm()
     }
 }
