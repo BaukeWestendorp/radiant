@@ -27,7 +27,7 @@ impl Default for Theme {
 
             radius: gpui::px(4.0),
             border_color: gpui::hsla(0.0, 0.0, 0.5, 1.0),
-            border_color_muted: gpui::hsla(0.0, 0.0, 0.25, 1.0),
+            border_color_muted: gpui::hsla(0.0, 0.0, 0.15, 1.0),
 
             accent: gpui::rgb(0xffc416).into(),
 

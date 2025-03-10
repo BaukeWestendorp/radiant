@@ -1,5 +1,10 @@
 use crate::{GraphDef, NodeId};
 
+pub enum SocketKind {
+    Input(Socket),
+    Output(Socket),
+}
+
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Socket {
