@@ -1,4 +1,5 @@
 use gpui::*;
+use prelude::FluentBuilder;
 use ui::{theme::ActiveTheme, z_stack};
 
 pub struct FrameContainer<F: Frame> {
@@ -17,7 +18,12 @@ impl<F: Frame + 'static> FrameContainer<F> {
 
     pub fn add_frame(&mut self, frame: F, bounds: Bounds<u32>, cx: &mut Context<Self>) {
         let container = cx.entity().clone();
-        self.frames.push(cx.new(|_| FrameWrapper { container, frame, bounds }));
+        self.frames.push(cx.new(|cx| FrameWrapper {
+            container,
+            frame,
+            bounds,
+            focus_handle: cx.focus_handle(),
+        }));
     }
 
     pub fn show_grid(&mut self, show: bool) {
@@ -43,36 +49,53 @@ pub struct FrameWrapper<F: Frame> {
 
     frame: F,
     bounds: Bounds<u32>,
+
+    focus_handle: FocusHandle,
+}
+
+impl<F: Frame> FrameWrapper<F> {
+    pub fn frame(&self) -> &F {
+        &self.frame
+    }
+
+    pub fn bounds(&self) -> &Bounds<u32> {
+        &self.bounds
+    }
 }
 
 impl<F: Frame + 'static> Render for FrameWrapper<F> {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let cell_size = self.container.read(cx).cell_size;
 
+        let focused = self.focus_handle.is_focused(window);
+
         div()
+            .track_focus(&self.focus_handle)
             .left(px(self.bounds.origin.x as f32) * cell_size)
             .top(px(self.bounds.origin.y as f32) * cell_size)
             .w(px(self.bounds.size.width as f32) * cell_size)
             .h(px(self.bounds.size.height as f32) * cell_size)
-            .child(self.frame.render(cx))
+            .bg(cx.theme().background)
+            .border_1()
+            .border_color(cx.theme().border_color)
+            .when(focused, |e| e.border_color(cx.theme().border_color_focused))
+            .rounded(cx.theme().radius)
+            .child(self.frame.render(window, cx))
+    }
+}
+
+impl<F: Frame + 'static> Focusable for FrameWrapper<F> {
+    fn focus_handle(&self, _cx: &App) -> FocusHandle {
+        self.focus_handle.clone()
     }
 }
 
 pub trait Frame {
-    fn render_content(&mut self, cx: &mut Context<FrameWrapper<Self>>) -> impl IntoElement
+    fn render(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<FrameWrapper<Self>>,
+    ) -> impl IntoElement
     where
         Self: Sized;
-
-    fn render(&mut self, cx: &mut Context<FrameWrapper<Self>>) -> impl IntoElement
-    where
-        Self: Sized,
-    {
-        div()
-            .size_full()
-            .bg(cx.theme().background)
-            .border_1()
-            .border_color(cx.theme().border_color)
-            .rounded(cx.theme().radius)
-            .child(self.render_content(cx))
-    }
 }

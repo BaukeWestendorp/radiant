@@ -11,7 +11,11 @@ pub enum MainFrame {
 }
 
 impl Frame for MainFrame {
-    fn render_content(&mut self, _cx: &mut Context<FrameWrapper<Self>>) -> impl IntoElement {
+    fn render(
+        &mut self,
+        _window: &mut Window,
+        _cx: &mut Context<FrameWrapper<Self>>,
+    ) -> impl IntoElement {
         match self {
             MainFrame::EffectGraphEditor(editor) => editor.clone(),
         }
