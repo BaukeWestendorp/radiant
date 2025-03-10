@@ -1,13 +1,14 @@
 use std::collections::HashMap;
 
 use flow::{Edge, GraphDef, Node, NodeId, ProcessingContext, Socket, Template, TemplateId};
+use gpui::{Pixels, Point};
 
 use crate::GraphEvent;
 
 #[derive(Clone)]
 pub struct Graph<D: GraphDef> {
     pub(crate) graph: flow::Graph<D>,
-    pub(crate) node_positions: HashMap<NodeId, (f32, f32)>,
+    pub(crate) node_positions: HashMap<NodeId, Point<Pixels>>,
 }
 
 impl<D: GraphDef + 'static> Graph<D> {
@@ -34,11 +35,11 @@ impl<D: GraphDef + 'static> Graph<D> {
     pub fn add_node(
         &mut self,
         node: Node<D>,
-        position: (f32, f32),
+        position: Point<Pixels>,
         cx: &mut gpui::Context<Self>,
     ) -> NodeId {
         let node_id = self.graph.add_node(node);
-        self.set_node_position(node_id, position);
+        self.node_positions.insert(node_id, position);
         cx.emit(GraphEvent::NodeAdded(node_id));
         node_id
     }
@@ -79,11 +80,11 @@ impl<D: GraphDef + 'static> Graph<D> {
 }
 
 impl<D: GraphDef> Graph<D> {
-    pub fn node_position(&self, node_id: &NodeId) -> &(f32, f32) {
+    pub fn node_position(&self, node_id: &NodeId) -> &Point<Pixels> {
         self.node_positions.get(node_id).expect("should have a position for every NodeId")
     }
 
-    pub fn set_node_position(&mut self, node_id: NodeId, position: (f32, f32)) {
+    pub fn set_node_position(&mut self, node_id: NodeId, position: Point<Pixels>) {
         self.node_positions.insert(node_id, position);
     }
 }

@@ -41,18 +41,12 @@ impl<D: GraphDef + 'static> NodeView<D> {
             Self { node_id, graph, inputs, outputs }
         })
     }
-
-    pub fn node_id(&self) -> NodeId {
-        self.node_id
-    }
 }
 
 impl<D: GraphDef + 'static> Render for NodeView<D> {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let graph = self.graph.read(cx);
         let template_id = graph.node(&self.node_id).template_id().clone();
-
-        let position = self.graph.read(cx).node_position(&self.node_id);
 
         let header = {
             let label = graph.template(&template_id).label().to_string();
@@ -68,20 +62,15 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
                 .child(label)
         };
 
-        let content = {
-            div()
-                .min_h_10()
-                .v_flex()
-                .gap(SOCKET_GAP)
-                .py(NODE_CONTENT_Y_PADDING)
-                .children(self.inputs.clone())
-                .children(self.outputs.clone())
-        };
+        let content = div()
+            .min_h_10()
+            .v_flex()
+            .gap(SOCKET_GAP)
+            .py(NODE_CONTENT_Y_PADDING)
+            .children(self.inputs.clone())
+            .children(self.outputs.clone());
 
         div()
-            .absolute()
-            .left(px(position.0))
-            .top(px(position.1))
             .w(NODE_WIDTH)
             .h(px(150.0))
             .border_1()

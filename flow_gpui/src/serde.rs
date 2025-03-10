@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
 use flow::{GraphDef, NodeId};
+use gpui::{Pixels, Point};
 
 #[derive(serde::Deserialize)]
 struct GraphIntermediate<D: GraphDef + 'static> {
     graph: flow::Graph<D>,
-    node_positions: HashMap<NodeId, (f32, f32)>,
+    node_positions: HashMap<NodeId, Point<Pixels>>,
 }
 
 impl<'de, D: GraphDef + serde::Deserialize<'de> + 'static> serde::Deserialize<'de>
