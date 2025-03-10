@@ -7,6 +7,7 @@ use gpui::{Pixels, Point};
 struct GraphIntermediate<D: GraphDef + 'static> {
     graph: flow::Graph<D>,
     node_positions: HashMap<NodeId, Point<Pixels>>,
+    offset: Point<Pixels>,
 }
 
 impl<'de, D: GraphDef + serde::Deserialize<'de> + 'static> serde::Deserialize<'de>
@@ -16,10 +17,10 @@ impl<'de, D: GraphDef + serde::Deserialize<'de> + 'static> serde::Deserialize<'d
     where
         De: serde::Deserializer<'de>,
     {
-        let GraphIntermediate { graph, node_positions } =
+        let GraphIntermediate { graph, node_positions, offset } =
             GraphIntermediate::<D>::deserialize(deserializer)?;
 
-        let graph = crate::Graph { graph, node_positions };
+        let graph = crate::Graph { graph, node_positions, offset };
 
         Ok(graph)
     }

@@ -64,10 +64,6 @@ impl<D: GraphDef + 'static> GraphView<D> {
     pub fn remove_edge(&mut self, _source: &Socket, _cx: &mut Context<Self>) {
         todo!();
     }
-
-    pub fn graph(&self) -> &Entity<crate::Graph<D>> {
-        &self.graph
-    }
 }
 
 impl<D: GraphDef + 'static> Render for GraphView<D> {

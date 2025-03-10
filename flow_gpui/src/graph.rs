@@ -9,11 +9,12 @@ use crate::GraphEvent;
 pub struct Graph<D: GraphDef> {
     pub(crate) graph: flow::Graph<D>,
     pub(crate) node_positions: HashMap<NodeId, Point<Pixels>>,
+    pub(crate) offset: Point<Pixels>,
 }
 
 impl<D: GraphDef + 'static> Graph<D> {
     pub fn new() -> Self {
-        Self { graph: flow::Graph::new(), node_positions: HashMap::new() }
+        Self { graph: flow::Graph::new(), node_positions: HashMap::new(), offset: Point::default() }
     }
 
     pub fn add_template(&mut self, template: Template<D>) {
@@ -86,5 +87,13 @@ impl<D: GraphDef> Graph<D> {
 
     pub fn set_node_position(&mut self, node_id: NodeId, position: Point<Pixels>) {
         self.node_positions.insert(node_id, position);
+    }
+
+    pub fn offset(&self) -> &Point<Pixels> {
+        &self.offset
+    }
+
+    pub fn set_offset(&mut self, offset: Point<Pixels>) {
+        self.offset = offset;
     }
 }
