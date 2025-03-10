@@ -8,9 +8,15 @@ pub trait GraphDef: Clone {
     #[cfg(not(feature = "serde"))]
     type Value: Clone;
 
-    type DataType: Clone;
+    type DataType: DataType<Self> + Clone;
 
     type ProcessingState: Default;
+}
+
+pub trait DataType<D: GraphDef> {
+    fn try_cast(&self, from: &D::Value) -> Option<D::Value>;
+
+    fn default_value(&self) -> D::Value;
 }
 
 #[derive(Clone)]
@@ -54,7 +60,10 @@ impl<D: GraphDef> Graph<D> {
 
     pub fn template(&self, template_id: &TemplateId) -> &Template<D> {
         self.templates.iter().find(|template| template.id() == template_id).unwrap_or_else(|| {
-            panic!("should always return a template for given template_id: found '{template_id:?}'")
+            panic!(
+                "should always return a template for given template_id: found '{}'",
+                template_id.0
+            )
         })
     }
 
@@ -114,7 +123,18 @@ impl<D: GraphDef> Graph<D> {
         self.edges.iter()
     }
 
-    pub fn add_edge(&mut self, edge: Edge) {
+    fn validate_edge(&self, edge: &Edge) -> bool {
+        let source = self.input(&edge.source);
+        let target = self.output(&edge.target);
+
+        target.data_type().try_cast(&source.data_type().default_value()).is_some()
+    }
+
+    pub fn add_edge(&mut self, edge: Edge, validate: bool) {
+        if validate && !self.validate_edge(&edge) {
+            return;
+        }
+
         self.remove_leaf_node(&edge.source.node_id);
         self.edges.push(edge);
     }

@@ -14,7 +14,7 @@ pub struct Graph<D: GraphDef> {
 
 impl<D: GraphDef + 'static> Default for Graph<D>
 where
-    D::DataType: crate::DataType,
+    D::DataType: crate::DataType<D>,
 {
     fn default() -> Self {
         Self::new()
@@ -73,7 +73,7 @@ impl<D: GraphDef + 'static> Graph<D> {
     }
 
     pub fn add_edge(&mut self, edge: Edge) {
-        self.graph.add_edge(edge)
+        self.graph.add_edge(edge, true)
     }
 
     pub fn remove_edge(&mut self, source: &Socket) {
@@ -107,6 +107,6 @@ impl<D: GraphDef> Graph<D> {
     }
 }
 
-pub trait DataType {
+pub trait DataType<D: GraphDef>: flow::DataType<D> {
     fn color(&self) -> Hsla;
 }

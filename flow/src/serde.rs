@@ -27,7 +27,7 @@ where
         });
         graph.node_id_counter = max_id + 1;
 
-        edges.into_iter().for_each(|edge| graph.add_edge(edge));
+        edges.into_iter().for_each(|edge| graph.add_edge(edge, false));
 
         Ok(graph)
     }

@@ -15,7 +15,7 @@ pub struct GraphEditorView<D: GraphDef> {
 
 impl<D: GraphDef + 'static> GraphEditorView<D>
 where
-    D::DataType: crate::DataType,
+    D::DataType: crate::DataType<D>,
 {
     pub fn build(graph: Entity<crate::Graph<D>>, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {

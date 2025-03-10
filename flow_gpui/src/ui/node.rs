@@ -50,7 +50,7 @@ impl<D: GraphDef + 'static> NodeView<D> {
 
 impl<D: GraphDef + 'static> Render for NodeView<D>
 where
-    D::DataType: crate::DataType,
+    D::DataType: crate::DataType<D>,
 {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let graph = self.graph.read(cx);
@@ -121,7 +121,7 @@ impl<D: GraphDef + 'static> InputView<D> {
 
 impl<D: GraphDef + 'static> Render for InputView<D>
 where
-    D::DataType: crate::DataType,
+    D::DataType: crate::DataType<D>,
 {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let socket = Socket::new(self.node_id, self.input.id().to_string());
@@ -169,7 +169,7 @@ impl<D: GraphDef + 'static> OutputView<D> {
 
 impl<D: GraphDef + 'static> Render for OutputView<D>
 where
-    D::DataType: crate::DataType,
+    D::DataType: crate::DataType<D>,
 {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let socket = Socket::new(self.node_id, self.output.id().to_string());
@@ -204,7 +204,7 @@ fn render_connector<D: GraphDef + 'static>(
     cx: &App,
 ) -> impl IntoElement
 where
-    D::DataType: crate::DataType,
+    D::DataType: crate::DataType<D>,
 {
     let width = px(5.0);
     let height = px(13.0);

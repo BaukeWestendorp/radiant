@@ -16,7 +16,7 @@ pub struct GraphView<D: GraphDef> {
 
 impl<D: GraphDef + 'static> GraphView<D>
 where
-    D::DataType: crate::DataType,
+    D::DataType: crate::DataType<D>,
 {
     pub fn build(graph: Entity<crate::Graph<D>>, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {

@@ -3,8 +3,8 @@ pub mod serde;
 
 pub mod export_prelude {
     pub use crate::{
-        Edge, GraphDef, Input, Node, NodeId, Output, ProcessingContext, Socket, SocketValues,
-        Template,
+        DataType, Edge, GraphDef, Input, Node, NodeId, Output, ProcessingContext, Socket,
+        SocketValues, Template,
     };
 }
 
