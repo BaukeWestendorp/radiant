@@ -13,7 +13,10 @@ pub struct GraphEditorView<D: GraphDef> {
     visual_graph_offset: Point<Pixels>,
 }
 
-impl<D: GraphDef + 'static> GraphEditorView<D> {
+impl<D: GraphDef + 'static> GraphEditorView<D>
+where
+    D::DataType: crate::DataType,
+{
     pub fn build(graph: Entity<crate::Graph<D>>, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {
             let graph_view = GraphView::build(graph.clone(), cx);

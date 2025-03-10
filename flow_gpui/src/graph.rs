@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use flow::{Edge, GraphDef, Node, NodeId, ProcessingContext, Socket, Template, TemplateId};
-use gpui::{Pixels, Point};
+use gpui::{Hsla, Pixels, Point};
 
 use crate::GraphEvent;
 
@@ -12,7 +12,10 @@ pub struct Graph<D: GraphDef> {
     pub(crate) offset: Point<Pixels>,
 }
 
-impl<D: GraphDef + 'static> Default for Graph<D> {
+impl<D: GraphDef + 'static> Default for Graph<D>
+where
+    D::DataType: crate::DataType,
+{
     fn default() -> Self {
         Self::new()
     }
@@ -102,4 +105,8 @@ impl<D: GraphDef> Graph<D> {
     pub fn set_offset(&mut self, offset: Point<Pixels>) {
         self.offset = offset;
     }
+}
+
+pub trait DataType {
+    fn color(&self) -> Hsla;
 }

@@ -14,7 +14,10 @@ pub struct GraphView<D: GraphDef> {
     node_views: HashMap<NodeId, Entity<Draggable>>,
 }
 
-impl<D: GraphDef + 'static> GraphView<D> {
+impl<D: GraphDef + 'static> GraphView<D>
+where
+    D::DataType: crate::DataType,
+{
     pub fn build(graph: Entity<crate::Graph<D>>, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {
             let mut this = Self { graph, node_views: HashMap::new() };

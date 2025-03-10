@@ -25,7 +25,7 @@ pub struct Template<D: GraphDef> {
     label: String,
 
     inputs: Vec<Input<D>>,
-    outputs: Vec<Output>,
+    outputs: Vec<Output<D>>,
 
     processor: Box<Processor<D>>,
 }
@@ -35,7 +35,7 @@ impl<D: GraphDef> Template<D> {
         id: impl Into<TemplateId>,
         label: impl Into<String>,
         inputs: Vec<Input<D>>,
-        outputs: Vec<Output>,
+        outputs: Vec<Output<D>>,
         processor: Box<Processor<D>>,
     ) -> Self {
         Self { id: id.into(), label: label.into(), inputs, outputs, processor }
@@ -49,11 +49,25 @@ impl<D: GraphDef> Template<D> {
         &self.label
     }
 
+    pub fn input(&self, id: &str) -> &Input<D> {
+        self.inputs
+            .iter()
+            .find(|i| i.id() == id)
+            .expect("should get input from template for given id")
+    }
+
     pub fn inputs(&self) -> &[Input<D>] {
         &self.inputs
     }
 
-    pub fn outputs(&self) -> &[Output] {
+    pub fn output(&self, id: &str) -> &Output<D> {
+        self.outputs
+            .iter()
+            .find(|i| i.id() == id)
+            .expect("should get input from template for given id")
+    }
+
+    pub fn outputs(&self) -> &[Output<D>] {
         &self.outputs
     }
 

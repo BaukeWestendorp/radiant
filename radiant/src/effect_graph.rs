@@ -10,15 +10,28 @@ pub enum Value {
     Number(f64),
 }
 
-impl Default for Value {
-    fn default() -> Self {
-        Value::Number(0.0)
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub enum DataType {
+    Number,
+}
+
+impl flow_gpui::DataType for DataType {
+    fn color(&self) -> gpui::Hsla {
+        match self {
+            Self::Number => gpui::rgb(0xCE39FF).into(),
+        }
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct State {
     pub value: Value,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self { value: Value::Number(0.0) }
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -28,6 +41,7 @@ pub struct GraphDef;
 impl flow::GraphDef for GraphDef {
     type ProcessingState = State;
     type Value = Value;
+    type DataType = DataType;
 }
 
 pub type EffectGraph = Graph<GraphDef>;
@@ -40,7 +54,7 @@ pub fn get_graph() -> EffectGraph {
             "number_new",
             "New Number",
             vec![],
-            vec![Output::new("value", "Value")],
+            vec![Output::new("value", "Value", DataType::Number)],
             Box::new(|_, output_values, _| {
                 output_values.set_value("value", Value::Number(42.0));
             }),
@@ -49,10 +63,10 @@ pub fn get_graph() -> EffectGraph {
             "number_add",
             "Add Number",
             vec![
-                Input::new("a", "A", Value::Number(0.0)),
-                Input::new("b", "B", Value::Number(0.0)),
+                Input::new("a", "A", Value::Number(0.0), DataType::Number),
+                Input::new("b", "B", Value::Number(0.0), DataType::Number),
             ],
-            vec![Output::new("sum", "Sum")],
+            vec![Output::new("sum", "Sum", DataType::Number)],
             Box::new(|input_values, output_values, _| {
                 let Some(Value::Number(a)) = input_values.get_value("a") else {
                     panic!("Invalid type for 'a'")
@@ -66,7 +80,7 @@ pub fn get_graph() -> EffectGraph {
         Template::new(
             "output",
             "Output",
-            vec![Input::new("value", "Value", Value::Number(0.0))],
+            vec![Input::new("value", "Value", Value::Number(0.0), DataType::Number)],
             vec![],
             Box::new(|input_values, _, cx: &mut ProcessingContext<GraphDef>| {
                 let value = input_values.get_value("value").unwrap();

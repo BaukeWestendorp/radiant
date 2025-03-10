@@ -5,6 +5,14 @@ pub enum SocketKind {
     Output(Socket),
 }
 
+impl SocketKind {
+    pub fn socket(&self) -> &Socket {
+        match self {
+            Self::Input(socket) | Self::Output(socket) => socket,
+        }
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Socket {
@@ -23,11 +31,17 @@ pub struct Input<D: GraphDef> {
     id: String,
     label: String,
     default: D::Value,
+    data_type: D::DataType,
 }
 
 impl<D: GraphDef> Input<D> {
-    pub fn new(id: impl Into<String>, label: impl Into<String>, default: D::Value) -> Self {
-        Self { id: id.into(), label: label.into(), default }
+    pub fn new(
+        id: impl Into<String>,
+        label: impl Into<String>,
+        default: D::Value,
+        data_type: D::DataType,
+    ) -> Self {
+        Self { id: id.into(), label: label.into(), default, data_type }
     }
 
     pub fn id(&self) -> &str {
@@ -41,17 +55,22 @@ impl<D: GraphDef> Input<D> {
     pub fn default(&self) -> &D::Value {
         &self.default
     }
+
+    pub fn data_type(&self) -> &D::DataType {
+        &self.data_type
+    }
 }
 
 #[derive(Debug, Clone)]
-pub struct Output {
+pub struct Output<D: GraphDef> {
     id: String,
     label: String,
+    data_type: D::DataType,
 }
 
-impl Output {
-    pub fn new(id: impl Into<String>, label: impl Into<String>) -> Self {
-        Self { id: id.into(), label: label.into() }
+impl<D: GraphDef> Output<D> {
+    pub fn new(id: impl Into<String>, label: impl Into<String>, data_type: D::DataType) -> Self {
+        Self { id: id.into(), label: label.into(), data_type }
     }
 
     pub fn id(&self) -> &str {
@@ -60,6 +79,10 @@ impl Output {
 
     pub fn label(&self) -> &str {
         &self.label
+    }
+
+    pub fn data_type(&self) -> &D::DataType {
+        &self.data_type
     }
 }
 

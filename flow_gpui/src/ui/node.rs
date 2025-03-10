@@ -3,6 +3,8 @@ use gpui::*;
 use prelude::FluentBuilder;
 use ui::{styled_ext::StyledExt, theme::ActiveTheme};
 
+use crate::DataType;
+
 pub(crate) const NODE_CONTENT_Y_PADDING: Pixels = px(6.0);
 pub(crate) const NODE_WIDTH: Pixels = px(204.0);
 pub(crate) const HEADER_HEIGHT: Pixels = px(24.0);
@@ -46,7 +48,10 @@ impl<D: GraphDef + 'static> NodeView<D> {
     }
 }
 
-impl<D: GraphDef + 'static> Render for NodeView<D> {
+impl<D: GraphDef + 'static> Render for NodeView<D>
+where
+    D::DataType: crate::DataType,
+{
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let graph = self.graph.read(cx);
         let template_id = graph.node(&self.node_id).template_id().clone();
@@ -114,7 +119,10 @@ impl<D: GraphDef + 'static> InputView<D> {
     }
 }
 
-impl<D: GraphDef + 'static> Render for InputView<D> {
+impl<D: GraphDef + 'static> Render for InputView<D>
+where
+    D::DataType: crate::DataType,
+{
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let socket = Socket::new(self.node_id, self.input.id().to_string());
         let socket_kind = SocketKind::Input(socket);
@@ -140,7 +148,7 @@ impl<D: GraphDef + 'static> Render for InputView<D> {
 }
 
 struct OutputView<D: GraphDef> {
-    output: Output,
+    output: Output<D>,
     node_id: NodeId,
 
     hovering: bool,
@@ -150,7 +158,7 @@ struct OutputView<D: GraphDef> {
 
 impl<D: GraphDef + 'static> OutputView<D> {
     pub fn build(
-        output: Output,
+        output: Output<D>,
         node_id: NodeId,
         graph: Entity<crate::Graph<D>>,
         cx: &mut App,
@@ -159,7 +167,10 @@ impl<D: GraphDef + 'static> OutputView<D> {
     }
 }
 
-impl<D: GraphDef + 'static> Render for OutputView<D> {
+impl<D: GraphDef + 'static> Render for OutputView<D>
+where
+    D::DataType: crate::DataType,
+{
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let socket = Socket::new(self.node_id, self.output.id().to_string());
         let socket_kind = SocketKind::Output(socket);
@@ -186,22 +197,31 @@ impl<D: GraphDef + 'static> Render for OutputView<D> {
     }
 }
 
-fn render_connector<D: GraphDef>(
-    socket: &SocketKind,
+fn render_connector<D: GraphDef + 'static>(
+    socket_kind: &SocketKind,
     hovering: bool,
     graph: &Entity<crate::Graph<D>>,
     cx: &App,
-) -> impl IntoElement {
+) -> impl IntoElement
+where
+    D::DataType: crate::DataType,
+{
     let width = px(5.0);
     let height = px(13.0);
     let hover_box_size = px(22.0);
 
-    let left = match socket {
+    let left = match socket_kind {
         SocketKind::Input(_) => false,
         SocketKind::Output(_) => true,
     };
 
-    let color = rgb(0xFF8B18);
+    let socket = socket_kind.socket();
+    let template_id = graph.read(cx).node(&socket.node_id).template_id();
+    let template = graph.read(cx).template(template_id);
+    let color = match socket_kind {
+        SocketKind::Input(_) => template.input(&socket.id).data_type().color(),
+        SocketKind::Output(_) => template.output(&socket.id).data_type().color(),
+    };
 
     div()
         .w(width)
