@@ -81,8 +81,9 @@ where
             AnySocket::Input(input) => {
                 // If the input already has an edge connected to it, remove it.
                 self.graph.update(cx, |graph, cx| {
-                    let source = graph.edge_source(input).clone();
-                    graph.remove_edge(&source, cx);
+                    if let Some(source) = graph.edge_source(input).cloned() {
+                        graph.remove_edge(&source, cx);
+                    }
                 });
 
                 self.new_edge.1 = Some(input.clone())
