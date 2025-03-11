@@ -41,14 +41,13 @@ impl Pannable {
         let diff = self.prev_mouse_pos.map_or(Point::default(), |prev| mouse_position - prev);
         self.offset += diff;
 
-        cx.emit(PannableEvent::OffsetChanged(self.offset));
-
         self.prev_mouse_pos = Some(mouse_position);
+
+        cx.emit(PannableEvent::OffsetChanged(self.offset));
     }
 
     fn handle_mouse_up(&mut self, _: &MouseUpEvent, _window: &mut Window, cx: &mut Context<Self>) {
         self.prev_mouse_pos = None;
-        cx.emit(PannableEvent::OffsetChanged(self.offset));
         cx.emit(PannableEvent::OffsetCommitted(self.offset));
     }
 }

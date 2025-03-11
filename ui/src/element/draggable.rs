@@ -1,5 +1,7 @@
 use gpui::*;
 
+use crate::snap_point;
+
 pub struct Draggable {
     id: ElementId,
 
@@ -31,10 +33,7 @@ impl Draggable {
 
     pub fn snapped_position(&self) -> Point<Pixels> {
         match self.snap_threshold {
-            Some(threshold) => Point::new(
-                (self.position().x / threshold).floor() * threshold,
-                (self.position().y / threshold).floor() * threshold,
-            ),
+            Some(threshold) => snap_point(self.position, threshold),
             None => self.position,
         }
     }
@@ -60,6 +59,8 @@ impl Draggable {
         self.position += diff;
 
         self.prev_mouse_pos = Some(mouse_position);
+
+        cx.emit(DraggableEvent::PositionChanged(self.position));
     }
 
     fn handle_mouse_up(&mut self, _: &MouseUpEvent, _window: &mut Window, cx: &mut Context<Self>) {
@@ -90,5 +91,6 @@ impl Render for Draggable {
 impl EventEmitter<DraggableEvent> for Draggable {}
 
 pub enum DraggableEvent {
+    PositionChanged(Point<Pixels>),
     PositionCommitted(Point<Pixels>),
 }

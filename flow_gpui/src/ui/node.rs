@@ -1,4 +1,4 @@
-use flow::{GraphDef, Input, NodeId, Output, Socket, SocketKind};
+use flow::{AnySocket, GraphDef, Input, NodeId, Output, Socket};
 use gpui::*;
 use prelude::FluentBuilder;
 use ui::{styled_ext::StyledExt, theme::ActiveTheme};
@@ -125,8 +125,8 @@ where
 {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let socket = Socket::new(self.node_id, self.input.id().to_string());
-        let socket_kind = SocketKind::Input(socket);
-        let connector = render_connector(&socket_kind, self.hovering, &self.graph, cx);
+        let any_socket = AnySocket::Input(socket);
+        let connector = render_connector(&any_socket, self.hovering, &self.graph, cx);
         let label = self.input.label().to_string();
 
         let id = ElementId::Name(format!("input-{}-{}", self.node_id.0, self.input.id()).into());
@@ -173,8 +173,8 @@ where
 {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let socket = Socket::new(self.node_id, self.output.id().to_string());
-        let socket_kind = SocketKind::Output(socket);
-        let connector = render_connector(&socket_kind, self.hovering, &self.graph, cx);
+        let any_socket = AnySocket::Output(socket);
+        let connector = render_connector(&any_socket, self.hovering, &self.graph, cx);
         let label = self.output.label().to_string();
 
         let id = ElementId::Name(format!("output-{}-{}", self.node_id.0, self.output.id()).into());
@@ -198,7 +198,7 @@ where
 }
 
 fn render_connector<D: GraphDef + 'static>(
-    socket_kind: &SocketKind,
+    any_socket: &AnySocket,
     hovering: bool,
     graph: &Entity<crate::Graph<D>>,
     cx: &App,
@@ -210,17 +210,17 @@ where
     let height = px(13.0);
     let hover_box_size = px(22.0);
 
-    let left = match socket_kind {
-        SocketKind::Input(_) => false,
-        SocketKind::Output(_) => true,
+    let left = match any_socket {
+        AnySocket::Input(_) => false,
+        AnySocket::Output(_) => true,
     };
 
-    let socket = socket_kind.socket();
+    let socket = any_socket.socket();
     let template_id = graph.read(cx).node(&socket.node_id).template_id();
     let template = graph.read(cx).template(template_id);
-    let color = match socket_kind {
-        SocketKind::Input(_) => template.input(&socket.id).data_type().color(),
-        SocketKind::Output(_) => template.output(&socket.id).data_type().color(),
+    let color = match any_socket {
+        AnySocket::Input(_) => template.input(&socket.id).data_type().color(),
+        AnySocket::Output(_) => template.output(&socket.id).data_type().color(),
     };
 
     div()

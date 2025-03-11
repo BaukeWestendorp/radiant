@@ -1,11 +1,12 @@
 use crate::{GraphDef, NodeId};
 
-pub enum SocketKind {
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum AnySocket {
     Input(Socket),
     Output(Socket),
 }
 
-impl SocketKind {
+impl AnySocket {
     pub fn socket(&self) -> &Socket {
         match self {
             Self::Input(socket) | Self::Output(socket) => socket,

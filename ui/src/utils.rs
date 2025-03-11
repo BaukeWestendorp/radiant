@@ -18,3 +18,9 @@ pub fn bounds_updater<V: 'static>(
     )
     .size_full()
 }
+
+pub fn snap_point(mut point: Point<Pixels>, threshold: Pixels) -> Point<Pixels> {
+    point.x = (point.x / threshold).floor() * threshold;
+    point.y = (point.y / threshold).floor() * threshold;
+    point
+}
