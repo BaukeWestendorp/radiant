@@ -4,6 +4,9 @@
       "0": {
         "template_id": "number_new"
       },
+      "3": {
+        "template_id": "number_new"
+      },
       "1": {
         "template_id": "number_add",
         "input_values": {
@@ -41,8 +44,9 @@
   },
   "node_positions": {
     "0": { "x": 100, "y": 100 },
-    "1": { "x": 100, "y": 400 },
-    "2": { "x": 600, "y": 250 }
+    "1": { "x": 350, "y": 250 },
+    "2": { "x": 600, "y": 250 },
+    "3": { "x": 100, "y": 400 }
   },
   "offset": { "x": 0, "y": 0 }
 }

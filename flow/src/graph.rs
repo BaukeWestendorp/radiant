@@ -124,13 +124,27 @@ impl<D: GraphDef> Graph<D> {
     }
 
     fn validate_edge(&self, edge: &Edge) -> bool {
-        let source = self.output(&edge.source);
-        let target = self.input(&edge.target);
+        let output = self.output(&edge.source);
+        let input = self.input(&edge.target);
 
-        target.data_type().try_cast(&source.data_type().default_value()).is_some()
+        // An edge can't connect to itself.
+        if edge.source.node_id == edge.target.node_id {
+            return false;
+        }
+
+        // An input can't have multiple edges connected.
+        if self.edges().any(|e| e.target == edge.target) {
+            return false;
+        }
+
+        // An edge can only exist between two castable types.
+        input.data_type().try_cast(&output.data_type().default_value()).is_some()
     }
 
     pub fn add_edge(&mut self, edge: Edge, validate: bool) {
+        // If the edge target already has an edge connected, remove that edge.
+        self.edges.retain(|e| e.target != edge.target);
+
         if validate && !self.validate_edge(&edge) {
             return;
         }
