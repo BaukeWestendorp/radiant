@@ -103,6 +103,7 @@ where
             .border_color(cx.theme().border_color)
             .when(focused, |e| e.border_color(cx.theme().border_color_focused))
             .rounded(cx.theme().radius)
+            .cursor_grab()
             .children([header, content])
     }
 }
