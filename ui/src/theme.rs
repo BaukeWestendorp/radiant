@@ -2,6 +2,8 @@ use gpui::{Hsla, Pixels};
 
 pub struct Theme {
     pub background: Hsla,
+    pub background_focused: Hsla,
+
     pub text_primary: Hsla,
 
     pub radius: Pixels,
@@ -24,6 +26,8 @@ impl Default for Theme {
     fn default() -> Self {
         Self {
             background: gpui::hsla(0.0, 0.0, 0.0, 1.0),
+            background_focused: gpui::hsla(0.0, 0.0, 0.1, 1.0),
+
             text_primary: gpui::hsla(0.0, 0.0, 1.0, 1.0),
 
             radius: gpui::px(4.0),

@@ -69,7 +69,10 @@ where
                 .py_px()
                 .border_b_1()
                 .border_color(cx.theme().border_color)
-                .when(focused, |e| e.border_color(cx.theme().border_color_focused))
+                .when(focused, |e| {
+                    e.bg(cx.theme().background_focused)
+                        .border_color(cx.theme().border_color_focused)
+                })
                 .child(label)
         };
 
