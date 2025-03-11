@@ -17,10 +17,11 @@ impl<'de, D: GraphDef + serde::Deserialize<'de> + 'static> serde::Deserialize<'d
     where
         De: serde::Deserializer<'de>,
     {
-        let GraphIntermediate { graph, node_positions, offset } =
+        let GraphIntermediate { graph: flow_graph, node_positions, offset } =
             GraphIntermediate::<D>::deserialize(deserializer)?;
 
-        let graph = crate::Graph { graph, node_positions, dragged_node_position: None, offset };
+        let graph =
+            crate::Graph { flow_graph, node_positions, dragged_node_position: None, offset };
 
         Ok(graph)
     }

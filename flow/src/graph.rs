@@ -124,8 +124,8 @@ impl<D: GraphDef> Graph<D> {
     }
 
     fn validate_edge(&self, edge: &Edge) -> bool {
-        let source = self.input(&edge.source);
-        let target = self.output(&edge.target);
+        let source = self.output(&edge.source);
+        let target = self.input(&edge.target);
 
         target.data_type().try_cast(&source.data_type().default_value()).is_some()
     }
