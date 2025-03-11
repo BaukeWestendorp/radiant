@@ -76,19 +76,17 @@ where
         cx.notify();
     }
 
-    #[inline]
-    pub fn add_edge(&mut self, _edge: Edge, _cx: &mut Context<Self>) {
-        // NOTE: Reserved for visual changes.
-    }
-
-    #[inline]
-    pub fn remove_edge(&mut self, _source: &Socket, _cx: &mut Context<Self>) {
-        // NOTE: Reserved for visual changes.
-    }
-
-    pub fn set_new_edge_socket(&mut self, from: &AnySocket) {
+    pub fn set_new_edge_socket(&mut self, from: &AnySocket, cx: &mut App) {
         match from {
-            AnySocket::Input(input) => self.new_edge.1 = Some(input.clone()),
+            AnySocket::Input(input) => {
+                // If the input already has an edge connected to it, remove it.
+                self.graph.update(cx, |graph, cx| {
+                    let source = graph.edge_source(input).clone();
+                    graph.remove_edge(&source, cx);
+                });
+
+                self.new_edge.1 = Some(input.clone())
+            }
             AnySocket::Output(output) => self.new_edge.0 = Some(output.clone()),
         }
     }

@@ -278,8 +278,8 @@ where
                     let graph_view = graph_view.clone();
                     let any_socket = any_socket.clone();
                     move |_, _, cx| {
-                        graph_view.update(cx, |graph_view, _cx| {
-                            graph_view.set_new_edge_socket(&any_socket)
+                        graph_view.update(cx, |graph_view, cx| {
+                            graph_view.set_new_edge_socket(&any_socket, cx)
                         })
                     }
                 })

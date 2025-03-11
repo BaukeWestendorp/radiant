@@ -27,8 +27,8 @@ where
                     graph_view.update(cx, |graph, cx| match event {
                         GraphEvent::NodeAdded(node_id) => graph.add_node(*node_id, cx),
                         GraphEvent::NodeRemoved(node_id) => graph.remove_node(node_id, cx),
-                        GraphEvent::EdgeAdded { edge } => graph.add_edge(edge.clone(), cx),
-                        GraphEvent::EdgeRemoved { source } => graph.remove_edge(source, cx),
+                        GraphEvent::EdgeAdded { .. } => {}
+                        GraphEvent::EdgeRemoved { .. } => {}
                     });
                 }
             })

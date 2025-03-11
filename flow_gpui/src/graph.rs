@@ -91,6 +91,10 @@ impl<D: GraphDef + 'static> Graph<D> {
         cx.emit(GraphEvent::EdgeRemoved { source: source.clone() });
     }
 
+    pub fn edge_source(&self, target: &Socket) -> &Socket {
+        &self.edges().find(|e| &e.target == target).unwrap().source
+    }
+
     pub fn edges(&self) -> impl Iterator<Item = &Edge> {
         self.flow_graph.edges()
     }
