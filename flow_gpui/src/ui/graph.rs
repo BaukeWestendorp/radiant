@@ -207,7 +207,7 @@ where
 
                 let source = self.graph.read(cx).output(&source);
                 let target = self.graph.read(cx).input(&target);
-                (source_pos, target_pos, &source.data_type(), &target.data_type())
+                (source_pos, target_pos, &target.data_type(), &source.data_type())
             }
         };
 
