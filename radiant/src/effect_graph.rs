@@ -8,17 +8,20 @@ use flow_gpui::{
 #[derive(Debug, Clone)]
 pub enum Value {
     Number(f64),
+    Boolean(bool),
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DataType {
     Number,
+    Boolean,
 }
 
 impl flow_gpui::DataType<GraphDef> for DataType {
     fn color(&self) -> gpui::Hsla {
         match self {
             Self::Number => gpui::rgb(0xCE39FF).into(),
+            Self::Boolean => gpui::rgb(0x1361FF).into(),
         }
     }
 }
@@ -27,12 +30,17 @@ impl flow::DataType<GraphDef> for DataType {
     fn try_cast(&self, from: &Value) -> Option<Value> {
         match (self, from) {
             (Self::Number, Value::Number(_)) => Some(from.clone()),
+
+            (Self::Boolean, Value::Boolean(_)) => Some(from.clone()),
+
+            _ => None,
         }
     }
 
     fn default_value(&self) -> <GraphDef as flow::GraphDef>::Value {
         match self {
             Self::Number => Value::Number(Default::default()),
+            Self::Boolean => Value::Boolean(Default::default()),
         }
     }
 }
@@ -99,8 +107,45 @@ pub fn get_graph() -> EffectGraph {
             Box::new(|input_values, _, cx: &mut ProcessingContext<GraphDef>| {
                 let Some(value) = input_values.get_value("value") else { panic!() };
                 let Some(Value::Number(value)) = DataType::Number.try_cast(value) else { panic!() };
-
                 cx.value = value;
+            }),
+        ),
+        Template::new(
+            "boolean_new",
+            "New Boolean",
+            vec![],
+            vec![Output::new("value", "Value", DataType::Boolean)],
+            Box::new(|_, output_values, _| {
+                output_values.set_value("value", Value::Boolean(true));
+            }),
+        ),
+        Template::new(
+            "number_invert",
+            "Invert Number",
+            vec![
+                Input::new("number", "Number", Value::Number(0.0), DataType::Number),
+                Input::new(
+                    "should_invert",
+                    "Should Invert",
+                    Value::Boolean(false),
+                    DataType::Boolean,
+                ),
+            ],
+            vec![Output::new("result", "Result", DataType::Number)],
+            Box::new(|input_values, output_values, _| {
+                let Some(number) = input_values.get_value("number") else { panic!() };
+                let Some(Value::Number(number)) = DataType::Number.try_cast(number) else {
+                    panic!()
+                };
+
+                let Some(should_invert) = input_values.get_value("should_invert") else { panic!() };
+                let Some(Value::Boolean(should_invert)) = DataType::Boolean.try_cast(should_invert)
+                else {
+                    panic!()
+                };
+
+                let factor = if should_invert { -1.0 } else { 1.0 };
+                output_values.set_value("result", Value::Number(number * factor));
             }),
         ),
     ]);

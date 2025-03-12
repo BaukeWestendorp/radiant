@@ -300,7 +300,7 @@ where
                 .inputs()
                 .iter()
                 .position(|i| i.id() == input.id)
-                .expect("should get index of input"),
+                .expect(&format!("should get index of input for socket {:?}", any_socket)),
             AnySocket::Output(output) => {
                 template.inputs().len() + // Move past all input sockets.
                     template.outputs().iter().position(|o| o.id()== output.id).expect("should get index of output")
