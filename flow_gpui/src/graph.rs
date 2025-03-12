@@ -1,11 +1,9 @@
-use std::collections::HashMap;
-
+use crate::GraphEvent;
 use flow::{
     Edge, GraphDef, Input, Node, NodeId, Output, ProcessingContext, Socket, Template, TemplateId,
 };
 use gpui::{Hsla, Pixels, Point};
-
-use crate::GraphEvent;
+use std::collections::HashMap;
 
 #[derive(Clone)]
 pub struct Graph<D: GraphDef> {

@@ -14,7 +14,7 @@ pub trait GraphDef: Clone {
 }
 
 pub trait DataType<D: GraphDef> {
-    fn try_cast(&self, from: &D::Value) -> Option<D::Value>;
+    fn try_cast_from(&self, from: &D::Value) -> Option<D::Value>;
 
     fn default_value(&self) -> D::Value;
 }
@@ -138,7 +138,7 @@ impl<D: GraphDef> Graph<D> {
         }
 
         // An edge can only exist between two castable types.
-        input.data_type().try_cast(&output.data_type().default_value()).is_some()
+        input.data_type().try_cast_from(&output.data_type().default_value()).is_some()
     }
 
     pub fn add_edge(&mut self, edge: Edge, validate: bool) {

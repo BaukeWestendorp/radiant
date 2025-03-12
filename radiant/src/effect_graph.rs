@@ -27,7 +27,7 @@ impl flow_gpui::DataType<GraphDef> for DataType {
 }
 
 impl flow::DataType<GraphDef> for DataType {
-    fn try_cast(&self, from: &Value) -> Option<Value> {
+    fn try_cast_from(&self, from: &Value) -> Option<Value> {
         match (self, from) {
             (Self::Number, Value::Number(_)) => Some(from.clone()),
 
@@ -91,10 +91,10 @@ pub fn get_graph() -> EffectGraph {
             vec![Output::new("sum", "Sum", DataType::Number)],
             Box::new(|input_values, output_values, _| {
                 let Some(a) = input_values.get_value("a") else { panic!() };
-                let Some(Value::Number(a)) = DataType::Number.try_cast(a) else { panic!() };
+                let Some(Value::Number(a)) = DataType::Number.try_cast_from(a) else { panic!() };
 
                 let Some(b) = input_values.get_value("b") else { panic!() };
-                let Some(Value::Number(b)) = DataType::Number.try_cast(b) else { panic!() };
+                let Some(Value::Number(b)) = DataType::Number.try_cast_from(b) else { panic!() };
 
                 output_values.set_value("sum", Value::Number(a + b));
             }),
@@ -106,7 +106,7 @@ pub fn get_graph() -> EffectGraph {
             vec![],
             Box::new(|input_values, _, cx: &mut ProcessingContext<GraphDef>| {
                 let Some(value) = input_values.get_value("value") else { panic!() };
-                let Some(Value::Number(value)) = DataType::Number.try_cast(value) else { panic!() };
+                let Some(Value::Number(value)) = DataType::Number.try_cast_from(value) else { panic!() };
                 cx.value = value;
             }),
         ),
@@ -134,12 +134,12 @@ pub fn get_graph() -> EffectGraph {
             vec![Output::new("result", "Result", DataType::Number)],
             Box::new(|input_values, output_values, _| {
                 let Some(number) = input_values.get_value("number") else { panic!() };
-                let Some(Value::Number(number)) = DataType::Number.try_cast(number) else {
+                let Some(Value::Number(number)) = DataType::Number.try_cast_from(number) else {
                     panic!()
                 };
 
                 let Some(should_invert) = input_values.get_value("should_invert") else { panic!() };
-                let Some(Value::Boolean(should_invert)) = DataType::Boolean.try_cast(should_invert)
+                let Some(Value::Boolean(should_invert)) = DataType::Boolean.try_cast_from(should_invert)
                 else {
                     panic!()
                 };

@@ -1,15 +1,12 @@
-use std::collections::HashMap;
-
-use flow::{AnySocket, Edge, GraphDef, NodeId, Socket};
+use super::node::{self, NodeView, SNAP_GRID_SIZE};
+use crate::DataType as _;
+use flow::{AnySocket, DataType, Edge, GraphDef, NodeId, Socket};
 use gpui::*;
+use std::collections::HashMap;
 use ui::{
     element::{Draggable, DraggableEvent},
     z_stack,
 };
-
-use crate::DataType;
-
-use super::node::{self, NodeView, SNAP_GRID_SIZE};
 
 pub struct GraphView<D: GraphDef> {
     graph: Entity<crate::Graph<D>>,
@@ -110,7 +107,9 @@ where
 
         let node_ids = self.graph.read(cx).node_ids().cloned().collect::<Vec<_>>();
         match from_socket {
-            AnySocket::Input(_) => {
+            AnySocket::Input(input_socket) => {
+                let input = self.graph().read(cx).input(input_socket);
+
                 // Find the closest output socket.
                 for node_id in node_ids {
                     let node = self.graph.read(cx).node(&node_id);
@@ -121,18 +120,23 @@ where
                         let position =
                             self.get_connector_position(&AnySocket::Output(source.clone()), cx);
 
-                        // If the edge can snap to the output socket
+                        // If the edge is close enough to snap to the output socket
                         if square_dist(position, end_position) < px(squared_snap_distance) {
-                            // Snap to the output socket
-                            self.new_edge.0 = Some(source);
-                            return;
+                            // And it's allowed to snap
+                            if output.data_type().try_cast_from(input.default()).is_some() {
+                                // Snap to the output socket
+                                self.new_edge.0 = Some(source);
+                                return;
+                            }
                         }
                     }
                 }
 
                 self.new_edge.0 = None;
             }
-            AnySocket::Output(_) => {
+            AnySocket::Output(output_socket) => {
+                let output = self.graph().read(cx).output(output_socket);
+
                 // Find the closest input socket.
                 for node_id in node_ids {
                     let node = self.graph.read(cx).node(&node_id);
@@ -143,11 +147,14 @@ where
                         let position =
                             self.get_connector_position(&AnySocket::Input(target.clone()), cx);
 
-                        // If the edge can snap to the input socket
+                        // If the edge is close enough to snap to the output socket
                         if square_dist(position, end_position) < px(squared_snap_distance) {
-                            // Snap to the input socket
-                            self.new_edge.1 = Some(target);
-                            return;
+                            // And it's allowed to snap
+                            if output.data_type().try_cast_from(input.default()).is_some() {
+                                // Snap to the output socket
+                                self.new_edge.0 = Some(target);
+                                return;
+                            }
                         }
                     }
                 }

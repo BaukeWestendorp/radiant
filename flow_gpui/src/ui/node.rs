@@ -1,11 +1,9 @@
+use super::graph::GraphView;
+use crate::DataType;
 use flow::{AnySocket, GraphDef, Input, NodeId, Output, Socket};
 use gpui::*;
 use prelude::FluentBuilder;
 use ui::{styled_ext::StyledExt, theme::ActiveTheme};
-
-use crate::DataType;
-
-use super::graph::GraphView;
 
 pub(crate) const NODE_CONTENT_Y_PADDING: Pixels = px(6.0);
 pub(crate) const NODE_WIDTH: Pixels = px(204.0);
@@ -14,7 +12,10 @@ pub(crate) const SOCKET_HEIGHT: Pixels = px(24.0); // cx.theme().input_height;
 pub(crate) const SOCKET_GAP: Pixels = px(12.0);
 pub(crate) const SNAP_GRID_SIZE: Pixels = px(12.0);
 
-pub struct NodeView<D: GraphDef> {
+pub struct NodeView<D: GraphDef + 'static>
+where
+    D::DataType: crate::DataType<D>,
+{
     node_id: NodeId,
 
     graph_view: Entity<GraphView<D>>,
@@ -108,29 +109,49 @@ where
     }
 }
 
-impl<D: GraphDef + 'static> Focusable for NodeView<D> {
+impl<D: GraphDef + 'static> Focusable for NodeView<D>
+where
+    D::DataType: crate::DataType<D>,
+{
     fn focus_handle(&self, _cx: &App) -> FocusHandle {
         self.focus_handle.clone()
     }
 }
 
-struct InputView<D: GraphDef> {
+struct InputView<D: GraphDef + 'static>
+where
+    D::DataType: crate::DataType<D>,
+{
     input: Input<D>,
     node_id: NodeId,
 
-    hovering: bool,
-
-    graph_view: Entity<GraphView<D>>,
+    connector: Entity<ConnectorView<D>>,
 }
 
-impl<D: GraphDef + 'static> InputView<D> {
+impl<D: GraphDef + 'static> InputView<D>
+where
+    D::DataType: crate::DataType<D>,
+{
     pub fn build(
         input: Input<D>,
         node_id: NodeId,
         graph_view: Entity<GraphView<D>>,
         cx: &mut App,
     ) -> Entity<Self> {
-        cx.new(|_cx| Self { input, node_id, hovering: false, graph_view })
+        cx.new(|cx| {
+            let socket = Socket::new(node_id, input.id().to_string());
+            let data_type = input.data_type().clone();
+            Self {
+                input,
+                node_id,
+                connector: ConnectorView::build(
+                    AnySocket::Input(socket),
+                    data_type,
+                    graph_view,
+                    cx,
+                ),
+            }
+        })
     }
 }
 
@@ -138,47 +159,56 @@ impl<D: GraphDef + 'static> Render for InputView<D>
 where
     D::DataType: crate::DataType<D>,
 {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let socket = Socket::new(self.node_id, self.input.id().to_string());
-        let any_socket = AnySocket::Input(socket);
-        let connector = render_connector(any_socket, self.hovering, self.graph_view.clone(), cx);
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         let label = self.input.label().to_string();
 
         let id = ElementId::Name(format!("input-{}-{}", self.node_id.0, self.input.id()).into());
 
         div()
             .id(id)
-            .on_drag_move::<()>(|_, _, _| {}) // FIXME: For some reason this on_drag_move is required to make on_hover work...
-            .on_hover(cx.listener(|this, hovering, _, cx| {
-                this.hovering = *hovering;
-                cx.notify();
-            }))
             .h_flex()
             .pr_1()
             .h(SOCKET_HEIGHT)
             .gap_2()
-            .child(connector)
+            .child(self.connector.clone())
             .child(label)
     }
 }
 
-struct OutputView<D: GraphDef> {
+struct OutputView<D: GraphDef + 'static>
+where
+    D::DataType: crate::DataType<D>,
+{
     output: Output<D>,
     node_id: NodeId,
 
-    hovering: bool,
-
-    graph_view: Entity<GraphView<D>>,
+    connector: Entity<ConnectorView<D>>,
 }
 
-impl<D: GraphDef + 'static> OutputView<D> {
+impl<D: GraphDef + 'static> OutputView<D>
+where
+    D::DataType: crate::DataType<D>,
+{
     pub fn build(
         output: Output<D>,
         node_id: NodeId,
         graph_view: Entity<GraphView<D>>,
         cx: &mut App,
     ) -> Entity<Self> {
-        cx.new(|_cx| Self { output, node_id, hovering: false, graph_view })
+        cx.new(|cx| {
+            let socket = Socket::new(node_id, output.id().to_string());
+            let data_type = output.data_type().clone();
+            Self {
+                output,
+                node_id,
+                connector: ConnectorView::build(
+                    AnySocket::Output(socket),
+                    data_type,
+                    graph_view,
+                    cx,
+                ),
+            }
+        })
     }
 }
 
@@ -186,115 +216,118 @@ impl<D: GraphDef + 'static> Render for OutputView<D>
 where
     D::DataType: crate::DataType<D>,
 {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let socket = Socket::new(self.node_id, self.output.id().to_string());
-        let any_socket = AnySocket::Output(socket);
-        let connector = render_connector(any_socket, self.hovering, self.graph_view.clone(), cx);
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         let label = self.output.label().to_string();
 
         let id = ElementId::Name(format!("output-{}-{}", self.node_id.0, self.output.id()).into());
 
         div()
             .id(id)
-            .on_drag_move::<()>(|_, _, _| {}) // FIXME: For some reason this on_drag_move is required to make on_hover work...
-            .on_hover(cx.listener(|this, hovering, _, cx| {
-                this.hovering = *hovering;
-                cx.notify();
-            }))
             .pl_1()
             .h_flex()
             .h(SOCKET_HEIGHT)
             .w_full()
             .flex_row_reverse()
             .gap_2()
-            .child(connector)
+            .child(self.connector.clone())
             .child(label)
     }
 }
 
-fn render_connector<D: GraphDef + 'static>(
-    any_socket: AnySocket,
-    hovering: bool,
-    graph_view: Entity<GraphView<D>>,
-    cx: &App,
-) -> impl IntoElement
+struct ConnectorView<D: GraphDef + 'static>
 where
     D::DataType: crate::DataType<D>,
 {
-    let width = px(5.0);
-    let height = px(13.0);
-    let hover_box_size = px(22.0);
+    any_socket: AnySocket,
+    data_type: D::DataType,
+    hovering: bool,
 
-    let left = match any_socket {
-        AnySocket::Input(_) => false,
-        AnySocket::Output(_) => true,
-    };
+    graph_view: Entity<GraphView<D>>,
+}
 
-    let socket = any_socket.socket().clone();
-    let graph = graph_view.read(cx).graph();
-    let template_id = graph.read(cx).node(&socket.node_id).template_id();
-    let template = graph.read(cx).template(template_id);
+impl<D: GraphDef + 'static> ConnectorView<D>
+where
+    D::DataType: crate::DataType<D>,
+{
+    const HITBOX_SIZE: Pixels = px(22.0);
 
-    let color = match any_socket {
-        AnySocket::Input(_) => template.input(&socket.id).data_type().color(),
-        AnySocket::Output(_) => template.output(&socket.id).data_type().color(),
-    };
+    pub fn build(
+        any_socket: AnySocket,
+        data_type: D::DataType,
+        graph_view: Entity<GraphView<D>>,
+        cx: &mut App,
+    ) -> Entity<Self> {
+        cx.new(|_cx| Self { any_socket, data_type, hovering: false, graph_view })
+    }
 
-    div()
-        .w(width)
-        .h(height)
-        .bg(color)
-        .rounded_r(cx.theme().radius)
-        .border_1()
-        .border_color(black().opacity(0.3))
-        .when(left, |e| e.rounded_r_none().rounded_l(cx.theme().radius))
-        .when(hovering, |e| e.bg(white()))
-        .child(
-            div()
-                .id(ElementId::Name(format!("connector-{}-{}", socket.node_id.0, socket.id).into()))
-                .size(hover_box_size)
-                .ml(width / 2.0 - hover_box_size / 2.0)
-                .mt(height / 2.0 - hover_box_size / 2.0)
-                .cursor_crosshair()
-                .on_drag(socket.clone(), |_, _, _, cx| cx.new(|_| EmptyView))
-                .on_drag_move::<Socket>({
-                    let graph_view = graph_view.clone();
-                    let any_socket = any_socket.clone();
-                    move |event, window, cx| {
-                        if &socket != event.drag(cx) {
-                            return;
-                        }
+    fn on_drag_move(
+        &mut self,
+        event: &DragMoveEvent<AnySocket>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if &self.any_socket != event.drag(cx) {
+            return;
+        }
 
-                        graph_view.update(cx, |graph_view, cx| {
-                            graph_view.drag_new_edge(
-                                &any_socket,
-                                hover_box_size.0 / 2.0,
-                                window,
-                                cx,
-                            );
-                        })
-                    }
-                })
-                .on_mouse_down(MouseButton::Left, {
-                    let graph_view = graph_view.clone();
-                    let any_socket = any_socket.clone();
-                    move |_, _, cx| {
-                        graph_view.update(cx, |graph_view, cx| {
-                            graph_view.set_new_edge_socket(&any_socket, cx)
-                        })
-                    }
-                })
-                .on_mouse_up(MouseButton::Left, {
-                    let graph_view = graph_view.clone();
-                    move |_, _, cx| {
-                        graph_view.update(cx, |graph_view, cx| graph_view.finish_new_edge(cx))
-                    }
-                })
-                .on_mouse_up_out(MouseButton::Left, {
-                    let graph_view = graph_view.clone();
-                    move |_, _, cx| {
-                        graph_view.update(cx, |graph_view, cx| graph_view.finish_new_edge(cx))
-                    }
-                }),
-        )
+        self.graph_view.update(cx, |graph_view, cx| {
+            graph_view.drag_new_edge(&self.any_socket, Self::HITBOX_SIZE.0 / 2.0, window, cx);
+        })
+    }
+
+    fn on_mouse_down(
+        &mut self,
+        _event: &MouseDownEvent,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.graph_view
+            .update(cx, |graph_view, cx| graph_view.set_new_edge_socket(&self.any_socket, cx))
+    }
+
+    fn on_mouse_up(&mut self, _event: &MouseUpEvent, _window: &mut Window, cx: &mut Context<Self>) {
+        self.graph_view.update(cx, |graph_view, cx| graph_view.finish_new_edge(cx))
+    }
+}
+
+impl<D: GraphDef + 'static> Render for ConnectorView<D>
+where
+    D::DataType: crate::DataType<D>,
+{
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let width = px(5.0);
+        let height = px(13.0);
+
+        let socket = self.any_socket.socket();
+        let id = ElementId::Name(format!("connector-{}-{}", socket.node_id.0, socket.id).into());
+
+        let hitbox = div()
+            .id(id)
+            .size(Self::HITBOX_SIZE)
+            .ml(width / 2.0 - Self::HITBOX_SIZE / 2.0)
+            .mt(height / 2.0 - Self::HITBOX_SIZE / 2.0)
+            .cursor_crosshair()
+            .on_hover(cx.listener(|this, hovering, _, _| this.hovering = *hovering))
+            .on_drag(self.any_socket.clone(), |_, _, _, cx| cx.new(|_| EmptyView))
+            .on_drag_move(cx.listener(Self::on_drag_move))
+            .on_mouse_down(MouseButton::Left, cx.listener(Self::on_mouse_down))
+            .on_mouse_up(MouseButton::Left, cx.listener(Self::on_mouse_up))
+            .on_mouse_up_out(MouseButton::Left, cx.listener(Self::on_mouse_up));
+
+        let left_side = match self.any_socket {
+            AnySocket::Input(_) => false,
+            AnySocket::Output(_) => true,
+        };
+
+        div()
+            .w(width)
+            .h(height)
+            .bg(self.data_type.color())
+            .rounded_r(cx.theme().radius)
+            .border_1()
+            .border_color(black().opacity(0.3))
+            .when(left_side, |e| e.rounded_r_none().rounded_l(cx.theme().radius))
+            .when(self.hovering, |e| e.bg(white()))
+            .child(hitbox)
+    }
 }
