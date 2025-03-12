@@ -1,35 +1,17 @@
 [workspace]
-members = [
-    "crates/radiant",
-    "crates/ui",
-    "crates/flow",
-    "crates/dmx",
-    "crates/flow_derive",
-    "crates/show",
-]
-resolver = "2"
+members = ["flow", "flow_gpui", "frames", "radiant", "ui"]
+resolver = "3"
 
 [workspace.package]
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [workspace.dependencies]
-ui = { path = "crates/ui" }
-flow = { path = "crates/flow" }
-flow_derive = { path = "crates/flow_derive" }
-dmx = { path = "crates/dmx" }
-show = { path = "crates/show" }
+frames = { path = "frames" }
+ui = { path = "ui" }
+flow = { path = "flow" }
+flow_gpui = { path = "flow_gpui" }
 
-gpui = { git = "https://github.com/zed-industries/zed.git" }
-gdtf = "0.2.0"
+serde = "1"
 
-anyhow = { version = "1.0.89", features = ["backtrace"] }
-slotmap = { version = "1.0.7", features = ["serde"] }
-thiserror = "1.0.61"
-log = "0.4.22"
-env_logger = "0.11.5"
-dirs = "5.0.1"
-regex = "1.11.0"
-
-serde = { version = "1.0.214", features = ["derive"] }
-serde_json = "1.0.132"
+gpui = { git = "https://github.com/zed-industries/zed" }

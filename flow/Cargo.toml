@@ -1,0 +1,11 @@
+[package]
+name = "flow"
+version.workspace = true
+edition.workspace = true
+
+[features]
+serde = ["dep:serde"]
+
+[dependencies]
+# feature = "serde"
+serde = { workspace = true, optional = true }
