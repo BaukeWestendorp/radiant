@@ -18,12 +18,7 @@ fn main() {
                 ))),
                 ..Default::default()
             },
-            |_, cx| {
-                cx.new(|cx| {
-                    cx.activate(true);
-                    RadiantApp::new(cx)
-                })
-            },
+            |_, cx| RadiantApp::build(cx),
         )
         .expect("should open window");
     });
