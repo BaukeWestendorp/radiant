@@ -152,7 +152,7 @@ where
                             // And it's allowed to snap
                             if output.data_type().try_cast_from(input.default()).is_some() {
                                 // Snap to the output socket
-                                self.new_edge.0 = Some(target);
+                                self.new_edge.1 = Some(target);
                                 return;
                             }
                         }
@@ -310,7 +310,8 @@ where
                 .expect(&format!("should get index of input for socket {:?}", any_socket)),
             AnySocket::Output(output) => {
                 template.inputs().len() + // Move past all input sockets.
-                    template.outputs().iter().position(|o| o.id()== output.id).expect("should get index of output")
+                    template.outputs().iter().position(|o| o.id() == output.id)
+                    .expect(&format!("should get index of input for socket {:?}", any_socket))
             }
         };
 
