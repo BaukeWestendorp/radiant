@@ -338,6 +338,6 @@ where
         let edges = self.render_edges(cx);
         let new_edge = self.render_new_edge(window, cx);
 
-        z_stack([nodes, edges, new_edge]).size_full().text_sm()
+        z_stack([nodes, edges, new_edge]).size_full().text_xs()
     }
 }

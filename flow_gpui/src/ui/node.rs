@@ -6,10 +6,10 @@ use prelude::FluentBuilder;
 use ui::{styled_ext::StyledExt, theme::ActiveTheme};
 
 pub(crate) const NODE_CONTENT_Y_PADDING: Pixels = px(6.0);
-pub(crate) const NODE_WIDTH: Pixels = px(204.0);
+pub(crate) const NODE_WIDTH: Pixels = px(192.0);
 pub(crate) const HEADER_HEIGHT: Pixels = px(24.0);
-pub(crate) const SOCKET_HEIGHT: Pixels = px(24.0); // cx.theme().input_height;
-pub(crate) const SOCKET_GAP: Pixels = px(12.0);
+pub(crate) const SOCKET_HEIGHT: Pixels = px(16.0);
+pub(crate) const SOCKET_GAP: Pixels = px(8.0);
 pub(crate) const SNAP_GRID_SIZE: Pixels = px(12.0);
 
 pub struct NodeView<D: GraphDef + 'static>
@@ -295,8 +295,8 @@ where
     D::DataType: crate::DataType<D>,
 {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let width = px(5.0);
-        let height = px(13.0);
+        let width = px(3.0);
+        let height = px(11.0);
 
         let socket = self.any_socket.socket();
         let id = ElementId::Name(format!("connector-{}-{}", socket.node_id.0, socket.id).into());

@@ -16,6 +16,8 @@ fn main() {
                     size(px(1600.0), px(960.0)),
                     cx,
                 ))),
+                app_id: Some("radiant".to_string()),
+
                 ..Default::default()
             },
             |_, cx| RadiantApp::build(cx),
