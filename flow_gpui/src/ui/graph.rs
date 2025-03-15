@@ -123,7 +123,7 @@ where
                         // If the edge is close enough to snap to the output socket
                         if square_dist(position, end_position) < px(squared_snap_distance) {
                             // And it's allowed to snap
-                            if output.data_type().can_cast_to(input.data_type()) {
+                            if output.data_type().can_cast_to(&input.data_type()) {
                                 // Snap to the output socket
                                 self.new_edge.0 = Some(source);
                                 return;
@@ -150,7 +150,7 @@ where
                         // If the edge is close enough to snap to the output socket
                         if square_dist(position, end_position) < px(squared_snap_distance) {
                             // And it's allowed to snap
-                            if output.data_type().can_cast_to(input.data_type()) {
+                            if output.data_type().can_cast_to(&input.data_type()) {
                                 // Snap to the output socket
                                 self.new_edge.1 = Some(target);
                                 return;
@@ -184,7 +184,7 @@ where
             let target = self.graph.read(cx).input(target);
             let source = self.graph.read(cx).output(source);
 
-            self.render_edge(target_pos, source_pos, target.data_type(), source.data_type())
+            self.render_edge(target_pos, source_pos, &target.data_type(), source.data_type())
         }))
     }
 
@@ -205,7 +205,7 @@ where
                 let target_pos = relative_mouse_pos;
 
                 let source = self.graph.read(cx).output(&source);
-                (source_pos, target_pos, &source.data_type(), &source.data_type())
+                (source_pos, target_pos, source.data_type(), source.data_type())
             }
             (Some(source), Some(target)) => {
                 let source_pos =
@@ -214,7 +214,7 @@ where
 
                 let source = self.graph.read(cx).output(&source);
                 let target = self.graph.read(cx).input(&target);
-                (source_pos, target_pos, &target.data_type(), &source.data_type())
+                (source_pos, target_pos, &target.data_type(), source.data_type())
             }
         };
 

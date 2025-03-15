@@ -92,8 +92,8 @@ pub fn get_graph() -> EffectGraph {
             "number_add",
             "Add Number",
             vec![
-                Input::new("a", "A", Value::Number(0.0), DataType::Number),
-                Input::new("b", "B", Value::Number(0.0), DataType::Number),
+                Input::new("a", "A", Value::Number(0.0)),
+                Input::new("b", "B", Value::Number(0.0)),
             ],
             vec![Output::new("sum", "Sum", DataType::Number)],
             Box::new(|input_values, output_values, _: &mut ProcessingContext<GraphDef>| {
@@ -109,7 +109,7 @@ pub fn get_graph() -> EffectGraph {
         Template::new(
             "output",
             "Output",
-            vec![Input::new("value", "Value", Value::Number(0.0), DataType::Number)],
+            vec![Input::new("value", "Value", Value::Number(0.0))],
             vec![],
             Box::new(|input_values, _, cx: &mut ProcessingContext<GraphDef>| {
                 let value = input_values.get_value("value").expect("should get value");
@@ -130,7 +130,7 @@ pub fn get_graph() -> EffectGraph {
             "number_invert",
             "Invert Number",
             vec![
-                Input::new("number", "Number", Value::Number(0.0), DataType::Number),
+                Input::new("number", "Number", Value::Number(0.0)),
                 Input::new(
                     "should_invert",
                     "Should Invert",

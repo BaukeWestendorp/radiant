@@ -1,4 +1,4 @@
-use crate::{GraphDef, NodeId};
+use crate::{GraphDef, NodeId, Value};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AnySocket {
@@ -32,17 +32,11 @@ pub struct Input<D: GraphDef> {
     id: String,
     label: String,
     default: D::Value,
-    data_type: D::DataType,
 }
 
 impl<D: GraphDef> Input<D> {
-    pub fn new(
-        id: impl Into<String>,
-        label: impl Into<String>,
-        default: D::Value,
-        data_type: D::DataType,
-    ) -> Self {
-        Self { id: id.into(), label: label.into(), default, data_type }
+    pub fn new(id: impl Into<String>, label: impl Into<String>, default: D::Value) -> Self {
+        Self { id: id.into(), label: label.into(), default }
     }
 
     pub fn id(&self) -> &str {
@@ -57,8 +51,8 @@ impl<D: GraphDef> Input<D> {
         &self.default
     }
 
-    pub fn data_type(&self) -> &D::DataType {
-        &self.data_type
+    pub fn data_type(&self) -> D::DataType {
+        self.default().data_type()
     }
 }
 
