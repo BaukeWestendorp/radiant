@@ -124,6 +124,7 @@ where
 {
     input: Input<D>,
     node_id: NodeId,
+    graph_view: Entity<GraphView<D>>,
 
     connector: Entity<ConnectorView<D>>,
 }
@@ -144,6 +145,7 @@ where
             Self {
                 input,
                 node_id,
+                graph_view: graph_view.clone(),
                 connector: ConnectorView::build(
                     AnySocket::Input(socket),
                     data_type,
@@ -159,10 +161,14 @@ impl<D: GraphDef + 'static> Render for InputView<D>
 where
     D::DataType: crate::DataType<D>,
 {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let label = self.input.label().to_string();
 
         let id = ElementId::Name(format!("input-{}-{}", self.node_id.0, self.input.id()).into());
+
+        let graph = self.graph_view.read(cx).graph().read(cx);
+        let socket = Socket::new(self.node_id, self.input.id().to_string());
+        let has_connection = graph.edge_source(&socket).is_some();
 
         div()
             .id(id)
@@ -172,6 +178,10 @@ where
             .gap_2()
             .child(self.connector.clone())
             .child(label)
+            .when(!has_connection, |e| {
+                let control = div().child("control").border_1().border_color(white());
+                e.child(control)
+            })
     }
 }
 
