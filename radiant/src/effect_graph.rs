@@ -11,6 +11,15 @@ pub enum Value {
     Boolean(bool),
 }
 
+impl flow::Value<GraphDef> for Value {
+    fn data_type(&self) -> DataType {
+        match self {
+            Self::Number(_) => DataType::Number,
+            Self::Boolean(_) => DataType::Boolean,
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DataType {
     Number,
@@ -106,7 +115,9 @@ pub fn get_graph() -> EffectGraph {
             vec![],
             Box::new(|input_values, _, cx: &mut ProcessingContext<GraphDef>| {
                 let Some(value) = input_values.get_value("value") else { panic!() };
-                let Some(Value::Number(value)) = DataType::Number.try_cast_from(value) else { panic!() };
+                let Some(Value::Number(value)) = DataType::Number.try_cast_from(value) else {
+                    panic!()
+                };
                 cx.value = value;
             }),
         ),
@@ -139,7 +150,8 @@ pub fn get_graph() -> EffectGraph {
                 };
 
                 let Some(should_invert) = input_values.get_value("should_invert") else { panic!() };
-                let Some(Value::Boolean(should_invert)) = DataType::Boolean.try_cast_from(should_invert)
+                let Some(Value::Boolean(should_invert)) =
+                    DataType::Boolean.try_cast_from(should_invert)
                 else {
                     panic!()
                 };

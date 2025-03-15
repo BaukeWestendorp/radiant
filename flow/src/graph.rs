@@ -4,13 +4,17 @@ use crate::{Edge, Input, Node, NodeId, Output, Socket, Template, TemplateId};
 
 pub trait GraphDef: Clone {
     #[cfg(feature = "serde")]
-    type Value: Clone + ::serde::Serialize + for<'de> ::serde::Deserialize<'de>;
+    type Value: Value<Self> + Clone + ::serde::Serialize + for<'de> ::serde::Deserialize<'de>;
     #[cfg(not(feature = "serde"))]
-    type Value: Clone;
+    type Value: Value<Self> + Clone;
 
     type DataType: DataType<Self> + Clone;
 
     type ProcessingState: Default;
+}
+
+pub trait Value<D: GraphDef> {
+    fn data_type(&self) -> D::DataType;
 }
 
 pub trait DataType<D: GraphDef> {

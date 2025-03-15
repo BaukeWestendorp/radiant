@@ -43,7 +43,6 @@ impl Render for RadiantApp {
         div()
             .bg(cx.theme().background)
             .text_color(cx.theme().text_primary)
-            .text_xs()
             .child(self.frame_container.clone())
             .child(format!("{}", self.value))
     }
