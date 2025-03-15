@@ -1,11 +1,7 @@
 use super::{GraphEvent, graph::GraphView, node::SNAP_GRID_SIZE};
 use flow::GraphDef;
 use gpui::*;
-use ui::{
-    element::{Pannable, PannableEvent},
-    theme::ActiveTheme,
-    z_stack,
-};
+use ui::{Pannable, PannableEvent, theme::ActiveTheme, z_stack};
 
 pub struct GraphEditorView<D: GraphDef> {
     graph_view: Entity<Pannable>,

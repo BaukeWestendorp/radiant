@@ -3,10 +3,7 @@ use crate::DataType as _;
 use flow::{AnySocket, DataType as _, Edge, GraphDef, NodeId, Socket};
 use gpui::*;
 use std::collections::HashMap;
-use ui::{
-    element::{Draggable, DraggableEvent},
-    z_stack,
-};
+use ui::{Draggable, DraggableEvent, z_stack};
 
 pub struct GraphView<D: GraphDef> {
     graph: Entity<crate::Graph<D>>,

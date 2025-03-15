@@ -5,6 +5,7 @@ pub struct Theme {
     pub background_focused: Hsla,
 
     pub text_primary: Hsla,
+    pub text_muted: Hsla,
 
     pub radius: Pixels,
     pub border_color: Hsla,
@@ -29,6 +30,7 @@ impl Default for Theme {
             background_focused: gpui::hsla(0.0, 0.0, 0.1, 1.0),
 
             text_primary: gpui::hsla(0.0, 0.0, 1.0, 1.0),
+            text_muted: gpui::hsla(0.0, 0.0, 0.75, 1.0),
 
             radius: gpui::px(4.0),
             border_color: gpui::hsla(0.0, 0.0, 0.5, 1.0),

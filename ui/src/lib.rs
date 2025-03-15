@@ -1,4 +1,5 @@
-pub mod element;
+mod element;
+mod input;
 pub mod styled_ext;
 pub mod theme;
 
@@ -7,4 +8,5 @@ mod utils;
 
 pub use element::*;
 pub use grid::*;
+pub use input::*;
 pub use utils::*;
