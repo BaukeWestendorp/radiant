@@ -131,12 +131,7 @@ pub fn get_graph() -> EffectGraph {
             "Invert Number",
             vec![
                 Input::new("number", "Number", Value::Number(0.0)),
-                Input::new(
-                    "should_invert",
-                    "Should Invert",
-                    Value::Boolean(false),
-                    DataType::Boolean,
-                ),
+                Input::new("should_invert", "Should Invert", Value::Boolean(false)),
             ],
             vec![Output::new("result", "Result", DataType::Number)],
             Box::new(|input_values, output_values, _| {
