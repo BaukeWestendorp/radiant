@@ -18,6 +18,6 @@ where
 
 impl<D: GraphDef + 'static> Render for GraphEditor<D> {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().child(self.graph_editor_view.clone()).size_full()
+        div().size_full().child(self.graph_editor_view.clone())
     }
 }

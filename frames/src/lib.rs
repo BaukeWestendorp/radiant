@@ -24,6 +24,7 @@ impl<F: Frame + 'static> FrameContainer<F> {
             bounds,
             focus_handle: cx.focus_handle(),
         }));
+        cx.notify();
     }
 
     pub fn show_grid(&mut self, show: bool) {
@@ -39,7 +40,7 @@ impl<F: Frame + 'static> Render for FrameContainer<F> {
                 .h(self.grid_size.height as f32 * self.cell_size)
                 .into_any_element()
         });
-        let frames = div().size_full().children(self.frames.clone()).into_any_element();
+        let frames = z_stack(self.frames.clone()).size_full().into_any_element();
         z_stack([grid, Some(frames)].into_iter().flatten())
     }
 }
