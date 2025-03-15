@@ -1,6 +1,6 @@
 use super::node::{self, NodeView, SNAP_GRID_SIZE};
 use crate::DataType as _;
-use flow::{AnySocket, DataType, Edge, GraphDef, NodeId, Socket};
+use flow::{AnySocket, DataType as _, Edge, GraphDef, NodeId, Socket};
 use gpui::*;
 use std::collections::HashMap;
 use ui::{
@@ -123,7 +123,7 @@ where
                         // If the edge is close enough to snap to the output socket
                         if square_dist(position, end_position) < px(squared_snap_distance) {
                             // And it's allowed to snap
-                            if output.data_type().try_cast_from(input.default()).is_some() {
+                            if output.data_type().can_cast_to(input.data_type()) {
                                 // Snap to the output socket
                                 self.new_edge.0 = Some(source);
                                 return;
@@ -150,7 +150,7 @@ where
                         // If the edge is close enough to snap to the output socket
                         if square_dist(position, end_position) < px(squared_snap_distance) {
                             // And it's allowed to snap
-                            if output.data_type().try_cast_from(input.default()).is_some() {
+                            if output.data_type().can_cast_to(input.data_type()) {
                                 // Snap to the output socket
                                 self.new_edge.1 = Some(target);
                                 return;

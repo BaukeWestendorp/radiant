@@ -1,6 +1,6 @@
 use flow_gpui::{
     Graph,
-    flow::{self, DataType as _, Input, Output, ProcessingContext, Template},
+    flow::{self, Input, Output, ProcessingContext, Template, Value as _},
 };
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -16,6 +16,14 @@ impl flow::Value<GraphDef> for Value {
         match self {
             Self::Number(_) => DataType::Number,
             Self::Boolean(_) => DataType::Boolean,
+        }
+    }
+
+    fn cast_to(&self, to: &DataType) -> Option<Value> {
+        match (self, to) {
+            (Self::Number(_), DataType::Number) => Some(self.clone()),
+            (Self::Boolean(_), DataType::Boolean) => Some(self.clone()),
+            _ => None,
         }
     }
 }
@@ -36,16 +44,6 @@ impl flow_gpui::DataType<GraphDef> for DataType {
 }
 
 impl flow::DataType<GraphDef> for DataType {
-    fn try_cast_from(&self, from: &Value) -> Option<Value> {
-        match (self, from) {
-            (Self::Number, Value::Number(_)) => Some(from.clone()),
-
-            (Self::Boolean, Value::Boolean(_)) => Some(from.clone()),
-
-            _ => None,
-        }
-    }
-
     fn default_value(&self) -> <GraphDef as flow::GraphDef>::Value {
         match self {
             Self::Number => Value::Number(Default::default()),
@@ -98,12 +96,12 @@ pub fn get_graph() -> EffectGraph {
                 Input::new("b", "B", Value::Number(0.0), DataType::Number),
             ],
             vec![Output::new("sum", "Sum", DataType::Number)],
-            Box::new(|input_values, output_values, _| {
-                let Some(a) = input_values.get_value("a") else { panic!() };
-                let Some(Value::Number(a)) = DataType::Number.try_cast_from(a) else { panic!() };
+            Box::new(|input_values, output_values, _: &mut ProcessingContext<GraphDef>| {
+                let a = input_values.get_value("a").expect("should get value");
+                let Some(Value::Number(a)) = a.cast_to(&DataType::Number) else { panic!() };
 
-                let Some(b) = input_values.get_value("b") else { panic!() };
-                let Some(Value::Number(b)) = DataType::Number.try_cast_from(b) else { panic!() };
+                let b = input_values.get_value("b").expect("should get value");
+                let Some(Value::Number(b)) = b.cast_to(&DataType::Number) else { panic!() };
 
                 output_values.set_value("sum", Value::Number(a + b));
             }),
@@ -114,10 +112,8 @@ pub fn get_graph() -> EffectGraph {
             vec![Input::new("value", "Value", Value::Number(0.0), DataType::Number)],
             vec![],
             Box::new(|input_values, _, cx: &mut ProcessingContext<GraphDef>| {
-                let Some(value) = input_values.get_value("value") else { panic!() };
-                let Some(Value::Number(value)) = DataType::Number.try_cast_from(value) else {
-                    panic!()
-                };
+                let value = input_values.get_value("value").expect("should get value");
+                let Some(Value::Number(value)) = value.cast_to(&DataType::Number) else { panic!() };
                 cx.value = value;
             }),
         ),
@@ -145,13 +141,12 @@ pub fn get_graph() -> EffectGraph {
             vec![Output::new("result", "Result", DataType::Number)],
             Box::new(|input_values, output_values, _| {
                 let Some(number) = input_values.get_value("number") else { panic!() };
-                let Some(Value::Number(number)) = DataType::Number.try_cast_from(number) else {
+                let Some(Value::Number(number)) = number.cast_to(&DataType::Number) else {
                     panic!()
                 };
 
                 let Some(should_invert) = input_values.get_value("should_invert") else { panic!() };
-                let Some(Value::Boolean(should_invert)) =
-                    DataType::Boolean.try_cast_from(should_invert)
+                let Some(Value::Boolean(should_invert)) = should_invert.cast_to(&DataType::Boolean)
                 else {
                     panic!()
                 };
