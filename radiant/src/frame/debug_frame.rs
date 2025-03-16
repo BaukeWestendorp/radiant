@@ -8,7 +8,11 @@ pub struct DebugFrame {
 impl DebugFrame {
     pub fn build(window: &mut Window, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {
-            let text_field = cx.new(|cx| TextField::new(window, cx));
+            let text_field = cx.new(|cx| {
+                let mut text_field = TextField::new(window, cx);
+                text_field.set_text("123 456  789".into());
+                text_field
+            });
             Self { text_field }
         })
     }

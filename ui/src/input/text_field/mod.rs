@@ -1,4 +1,4 @@
-use std::ops::{Range, Sub};
+use std::ops::Range;
 
 use crate::theme::ActiveTheme;
 use gpui::*;
@@ -9,12 +9,29 @@ mod text_element;
 
 const KEY_CONTEXT: &str = "Input";
 
-actions!(input, [Left, Right, Backspace, Delete, Enter]);
+actions!(
+    input,
+    [
+        MoveLeft,
+        MoveRight,
+        MoveToPreviousWord,
+        MoveToNextWord,
+        MoveToStartOfLine,
+        MoveToEndOfLine,
+        Backspace,
+        Delete,
+        Enter
+    ]
+);
 
 pub fn init(cx: &mut App) {
     cx.bind_keys([
-        KeyBinding::new("left", Left, Some(KEY_CONTEXT)),
-        KeyBinding::new("right", Right, Some(KEY_CONTEXT)),
+        KeyBinding::new("left", MoveLeft, Some(KEY_CONTEXT)),
+        KeyBinding::new("right", MoveRight, Some(KEY_CONTEXT)),
+        KeyBinding::new("ctrl-left", MoveToPreviousWord, Some(KEY_CONTEXT)),
+        KeyBinding::new("ctrl-right", MoveToNextWord, Some(KEY_CONTEXT)),
+        KeyBinding::new("home", MoveToStartOfLine, Some(KEY_CONTEXT)),
+        KeyBinding::new("end", MoveToEndOfLine, Some(KEY_CONTEXT)),
         KeyBinding::new("backspace", Backspace, Some(KEY_CONTEXT)),
         KeyBinding::new("delete", Delete, Some(KEY_CONTEXT)),
         KeyBinding::new("enter", Enter, Some(KEY_CONTEXT)),
@@ -111,18 +128,88 @@ impl TextField {
         let char_offset = self.cursor_char_offset();
         char_offset..char_offset
     }
+
+    fn start_of_word_char_offset(&self) -> usize {
+        let mut offset = self.cursor_char_offset();
+        while offset > 0 && self.text.chars().nth(offset - 1).unwrap().is_whitespace() {
+            offset -= 1;
+        }
+        while offset > 0 && self.text.chars().nth(offset - 1).unwrap().is_alphanumeric() {
+            offset -= 1;
+        }
+        offset
+    }
+
+    fn end_of_word_char_offset(&self) -> usize {
+        let mut offset = self.cursor_char_offset();
+        while offset < self.text.len() && self.text.chars().nth(offset).unwrap().is_whitespace() {
+            offset += 1;
+        }
+        while offset < self.text.len() && self.text.chars().nth(offset).unwrap().is_alphanumeric() {
+            offset += 1;
+        }
+        offset
+    }
 }
 
 impl TextField {
-    fn handle_left(&mut self, _: &Left, _window: &mut Window, cx: &mut Context<Self>) {
+    fn handle_move_left(&mut self, _: &MoveLeft, _window: &mut Window, cx: &mut Context<Self>) {
         let new_char_offset = self.cursor_char_offset().saturating_sub(1);
         let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
         self.move_to(new_utf16_offset, cx);
         cx.notify();
     }
 
-    fn handle_right(&mut self, _: &Right, _window: &mut Window, cx: &mut Context<Self>) {
+    fn handle_move_right(&mut self, _: &MoveRight, _window: &mut Window, cx: &mut Context<Self>) {
         let new_char_offset = self.cursor_char_offset().saturating_add(1);
+        let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
+        self.move_to(new_utf16_offset, cx);
+        cx.notify();
+    }
+
+    fn handle_move_to_start_of_word(
+        &mut self,
+        _: &MoveToPreviousWord,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let new_char_offset = self.start_of_word_char_offset();
+        let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
+        self.move_to(new_utf16_offset, cx);
+        cx.notify();
+    }
+
+    fn handle_move_to_end_of_word(
+        &mut self,
+        _: &MoveToNextWord,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let new_char_offset = self.end_of_word_char_offset();
+        let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
+        self.move_to(new_utf16_offset, cx);
+        cx.notify();
+    }
+
+    fn handle_move_to_start_of_line(
+        &mut self,
+        _: &MoveToStartOfLine,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let new_char_offset = 0;
+        let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
+        self.move_to(new_utf16_offset, cx);
+        cx.notify();
+    }
+
+    fn handle_move_to_end_of_line(
+        &mut self,
+        _: &MoveToEndOfLine,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let new_char_offset = self.text().chars().count();
         let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
         self.move_to(new_utf16_offset, cx);
         cx.notify();
@@ -247,8 +334,12 @@ impl Render for TextField {
             })
             .rounded(cx.theme().radius)
             .child(TextElement::new(cx.entity().clone()))
-            .on_action(cx.listener(Self::handle_left))
-            .on_action(cx.listener(Self::handle_right))
+            .on_action(cx.listener(Self::handle_move_left))
+            .on_action(cx.listener(Self::handle_move_right))
+            .on_action(cx.listener(Self::handle_move_to_start_of_word))
+            .on_action(cx.listener(Self::handle_move_to_end_of_word))
+            .on_action(cx.listener(Self::handle_move_to_start_of_line))
+            .on_action(cx.listener(Self::handle_move_to_end_of_line))
             .on_action(cx.listener(Self::handle_backspace))
             .on_action(cx.listener(Self::handle_delete))
             .on_action(cx.listener(Self::handle_enter))
