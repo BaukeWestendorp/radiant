@@ -9,7 +9,7 @@ actions!(app, [Quit]);
 
 fn main() {
     Application::new().run(|cx: &mut App| {
-        ui::theme::Theme::init(cx);
+        ui::init(cx);
 
         cx.bind_keys([KeyBinding::new("ctrl-q", Quit, None)]);
 
