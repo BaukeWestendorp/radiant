@@ -174,7 +174,7 @@ impl TextField {
     }
 
     pub fn has_selection(&self) -> bool {
-        self.utf16_selection.is_empty()
+        self.utf16_selection.start != self.utf16_selection.end
     }
 
     fn char_offset_to_utf16(&self, char_offset: usize) -> usize {
@@ -260,7 +260,7 @@ impl TextField {
 
 impl TextField {
     fn handle_move_left(&mut self, _: &MoveLeft, _window: &mut Window, cx: &mut Context<Self>) {
-        if self.has_selection() {
+        if !self.has_selection() {
             self.move_left(cx);
         }
         self.end_current_selection(cx);
@@ -268,7 +268,7 @@ impl TextField {
     }
 
     fn handle_move_right(&mut self, _: &MoveRight, _window: &mut Window, cx: &mut Context<Self>) {
-        if self.has_selection() {
+        if !self.has_selection() {
             self.move_right(cx);
         }
         self.end_current_selection(cx);
@@ -281,7 +281,7 @@ impl TextField {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if self.has_selection() {
+        if !self.has_selection() {
             self.move_to_start_of_word(cx);
         }
         self.end_current_selection(cx);
@@ -294,7 +294,7 @@ impl TextField {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if self.has_selection() {
+        if !self.has_selection() {
             self.move_to_end_of_word(cx);
         }
         self.end_current_selection(cx);
@@ -307,7 +307,7 @@ impl TextField {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if self.has_selection() {
+        if !self.has_selection() {
             self.move_to_start_of_line(cx);
         }
         self.end_current_selection(cx);
@@ -320,7 +320,7 @@ impl TextField {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if self.has_selection() {
+        if !self.has_selection() {
             self.move_to_end_of_line(cx);
         }
         self.end_current_selection(cx);
@@ -397,12 +397,24 @@ impl TextField {
     }
 
     fn handle_backspace(&mut self, _: &Backspace, window: &mut Window, cx: &mut Context<Self>) {
+        if self.has_selection() {
+            let range = self.utf16_selection_range();
+            self.replace_text_in_range(Some(range), "", window, cx);
+            return;
+        }
+
         let utf16_offset = self.cursor_utf16_offset();
         let utf16_range = utf16_offset.saturating_sub(1)..utf16_offset;
         self.replace_text_in_range(Some(utf16_range), "", window, cx);
     }
 
     fn handle_delete(&mut self, _: &Delete, window: &mut Window, cx: &mut Context<Self>) {
+        if self.has_selection() {
+            let range = self.utf16_selection_range();
+            self.replace_text_in_range(Some(range), "", window, cx);
+            return;
+        }
+
         let utf16_offset = self.cursor_utf16_offset();
         let utf16_range = utf16_offset..utf16_offset.saturating_add(1);
         self.replace_text_in_range(Some(utf16_range), "", window, cx);
