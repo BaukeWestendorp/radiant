@@ -14,6 +14,10 @@ pub struct Theme {
 
     pub accent: Hsla,
 
+    pub cursor: Hsla,
+    pub cursor_width: Pixels,
+    pub highlight: Hsla,
+
     pub grid_color: Hsla,
 }
 
@@ -38,6 +42,10 @@ impl Default for Theme {
             border_color_focused: gpui::rgb(0xffc416).into(),
 
             accent: gpui::rgb(0xffc416).into(),
+
+            cursor: gpui::rgb(0xffc416).into(),
+            cursor_width: gpui::px(1.0),
+            highlight: gpui::rgba(0xffc41640).into(),
 
             grid_color: gpui::rgba(0xffc41680).into(),
         }

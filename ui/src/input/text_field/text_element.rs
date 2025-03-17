@@ -72,7 +72,8 @@ impl Element for TextElement {
         // Cursor.
         let cursor_x_offset = line.x_for_index(field.cursor_char_offset());
         let cursor_origin = bounds.origin + point(cursor_x_offset, px(0.0));
-        let cursor_bounds = gpui::bounds(cursor_origin, size(px(1.0), window.line_height()));
+        let cursor_bounds =
+            gpui::bounds(cursor_origin, size(cx.theme().cursor_width, window.line_height()));
 
         // Selection.
         let char_selection = field.char_selection();
@@ -136,11 +137,10 @@ impl Element for TextElement {
         _ = line.paint(bounds.origin + text_offset, window.line_height(), window, cx);
 
         // Paint selection.
-        _ = window
-            .paint_quad(fill(*selection_bounds + text_offset, cx.theme().accent.opacity(0.3)));
+        _ = window.paint_quad(fill(*selection_bounds + text_offset, cx.theme().highlight));
 
         // Paint cursor.
-        _ = window.paint_quad(fill(*cursor_bounds + text_offset, cx.theme().accent));
+        _ = window.paint_quad(fill(*cursor_bounds + text_offset, cx.theme().cursor));
     }
 }
 
