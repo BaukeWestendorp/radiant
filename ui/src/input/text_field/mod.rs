@@ -1,10 +1,12 @@
 use std::ops::Range;
 
 use crate::theme::ActiveTheme;
+use blink::BlinkCursor;
 use gpui::*;
 use prelude::FluentBuilder;
 use text_element::TextElement;
 
+mod blink;
 mod text_element;
 
 const KEY_CONTEXT: &str = "Input";
@@ -70,11 +72,19 @@ pub struct TextField {
     focus_handle: FocusHandle,
     last_prepaint_state: Option<text_element::PrepaintState>,
     scroll_offset: Pixels,
+
+    blink_cursor: Entity<BlinkCursor>,
 }
 
 impl TextField {
     pub fn new(_window: &mut Window, cx: &mut Context<Self>) -> Self {
         let focus_handle = cx.focus_handle();
+
+        let blink_cursor = cx.new(|cx| {
+            let mut blink_cursor = BlinkCursor::new();
+            blink_cursor.start(cx);
+            blink_cursor
+        });
 
         Self {
             text: "".into(),
@@ -86,6 +96,7 @@ impl TextField {
             focus_handle,
             last_prepaint_state: None,
             scroll_offset: px(0.0),
+            blink_cursor,
         }
     }
 

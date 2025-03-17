@@ -122,6 +122,7 @@ impl Element for TextElement {
         }
 
         let field = self.field.read(cx);
+        let should_show_cursor = field.blink_cursor.read(cx).visible();
         let focus_handle = field.focus_handle.clone();
 
         // Handle Input.
@@ -139,8 +140,10 @@ impl Element for TextElement {
         // Paint selection.
         _ = window.paint_quad(fill(*selection_bounds + text_offset, cx.theme().highlight));
 
-        // Paint cursor.
-        _ = window.paint_quad(fill(*cursor_bounds + text_offset, cx.theme().cursor));
+        // Paint cursor if visible.
+        if should_show_cursor {
+            _ = window.paint_quad(fill(*cursor_bounds + text_offset, cx.theme().cursor));
+        }
     }
 }
 
