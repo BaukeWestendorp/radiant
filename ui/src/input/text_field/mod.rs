@@ -448,12 +448,10 @@ impl EntityInputHandler for TextField {
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) -> Option<std::ops::Range<usize>> {
-        unimplemented!("text marking is not implemented")
+        None
     }
 
-    fn unmark_text(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {
-        unimplemented!("text marking is not implemented")
-    }
+    fn unmark_text(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {}
 
     fn replace_text_in_range(
         &mut self,
@@ -492,7 +490,6 @@ impl EntityInputHandler for TextField {
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
-        unimplemented!("text marking is not implemented")
     }
 
     fn bounds_for_range(
