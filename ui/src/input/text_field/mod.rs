@@ -61,6 +61,7 @@ pub struct TextField {
 
     focus_handle: FocusHandle,
     last_prepaint_state: Option<text_element::PrepaintState>,
+    scroll_offset: Pixels,
 }
 
 impl TextField {
@@ -76,6 +77,7 @@ impl TextField {
 
             focus_handle,
             last_prepaint_state: None,
+            scroll_offset: px(0.0),
         }
     }
 
@@ -99,6 +101,7 @@ impl TextField {
     pub fn move_to(&mut self, mut utf16_offset: usize, cx: &mut Context<Self>) {
         utf16_offset = utf16_offset.clamp(0, self.text.len());
         self.utf16_selection = utf16_offset..utf16_offset;
+
         cx.notify();
     }
 
@@ -441,7 +444,8 @@ impl TextField {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let Some(char_offset) = self.character_index_for_point(event.position, window, cx) else {
+        let point = event.position + point(self.scroll_offset, px(0.0));
+        let Some(char_offset) = self.character_index_for_point(point, window, cx) else {
             return;
         };
 
@@ -463,17 +467,18 @@ impl TextField {
         self.start_selection();
     }
 
-    fn handle_mouse_move(
+    fn handle_drag_move(
         &mut self,
-        event: &MouseMoveEvent,
+        event: &DragMoveEvent<()>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if !event.dragging() {
+        if !event.event.dragging() {
             return;
         }
 
-        let Some(char_offset) = self.character_index_for_point(event.position, window, cx) else {
+        let point = event.event.position + point(self.scroll_offset, px(0.0));
+        let Some(char_offset) = self.character_index_for_point(point, window, cx) else {
             return;
         };
 
@@ -600,7 +605,9 @@ impl Render for TextField {
                 e.bg(cx.theme().background_focused).border_color(cx.theme().border_color_focused)
             })
             .rounded(cx.theme().radius)
-            .child(div().child(TextElement::new(cx.entity().clone())).cursor_text())
+            .child(
+                div().child(TextElement::new(cx.entity().clone())).cursor_text().overflow_hidden(),
+            )
             .on_action(cx.listener(Self::handle_move_left))
             .on_action(cx.listener(Self::handle_move_right))
             .on_action(cx.listener(Self::handle_move_to_start_of_word))
@@ -618,7 +625,9 @@ impl Render for TextField {
             .on_action(cx.listener(Self::handle_delete))
             .on_action(cx.listener(Self::handle_enter))
             .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_mouse_down))
-            .on_mouse_move(cx.listener(Self::handle_mouse_move))
+            .on_drag((), |_, _, _, cx| cx.new(|_| EmptyView))
+            .on_drag_move(cx.listener(Self::handle_drag_move))
             .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
+            .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up))
     }
 }

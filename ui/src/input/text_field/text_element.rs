@@ -98,8 +98,30 @@ impl Element for TextElement {
         window: &mut Window,
         cx: &mut App,
     ) {
-        let focus_handle = self.field.read(cx).focus_handle.clone();
         let Self::PrepaintState { bounds, line, cursor_bounds, selection_bounds } = prepaint;
+
+        let cursor_px_offset = cursor_bounds.right() - bounds.left();
+        if cursor_px_offset >= bounds.size.width {
+            self.field.update(cx, |field, _cx| {
+                let new_offset = cursor_px_offset - bounds.size.width;
+                if new_offset > field.scroll_offset {
+                    field.scroll_offset = new_offset;
+                }
+            });
+        }
+
+        let scroll_offset = self.field.read(cx).scroll_offset;
+        if cursor_px_offset < scroll_offset {
+            self.field.update(cx, |field, _cx| {
+                let new_offset = cursor_px_offset - cursor_bounds.size.width;
+                if new_offset < field.scroll_offset {
+                    field.scroll_offset = new_offset;
+                }
+            });
+        }
+
+        let field = self.field.read(cx);
+        let focus_handle = field.focus_handle.clone();
 
         // Handle Input.
         window.handle_input(
@@ -108,14 +130,17 @@ impl Element for TextElement {
             cx,
         );
 
+        let text_offset = point(-field.scroll_offset, px(0.0));
+
         // Paint text.
-        _ = line.paint(bounds.origin, window.line_height(), window, cx);
+        _ = line.paint(bounds.origin + text_offset, window.line_height(), window, cx);
 
         // Paint selection.
-        _ = window.paint_quad(fill(*selection_bounds, cx.theme().accent.opacity(0.3)));
+        _ = window
+            .paint_quad(fill(*selection_bounds + text_offset, cx.theme().accent.opacity(0.3)));
 
         // Paint cursor.
-        _ = window.paint_quad(fill(*cursor_bounds, cx.theme().accent));
+        _ = window.paint_quad(fill(*cursor_bounds + text_offset, cx.theme().accent));
     }
 }
 

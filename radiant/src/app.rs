@@ -27,7 +27,7 @@ impl RadiantApp {
                     );
                     container.add_frame(
                         MainFrame::DebugFrame(DebugFrame::build(window, cx)),
-                        bounds(point(15, 0), size(4, 4)),
+                        bounds(point(15, 0), size(2, 4)),
                         cx,
                     );
                     container
