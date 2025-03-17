@@ -39,6 +39,8 @@ pub fn init(cx: &mut App) {
         KeyBinding::new("ctrl-right", MoveToNextWord, Some(KEY_CONTEXT)),
         KeyBinding::new("home", MoveToStartOfLine, Some(KEY_CONTEXT)),
         KeyBinding::new("end", MoveToEndOfLine, Some(KEY_CONTEXT)),
+        KeyBinding::new("pageup", MoveToStartOfLine, Some(KEY_CONTEXT)),
+        KeyBinding::new("pagedown", MoveToEndOfLine, Some(KEY_CONTEXT)),
         KeyBinding::new("shift-left", SelectLeft, Some(KEY_CONTEXT)),
         KeyBinding::new("shift-right", SelectRight, Some(KEY_CONTEXT)),
         KeyBinding::new("shift-ctrl-left", SelectToStartOfWord, Some(KEY_CONTEXT)),
