@@ -462,6 +462,8 @@ impl EntityInputHandler for TextField {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        self.unselect(cx);
+
         let char_range = match utf16_range {
             Some(utf16_range) => {
                 self.char_offset_from_utf16(utf16_range.start)
@@ -473,13 +475,11 @@ impl EntityInputHandler for TextField {
         let new_text =
             self.text[0..char_range.start].to_owned() + text + &self.text[char_range.end..];
 
+        self.set_text(new_text.into());
+
         // Move the cursor to the end of the inserted text.
         let utf16_offset = self.char_offset_to_utf16(char_range.start) + text.len();
         self.move_to(utf16_offset, cx);
-
-        self.set_text(new_text.into());
-
-        self.unselect(cx);
 
         cx.notify();
     }
