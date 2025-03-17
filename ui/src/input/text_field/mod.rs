@@ -175,6 +175,21 @@ impl TextField {
         cx.notify();
     }
 
+    fn select_all(&mut self, cx: &mut Context<Self>) {
+        self.end_current_selection(cx);
+        self.move_to(0, cx);
+        self.start_selection();
+        self.move_to(self.text().len(), cx);
+        self.end_current_selection(cx);
+    }
+
+    fn select_word_under_cursor(&mut self, cx: &mut Context<Self>) {
+        self.move_to_start_of_word(cx);
+        self.start_selection();
+        self.move_to_end_of_word(cx);
+        self.end_current_selection(cx);
+    }
+
     pub fn has_selection(&self) -> bool {
         self.utf16_selection.start != self.utf16_selection.end
     }
@@ -391,11 +406,7 @@ impl TextField {
     }
 
     fn handle_select_all(&mut self, _: &SelectAll, _window: &mut Window, cx: &mut Context<Self>) {
-        self.end_current_selection(cx);
-        self.move_to(0, cx);
-        self.start_selection();
-        self.move_to(self.text().len(), cx);
-        self.end_current_selection(cx);
+        self.select_all(cx);
     }
 
     fn handle_backspace(&mut self, _: &Backspace, window: &mut Window, cx: &mut Context<Self>) {
@@ -436,6 +447,19 @@ impl TextField {
 
         let utf16_offset = self.char_offset_to_utf16(char_offset);
         self.move_to(utf16_offset, cx);
+
+        match event.click_count {
+            2 => {
+                self.select_word_under_cursor(cx);
+                return;
+            }
+            3 => {
+                self.select_all(cx);
+                return;
+            }
+            _ => {}
+        }
+
         self.start_selection();
     }
 
