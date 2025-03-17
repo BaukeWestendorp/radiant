@@ -77,14 +77,14 @@ pub struct TextField {
 }
 
 impl TextField {
-    pub fn new(_window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let focus_handle = cx.focus_handle();
 
-        let blink_cursor = cx.new(|cx| {
-            let mut blink_cursor = BlinkCursor::new();
-            blink_cursor.start(cx);
-            blink_cursor
-        });
+        let blink_cursor = cx.new(|_cx| BlinkCursor::new());
+        cx.observe(&blink_cursor, |_, _, cx| cx.notify()).detach();
+
+        cx.on_focus(&focus_handle, window, Self::handle_focus).detach();
+        cx.on_blur(&focus_handle, window, Self::handle_blur).detach();
 
         Self {
             text: "".into(),
@@ -552,6 +552,19 @@ impl TextField {
         cx: &mut Context<Self>,
     ) {
         self.end_current_selection(cx);
+    }
+
+    fn handle_focus(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
+        self.blink_cursor.update(cx, |blink_cursor, cx| {
+            blink_cursor.start(cx);
+        });
+    }
+
+    fn handle_blur(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
+        self.unselect(cx);
+        self.blink_cursor.update(cx, |blink_cursor, cx| {
+            blink_cursor.stop(cx);
+        });
     }
 }
 

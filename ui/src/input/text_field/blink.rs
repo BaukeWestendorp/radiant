@@ -1,7 +1,7 @@
 use gpui::{Context, Timer};
 use std::time::Duration;
 
-const BLINK_TIME: Duration = Duration::from_millis(500);
+const BLINK_TIME: Duration = Duration::from_millis(1000);
 
 pub struct BlinkCursor {
     visible: bool,
@@ -25,6 +25,7 @@ impl BlinkCursor {
 
     pub fn stop(&mut self, cx: &mut Context<Self>) {
         self.epoch = 0;
+        self.visible = false;
         cx.notify();
     }
 
