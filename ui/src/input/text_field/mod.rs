@@ -25,6 +25,9 @@ actions!(
         SelectToStartOfLine,
         SelectToEndOfLine,
         SelectAll,
+        Copy,
+        Cut,
+        Paste,
         Backspace,
         Delete,
         Enter
@@ -48,6 +51,9 @@ pub fn init(cx: &mut App) {
         KeyBinding::new("shift-home", SelectToStartOfLine, Some(KEY_CONTEXT)),
         KeyBinding::new("shift-end", SelectToEndOfLine, Some(KEY_CONTEXT)),
         KeyBinding::new("ctrl-a", SelectAll, Some(KEY_CONTEXT)),
+        KeyBinding::new("ctrl-c", Copy, Some(KEY_CONTEXT)),
+        KeyBinding::new("ctrl-x", Cut, Some(KEY_CONTEXT)),
+        KeyBinding::new("ctrl-v", Paste, Some(KEY_CONTEXT)),
         KeyBinding::new("backspace", Backspace, Some(KEY_CONTEXT)),
         KeyBinding::new("delete", Delete, Some(KEY_CONTEXT)),
         KeyBinding::new("enter", Enter, Some(KEY_CONTEXT)),
@@ -186,6 +192,31 @@ impl TextField {
         self.start_selection();
         self.move_to(self.text().len(), cx);
         self.end_current_selection(cx);
+    }
+
+    fn delete_selection(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let range = self.utf16_selection_range();
+        self.replace_text_in_range(Some(range), "", window, cx);
+    }
+
+    fn copy_selection(&mut self, cx: &mut Context<Self>) {
+        self.commit_current_selection(cx);
+        let utf16_range = self.utf16_selection_range();
+        let text = self.text[utf16_range].to_string();
+        cx.write_to_clipboard(ClipboardItem::new_string(text));
+    }
+
+    fn cut_selection(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.copy_selection(cx);
+        self.delete_selection(window, cx);
+    }
+
+    fn paste(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.commit_current_selection(cx);
+        if let Some(text) = cx.read_from_clipboard().and_then(|c| c.text()) {
+            let utf16_range = self.utf16_selection_range();
+            self.replace_text_in_range(Some(utf16_range), &text, window, cx);
+        }
     }
 
     fn select_word_under_cursor(&mut self, cx: &mut Context<Self>) {
@@ -418,10 +449,21 @@ impl TextField {
         self.select_all(cx);
     }
 
+    fn handle_copy(&mut self, _: &Copy, _window: &mut Window, cx: &mut Context<Self>) {
+        self.copy_selection(cx);
+    }
+
+    fn handle_cut(&mut self, _: &Cut, window: &mut Window, cx: &mut Context<Self>) {
+        self.cut_selection(window, cx);
+    }
+
+    fn handle_paste(&mut self, _: &Paste, window: &mut Window, cx: &mut Context<Self>) {
+        self.paste(window, cx);
+    }
+
     fn handle_backspace(&mut self, _: &Backspace, window: &mut Window, cx: &mut Context<Self>) {
         if self.has_selection() {
-            let range = self.utf16_selection_range();
-            self.replace_text_in_range(Some(range), "", window, cx);
+            self.delete_selection(window, cx);
             return;
         }
 
@@ -432,8 +474,7 @@ impl TextField {
 
     fn handle_delete(&mut self, _: &Delete, window: &mut Window, cx: &mut Context<Self>) {
         if self.has_selection() {
-            let range = self.utf16_selection_range();
-            self.replace_text_in_range(Some(range), "", window, cx);
+            self.delete_selection(window, cx);
             return;
         }
 
@@ -627,6 +668,9 @@ impl Render for TextField {
             .on_action(cx.listener(Self::handle_select_to_start_of_line))
             .on_action(cx.listener(Self::handle_select_to_end_of_line))
             .on_action(cx.listener(Self::handle_select_all))
+            .on_action(cx.listener(Self::handle_copy))
+            .on_action(cx.listener(Self::handle_cut))
+            .on_action(cx.listener(Self::handle_paste))
             .on_action(cx.listener(Self::handle_backspace))
             .on_action(cx.listener(Self::handle_delete))
             .on_action(cx.listener(Self::handle_enter))
