@@ -245,7 +245,7 @@ impl TextField {
         while offset > 0 && self.text.chars().nth(offset - 1).unwrap().is_whitespace() {
             offset -= 1;
         }
-        while offset > 0 && self.text.chars().nth(offset - 1).unwrap().is_alphanumeric() {
+        while offset > 0 && !self.text.chars().nth(offset - 1).unwrap().is_whitespace() {
             offset -= 1;
         }
         offset
@@ -257,7 +257,7 @@ impl TextField {
         while offset < chars && self.text.chars().nth(offset).unwrap().is_whitespace() {
             offset += 1;
         }
-        while offset < chars && self.text.chars().nth(offset).unwrap().is_alphanumeric() {
+        while offset < chars && !self.text.chars().nth(offset).unwrap().is_whitespace() {
             offset += 1;
         }
         offset
