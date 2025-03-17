@@ -436,6 +436,35 @@ impl TextField {
 
         let utf16_offset = self.char_offset_to_utf16(char_offset);
         self.move_to(utf16_offset, cx);
+        self.start_selection();
+    }
+
+    fn handle_mouse_move(
+        &mut self,
+        event: &MouseMoveEvent,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if !event.dragging() {
+            return;
+        }
+
+        let Some(char_offset) = self.character_index_for_point(event.position, window, cx) else {
+            return;
+        };
+
+        let utf16_offset = self.char_offset_to_utf16(char_offset);
+        self.move_to(utf16_offset, cx);
+        self.commit_current_selection(cx);
+    }
+
+    fn handle_mouse_up(
+        &mut self,
+        _event: &MouseUpEvent,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.end_current_selection(cx);
     }
 }
 
@@ -547,7 +576,7 @@ impl Render for TextField {
                 e.bg(cx.theme().background_focused).border_color(cx.theme().border_color_focused)
             })
             .rounded(cx.theme().radius)
-            .child(TextElement::new(cx.entity().clone()))
+            .child(div().child(TextElement::new(cx.entity().clone())).cursor_text())
             .on_action(cx.listener(Self::handle_move_left))
             .on_action(cx.listener(Self::handle_move_right))
             .on_action(cx.listener(Self::handle_move_to_start_of_word))
@@ -565,5 +594,7 @@ impl Render for TextField {
             .on_action(cx.listener(Self::handle_delete))
             .on_action(cx.listener(Self::handle_enter))
             .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_mouse_down))
+            .on_mouse_move(cx.listener(Self::handle_mouse_move))
+            .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
     }
 }
