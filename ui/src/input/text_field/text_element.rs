@@ -83,7 +83,10 @@ impl Element for TextElement {
             size(end - start, window.line_height()),
         );
 
-        PrepaintState { bounds, line, cursor_bounds, selection_bounds }
+        let prepaint_state = PrepaintState { bounds, line, cursor_bounds, selection_bounds };
+        self.field
+            .update(cx, |field, _cx| field.last_prepaint_state = Some(prepaint_state.clone()));
+        prepaint_state
     }
 
     fn paint(
@@ -124,9 +127,10 @@ impl IntoElement for TextElement {
     }
 }
 
+#[derive(Debug, Clone)]
 pub(super) struct PrepaintState {
-    bounds: Bounds<Pixels>,
-    line: ShapedLine,
-    cursor_bounds: Bounds<Pixels>,
-    selection_bounds: Bounds<Pixels>,
+    pub bounds: Bounds<Pixels>,
+    pub line: ShapedLine,
+    pub cursor_bounds: Bounds<Pixels>,
+    pub selection_bounds: Bounds<Pixels>,
 }

@@ -59,7 +59,8 @@ pub struct TextField {
     utf16_selection: Range<usize>,
     new_selection_start_utf16_offset: Option<usize>,
 
-    pub(super) focus_handle: FocusHandle,
+    focus_handle: FocusHandle,
+    last_prepaint_state: Option<text_element::PrepaintState>,
 }
 
 impl TextField {
@@ -74,6 +75,7 @@ impl TextField {
             new_selection_start_utf16_offset: None,
 
             focus_handle,
+            last_prepaint_state: None,
         }
     }
 
@@ -421,6 +423,20 @@ impl TextField {
     }
 
     fn handle_enter(&mut self, _: &Enter, _window: &mut Window, _cx: &mut Context<Self>) {}
+
+    fn handle_mouse_down(
+        &mut self,
+        event: &MouseDownEvent,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let Some(char_offset) = self.character_index_for_point(event.position, window, cx) else {
+            return;
+        };
+
+        let utf16_offset = self.char_offset_to_utf16(char_offset);
+        self.move_to(utf16_offset, cx);
+    }
 }
 
 impl EntityInputHandler for TextField {
@@ -504,11 +520,14 @@ impl EntityInputHandler for TextField {
 
     fn character_index_for_point(
         &mut self,
-        _point: gpui::Point<Pixels>,
+        point: gpui::Point<Pixels>,
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) -> Option<usize> {
-        todo!()
+        let prepaint_state = self.last_prepaint_state.as_ref()?;
+        let x = point.x - prepaint_state.bounds.origin.x;
+        let char_offset = prepaint_state.line.closest_index_for_x(x);
+        Some(char_offset)
     }
 }
 
@@ -545,5 +564,6 @@ impl Render for TextField {
             .on_action(cx.listener(Self::handle_backspace))
             .on_action(cx.listener(Self::handle_delete))
             .on_action(cx.listener(Self::handle_enter))
+            .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_mouse_down))
     }
 }
