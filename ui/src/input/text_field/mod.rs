@@ -282,6 +282,8 @@ impl TextField {
     fn handle_move_left(&mut self, _: &MoveLeft, _window: &mut Window, cx: &mut Context<Self>) {
         if !self.has_selection() {
             self.move_left(cx);
+        } else {
+            self.move_to(self.char_selection().start, cx);
         }
         self.end_current_selection(cx);
         self.unselect(cx);
@@ -290,6 +292,8 @@ impl TextField {
     fn handle_move_right(&mut self, _: &MoveRight, _window: &mut Window, cx: &mut Context<Self>) {
         if !self.has_selection() {
             self.move_right(cx);
+        } else {
+            self.move_to(self.utf16_selection_range().end, cx);
         }
         self.end_current_selection(cx);
         self.unselect(cx);
