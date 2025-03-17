@@ -18,6 +18,13 @@ actions!(
         MoveToNextWord,
         MoveToStartOfLine,
         MoveToEndOfLine,
+        SelectLeft,
+        SelectRight,
+        SelectToStartOfWord,
+        SelectToEndOfWord,
+        SelectToStartOfLine,
+        SelectToEndOfLine,
+        SelectAll,
         Backspace,
         Delete,
         Enter
@@ -32,6 +39,13 @@ pub fn init(cx: &mut App) {
         KeyBinding::new("ctrl-right", MoveToNextWord, Some(KEY_CONTEXT)),
         KeyBinding::new("home", MoveToStartOfLine, Some(KEY_CONTEXT)),
         KeyBinding::new("end", MoveToEndOfLine, Some(KEY_CONTEXT)),
+        KeyBinding::new("shift-left", SelectLeft, Some(KEY_CONTEXT)),
+        KeyBinding::new("shift-right", SelectRight, Some(KEY_CONTEXT)),
+        KeyBinding::new("shift-ctrl-left", SelectToStartOfWord, Some(KEY_CONTEXT)),
+        KeyBinding::new("shift-ctrl-right", SelectToEndOfWord, Some(KEY_CONTEXT)),
+        KeyBinding::new("shift-home", SelectToStartOfLine, Some(KEY_CONTEXT)),
+        KeyBinding::new("shift-end", SelectToEndOfLine, Some(KEY_CONTEXT)),
+        KeyBinding::new("ctrl-a", SelectAll, Some(KEY_CONTEXT)),
         KeyBinding::new("backspace", Backspace, Some(KEY_CONTEXT)),
         KeyBinding::new("delete", Delete, Some(KEY_CONTEXT)),
         KeyBinding::new("enter", Enter, Some(KEY_CONTEXT)),
@@ -42,8 +56,8 @@ pub struct TextField {
     text: SharedString,
     placeholder: SharedString,
 
-    pub(super) utf16_cursor_offset: usize,
-    pub(super) utf16_selection: Option<Range<usize>>,
+    utf16_selection: Range<usize>,
+    new_selection_start_utf16_offset: Option<usize>,
 
     pub(super) focus_handle: FocusHandle,
 }
@@ -55,8 +69,10 @@ impl TextField {
         Self {
             text: "".into(),
             placeholder: "".into(),
-            utf16_cursor_offset: 0,
-            utf16_selection: None,
+
+            utf16_selection: 0..0,
+            new_selection_start_utf16_offset: None,
+
             focus_handle,
         }
     }
@@ -69,25 +85,96 @@ impl TextField {
         &self.text
     }
 
-    pub fn set_placeholder(&mut self, placeholder: SharedString) {
+    pub fn set_placeholder(&mut self, placeholder: SharedString, cx: &mut Context<Self>) {
         self.placeholder = placeholder;
+        cx.notify();
     }
 
     pub fn placeholder(&self) -> &SharedString {
         &self.placeholder
     }
 
-    fn move_to(&mut self, utf16_offset: usize, cx: &mut Context<Self>) {
-        self.utf16_cursor_offset = utf16_offset.clamp(0, self.text.len());
+    pub fn move_to(&mut self, mut utf16_offset: usize, cx: &mut Context<Self>) {
+        utf16_offset = utf16_offset.clamp(0, self.text.len());
+        self.utf16_selection = utf16_offset..utf16_offset;
         cx.notify();
     }
 
-    fn select(&mut self, utf16_range: Range<usize>) {
-        self.utf16_selection = Some(utf16_range);
+    pub fn move_left(&mut self, cx: &mut Context<Self>) {
+        let new_char_offset = self.cursor_char_offset().saturating_sub(1);
+        let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
+        self.move_to(new_utf16_offset, cx);
+        cx.notify();
     }
 
-    fn unselect(&mut self) {
-        self.utf16_selection = None;
+    pub fn move_right(&mut self, cx: &mut Context<Self>) {
+        let new_char_offset = self.cursor_char_offset().saturating_add(1);
+        let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
+        self.move_to(new_utf16_offset, cx);
+        cx.notify();
+    }
+
+    pub fn move_to_start_of_word(&mut self, cx: &mut Context<Self>) {
+        let new_char_offset = self.start_of_word_char_offset();
+        let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
+        self.move_to(new_utf16_offset, cx);
+        cx.notify();
+    }
+
+    pub fn move_to_end_of_word(&mut self, cx: &mut Context<Self>) {
+        let new_char_offset = self.end_of_word_char_offset();
+        let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
+        self.move_to(new_utf16_offset, cx);
+        cx.notify();
+    }
+
+    pub fn move_to_start_of_line(&mut self, cx: &mut Context<Self>) {
+        let new_char_offset = 0;
+        let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
+        self.move_to(new_utf16_offset, cx);
+        cx.notify();
+    }
+
+    pub fn move_to_end_of_line(&mut self, cx: &mut Context<Self>) {
+        let new_char_offset = self.text().chars().count();
+        let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
+        self.move_to(new_utf16_offset, cx);
+        cx.notify();
+    }
+
+    pub fn select(&mut self, utf16_range: Range<usize>, cx: &mut Context<Self>) {
+        self.utf16_selection = utf16_range;
+        cx.notify();
+    }
+
+    pub fn unselect(&mut self, cx: &mut Context<Self>) {
+        self.utf16_selection.start = self.cursor_utf16_offset();
+        cx.notify();
+    }
+
+    fn start_selection(&mut self) {
+        if self.new_selection_start_utf16_offset.is_some() {
+            return;
+        };
+
+        self.new_selection_start_utf16_offset = Some(self.cursor_utf16_offset());
+    }
+
+    fn commit_current_selection(&mut self, cx: &mut Context<Self>) {
+        if let Some(start) = self.new_selection_start_utf16_offset {
+            let end = self.cursor_utf16_offset();
+            self.select(start..end, cx);
+        }
+    }
+
+    fn end_current_selection(&mut self, cx: &mut Context<Self>) {
+        self.commit_current_selection(cx);
+        self.new_selection_start_utf16_offset = None;
+        cx.notify();
+    }
+
+    pub fn has_selection(&self) -> bool {
+        self.utf16_selection.is_empty()
     }
 
     fn char_offset_to_utf16(&self, char_offset: usize) -> usize {
@@ -120,8 +207,12 @@ impl TextField {
         utf8_offset
     }
 
+    fn cursor_utf16_offset(&self) -> usize {
+        self.utf16_selection.end
+    }
+
     fn cursor_char_offset(&self) -> usize {
-        self.char_offset_from_utf16(self.utf16_cursor_offset)
+        self.char_offset_from_utf16(self.cursor_utf16_offset())
     }
 
     fn cursor_char_range(&self) -> Range<usize> {
@@ -142,29 +233,46 @@ impl TextField {
 
     fn end_of_word_char_offset(&self) -> usize {
         let mut offset = self.cursor_char_offset();
-        while offset < self.text.len() && self.text.chars().nth(offset).unwrap().is_whitespace() {
+        let chars = self.text.chars().count();
+        while offset < chars && self.text.chars().nth(offset).unwrap().is_whitespace() {
             offset += 1;
         }
-        while offset < self.text.len() && self.text.chars().nth(offset).unwrap().is_alphanumeric() {
+        while offset < chars && self.text.chars().nth(offset).unwrap().is_alphanumeric() {
             offset += 1;
         }
         offset
+    }
+
+    fn utf16_selection_range(&self) -> Range<usize> {
+        if self.utf16_selection.end < self.utf16_selection.start {
+            self.utf16_selection.end..self.utf16_selection.start
+        } else {
+            self.utf16_selection.clone()
+        }
+    }
+
+    fn char_selection(&self) -> Range<usize> {
+        let start = self.char_offset_to_utf16(self.utf16_selection_range().start);
+        let end = self.char_offset_to_utf16(self.utf16_selection_range().end);
+        start..end
     }
 }
 
 impl TextField {
     fn handle_move_left(&mut self, _: &MoveLeft, _window: &mut Window, cx: &mut Context<Self>) {
-        let new_char_offset = self.cursor_char_offset().saturating_sub(1);
-        let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
-        self.move_to(new_utf16_offset, cx);
-        cx.notify();
+        if self.has_selection() {
+            self.move_left(cx);
+        }
+        self.end_current_selection(cx);
+        self.unselect(cx);
     }
 
     fn handle_move_right(&mut self, _: &MoveRight, _window: &mut Window, cx: &mut Context<Self>) {
-        let new_char_offset = self.cursor_char_offset().saturating_add(1);
-        let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
-        self.move_to(new_utf16_offset, cx);
-        cx.notify();
+        if self.has_selection() {
+            self.move_right(cx);
+        }
+        self.end_current_selection(cx);
+        self.unselect(cx);
     }
 
     fn handle_move_to_start_of_word(
@@ -173,10 +281,11 @@ impl TextField {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let new_char_offset = self.start_of_word_char_offset();
-        let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
-        self.move_to(new_utf16_offset, cx);
-        cx.notify();
+        if self.has_selection() {
+            self.move_to_start_of_word(cx);
+        }
+        self.end_current_selection(cx);
+        self.unselect(cx);
     }
 
     fn handle_move_to_end_of_word(
@@ -185,10 +294,11 @@ impl TextField {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let new_char_offset = self.end_of_word_char_offset();
-        let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
-        self.move_to(new_utf16_offset, cx);
-        cx.notify();
+        if self.has_selection() {
+            self.move_to_end_of_word(cx);
+        }
+        self.end_current_selection(cx);
+        self.unselect(cx);
     }
 
     fn handle_move_to_start_of_line(
@@ -197,10 +307,11 @@ impl TextField {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let new_char_offset = 0;
-        let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
-        self.move_to(new_utf16_offset, cx);
-        cx.notify();
+        if self.has_selection() {
+            self.move_to_start_of_line(cx);
+        }
+        self.end_current_selection(cx);
+        self.unselect(cx);
     }
 
     fn handle_move_to_end_of_line(
@@ -209,19 +320,91 @@ impl TextField {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let new_char_offset = self.text().chars().count();
-        let new_utf16_offset = self.char_offset_to_utf16(new_char_offset);
-        self.move_to(new_utf16_offset, cx);
-        cx.notify();
+        if self.has_selection() {
+            self.move_to_end_of_line(cx);
+        }
+        self.end_current_selection(cx);
+        self.unselect(cx);
+    }
+
+    fn handle_select_left(&mut self, _: &SelectLeft, _window: &mut Window, cx: &mut Context<Self>) {
+        self.start_selection();
+        self.move_left(cx);
+        self.commit_current_selection(cx);
+    }
+
+    fn handle_select_right(
+        &mut self,
+        _: &SelectRight,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.start_selection();
+        self.move_right(cx);
+        self.commit_current_selection(cx);
+    }
+
+    fn handle_select_to_start_of_word(
+        &mut self,
+        _: &SelectToStartOfWord,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.start_selection();
+        self.move_to_start_of_word(cx);
+        self.commit_current_selection(cx);
+    }
+
+    fn handle_select_to_end_of_word(
+        &mut self,
+        _: &SelectToEndOfWord,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.start_selection();
+        self.move_to_end_of_word(cx);
+        self.commit_current_selection(cx);
+    }
+
+    fn handle_select_to_start_of_line(
+        &mut self,
+        _: &SelectToStartOfLine,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.start_selection();
+        self.move_to_start_of_line(cx);
+        self.commit_current_selection(cx);
+    }
+
+    fn handle_select_to_end_of_line(
+        &mut self,
+        _: &SelectToEndOfLine,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.start_selection();
+        self.move_to_end_of_line(cx);
+        self.commit_current_selection(cx);
+    }
+
+    fn handle_select_all(&mut self, _: &SelectAll, _window: &mut Window, cx: &mut Context<Self>) {
+        self.end_current_selection(cx);
+        self.move_to(0, cx);
+        self.start_selection();
+        self.move_to(self.text().len(), cx);
+        self.end_current_selection(cx);
     }
 
     fn handle_backspace(&mut self, _: &Backspace, window: &mut Window, cx: &mut Context<Self>) {
-        let utf16_range = self.utf16_cursor_offset.saturating_sub(1)..self.utf16_cursor_offset;
+        let utf16_offset = self.cursor_utf16_offset();
+        let utf16_range = utf16_offset.saturating_sub(1)..utf16_offset;
         self.replace_text_in_range(Some(utf16_range), "", window, cx);
     }
 
     fn handle_delete(&mut self, _: &Delete, window: &mut Window, cx: &mut Context<Self>) {
-        let utf16_range = self.utf16_cursor_offset..self.utf16_cursor_offset.saturating_add(1);
+        let utf16_offset = self.cursor_utf16_offset();
+        let utf16_range = utf16_offset..utf16_offset.saturating_add(1);
         self.replace_text_in_range(Some(utf16_range), "", window, cx);
     }
 
@@ -279,9 +462,12 @@ impl EntityInputHandler for TextField {
             self.text[0..char_range.start].to_owned() + text + &self.text[char_range.end..];
 
         // Move the cursor to the end of the inserted text.
-        self.utf16_cursor_offset = self.char_offset_to_utf16(char_range.start) + text.len();
+        let utf16_offset = self.char_offset_to_utf16(char_range.start) + text.len();
+        self.move_to(utf16_offset, cx);
 
         self.set_text(new_text.into());
+
+        self.unselect(cx);
 
         cx.notify();
     }
@@ -340,6 +526,13 @@ impl Render for TextField {
             .on_action(cx.listener(Self::handle_move_to_end_of_word))
             .on_action(cx.listener(Self::handle_move_to_start_of_line))
             .on_action(cx.listener(Self::handle_move_to_end_of_line))
+            .on_action(cx.listener(Self::handle_select_left))
+            .on_action(cx.listener(Self::handle_select_right))
+            .on_action(cx.listener(Self::handle_select_to_start_of_word))
+            .on_action(cx.listener(Self::handle_select_to_end_of_word))
+            .on_action(cx.listener(Self::handle_select_to_start_of_line))
+            .on_action(cx.listener(Self::handle_select_to_end_of_line))
+            .on_action(cx.listener(Self::handle_select_all))
             .on_action(cx.listener(Self::handle_backspace))
             .on_action(cx.listener(Self::handle_delete))
             .on_action(cx.listener(Self::handle_enter))

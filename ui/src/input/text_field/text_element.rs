@@ -69,11 +69,21 @@ impl Element for TextElement {
             )
             .unwrap();
 
+        // Cursor.
         let cursor_x_offset = line.x_for_index(field.cursor_char_offset());
         let cursor_origin = bounds.origin + point(cursor_x_offset, px(0.0));
         let cursor_bounds = gpui::bounds(cursor_origin, size(px(1.0), window.line_height()));
 
-        PrepaintState { bounds, line, cursor_bounds }
+        // Selection.
+        let char_selection = field.char_selection();
+        let start = line.x_for_index(char_selection.start);
+        let end = line.x_for_index(char_selection.end);
+        let selection_bounds = gpui::bounds(
+            bounds.origin + point(start, px(0.0)),
+            size(end - start, window.line_height()),
+        );
+
+        PrepaintState { bounds, line, cursor_bounds, selection_bounds }
     }
 
     fn paint(
@@ -86,7 +96,7 @@ impl Element for TextElement {
         cx: &mut App,
     ) {
         let focus_handle = self.field.read(cx).focus_handle.clone();
-        let Self::PrepaintState { bounds, line, cursor_bounds } = prepaint;
+        let Self::PrepaintState { bounds, line, cursor_bounds, selection_bounds } = prepaint;
 
         // Handle Input.
         window.handle_input(
@@ -98,7 +108,10 @@ impl Element for TextElement {
         // Paint text.
         _ = line.paint(bounds.origin, window.line_height(), window, cx);
 
-        // Paint cursor
+        // Paint selection.
+        _ = window.paint_quad(fill(*selection_bounds, cx.theme().accent.opacity(0.3)));
+
+        // Paint cursor.
         _ = window.paint_quad(fill(*cursor_bounds, cx.theme().accent));
     }
 }
@@ -115,4 +128,5 @@ pub(super) struct PrepaintState {
     bounds: Bounds<Pixels>,
     line: ShapedLine,
     cursor_bounds: Bounds<Pixels>,
+    selection_bounds: Bounds<Pixels>,
 }
