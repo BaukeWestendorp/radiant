@@ -101,6 +101,7 @@ impl Element for TextElement {
     ) {
         let Self::PrepaintState { bounds, line, cursor_bounds, selection_bounds } = prepaint;
 
+        // Calculate scroll offset.
         let cursor_px_offset = cursor_bounds.right() - bounds.left();
         if cursor_px_offset >= bounds.size.width {
             self.field.update(cx, |field, _cx| {
@@ -110,7 +111,6 @@ impl Element for TextElement {
                 }
             });
         }
-
         let scroll_offset = self.field.read(cx).scroll_offset;
         if cursor_px_offset < scroll_offset {
             self.field.update(cx, |field, _cx| {
@@ -138,11 +138,11 @@ impl Element for TextElement {
         _ = line.paint(bounds.origin + text_offset, window.line_height(), window, cx);
 
         // Paint selection.
-        _ = window.paint_quad(fill(*selection_bounds + text_offset, cx.theme().highlight));
+        window.paint_quad(fill(*selection_bounds + text_offset, cx.theme().highlight));
 
         // Paint cursor if visible.
         if should_show_cursor {
-            _ = window.paint_quad(fill(*cursor_bounds + text_offset, cx.theme().cursor));
+            window.paint_quad(fill(*cursor_bounds + text_offset, cx.theme().cursor));
         }
     }
 }

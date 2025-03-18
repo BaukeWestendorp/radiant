@@ -9,7 +9,15 @@ use text_element::TextElement;
 mod blink;
 mod text_element;
 
-const KEY_CONTEXT: &str = "Input";
+const KEY_CONTEXT: &str = "TextInput";
+
+// TODO:
+// - MacOS shortcuts
+// - Events
+// - Validation
+// - Input Masking
+// - Disabling
+// - History
 
 actions!(
     input,
