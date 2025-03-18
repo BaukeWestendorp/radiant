@@ -12,7 +12,6 @@ mod text_element;
 const KEY_CONTEXT: &str = "TextInput";
 
 // TODO:
-// - MacOS shortcuts
 // - Events
 // - Validation
 // - Input Masking
@@ -45,28 +44,52 @@ actions!(
 );
 
 pub fn init(cx: &mut App) {
+    macro_rules! kb {
+        (macos = $kb_macos:literal, other = $kb_other:literal, $action:expr) => {
+            if cfg!(target_os = "macos") {
+                KeyBinding::new($kb_macos, $action, Some(KEY_CONTEXT))
+            } else {
+                KeyBinding::new($kb_other, $action, Some(KEY_CONTEXT))
+            }
+        };
+        (macos = $kb_macos:literal, $action:expr) => {
+            if cfg!(target_os = "macos") {
+                KeyBinding::new($kb_macos, $action, Some(KEY_CONTEXT))
+            }
+        };
+        (all = $kb:literal, $action:expr) => {
+            kb!(macos = $kb, other = $kb, $action)
+        };
+    }
+
     cx.bind_keys([
-        KeyBinding::new("left", MoveLeft, Some(KEY_CONTEXT)),
-        KeyBinding::new("right", MoveRight, Some(KEY_CONTEXT)),
-        KeyBinding::new("ctrl-left", MoveToPreviousWord, Some(KEY_CONTEXT)),
-        KeyBinding::new("ctrl-right", MoveToNextWord, Some(KEY_CONTEXT)),
-        KeyBinding::new("home", MoveToStartOfLine, Some(KEY_CONTEXT)),
-        KeyBinding::new("end", MoveToEndOfLine, Some(KEY_CONTEXT)),
-        KeyBinding::new("pageup", MoveToStartOfLine, Some(KEY_CONTEXT)),
-        KeyBinding::new("pagedown", MoveToEndOfLine, Some(KEY_CONTEXT)),
-        KeyBinding::new("shift-left", SelectLeft, Some(KEY_CONTEXT)),
-        KeyBinding::new("shift-right", SelectRight, Some(KEY_CONTEXT)),
-        KeyBinding::new("shift-ctrl-left", SelectToStartOfWord, Some(KEY_CONTEXT)),
-        KeyBinding::new("shift-ctrl-right", SelectToEndOfWord, Some(KEY_CONTEXT)),
-        KeyBinding::new("shift-home", SelectToStartOfLine, Some(KEY_CONTEXT)),
-        KeyBinding::new("shift-end", SelectToEndOfLine, Some(KEY_CONTEXT)),
-        KeyBinding::new("ctrl-a", SelectAll, Some(KEY_CONTEXT)),
-        KeyBinding::new("ctrl-c", Copy, Some(KEY_CONTEXT)),
-        KeyBinding::new("ctrl-x", Cut, Some(KEY_CONTEXT)),
-        KeyBinding::new("ctrl-v", Paste, Some(KEY_CONTEXT)),
-        KeyBinding::new("backspace", Backspace, Some(KEY_CONTEXT)),
-        KeyBinding::new("delete", Delete, Some(KEY_CONTEXT)),
-        KeyBinding::new("enter", Enter, Some(KEY_CONTEXT)),
+        kb!(all = "left", MoveLeft),
+        kb!(all = "right", MoveRight),
+        //
+        kb!(all = "home", MoveToStartOfLine),
+        kb!(all = "pageup", MoveToStartOfLine),
+        kb!(macos = "cmd-left", MoveToStartOfLine),
+        //
+        kb!(all = "pagedown", MoveToEndOfLine),
+        kb!(all = "end", MoveToEndOfLine),
+        kb!(macos = "cmd-right", MoveToEndOfLine),
+        //
+        kb!(all = "shift-left", SelectLeft),
+        kb!(all = "shift-right", SelectRight),
+        kb!(all = "backspace", Backspace),
+        kb!(all = "delete", Delete),
+        kb!(all = "enter", Enter),
+        //
+        kb!(macos = "shift-cmd-left", other = "shift-home", SelectToStartOfLine),
+        kb!(macos = "shift-cmd-right", other = "shift-end", SelectToEndOfLine),
+        kb!(macos = "alt-left", other = "ctrl-left", MoveToPreviousWord),
+        kb!(macos = "alt-right", other = "ctrl-right", MoveToNextWord),
+        kb!(macos = "alt-shift-left", other = "shift-ctrl-left", SelectToStartOfWord),
+        kb!(macos = "alt-shift-right", other = "shift-ctrl-right", SelectToEndOfWord),
+        kb!(macos = "cmd-a", other = "ctrl-a", SelectAll),
+        kb!(macos = "cmd-c", other = "ctrl-c", Copy),
+        kb!(macos = "cmd-x", other = "ctrl-x", Cut),
+        kb!(macos = "cmd-v", other = "ctrl-v", Paste),
     ]);
 }
 
