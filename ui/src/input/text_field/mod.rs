@@ -120,6 +120,7 @@ impl TextField {
     pub fn move_to(&mut self, mut utf16_offset: usize, cx: &mut Context<Self>) {
         utf16_offset = utf16_offset.clamp(0, self.text.len());
         self.utf16_selection = utf16_offset..utf16_offset;
+        self.hold_cursor_blink(cx);
         cx.notify();
     }
 
@@ -319,6 +320,12 @@ impl TextField {
         let end = self.char_offset_to_utf16(self.utf16_selection_range().end);
         start..end
     }
+
+    fn hold_cursor_blink(&mut self, cx: &mut Context<Self>) {
+        self.blink_cursor.update(cx, |blink_cursor, cx| {
+            blink_cursor.hold(cx);
+        });
+    }
 }
 
 impl TextField {
@@ -505,6 +512,8 @@ impl TextField {
         let Some(char_offset) = self.character_index_for_point(point, window, cx) else {
             return;
         };
+
+        self.hold_cursor_blink(cx);
 
         let utf16_offset = self.char_offset_to_utf16(char_offset);
         self.move_to(utf16_offset, cx);

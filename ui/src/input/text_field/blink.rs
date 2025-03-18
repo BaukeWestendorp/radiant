@@ -2,6 +2,7 @@ use gpui::{Context, Timer};
 use std::time::Duration;
 
 const BLINK_TIME: Duration = Duration::from_millis(1000);
+const HOLD_TIME: Duration = Duration::from_millis(500);
 
 pub struct BlinkCursor {
     visible: bool,
@@ -29,13 +30,13 @@ impl BlinkCursor {
         cx.notify();
     }
 
-    pub fn pause(&mut self, cx: &mut Context<Self>) {
+    pub fn hold(&mut self, cx: &mut Context<Self>) {
         self.paused = true;
         cx.notify();
 
         let epoch = self.next_epoch();
         cx.spawn(|this, mut cx| async move {
-            Timer::after(BLINK_TIME).await;
+            Timer::after(HOLD_TIME).await;
 
             if let Some(this) = this.upgrade() {
                 this.update(&mut cx, |this, cx| {
