@@ -120,7 +120,6 @@ impl TextField {
     pub fn move_to(&mut self, mut utf16_offset: usize, cx: &mut Context<Self>) {
         utf16_offset = utf16_offset.clamp(0, self.text.len());
         self.utf16_selection = utf16_offset..utf16_offset;
-
         cx.notify();
     }
 
@@ -699,6 +698,7 @@ impl Render for TextField {
             .on_action(cx.listener(Self::handle_delete))
             .on_action(cx.listener(Self::handle_enter))
             .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_mouse_down))
+            .on_mouse_down_out(cx.listener(|this, _, window, cx| this.handle_blur(window, cx)))
             .on_drag((), |_, _, _, cx| cx.new(|_| EmptyView))
             .on_drag_move(cx.listener(Self::handle_drag_move))
             .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))

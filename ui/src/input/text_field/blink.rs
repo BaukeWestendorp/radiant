@@ -11,7 +11,7 @@ pub struct BlinkCursor {
 
 impl BlinkCursor {
     pub fn new() -> Self {
-        Self { visible: true, paused: false, epoch: 0 }
+        Self { visible: false, paused: false, epoch: 0 }
     }
 
     pub fn visible(&self) -> bool {
@@ -39,7 +39,7 @@ impl BlinkCursor {
 
             if let Some(this) = this.upgrade() {
                 this.update(&mut cx, |this, cx| {
-                    this.paused = true;
+                    this.paused = false;
                     this.blink(epoch, cx);
                 })
                 .ok();
