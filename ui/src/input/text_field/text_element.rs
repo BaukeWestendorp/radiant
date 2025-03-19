@@ -47,6 +47,8 @@ impl Element for TextElement {
         // Get text to show.
         let (display_text, text_color) = if field.text().is_empty() {
             (field.placeholder(), cx.theme().text_muted)
+        } else if field.disabled() {
+            (field.text(), cx.theme().text_muted)
         } else {
             (field.text(), cx.theme().text_primary)
         };
@@ -122,7 +124,7 @@ impl Element for TextElement {
         }
 
         let field = self.field.read(cx);
-        let should_show_cursor = field.blink_cursor.read(cx).visible();
+        let should_show_cursor = field.show_cursor(window, cx);
         let focus_handle = field.focus_handle.clone();
 
         // Handle Input.
@@ -140,7 +142,7 @@ impl Element for TextElement {
         // Paint selection.
         window.paint_quad(fill(*selection_bounds + text_offset, cx.theme().highlight));
 
-        // Paint cursor if visible.
+        // Paint cursor if visible and field is not disabled.
         if should_show_cursor {
             window.paint_quad(fill(*cursor_bounds + text_offset, cx.theme().cursor));
         }

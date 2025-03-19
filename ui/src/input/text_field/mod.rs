@@ -1,9 +1,8 @@
-use std::ops::Range;
-
 use crate::theme::ActiveTheme;
 use blink::BlinkCursor;
 use gpui::*;
 use prelude::FluentBuilder;
+use std::ops::Range;
 use text_element::TextElement;
 
 mod blink;
@@ -15,7 +14,6 @@ const KEY_CONTEXT: &str = "TextInput";
 // - Events
 // - Validation
 // - Input Masking
-// - Disabling
 // - History
 
 actions!(
@@ -53,9 +51,8 @@ pub fn init(cx: &mut App) {
             }
         };
         (macos = $kb_macos:literal, $action:expr) => {
-            if cfg!(target_os = "macos") {
-                KeyBinding::new($kb_macos, $action, Some(KEY_CONTEXT))
-            }
+            #[cfg(target_os = "macos")]
+            KeyBinding::new($kb_macos, $action, Some(KEY_CONTEXT))
         };
         (all = $kb:literal, $action:expr) => {
             kb!(macos = $kb, other = $kb, $action)
@@ -96,6 +93,7 @@ pub fn init(cx: &mut App) {
 pub struct TextField {
     text: SharedString,
     placeholder: SharedString,
+    disabled: bool,
 
     utf16_selection: Range<usize>,
     new_selection_start_utf16_offset: Option<usize>,
@@ -120,6 +118,7 @@ impl TextField {
         Self {
             text: "".into(),
             placeholder: "".into(),
+            disabled: false,
 
             utf16_selection: 0..0,
             new_selection_start_utf16_offset: None,
@@ -131,8 +130,9 @@ impl TextField {
         }
     }
 
-    pub fn set_text(&mut self, text: SharedString) {
+    pub fn set_text(&mut self, text: SharedString, cx: &mut Context<Self>) {
         self.text = text;
+        cx.notify();
     }
 
     pub fn text(&self) -> &SharedString {
@@ -146,6 +146,24 @@ impl TextField {
 
     pub fn placeholder(&self) -> &SharedString {
         &self.placeholder
+    }
+
+    pub fn disabled(&self) -> bool {
+        self.disabled
+    }
+
+    pub fn set_disabled(&mut self, disabled: bool, cx: &mut Context<Self>) {
+        self.disabled = disabled;
+
+        self.blink_cursor.update(cx, |blink_cursor, cx| {
+            if disabled {
+                blink_cursor.stop(cx);
+            } else {
+                blink_cursor.start(cx);
+            }
+        });
+
+        cx.notify();
     }
 
     pub fn move_to(&mut self, mut utf16_offset: usize, cx: &mut Context<Self>) {
@@ -237,6 +255,10 @@ impl TextField {
     }
 
     fn delete_selection(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.disabled {
+            return;
+        }
+
         let range = self.utf16_selection_range();
         self.replace_text_in_range(Some(range), "", window, cx);
     }
@@ -249,11 +271,19 @@ impl TextField {
     }
 
     fn cut_selection(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.disabled {
+            return;
+        }
+
         self.copy_selection(cx);
         self.delete_selection(window, cx);
     }
 
     fn paste(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.disabled {
+            return;
+        }
+
         self.commit_current_selection(cx);
         if let Some(text) = cx.read_from_clipboard().and_then(|c| c.text()) {
             let utf16_range = self.utf16_selection_range();
@@ -356,6 +386,14 @@ impl TextField {
         self.blink_cursor.update(cx, |blink_cursor, cx| {
             blink_cursor.hold(cx);
         });
+    }
+
+    fn show_cursor(&self, window: &Window, cx: &App) -> bool {
+        if self.disabled() && self.focus_handle.is_focused(window) {
+            return true;
+        }
+
+        self.blink_cursor.read(cx).visible()
     }
 }
 
@@ -502,14 +540,26 @@ impl TextField {
     }
 
     fn handle_cut(&mut self, _: &Cut, window: &mut Window, cx: &mut Context<Self>) {
+        if self.disabled {
+            return;
+        }
+
         self.cut_selection(window, cx);
     }
 
     fn handle_paste(&mut self, _: &Paste, window: &mut Window, cx: &mut Context<Self>) {
+        if self.disabled {
+            return;
+        }
+
         self.paste(window, cx);
     }
 
     fn handle_backspace(&mut self, _: &Backspace, window: &mut Window, cx: &mut Context<Self>) {
+        if self.disabled {
+            return;
+        }
+
         if self.has_selection() {
             self.delete_selection(window, cx);
             return;
@@ -521,6 +571,10 @@ impl TextField {
     }
 
     fn handle_delete(&mut self, _: &Delete, window: &mut Window, cx: &mut Context<Self>) {
+        if self.disabled {
+            return;
+        }
+
         if self.has_selection() {
             self.delete_selection(window, cx);
             return;
@@ -644,6 +698,10 @@ impl EntityInputHandler for TextField {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if self.disabled {
+            return;
+        }
+
         self.unselect(cx);
 
         let char_range = match utf16_range {
@@ -657,7 +715,7 @@ impl EntityInputHandler for TextField {
         let new_text =
             self.text[0..char_range.start].to_owned() + text + &self.text[char_range.end..];
 
-        self.set_text(new_text.into());
+        self.set_text(new_text.into(), cx);
 
         // Move the cursor to the end of the inserted text.
         let utf16_offset = self.char_offset_to_utf16(char_range.start) + text.len();
@@ -674,6 +732,9 @@ impl EntityInputHandler for TextField {
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
+        if self.disabled {
+            return;
+        }
     }
 
     fn bounds_for_range(
@@ -703,18 +764,30 @@ impl Render for TextField {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let focused = self.focus_handle.is_focused(window);
 
+        let background_color =
+            if focused { cx.theme().background_focused } else { cx.theme().background };
+
+        let border_color = if focused {
+            cx.theme().border_color_focused
+        } else if self.disabled {
+            cx.theme().border_color_muted
+        } else {
+            cx.theme().border_color
+        };
+
+        let text_color =
+            if self.disabled { cx.theme().text_muted } else { cx.theme().text_primary };
+
         div()
             .id("input")
             .key_context(KEY_CONTEXT)
             .track_focus(&self.focus_handle)
-            .bg(cx.theme().background)
+            .bg(background_color)
             .p_1()
             .border_1()
-            .border_color(cx.theme().border_color)
-            .when(focused, |e| {
-                e.bg(cx.theme().background_focused).border_color(cx.theme().border_color_focused)
-            })
+            .border_color(border_color)
             .rounded(cx.theme().radius)
+            .text_color(text_color)
             .child(
                 div().child(TextElement::new(cx.entity().clone())).cursor_text().overflow_hidden(),
             )

@@ -10,7 +10,9 @@ impl DebugFrame {
         cx.new(|cx| {
             let text_field = cx.new(|cx| {
                 let mut text_field = TextField::new(window, cx);
-                text_field.set_text("123 456  789 even more text here to make it overflow.".into());
+                text_field
+                    .set_text("123 456  789 even more text here to make it overflow.".into(), cx);
+                text_field.set_disabled(true, cx);
                 text_field
             });
             Self { text_field }
