@@ -4,18 +4,13 @@ use crate::theme::ActiveTheme;
 
 use super::TextInput;
 
-pub struct NumberField {
+pub struct TextField {
     input: Entity<TextInput>,
-
-    focus_handle: FocusHandle,
 }
 
-impl NumberField {
+impl TextField {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        Self {
-            input: cx.new(|cx| TextInput::new(window, cx).p(window.rem_size() * 0.25)),
-            focus_handle: cx.focus_handle().clone(),
-        }
+        Self { input: cx.new(|cx| TextInput::new(window, cx).p(window.rem_size() * 0.25)) }
     }
 
     pub fn disabled(&self, cx: &App) -> bool {
@@ -34,22 +29,20 @@ impl NumberField {
         self.input.update(cx, |text_field, _cx| text_field.set_masked(masked));
     }
 
-    pub fn value(&self, cx: &App) -> f64 {
-        let value_str = self.input.read(cx).text();
-        value_str.parse().expect("should always be able to parse value string")
+    pub fn value<'a>(&self, cx: &'a App) -> &'a str {
+        self.input.read(cx).text()
     }
 
-    pub fn set_value(&self, value: f64, cx: &mut App) {
+    pub fn set_value(&self, value: SharedString, cx: &mut App) {
         self.input.update(cx, |text_field, cx| {
-            let value_str = value.to_string().into();
-            text_field.set_text(value_str, cx);
+            text_field.set_text(value, cx);
         })
     }
 }
 
-impl Render for NumberField {
+impl Render for TextField {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let focused = self.focus_handle.is_focused(window);
+        let focused = self.input.read(cx).is_focused(window);
 
         let background_color =
             if focused { cx.theme().background_focused } else { cx.theme().background };
@@ -66,8 +59,7 @@ impl Render for NumberField {
             if self.disabled(cx) { cx.theme().text_muted } else { cx.theme().text_primary };
 
         div()
-            .id("number_field")
-            .track_focus(&self.focus_handle)
+            .id("text_field")
             .w_full()
             .bg(background_color)
             .text_color(text_color)

@@ -1,13 +1,13 @@
-use super::TextField;
+use super::TextInput;
 use crate::theme::ActiveTheme;
 use gpui::*;
 
 pub(super) struct TextElement {
-    field: Entity<TextField>,
+    field: Entity<TextInput>,
 }
 
 impl TextElement {
-    pub fn new(field: Entity<TextField>) -> Self {
+    pub fn new(field: Entity<TextInput>) -> Self {
         Self { field }
     }
 }
@@ -53,30 +53,12 @@ impl Element for TextElement {
             field.text().to_string()
         };
 
-        // Text Color.
-        let text_color = if field.text().is_empty() || field.disabled() {
-            cx.theme().text_muted
-        } else {
-            cx.theme().text_primary
-        };
-
         // Line.
         let font_size = style.font_size.to_pixels(window.rem_size());
         let text_len = display_text.len();
         let line = window
             .text_system()
-            .shape_line(
-                display_text.into(),
-                font_size,
-                &[TextRun {
-                    len: text_len,
-                    font: style.font(),
-                    color: text_color,
-                    background_color: None,
-                    underline: None,
-                    strikethrough: None,
-                }],
-            )
+            .shape_line(display_text.into(), font_size, &[style.to_run(text_len)])
             .unwrap();
 
         // Cursor.

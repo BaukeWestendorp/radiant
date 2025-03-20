@@ -1,11 +1,10 @@
-use crate::theme::ActiveTheme;
 use blink::BlinkCursor;
+use element::TextElement;
 use gpui::*;
 use std::ops::Range;
-use text_element::TextElement;
 
 mod blink;
-mod text_element;
+mod element;
 
 const KEY_CONTEXT: &str = "TextInput";
 
@@ -88,7 +87,7 @@ pub fn init(cx: &mut App) {
 
 pub type Validator = dyn Fn(&str) -> bool;
 
-pub struct TextField {
+pub struct TextInput {
     text: SharedString,
     placeholder: SharedString,
     disabled: bool,
@@ -99,13 +98,14 @@ pub struct TextField {
     new_selection_start_utf16_offset: Option<usize>,
 
     focus_handle: FocusHandle,
-    last_prepaint_state: Option<text_element::PrepaintState>,
+    last_prepaint_state: Option<element::PrepaintState>,
     scroll_offset: Pixels,
+    padding: Pixels,
 
     blink_cursor: Entity<BlinkCursor>,
 }
 
-impl TextField {
+impl TextInput {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let focus_handle = cx.focus_handle();
 
@@ -128,18 +128,25 @@ impl TextField {
             focus_handle,
             last_prepaint_state: None,
             scroll_offset: px(0.0),
+            padding: px(0.0),
+
             blink_cursor,
         }
     }
 
+    pub fn p(mut self, padding: Pixels) -> Self {
+        self.padding = padding;
+        self
+    }
+
     pub fn set_text(&mut self, text: SharedString, cx: &mut Context<Self>) {
         if self.validator.as_ref().is_some_and(|validator| !validator(&text)) {
-            cx.emit(TextFieldEvent::ValidationRejected);
+            cx.emit(TextInputEvent::ValidationRejected);
             return;
         }
 
         self.text = text;
-        cx.emit(TextFieldEvent::Change(self.text.clone()));
+        cx.emit(TextInputEvent::Change(self.text.clone()));
         cx.notify();
     }
 
@@ -186,7 +193,7 @@ impl TextField {
         self.validator = validator;
     }
 
-    pub fn focused(&self, window: &Window) -> bool {
+    pub fn is_focused(&self, window: &Window) -> bool {
         self.focus_handle.is_focused(window)
     }
 
@@ -413,7 +420,7 @@ impl TextField {
     }
 
     fn show_cursor(&self, window: &Window, cx: &App) -> bool {
-        if self.disabled() && self.focused(window) {
+        if self.disabled() && self.is_focused(window) {
             return true;
         }
 
@@ -421,7 +428,7 @@ impl TextField {
     }
 }
 
-impl TextField {
+impl TextInput {
     fn handle_move_left(&mut self, _: &MoveLeft, _window: &mut Window, cx: &mut Context<Self>) {
         if !self.has_selection() {
             self.move_left(cx);
@@ -610,7 +617,7 @@ impl TextField {
     }
 
     fn handle_submit(&mut self, _: &Submit, _window: &mut Window, cx: &mut Context<Self>) {
-        cx.emit(TextFieldEvent::Submit);
+        cx.emit(TextInputEvent::Submit);
     }
 
     fn handle_mouse_down(
@@ -677,21 +684,21 @@ impl TextField {
         self.blink_cursor.update(cx, |blink_cursor, cx| {
             blink_cursor.start(cx);
         });
-        cx.emit(TextFieldEvent::Focus);
+        cx.emit(TextInputEvent::Focus);
     }
 
     fn handle_blur(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if self.focused(window) {
+        if self.is_focused(window) {
             self.unselect(cx);
             self.blink_cursor.update(cx, |blink_cursor, cx| {
                 blink_cursor.stop(cx);
             });
-            cx.emit(TextFieldEvent::Blur);
+            cx.emit(TextInputEvent::Blur);
         }
     }
 }
 
-impl EntityInputHandler for TextField {
+impl EntityInputHandler for TextInput {
     fn text_for_range(
         &mut self,
         _utf16_range: std::ops::Range<usize>,
@@ -790,34 +797,14 @@ impl EntityInputHandler for TextField {
     }
 }
 
-impl Render for TextField {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let focused = self.focused(window);
-
-        let background_color =
-            if focused { cx.theme().background_focused } else { cx.theme().background };
-
-        let border_color = if focused {
-            cx.theme().border_color_focused
-        } else if self.disabled {
-            cx.theme().border_color_muted
-        } else {
-            cx.theme().border_color
-        };
-
-        let text_color =
-            if self.disabled { cx.theme().text_muted } else { cx.theme().text_primary };
-
+impl Render for TextInput {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .id("text_input")
             .key_context(KEY_CONTEXT)
             .track_focus(&self.focus_handle)
-            .bg(background_color)
-            .p_1()
-            .border_1()
-            .border_color(border_color)
-            .rounded(cx.theme().radius)
-            .text_color(text_color)
+            .size_full()
+            .p(self.padding)
             .child(
                 div().child(TextElement::new(cx.entity().clone())).cursor_text().overflow_hidden(),
             )
@@ -850,7 +837,7 @@ impl Render for TextField {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum TextFieldEvent {
+pub enum TextInputEvent {
     Focus,
     Blur,
     Submit,
@@ -858,4 +845,4 @@ pub enum TextFieldEvent {
     Change(SharedString),
 }
 
-impl EventEmitter<TextFieldEvent> for TextField {}
+impl EventEmitter<TextInputEvent> for TextInput {}
