@@ -44,24 +44,32 @@ impl Element for TextElement {
         let field = self.field.read(cx);
         let style = window.text_style();
 
-        // Get text to show.
-        let (display_text, text_color) = if field.text().is_empty() {
-            (field.placeholder(), cx.theme().text_muted)
-        } else if field.disabled() {
-            (field.text(), cx.theme().text_muted)
+        // Text.
+        let display_text = if field.text().is_empty() {
+            field.placeholder().to_string()
+        } else if field.masked() {
+            field.text().chars().map(|_| '*').collect()
         } else {
-            (field.text(), cx.theme().text_primary)
+            field.text().to_string()
+        };
+
+        // Text Color.
+        let text_color = if field.text().is_empty() || field.disabled() {
+            cx.theme().text_muted
+        } else {
+            cx.theme().text_primary
         };
 
         // Line.
         let font_size = style.font_size.to_pixels(window.rem_size());
+        let text_len = display_text.len();
         let line = window
             .text_system()
             .shape_line(
                 display_text.into(),
                 font_size,
                 &[TextRun {
-                    len: display_text.len(),
+                    len: text_len,
                     font: style.font(),
                     color: text_color,
                     background_color: None,

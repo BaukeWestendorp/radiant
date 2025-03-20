@@ -1,7 +1,6 @@
 use crate::theme::ActiveTheme;
 use blink::BlinkCursor;
 use gpui::*;
-use prelude::FluentBuilder;
 use std::ops::Range;
 use text_element::TextElement;
 
@@ -13,7 +12,6 @@ const KEY_CONTEXT: &str = "TextInput";
 // TODO:
 // - Events
 // - Validation
-// - Input Masking
 // - History
 
 actions!(
@@ -94,6 +92,7 @@ pub struct TextField {
     text: SharedString,
     placeholder: SharedString,
     disabled: bool,
+    masked: bool,
 
     utf16_selection: Range<usize>,
     new_selection_start_utf16_offset: Option<usize>,
@@ -119,6 +118,7 @@ impl TextField {
             text: "".into(),
             placeholder: "".into(),
             disabled: false,
+            masked: false,
 
             utf16_selection: 0..0,
             new_selection_start_utf16_offset: None,
@@ -164,6 +164,14 @@ impl TextField {
         });
 
         cx.notify();
+    }
+
+    pub fn masked(&self) -> bool {
+        self.masked
+    }
+
+    pub fn set_masked(&mut self, masked: bool) {
+        self.masked = masked;
     }
 
     pub fn move_to(&mut self, mut utf16_offset: usize, cx: &mut Context<Self>) {
