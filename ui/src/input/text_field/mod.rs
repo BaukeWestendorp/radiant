@@ -10,7 +10,6 @@ mod text_element;
 const KEY_CONTEXT: &str = "TextInput";
 
 // TODO:
-// - Events
 // - Validation
 // - History
 
@@ -35,7 +34,7 @@ actions!(
         Paste,
         Backspace,
         Delete,
-        Enter
+        Submit
     ]
 );
 
@@ -73,7 +72,7 @@ pub fn init(cx: &mut App) {
         kb!(all = "shift-right", SelectRight),
         kb!(all = "backspace", Backspace),
         kb!(all = "delete", Delete),
-        kb!(all = "enter", Enter),
+        kb!(all = "enter", Submit),
         //
         kb!(macos = "shift-cmd-left", other = "shift-home", SelectToStartOfLine),
         kb!(macos = "shift-cmd-right", other = "shift-end", SelectToEndOfLine),
@@ -132,6 +131,7 @@ impl TextField {
 
     pub fn set_text(&mut self, text: SharedString, cx: &mut Context<Self>) {
         self.text = text;
+        cx.emit(TextFieldEvent::Change(self.text.clone()));
         cx.notify();
     }
 
@@ -172,6 +172,10 @@ impl TextField {
 
     pub fn set_masked(&mut self, masked: bool) {
         self.masked = masked;
+    }
+
+    pub fn focused(&self, window: &Window) -> bool {
+        self.focus_handle.is_focused(window)
     }
 
     pub fn move_to(&mut self, mut utf16_offset: usize, cx: &mut Context<Self>) {
@@ -397,7 +401,7 @@ impl TextField {
     }
 
     fn show_cursor(&self, window: &Window, cx: &App) -> bool {
-        if self.disabled() && self.focus_handle.is_focused(window) {
+        if self.disabled() && self.focused(window) {
             return true;
         }
 
@@ -593,7 +597,9 @@ impl TextField {
         self.replace_text_in_range(Some(utf16_range), "", window, cx);
     }
 
-    fn handle_enter(&mut self, _: &Enter, _window: &mut Window, _cx: &mut Context<Self>) {}
+    fn handle_submit(&mut self, _: &Submit, _window: &mut Window, cx: &mut Context<Self>) {
+        cx.emit(TextFieldEvent::Submit);
+    }
 
     fn handle_mouse_down(
         &mut self,
@@ -659,13 +665,17 @@ impl TextField {
         self.blink_cursor.update(cx, |blink_cursor, cx| {
             blink_cursor.start(cx);
         });
+        cx.emit(TextFieldEvent::Focus);
     }
 
-    fn handle_blur(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
-        self.unselect(cx);
-        self.blink_cursor.update(cx, |blink_cursor, cx| {
-            blink_cursor.stop(cx);
-        });
+    fn handle_blur(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.focused(window) {
+            self.unselect(cx);
+            self.blink_cursor.update(cx, |blink_cursor, cx| {
+                blink_cursor.stop(cx);
+            });
+            cx.emit(TextFieldEvent::Blur);
+        }
     }
 }
 
@@ -770,7 +780,7 @@ impl EntityInputHandler for TextField {
 
 impl Render for TextField {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let focused = self.focus_handle.is_focused(window);
+        let focused = self.focused(window);
 
         let background_color =
             if focused { cx.theme().background_focused } else { cx.theme().background };
@@ -787,7 +797,7 @@ impl Render for TextField {
             if self.disabled { cx.theme().text_muted } else { cx.theme().text_primary };
 
         div()
-            .id("input")
+            .id("text_input")
             .key_context(KEY_CONTEXT)
             .track_focus(&self.focus_handle)
             .bg(background_color)
@@ -817,7 +827,7 @@ impl Render for TextField {
             .on_action(cx.listener(Self::handle_paste))
             .on_action(cx.listener(Self::handle_backspace))
             .on_action(cx.listener(Self::handle_delete))
-            .on_action(cx.listener(Self::handle_enter))
+            .on_action(cx.listener(Self::handle_submit))
             .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_mouse_down))
             .on_mouse_down_out(cx.listener(|this, _, window, cx| this.handle_blur(window, cx)))
             .on_drag((), |_, _, _, cx| cx.new(|_| EmptyView))
@@ -826,3 +836,13 @@ impl Render for TextField {
             .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up))
     }
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TextFieldEvent {
+    Focus,
+    Blur,
+    Submit,
+    Change(SharedString),
+}
+
+impl EventEmitter<TextFieldEvent> for TextField {}

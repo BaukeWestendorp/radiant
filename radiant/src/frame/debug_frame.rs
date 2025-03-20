@@ -1,5 +1,5 @@
 use gpui::*;
-use ui::TextField;
+use ui::{TextField, TextFieldEvent};
 
 pub struct DebugFrame {
     text_field: Entity<TextField>,
@@ -11,9 +11,17 @@ impl DebugFrame {
             let text_field = cx.new(|cx| {
                 let mut text_field = TextField::new(window, cx);
                 text_field.set_text("hidden".into(), cx);
-                text_field.set_masked(true);
                 text_field
             });
+
+            cx.subscribe(
+                &text_field,
+                |_this, _text_field, event: &TextFieldEvent, _cx: &mut Context<Self>| {
+                    dbg!(&event);
+                },
+            )
+            .detach();
+
             Self { text_field }
         })
     }
