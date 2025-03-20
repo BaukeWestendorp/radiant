@@ -5,6 +5,7 @@ pub struct Theme {
     pub background_focused: Hsla,
 
     pub text_primary: Hsla,
+    pub text_muted: Hsla,
 
     pub radius: Pixels,
     pub border_color: Hsla,
@@ -13,7 +14,12 @@ pub struct Theme {
 
     pub accent: Hsla,
 
-    pub grid_color: Hsla,
+    pub cursor: Hsla,
+    pub cursor_width: Pixels,
+    pub highlight: Hsla,
+
+    pub dot_grid_color: Hsla,
+    pub line_grid_color: Hsla,
 }
 
 impl Theme {
@@ -29,15 +35,21 @@ impl Default for Theme {
             background_focused: gpui::hsla(0.0, 0.0, 0.1, 1.0),
 
             text_primary: gpui::hsla(0.0, 0.0, 1.0, 1.0),
+            text_muted: gpui::hsla(0.0, 0.0, 0.75, 1.0),
 
             radius: gpui::px(4.0),
             border_color: gpui::hsla(0.0, 0.0, 0.5, 1.0),
-            border_color_muted: gpui::hsla(0.0, 0.0, 0.15, 1.0),
+            border_color_muted: gpui::hsla(0.0, 0.0, 0.50, 1.0),
             border_color_focused: gpui::rgb(0xffc416).into(),
 
             accent: gpui::rgb(0xffc416).into(),
 
-            grid_color: gpui::rgba(0xffc41680).into(),
+            cursor: gpui::rgb(0xffc416).into(),
+            cursor_width: gpui::px(1.0),
+            highlight: gpui::rgba(0xffc41640).into(),
+
+            dot_grid_color: gpui::rgba(0xffc41680).into(),
+            line_grid_color: gpui::hsla(0.0, 0.0, 0.15, 1.0),
         }
     }
 }

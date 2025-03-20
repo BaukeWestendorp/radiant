@@ -5,9 +5,15 @@ mod app;
 mod effect_graph;
 mod frame;
 
+actions!(app, [Quit]);
+
 fn main() {
     Application::new().run(|cx: &mut App| {
-        ui::theme::Theme::init(cx);
+        ui::init(cx);
+
+        cx.bind_keys([KeyBinding::new("ctrl-q", Quit, None)]);
+
+        cx.on_action::<Quit>(|_, cx| cx.quit());
 
         cx.open_window(
             WindowOptions {
@@ -20,7 +26,7 @@ fn main() {
 
                 ..Default::default()
             },
-            |_, cx| RadiantApp::build(cx),
+            |window, cx| RadiantApp::build(window, cx),
         )
         .expect("should open window");
     });
