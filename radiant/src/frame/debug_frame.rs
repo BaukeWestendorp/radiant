@@ -10,7 +10,7 @@ impl DebugFrame {
         cx.new(|cx| {
             let text_field = cx.new(|cx| {
                 let mut text_field = TextField::new(window, cx);
-                text_field.set_text("hidden".into(), cx);
+                text_field.set_validator(Some(Box::new(|text| !text.contains("0"))));
                 text_field
             });
 

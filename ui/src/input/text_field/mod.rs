@@ -10,7 +10,6 @@ mod text_element;
 const KEY_CONTEXT: &str = "TextInput";
 
 // TODO:
-// - Validation
 // - History
 
 actions!(
@@ -87,11 +86,14 @@ pub fn init(cx: &mut App) {
     ]);
 }
 
+pub type Validator = dyn Fn(&str) -> bool;
+
 pub struct TextField {
     text: SharedString,
     placeholder: SharedString,
     disabled: bool,
     masked: bool,
+    validator: Option<Box<Validator>>,
 
     utf16_selection: Range<usize>,
     new_selection_start_utf16_offset: Option<usize>,
@@ -118,6 +120,7 @@ impl TextField {
             placeholder: "".into(),
             disabled: false,
             masked: false,
+            validator: None,
 
             utf16_selection: 0..0,
             new_selection_start_utf16_offset: None,
@@ -130,6 +133,11 @@ impl TextField {
     }
 
     pub fn set_text(&mut self, text: SharedString, cx: &mut Context<Self>) {
+        if self.validator.as_ref().is_some_and(|validator| !validator(&text)) {
+            cx.emit(TextFieldEvent::ValidationRejected);
+            return;
+        }
+
         self.text = text;
         cx.emit(TextFieldEvent::Change(self.text.clone()));
         cx.notify();
@@ -172,6 +180,10 @@ impl TextField {
 
     pub fn set_masked(&mut self, masked: bool) {
         self.masked = masked;
+    }
+
+    pub fn set_validator(&mut self, validator: Option<Box<Validator>>) {
+        self.validator = validator;
     }
 
     pub fn focused(&self, window: &Window) -> bool {
@@ -842,6 +854,7 @@ pub enum TextFieldEvent {
     Focus,
     Blur,
     Submit,
+    ValidationRejected,
     Change(SharedString),
 }
 
