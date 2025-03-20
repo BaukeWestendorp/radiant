@@ -10,13 +10,13 @@ impl DebugFrame {
     pub fn build(window: &mut Window, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {
             let text_field = cx.new(|cx| {
-                let field = TextField::new(window, cx);
+                let field = TextField::new("text_field_1", window, cx);
                 field.set_value("Text Field Value".into(), cx);
                 field
             });
 
             let number_field = cx.new(|cx| {
-                let field = NumberField::new(window, cx);
+                let field = NumberField::new("number_field_1", window, cx);
                 field.set_value(42.7, cx);
                 field
             });

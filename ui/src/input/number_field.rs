@@ -11,9 +11,9 @@ pub struct NumberField {
 }
 
 impl NumberField {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(id: impl Into<ElementId>, window: &mut Window, cx: &mut Context<Self>) -> Self {
         Self {
-            input: cx.new(|cx| TextInput::new(window, cx).p(window.rem_size() * 0.25)),
+            input: cx.new(|cx| TextInput::new(id, window, cx).p(window.rem_size() * 0.25)),
             focus_handle: cx.focus_handle().clone(),
         }
     }

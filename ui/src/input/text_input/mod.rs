@@ -88,6 +88,8 @@ pub fn init(cx: &mut App) {
 pub type Validator = dyn Fn(&str) -> bool;
 
 pub struct TextInput {
+    id: ElementId,
+
     text: SharedString,
     placeholder: SharedString,
     disabled: bool,
@@ -106,7 +108,7 @@ pub struct TextInput {
 }
 
 impl TextInput {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(id: impl Into<ElementId>, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let focus_handle = cx.focus_handle();
 
         let blink_cursor = cx.new(|_cx| BlinkCursor::new());
@@ -116,6 +118,8 @@ impl TextInput {
         cx.on_blur(&focus_handle, window, Self::handle_blur).detach();
 
         Self {
+            id: id.into(),
+
             text: "".into(),
             placeholder: "".into(),
             disabled: false,
@@ -653,10 +657,14 @@ impl TextInput {
 
     fn handle_drag_move(
         &mut self,
-        event: &DragMoveEvent<()>,
+        event: &DragMoveEvent<ElementId>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if event.drag(cx) != &self.id {
+            return;
+        }
+
         if !event.event.dragging() {
             return;
         }
@@ -800,7 +808,7 @@ impl EntityInputHandler for TextInput {
 impl Render for TextInput {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
-            .id("text_input")
+            .id(self.id.clone())
             .key_context(KEY_CONTEXT)
             .track_focus(&self.focus_handle)
             .size_full()
@@ -829,7 +837,7 @@ impl Render for TextInput {
             .on_action(cx.listener(Self::handle_submit))
             .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_mouse_down))
             .on_mouse_down_out(cx.listener(|this, _, window, cx| this.handle_blur(window, cx)))
-            .on_drag((), |_, _, _, cx| cx.new(|_| EmptyView))
+            .on_drag(self.id.clone(), |_, _, _, cx| cx.new(|_| EmptyView))
             .on_drag_move(cx.listener(Self::handle_drag_move))
             .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
             .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up))
