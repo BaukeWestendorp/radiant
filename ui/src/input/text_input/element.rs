@@ -114,7 +114,7 @@ impl Element for TextElement {
         }
 
         let field = self.field.read(cx);
-        let should_show_cursor = field.show_cursor(window, cx);
+        let should_show_cursor = field.is_focused(window) && field.show_cursor(window, cx);
         let focus_handle = field.focus_handle.clone();
 
         // Handle Input.

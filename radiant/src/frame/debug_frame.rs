@@ -28,6 +28,13 @@ impl DebugFrame {
 
 impl Render for DebugFrame {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().p_2().child(self.number_field.clone()).child(self.text_field.clone())
+        div()
+            .size_full()
+            .flex()
+            .flex_col()
+            .gap_2()
+            .p_2()
+            .child(self.number_field.clone())
+            .child(self.text_field.clone())
     }
 }
