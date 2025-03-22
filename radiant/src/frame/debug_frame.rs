@@ -1,34 +1,42 @@
 use gpui::*;
-use ui::{TextField, TextFieldEvent};
+use ui::{NumberField, TextField};
 
 pub struct DebugFrame {
     text_field: Entity<TextField>,
+    number_field: Entity<NumberField>,
 }
 
 impl DebugFrame {
     pub fn build(window: &mut Window, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {
             let text_field = cx.new(|cx| {
-                let mut text_field = TextField::new(window, cx);
-                text_field.set_validator(Some(Box::new(|text| !text.contains("0"))));
-                text_field
+                let field = TextField::new("text_field_1", window, cx);
+                field.set_value("Text Field Value".into(), cx);
+                field
             });
 
-            cx.subscribe(
-                &text_field,
-                |_this, _text_field, event: &TextFieldEvent, _cx: &mut Context<Self>| {
-                    dbg!(&event);
-                },
-            )
-            .detach();
+            let number_field = cx.new(|cx| {
+                let mut field = NumberField::new("number_field_1", window, cx);
+                field.set_value(0.2, cx);
+                field.set_min(Some(0.0));
+                field.set_max(Some(1.0));
+                field
+            });
 
-            Self { text_field }
+            Self { text_field, number_field }
         })
     }
 }
 
 impl Render for DebugFrame {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().p_2().child(self.text_field.clone())
+        div()
+            .size_full()
+            .flex()
+            .flex_col()
+            .gap_2()
+            .p_2()
+            .child(self.number_field.clone())
+            .child(self.text_field.clone())
     }
 }

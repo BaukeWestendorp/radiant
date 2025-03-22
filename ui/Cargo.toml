@@ -5,3 +5,4 @@ edition.workspace = true
 
 [dependencies]
 gpui.workspace = true
+smallvec = "1.14.0"
