@@ -43,6 +43,7 @@ impl TextField {
 impl Render for TextField {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let focused = self.input.read(cx).is_focused(window);
+        let focus_handle = self.input.read(cx).focus_handle(cx);
 
         let background_color =
             if focused { cx.theme().background_focused } else { cx.theme().background };
@@ -60,6 +61,7 @@ impl Render for TextField {
 
         div()
             .id("text_field")
+            .track_focus(&focus_handle)
             .w_full()
             .bg(background_color)
             .text_color(text_color)

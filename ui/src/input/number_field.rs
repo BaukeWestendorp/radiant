@@ -2,7 +2,7 @@ use gpui::*;
 
 use crate::theme::ActiveTheme;
 
-use super::TextInput;
+use super::{TextInput, TextInputEvent};
 
 pub struct NumberField {
     input: Entity<TextInput>,
@@ -12,10 +12,19 @@ pub struct NumberField {
 
 impl NumberField {
     pub fn new(id: impl Into<ElementId>, window: &mut Window, cx: &mut Context<Self>) -> Self {
-        Self {
-            input: cx.new(|cx| TextInput::new(id, window, cx).p(window.rem_size() * 0.25)),
-            focus_handle: cx.focus_handle().clone(),
-        }
+        let input = cx.new(|cx| {
+            let mut input = TextInput::new(id, window, cx).p(window.rem_size() * 0.25);
+            input.set_interactive(false, cx);
+            input
+        });
+
+        cx.subscribe(&input, |_number_field, input, event, cx| match event {
+            TextInputEvent::Blur => input.update(cx, |input, cx| input.set_interactive(false, cx)),
+            _ => {}
+        })
+        .detach();
+
+        Self { input, focus_handle: cx.focus_handle().clone() }
     }
 
     pub fn disabled(&self, cx: &App) -> bool {
@@ -47,6 +56,17 @@ impl NumberField {
     }
 }
 
+impl NumberField {
+    fn handle_on_click(
+        &mut self,
+        _event: &ClickEvent,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.input.update(cx, |input, cx| input.set_interactive(true, cx));
+    }
+}
+
 impl Render for NumberField {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let focused = self.focus_handle.is_focused(window);
@@ -75,6 +95,8 @@ impl Render for NumberField {
             .border_color(border_color)
             .rounded(cx.theme().radius)
             .cursor_text()
+            .on_click(cx.listener(Self::handle_on_click))
+            .cursor_ew_resize()
             .child(self.input.clone())
     }
 }

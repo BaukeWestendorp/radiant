@@ -1,6 +1,7 @@
 use blink::BlinkCursor;
 use element::TextElement;
 use gpui::*;
+use prelude::FluentBuilder;
 use std::ops::Range;
 
 mod blink;
@@ -95,6 +96,7 @@ pub struct TextInput {
     disabled: bool,
     masked: bool,
     validator: Option<Box<Validator>>,
+    interactive: bool,
 
     utf16_selection: Range<usize>,
     new_selection_start_utf16_offset: Option<usize>,
@@ -125,6 +127,7 @@ impl TextInput {
             disabled: false,
             masked: false,
             validator: None,
+            interactive: true,
 
             utf16_selection: 0..0,
             new_selection_start_utf16_offset: None,
@@ -197,8 +200,25 @@ impl TextInput {
         self.validator = validator;
     }
 
+    pub fn interactive(&self) -> bool {
+        self.interactive
+    }
+
+    pub fn set_interactive(&mut self, interactive: bool, cx: &mut App) {
+        self.interactive = interactive;
+        if self.interactive {
+            self.blink_cursor.update(cx, |blink_cursor, cx| {
+                blink_cursor.start(cx);
+            });
+        }
+    }
+
     pub fn is_focused(&self, window: &Window) -> bool {
         self.focus_handle.is_focused(window)
+    }
+
+    pub fn focus(&self, window: &mut Window) {
+        window.focus(&self.focus_handle);
     }
 
     pub fn move_to(&mut self, mut utf16_offset: usize, cx: &mut Context<Self>) {
@@ -689,10 +709,12 @@ impl TextInput {
     }
 
     fn handle_focus(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
-        self.blink_cursor.update(cx, |blink_cursor, cx| {
-            blink_cursor.start(cx);
-        });
-        cx.emit(TextInputEvent::Focus);
+        if self.interactive() {
+            self.blink_cursor.update(cx, |blink_cursor, cx| {
+                blink_cursor.start(cx);
+            });
+            cx.emit(TextInputEvent::Focus);
+        }
     }
 
     fn handle_blur(&mut self, window: &mut Window, cx: &mut Context<Self>) {
@@ -813,34 +835,43 @@ impl Render for TextInput {
             .track_focus(&self.focus_handle)
             .size_full()
             .p(self.padding)
-            .child(
-                div().child(TextElement::new(cx.entity().clone())).cursor_text().overflow_hidden(),
-            )
-            .on_action(cx.listener(Self::handle_move_left))
-            .on_action(cx.listener(Self::handle_move_right))
-            .on_action(cx.listener(Self::handle_move_to_start_of_word))
-            .on_action(cx.listener(Self::handle_move_to_end_of_word))
-            .on_action(cx.listener(Self::handle_move_to_start_of_line))
-            .on_action(cx.listener(Self::handle_move_to_end_of_line))
-            .on_action(cx.listener(Self::handle_select_left))
-            .on_action(cx.listener(Self::handle_select_right))
-            .on_action(cx.listener(Self::handle_select_to_start_of_word))
-            .on_action(cx.listener(Self::handle_select_to_end_of_word))
-            .on_action(cx.listener(Self::handle_select_to_start_of_line))
-            .on_action(cx.listener(Self::handle_select_to_end_of_line))
-            .on_action(cx.listener(Self::handle_select_all))
-            .on_action(cx.listener(Self::handle_copy))
-            .on_action(cx.listener(Self::handle_cut))
-            .on_action(cx.listener(Self::handle_paste))
-            .on_action(cx.listener(Self::handle_backspace))
-            .on_action(cx.listener(Self::handle_delete))
-            .on_action(cx.listener(Self::handle_submit))
-            .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_mouse_down))
-            .on_mouse_down_out(cx.listener(|this, _, window, cx| this.handle_blur(window, cx)))
-            .on_drag(self.id.clone(), |_, _, _, cx| cx.new(|_| EmptyView))
-            .on_drag_move(cx.listener(Self::handle_drag_move))
-            .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
-            .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up))
+            .child(div().child(TextElement::new(cx.entity().clone())).overflow_hidden())
+            .when(self.interactive(), |e| {
+                e.cursor_text()
+                    .on_action(cx.listener(Self::handle_move_left))
+                    .on_action(cx.listener(Self::handle_move_right))
+                    .on_action(cx.listener(Self::handle_move_to_start_of_word))
+                    .on_action(cx.listener(Self::handle_move_to_end_of_word))
+                    .on_action(cx.listener(Self::handle_move_to_start_of_line))
+                    .on_action(cx.listener(Self::handle_move_to_end_of_line))
+                    .on_action(cx.listener(Self::handle_select_left))
+                    .on_action(cx.listener(Self::handle_select_right))
+                    .on_action(cx.listener(Self::handle_select_to_start_of_word))
+                    .on_action(cx.listener(Self::handle_select_to_end_of_word))
+                    .on_action(cx.listener(Self::handle_select_to_start_of_line))
+                    .on_action(cx.listener(Self::handle_select_to_end_of_line))
+                    .on_action(cx.listener(Self::handle_select_all))
+                    .on_action(cx.listener(Self::handle_copy))
+                    .on_action(cx.listener(Self::handle_cut))
+                    .on_action(cx.listener(Self::handle_paste))
+                    .on_action(cx.listener(Self::handle_backspace))
+                    .on_action(cx.listener(Self::handle_delete))
+                    .on_action(cx.listener(Self::handle_submit))
+                    .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_mouse_down))
+                    .on_mouse_down_out(
+                        cx.listener(|this, _, window, cx| this.handle_blur(window, cx)),
+                    )
+                    .on_drag(self.id.clone(), |_, _, _, cx| cx.new(|_| EmptyView))
+                    .on_drag_move(cx.listener(Self::handle_drag_move))
+                    .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
+                    .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up))
+            })
+    }
+}
+
+impl Focusable for TextInput {
+    fn focus_handle(&self, _cx: &App) -> FocusHandle {
+        self.focus_handle.clone()
     }
 }
 
