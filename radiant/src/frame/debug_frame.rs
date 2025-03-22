@@ -12,7 +12,7 @@ impl DebugFrame {
             let text_field = cx.new(|cx| {
                 let field = TextField::new("text_field_1", window, cx);
                 field.set_value("Text Field Value".into(), cx);
-                field.set_disabled(true, cx);
+                field.set_masked(true, cx);
                 field
             });
 

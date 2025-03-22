@@ -13,12 +13,12 @@ impl NumberField {
     pub fn new(id: impl Into<ElementId>, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let input = cx.new(|cx| {
             let mut input = TextInput::new(id, window, cx).p(window.rem_size() * 0.25);
-            input.set_interactive(false, cx);
+            input.set_is_interactive(false);
             input
         });
 
         cx.subscribe(&input, |_number_field, input, event, cx| match event {
-            TextInputEvent::Blur => input.update(cx, |input, cx| input.set_interactive(false, cx)),
+            TextInputEvent::Blur => input.update(cx, |input, _cx| input.set_is_interactive(false)),
             _ => {}
         })
         .detach();
@@ -31,7 +31,7 @@ impl NumberField {
     }
 
     pub fn set_disabled(&self, disabled: bool, cx: &mut App) {
-        self.input.update(cx, |text_field, cx| text_field.set_disabled(disabled, cx));
+        self.input.update(cx, |text_field, _cx| text_field.set_disabled(disabled));
     }
 
     pub fn masked(&self, cx: &App) -> bool {
@@ -62,7 +62,7 @@ impl NumberField {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.input.update(cx, |input, cx| input.set_interactive(true, cx));
+        self.input.update(cx, |input, _cx| input.set_is_interactive(true));
     }
 
     fn handle_drag_move(

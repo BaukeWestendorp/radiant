@@ -1,5 +1,5 @@
 use super::TextInput;
-use crate::theme::ActiveTheme;
+use crate::{Disableable, InteractiveContainer};
 use gpui::*;
 
 pub struct TextField {
@@ -16,7 +16,7 @@ impl TextField {
     }
 
     pub fn set_disabled(&self, disabled: bool, cx: &mut App) {
-        self.input.update(cx, |text_field, cx| text_field.set_disabled(disabled, cx));
+        self.input.update(cx, |text_field, _cx| text_field.set_disabled(disabled));
     }
 
     pub fn masked(&self, cx: &App) -> bool {
@@ -39,33 +39,11 @@ impl TextField {
 }
 
 impl Render for TextField {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let focused = self.input.read(cx).is_focused(window);
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let focus_handle = self.input.read(cx).focus_handle(cx);
 
-        let background_color =
-            if focused { cx.theme().element_background_focused } else { cx.theme().background };
-
-        let border_color = if focused {
-            cx.theme().border_focused
-        } else if self.disabled(cx) {
-            cx.theme().border_muted
-        } else {
-            cx.theme().border
-        };
-
-        let text_color =
-            if self.disabled(cx) { cx.theme().text_muted } else { cx.theme().text_primary };
-
-        div()
-            .id("text_field")
-            .track_focus(&focus_handle)
-            .w_full()
-            .bg(background_color)
-            .text_color(text_color)
-            .border_1()
-            .border_color(border_color)
-            .rounded(cx.theme().radius)
+        InteractiveContainer::new(ElementId::View(cx.entity_id()), focus_handle)
+            .disabled(self.disabled(cx))
             .cursor_text()
             .child(self.input.clone())
     }

@@ -174,18 +174,8 @@ impl TextInput {
         self.disabled
     }
 
-    pub fn set_disabled(&mut self, disabled: bool, cx: &mut Context<Self>) {
+    pub fn set_disabled(&mut self, disabled: bool) {
         self.disabled = disabled;
-
-        self.blink_cursor.update(cx, |blink_cursor, cx| {
-            if disabled {
-                blink_cursor.stop(cx);
-            } else {
-                blink_cursor.start(cx);
-            }
-        });
-
-        cx.notify();
     }
 
     pub fn masked(&self) -> bool {
@@ -204,13 +194,8 @@ impl TextInput {
         self.is_interactive
     }
 
-    pub fn set_interactive(&mut self, is_interactive: bool, cx: &mut App) {
+    pub fn set_is_interactive(&mut self, is_interactive: bool) {
         self.is_interactive = is_interactive;
-        if self.is_interactive {
-            self.blink_cursor.update(cx, |blink_cursor, cx| {
-                blink_cursor.start(cx);
-            });
-        }
     }
 
     pub fn is_focused(&self, window: &Window) -> bool {
@@ -444,8 +429,8 @@ impl TextInput {
     }
 
     fn cursor_shown(&self, window: &Window, cx: &App) -> bool {
-        if !self.disabled() && self.is_focused(window) {
-            return true;
+        if self.disabled() || !self.is_focused(window) {
+            return false;
         }
 
         self.blink_cursor.read(cx).visible()
@@ -829,6 +814,8 @@ impl EntityInputHandler for TextInput {
 
 impl Render for TextInput {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let can_interact = self.is_interactive() && !self.disabled();
+
         div()
             .id(self.id.clone())
             .key_context(KEY_CONTEXT)
@@ -836,7 +823,7 @@ impl Render for TextInput {
             .size_full()
             .p(self.padding)
             .child(div().child(TextElement::new(cx.entity().clone())).overflow_hidden())
-            .when(self.is_interactive(), |e| {
+            .when(can_interact, |e| {
                 e.cursor_text()
                     .on_action(cx.listener(Self::handle_move_left))
                     .on_action(cx.listener(Self::handle_move_right))
