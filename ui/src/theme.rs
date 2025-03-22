@@ -2,15 +2,20 @@ use gpui::{Hsla, Pixels};
 
 pub struct Theme {
     pub background: Hsla,
-    pub background_focused: Hsla,
+
+    pub element_background: Hsla,
+    pub element_background_focused: Hsla,
+    pub element_background_hover: Hsla,
+    pub element_background_muted: Hsla,
 
     pub text_primary: Hsla,
     pub text_muted: Hsla,
 
     pub radius: Pixels,
-    pub border_color: Hsla,
-    pub border_color_muted: Hsla,
-    pub border_color_focused: Hsla,
+    pub border: Hsla,
+    pub border_muted: Hsla,
+    pub border_focused: Hsla,
+    pub border_muted_focused: Hsla,
 
     pub accent: Hsla,
 
@@ -32,15 +37,20 @@ impl Default for Theme {
     fn default() -> Self {
         Self {
             background: gpui::hsla(0.0, 0.0, 0.0, 1.0),
-            background_focused: gpui::hsla(0.0, 0.0, 0.1, 1.0),
+
+            element_background: gpui::hsla(0.0, 0.0, 0.0, 1.0),
+            element_background_focused: gpui::hsla(0.0, 0.0, 0.1, 1.0),
+            element_background_hover: gpui::hsla(0.0, 0.0, 0.075, 1.0),
+            element_background_muted: gpui::hsla(0.0, 0.0, 0.0, 1.0),
 
             text_primary: gpui::hsla(0.0, 0.0, 1.0, 1.0),
             text_muted: gpui::hsla(0.0, 0.0, 0.75, 1.0),
 
             radius: gpui::px(4.0),
-            border_color: gpui::hsla(0.0, 0.0, 0.5, 1.0),
-            border_color_muted: gpui::hsla(0.0, 0.0, 0.50, 1.0),
-            border_color_focused: gpui::rgb(0xffc416).into(),
+            border: gpui::hsla(0.0, 0.0, 0.5, 1.0),
+            border_muted: gpui::hsla(0.0, 0.0, 0.50, 1.0),
+            border_focused: gpui::rgb(0xffc416).into(),
+            border_muted_focused: gpui::rgb(0x6d5b25).into(),
 
             accent: gpui::rgb(0xffc416).into(),
 

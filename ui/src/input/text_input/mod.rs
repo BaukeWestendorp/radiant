@@ -96,7 +96,7 @@ pub struct TextInput {
     disabled: bool,
     masked: bool,
     validator: Option<Box<Validator>>,
-    interactive: bool,
+    is_interactive: bool,
 
     utf16_selection: Range<usize>,
     new_selection_start_utf16_offset: Option<usize>,
@@ -127,7 +127,7 @@ impl TextInput {
             disabled: false,
             masked: false,
             validator: None,
-            interactive: true,
+            is_interactive: true,
 
             utf16_selection: 0..0,
             new_selection_start_utf16_offset: None,
@@ -200,13 +200,13 @@ impl TextInput {
         self.validator = validator;
     }
 
-    pub fn interactive(&self) -> bool {
-        self.interactive
+    pub fn is_interactive(&self) -> bool {
+        self.is_interactive
     }
 
-    pub fn set_interactive(&mut self, interactive: bool, cx: &mut App) {
-        self.interactive = interactive;
-        if self.interactive {
+    pub fn set_interactive(&mut self, is_interactive: bool, cx: &mut App) {
+        self.is_interactive = is_interactive;
+        if self.is_interactive {
             self.blink_cursor.update(cx, |blink_cursor, cx| {
                 blink_cursor.start(cx);
             });
@@ -443,8 +443,8 @@ impl TextInput {
         });
     }
 
-    fn show_cursor(&self, window: &Window, cx: &App) -> bool {
-        if self.disabled() && self.is_focused(window) {
+    fn cursor_shown(&self, window: &Window, cx: &App) -> bool {
+        if !self.disabled() && self.is_focused(window) {
             return true;
         }
 
@@ -709,7 +709,7 @@ impl TextInput {
     }
 
     fn handle_focus(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
-        if self.interactive() {
+        if self.is_interactive() {
             self.blink_cursor.update(cx, |blink_cursor, cx| {
                 blink_cursor.start(cx);
             });
@@ -836,7 +836,7 @@ impl Render for TextInput {
             .size_full()
             .p(self.padding)
             .child(div().child(TextElement::new(cx.entity().clone())).overflow_hidden())
-            .when(self.interactive(), |e| {
+            .when(self.is_interactive(), |e| {
                 e.cursor_text()
                     .on_action(cx.listener(Self::handle_move_left))
                     .on_action(cx.listener(Self::handle_move_right))

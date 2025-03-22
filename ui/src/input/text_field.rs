@@ -1,8 +1,6 @@
-use gpui::*;
-
-use crate::theme::ActiveTheme;
-
 use super::TextInput;
+use crate::theme::ActiveTheme;
+use gpui::*;
 
 pub struct TextField {
     input: Entity<TextInput>,
@@ -46,14 +44,14 @@ impl Render for TextField {
         let focus_handle = self.input.read(cx).focus_handle(cx);
 
         let background_color =
-            if focused { cx.theme().background_focused } else { cx.theme().background };
+            if focused { cx.theme().element_background_focused } else { cx.theme().background };
 
         let border_color = if focused {
-            cx.theme().border_color_focused
+            cx.theme().border_focused
         } else if self.disabled(cx) {
-            cx.theme().border_color_muted
+            cx.theme().border_muted
         } else {
-            cx.theme().border_color
+            cx.theme().border
         };
 
         let text_color =

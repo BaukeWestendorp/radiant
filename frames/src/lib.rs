@@ -78,8 +78,8 @@ impl<F: Frame + 'static> Render for FrameWrapper<F> {
             .h(px(self.bounds.size.height as f32) * cell_size)
             .bg(cx.theme().background)
             .border_1()
-            .border_color(cx.theme().border_color)
-            .when(focused, |e| e.border_color(cx.theme().border_color_focused))
+            .border_color(cx.theme().border)
+            .when(focused, |e| e.border_color(cx.theme().border_focused))
             .rounded(cx.theme().radius)
             .child(self.frame.render(window, cx))
     }

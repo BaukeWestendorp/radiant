@@ -1,9 +1,7 @@
+use super::{TextInput, TextInputEvent};
+use crate::{Disableable, InteractiveContainer};
 use gpui::*;
 use prelude::FluentBuilder;
-
-use crate::theme::ActiveTheme;
-
-use super::{TextInput, TextInputEvent};
 
 pub struct NumberField {
     input: Entity<TextInput>,
@@ -74,11 +72,9 @@ impl NumberField {
         cx: &mut Context<Self>,
     ) {
         let mouse_position = window.mouse_position();
-
         let diff = self.prev_mouse_pos.map_or(Point::default(), |prev| mouse_position - prev);
 
         let factor = 0.5;
-
         self.set_value(self.value(cx) + diff.x.to_f64() * factor, cx);
 
         self.prev_mouse_pos = Some(mouse_position);
@@ -90,38 +86,19 @@ impl NumberField {
 }
 
 impl Render for NumberField {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let interactive = !self.input.read(cx).interactive();
-        let focused = self.input.read(cx).is_focused(window);
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let is_interactive = !self.input.read(cx).is_interactive();
+        let focus_handle = self.input.read(cx).focus_handle(cx);
 
-        let background_color =
-            if focused { cx.theme().background_focused } else { cx.theme().background };
-
-        let border_color = if focused {
-            cx.theme().border_color_focused
-        } else if self.disabled(cx) {
-            cx.theme().border_color_muted
-        } else {
-            cx.theme().border_color
-        };
-
-        let text_color =
-            if self.disabled(cx) { cx.theme().text_muted } else { cx.theme().text_primary };
-
-        div()
-            .id("number_field")
-            .w_full()
-            .bg(background_color)
-            .text_color(text_color)
-            .border_1()
-            .border_color(border_color)
-            .rounded(cx.theme().radius)
-            .on_click(cx.listener(Self::handle_on_click))
-            .cursor_ew_resize()
-            .when(interactive, |e| {
-                e.on_drag((), |_, _, _, cx| cx.new(|_cx| EmptyView))
-                    .on_drag_move(cx.listener(Self::handle_drag_move))
-                    .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
+        InteractiveContainer::new(ElementId::View(cx.entity_id()), focus_handle)
+            .disabled(self.disabled(cx))
+            .when(!self.disabled(cx), |e| {
+                e.on_click(cx.listener(Self::handle_on_click)).when(is_interactive, |e| {
+                    e.cursor_ew_resize()
+                        .on_drag((), |_, _, _, cx| cx.new(|_cx| EmptyView))
+                        .on_drag_move(cx.listener(Self::handle_drag_move))
+                        .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
+                })
             })
             .child(self.input.clone())
     }
