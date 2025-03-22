@@ -17,7 +17,7 @@ impl DebugFrame {
 
             let number_field = cx.new(|cx| {
                 let mut field = NumberField::new("number_field_1", window, cx);
-                field.set_value(42.7, cx);
+                field.set_value(0.2, cx);
                 field.set_min(Some(0.0));
                 field.set_max(Some(1.0));
                 field

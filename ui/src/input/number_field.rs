@@ -21,8 +21,11 @@ impl NumberField {
             input
         });
 
-        cx.subscribe(&input, |_number_field, input, event, cx| match event {
-            TextInputEvent::Blur => input.update(cx, |input, _cx| input.set_is_interactive(false)),
+        cx.subscribe(&input, |number_field, input, event, cx| match event {
+            TextInputEvent::Blur => {
+                number_field.commit_value(cx);
+                input.update(cx, |input, _cx| input.set_is_interactive(false));
+            }
             _ => {}
         })
         .detach();
@@ -48,7 +51,7 @@ impl NumberField {
 
     pub fn value(&self, cx: &App) -> f64 {
         let value_str = self.input.read(cx).text();
-        value_str.parse().expect("should always be able to parse value string")
+        value_str.parse().unwrap_or_default()
     }
 
     pub fn set_value(&self, value: f64, cx: &mut App) {
@@ -64,6 +67,10 @@ impl NumberField {
             let value_str = value.to_string().into();
             text_field.set_text(value_str, cx);
         })
+    }
+
+    fn commit_value(&self, cx: &mut App) {
+        self.set_value(self.value(cx), cx);
     }
 
     pub fn step(&self) -> Option<f64> {
