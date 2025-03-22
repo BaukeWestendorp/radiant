@@ -6,6 +6,10 @@ use prelude::FluentBuilder;
 pub struct NumberField {
     input: Entity<TextInput>,
 
+    step: Option<f64>,
+    min: Option<f64>,
+    max: Option<f64>,
+
     prev_mouse_pos: Option<Point<Pixels>>,
 }
 
@@ -23,7 +27,7 @@ impl NumberField {
         })
         .detach();
 
-        Self { input, prev_mouse_pos: None }
+        Self { input, step: None, min: None, max: None, prev_mouse_pos: None }
     }
 
     pub fn disabled(&self, cx: &App) -> bool {
@@ -48,10 +52,42 @@ impl NumberField {
     }
 
     pub fn set_value(&self, value: f64, cx: &mut App) {
+        let min = self.min().unwrap_or(f64::MIN);
+        let max = self.max().unwrap_or(f64::MAX);
+        let mut value = value.clamp(min, max);
+
+        if let Some(step) = self.step() {
+            value = (value / step).round() * step;
+        }
+
         self.input.update(cx, |text_field, cx| {
             let value_str = value.to_string().into();
             text_field.set_text(value_str, cx);
         })
+    }
+
+    pub fn step(&self) -> Option<f64> {
+        self.step
+    }
+
+    pub fn set_step(&mut self, step: Option<f64>) {
+        self.step = step;
+    }
+
+    pub fn min(&self) -> Option<f64> {
+        self.min
+    }
+
+    pub fn set_min(&mut self, min: Option<f64>) {
+        self.min = min;
+    }
+
+    pub fn max(&self) -> Option<f64> {
+        self.max
+    }
+
+    pub fn set_max(&mut self, max: Option<f64>) {
+        self.max = max;
     }
 }
 
