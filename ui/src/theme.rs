@@ -25,6 +25,9 @@ pub struct Theme {
 
     pub dot_grid_color: Hsla,
     pub line_grid_color: Hsla,
+
+    pub input_height: Pixels,
+    pub input_slider_bar_color: Hsla,
 }
 
 impl Theme {
@@ -60,6 +63,9 @@ impl Default for Theme {
 
             dot_grid_color: gpui::rgba(0xffc41680).into(),
             line_grid_color: gpui::hsla(0.0, 0.0, 0.15, 1.0),
+
+            input_height: gpui::px(28.0),
+            input_slider_bar_color: gpui::hsla(0.0, 0.0, 0.2, 1.0),
         }
     }
 }

@@ -1,5 +1,5 @@
 use super::{TextInput, TextInputEvent};
-use crate::{Disableable, InteractiveContainer};
+use crate::{Disableable, InteractiveContainer, bounds_updater, theme::ActiveTheme, z_stack};
 use gpui::*;
 use prelude::FluentBuilder;
 
@@ -9,6 +9,8 @@ pub struct NumberField {
     step: Option<f64>,
     min: Option<f64>,
     max: Option<f64>,
+
+    bounds: Bounds<Pixels>,
 
     prev_mouse_pos: Option<Point<Pixels>>,
 }
@@ -30,7 +32,14 @@ impl NumberField {
         })
         .detach();
 
-        Self { input, step: None, min: None, max: None, prev_mouse_pos: None }
+        Self {
+            input,
+            step: None,
+            min: None,
+            max: None,
+            bounds: Bounds::default(),
+            prev_mouse_pos: None,
+        }
     }
 
     pub fn disabled(&self, cx: &App) -> bool {
@@ -55,13 +64,18 @@ impl NumberField {
     }
 
     pub fn set_value(&self, value: f64, cx: &mut App) {
+        // Clamp
         let min = self.min().unwrap_or(f64::MIN);
         let max = self.max().unwrap_or(f64::MAX);
         let mut value = value.clamp(min, max);
 
+        // Step
         if let Some(step) = self.step() {
             value = (value / step).round() * step;
         }
+
+        // Round
+        value = (value * 10e3f64).round() / 10e3f64;
 
         self.input.update(cx, |text_field, cx| {
             let value_str = value.to_string().into();
@@ -96,6 +110,26 @@ impl NumberField {
     pub fn set_max(&mut self, max: Option<f64>) {
         self.max = max;
     }
+
+    pub fn is_slider(&self) -> bool {
+        self.min.is_some() && self.max.is_some()
+    }
+
+    pub fn relative_value(&self, cx: &App) -> Option<f64> {
+        let min = self.min()?;
+        let max = self.max()?;
+        let value = self.value(cx).clamp(min, max);
+        Some((value - min) / (max - min))
+    }
+
+    fn drag_factor(&self) -> f64 {
+        if self.is_slider() {
+            let delta = self.max.unwrap() - self.min.unwrap();
+            delta / self.bounds.size.width.to_f64()
+        } else {
+            0.5
+        }
+    }
 }
 
 impl NumberField {
@@ -115,10 +149,10 @@ impl NumberField {
         cx: &mut Context<Self>,
     ) {
         let mouse_position = window.mouse_position();
-        let diff = self.prev_mouse_pos.map_or(Point::default(), |prev| mouse_position - prev);
+        let delta = self.prev_mouse_pos.map_or(Point::default(), |prev| mouse_position - prev);
 
-        let factor = 0.5;
-        self.set_value(self.value(cx) + diff.x.to_f64() * factor, cx);
+        let factor = self.drag_factor();
+        self.set_value(self.value(cx) + delta.x.to_f64() * factor, cx);
 
         self.prev_mouse_pos = Some(mouse_position);
     }
@@ -133,6 +167,14 @@ impl Render for NumberField {
         let is_interactive = !self.input.read(cx).is_interactive();
         let focus_handle = self.input.read(cx).focus_handle(cx);
 
+        let slider_bar = match self.relative_value(cx) {
+            Some(relative_value) => {
+                let slider_width = self.bounds.size.width * px(relative_value as f32);
+                div().size_full().w(slider_width).bg(cx.theme().input_slider_bar_color)
+            }
+            None => div(),
+        };
+
         InteractiveContainer::new(ElementId::View(cx.entity_id()), focus_handle)
             .disabled(self.disabled(cx))
             .when(!self.disabled(cx), |e| {
@@ -143,6 +185,14 @@ impl Render for NumberField {
                         .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
                 })
             })
-            .child(self.input.clone())
+            .w_full()
+            .h(cx.theme().input_height)
+            .child(
+                z_stack([slider_bar.into_any_element(), self.input.clone().into_any_element()])
+                    .size_full(),
+            )
+            .child(bounds_updater(cx.entity(), |this, bounds, _cx| {
+                this.bounds = bounds;
+            }))
     }
 }
