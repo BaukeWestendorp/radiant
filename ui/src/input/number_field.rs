@@ -1,4 +1,5 @@
 use gpui::*;
+use prelude::FluentBuilder;
 
 use crate::theme::ActiveTheme;
 
@@ -7,7 +8,7 @@ use super::{TextInput, TextInputEvent};
 pub struct NumberField {
     input: Entity<TextInput>,
 
-    focus_handle: FocusHandle,
+    prev_mouse_pos: Option<Point<Pixels>>,
 }
 
 impl NumberField {
@@ -24,7 +25,7 @@ impl NumberField {
         })
         .detach();
 
-        Self { input, focus_handle: cx.focus_handle().clone() }
+        Self { input, prev_mouse_pos: None }
     }
 
     pub fn disabled(&self, cx: &App) -> bool {
@@ -65,11 +66,33 @@ impl NumberField {
     ) {
         self.input.update(cx, |input, cx| input.set_interactive(true, cx));
     }
+
+    fn handle_drag_move(
+        &mut self,
+        _event: &DragMoveEvent<()>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let mouse_position = window.mouse_position();
+
+        let diff = self.prev_mouse_pos.map_or(Point::default(), |prev| mouse_position - prev);
+
+        let factor = 0.5;
+
+        self.set_value(self.value(cx) + diff.x.to_f64() * factor, cx);
+
+        self.prev_mouse_pos = Some(mouse_position);
+    }
+
+    fn handle_mouse_up(&mut self, _: &MouseUpEvent, _window: &mut Window, _cx: &mut Context<Self>) {
+        self.prev_mouse_pos = None;
+    }
 }
 
 impl Render for NumberField {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let focused = self.focus_handle.is_focused(window);
+        let interactive = !self.input.read(cx).interactive();
+        let focused = self.input.read(cx).is_focused(window);
 
         let background_color =
             if focused { cx.theme().background_focused } else { cx.theme().background };
@@ -87,16 +110,19 @@ impl Render for NumberField {
 
         div()
             .id("number_field")
-            .track_focus(&self.focus_handle)
             .w_full()
             .bg(background_color)
             .text_color(text_color)
             .border_1()
             .border_color(border_color)
             .rounded(cx.theme().radius)
-            .cursor_text()
             .on_click(cx.listener(Self::handle_on_click))
             .cursor_ew_resize()
+            .when(interactive, |e| {
+                e.on_drag((), |_, _, _, cx| cx.new(|_cx| EmptyView))
+                    .on_drag_move(cx.listener(Self::handle_drag_move))
+                    .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
+            })
             .child(self.input.clone())
     }
 }
