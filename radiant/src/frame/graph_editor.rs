@@ -7,6 +7,7 @@ pub struct GraphEditor<D: GraphDef> {
 impl<D: GraphDef + 'static> GraphEditor<D>
 where
     D::DataType: flow_gpui::DataType<D>,
+    D::InputMeta: flow_gpui::Control,
 {
     pub fn build(graph: Entity<Graph<D>>, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {

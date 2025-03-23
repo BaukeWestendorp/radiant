@@ -15,6 +15,7 @@ pub struct GraphView<D: GraphDef> {
 impl<D: GraphDef + 'static> GraphView<D>
 where
     D::DataType: crate::DataType<D>,
+    D::InputMeta: crate::Control,
 {
     pub fn build(graph: Entity<crate::Graph<D>>, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {
@@ -329,6 +330,7 @@ where
 impl<D: GraphDef + 'static> Render for GraphView<D>
 where
     D::DataType: crate::DataType<D>,
+    D::InputMeta: crate::Control,
 {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let nodes = div().children(self.node_views.values().cloned()).relative().size_full();

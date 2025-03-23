@@ -1,5 +1,5 @@
 use super::graph::GraphView;
-use crate::DataType;
+use crate::{Control, DataType};
 use flow::{AnySocket, GraphDef, Input, NodeId, Output, Socket};
 use gpui::*;
 use prelude::FluentBuilder;
@@ -29,6 +29,7 @@ where
 impl<D: GraphDef + 'static> NodeView<D>
 where
     D::DataType: crate::DataType<D>,
+    D::InputMeta: crate::Control,
 {
     pub fn build(
         node_id: NodeId,
@@ -62,6 +63,7 @@ where
 impl<D: GraphDef + 'static> Render for NodeView<D>
 where
     D::DataType: crate::DataType<D>,
+    D::InputMeta: crate::Control,
 {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let graph = self.graph_view.read(cx).graph().read(cx);
@@ -132,6 +134,7 @@ where
 impl<D: GraphDef + 'static> InputView<D>
 where
     D::DataType: crate::DataType<D>,
+    D::InputMeta: crate::Control,
 {
     pub fn build(
         input: Input<D>,
@@ -160,6 +163,7 @@ where
 impl<D: GraphDef + 'static> Render for InputView<D>
 where
     D::DataType: crate::DataType<D>,
+    D::InputMeta: crate::Control,
 {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let label = self.input.label().to_string();
@@ -179,7 +183,7 @@ where
             .child(self.connector.clone())
             .child(label)
             .when(!has_connection, |e| {
-                let control = div().child("control").border_1().border_color(white());
+                let control = self.input.meta().element();
                 e.child(control)
             })
     }
@@ -198,6 +202,7 @@ where
 impl<D: GraphDef + 'static> OutputView<D>
 where
     D::DataType: crate::DataType<D>,
+    D::InputMeta: crate::Control,
 {
     pub fn build(
         output: Output<D>,
@@ -225,6 +230,7 @@ where
 impl<D: GraphDef + 'static> Render for OutputView<D>
 where
     D::DataType: crate::DataType<D>,
+    D::InputMeta: crate::Control,
 {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         let label = self.output.label().to_string();
@@ -258,6 +264,7 @@ where
 impl<D: GraphDef + 'static> ConnectorView<D>
 where
     D::DataType: crate::DataType<D>,
+    D::InputMeta: crate::Control,
 {
     const HITBOX_SIZE: Pixels = px(22.0);
 
@@ -303,6 +310,7 @@ where
 impl<D: GraphDef + 'static> Render for ConnectorView<D>
 where
     D::DataType: crate::DataType<D>,
+    D::InputMeta: crate::Control,
 {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let width = px(3.0);

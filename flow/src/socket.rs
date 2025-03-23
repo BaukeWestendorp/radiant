@@ -32,11 +32,17 @@ pub struct Input<D: GraphDef> {
     id: String,
     label: String,
     default: D::Value,
+    meta: D::InputMeta,
 }
 
 impl<D: GraphDef> Input<D> {
-    pub fn new(id: impl Into<String>, label: impl Into<String>, default: D::Value) -> Self {
-        Self { id: id.into(), label: label.into(), default }
+    pub fn new(
+        id: impl Into<String>,
+        label: impl Into<String>,
+        default: D::Value,
+        meta: D::InputMeta,
+    ) -> Self {
+        Self { id: id.into(), label: label.into(), default, meta }
     }
 
     pub fn id(&self) -> &str {
@@ -54,6 +60,10 @@ impl<D: GraphDef> Input<D> {
     pub fn data_type(&self) -> D::DataType {
         self.default().data_type()
     }
+
+    pub fn meta(&self) -> &D::InputMeta {
+        &self.meta
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -61,11 +71,17 @@ pub struct Output<D: GraphDef> {
     id: String,
     label: String,
     data_type: D::DataType,
+    meta: D::OutputMeta,
 }
 
 impl<D: GraphDef> Output<D> {
-    pub fn new(id: impl Into<String>, label: impl Into<String>, data_type: D::DataType) -> Self {
-        Self { id: id.into(), label: label.into(), data_type }
+    pub fn new(
+        id: impl Into<String>,
+        label: impl Into<String>,
+        data_type: D::DataType,
+        meta: D::OutputMeta,
+    ) -> Self {
+        Self { id: id.into(), label: label.into(), data_type, meta }
     }
 
     pub fn id(&self) -> &str {
@@ -78,6 +94,10 @@ impl<D: GraphDef> Output<D> {
 
     pub fn data_type(&self) -> &D::DataType {
         &self.data_type
+    }
+
+    pub fn meta(&self) -> &D::OutputMeta {
+        &self.meta
     }
 }
 

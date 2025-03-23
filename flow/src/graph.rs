@@ -11,6 +11,9 @@ pub trait GraphDef: Clone {
     type DataType: DataType<Self> + Clone;
 
     type ProcessingState: Default;
+
+    type InputMeta: Clone;
+    type OutputMeta: Clone;
 }
 
 pub trait Value<D: GraphDef> {

@@ -2,7 +2,7 @@ use crate::GraphEvent;
 use flow::{
     Edge, GraphDef, Input, Node, NodeId, Output, ProcessingContext, Socket, Template, TemplateId,
 };
-use gpui::{Hsla, Pixels, Point};
+use gpui::{AnyElement, Hsla, Pixels, Point};
 use std::collections::HashMap;
 
 #[derive(Clone)]
@@ -151,4 +151,8 @@ impl<D: GraphDef + 'static> Graph<D> {
 
 pub trait DataType<D: GraphDef>: flow::DataType<D> {
     fn color(&self) -> Hsla;
+}
+
+pub trait Control {
+    fn element(&self) -> AnyElement;
 }
