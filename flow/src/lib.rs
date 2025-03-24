@@ -1,12 +1,7 @@
 #[cfg(feature = "serde")]
 pub mod serde;
 
-pub mod export_prelude {
-    pub use crate::{
-        DataType, Edge, GraphDef, Input, Node, NodeId, Output, ProcessingContext, Socket,
-        SocketValues, Template, Value,
-    };
-}
+pub mod gpui;
 
 pub(crate) mod graph;
 pub(crate) mod node;

@@ -1,7 +1,4 @@
-use flow_gpui::{
-    Graph,
-    flow::{self, Input, Output, ProcessingContext, Template, Value as _},
-};
+use flow::{Graph, Input, Output, ProcessingContext, Template, Value as _};
 use gpui::IntoElement;
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -35,20 +32,18 @@ pub enum DataType {
     Boolean,
 }
 
-impl flow_gpui::DataType<GraphDef> for DataType {
-    fn color(&self) -> gpui::Hsla {
-        match self {
-            Self::Number => gpui::rgb(0xCE39FF).into(),
-            Self::Boolean => gpui::rgb(0x1361FF).into(),
-        }
-    }
-}
-
 impl flow::DataType<GraphDef> for DataType {
     fn default_value(&self) -> <GraphDef as flow::GraphDef>::Value {
         match self {
             Self::Number => Value::Number(Default::default()),
             Self::Boolean => Value::Boolean(Default::default()),
+        }
+    }
+
+    fn color(&self) -> gpui::Hsla {
+        match self {
+            Self::Number => gpui::rgb(0xCE39FF).into(),
+            Self::Boolean => gpui::rgb(0x1361FF).into(),
         }
     }
 }
@@ -71,7 +66,7 @@ pub enum Control {
     Checkbox,
 }
 
-impl flow_gpui::Control for Control {
+impl flow::Control for Control {
     fn element(&self) -> gpui::AnyElement {
         match self {
             Control::Float => "Float".into_any_element(),
@@ -89,9 +84,7 @@ impl flow::GraphDef for GraphDef {
     type ProcessingState = State;
     type Value = Value;
     type DataType = DataType;
-
-    type InputMeta = Control;
-    type OutputMeta = ();
+    type Control = Control;
 }
 
 pub type EffectGraph = Graph<GraphDef>;
@@ -104,7 +97,7 @@ pub fn get_graph() -> EffectGraph {
             "number_new",
             "New Number",
             vec![],
-            vec![Output::new("value", "Value", DataType::Number, ())],
+            vec![Output::new("value", "Value", DataType::Number)],
             Box::new(|_, output_values, _| {
                 output_values.set_value("value", Value::Number(42.0));
             }),
@@ -116,7 +109,7 @@ pub fn get_graph() -> EffectGraph {
                 Input::new("a", "A", Value::Number(0.0), Control::Float),
                 Input::new("b", "B", Value::Number(0.0), Control::Float),
             ],
-            vec![Output::new("sum", "Sum", DataType::Number, ())],
+            vec![Output::new("sum", "Sum", DataType::Number)],
             Box::new(|input_values, output_values, _: &mut ProcessingContext<GraphDef>| {
                 let a = input_values.get_value("a").expect("should get value");
                 let Some(Value::Number(a)) = a.cast_to(&DataType::Number) else { panic!() };
@@ -142,7 +135,7 @@ pub fn get_graph() -> EffectGraph {
             "boolean_new",
             "New Boolean",
             vec![],
-            vec![Output::new("value", "Value", DataType::Boolean, ())],
+            vec![Output::new("value", "Value", DataType::Boolean)],
             Box::new(|_, output_values, _| {
                 output_values.set_value("value", Value::Boolean(true));
             }),
@@ -159,7 +152,7 @@ pub fn get_graph() -> EffectGraph {
                     Control::Checkbox,
                 ),
             ],
-            vec![Output::new("result", "Result", DataType::Number, ())],
+            vec![Output::new("result", "Result", DataType::Number)],
             Box::new(|input_values, output_values, _| {
                 let Some(number) = input_values.get_value("number") else { panic!() };
                 let Some(Value::Number(number)) = number.cast_to(&DataType::Number) else {

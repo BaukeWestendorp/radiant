@@ -1,5 +1,6 @@
+use crate::GraphDef;
+
 use super::{GraphEvent, graph::GraphView, node::SNAP_GRID_SIZE};
-use flow::GraphDef;
 use gpui::*;
 use ui::{Pannable, PannableEvent, theme::ActiveTheme, z_stack};
 
@@ -9,11 +10,7 @@ pub struct GraphEditorView<D: GraphDef> {
     visual_graph_offset: Point<Pixels>,
 }
 
-impl<D: GraphDef + 'static> GraphEditorView<D>
-where
-    D::DataType: crate::DataType<D>,
-    D::InputMeta: crate::Control,
-{
+impl<D: GraphDef + 'static> GraphEditorView<D> {
     pub fn build(graph: Entity<crate::Graph<D>>, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {
             let graph_view = GraphView::build(graph.clone(), cx);

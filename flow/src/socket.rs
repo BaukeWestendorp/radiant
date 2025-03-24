@@ -2,28 +2,33 @@ use crate::{GraphDef, NodeId, Value};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AnySocket {
-    Input(Socket),
-    Output(Socket),
+    Input(InputSocket),
+    Output(OutputSocket),
 }
 
-impl AnySocket {
-    pub fn socket(&self) -> &Socket {
-        match self {
-            Self::Input(socket) | Self::Output(socket) => socket,
-        }
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct InputSocket {
+    pub node_id: NodeId,
+    pub name: String,
+}
+
+impl InputSocket {
+    pub fn new(node_id: NodeId, id: String) -> Self {
+        Self { node_id, name: id }
     }
 }
 
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Socket {
+pub struct OutputSocket {
     pub node_id: NodeId,
-    pub id: String,
+    pub name: String,
 }
 
-impl Socket {
+impl OutputSocket {
     pub fn new(node_id: NodeId, id: String) -> Self {
-        Self { node_id, id }
+        Self { node_id, name: id }
     }
 }
 
@@ -32,7 +37,7 @@ pub struct Input<D: GraphDef> {
     id: String,
     label: String,
     default: D::Value,
-    meta: D::InputMeta,
+    control: D::Control,
 }
 
 impl<D: GraphDef> Input<D> {
@@ -40,9 +45,9 @@ impl<D: GraphDef> Input<D> {
         id: impl Into<String>,
         label: impl Into<String>,
         default: D::Value,
-        meta: D::InputMeta,
+        control: D::Control,
     ) -> Self {
-        Self { id: id.into(), label: label.into(), default, meta }
+        Self { id: id.into(), label: label.into(), default, control }
     }
 
     pub fn id(&self) -> &str {
@@ -61,8 +66,8 @@ impl<D: GraphDef> Input<D> {
         self.default().data_type()
     }
 
-    pub fn meta(&self) -> &D::InputMeta {
-        &self.meta
+    pub fn control(&self) -> &D::Control {
+        &self.control
     }
 }
 
@@ -71,17 +76,11 @@ pub struct Output<D: GraphDef> {
     id: String,
     label: String,
     data_type: D::DataType,
-    meta: D::OutputMeta,
 }
 
 impl<D: GraphDef> Output<D> {
-    pub fn new(
-        id: impl Into<String>,
-        label: impl Into<String>,
-        data_type: D::DataType,
-        meta: D::OutputMeta,
-    ) -> Self {
-        Self { id: id.into(), label: label.into(), data_type, meta }
+    pub fn new(id: impl Into<String>, label: impl Into<String>, data_type: D::DataType) -> Self {
+        Self { id: id.into(), label: label.into(), data_type }
     }
 
     pub fn id(&self) -> &str {
@@ -95,15 +94,4 @@ impl<D: GraphDef> Output<D> {
     pub fn data_type(&self) -> &D::DataType {
         &self.data_type
     }
-
-    pub fn meta(&self) -> &D::OutputMeta {
-        &self.meta
-    }
-}
-
-#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
-#[derive(Debug, Clone)]
-pub struct Edge {
-    pub source: Socket,
-    pub target: Socket,
 }

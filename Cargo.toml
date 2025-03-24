@@ -1,5 +1,5 @@
 [workspace]
-members = ["flow", "flow2", "flow_gpui", "frames", "radiant", "ui"]
+members = ["flow", "frames", "radiant", "ui"]
 resolver = "3"
 
 [workspace.package]
@@ -10,7 +10,6 @@ edition = "2024"
 frames = { path = "frames" }
 ui = { path = "ui" }
 flow = { path = "flow" }
-flow_gpui = { path = "flow_gpui" }
 
 serde = "1"
 

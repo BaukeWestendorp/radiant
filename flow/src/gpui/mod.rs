@@ -1,4 +1,4 @@
-use flow::{Edge, GraphDef, NodeId, Socket};
+use crate::{GraphDef, InputSocket, NodeId, OutputSocket};
 
 pub mod editor;
 mod graph;
@@ -8,8 +8,8 @@ mod node;
 pub enum GraphEvent {
     NodeAdded(NodeId),
     NodeRemoved(NodeId),
-    EdgeAdded { edge: Edge },
-    EdgeRemoved { source: Socket },
+    EdgeAdded { target: InputSocket, source: OutputSocket },
+    EdgeRemoved { target: InputSocket },
 }
 
 impl<D: GraphDef + 'static> gpui::EventEmitter<GraphEvent> for crate::Graph<D> {}

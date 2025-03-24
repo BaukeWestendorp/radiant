@@ -1,6 +1,6 @@
 use super::node::{self, NodeView, SNAP_GRID_SIZE};
-use crate::DataType as _;
-use flow::{AnySocket, DataType as _, Edge, GraphDef, NodeId, Socket};
+use crate::{AnySocket, GraphDef, NodeId};
+use crate::{DataType as _, InputSocket, OutputSocket};
 use gpui::*;
 use std::collections::HashMap;
 use ui::{Draggable, DraggableEvent, z_stack};
@@ -9,14 +9,10 @@ pub struct GraphView<D: GraphDef> {
     graph: Entity<crate::Graph<D>>,
 
     node_views: HashMap<NodeId, Entity<Draggable>>,
-    new_edge: (Option<Socket>, Option<Socket>),
+    new_edge: (Option<InputSocket>, Option<OutputSocket>),
 }
 
-impl<D: GraphDef + 'static> GraphView<D>
-where
-    D::DataType: crate::DataType<D>,
-    D::InputMeta: crate::Control,
-{
+impl<D: GraphDef + 'static> GraphView<D> {
     pub fn build(graph: Entity<crate::Graph<D>>, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {
             let mut this = Self { graph, node_views: HashMap::new(), new_edge: (None, None) };
@@ -76,14 +72,14 @@ where
             AnySocket::Input(input) => {
                 // If the input already has an edge connected to it, remove it.
                 self.graph.update(cx, |graph, cx| {
-                    if let Some(source) = graph.edge_source(input).cloned() {
-                        graph.remove_edge(&source, cx);
+                    if graph.edge_source(input).is_some() {
+                        graph.remove_edge(&input, cx);
                     }
                 });
 
-                self.new_edge.1 = Some(input.clone())
+                self.new_edge.0 = Some(input.clone())
             }
-            AnySocket::Output(output) => self.new_edge.0 = Some(output.clone()),
+            AnySocket::Output(output) => self.new_edge.1 = Some(output.clone()),
         }
     }
 
@@ -114,7 +110,7 @@ where
                     let template = self.graph.read(cx).template(node.template_id());
 
                     for output in template.outputs() {
-                        let source = Socket::new(node_id, output.id().to_string());
+                        let source = OutputSocket::new(node_id, output.id().to_string());
                         let position =
                             self.get_connector_position(&AnySocket::Output(source.clone()), cx);
 
@@ -123,7 +119,7 @@ where
                             // And it's allowed to snap
                             if output.data_type().can_cast_to(&input.data_type()) {
                                 // Snap to the output socket
-                                self.new_edge.0 = Some(source);
+                                self.new_edge.1 = Some(source);
                                 return;
                             }
                         }
@@ -141,7 +137,7 @@ where
                     let template = self.graph.read(cx).template(node.template_id());
 
                     for input in template.inputs() {
-                        let target = Socket::new(node_id, input.id().to_string());
+                        let target = InputSocket::new(node_id, input.id().to_string());
                         let position =
                             self.get_connector_position(&AnySocket::Input(target.clone()), cx);
 
@@ -150,7 +146,7 @@ where
                             // And it's allowed to snap
                             if output.data_type().can_cast_to(&input.data_type()) {
                                 // Snap to the output socket
-                                self.new_edge.1 = Some(target);
+                                self.new_edge.0 = Some(target);
                                 return;
                             }
                         }
@@ -163,9 +159,9 @@ where
     }
 
     pub fn finish_new_edge(&mut self, cx: &mut gpui::Context<Self>) {
-        if let (Some(source), Some(target)) = self.new_edge.clone() {
+        if let (Some(target), Some(source)) = self.new_edge.clone() {
             self.graph().update(cx, |graph, cx| {
-                graph.add_edge(Edge { source, target }, cx);
+                graph.add_edge(target, source, cx);
                 cx.notify();
             });
         }
@@ -175,7 +171,7 @@ where
     fn render_edges(&self, cx: &App) -> Div {
         let edges = self.graph.read(cx).edges();
 
-        z_stack(edges.map(|Edge { source, target }| {
+        z_stack(edges.map(|(target, source)| {
             let target_pos = self.get_connector_position(&AnySocket::Input(target.clone()), cx);
             let source_pos = self.get_connector_position(&AnySocket::Output(source.clone()), cx);
 
@@ -190,14 +186,7 @@ where
         let relative_mouse_pos = window.mouse_position() - *self.graph().read(cx).offset();
         let (source_pos, target_pos, source_type, target_type) = match &self.new_edge {
             (None, None) => return div(),
-            (None, Some(target)) => {
-                let target_pos = self.get_connector_position(&AnySocket::Input(target.clone()), cx);
-                let source_pos = relative_mouse_pos;
-
-                let target = self.graph.read(cx).input(&target);
-                (source_pos, target_pos, &target.data_type(), &target.data_type())
-            }
-            (Some(source), None) => {
+            (None, Some(source)) => {
                 let source_pos =
                     self.get_connector_position(&AnySocket::Output(source.clone()), cx);
                 let target_pos = relative_mouse_pos;
@@ -205,7 +194,14 @@ where
                 let source = self.graph.read(cx).output(&source);
                 (source_pos, target_pos, source.data_type(), source.data_type())
             }
-            (Some(source), Some(target)) => {
+            (Some(target), None) => {
+                let target_pos = self.get_connector_position(&AnySocket::Input(target.clone()), cx);
+                let source_pos = relative_mouse_pos;
+
+                let target = self.graph.read(cx).input(&target);
+                (source_pos, target_pos, &target.data_type(), &target.data_type())
+            }
+            (Some(target), Some(source)) => {
                 let source_pos =
                     self.get_connector_position(&AnySocket::Output(source.clone()), cx);
                 let target_pos = self.get_connector_position(&AnySocket::Input(target.clone()), cx);
@@ -288,32 +284,36 @@ where
         z_stack([target_horizontal, target_vertical, source_vertical, source_horizontal])
     }
 
-    fn get_connector_position(&self, any_socket: &AnySocket, cx: &App) -> Point<Pixels> {
+    fn get_connector_position(&self, socket: &AnySocket, cx: &App) -> Point<Pixels> {
         // FIXME: This is a bit hacky. It might be possible to get the node position from the layout.
         //        Just trying to get it working for now...
 
-        let node_id = &any_socket.socket().node_id;
-        let node = self.graph.read(cx).node(node_id);
+        let node_id = match socket {
+            AnySocket::Input(socket) => socket.node_id,
+            AnySocket::Output(socket) => socket.node_id,
+        };
+        let node = self.graph.read(cx).node(&node_id);
+
         let template = self.graph.read(cx).template(node.template_id());
         let node_position = ui::snap_point(
-            *self.graph.read(cx).visual_node_position(node_id),
+            *self.graph.read(cx).visual_node_position(&node_id),
             node::SNAP_GRID_SIZE,
         );
 
-        let socket_index = match any_socket {
+        let socket_index = match socket {
             AnySocket::Input(input) => template
                 .inputs()
                 .iter()
-                .position(|i| i.id() == input.id)
-                .expect(&format!("should get index of input for socket {:?}", any_socket)),
+                .position(|i| i.id() == input.name)
+                .expect(&format!("should get index of input for socket {:?}", socket)),
             AnySocket::Output(output) => {
                 template.inputs().len() + // Move past all input sockets.
-                    template.outputs().iter().position(|o| o.id() == output.id)
-                    .expect(&format!("should get index of input for socket {:?}", any_socket))
+                    template.outputs().iter().position(|o| o.id() == output.name)
+                    .expect(&format!("should get index of input for socket {:?}", socket))
             }
         };
 
-        let x_offset = match any_socket {
+        let x_offset = match socket {
             AnySocket::Input(_) => px(0.0), // Move to the left edge of the node for input sockets.
             AnySocket::Output(_) => node::NODE_WIDTH, // Move to the right edge of the node for output sockets.
         };
@@ -327,11 +327,7 @@ where
     }
 }
 
-impl<D: GraphDef + 'static> Render for GraphView<D>
-where
-    D::DataType: crate::DataType<D>,
-    D::InputMeta: crate::Control,
-{
+impl<D: GraphDef + 'static> Render for GraphView<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let nodes = div().children(self.node_views.values().cloned()).relative().size_full();
         let edges = self.render_edges(cx);
