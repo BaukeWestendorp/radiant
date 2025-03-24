@@ -129,7 +129,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
                     }
                 }
 
-                self.new_edge.0 = None;
+                self.new_edge.1 = None;
             }
             AnySocket::Output(output_socket) => {
                 let output = self.graph().read(cx).output(output_socket);
@@ -156,7 +156,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
                     }
                 }
 
-                self.new_edge.1 = None;
+                self.new_edge.0 = None;
             }
         }
     }
