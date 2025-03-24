@@ -1,6 +1,5 @@
 use super::node::{self, NodeView, SNAP_GRID_SIZE};
-use crate::{AnySocket, GraphDef, NodeId};
-use crate::{DataType as _, InputSocket, OutputSocket};
+use crate::{AnySocket, DataType as _, GraphDef, InputSocket, NodeId, OutputSocket};
 use gpui::*;
 use std::collections::HashMap;
 use ui::{Draggable, DraggableEvent, z_stack};
@@ -13,13 +12,17 @@ pub struct GraphView<D: GraphDef> {
 }
 
 impl<D: GraphDef + 'static> GraphView<D> {
-    pub fn build(graph: Entity<crate::Graph<D>>, cx: &mut App) -> Entity<Self> {
+    pub fn build(
+        graph: Entity<crate::Graph<D>>,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> Entity<Self> {
         cx.new(|cx| {
             let mut this = Self { graph, node_views: HashMap::new(), new_edge: (None, None) };
 
             let node_ids = this.graph.read(cx).node_ids().copied().collect::<Vec<_>>();
             for node_id in node_ids {
-                this.add_node(node_id, cx);
+                this.add_node(node_id, window, cx);
             }
 
             this
@@ -30,14 +33,14 @@ impl<D: GraphDef + 'static> GraphView<D> {
         &self.graph
     }
 
-    pub fn add_node(&mut self, node_id: NodeId, cx: &mut Context<Self>) {
+    pub fn add_node(&mut self, node_id: NodeId, window: &mut Window, cx: &mut Context<Self>) {
         let graph_view = cx.entity().clone();
         let draggable = cx.new(|cx| {
             Draggable::new(
                 ElementId::NamedInteger("node".into(), node_id.0 as usize),
                 *self.graph.read(cx).node_position(&node_id),
                 Some(SNAP_GRID_SIZE),
-                NodeView::build(node_id, graph_view, self.graph.clone(), cx),
+                NodeView::build(node_id, graph_view, self.graph.clone(), window, cx),
             )
         });
 

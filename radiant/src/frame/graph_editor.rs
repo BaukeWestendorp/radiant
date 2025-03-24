@@ -6,9 +6,9 @@ pub struct GraphEditor<D: GraphDef> {
 }
 
 impl<D: GraphDef + 'static> GraphEditor<D> {
-    pub fn build(graph: Entity<Graph<D>>, cx: &mut App) -> Entity<Self> {
+    pub fn build(graph: Entity<Graph<D>>, window: &mut Window, cx: &mut App) -> Entity<Self> {
         cx.new(|cx| {
-            let graph_editor_view = GraphEditorView::build(graph, cx);
+            let graph_editor_view = GraphEditorView::build(graph, window, cx);
             Self { graph_editor_view }
         })
     }

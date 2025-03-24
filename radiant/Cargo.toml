@@ -7,7 +7,9 @@ edition = "2024"
 flow = { workspace = true, features = ["serde"] }
 frames.workspace = true
 ui.workspace = true
+
 serde.workspace = true
 serde_json = "1"
 
 gpui.workspace = true
+eyre = "0.6.12"

@@ -13,7 +13,7 @@ pub trait GraphDef: Clone {
     type Value: Value<Self> + Clone;
 
     type DataType: DataType<Self> + Clone;
-    type Control: Control + Clone;
+    type Control: Control<Self> + Clone;
 
     type ProcessingState: Default;
 }
@@ -34,8 +34,14 @@ pub trait DataType<D: GraphDef> {
     fn color(&self) -> gpui::Hsla;
 }
 
-pub trait Control {
-    fn element(&self) -> AnyElement;
+pub trait Control<D: GraphDef> {
+    fn build_view(
+        &self,
+        value: D::Value,
+        id: gpui::ElementId,
+        window: &mut gpui::Window,
+        cx: &mut gpui::App,
+    ) -> gpui::AnyView;
 }
 
 #[derive(Clone)]

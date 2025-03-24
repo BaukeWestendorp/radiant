@@ -21,7 +21,7 @@ impl RadiantApp {
                 frame_container: cx.new(|cx| {
                     let mut container = FrameContainer::new(size(20, 12), px(80.0));
                     container.add_frame(
-                        MainFrame::EffectGraphEditor(GraphEditor::build(effect_graph, cx)),
+                        MainFrame::EffectGraphEditor(GraphEditor::build(effect_graph, window, cx)),
                         bounds(point(0, 0), size(15, 12)),
                         cx,
                     );

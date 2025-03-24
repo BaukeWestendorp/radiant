@@ -30,6 +30,7 @@ impl<D: GraphDef + 'static> NodeView<D> {
         node_id: NodeId,
         graph_view: Entity<GraphView<D>>,
         graph: Entity<crate::Graph<D>>,
+        window: &mut Window,
         cx: &mut App,
     ) -> Entity<Self> {
         cx.new(move |cx| {
@@ -40,7 +41,7 @@ impl<D: GraphDef + 'static> NodeView<D> {
                 .inputs()
                 .iter()
                 .cloned()
-                .map(|input| InputView::build(input, node_id, graph_view.clone(), cx))
+                .map(|input| InputView::build(input, node_id, graph_view.clone(), window, cx))
                 .collect();
 
             let outputs = template
@@ -113,7 +114,9 @@ struct InputView<D: GraphDef + 'static> {
     node_id: NodeId,
     graph_view: Entity<GraphView<D>>,
 
+    id: ElementId,
     connector: Entity<ConnectorView<D>>,
+    control: AnyView,
 }
 
 impl<D: GraphDef + 'static> InputView<D> {
@@ -121,21 +124,27 @@ impl<D: GraphDef + 'static> InputView<D> {
         input: Input<D>,
         node_id: NodeId,
         graph_view: Entity<GraphView<D>>,
+        window: &mut Window,
         cx: &mut App,
     ) -> Entity<Self> {
         cx.new(|cx| {
             let socket = InputSocket::new(node_id, input.id().to_string());
             let data_type = input.data_type().clone();
+            let id = ElementId::Name(format!("input-{}-{}", node_id.0, input.id()).into());
+            let control =
+                input.control().build_view(input.default().clone(), id.clone(), window, cx);
             Self {
                 input,
                 node_id,
                 graph_view: graph_view.clone(),
+                id,
                 connector: ConnectorView::build(
                     AnySocket::Input(socket),
                     data_type,
                     graph_view,
                     cx,
                 ),
+                control,
             }
         })
     }
@@ -145,31 +154,26 @@ impl<D: GraphDef + 'static> Render for InputView<D> {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let label = self.input.label().to_string();
 
-        let id = ElementId::Name(format!("input-{}-{}", self.node_id.0, self.input.id()).into());
-
         let graph = self.graph_view.read(cx).graph().read(cx);
         let socket = InputSocket::new(self.node_id, self.input.id().to_string());
         let has_connection = graph.edge_source(&socket).is_some();
 
         div()
-            .id(id)
+            .id(self.id.clone())
             .h_flex()
             .pr_1()
             .h(SOCKET_HEIGHT)
             .gap_2()
             .child(self.connector.clone())
             .child(label)
-            .when(!has_connection, |e| {
-                let control = self.input.control().element();
-                e.child(control)
-            })
+            .when(!has_connection, |e| e.child(self.control.clone()))
     }
 }
 
 struct OutputView<D: GraphDef + 'static> {
     output: Output<D>,
-    node_id: NodeId,
 
+    id: ElementId,
     connector: Entity<ConnectorView<D>>,
 }
 
@@ -183,9 +187,10 @@ impl<D: GraphDef + 'static> OutputView<D> {
         cx.new(|cx| {
             let socket = OutputSocket::new(node_id, output.id().to_string());
             let data_type = output.data_type().clone();
+            let id = ElementId::Name(format!("output-{}-{}", node_id.0, output.id()).into());
             Self {
                 output,
-                node_id,
+                id,
                 connector: ConnectorView::build(
                     AnySocket::Output(socket),
                     data_type,
@@ -201,10 +206,8 @@ impl<D: GraphDef + 'static> Render for OutputView<D> {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         let label = self.output.label().to_string();
 
-        let id = ElementId::Name(format!("output-{}-{}", self.node_id.0, self.output.id()).into());
-
         div()
-            .id(id)
+            .id(self.id.clone())
             .pl_1()
             .h_flex()
             .h(SOCKET_HEIGHT)
