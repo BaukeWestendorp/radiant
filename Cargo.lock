@@ -1407,6 +1407,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "flow2"
+version = "0.1.0"
+dependencies = [
+ "gpui",
+ "serde",
+ "ui",
+]
+
+[[package]]
 name = "flow_gpui"
 version = "0.1.0"
 dependencies = [

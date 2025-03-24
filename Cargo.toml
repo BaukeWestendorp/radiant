@@ -1,5 +1,5 @@
 [workspace]
-members = ["flow", "flow_gpui", "frames", "radiant", "ui"]
+members = ["flow", "flow2", "flow_gpui", "frames", "radiant", "ui"]
 resolver = "3"
 
 [workspace.package]
