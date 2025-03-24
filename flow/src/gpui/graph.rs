@@ -330,12 +330,27 @@ impl<D: GraphDef + 'static> GraphView<D> {
     }
 }
 
+impl<D: GraphDef + 'static> GraphView<D> {
+    fn handle_mouse_up(
+        &mut self,
+        _event: &MouseUpEvent,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.finish_new_edge(cx);
+    }
+}
+
 impl<D: GraphDef + 'static> Render for GraphView<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let nodes = div().children(self.node_views.values().cloned()).relative().size_full();
         let edges = self.render_edges(cx);
         let new_edge = self.render_new_edge(window, cx);
 
-        z_stack([nodes, edges, new_edge]).size_full().text_xs()
+        z_stack([nodes, edges, new_edge])
+            .size_full()
+            .text_xs()
+            .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
+            .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up))
     }
 }

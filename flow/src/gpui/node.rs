@@ -238,8 +238,10 @@ impl<D: GraphDef + 'static> ConnectorView<D> {
     ) -> Entity<Self> {
         cx.new(|_cx| Self { socket, data_type, hovering: false, graph_view })
     }
+}
 
-    fn on_drag_move(
+impl<D: GraphDef> ConnectorView<D> {
+    fn handle_drag_move(
         &mut self,
         event: &DragMoveEvent<AnySocket>,
         window: &mut Window,
@@ -254,7 +256,7 @@ impl<D: GraphDef + 'static> ConnectorView<D> {
         })
     }
 
-    fn on_mouse_down(
+    fn handle_mouse_down(
         &mut self,
         _event: &MouseDownEvent,
         _window: &mut Window,
@@ -262,10 +264,6 @@ impl<D: GraphDef + 'static> ConnectorView<D> {
     ) {
         self.graph_view
             .update(cx, |graph_view, cx| graph_view.set_new_edge_socket(&self.socket, cx))
-    }
-
-    fn on_mouse_up(&mut self, _event: &MouseUpEvent, _window: &mut Window, cx: &mut Context<Self>) {
-        self.graph_view.update(cx, |graph_view, cx| graph_view.finish_new_edge(cx))
     }
 }
 
@@ -289,10 +287,8 @@ impl<D: GraphDef + 'static> Render for ConnectorView<D> {
             .cursor_crosshair()
             .on_hover(cx.listener(|this, hovering, _, _| this.hovering = *hovering))
             .on_drag(self.socket.clone(), |_, _, _, cx| cx.new(|_| EmptyView))
-            .on_drag_move(cx.listener(Self::on_drag_move))
-            .on_mouse_down(MouseButton::Left, cx.listener(Self::on_mouse_down))
-            .on_mouse_up(MouseButton::Left, cx.listener(Self::on_mouse_up))
-            .on_mouse_up_out(MouseButton::Left, cx.listener(Self::on_mouse_up));
+            .on_drag_move(cx.listener(Self::handle_drag_move))
+            .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_mouse_down));
 
         let left_side = match self.socket {
             AnySocket::Input(_) => false,
