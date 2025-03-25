@@ -41,7 +41,11 @@ impl<D: GraphDef + 'static> NodeView<D> {
                 .inputs()
                 .iter()
                 .cloned()
-                .map(|input| InputView::build(input, node_id, graph_view.clone(), window, cx))
+                .map(|input| {
+                    let socket = InputSocket::new(node_id, input.id().to_owned());
+                    let value = graph.read(cx).input_value(&socket).unwrap();
+                    InputView::build(input, node_id, value.clone(), graph_view.clone(), window, cx)
+                })
                 .collect();
 
             let outputs = template
@@ -123,6 +127,7 @@ impl<D: GraphDef + 'static> InputView<D> {
     pub fn build(
         input: Input<D>,
         node_id: NodeId,
+        value: D::Value,
         graph_view: Entity<GraphView<D>>,
         window: &mut Window,
         cx: &mut App,
@@ -131,22 +136,17 @@ impl<D: GraphDef + 'static> InputView<D> {
             let socket = InputSocket::new(node_id.clone(), input.id().to_string());
             let data_type = input.data_type().clone();
             let id = ElementId::Name(format!("input-{}-{}", node_id.0, input.id()).into());
-            let control =
-                input.control().build_view(input.default().clone(), id.clone(), window, cx);
+            let control = input.control().build_view(value, id.clone(), window, cx);
 
             cx.subscribe(&control, {
-                let input_id = input.id().to_owned();
-                let node_id = node_id.clone();
+                let socket = socket.clone();
                 move |input_view: &mut Self, _, event: &ControlEvent<D>, cx| match event {
                     ControlEvent::Change(value) => {
-                        let input_id = input_id.clone();
                         let value = value.clone();
+                        let socket = socket.clone();
                         input_view.graph_view.update(cx, move |graph_view, cx| {
                             graph_view.graph().update(cx, |graph, cx| {
-                                graph
-                                    .node_mut(&node_id)
-                                    .input_values_mut()
-                                    .set_value(input_id, value);
+                                graph.set_input_value(socket, value);
                                 cx.notify();
                             })
                         });
@@ -295,8 +295,8 @@ impl<D: GraphDef + 'static> Render for ConnectorView<D> {
         let height = px(11.0);
 
         let (node_id, socket_name) = match self.socket.clone() {
-            AnySocket::Input(socket) => (socket.node_id, socket.name),
-            AnySocket::Output(socket) => (socket.node_id, socket.name),
+            AnySocket::Input(socket) => (socket.node_id, socket.id),
+            AnySocket::Output(socket) => (socket.node_id, socket.id),
         };
 
         let id = ElementId::Name(format!("connector-{}-{}", node_id.0, socket_name).into());

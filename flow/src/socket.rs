@@ -10,12 +10,12 @@ pub enum AnySocket {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct InputSocket {
     pub node_id: NodeId,
-    pub name: String,
+    pub id: String,
 }
 
 impl InputSocket {
     pub fn new(node_id: NodeId, id: String) -> Self {
-        Self { node_id, name: id }
+        Self { node_id, id }
     }
 }
 
@@ -23,12 +23,12 @@ impl InputSocket {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct OutputSocket {
     pub node_id: NodeId,
-    pub name: String,
+    pub id: String,
 }
 
 impl OutputSocket {
     pub fn new(node_id: NodeId, id: String) -> Self {
-        Self { node_id, name: id }
+        Self { node_id, id }
     }
 }
 

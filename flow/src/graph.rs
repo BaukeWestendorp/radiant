@@ -216,7 +216,7 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.template(template_id)
             .inputs()
             .iter()
-            .find(|i| i.id() == socket.name)
+            .find(|i| i.id() == socket.id)
             .expect("should have found input")
     }
 
@@ -225,7 +225,7 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.template(template_id)
             .outputs()
             .iter()
-            .find(|o| o.id() == socket.name)
+            .find(|o| o.id() == socket.id)
             .expect("should have found output")
     }
 
@@ -240,21 +240,14 @@ impl<D: GraphDef + 'static> Graph<D> {
         let template = self.template(node.template_id());
 
         // Calculate inputs.
-        let mut input_values = SocketValues::new();
-        for (input_id, default_value) in template.default_input_values().0 {
+        let mut input_values = Values::new();
+        for (input_id, value) in node.input_values().values() {
             let socket = InputSocket::new(*node_id, input_id.clone());
 
-            // If the input is connected to an edge, get the value from the edge source.
             let value = if let Some(source) = self.edge_source(&socket) {
                 self.get_output_value(source, pcx)
-            }
-            // Else, if the input has a value, use it.
-            else if let Some(value) = node.input_values().get_value(&input_id) {
+            } else {
                 value.clone()
-            }
-            // Else use the default value.
-            else {
-                default_value
             };
 
             input_values.set_value(input_id, value);
@@ -266,6 +259,14 @@ impl<D: GraphDef + 'static> Graph<D> {
 
         // Update output value cache.
         pcx.cache_output_values(*node_id, output_values);
+    }
+
+    pub fn input_value(&self, socket: &InputSocket) -> Option<&D::Value> {
+        self.node(&socket.node_id).input_values().value(&socket.id)
+    }
+
+    pub fn set_input_value(&mut self, socket: InputSocket, value: D::Value) {
+        self.node_mut(&socket.node_id).input_values_mut().set_value(socket.id.clone(), value);
     }
 
     fn get_output_value(
@@ -336,7 +337,7 @@ impl<D: GraphDef> ProcessingContext<D> {
         &self.state
     }
 
-    fn cache_output_values(&mut self, node_id: NodeId, output_values: SocketValues<D>) {
+    fn cache_output_values(&mut self, node_id: NodeId, output_values: Values<D>) {
         for (output_id, value) in output_values.values() {
             let socket = OutputSocket::new(node_id, output_id.clone());
             self.output_value_cache.insert(socket, value.clone());
@@ -364,9 +365,9 @@ impl<D: GraphDef> std::ops::DerefMut for ProcessingContext<D> {
 
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 #[derive(Clone, Default)]
-pub struct SocketValues<D: GraphDef>(HashMap<String, D::Value>);
+pub struct Values<D: GraphDef>(HashMap<String, D::Value>);
 
-impl<D: GraphDef> SocketValues<D> {
+impl<D: GraphDef> Values<D> {
     pub fn new() -> Self {
         Self(HashMap::new())
     }
@@ -375,7 +376,7 @@ impl<D: GraphDef> SocketValues<D> {
         self.0.insert(id.into(), value);
     }
 
-    pub fn get_value(&self, id: &str) -> Option<&D::Value> {
+    pub fn value(&self, id: &str) -> Option<&D::Value> {
         self.0.get(id)
     }
 

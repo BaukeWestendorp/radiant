@@ -9,38 +9,46 @@
     "1": {
       "template_id": "number_add",
       "input_values": {
+        "a": { "number": 200 },
         "b": { "number": 27 }
       }
     },
     "2": {
-      "template_id": "output"
+      "template_id": "output",
+      "input_values": {
+        "value": { "number": 200 }
+      }
     },
     "4": {
       "template_id": "boolean_new"
     },
     "5": {
-      "template_id": "number_invert"
+      "template_id": "number_invert",
+      "input_values": {
+        "number": { "number": 203467 },
+        "should_invert": { "boolean": false }
+      }
     }
   },
   "edges": [
     {
       "source": {
         "node_id": 0,
-        "name": "value"
+        "id": "value"
       },
       "target": {
         "node_id": 1,
-        "name": "a"
+        "id": "a"
       }
     },
     {
       "source": {
         "node_id": 1,
-        "name": "sum"
+        "id": "sum"
       },
       "target": {
         "node_id": 2,
-        "name": "value"
+        "id": "value"
       }
     }
   ],

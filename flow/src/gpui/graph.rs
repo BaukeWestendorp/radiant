@@ -307,11 +307,11 @@ impl<D: GraphDef + 'static> GraphView<D> {
             AnySocket::Input(input) => template
                 .inputs()
                 .iter()
-                .position(|i| i.id() == input.name)
+                .position(|i| i.id() == input.id)
                 .expect(&format!("should get index of input for socket {:?}", socket)),
             AnySocket::Output(output) => {
                 template.inputs().len() + // Move past all input sockets.
-                    template.outputs().iter().position(|o| o.id() == output.name)
+                    template.outputs().iter().position(|o| o.id() == output.id)
                     .expect(&format!("should get index of input for socket {:?}", socket))
             }
         };
