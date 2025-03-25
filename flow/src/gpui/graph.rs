@@ -349,7 +349,6 @@ impl<D: GraphDef + 'static> Render for GraphView<D> {
 
         z_stack([nodes, edges, new_edge])
             .size_full()
-            .text_xs()
             .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
             .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up))
     }

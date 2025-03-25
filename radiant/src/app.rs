@@ -45,7 +45,6 @@ impl Render for RadiantApp {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .bg(cx.theme().background)
-            .text_xs()
             .text_color(cx.theme().text_primary)
             .child(self.frame_container.clone())
     }

@@ -21,7 +21,7 @@ impl NumberField {
         let id = id.into();
 
         let input = cx.new(|cx| {
-            let mut input = TextInput::new(id.clone(), window, cx).p(window.rem_size() * 0.25);
+            let mut input = TextInput::new(id.clone(), window, cx).px(window.rem_size() * 0.25);
             input.set_is_interactive(false);
             input
         });
@@ -175,16 +175,16 @@ impl NumberField {
 }
 
 impl Render for NumberField {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let is_interactive = !self.input.read(cx).is_interactive();
         let focus_handle = self.input.read(cx).focus_handle(cx);
 
         let slider_bar = match self.relative_value(cx) {
             Some(relative_value) => {
                 let slider_width = self.bounds.size.width * px(relative_value as f32);
-                div().size_full().w(slider_width).bg(cx.theme().input_slider_bar_color)
+                div().w(slider_width).h_full().bg(cx.theme().input_slider_bar_color)
             }
-            None => div(),
+            None => div().size_full(),
         };
 
         InteractiveContainer::new(self.id.clone(), focus_handle)
@@ -198,10 +198,11 @@ impl Render for NumberField {
                 })
             })
             .w_full()
-            .h(cx.theme().input_height)
+            .flex()
             .child(
                 z_stack([slider_bar.into_any_element(), self.input.clone().into_any_element()])
-                    .size_full(),
+                    .w_full()
+                    .h(window.line_height()),
             )
             .child(bounds_updater(cx.entity(), |this, bounds, _cx| {
                 this.bounds = bounds;

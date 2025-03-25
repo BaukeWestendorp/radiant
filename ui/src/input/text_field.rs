@@ -8,7 +8,7 @@ pub struct TextField {
 
 impl TextField {
     pub fn new(id: impl Into<ElementId>, window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let input = cx.new(|cx| TextInput::new(id, window, cx).p(window.rem_size() * 0.25));
+        let input = cx.new(|cx| TextInput::new(id, window, cx).px(window.rem_size() * 0.25));
 
         cx.subscribe(&input, |_number_field, _input, event, cx| {
             cx.emit(event.clone());

@@ -104,7 +104,7 @@ pub struct TextInput {
     focus_handle: FocusHandle,
     last_prepaint_state: Option<element::PrepaintState>,
     scroll_offset: Pixels,
-    padding: Pixels,
+    padding_x: Pixels,
 
     blink_cursor: Entity<BlinkCursor>,
 }
@@ -135,14 +135,14 @@ impl TextInput {
             focus_handle,
             last_prepaint_state: None,
             scroll_offset: px(0.0),
-            padding: px(0.0),
+            padding_x: px(0.0),
 
             blink_cursor,
         }
     }
 
-    pub fn p(mut self, padding: Pixels) -> Self {
-        self.padding = padding;
+    pub fn px(mut self, padding_x: Pixels) -> Self {
+        self.padding_x = padding_x;
         self
     }
 
@@ -821,7 +821,7 @@ impl Render for TextInput {
             .key_context(KEY_CONTEXT)
             .track_focus(&self.focus_handle)
             .size_full()
-            .p(self.padding)
+            .px(self.padding_x)
             .child(div().child(TextElement::new(cx.entity().clone())).overflow_hidden())
             .when(can_interact, |e| {
                 e.cursor_text()
