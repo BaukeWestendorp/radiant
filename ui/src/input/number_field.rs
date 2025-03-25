@@ -4,6 +4,7 @@ use gpui::*;
 use prelude::FluentBuilder;
 
 pub struct NumberField {
+    id: ElementId,
     input: Entity<TextInput>,
 
     step: Option<f64>,
@@ -17,22 +18,29 @@ pub struct NumberField {
 
 impl NumberField {
     pub fn new(id: impl Into<ElementId>, window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let id = id.into();
+
         let input = cx.new(|cx| {
-            let mut input = TextInput::new(id, window, cx).p(window.rem_size() * 0.25);
+            let mut input = TextInput::new(id.clone(), window, cx).p(window.rem_size() * 0.25);
             input.set_is_interactive(false);
             input
         });
 
-        cx.subscribe(&input, |number_field, input, event, cx| match event {
-            TextInputEvent::Blur => {
-                number_field.commit_value(cx);
-                input.update(cx, |input, _cx| input.set_is_interactive(false));
+        cx.subscribe(&input, |number_field, input, event, cx| {
+            cx.emit(event.clone());
+            cx.notify();
+            match event {
+                TextInputEvent::Blur => {
+                    number_field.commit_value(cx);
+                    input.update(cx, |input, _cx| input.set_is_interactive(false));
+                }
+                _ => {}
             }
-            _ => {}
         })
         .detach();
 
         Self {
+            id,
             input,
             step: None,
             min: None,
@@ -144,10 +152,14 @@ impl NumberField {
 
     fn handle_drag_move(
         &mut self,
-        _event: &DragMoveEvent<()>,
+        event: &DragMoveEvent<ElementId>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if &self.id != event.drag(cx) {
+            return;
+        }
+
         let mouse_position = window.mouse_position();
         let delta = self.prev_mouse_pos.map_or(Point::default(), |prev| mouse_position - prev);
 
@@ -175,12 +187,12 @@ impl Render for NumberField {
             None => div(),
         };
 
-        InteractiveContainer::new(ElementId::View(cx.entity_id()), focus_handle)
+        InteractiveContainer::new(self.id.clone(), focus_handle)
             .disabled(self.disabled(cx))
             .when(!self.disabled(cx), |e| {
                 e.on_click(cx.listener(Self::handle_on_click)).when(is_interactive, |e| {
                     e.cursor_ew_resize()
-                        .on_drag((), |_, _, _, cx| cx.new(|_cx| EmptyView))
+                        .on_drag(self.id.clone(), |_, _, _, cx| cx.new(|_cx| EmptyView))
                         .on_drag_move(cx.listener(Self::handle_drag_move))
                         .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
                 })
@@ -196,3 +208,5 @@ impl Render for NumberField {
             }))
     }
 }
+
+impl EventEmitter<TextInputEvent> for NumberField {}

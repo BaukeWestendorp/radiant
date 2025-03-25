@@ -4,10 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-flow_gpui = { workspace = true, features = ["serde"] }
+flow = { workspace = true, features = ["serde"] }
 frames.workspace = true
 ui.workspace = true
+
 serde.workspace = true
 serde_json = "1"
 
 gpui.workspace = true
+eyre = "0.6.12"

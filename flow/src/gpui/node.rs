@@ -1,6 +1,8 @@
-use super::graph::GraphView;
-use crate::DataType;
-use flow::{AnySocket, GraphDef, Input, NodeId, Output, Socket};
+use crate::{
+    AnySocket, Control, DataType, GraphDef, Input, InputSocket, NodeId, Output, OutputSocket,
+};
+
+use super::{ControlEvent, ControlView, graph::GraphView};
 use gpui::*;
 use prelude::FluentBuilder;
 use ui::{styled_ext::StyledExt, theme::ActiveTheme};
@@ -12,10 +14,7 @@ pub(crate) const SOCKET_HEIGHT: Pixels = px(16.0);
 pub(crate) const SOCKET_GAP: Pixels = px(8.0);
 pub(crate) const SNAP_GRID_SIZE: Pixels = px(12.0);
 
-pub struct NodeView<D: GraphDef + 'static>
-where
-    D::DataType: crate::DataType<D>,
-{
+pub struct NodeView<D: GraphDef + 'static> {
     node_id: NodeId,
 
     graph_view: Entity<GraphView<D>>,
@@ -26,14 +25,12 @@ where
     focus_handle: FocusHandle,
 }
 
-impl<D: GraphDef + 'static> NodeView<D>
-where
-    D::DataType: crate::DataType<D>,
-{
+impl<D: GraphDef + 'static> NodeView<D> {
     pub fn build(
         node_id: NodeId,
         graph_view: Entity<GraphView<D>>,
         graph: Entity<crate::Graph<D>>,
+        window: &mut Window,
         cx: &mut App,
     ) -> Entity<Self> {
         cx.new(move |cx| {
@@ -44,7 +41,7 @@ where
                 .inputs()
                 .iter()
                 .cloned()
-                .map(|input| InputView::build(input, node_id, graph_view.clone(), cx))
+                .map(|input| InputView::build(input, node_id, graph_view.clone(), window, cx))
                 .collect();
 
             let outputs = template
@@ -59,10 +56,7 @@ where
     }
 }
 
-impl<D: GraphDef + 'static> Render for NodeView<D>
-where
-    D::DataType: crate::DataType<D>,
-{
+impl<D: GraphDef + 'static> Render for NodeView<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let graph = self.graph_view.read(cx).graph().read(cx);
         let template_id = graph.node(&self.node_id).template_id().clone();
@@ -109,96 +103,103 @@ where
     }
 }
 
-impl<D: GraphDef + 'static> Focusable for NodeView<D>
-where
-    D::DataType: crate::DataType<D>,
-{
+impl<D: GraphDef + 'static> Focusable for NodeView<D> {
     fn focus_handle(&self, _cx: &App) -> FocusHandle {
         self.focus_handle.clone()
     }
 }
 
-struct InputView<D: GraphDef + 'static>
-where
-    D::DataType: crate::DataType<D>,
-{
+struct InputView<D: GraphDef + 'static> {
     input: Input<D>,
     node_id: NodeId,
     graph_view: Entity<GraphView<D>>,
 
+    id: ElementId,
     connector: Entity<ConnectorView<D>>,
+    control: Entity<ControlView>,
 }
 
-impl<D: GraphDef + 'static> InputView<D>
-where
-    D::DataType: crate::DataType<D>,
-{
+impl<D: GraphDef + 'static> InputView<D> {
     pub fn build(
         input: Input<D>,
         node_id: NodeId,
         graph_view: Entity<GraphView<D>>,
+        window: &mut Window,
         cx: &mut App,
     ) -> Entity<Self> {
         cx.new(|cx| {
-            let socket = Socket::new(node_id, input.id().to_string());
+            let socket = InputSocket::new(node_id.clone(), input.id().to_string());
             let data_type = input.data_type().clone();
+            let id = ElementId::Name(format!("input-{}-{}", node_id.0, input.id()).into());
+            let control =
+                input.control().build_view(input.default().clone(), id.clone(), window, cx);
+
+            cx.subscribe(&control, {
+                let input_id = input.id().to_owned();
+                let node_id = node_id.clone();
+                move |input_view: &mut Self, _, event: &ControlEvent<D>, cx| match event {
+                    ControlEvent::Change(value) => {
+                        let input_id = input_id.clone();
+                        let value = value.clone();
+                        input_view.graph_view.update(cx, move |graph_view, cx| {
+                            graph_view.graph().update(cx, |graph, cx| {
+                                graph
+                                    .node_mut(&node_id)
+                                    .input_values_mut()
+                                    .set_value(input_id, value);
+                                cx.notify();
+                            })
+                        });
+                    }
+                }
+            })
+            .detach();
+
             Self {
                 input,
                 node_id,
                 graph_view: graph_view.clone(),
+                id,
                 connector: ConnectorView::build(
                     AnySocket::Input(socket),
                     data_type,
                     graph_view,
                     cx,
                 ),
+                control,
             }
         })
     }
 }
 
-impl<D: GraphDef + 'static> Render for InputView<D>
-where
-    D::DataType: crate::DataType<D>,
-{
+impl<D: GraphDef + 'static> Render for InputView<D> {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let label = self.input.label().to_string();
 
-        let id = ElementId::Name(format!("input-{}-{}", self.node_id.0, self.input.id()).into());
-
         let graph = self.graph_view.read(cx).graph().read(cx);
-        let socket = Socket::new(self.node_id, self.input.id().to_string());
+        let socket = InputSocket::new(self.node_id, self.input.id().to_string());
         let has_connection = graph.edge_source(&socket).is_some();
 
         div()
-            .id(id)
+            .id(self.id.clone())
             .h_flex()
             .pr_1()
             .h(SOCKET_HEIGHT)
             .gap_2()
             .child(self.connector.clone())
             .child(label)
-            .when(!has_connection, |e| {
-                let control = div().child("control").border_1().border_color(white());
-                e.child(control)
-            })
+            .when(!has_connection, |e| e.child(self.control.read(cx).view.clone()))
     }
 }
 
-struct OutputView<D: GraphDef + 'static>
-where
-    D::DataType: crate::DataType<D>,
-{
+struct OutputView<D: GraphDef + 'static> {
     output: Output<D>,
-    node_id: NodeId,
 
+    id: ElementId,
     connector: Entity<ConnectorView<D>>,
 }
 
-impl<D: GraphDef + 'static> OutputView<D>
-where
-    D::DataType: crate::DataType<D>,
-{
+impl<D: GraphDef + 'static> OutputView<D> {
     pub fn build(
         output: Output<D>,
         node_id: NodeId,
@@ -206,11 +207,12 @@ where
         cx: &mut App,
     ) -> Entity<Self> {
         cx.new(|cx| {
-            let socket = Socket::new(node_id, output.id().to_string());
+            let socket = OutputSocket::new(node_id, output.id().to_string());
             let data_type = output.data_type().clone();
+            let id = ElementId::Name(format!("output-{}-{}", node_id.0, output.id()).into());
             Self {
                 output,
-                node_id,
+                id,
                 connector: ConnectorView::build(
                     AnySocket::Output(socket),
                     data_type,
@@ -222,17 +224,12 @@ where
     }
 }
 
-impl<D: GraphDef + 'static> Render for OutputView<D>
-where
-    D::DataType: crate::DataType<D>,
-{
+impl<D: GraphDef + 'static> Render for OutputView<D> {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         let label = self.output.label().to_string();
 
-        let id = ElementId::Name(format!("output-{}-{}", self.node_id.0, self.output.id()).into());
-
         div()
-            .id(id)
+            .id(self.id.clone())
             .pl_1()
             .h_flex()
             .h(SOCKET_HEIGHT)
@@ -244,72 +241,65 @@ where
     }
 }
 
-struct ConnectorView<D: GraphDef + 'static>
-where
-    D::DataType: crate::DataType<D>,
-{
-    any_socket: AnySocket,
+struct ConnectorView<D: GraphDef + 'static> {
+    socket: AnySocket,
     data_type: D::DataType,
     hovering: bool,
 
     graph_view: Entity<GraphView<D>>,
 }
 
-impl<D: GraphDef + 'static> ConnectorView<D>
-where
-    D::DataType: crate::DataType<D>,
-{
+impl<D: GraphDef + 'static> ConnectorView<D> {
     const HITBOX_SIZE: Pixels = px(22.0);
 
     pub fn build(
-        any_socket: AnySocket,
+        socket: AnySocket,
         data_type: D::DataType,
         graph_view: Entity<GraphView<D>>,
         cx: &mut App,
     ) -> Entity<Self> {
-        cx.new(|_cx| Self { any_socket, data_type, hovering: false, graph_view })
+        cx.new(|_cx| Self { socket, data_type, hovering: false, graph_view })
     }
+}
 
-    fn on_drag_move(
+impl<D: GraphDef> ConnectorView<D> {
+    fn handle_drag_move(
         &mut self,
         event: &DragMoveEvent<AnySocket>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if &self.any_socket != event.drag(cx) {
+        if &self.socket != event.drag(cx) {
             return;
         }
 
         self.graph_view.update(cx, |graph_view, cx| {
-            graph_view.drag_new_edge(&self.any_socket, Self::HITBOX_SIZE.0 / 2.0, window, cx);
+            graph_view.drag_new_edge(&self.socket, Self::HITBOX_SIZE.0 / 2.0, window, cx);
         })
     }
 
-    fn on_mouse_down(
+    fn handle_mouse_down(
         &mut self,
         _event: &MouseDownEvent,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
         self.graph_view
-            .update(cx, |graph_view, cx| graph_view.set_new_edge_socket(&self.any_socket, cx))
-    }
-
-    fn on_mouse_up(&mut self, _event: &MouseUpEvent, _window: &mut Window, cx: &mut Context<Self>) {
-        self.graph_view.update(cx, |graph_view, cx| graph_view.finish_new_edge(cx))
+            .update(cx, |graph_view, cx| graph_view.set_new_edge_socket(&self.socket, cx))
     }
 }
 
-impl<D: GraphDef + 'static> Render for ConnectorView<D>
-where
-    D::DataType: crate::DataType<D>,
-{
+impl<D: GraphDef + 'static> Render for ConnectorView<D> {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let width = px(3.0);
         let height = px(11.0);
 
-        let socket = self.any_socket.socket();
-        let id = ElementId::Name(format!("connector-{}-{}", socket.node_id.0, socket.id).into());
+        let (node_id, socket_name) = match self.socket.clone() {
+            AnySocket::Input(socket) => (socket.node_id, socket.name),
+            AnySocket::Output(socket) => (socket.node_id, socket.name),
+        };
+
+        let id = ElementId::Name(format!("connector-{}-{}", node_id.0, socket_name).into());
 
         let hitbox = div()
             .id(id)
@@ -318,13 +308,11 @@ where
             .mt(height / 2.0 - Self::HITBOX_SIZE / 2.0)
             .cursor_crosshair()
             .on_hover(cx.listener(|this, hovering, _, _| this.hovering = *hovering))
-            .on_drag(self.any_socket.clone(), |_, _, _, cx| cx.new(|_| EmptyView))
-            .on_drag_move(cx.listener(Self::on_drag_move))
-            .on_mouse_down(MouseButton::Left, cx.listener(Self::on_mouse_down))
-            .on_mouse_up(MouseButton::Left, cx.listener(Self::on_mouse_up))
-            .on_mouse_up_out(MouseButton::Left, cx.listener(Self::on_mouse_up));
+            .on_drag(self.socket.clone(), |_, _, _, cx| cx.new(|_| EmptyView))
+            .on_drag_move(cx.listener(Self::handle_drag_move))
+            .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_mouse_down));
 
-        let left_side = match self.any_socket {
+        let left_side = match self.socket {
             AnySocket::Input(_) => false,
             AnySocket::Output(_) => true,
         };

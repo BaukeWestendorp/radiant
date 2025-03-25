@@ -1337,6 +1337,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "eyre"
+version = "0.6.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7cd915d99f24784cdc19fd37ef22b97e3ff0ae756c7e492e9fbfe897d61e2aec"
+dependencies = [
+ "indenter",
+ "once_cell",
+]
+
+[[package]]
 name = "fastrand"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1403,14 +1413,6 @@ checksum = "8bf7cc16383c4b8d58b9905a8509f02926ce3058053c056376248d958c9df1e8"
 name = "flow"
 version = "0.1.0"
 dependencies = [
- "serde",
-]
-
-[[package]]
-name = "flow_gpui"
-version = "0.1.0"
-dependencies = [
- "flow",
  "gpui",
  "serde",
  "ui",
@@ -2205,6 +2207,12 @@ name = "imgref"
 version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0263a3d970d5c054ed9312c0057b4f3bde9c0b33836d3637361d4a9e6e7a408"
+
+[[package]]
+name = "indenter"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce23b50ad8242c51a442f3ff322d56b02f08852c77e4c0b4d3fd684abc89c683"
 
 [[package]]
 name = "indexmap"
@@ -3385,7 +3393,8 @@ dependencies = [
 name = "radiant"
 version = "0.1.0"
 dependencies = [
- "flow_gpui",
+ "eyre",
+ "flow",
  "frames",
  "gpui",
  "serde",

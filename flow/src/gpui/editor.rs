@@ -1,5 +1,5 @@
 use super::{GraphEvent, graph::GraphView, node::SNAP_GRID_SIZE};
-use flow::GraphDef;
+use crate::GraphDef;
 use gpui::*;
 use ui::{Pannable, PannableEvent, theme::ActiveTheme, z_stack};
 
@@ -9,26 +9,31 @@ pub struct GraphEditorView<D: GraphDef> {
     visual_graph_offset: Point<Pixels>,
 }
 
-impl<D: GraphDef + 'static> GraphEditorView<D>
-where
-    D::DataType: crate::DataType<D>,
-{
-    pub fn build(graph: Entity<crate::Graph<D>>, cx: &mut App) -> Entity<Self> {
+impl<D: GraphDef + 'static> GraphEditorView<D> {
+    pub fn build(
+        graph: Entity<crate::Graph<D>>,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> Entity<Self> {
         cx.new(|cx| {
-            let graph_view = GraphView::build(graph.clone(), cx);
+            let graph_view = GraphView::build(graph.clone(), window, cx);
 
-            cx.subscribe(&graph, {
-                let graph_view = graph_view.clone();
-                move |_editor, _graph, event: &GraphEvent, cx| {
-                    graph_view.update(cx, |graph, cx| match event {
-                        GraphEvent::NodeAdded(node_id) => graph.add_node(*node_id, cx),
-                        GraphEvent::NodeRemoved(node_id) => graph.remove_node(node_id, cx),
-                        GraphEvent::EdgeAdded { .. } => {}
-                        GraphEvent::EdgeRemoved { .. } => {}
-                    });
-                }
-            })
-            .detach();
+            window
+                .subscribe(&graph, cx, {
+                    let graph_view = graph_view.clone();
+                    move |graph, event: &GraphEvent, window, cx| {
+                        graph_view.update(cx, |graph_view, cx| match event {
+                            GraphEvent::NodeAdded(node_id) => {
+                                graph_view.add_node(*node_id, window, cx)
+                            }
+                            GraphEvent::NodeRemoved(node_id) => graph_view.remove_node(node_id, cx),
+                            GraphEvent::EdgeAdded { .. } => {}
+                            GraphEvent::EdgeRemoved { .. } => {}
+                        });
+                        cx.notify(graph.entity_id());
+                    }
+                })
+                .detach();
 
             let graph_offset = *graph.read(cx).offset();
             let pannable = cx.new(|_cx| Pannable::new("graph", graph_offset, graph_view.clone()));

@@ -8,7 +8,7 @@ pub struct NodeId(pub u32);
 #[derive(Clone)]
 pub struct Node<D: GraphDef> {
     template_id: TemplateId,
-    #[serde(default = "SocketValues::new")]
+    #[cfg_attr(feature = "serde", serde(default = "SocketValues::new"))]
     input_values: SocketValues<D>,
 }
 

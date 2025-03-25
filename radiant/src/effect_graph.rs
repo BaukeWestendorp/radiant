@@ -1,7 +1,9 @@
-use flow_gpui::{
-    Graph,
-    flow::{self, Input, Output, ProcessingContext, Template, Value as _},
+use flow::{
+    Graph, Input, Output, ProcessingContext, Template, Value as _,
+    gpui::{ControlEvent, ControlView},
 };
+use gpui::AppContext;
+use ui::{NumberField, TextInputEvent};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -28,19 +30,32 @@ impl flow::Value<GraphDef> for Value {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+impl TryFrom<Value> for f64 {
+    type Error = eyre::Error;
+
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        match value {
+            Value::Number(number) => Ok(number),
+            _ => eyre::bail!("Failed to cast value from {:?} to f64", value.data_type()),
+        }
+    }
+}
+
+impl TryFrom<Value> for bool {
+    type Error = eyre::Error;
+
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        match value {
+            Value::Boolean(boolean) => Ok(boolean),
+            _ => eyre::bail!("Failed to cast value from {:?} to bool", value.data_type()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DataType {
     Number,
     Boolean,
-}
-
-impl flow_gpui::DataType<GraphDef> for DataType {
-    fn color(&self) -> gpui::Hsla {
-        match self {
-            Self::Number => gpui::rgb(0xCE39FF).into(),
-            Self::Boolean => gpui::rgb(0x1361FF).into(),
-        }
-    }
 }
 
 impl flow::DataType<GraphDef> for DataType {
@@ -48,6 +63,13 @@ impl flow::DataType<GraphDef> for DataType {
         match self {
             Self::Number => Value::Number(Default::default()),
             Self::Boolean => Value::Boolean(Default::default()),
+        }
+    }
+
+    fn color(&self) -> gpui::Hsla {
+        match self {
+            Self::Number => gpui::rgb(0xCE39FF).into(),
+            Self::Boolean => gpui::rgb(0x1361FF).into(),
         }
     }
 }
@@ -63,6 +85,74 @@ impl Default for State {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Control {
+    Slider { min: f64, max: f64, step: Option<f64> },
+    Float,
+    Checkbox,
+}
+
+impl flow::Control<GraphDef> for Control {
+    fn build_view(
+        &self,
+        value: Value,
+        id: gpui::ElementId,
+        window: &mut gpui::Window,
+        cx: &mut gpui::App,
+    ) -> gpui::Entity<ControlView> {
+        ControlView::new(cx, |cx| match self {
+            Control::Slider { min, max, step } => {
+                let field = cx.new(|cx| {
+                    let value = value.try_into().expect("should always be able to convert initial input value to the value used by it's control");
+
+                    let mut field = NumberField::new(id, window, cx);
+                    field.set_value(value, cx);
+                    field.set_min(Some(*min));
+                    field.set_max(Some(*max));
+                    field.set_step(*step);
+
+                    field
+                })
+                .into();
+
+                cx.subscribe(&field, |_, field, event: &TextInputEvent, cx| {
+                    if let TextInputEvent::Change(_) = event {
+                        let value = field.read(cx).value(cx);
+                        cx.emit(ControlEvent::<GraphDef>::Change(Value::Number(value)));
+                        cx.notify();
+                    }
+                })
+                .detach();
+
+                field.into()
+            }
+            Control::Float => {
+                let field = cx.new(|cx| {
+                    let value = value.try_into().expect("should always be able to convert initial input value to the value used by it's control");
+
+                    let field = NumberField::new(id, window, cx);
+                    field.set_value(value, cx);
+
+
+                    field
+                }).into();
+
+                cx.subscribe(&field, |_, field, event: &TextInputEvent, cx| {
+                    if let TextInputEvent::Change(_) = event {
+                        let value = field.read(cx).value(cx);
+                        cx.emit(ControlEvent::<GraphDef>::Change(Value::Number(value)));
+                        cx.notify();
+                    }
+                })
+                .detach();
+
+                field.into()
+            }
+            Control::Checkbox => cx.new(|_cx| gpui::EmptyView).into(),
+        })
+    }
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone)]
 pub struct GraphDef;
@@ -71,6 +161,7 @@ impl flow::GraphDef for GraphDef {
     type ProcessingState = State;
     type Value = Value;
     type DataType = DataType;
+    type Control = Control;
 }
 
 pub type EffectGraph = Graph<GraphDef>;
@@ -92,8 +183,8 @@ pub fn get_graph() -> EffectGraph {
             "number_add",
             "Add Number",
             vec![
-                Input::new("a", "A", Value::Number(0.0)),
-                Input::new("b", "B", Value::Number(0.0)),
+                Input::new("a", "A", Value::Number(0.0), Control::Float),
+                Input::new("b", "B", Value::Number(0.0), Control::Float),
             ],
             vec![Output::new("sum", "Sum", DataType::Number)],
             Box::new(|input_values, output_values, _: &mut ProcessingContext<GraphDef>| {
@@ -109,7 +200,12 @@ pub fn get_graph() -> EffectGraph {
         Template::new(
             "output",
             "Output",
-            vec![Input::new("value", "Value", Value::Number(0.0))],
+            vec![Input::new(
+                "value",
+                "Value",
+                Value::Number(0.0),
+                Control::Slider { min: 0.0, max: 1.0, step: None },
+            )],
             vec![],
             Box::new(|input_values, _, cx: &mut ProcessingContext<GraphDef>| {
                 let value = input_values.get_value("value").expect("should get value");
@@ -130,8 +226,18 @@ pub fn get_graph() -> EffectGraph {
             "number_invert",
             "Invert Number",
             vec![
-                Input::new("number", "Number", Value::Number(0.0)),
-                Input::new("should_invert", "Should Invert", Value::Boolean(false)),
+                Input::new(
+                    "number",
+                    "Number",
+                    Value::Number(0.0),
+                    Control::Slider { min: 0.0, max: 100.0, step: Some(5.0) },
+                ),
+                Input::new(
+                    "should_invert",
+                    "Should Invert",
+                    Value::Boolean(false),
+                    Control::Checkbox,
+                ),
             ],
             vec![Output::new("result", "Result", DataType::Number)],
             Box::new(|input_values, output_values, _| {
