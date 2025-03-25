@@ -1,4 +1,4 @@
-use super::{GraphEvent, graph::GraphView, node::SNAP_GRID_SIZE};
+use super::{GraphEvent, graph::GraphView, node::NodeMeasurements};
 use crate::GraphDef;
 use gpui::*;
 use ui::{Pannable, PannableEvent, theme::ActiveTheme, z_stack};
@@ -63,10 +63,12 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
 }
 
 impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let NodeMeasurements { snap_size, .. } = NodeMeasurements::new(window);
+
         let grid = ui::scrollable_line_grid(
             &self.visual_graph_offset,
-            SNAP_GRID_SIZE,
+            snap_size,
             cx.theme().line_grid_color,
         )
         .size_full();

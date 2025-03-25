@@ -1,4 +1,4 @@
-use super::node::{self, NodeView, SNAP_GRID_SIZE};
+use super::node::{NodeMeasurements, NodeView};
 use crate::{AnySocket, DataType as _, GraphDef, InputSocket, NodeId, OutputSocket};
 use gpui::*;
 use std::collections::HashMap;
@@ -34,12 +34,14 @@ impl<D: GraphDef + 'static> GraphView<D> {
     }
 
     pub fn add_node(&mut self, node_id: NodeId, window: &mut Window, cx: &mut Context<Self>) {
+        let NodeMeasurements { snap_size, .. } = NodeMeasurements::new(window);
+
         let graph_view = cx.entity().clone();
         let draggable = cx.new(|cx| {
             Draggable::new(
                 ElementId::NamedInteger("node".into(), node_id.0 as usize),
                 *self.graph.read(cx).node_position(&node_id),
-                Some(SNAP_GRID_SIZE),
+                Some(snap_size),
                 NodeView::build(node_id, graph_view, self.graph.clone(), window, cx),
             )
         });
@@ -114,8 +116,11 @@ impl<D: GraphDef + 'static> GraphView<D> {
 
                     for output in template.outputs() {
                         let source = OutputSocket::new(node_id, output.id().to_string());
-                        let position =
-                            self.get_connector_position(&AnySocket::Output(source.clone()), cx);
+                        let position = self.get_connector_position(
+                            &AnySocket::Output(source.clone()),
+                            window,
+                            cx,
+                        );
 
                         // If the edge is close enough to snap to the output socket
                         if square_dist(position, end_position) < px(squared_snap_distance) {
@@ -141,8 +146,11 @@ impl<D: GraphDef + 'static> GraphView<D> {
 
                     for input in template.inputs() {
                         let target = InputSocket::new(node_id, input.id().to_string());
-                        let position =
-                            self.get_connector_position(&AnySocket::Input(target.clone()), cx);
+                        let position = self.get_connector_position(
+                            &AnySocket::Input(target.clone()),
+                            window,
+                            cx,
+                        );
 
                         // If the edge is close enough to snap to the output socket
                         if square_dist(position, end_position) < px(squared_snap_distance) {
@@ -171,12 +179,14 @@ impl<D: GraphDef + 'static> GraphView<D> {
         self.new_edge = (None, None);
     }
 
-    fn render_edges(&self, cx: &App) -> Div {
+    fn render_edges(&self, window: &Window, cx: &App) -> Div {
         let edges = self.graph.read(cx).edges();
 
         z_stack(edges.map(|(target, source)| {
-            let target_pos = self.get_connector_position(&AnySocket::Input(target.clone()), cx);
-            let source_pos = self.get_connector_position(&AnySocket::Output(source.clone()), cx);
+            let target_pos =
+                self.get_connector_position(&AnySocket::Input(target.clone()), window, cx);
+            let source_pos =
+                self.get_connector_position(&AnySocket::Output(source.clone()), window, cx);
 
             let target = self.graph.read(cx).input(target);
             let source = self.graph.read(cx).output(source);
@@ -191,14 +201,15 @@ impl<D: GraphDef + 'static> GraphView<D> {
             (None, None) => return div(),
             (None, Some(source)) => {
                 let source_pos =
-                    self.get_connector_position(&AnySocket::Output(source.clone()), cx);
+                    self.get_connector_position(&AnySocket::Output(source.clone()), window, cx);
                 let target_pos = relative_mouse_pos;
 
                 let source = self.graph.read(cx).output(&source);
                 (source_pos, target_pos, source.data_type(), source.data_type())
             }
             (Some(target), None) => {
-                let target_pos = self.get_connector_position(&AnySocket::Input(target.clone()), cx);
+                let target_pos =
+                    self.get_connector_position(&AnySocket::Input(target.clone()), window, cx);
                 let source_pos = relative_mouse_pos;
 
                 let target = self.graph.read(cx).input(&target);
@@ -206,8 +217,9 @@ impl<D: GraphDef + 'static> GraphView<D> {
             }
             (Some(target), Some(source)) => {
                 let source_pos =
-                    self.get_connector_position(&AnySocket::Output(source.clone()), cx);
-                let target_pos = self.get_connector_position(&AnySocket::Input(target.clone()), cx);
+                    self.get_connector_position(&AnySocket::Output(source.clone()), window, cx);
+                let target_pos =
+                    self.get_connector_position(&AnySocket::Input(target.clone()), window, cx);
 
                 let source = self.graph.read(cx).output(&source);
                 let target = self.graph.read(cx).input(&target);
@@ -287,7 +299,12 @@ impl<D: GraphDef + 'static> GraphView<D> {
         z_stack([target_horizontal, target_vertical, source_vertical, source_horizontal])
     }
 
-    fn get_connector_position(&self, socket: &AnySocket, cx: &App) -> Point<Pixels> {
+    fn get_connector_position(
+        &self,
+        socket: &AnySocket,
+        window: &Window,
+        cx: &App,
+    ) -> Point<Pixels> {
         // FIXME: This is a bit hacky. It might be possible to get the node position from the layout.
         //        Just trying to get it working for now...
 
@@ -297,11 +314,19 @@ impl<D: GraphDef + 'static> GraphView<D> {
         };
         let node = self.graph.read(cx).node(&node_id);
 
+        let NodeMeasurements {
+            snap_size,
+            content_padding_y,
+            width,
+            header_height,
+            socket_height,
+            socket_gap,
+            ..
+        } = NodeMeasurements::new(window);
+
         let template = self.graph.read(cx).template(node.template_id());
-        let node_position = ui::snap_point(
-            *self.graph.read(cx).visual_node_position(&node_id),
-            node::SNAP_GRID_SIZE,
-        );
+        let node_position =
+            ui::snap_point(*self.graph.read(cx).visual_node_position(&node_id), snap_size);
 
         let socket_index = match socket {
             AnySocket::Input(input) => template
@@ -318,12 +343,12 @@ impl<D: GraphDef + 'static> GraphView<D> {
 
         let x_offset = match socket {
             AnySocket::Input(_) => px(0.0), // Move to the left edge of the node for input sockets.
-            AnySocket::Output(_) => node::NODE_WIDTH, // Move to the right edge of the node for output sockets.
+            AnySocket::Output(_) => width, // Move to the right edge of the node for output sockets.
         };
-        let y_offset = node::HEADER_HEIGHT + // Move below the header.
-            node::NODE_CONTENT_Y_PADDING + // Move below the content's vertical padding.
-            socket_index as f32 * (node::SOCKET_HEIGHT + node::SOCKET_GAP) + // Move to the correct socket.
-            node::SOCKET_HEIGHT / 2.0 + // Move to the center of the socket.
+        let y_offset = header_height + // Move below the header.
+            content_padding_y + // Move below the content's vertical padding.
+            socket_index as f32 * (socket_height + socket_gap) + // Move to the correct socket.
+            socket_height / 2.0 + // Move to the center of the socket.
             px(1.0);
 
         point(node_position.x + x_offset, node_position.y + y_offset)
@@ -344,7 +369,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
 impl<D: GraphDef + 'static> Render for GraphView<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let nodes = div().children(self.node_views.values().cloned()).relative().size_full();
-        let edges = self.render_edges(cx);
+        let edges = self.render_edges(window, cx);
         let new_edge = self.render_new_edge(window, cx);
 
         z_stack([nodes, edges, new_edge])

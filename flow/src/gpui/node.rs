@@ -7,12 +7,36 @@ use gpui::*;
 use prelude::FluentBuilder;
 use ui::{styled_ext::StyledExt, theme::ActiveTheme};
 
-pub(crate) const NODE_CONTENT_Y_PADDING: Pixels = px(6.0);
-pub(crate) const NODE_WIDTH: Pixels = px(192.0);
-pub(crate) const HEADER_HEIGHT: Pixels = px(24.0);
-pub(crate) const SOCKET_HEIGHT: Pixels = px(16.0);
-pub(crate) const SOCKET_GAP: Pixels = px(8.0);
-pub(crate) const SNAP_GRID_SIZE: Pixels = px(12.0);
+pub struct NodeMeasurements {
+    pub content_padding_y: Pixels,
+    pub width: Pixels,
+    pub min_height: Pixels,
+    pub header_height: Pixels,
+    pub socket_height: Pixels,
+    pub socket_gap: Pixels,
+    pub snap_size: Pixels,
+    pub connector_width: Pixels,
+    pub connector_height: Pixels,
+}
+
+impl NodeMeasurements {
+    pub fn new(window: &Window) -> Self {
+        let rem = window.rem_size();
+        let line_height = window.line_height();
+
+        Self {
+            content_padding_y: rem,
+            width: rem * 16.0,
+            min_height: rem * 8.0,
+            header_height: line_height,
+            socket_height: line_height,
+            socket_gap: rem / 2.0,
+            snap_size: rem,
+            connector_width: rem / 4.0,
+            connector_height: rem,
+        }
+    }
+}
 
 pub struct NodeView<D: GraphDef + 'static> {
     node_id: NodeId,
@@ -104,12 +128,21 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
 
         let focused = self.focus_handle.is_focused(window);
 
+        let NodeMeasurements {
+            content_padding_y,
+            width,
+            min_height,
+            header_height,
+            socket_gap,
+            ..
+        } = NodeMeasurements::new(window);
+
         let header = {
             let label = template.label().to_string();
 
             div()
                 .h_flex()
-                .h(HEADER_HEIGHT)
+                .h(header_height)
                 .gap_1()
                 .px_1()
                 .py_px()
@@ -124,16 +157,16 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
 
         let content = div()
             .v_flex()
-            .gap(SOCKET_GAP)
-            .py(NODE_CONTENT_Y_PADDING)
+            .gap(socket_gap)
+            .py(content_padding_y)
             .children(self.inputs.clone())
             .children(self.outputs.clone())
             .children(self.controls.iter().map(|c| c.read(cx).view.clone()));
 
         div()
             .track_focus(&self.focus_handle)
-            .w(NODE_WIDTH)
-            .min_h(SNAP_GRID_SIZE * 8)
+            .w(width)
+            .min_h(min_height)
             .bg(cx.theme().background)
             .border_1()
             .border_color(cx.theme().border)
@@ -210,18 +243,20 @@ impl<D: GraphDef + 'static> InputView<D> {
 }
 
 impl<D: GraphDef + 'static> Render for InputView<D> {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let label = self.input.label().to_string();
 
         let graph = self.graph_view.read(cx).graph().read(cx);
         let socket = InputSocket::new(self.node_id, self.input.id().to_string());
         let has_connection = graph.edge_source(&socket).is_some();
 
+        let NodeMeasurements { socket_height, .. } = NodeMeasurements::new(window);
+
         div()
             .id(self.id.clone())
             .h_flex()
             .pr_1()
-            .h(SOCKET_HEIGHT)
+            .h(socket_height)
             .gap_2()
             .child(self.connector.clone())
             .child(label)
@@ -262,14 +297,16 @@ impl<D: GraphDef + 'static> OutputView<D> {
 }
 
 impl<D: GraphDef + 'static> Render for OutputView<D> {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         let label = self.output.label().to_string();
+
+        let NodeMeasurements { socket_height, .. } = NodeMeasurements::new(window);
 
         div()
             .id(self.id.clone())
             .pl_1()
             .h_flex()
-            .h(SOCKET_HEIGHT)
+            .h(socket_height)
             .w_full()
             .flex_row_reverse()
             .gap_2()
@@ -327,9 +364,9 @@ impl<D: GraphDef> ConnectorView<D> {
 }
 
 impl<D: GraphDef + 'static> Render for ConnectorView<D> {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let width = px(3.0);
-        let height = px(11.0);
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let NodeMeasurements { connector_width, connector_height, .. } =
+            NodeMeasurements::new(window);
 
         let (node_id, socket_name) = match self.socket.clone() {
             AnySocket::Input(socket) => (socket.node_id, socket.id),
@@ -341,8 +378,8 @@ impl<D: GraphDef + 'static> Render for ConnectorView<D> {
         let hitbox = div()
             .id(id)
             .size(Self::HITBOX_SIZE)
-            .ml(width / 2.0 - Self::HITBOX_SIZE / 2.0)
-            .mt(height / 2.0 - Self::HITBOX_SIZE / 2.0)
+            .ml(connector_width / 2.0 - Self::HITBOX_SIZE / 2.0)
+            .mt(connector_height / 2.0 - Self::HITBOX_SIZE / 2.0)
             .cursor_crosshair()
             .on_hover(cx.listener(|this, hovering, _, _| this.hovering = *hovering))
             .on_drag(self.socket.clone(), |_, _, _, cx| cx.new(|_| EmptyView))
@@ -355,8 +392,8 @@ impl<D: GraphDef + 'static> Render for ConnectorView<D> {
         };
 
         div()
-            .w(width)
-            .h(height)
+            .w(connector_width)
+            .h(connector_height)
             .bg(self.data_type.color())
             .rounded_r(cx.theme().radius)
             .border_1()
