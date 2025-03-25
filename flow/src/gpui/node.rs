@@ -2,7 +2,7 @@ use crate::{
     AnySocket, Control, DataType, GraphDef, Input, InputSocket, NodeId, Output, OutputSocket,
 };
 
-use super::graph::GraphView;
+use super::{ControlEvent, ControlView, graph::GraphView};
 use gpui::*;
 use prelude::FluentBuilder;
 use ui::{styled_ext::StyledExt, theme::ActiveTheme};
@@ -116,7 +116,7 @@ struct InputView<D: GraphDef + 'static> {
 
     id: ElementId,
     connector: Entity<ConnectorView<D>>,
-    control: AnyView,
+    control: Entity<ControlView>,
 }
 
 impl<D: GraphDef + 'static> InputView<D> {
@@ -128,11 +128,33 @@ impl<D: GraphDef + 'static> InputView<D> {
         cx: &mut App,
     ) -> Entity<Self> {
         cx.new(|cx| {
-            let socket = InputSocket::new(node_id, input.id().to_string());
+            let socket = InputSocket::new(node_id.clone(), input.id().to_string());
             let data_type = input.data_type().clone();
             let id = ElementId::Name(format!("input-{}-{}", node_id.0, input.id()).into());
             let control =
                 input.control().build_view(input.default().clone(), id.clone(), window, cx);
+
+            cx.subscribe(&control, {
+                let input_id = input.id().to_owned();
+                let node_id = node_id.clone();
+                move |input_view: &mut Self, _, event: &ControlEvent<D>, cx| match event {
+                    ControlEvent::Change(value) => {
+                        let input_id = input_id.clone();
+                        let value = value.clone();
+                        input_view.graph_view.update(cx, move |graph_view, cx| {
+                            graph_view.graph().update(cx, |graph, cx| {
+                                graph
+                                    .node_mut(&node_id)
+                                    .input_values_mut()
+                                    .set_value(input_id, value);
+                                cx.notify();
+                            })
+                        });
+                    }
+                }
+            })
+            .detach();
+
             Self {
                 input,
                 node_id,
@@ -166,7 +188,7 @@ impl<D: GraphDef + 'static> Render for InputView<D> {
             .gap_2()
             .child(self.connector.clone())
             .child(label)
-            .when(!has_connection, |e| e.child(self.control.clone()))
+            .when(!has_connection, |e| e.child(self.control.read(cx).view.clone()))
     }
 }
 

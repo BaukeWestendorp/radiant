@@ -26,12 +26,16 @@ impl NumberField {
             input
         });
 
-        cx.subscribe(&input, |number_field, input, event, cx| match event {
-            TextInputEvent::Blur => {
-                number_field.commit_value(cx);
-                input.update(cx, |input, _cx| input.set_is_interactive(false));
+        cx.subscribe(&input, |number_field, input, event, cx| {
+            cx.emit(event.clone());
+            cx.notify();
+            match event {
+                TextInputEvent::Blur => {
+                    number_field.commit_value(cx);
+                    input.update(cx, |input, _cx| input.set_is_interactive(false));
+                }
+                _ => {}
             }
-            _ => {}
         })
         .detach();
 
@@ -204,3 +208,5 @@ impl Render for NumberField {
             }))
     }
 }
+
+impl EventEmitter<TextInputEvent> for NumberField {}

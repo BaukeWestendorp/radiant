@@ -1,4 +1,4 @@
-use super::TextInput;
+use super::{TextInput, TextInputEvent};
 use crate::{Disableable, InteractiveContainer};
 use gpui::*;
 
@@ -8,7 +8,15 @@ pub struct TextField {
 
 impl TextField {
     pub fn new(id: impl Into<ElementId>, window: &mut Window, cx: &mut Context<Self>) -> Self {
-        Self { input: cx.new(|cx| TextInput::new(id, window, cx).p(window.rem_size() * 0.25)) }
+        let input = cx.new(|cx| TextInput::new(id, window, cx).p(window.rem_size() * 0.25));
+
+        cx.subscribe(&input, |_number_field, _input, event, cx| {
+            cx.emit(event.clone());
+            cx.notify();
+        })
+        .detach();
+
+        Self { input }
     }
 
     pub fn disabled(&self, cx: &App) -> bool {
@@ -48,3 +56,5 @@ impl Render for TextField {
             .child(self.input.clone())
     }
 }
+
+impl EventEmitter<TextInputEvent> for TextField {}

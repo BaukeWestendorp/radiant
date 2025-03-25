@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use gpui::*;
 
 use crate::{
-    Input, InputSocket, Node, NodeId, Output, OutputSocket, Template, TemplateId, gpui::GraphEvent,
+    Input, InputSocket, Node, NodeId, Output, OutputSocket, Template, TemplateId,
+    gpui::{ControlView, GraphEvent},
 };
 
 pub trait GraphDef: Clone {
@@ -41,7 +42,7 @@ pub trait Control<D: GraphDef> {
         id: gpui::ElementId,
         window: &mut gpui::Window,
         cx: &mut gpui::App,
-    ) -> gpui::AnyView;
+    ) -> Entity<ControlView>;
 }
 
 #[derive(Clone)]
@@ -113,6 +114,12 @@ impl<D: GraphDef + 'static> Graph<D> {
 
     pub fn node(&self, node_id: &NodeId) -> &Node<D> {
         self.nodes.get(node_id).unwrap_or_else(|| {
+            panic!("should always return a node for given node_id: found '{node_id:?}'")
+        })
+    }
+
+    pub fn node_mut(&mut self, node_id: &NodeId) -> &mut Node<D> {
+        self.nodes.get_mut(node_id).unwrap_or_else(|| {
             panic!("should always return a node for given node_id: found '{node_id:?}'")
         })
     }

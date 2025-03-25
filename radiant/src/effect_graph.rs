@@ -1,6 +1,9 @@
-use flow::{Graph, Input, Output, ProcessingContext, Template, Value as _};
-use gpui::{AppContext, ElementId, EmptyView};
-use ui::NumberField;
+use flow::{
+    Graph, Input, Output, ProcessingContext, Template, Value as _,
+    gpui::{ControlEvent, ControlView},
+};
+use gpui::AppContext;
+use ui::{NumberField, TextInputEvent};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -93,13 +96,13 @@ impl flow::Control<GraphDef> for Control {
     fn build_view(
         &self,
         value: Value,
-        id: ElementId,
+        id: gpui::ElementId,
         window: &mut gpui::Window,
         cx: &mut gpui::App,
-    ) -> gpui::AnyView {
-        match self {
-            Control::Slider { min, max, step } => cx
-                .new(|cx| {
+    ) -> gpui::Entity<ControlView> {
+        ControlView::new(cx, |cx| match self {
+            Control::Slider { min, max, step } => {
+                let field = cx.new(|cx| {
                     let value = value.try_into().expect("should always be able to convert initial input value to the value used by it's control");
 
                     let mut field = NumberField::new(id, window, cx);
@@ -110,17 +113,43 @@ impl flow::Control<GraphDef> for Control {
 
                     field
                 })
-                .into(),
-            Control::Float => cx.new(|cx| {
-                let value = value.try_into().expect("should always be able to convert initial input value to the value used by it's control");
+                .into();
 
-                let field = NumberField::new(id, window, cx);
-                field.set_value(value, cx);
+                cx.subscribe(&field, |_, field, event: &TextInputEvent, cx| {
+                    if let TextInputEvent::Change(_) = event {
+                        let value = field.read(cx).value(cx);
+                        cx.emit(ControlEvent::<GraphDef>::Change(Value::Number(value)));
+                        cx.notify();
+                    }
+                })
+                .detach();
 
-                field
-            }).into(),
-            Control::Checkbox => cx.new(|_cx| EmptyView).into(),
-        }
+                field.into()
+            }
+            Control::Float => {
+                let field = cx.new(|cx| {
+                    let value = value.try_into().expect("should always be able to convert initial input value to the value used by it's control");
+
+                    let field = NumberField::new(id, window, cx);
+                    field.set_value(value, cx);
+
+
+                    field
+                }).into();
+
+                cx.subscribe(&field, |_, field, event: &TextInputEvent, cx| {
+                    if let TextInputEvent::Change(_) = event {
+                        let value = field.read(cx).value(cx);
+                        cx.emit(ControlEvent::<GraphDef>::Change(Value::Number(value)));
+                        cx.notify();
+                    }
+                })
+                .detach();
+
+                field.into()
+            }
+            Control::Checkbox => cx.new(|_cx| gpui::EmptyView).into(),
+        })
     }
 }
 
