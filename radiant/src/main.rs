@@ -26,7 +26,10 @@ fn main() {
 
                 ..Default::default()
             },
-            |window, cx| RadiantApp::build(window, cx),
+            |window, cx| {
+                window.set_rem_size(px(14.0));
+                RadiantApp::build(window, cx)
+            },
         )
         .expect("should open window");
     });

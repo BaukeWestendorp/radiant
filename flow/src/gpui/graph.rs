@@ -316,11 +316,11 @@ impl<D: GraphDef + 'static> GraphView<D> {
 
         let NodeMeasurements {
             snap_size,
-            content_padding_y,
+            sockets_padding_y,
             width,
             header_height,
             socket_height,
-            socket_gap,
+            socket_gap_y,
             ..
         } = NodeMeasurements::new(window);
 
@@ -346,8 +346,8 @@ impl<D: GraphDef + 'static> GraphView<D> {
             AnySocket::Output(_) => width, // Move to the right edge of the node for output sockets.
         };
         let y_offset = header_height + // Move below the header.
-            content_padding_y + // Move below the content's vertical padding.
-            socket_index as f32 * (socket_height + socket_gap) + // Move to the correct socket.
+            sockets_padding_y + // Move below the content's vertical padding.
+            socket_index as f32 * (socket_height + socket_gap_y) + // Move to the correct socket.
             socket_height / 2.0 + // Move to the center of the socket.
             px(1.0);
 

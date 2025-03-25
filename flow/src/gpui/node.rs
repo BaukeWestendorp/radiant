@@ -8,12 +8,11 @@ use prelude::FluentBuilder;
 use ui::{styled_ext::StyledExt, theme::ActiveTheme};
 
 pub struct NodeMeasurements {
-    pub content_padding_y: Pixels,
     pub width: Pixels,
-    pub min_height: Pixels,
     pub header_height: Pixels,
+    pub sockets_padding_y: Pixels,
     pub socket_height: Pixels,
-    pub socket_gap: Pixels,
+    pub socket_gap_y: Pixels,
     pub snap_size: Pixels,
     pub connector_width: Pixels,
     pub connector_height: Pixels,
@@ -25,14 +24,13 @@ impl NodeMeasurements {
         let line_height = window.line_height();
 
         Self {
-            content_padding_y: rem,
             width: rem * 16.0,
-            min_height: rem * 8.0,
             header_height: line_height,
+            sockets_padding_y: rem / 2.0,
             socket_height: line_height,
-            socket_gap: rem / 2.0,
+            socket_gap_y: rem / 2.0,
             snap_size: rem,
-            connector_width: rem / 4.0,
+            connector_width: px(4.0),
             connector_height: rem,
         }
     }
@@ -129,11 +127,10 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
         let focused = self.focus_handle.is_focused(window);
 
         let NodeMeasurements {
-            content_padding_y,
+            sockets_padding_y: content_padding_top,
             width,
-            min_height,
             header_height,
-            socket_gap,
+            socket_gap_y,
             ..
         } = NodeMeasurements::new(window);
 
@@ -156,17 +153,33 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
         };
 
         let content = div()
-            .v_flex()
-            .gap(socket_gap)
-            .py(content_padding_y)
-            .children(self.inputs.clone())
-            .children(self.outputs.clone())
-            .children(self.controls.iter().map(|c| c.read(cx).view.clone()));
+            .child(
+                div()
+                    .v_flex()
+                    .gap(socket_gap_y)
+                    .py(content_padding_top)
+                    .children(self.inputs.clone())
+                    .children(self.outputs.clone()),
+            )
+            .when(!self.controls.is_empty(), |e| {
+                e.child(
+                    div()
+                        .flex()
+                        .p_2()
+                        .gap_2()
+                        .border_t_1()
+                        .border_color(cx.theme().border)
+                        .when(focused, |e| {
+                            e.bg(cx.theme().element_background_focused)
+                                .border_color(cx.theme().border_focused)
+                        })
+                        .children(self.controls.iter().map(|c| c.read(cx).view.clone())),
+                )
+            });
 
         div()
             .track_focus(&self.focus_handle)
             .w(width)
-            .min_h(min_height)
             .bg(cx.theme().background)
             .border_1()
             .border_color(cx.theme().border)
@@ -255,7 +268,7 @@ impl<D: GraphDef + 'static> Render for InputView<D> {
         div()
             .id(self.id.clone())
             .h_flex()
-            .pr_1()
+            .pr_2()
             .h(socket_height)
             .gap_2()
             .child(self.connector.clone())
@@ -304,7 +317,7 @@ impl<D: GraphDef + 'static> Render for OutputView<D> {
 
         div()
             .id(self.id.clone())
-            .pl_1()
+            .pl_2()
             .h_flex()
             .h(socket_height)
             .w_full()
