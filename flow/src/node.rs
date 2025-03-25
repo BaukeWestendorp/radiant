@@ -10,11 +10,17 @@ pub struct Node<D: GraphDef> {
     template_id: TemplateId,
     #[cfg_attr(feature = "serde", serde(default = "Values::new"))]
     input_values: Values<D>,
+    #[cfg_attr(feature = "serde", serde(default = "Values::new"))]
+    control_values: Values<D>,
 }
 
 impl<D: GraphDef> Node<D> {
     pub fn new(template_id: impl Into<TemplateId>) -> Self {
-        Self { template_id: template_id.into(), input_values: Values::new() }
+        Self {
+            template_id: template_id.into(),
+            input_values: Values::new(),
+            control_values: Values::new(),
+        }
     }
 
     pub fn template_id(&self) -> &TemplateId {
@@ -27,5 +33,13 @@ impl<D: GraphDef> Node<D> {
 
     pub fn input_values_mut(&mut self) -> &mut Values<D> {
         &mut self.input_values
+    }
+
+    pub fn control_values(&self) -> &Values<D> {
+        &self.control_values
+    }
+
+    pub fn control_values_mut(&mut self) -> &mut Values<D> {
+        &mut self.control_values
     }
 }

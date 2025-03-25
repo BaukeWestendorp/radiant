@@ -1,10 +1,16 @@
 {
   "nodes": {
     "0": {
-      "template_id": "number_new"
+      "template_id": "number_new",
+      "control_values": {
+        "value": { "number": 42 }
+      }
     },
     "3": {
-      "template_id": "number_new"
+      "template_id": "number_new",
+      "control_values": {
+        "value": { "number": 10 }
+      }
     },
     "1": {
       "template_id": "number_add",
@@ -20,7 +26,10 @@
       }
     },
     "4": {
-      "template_id": "boolean_new"
+      "template_id": "boolean_new",
+      "control_values": {
+        "value": { "boolean": true }
+      }
     },
     "5": {
       "template_id": "number_invert",

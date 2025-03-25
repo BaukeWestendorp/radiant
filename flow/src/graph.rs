@@ -253,9 +253,12 @@ impl<D: GraphDef + 'static> Graph<D> {
             input_values.set_value(input_id, value);
         }
 
+        // Control values.
+        let control_values = node.control_values();
+
         // Calculate outputs and update context.
-        let mut output_values = SocketValues::new();
-        template.process(&input_values, &mut output_values, pcx);
+        let mut output_values = Values::new();
+        template.process(&input_values, &control_values, &mut output_values, pcx);
 
         // Update output value cache.
         pcx.cache_output_values(*node_id, output_values);
@@ -267,6 +270,14 @@ impl<D: GraphDef + 'static> Graph<D> {
 
     pub fn set_input_value(&mut self, socket: InputSocket, value: D::Value) {
         self.node_mut(&socket.node_id).input_values_mut().set_value(socket.id.clone(), value);
+    }
+
+    pub fn control_value(&self, node_id: &NodeId, id: &str) -> Option<&D::Value> {
+        self.node(node_id).control_values().value(id)
+    }
+
+    pub fn set_control_value(&mut self, node_id: &NodeId, id: String, value: D::Value) {
+        self.node_mut(&node_id).control_values_mut().set_value(id, value)
     }
 
     fn get_output_value(

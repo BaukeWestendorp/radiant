@@ -1,4 +1,4 @@
-use crate::{GraphDef, Input, Output, ProcessingContext, SocketValues};
+use crate::{GraphDef, Input, Output, ProcessingContext, Value as _, Values};
 
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -16,7 +16,7 @@ impl From<&str> for TemplateId {
     }
 }
 
-pub type Processor<D> = fn(&SocketValues<D>, &mut SocketValues<D>, &mut ProcessingContext<D>);
+pub type Processor<D> = fn(&Values<D>, &Values<D>, &mut Values<D>, &mut ProcessingContext<D>);
 
 #[derive(Clone)]
 pub struct Template<D: GraphDef> {
@@ -26,6 +26,7 @@ pub struct Template<D: GraphDef> {
 
     inputs: Vec<Input<D>>,
     outputs: Vec<Output<D>>,
+    controls: Vec<NodeControl<D>>,
 
     processor: Box<Processor<D>>,
 }
@@ -36,9 +37,10 @@ impl<D: GraphDef> Template<D> {
         label: impl Into<String>,
         inputs: Vec<Input<D>>,
         outputs: Vec<Output<D>>,
+        controls: Vec<NodeControl<D>>,
         processor: Box<Processor<D>>,
     ) -> Self {
-        Self { id: id.into(), label: label.into(), inputs, outputs, processor }
+        Self { id: id.into(), label: label.into(), inputs, outputs, controls, processor }
     }
 
     pub fn id(&self) -> &TemplateId {
@@ -71,8 +73,19 @@ impl<D: GraphDef> Template<D> {
         &self.outputs
     }
 
-    pub fn default_input_values(&self) -> SocketValues<D> {
-        let mut values = SocketValues::new();
+    pub fn control(&self, id: &str) -> &NodeControl<D> {
+        self.controls
+            .iter()
+            .find(|c| c.id() == id)
+            .expect("should get control from template for given id")
+    }
+
+    pub fn controls(&self) -> &[NodeControl<D>] {
+        &self.controls
+    }
+
+    pub fn default_input_values(&self) -> Values<D> {
+        let mut values = Values::new();
         for input in &self.inputs {
             values.set_value(input.id(), input.default().clone());
         }
@@ -81,10 +94,50 @@ impl<D: GraphDef> Template<D> {
 
     pub fn process(
         &self,
-        input_values: &SocketValues<D>,
-        output_values: &mut SocketValues<D>,
+        input_values: &Values<D>,
+        control_values: &Values<D>,
+        output_values: &mut Values<D>,
         state: &mut ProcessingContext<D>,
     ) {
-        (self.processor)(input_values, output_values, state)
+        (self.processor)(input_values, control_values, output_values, state)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct NodeControl<D: GraphDef> {
+    id: String,
+    label: String,
+    default: D::Value,
+    control: D::Control,
+}
+
+impl<D: GraphDef> NodeControl<D> {
+    pub fn new(
+        id: impl Into<String>,
+        label: impl Into<String>,
+        default: D::Value,
+        control: D::Control,
+    ) -> Self {
+        Self { id: id.into(), label: label.into(), default, control }
+    }
+
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    pub fn label(&self) -> &str {
+        &self.label
+    }
+
+    pub fn default(&self) -> &D::Value {
+        &self.default
+    }
+
+    pub fn data_type(&self) -> D::DataType {
+        self.default().data_type()
+    }
+
+    pub fn control(&self) -> &D::Control {
+        &self.control
     }
 }

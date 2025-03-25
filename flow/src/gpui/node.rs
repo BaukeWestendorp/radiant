@@ -21,6 +21,7 @@ pub struct NodeView<D: GraphDef + 'static> {
 
     inputs: Vec<Entity<InputView<D>>>,
     outputs: Vec<Entity<OutputView<D>>>,
+    controls: Vec<Entity<ControlView>>,
 
     focus_handle: FocusHandle,
 }
@@ -55,7 +56,42 @@ impl<D: GraphDef + 'static> NodeView<D> {
                 .map(|output| OutputView::build(output, node_id, graph_view.clone(), cx))
                 .collect();
 
-            Self { node_id, graph_view, inputs, outputs, focus_handle: cx.focus_handle() }
+            let controls = template
+                .controls()
+                .iter()
+                .cloned()
+                .map(|control| {
+                    let value = graph.read(cx).control_value(&node_id, control.id()).unwrap();
+                    let id = ElementId::Name(
+                        format!("node-control-{:?}-{}", node_id, control.id()).into(),
+                    );
+
+                    let control_view = control.control().build_view(value.clone(), id, window, cx);
+
+                    cx.subscribe(&control_view, {
+                        let graph = graph.clone();
+                        move |_control_view: &mut Self, _, event: &ControlEvent<D>, cx| match event
+                        {
+                            ControlEvent::Change(value) => {
+                                let value = value.clone();
+                                graph.update(cx, |graph, cx| {
+                                    graph.set_control_value(
+                                        &node_id,
+                                        control.id().to_owned(),
+                                        value,
+                                    );
+                                    cx.notify();
+                                })
+                            }
+                        }
+                    })
+                    .detach();
+
+                    control_view
+                })
+                .collect();
+
+            Self { node_id, graph_view, inputs, outputs, controls, focus_handle: cx.focus_handle() }
         })
     }
 }
@@ -91,7 +127,8 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
             .gap(SOCKET_GAP)
             .py(NODE_CONTENT_Y_PADDING)
             .children(self.inputs.clone())
-            .children(self.outputs.clone());
+            .children(self.outputs.clone())
+            .children(self.controls.iter().map(|c| c.read(cx).view.clone()));
 
         div()
             .track_focus(&self.focus_handle)

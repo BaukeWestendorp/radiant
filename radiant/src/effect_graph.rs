@@ -1,5 +1,5 @@
 use flow::{
-    Graph, Input, Output, ProcessingContext, Template, Value as _,
+    Graph, Input, NodeControl, Output, ProcessingContext, Template, Value as _,
     gpui::{ControlEvent, ControlView},
 };
 use gpui::AppContext;
@@ -175,8 +175,10 @@ pub fn get_graph() -> EffectGraph {
             "New Number",
             vec![],
             vec![Output::new("value", "Value", DataType::Number)],
-            Box::new(|_, output_values, _| {
-                output_values.set_value("value", Value::Number(42.0));
+            vec![NodeControl::new("value", "Value", Value::Number(0.0), Control::Float)],
+            Box::new(|_, control_values, output_values, _pcx: &mut ProcessingContext<GraphDef>| {
+                let value = control_values.value("value").expect("should get value from control");
+                output_values.set_value("value", value.clone());
             }),
         ),
         Template::new(
@@ -187,11 +189,12 @@ pub fn get_graph() -> EffectGraph {
                 Input::new("b", "B", Value::Number(0.0), Control::Float),
             ],
             vec![Output::new("sum", "Sum", DataType::Number)],
-            Box::new(|input_values, output_values, _: &mut ProcessingContext<GraphDef>| {
-                let a = input_values.get_value("a").expect("should get value");
+            vec![],
+            Box::new(|input_values, _, output_values, _: &mut ProcessingContext<GraphDef>| {
+                let a = input_values.value("a").expect("should get value");
                 let Some(Value::Number(a)) = a.cast_to(&DataType::Number) else { panic!() };
 
-                let b = input_values.get_value("b").expect("should get value");
+                let b = input_values.value("b").expect("should get value");
                 let Some(Value::Number(b)) = b.cast_to(&DataType::Number) else { panic!() };
 
                 output_values.set_value("sum", Value::Number(a + b));
@@ -207,10 +210,11 @@ pub fn get_graph() -> EffectGraph {
                 Control::Slider { min: 0.0, max: 1.0, step: None },
             )],
             vec![],
-            Box::new(|input_values, _, cx: &mut ProcessingContext<GraphDef>| {
-                let value = input_values.get_value("value").expect("should get value");
+            vec![],
+            Box::new(|input_values, _, _, pcx: &mut ProcessingContext<GraphDef>| {
+                let value = input_values.value("value").expect("should get value");
                 let Some(Value::Number(value)) = value.cast_to(&DataType::Number) else { panic!() };
-                cx.value = value;
+                pcx.value = value;
             }),
         ),
         Template::new(
@@ -218,8 +222,10 @@ pub fn get_graph() -> EffectGraph {
             "New Boolean",
             vec![],
             vec![Output::new("value", "Value", DataType::Boolean)],
-            Box::new(|_, output_values, _| {
-                output_values.set_value("value", Value::Boolean(true));
+            vec![NodeControl::new("value", "Value", Value::Boolean(false), Control::Checkbox)],
+            Box::new(|_, control_values, output_values, _pcx: &mut ProcessingContext<GraphDef>| {
+                let value = control_values.value("value").expect("should get value from control");
+                output_values.set_value("value", value.clone());
             }),
         ),
         Template::new(
@@ -240,13 +246,14 @@ pub fn get_graph() -> EffectGraph {
                 ),
             ],
             vec![Output::new("result", "Result", DataType::Number)],
-            Box::new(|input_values, output_values, _| {
-                let Some(number) = input_values.get_value("number") else { panic!() };
+            vec![],
+            Box::new(|input_values, _, output_values, _pcx: &mut ProcessingContext<GraphDef>| {
+                let Some(number) = input_values.value("number") else { panic!() };
                 let Some(Value::Number(number)) = number.cast_to(&DataType::Number) else {
                     panic!()
                 };
 
-                let Some(should_invert) = input_values.get_value("should_invert") else { panic!() };
+                let Some(should_invert) = input_values.value("should_invert") else { panic!() };
                 let Some(Value::Boolean(should_invert)) = should_invert.cast_to(&DataType::Boolean)
                 else {
                     panic!()
