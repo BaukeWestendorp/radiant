@@ -7,6 +7,7 @@ mod node;
 
 pub fn init(app: &mut App) {
     node::init(app);
+    editor::init(app);
 }
 
 #[derive(Debug, Clone)]
