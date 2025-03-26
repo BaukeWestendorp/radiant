@@ -200,13 +200,17 @@ impl Render for NumberField {
             .w_full()
             .flex()
             .child(
-                z_stack([slider_bar.into_any_element(), self.input.clone().into_any_element()])
-                    .w_full()
-                    .h(window.line_height()),
+                z_stack([
+                    slider_bar.into_any_element(),
+                    self.input.clone().into_any_element(),
+                    bounds_updater(cx.entity(), |this, bounds, _cx| {
+                        this.bounds = bounds;
+                    })
+                    .into_any_element(),
+                ])
+                .w_full()
+                .h(window.line_height()),
             )
-            .child(bounds_updater(cx.entity(), |this, bounds, _cx| {
-                this.bounds = bounds;
-            }))
     }
 }
 
