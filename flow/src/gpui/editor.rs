@@ -6,14 +6,19 @@ use ui::{Pannable, PannableEvent, theme::ActiveTheme, z_stack};
 
 const KEY_CONTEXT: &str = "GraphEditor";
 
-actions!(graph_editor, [OpenNewNodeMenu]);
+actions!(graph_editor, [OpenNewNodeMenu, CloseNewNodeMenu]);
 
 pub fn init(app: &mut App) {
-    app.bind_keys([KeyBinding::new("space", OpenNewNodeMenu, Some(KEY_CONTEXT))]);
+    app.bind_keys([
+        KeyBinding::new("space", OpenNewNodeMenu, Some(KEY_CONTEXT)),
+        KeyBinding::new("escape", CloseNewNodeMenu, Some(KEY_CONTEXT)),
+    ]);
 }
 
 pub struct GraphEditorView<D: GraphDef> {
     graph_view: Entity<Pannable>,
+    new_node_menu_view: Option<Entity<NewNodeMenuView>>,
+
     graph: Entity<crate::Graph<D>>,
     visual_graph_offset: Point<Pixels>,
 
@@ -66,6 +71,7 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
 
             Self {
                 graph_view: pannable,
+                new_node_menu_view: None,
                 graph,
                 visual_graph_offset: graph_offset,
                 focus_handle: cx.focus_handle(),
@@ -82,10 +88,23 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
     fn handle_open_new_node_menu(
         &mut self,
         _: &OpenNewNodeMenu,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        // TODO: Account for editor bounds origin.
+        let position = window.mouse_position();
+        self.new_node_menu_view = Some(cx.new(|cx| NewNodeMenuView::new(position, cx)));
+        cx.notify();
+    }
+
+    fn handle_close_new_node_menu(
+        &mut self,
+        _: &CloseNewNodeMenu,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        dbg!("open new node menu");
+        self.new_node_menu_view = None;
+        cx.notify();
     }
 }
 
@@ -102,18 +121,54 @@ impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
 
         let focused = self.focus_handle.is_focused(window);
 
-        z_stack([grid.into_any_element(), self.graph_view.clone().into_any_element()])
-            .track_focus(&self.focus_handle)
-            .key_context(KEY_CONTEXT)
-            .relative()
-            .size_full()
-            .overflow_hidden()
-            .when(focused, |e| e.on_action(cx.listener(Self::handle_open_new_node_menu)))
+        z_stack([
+            grid.into_any_element(),
+            self.graph_view.clone().into_any_element(),
+            self.new_node_menu_view
+                .clone()
+                .map(|e| e.into_any_element())
+                .unwrap_or_else(|| cx.new(|_cx| EmptyView).into_any_element()),
+        ])
+        .track_focus(&self.focus_handle)
+        .key_context(KEY_CONTEXT)
+        .relative()
+        .size_full()
+        .overflow_hidden()
+        .when(focused, |e| {
+            e.on_action(cx.listener(Self::handle_open_new_node_menu))
+                .on_action(cx.listener(Self::handle_close_new_node_menu))
+        })
     }
 }
 
 impl<D: GraphDef + 'static> Focusable for GraphEditorView<D> {
     fn focus_handle(&self, _cx: &App) -> FocusHandle {
         self.focus_handle.clone()
+    }
+}
+
+pub struct NewNodeMenuView {
+    position: Point<Pixels>,
+}
+
+impl NewNodeMenuView {
+    pub fn new(position: Point<Pixels>, _cx: &mut Context<Self>) -> Self {
+        Self { position }
+    }
+}
+
+impl Render for NewNodeMenuView {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<'_, Self>) -> impl IntoElement {
+        div()
+            .absolute()
+            .left(self.position.x)
+            .top(self.position.y)
+            .bg(cx.theme().element_background)
+            .border_1()
+            .border_color(cx.theme().border)
+            .rounded(cx.theme().radius)
+            .w_80()
+            .h_64()
+            .child("new node menu")
     }
 }
