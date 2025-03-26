@@ -10,6 +10,7 @@ actions!(app, [Quit]);
 fn main() {
     Application::new().run(|cx: &mut App| {
         ui::init(cx);
+        flow::gpui::init(cx);
 
         cx.bind_keys([KeyBinding::new("ctrl-q", Quit, None)]);
 

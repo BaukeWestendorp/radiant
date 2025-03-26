@@ -5,6 +5,10 @@ pub mod editor;
 mod graph;
 mod node;
 
+pub fn init(app: &mut App) {
+    node::init(app);
+}
+
 #[derive(Debug, Clone)]
 pub enum GraphEvent {
     NodeAdded(NodeId),

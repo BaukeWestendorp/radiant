@@ -7,6 +7,17 @@ use gpui::*;
 use prelude::FluentBuilder;
 use ui::{styled_ext::StyledExt, theme::ActiveTheme};
 
+const KEY_CONTEXT: &str = "GraphNode";
+
+actions!(node, [Delete]);
+
+pub fn init(app: &mut App) {
+    app.bind_keys([
+        KeyBinding::new("delete", Delete, Some(KEY_CONTEXT)),
+        KeyBinding::new("backspace", Delete, Some(KEY_CONTEXT)),
+    ]);
+}
+
 pub struct NodeMeasurements {
     pub width: Pixels,
     pub header_height: Pixels,
@@ -116,6 +127,16 @@ impl<D: GraphDef + 'static> NodeView<D> {
             Self { node_id, graph_view, inputs, outputs, controls, focus_handle: cx.focus_handle() }
         })
     }
+
+    fn graph(&self, cx: &App) -> Entity<crate::Graph<D>> {
+        self.graph_view.read(cx).graph().clone()
+    }
+}
+
+impl<D: GraphDef + 'static> NodeView<D> {
+    fn handle_delete(&mut self, _: &Delete, _window: &mut Window, cx: &mut Context<Self>) {
+        self.graph(cx).update(cx, |graph, cx| graph.remove_node(&self.node_id, cx));
+    }
 }
 
 impl<D: GraphDef + 'static> Render for NodeView<D> {
@@ -179,6 +200,7 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
 
         div()
             .track_focus(&self.focus_handle)
+            .key_context(KEY_CONTEXT)
             .w(width)
             .bg(cx.theme().background)
             .border_1()
@@ -186,6 +208,7 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
             .when(focused, |e| e.border_color(cx.theme().border_focused))
             .rounded(cx.theme().radius)
             .cursor_grab()
+            .on_action(cx.listener(Self::handle_delete))
             .children([header, content])
     }
 }
