@@ -264,16 +264,22 @@ impl<D: GraphDef + 'static> Graph<D> {
         pcx.cache_output_values(*node_id, output_values);
     }
 
-    pub fn input_value(&self, socket: &InputSocket) -> Option<&D::Value> {
-        self.node(&socket.node_id).input_values().value(&socket.id)
+    pub fn input_value(&self, socket: &InputSocket) -> &D::Value {
+        self.node(&socket.node_id)
+            .input_values()
+            .value(&socket.id)
+            .expect("should always have a value for an input")
     }
 
     pub fn set_input_value(&mut self, socket: InputSocket, value: D::Value) {
         self.node_mut(&socket.node_id).input_values_mut().set_value(socket.id.clone(), value);
     }
 
-    pub fn control_value(&self, node_id: &NodeId, id: &str) -> Option<&D::Value> {
-        self.node(node_id).control_values().value(id)
+    pub fn node_control_value(&self, node_id: &NodeId, id: &str) -> &D::Value {
+        self.node(node_id)
+            .control_values()
+            .value(id)
+            .expect("should always have a value for a node control")
     }
 
     pub fn set_control_value(&mut self, node_id: &NodeId, id: String, value: D::Value) {

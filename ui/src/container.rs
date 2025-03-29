@@ -2,7 +2,10 @@ use gpui::*;
 use prelude::FluentBuilder;
 use smallvec::SmallVec;
 
-use crate::{Disableable, theme::ActiveTheme};
+use crate::{
+    Disableable,
+    theme::{ActiveTheme, InteractiveColor},
+};
 
 /// An interactive, styled container that can hold other elements.
 #[derive(IntoElement)]
@@ -81,14 +84,14 @@ impl RenderOnce for InteractiveContainer {
             .border_color(ContainerKind::Element.border_color(cx))
             .rounded(cx.theme().radius)
             .when(self.disabled, |e| {
-                e.bg(cx.theme().element_background_muted)
-                    .border_color(cx.theme().border_muted)
-                    .text_color(cx.theme().text_muted)
+                e.bg(cx.theme().element_background.muted())
+                    .border_color(cx.theme().border.muted())
+                    .text_color(cx.theme().text_primary.muted())
                     .cursor_not_allowed()
-                    .when(focused, |e| e.border_color(cx.theme().border_muted_focused))
+                    .when(focused, |e| e.border_color(cx.theme().border_focused.muted()))
             })
             .when(!self.disabled, |e| {
-                e.hover(|e| e.bg(cx.theme().element_background_hover)).when(focused, |e| {
+                e.hover(|e| e.bg(cx.theme().element_background.hovered())).when(focused, |e| {
                     e.bg(cx.theme().element_background_focused)
                         .border_color(cx.theme().border_focused)
                 })

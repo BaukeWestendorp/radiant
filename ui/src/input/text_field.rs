@@ -7,8 +7,14 @@ pub struct TextField {
 }
 
 impl TextField {
-    pub fn new(id: impl Into<ElementId>, window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let input = cx.new(|cx| TextInput::new(id, window, cx).px(window.rem_size() * 0.25));
+    pub fn new(
+        id: impl Into<ElementId>,
+        focus_handle: FocusHandle,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
+        let input =
+            cx.new(|cx| TextInput::new(id, focus_handle, window, cx).px(window.rem_size() * 0.25));
 
         cx.subscribe(&input, |_number_field, _input, event, cx| {
             cx.emit(event.clone());
@@ -17,6 +23,16 @@ impl TextField {
         .detach();
 
         Self { input }
+    }
+
+    pub fn placeholder<'a>(&self, cx: &'a App) -> &'a SharedString {
+        self.input.read(cx).placeholder()
+    }
+
+    pub fn set_placeholder(&self, placeholder: SharedString, cx: &mut App) {
+        self.input.update(cx, |input, cx| {
+            input.set_placeholder(placeholder, cx);
+        })
     }
 
     pub fn disabled(&self, cx: &App) -> bool {
@@ -54,6 +70,12 @@ impl Render for TextField {
             .disabled(self.disabled(cx))
             .cursor_text()
             .child(self.input.clone())
+    }
+}
+
+impl Focusable for TextField {
+    fn focus_handle(&self, cx: &App) -> FocusHandle {
+        self.input.focus_handle(cx)
     }
 }
 

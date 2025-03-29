@@ -77,7 +77,7 @@ impl<D: GraphDef + 'static> NodeView<D> {
                 .cloned()
                 .map(|input| {
                     let socket = InputSocket::new(node_id, input.id().to_owned());
-                    let value = graph.read(cx).input_value(&socket).unwrap();
+                    let value = graph.read(cx).input_value(&socket);
                     InputView::build(input, node_id, value.clone(), graph_view.clone(), window, cx)
                 })
                 .collect();
@@ -94,7 +94,7 @@ impl<D: GraphDef + 'static> NodeView<D> {
                 .iter()
                 .cloned()
                 .map(|control| {
-                    let value = graph.read(cx).control_value(&node_id, control.id()).unwrap();
+                    let value = graph.read(cx).node_control_value(&node_id, control.id());
                     let id = ElementId::Name(
                         format!("node-control-{:?}-{}", node_id, control.id()).into(),
                     );
