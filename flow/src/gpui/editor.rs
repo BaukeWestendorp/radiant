@@ -242,8 +242,9 @@ impl<D: GraphDef + 'static> Render for NewNodeMenuView<D> {
                                 MouseButton::Left,
                                 cx.listener({
                                     let template = template.clone();
+                                    let graph_offset = *graph.read(cx).offset();
                                     move |menu, _, _window, cx| {
-                                        let position = menu.position;
+                                        let position = menu.position - graph_offset;
                                         menu.editor_view.read(cx).graph().update(
                                             cx,
                                             |graph, cx| {
