@@ -1,5 +1,9 @@
-use super::{GraphEvent, graph::GraphView, node::NodeMeasurements};
-use crate::GraphDef;
+use super::{
+    GraphEvent,
+    graph::{GraphView, VisualGraphEvent},
+    node::NodeMeasurements,
+};
+use crate::{Graph, GraphDef};
 use gpui::*;
 use new_node_menu::NewNodeMenuView;
 use prelude::FluentBuilder;
@@ -24,37 +28,26 @@ pub struct GraphEditorView<D: GraphDef> {
     graph_view: Entity<Pannable>,
     new_node_menu_view: Option<Entity<NewNodeMenuView<D>>>,
 
-    graph: Entity<crate::Graph<D>>,
+    graph: Entity<Graph<D>>,
     visual_graph_offset: Point<Pixels>,
 
     focus_handle: FocusHandle,
 }
 
 impl<D: GraphDef + 'static> GraphEditorView<D> {
-    pub fn build(
-        graph: Entity<crate::Graph<D>>,
-        window: &mut Window,
-        cx: &mut App,
-    ) -> Entity<Self> {
-        cx.new(|cx| {
-            let graph_view = GraphView::build(graph.clone(), window, cx);
+    pub fn build(graph: Entity<Graph<D>>, window: &mut Window, cx: &mut App) -> Entity<Self> {
+        let graph_view = GraphView::build(graph.clone(), window, cx);
 
-            window
-                .subscribe(&graph, cx, {
-                    let graph_view = graph_view.clone();
-                    move |graph, event: &GraphEvent, window, cx| {
-                        graph_view.update(cx, |graph_view, cx| match event {
-                            GraphEvent::NodeAdded(node_id) => {
-                                graph_view.add_node(*node_id, window, cx)
-                            }
-                            GraphEvent::NodeRemoved(node_id) => graph_view.remove_node(node_id, cx),
-                            GraphEvent::EdgeAdded { .. } => {}
-                            GraphEvent::EdgeRemoved { .. } => {}
-                        });
-                        cx.notify(graph.entity_id());
-                    }
-                })
-                .detach();
+        let editor_view = cx.new(|cx| {
+            cx.subscribe(&graph, |_editor, _graph_view, event: &GraphEvent, cx| {
+                cx.emit(event.clone())
+            })
+            .detach();
+
+            cx.subscribe(&graph_view, |_editor, _graph_view, event: &VisualGraphEvent, cx| {
+                cx.emit(event.clone())
+            })
+            .detach();
 
             let graph_offset = *graph.read(cx).offset();
             let pannable = cx.new(|_cx| Pannable::new("graph", graph_offset, graph_view.clone()));
@@ -81,10 +74,48 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
                 visual_graph_offset: graph_offset,
                 focus_handle: cx.focus_handle(),
             }
-        })
+        });
+
+        window
+            .subscribe(&editor_view, cx, {
+                move |_editor, event: &GraphEvent, window, cx| match event {
+                    GraphEvent::NodeAdded(node_id) => {
+                        graph_view.update(cx, |graph, cx| {
+                            graph.add_node(*node_id, window, cx);
+                        });
+                    }
+                    GraphEvent::NodeRemoved(node_id) => {
+                        graph_view.update(cx, |graph, cx| {
+                            graph.remove_node(node_id, cx);
+                        });
+                    }
+
+                    _ => {}
+                }
+            })
+            .detach();
+
+        window
+            .subscribe(&editor_view, cx, {
+                move |editor, event: &VisualGraphEvent, window, cx| match event {
+                    VisualGraphEvent::EdgeSourceRequested { target } => {
+                        editor.update(cx, |editor, cx| {
+                            editor.open_new_node_menu(window, cx);
+                        });
+                    }
+                    VisualGraphEvent::EdgeTargetRequested { source } => {
+                        editor.update(cx, |editor, cx| {
+                            editor.open_new_node_menu(window, cx);
+                        });
+                    }
+                }
+            })
+            .detach();
+
+        editor_view
     }
 
-    pub fn graph(&self) -> Entity<crate::Graph<D>> {
+    pub fn graph(&self) -> Entity<Graph<D>> {
         self.graph.clone()
     }
 
@@ -162,3 +193,7 @@ impl<D: GraphDef + 'static> Focusable for GraphEditorView<D> {
         self.focus_handle.clone()
     }
 }
+
+impl<D: GraphDef + 'static> EventEmitter<GraphEvent> for GraphEditorView<D> {}
+
+impl<D: GraphDef + 'static> EventEmitter<VisualGraphEvent> for GraphEditorView<D> {}

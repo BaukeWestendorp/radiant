@@ -1,4 +1,4 @@
-use crate::{GraphDef, InputSocket, NodeId, OutputSocket};
+use crate::{Graph, GraphDef, InputSocket, NodeId, OutputSocket};
 use gpui::*;
 
 pub mod editor;
@@ -18,7 +18,7 @@ pub enum GraphEvent {
     EdgeRemoved { target: InputSocket },
 }
 
-impl<D: GraphDef + 'static> EventEmitter<GraphEvent> for crate::Graph<D> {}
+impl<D: GraphDef + 'static> EventEmitter<GraphEvent> for Graph<D> {}
 
 pub struct ControlView {
     pub view: AnyView,

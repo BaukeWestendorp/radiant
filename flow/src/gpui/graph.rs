@@ -169,12 +169,21 @@ impl<D: GraphDef + 'static> GraphView<D> {
         }
     }
 
-    pub fn finish_new_edge(&mut self, cx: &mut gpui::Context<Self>) {
-        if let (Some(target), Some(source)) = self.new_edge.clone() {
-            self.graph().update(cx, |graph, cx| {
-                graph.add_edge(target, source, cx);
-                cx.notify();
-            });
+    pub fn finish_new_edge(&mut self, cx: &mut Context<Self>) {
+        match self.new_edge.clone() {
+            (Some(target), Some(source)) => {
+                self.graph().update(cx, |graph, cx| {
+                    graph.add_edge(target, source, cx);
+                    cx.notify();
+                });
+            }
+            (None, Some(source)) => {
+                cx.emit(VisualGraphEvent::EdgeTargetRequested { source: source.clone() });
+            }
+            (Some(target), None) => {
+                cx.emit(VisualGraphEvent::EdgeSourceRequested { target: target.clone() });
+            }
+            _ => (),
         }
         self.new_edge = (None, None);
     }
@@ -378,3 +387,11 @@ impl<D: GraphDef + 'static> Render for GraphView<D> {
             .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up))
     }
 }
+
+#[derive(Debug, Clone)]
+pub enum VisualGraphEvent {
+    EdgeTargetRequested { source: OutputSocket },
+    EdgeSourceRequested { target: InputSocket },
+}
+
+impl<D: GraphDef + 'static> EventEmitter<VisualGraphEvent> for GraphView<D> {}
