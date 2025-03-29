@@ -214,4 +214,10 @@ impl Render for NumberField {
     }
 }
 
+impl Focusable for NumberField {
+    fn focus_handle(&self, cx: &App) -> FocusHandle {
+        self.input.focus_handle(cx)
+    }
+}
+
 impl EventEmitter<TextInputEvent> for NumberField {}

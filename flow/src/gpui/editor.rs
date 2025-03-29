@@ -172,6 +172,8 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
             field
         });
 
+        cx.focus_view(&search_field, window);
+
         Self { position, editor_view, search_field }
     }
 

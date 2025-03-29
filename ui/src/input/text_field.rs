@@ -67,4 +67,10 @@ impl Render for TextField {
     }
 }
 
+impl Focusable for TextField {
+    fn focus_handle(&self, cx: &App) -> FocusHandle {
+        self.input.focus_handle(cx)
+    }
+}
+
 impl EventEmitter<TextInputEvent> for TextField {}
