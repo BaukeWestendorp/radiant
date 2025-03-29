@@ -1,4 +1,4 @@
-use crate::{GraphDef, TemplateId, Values};
+use crate::{GraphDef, Template, TemplateId, Values};
 
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -15,11 +15,11 @@ pub struct Node<D: GraphDef> {
 }
 
 impl<D: GraphDef> Node<D> {
-    pub fn new(template_id: impl Into<TemplateId>) -> Self {
+    pub fn new(template: &Template<D>) -> Self {
         Self {
-            template_id: template_id.into(),
-            input_values: Values::new(),
-            control_values: Values::new(),
+            template_id: template.id().clone(),
+            input_values: template.default_input_values(),
+            control_values: template.default_control_values(),
         }
     }
 

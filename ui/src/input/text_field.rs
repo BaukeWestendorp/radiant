@@ -19,6 +19,16 @@ impl TextField {
         Self { input }
     }
 
+    pub fn placeholder<'a>(&self, cx: &'a App) -> &'a SharedString {
+        self.input.read(cx).placeholder()
+    }
+
+    pub fn set_placeholder(&self, placeholder: SharedString, cx: &mut App) {
+        self.input.update(cx, |input, cx| {
+            input.set_placeholder(placeholder, cx);
+        })
+    }
+
     pub fn disabled(&self, cx: &App) -> bool {
         self.input.read(cx).disabled()
     }

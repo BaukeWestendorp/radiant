@@ -92,6 +92,14 @@ impl<D: GraphDef> Template<D> {
         values
     }
 
+    pub fn default_control_values(&self) -> Values<D> {
+        let mut values = Values::new();
+        for control in &self.controls {
+            values.set_value(control.id(), control.default().clone());
+        }
+        values
+    }
+
     pub fn process(
         &self,
         input_values: &Values<D>,

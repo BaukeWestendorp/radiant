@@ -50,7 +50,7 @@ impl Default for Theme {
 
             radius: gpui::px(4.0),
             border: gpui::hsla(0.0, 0.0, 0.5, 1.0),
-            border_muted: gpui::hsla(0.0, 0.0, 0.50, 1.0),
+            border_muted: gpui::hsla(0.0, 0.0, 0.25, 1.0),
             border_focused: gpui::rgb(0xffc416).into(),
             border_muted_focused: gpui::rgb(0x6d5b25).into(),
 

@@ -1,8 +1,8 @@
 use super::{GraphEvent, graph::GraphView, node::NodeMeasurements};
-use crate::GraphDef;
+use crate::{GraphDef, Node};
 use gpui::*;
 use prelude::FluentBuilder;
-use ui::{Pannable, PannableEvent, theme::ActiveTheme, z_stack};
+use ui::{Pannable, PannableEvent, TextField, theme::ActiveTheme, z_stack};
 
 const KEY_CONTEXT: &str = "GraphEditor";
 
@@ -17,7 +17,7 @@ pub fn init(app: &mut App) {
 
 pub struct GraphEditorView<D: GraphDef> {
     graph_view: Entity<Pannable>,
-    new_node_menu_view: Option<Entity<NewNodeMenuView>>,
+    new_node_menu_view: Option<Entity<NewNodeMenuView<D>>>,
 
     graph: Entity<crate::Graph<D>>,
     visual_graph_offset: Point<Pixels>,
@@ -79,8 +79,13 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
         })
     }
 
-    pub fn graph(&self) -> &Entity<crate::Graph<D>> {
-        &self.graph
+    pub fn graph(&self) -> Entity<crate::Graph<D>> {
+        self.graph.clone()
+    }
+
+    pub fn close_new_node_menu(&mut self, cx: &mut Context<Self>) {
+        self.new_node_menu_view = None;
+        cx.notify();
     }
 }
 
@@ -93,7 +98,9 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
     ) {
         // TODO: Account for editor bounds origin.
         let position = window.mouse_position();
-        self.new_node_menu_view = Some(cx.new(|cx| NewNodeMenuView::new(position, cx)));
+        let editor_view = cx.entity().clone();
+        self.new_node_menu_view =
+            Some(cx.new(|cx| NewNodeMenuView::new(position, editor_view, window, cx)));
         cx.notify();
     }
 
@@ -103,8 +110,7 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.new_node_menu_view = None;
-        cx.notify();
+        self.close_new_node_menu(cx);
     }
 }
 
@@ -147,18 +153,104 @@ impl<D: GraphDef + 'static> Focusable for GraphEditorView<D> {
     }
 }
 
-pub struct NewNodeMenuView {
+pub struct NewNodeMenuView<D: GraphDef> {
     position: Point<Pixels>,
+    editor_view: Entity<GraphEditorView<D>>,
+    search_field: Entity<TextField>,
 }
 
-impl NewNodeMenuView {
-    pub fn new(position: Point<Pixels>, _cx: &mut Context<Self>) -> Self {
-        Self { position }
+impl<D: GraphDef + 'static> NewNodeMenuView<D> {
+    pub fn new(
+        position: Point<Pixels>,
+        editor_view: Entity<GraphEditorView<D>>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
+        let search_field = cx.new(|cx| {
+            let field = TextField::new("search_field", window, cx);
+            field.set_placeholder("Search...".into(), cx);
+            field
+        });
+
+        Self { position, editor_view, search_field }
+    }
+
+    pub fn close(&self, cx: &mut App) {
+        self.editor_view.update(cx, |editor, cx| editor.close_new_node_menu(cx));
     }
 }
 
-impl Render for NewNodeMenuView {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<'_, Self>) -> impl IntoElement {
+impl<D: GraphDef + 'static> Render for NewNodeMenuView<D> {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let search_pattern = self.search_field.read(cx).value(cx).to_ascii_lowercase();
+
+        let graph = self.editor_view.read(cx).graph().clone();
+
+        let templates = graph
+            .read(cx)
+            .templates()
+            .filter(|template| {
+                template.label().to_ascii_lowercase().replace(" ", "").contains(&search_pattern)
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+
+        let header = div()
+            .p_2()
+            .border_b_1()
+            .border_color(cx.theme().border)
+            .child(self.search_field.clone());
+
+        let list = uniform_list(
+            cx.entity().clone(),
+            "templates",
+            templates.len(),
+            move |_menu, range, _window, cx| {
+                let mut children = Vec::new();
+
+                for ix in range {
+                    let template = &templates[ix];
+                    let label = template.label().to_owned();
+
+                    let child = div().child(
+                        div()
+                            .p_1()
+                            .hover(|e| {
+                                e.bg(cx.theme().element_background_hover)
+                                    .border_1()
+                                    .border_color(cx.theme().border_muted)
+                            })
+                            .rounded(cx.theme().radius)
+                            .cursor_pointer()
+                            .on_mouse_down(
+                                MouseButton::Left,
+                                cx.listener({
+                                    let template = template.clone();
+                                    move |menu, _, _window, cx| {
+                                        let position = menu.position;
+                                        menu.editor_view.read(cx).graph().update(
+                                            cx,
+                                            |graph, cx| {
+                                                let node = Node::new(&template);
+                                                graph.add_node(node, position, cx);
+                                            },
+                                        );
+                                        menu.close(cx);
+                                    }
+                                }),
+                            )
+                            .child(label),
+                    );
+
+                    children.push(child);
+                }
+
+                children
+            },
+        )
+        .p_2()
+        .size_full();
+
         div()
             .absolute()
             .left(self.position.x)
@@ -169,6 +261,7 @@ impl Render for NewNodeMenuView {
             .rounded(cx.theme().radius)
             .w_80()
             .h_64()
-            .child("new node menu")
+            .child(header)
+            .child(list)
     }
 }
