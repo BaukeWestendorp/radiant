@@ -83,6 +83,15 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
         self.graph.clone()
     }
 
+    pub fn open_new_node_menu(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        // TODO: Account for editor bounds origin.
+        let position = window.mouse_position();
+        let editor_view = cx.entity().clone();
+        self.new_node_menu_view =
+            Some(cx.new(|cx| NewNodeMenuView::new(position, editor_view, window, cx)));
+        cx.notify();
+    }
+
     pub fn close_new_node_menu(&mut self, cx: &mut Context<Self>) {
         self.new_node_menu_view = None;
         cx.notify();
@@ -96,12 +105,7 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        // TODO: Account for editor bounds origin.
-        let position = window.mouse_position();
-        let editor_view = cx.entity().clone();
-        self.new_node_menu_view =
-            Some(cx.new(|cx| NewNodeMenuView::new(position, editor_view, window, cx)));
-        cx.notify();
+        self.open_new_node_menu(window, cx);
     }
 
     fn handle_close_new_node_menu(
@@ -167,7 +171,7 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
         cx: &mut Context<Self>,
     ) -> Self {
         let search_field = cx.new(|cx| {
-            let field = TextField::new("search_field", window, cx);
+            let field = TextField::new("search_field", cx.focus_handle(), window, cx);
             field.set_placeholder("Search...".into(), cx);
             field
         });
@@ -182,18 +186,28 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
     }
 }
 
+impl<D: GraphDef + 'static> NewNodeMenuView<D> {
+    fn handle_mouse_down_out(
+        &mut self,
+        _event: &MouseDownEvent,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.close(cx);
+    }
+}
+
 impl<D: GraphDef + 'static> Render for NewNodeMenuView<D> {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let search_pattern = self.search_field.read(cx).value(cx).to_ascii_lowercase();
+        let normalize_search_text = |s: &str| s.to_ascii_lowercase().replace(" ", "");
 
+        let search_pattern = normalize_search_text(self.search_field.read(cx).value(cx));
         let graph = self.editor_view.read(cx).graph().clone();
 
         let templates = graph
             .read(cx)
             .templates()
-            .filter(|template| {
-                template.label().to_ascii_lowercase().replace(" ", "").contains(&search_pattern)
-            })
+            .filter(|template| normalize_search_text(template.label()).contains(&search_pattern))
             .cloned()
             .collect::<Vec<_>>();
 
@@ -255,14 +269,16 @@ impl<D: GraphDef + 'static> Render for NewNodeMenuView<D> {
 
         div()
             .absolute()
+            .w_80()
+            .h_64()
             .left(self.position.x)
             .top(self.position.y)
             .bg(cx.theme().element_background)
             .border_1()
             .border_color(cx.theme().border)
             .rounded(cx.theme().radius)
-            .w_80()
-            .h_64()
+            .block_mouse_down()
+            .on_mouse_down_out(cx.listener(Self::handle_mouse_down_out))
             .child(header)
             .child(list)
     }

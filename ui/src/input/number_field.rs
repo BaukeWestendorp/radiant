@@ -17,11 +17,17 @@ pub struct NumberField {
 }
 
 impl NumberField {
-    pub fn new(id: impl Into<ElementId>, window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(
+        id: impl Into<ElementId>,
+        focus_handle: FocusHandle,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
         let id = id.into();
 
         let input = cx.new(|cx| {
-            let mut input = TextInput::new(id.clone(), window, cx).px(window.rem_size() * 0.25);
+            let mut input =
+                TextInput::new(id.clone(), focus_handle, window, cx).px(window.rem_size() * 0.25);
             input.set_is_interactive(false);
             input
         });

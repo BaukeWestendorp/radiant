@@ -110,9 +110,12 @@ pub struct TextInput {
 }
 
 impl TextInput {
-    pub fn new(id: impl Into<ElementId>, window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let focus_handle = cx.focus_handle();
-
+    pub fn new(
+        id: impl Into<ElementId>,
+        focus_handle: FocusHandle,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
         let blink_cursor = cx.new(|_cx| BlinkCursor::new());
         cx.observe(&blink_cursor, |_, _, cx| cx.notify()).detach();
 
