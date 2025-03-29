@@ -5,9 +5,9 @@ pub mod editor;
 mod graph;
 mod node;
 
-pub fn init(app: &mut App) {
-    node::init(app);
-    editor::init(app);
+pub fn init(cx: &mut App) {
+    node::init(cx);
+    editor::init(cx);
 }
 
 #[derive(Debug, Clone)]

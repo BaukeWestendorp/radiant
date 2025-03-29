@@ -11,8 +11,8 @@ const KEY_CONTEXT: &str = "GraphNode";
 
 actions!(node, [Delete]);
 
-pub fn init(app: &mut App) {
-    app.bind_keys([
+pub fn init(cx: &mut App) {
+    cx.bind_keys([
         KeyBinding::new("delete", Delete, Some(KEY_CONTEXT)),
         KeyBinding::new("backspace", Delete, Some(KEY_CONTEXT)),
     ]);
