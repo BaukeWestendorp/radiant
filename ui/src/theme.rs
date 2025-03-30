@@ -42,7 +42,7 @@ impl Default for Theme {
 
             element_background: gpui::hsla(0.0, 0.0, 0.0, 1.0),
             element_background_focused: gpui::hsla(0.0, 0.0, 0.1, 1.0),
-            element_background_selected: selected.darken(0.5).with_opacity(0.1),
+            element_background_selected: selected.darken(0.5).with_opacity(0.3),
 
             text_primary: gpui::hsla(0.0, 0.0, 1.0, 1.0),
 
