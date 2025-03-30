@@ -1,4 +1,4 @@
-use gpui::{Context, Timer};
+use gpui::*;
 use std::time::Duration;
 
 const BLINK_TIME: Duration = Duration::from_millis(1000);
@@ -35,16 +35,15 @@ impl BlinkCursor {
         cx.notify();
 
         let epoch = self.next_epoch();
-        cx.spawn(|this, mut cx| async move {
+
+        cx.spawn(async move |this, cx| {
             Timer::after(HOLD_TIME).await;
 
-            if let Some(this) = this.upgrade() {
-                this.update(&mut cx, |this, cx| {
-                    this.paused = false;
-                    this.blink(epoch, cx);
-                })
-                .ok();
-            }
+            this.update(cx, |this, cx| {
+                this.paused = false;
+                this.blink(epoch, cx);
+            })
+            .ok();
         })
         .detach();
     }
@@ -63,12 +62,9 @@ impl BlinkCursor {
         cx.notify();
 
         let epoch = self.next_epoch();
-        cx.spawn(|this, mut cx| async move {
+        cx.spawn(async move |this, cx| {
             Timer::after(BLINK_TIME).await;
-
-            if let Some(this) = this.upgrade() {
-                this.update(&mut cx, |this, cx| this.blink(epoch, cx)).ok();
-            }
+            this.update(cx, |this: &mut Self, cx| this.blink(epoch, cx)).ok();
         })
         .detach();
     }

@@ -99,8 +99,8 @@ impl<D: GraphDef + 'static> GraphView<D> {
         let squared_snap_distance = snap_distance * snap_distance;
 
         let square_dist = |a: Point<Pixels>, b: Point<Pixels>| {
-            let dx = a.x - b.x;
-            let dy = a.y - b.y;
+            let dx = a.x.0 - b.x.0;
+            let dy = a.y.0 - b.y.0;
             dx * dx + dy * dy
         };
 
@@ -123,7 +123,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
                         );
 
                         // If the edge is close enough to snap to the output socket
-                        if square_dist(position, end_position) < px(squared_snap_distance) {
+                        if square_dist(position, end_position) < squared_snap_distance {
                             // And it's allowed to snap
                             if output.data_type().can_cast_to(&input.data_type()) {
                                 // Snap to the output socket
@@ -153,7 +153,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
                         );
 
                         // If the edge is close enough to snap to the output socket
-                        if square_dist(position, end_position) < px(squared_snap_distance) {
+                        if square_dist(position, end_position) < squared_snap_distance {
                             // And it's allowed to snap
                             if output.data_type().can_cast_to(&input.data_type()) {
                                 // Snap to the output socket
