@@ -5,7 +5,7 @@ use ui::{
     theme::{ActiveTheme as _, InteractiveColor as _},
 };
 
-use crate::{Graph, GraphDef, Node, Template};
+use crate::{AnySocket, DataType, Graph, GraphDef, Node, Template};
 
 use super::GraphEditorView;
 
@@ -26,11 +26,13 @@ pub struct NewNodeMenuView<D: GraphDef> {
     search_field: Entity<TextField>,
     templates: Vec<Template<D>>,
     selected_item_ix: Option<usize>,
+    edge_start: Option<AnySocket>,
 }
 
 impl<D: GraphDef + 'static> NewNodeMenuView<D> {
     pub fn new(
         position: Point<Pixels>,
+        edge_start: Option<AnySocket>,
         graph: Graph<D>,
         editor_view: Entity<GraphEditorView<D>>,
         window: &mut Window,
@@ -44,24 +46,29 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
 
         cx.focus_view(&search_field, window);
 
-        let templates = get_filtered_templates(&graph, search_field.read(cx).value(cx));
+        let templates =
+            get_filtered_templates(edge_start.as_ref(), search_field.read(cx).value(cx), &graph);
         let selected_item_ix = if templates.is_empty() { None } else { Some(0) };
 
-        cx.subscribe(&search_field, move |menu, _search_field, event, cx| match event {
-            TextInputEvent::Change(value) => {
-                let templates = get_filtered_templates(&graph, value);
-                menu.selected_item_ix = if templates.is_empty() { None } else { Some(0) };
-                menu.templates = templates;
-            }
-            TextInputEvent::Submit => {
-                if let Some(ix) = menu.selected_item_ix {
-                    menu.create_node(ix, cx);
+        cx.subscribe(&search_field, {
+            let required_socket = edge_start.clone();
+            move |menu, _search_field, event, cx| match event {
+                TextInputEvent::Change(value) => {
+                    let templates = get_filtered_templates(required_socket.as_ref(), value, &graph);
+                    menu.selected_item_ix = if templates.is_empty() { None } else { Some(0) };
+                    menu.templates = templates;
                 }
+                TextInputEvent::Submit => {
+                    if let Some(ix) = menu.selected_item_ix {
+                        menu.create_node(ix, cx);
+                    }
+                }
+                _ => {}
             }
-            _ => {}
         })
         .detach();
-        Self { position, editor_view, search_field, templates, selected_item_ix }
+
+        Self { position, editor_view, search_field, templates, selected_item_ix, edge_start }
     }
 
     pub fn close(&self, cx: &mut App) {
@@ -81,15 +88,32 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
 }
 
 fn get_filtered_templates<D: GraphDef + 'static>(
-    graph: &Graph<D>,
+    edge_start: Option<&AnySocket>,
     search_field_text: &str,
+    graph: &Graph<D>,
 ) -> Vec<Template<D>> {
     let normalize_search_text = |s: &str| s.to_ascii_lowercase().replace(" ", "");
     let search_pattern = normalize_search_text(search_field_text);
 
     graph
         .templates()
-        .filter(|template| normalize_search_text(template.label()).contains(&search_pattern))
+        .filter(|template| {
+            let has_name = normalize_search_text(template.label()).contains(&search_pattern);
+
+            let has_socket = match edge_start {
+                Some(AnySocket::Input(input_socket)) => {
+                    let input = graph.input(input_socket);
+                    template.outputs().iter().any(|o| o.data_type().can_cast_to(&input.data_type()))
+                }
+                Some(AnySocket::Output(output_socket)) => {
+                    let output = graph.output(output_socket);
+                    template.inputs().iter().any(|i| i.data_type().can_cast_to(&output.data_type()))
+                }
+                None => true,
+            };
+
+            has_name && has_socket
+        })
         .cloned()
         .collect::<Vec<_>>()
 }

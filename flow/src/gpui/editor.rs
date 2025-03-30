@@ -3,7 +3,7 @@ use super::{
     graph::{GraphView, VisualGraphEvent},
     node::NodeMeasurements,
 };
-use crate::{Graph, GraphDef};
+use crate::{AnySocket, Graph, GraphDef};
 use gpui::*;
 use new_node_menu::NewNodeMenuView;
 use prelude::FluentBuilder;
@@ -100,12 +100,20 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
                 move |editor, event: &VisualGraphEvent, window, cx| match event {
                     VisualGraphEvent::EdgeSourceRequested { target } => {
                         editor.update(cx, |editor, cx| {
-                            editor.open_new_node_menu(window, cx);
+                            editor.open_new_node_menu(
+                                Some(AnySocket::Input(target.clone())),
+                                window,
+                                cx,
+                            );
                         });
                     }
                     VisualGraphEvent::EdgeTargetRequested { source } => {
                         editor.update(cx, |editor, cx| {
-                            editor.open_new_node_menu(window, cx);
+                            editor.open_new_node_menu(
+                                Some(AnySocket::Output(source.clone())),
+                                window,
+                                cx,
+                            );
                         });
                     }
                 }
@@ -119,12 +127,24 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
         self.graph.clone()
     }
 
-    pub fn open_new_node_menu(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub fn open_new_node_menu(
+        &mut self,
+        edge_start: Option<AnySocket>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         // TODO: Account for editor bounds origin.
         let position = window.mouse_position();
         let editor_view = cx.entity().clone();
         self.new_node_menu_view = Some(cx.new(|cx| {
-            NewNodeMenuView::new(position, self.graph.read(cx).clone(), editor_view, window, cx)
+            NewNodeMenuView::new(
+                position,
+                edge_start,
+                self.graph.read(cx).clone(),
+                editor_view,
+                window,
+                cx,
+            )
         }));
         cx.notify();
     }
@@ -142,7 +162,7 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.open_new_node_menu(window, cx);
+        self.open_new_node_menu(None, window, cx);
     }
 
     fn handle_close_new_node_menu(

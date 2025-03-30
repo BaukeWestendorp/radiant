@@ -13,7 +13,7 @@ pub trait GraphDef: Clone {
     #[cfg(not(feature = "serde"))]
     type Value: Value<Self> + Clone;
 
-    type DataType: DataType<Self> + Clone;
+    type DataType: DataType<Self> + PartialEq + Clone;
     type Control: Control<Self> + Clone;
 
     type ProcessingState: Default;
