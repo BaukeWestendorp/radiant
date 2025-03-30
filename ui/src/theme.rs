@@ -101,7 +101,7 @@ impl InteractiveColor for Hsla {
     }
 
     fn muted(self) -> Self {
-        self.darken(0.1)
+        self.darken(0.4)
     }
 
     fn with_opacity(&self, opacity: f32) -> Self {

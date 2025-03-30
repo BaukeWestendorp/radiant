@@ -5,7 +5,7 @@ use ui::{
     theme::{ActiveTheme as _, InteractiveColor as _},
 };
 
-use crate::{AnySocket, DataType, Graph, GraphDef, Node, Template};
+use crate::{AnySocket, DataType, Graph, GraphDef, Node, TemplateId};
 
 use super::GraphEditorView;
 
@@ -24,9 +24,8 @@ pub struct NewNodeMenuView<D: GraphDef> {
     position: Point<Pixels>,
     editor_view: Entity<GraphEditorView<D>>,
     search_field: Entity<TextField>,
-    templates: Vec<Template<D>>,
+    items: Vec<NewNodeMenuItem<D>>,
     selected_item_ix: Option<usize>,
-    edge_start: Option<AnySocket>,
 }
 
 impl<D: GraphDef + 'static> NewNodeMenuView<D> {
@@ -46,17 +45,17 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
 
         cx.focus_view(&search_field, window);
 
-        let templates =
-            get_filtered_templates(edge_start.as_ref(), search_field.read(cx).value(cx), &graph);
-        let selected_item_ix = if templates.is_empty() { None } else { Some(0) };
+        let items =
+            get_filtered_items(edge_start.as_ref(), search_field.read(cx).value(cx), &graph);
+        let selected_item_ix = if items.is_empty() { None } else { Some(0) };
 
         cx.subscribe(&search_field, {
             let required_socket = edge_start.clone();
             move |menu, _search_field, event, cx| match event {
                 TextInputEvent::Change(value) => {
-                    let templates = get_filtered_templates(required_socket.as_ref(), value, &graph);
-                    menu.selected_item_ix = if templates.is_empty() { None } else { Some(0) };
-                    menu.templates = templates;
+                    let items = get_filtered_items(required_socket.as_ref(), value, &graph);
+                    menu.selected_item_ix = if items.is_empty() { None } else { Some(0) };
+                    menu.items = items;
                 }
                 TextInputEvent::Submit => {
                     if let Some(ix) = menu.selected_item_ix {
@@ -68,18 +67,19 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
         })
         .detach();
 
-        Self { position, editor_view, search_field, templates, selected_item_ix, edge_start }
+        Self { position, editor_view, search_field, items, selected_item_ix }
     }
 
     pub fn close(&self, cx: &mut App) {
         self.editor_view.update(cx, |editor, cx| editor.close_new_node_menu(cx));
     }
 
-    pub fn create_node(&mut self, ix: usize, cx: &mut Context<Self>) {
+    pub fn create_node(&mut self, item_ix: usize, cx: &mut Context<Self>) {
         let graph_offset = *self.editor_view.read(cx).graph().read(cx).offset();
         let position = self.position - graph_offset;
         self.editor_view.read(cx).graph().update(cx, |graph, cx| {
-            let template = &self.templates[ix];
+            let template_id = &self.items[item_ix].template_id;
+            let template = graph.template(template_id);
             let node = Node::new(template);
             graph.add_node(node, position, cx);
         });
@@ -87,35 +87,63 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
     }
 }
 
-fn get_filtered_templates<D: GraphDef + 'static>(
+fn get_filtered_items<D: GraphDef + 'static>(
     edge_start: Option<&AnySocket>,
     search_field_text: &str,
     graph: &Graph<D>,
-) -> Vec<Template<D>> {
+) -> Vec<NewNodeMenuItem<D>> {
     let normalize_search_text = |s: &str| s.to_ascii_lowercase().replace(" ", "");
     let search_pattern = normalize_search_text(search_field_text);
 
-    graph
-        .templates()
-        .filter(|template| {
-            let has_name = normalize_search_text(template.label()).contains(&search_pattern);
+    let mut items = Vec::new();
 
-            let has_socket = match edge_start {
-                Some(AnySocket::Input(input_socket)) => {
-                    let input = graph.input(input_socket);
-                    template.outputs().iter().any(|o| o.data_type().can_cast_to(&input.data_type()))
-                }
-                Some(AnySocket::Output(output_socket)) => {
-                    let output = graph.output(output_socket);
-                    template.inputs().iter().any(|i| i.data_type().can_cast_to(&output.data_type()))
-                }
-                None => true,
-            };
+    for template in graph.templates() {
+        if !normalize_search_text(template.label()).contains(&search_pattern) {
+            continue;
+        }
 
-            has_name && has_socket
-        })
-        .cloned()
-        .collect::<Vec<_>>()
+        match &edge_start {
+            Some(AnySocket::Input(input_socket)) => {
+                let input = graph.input(&input_socket);
+                for output in template.outputs() {
+                    if output.data_type().can_cast_to(&input.data_type()) {
+                        items.push(NewNodeMenuItem {
+                            template_id: template.id().clone(),
+                            node_label: template.label().to_string().into(),
+                            socket_info: Some(SocketInfo {
+                                label: output.label().to_string().into(),
+                                data_type: output.data_type().clone(),
+                            }),
+                        });
+                    }
+                }
+            }
+            Some(AnySocket::Output(output_socket)) => {
+                let output = graph.output(&output_socket);
+                for input in template.inputs() {
+                    if input.data_type().can_cast_to(output.data_type()) {
+                        items.push(NewNodeMenuItem {
+                            template_id: template.id().clone(),
+                            node_label: template.label().to_string().into(),
+                            socket_info: Some(SocketInfo {
+                                label: input.label().to_string().into(),
+                                data_type: input.data_type().clone(),
+                            }),
+                        });
+                    }
+                }
+            }
+            None => {
+                items.push(NewNodeMenuItem {
+                    template_id: template.id().clone(),
+                    node_label: template.label().to_string().into(),
+                    socket_info: None,
+                });
+            }
+        }
+    }
+
+    items
 }
 
 impl<D: GraphDef + 'static> NewNodeMenuView<D> {
@@ -136,7 +164,7 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
     ) {
         match self.selected_item_ix {
             Some(ix) => {
-                self.selected_item_ix = Some((ix + 1) % self.templates.len());
+                self.selected_item_ix = Some((ix + 1) % self.items.len());
             }
             None => {
                 self.selected_item_ix = Some(0);
@@ -152,11 +180,10 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
     ) {
         match self.selected_item_ix {
             Some(ix) => {
-                self.selected_item_ix =
-                    Some((ix + self.templates.len() - 1) % self.templates.len());
+                self.selected_item_ix = Some((ix + self.items.len() - 1) % self.items.len());
             }
             None => {
-                self.selected_item_ix = Some(self.templates.len() - 1);
+                self.selected_item_ix = Some(self.items.len() - 1);
             }
         }
         cx.notify();
@@ -174,17 +201,18 @@ impl<D: GraphDef + 'static> Render for NewNodeMenuView<D> {
         let list = uniform_list(
             cx.entity().clone(),
             "templates",
-            self.templates.len(),
+            self.items.len(),
             move |menu, range, _window, cx| {
                 let mut children = Vec::new();
-
                 for ix in range {
-                    let template = &menu.templates[ix];
-                    let label = template.label().to_owned();
+                    let item = menu.items[ix].clone();
                     let selected = menu.selected_item_ix == Some(ix);
 
                     let child = div().child(
                         div()
+                            .flex()
+                            .justify_between()
+                            .items_center()
                             .px_1()
                             .border_1()
                             .hover(|e| {
@@ -214,7 +242,25 @@ impl<D: GraphDef + 'static> Render for NewNodeMenuView<D> {
                                     menu.create_node(ix, cx);
                                 }),
                             )
-                            .child(label),
+                            .child(div().flex().gap_2().child(item.node_label).when_some(
+                                item.socket_info.clone(),
+                                |e, socket_info| {
+                                    e.child(
+                                        div()
+                                            .text_color(cx.theme().text_primary.muted())
+                                            .child(socket_info.label),
+                                    )
+                                },
+                            ))
+                            .when_some(item.socket_info, |e, socket_info| {
+                                e.child(
+                                    div()
+                                        .size_3()
+                                        .bg(socket_info.data_type.color())
+                                        .border_1()
+                                        .border_color(black().opacity(0.5)),
+                                )
+                            }),
                     );
 
                     children.push(child);
@@ -244,4 +290,17 @@ impl<D: GraphDef + 'static> Render for NewNodeMenuView<D> {
             .child(header)
             .child(list)
     }
+}
+
+#[derive(Clone)]
+struct NewNodeMenuItem<D: GraphDef> {
+    template_id: TemplateId,
+    node_label: SharedString,
+    socket_info: Option<SocketInfo<D>>,
+}
+
+#[derive(Clone)]
+struct SocketInfo<D: GraphDef> {
+    label: SharedString,
+    data_type: D::DataType,
 }
