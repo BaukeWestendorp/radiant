@@ -33,7 +33,7 @@ pub struct GraphEditorView<D: GraphDef> {
 
     focus_handle: FocusHandle,
 
-    rect_selection: Option<Bounds<Pixels>>,
+    selection_corners: Option<(Point<Pixels>, Point<Pixels>)>,
 }
 
 impl<D: GraphDef + 'static> GraphEditorView<D> {
@@ -75,7 +75,7 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
                 graph,
                 visual_graph_offset: graph_offset,
                 focus_handle: cx.focus_handle(),
-                rect_selection: Some(bounds(point(px(20.0), px(50.0)), size(px(200.0), px(150.0)))),
+                selection_corners: None,
             }
         });
 
@@ -156,6 +156,14 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
         self.new_node_menu_view = None;
         cx.notify();
     }
+
+    pub fn selection_bounds(&self) -> Option<Bounds<Pixels>> {
+        let (a, b) = self.selection_corners?;
+        Some(Bounds::from_corners(
+            Point::new(a.x.min(b.x), a.y.min(b.y)),
+            Point::new(a.x.max(b.x), a.y.max(b.y)),
+        ))
+    }
 }
 
 impl<D: GraphDef + 'static> GraphEditorView<D> {
@@ -176,6 +184,38 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
     ) {
         self.close_new_node_menu(cx);
     }
+
+    fn handle_mouse_down_right(
+        &mut self,
+        event: &MouseDownEvent,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.selection_corners = Some((event.position, event.position));
+        cx.notify();
+    }
+
+    fn handle_mouse_move(
+        &mut self,
+        event: &MouseMoveEvent,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if let Some(rect_selection) = &mut self.selection_corners {
+            rect_selection.1 = event.position;
+        }
+        cx.notify();
+    }
+
+    fn handle_mouse_up_right(
+        &mut self,
+        _: &MouseUpEvent,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.selection_corners = None;
+        cx.notify();
+    }
 }
 
 impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
@@ -191,13 +231,13 @@ impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
 
         let focused = self.focus_handle.is_focused(window);
 
-        let rect_selection = match &self.rect_selection {
-            Some(rect) => div()
+        let rect_selection = match &self.selection_bounds() {
+            Some(bounds) => div()
                 .absolute()
-                .left(rect.origin.x)
-                .top(rect.origin.y)
-                .w(rect.size.width)
-                .h(rect.size.height)
+                .left(bounds.origin.x)
+                .top(bounds.origin.y)
+                .w(bounds.size.width)
+                .h(bounds.size.height)
                 .border_1()
                 .border_color(cx.theme().border_selected)
                 .bg(cx.theme().element_background_selected),
@@ -218,6 +258,10 @@ impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
         .relative()
         .size_full()
         .overflow_hidden()
+        .on_mouse_down(MouseButton::Right, cx.listener(Self::handle_mouse_down_right))
+        .on_mouse_move(cx.listener(Self::handle_mouse_move))
+        .on_mouse_up(MouseButton::Right, cx.listener(Self::handle_mouse_up_right))
+        .on_mouse_up_out(MouseButton::Right, cx.listener(Self::handle_mouse_up_right))
         .when(focused, |e| {
             e.on_action(cx.listener(Self::handle_open_new_node_menu))
                 .on_action(cx.listener(Self::handle_close_new_node_menu))
