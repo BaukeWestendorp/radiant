@@ -5,7 +5,7 @@ use ui::{
     theme::{ActiveTheme as _, InteractiveColor as _},
 };
 
-use crate::{AnySocket, DataType, Graph, GraphDef, Node, TemplateId};
+use crate::{AnySocket, DataType, Graph, GraphDef, InputSocket, Node, OutputSocket, TemplateId};
 
 use super::GraphEditorView;
 
@@ -26,6 +26,7 @@ pub struct NewNodeMenuView<D: GraphDef> {
     search_field: Entity<TextField>,
     items: Vec<NewNodeMenuItem<D>>,
     selected_item_ix: Option<usize>,
+    edge_start: Option<AnySocket>,
 }
 
 impl<D: GraphDef + 'static> NewNodeMenuView<D> {
@@ -67,7 +68,7 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
         })
         .detach();
 
-        Self { position, editor_view, search_field, items, selected_item_ix }
+        Self { position, editor_view, search_field, items, selected_item_ix, edge_start }
     }
 
     pub fn close(&self, cx: &mut App) {
@@ -78,10 +79,38 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
         let graph_offset = *self.editor_view.read(cx).graph().read(cx).offset();
         let position = self.position - graph_offset;
         self.editor_view.read(cx).graph().update(cx, |graph, cx| {
-            let template_id = &self.items[item_ix].template_id;
-            let template = graph.template(template_id);
+            let item = &self.items[item_ix];
+            let template_id = &item.template_id;
+            let template = graph.template(&template_id);
             let node = Node::new(template);
-            graph.add_node(node, position, cx);
+            let node_id = graph.add_node(node, position, cx);
+
+            match &self.edge_start {
+                Some(AnySocket::Input(target)) => {
+                    let source_id = &item
+                        .socket_info
+                        .as_ref()
+                        .expect(
+                            "should get socket_info from NewNodeMenuItem as it has an edge_start",
+                        )
+                        .socket_id;
+                    let source = OutputSocket::new(node_id, source_id.clone());
+                    graph.add_edge(target.clone(), source, cx);
+                }
+                Some(AnySocket::Output(source)) => {
+                    let target_id = &item
+                        .socket_info
+                        .as_ref()
+                        .expect(
+                            "should get socket_info from NewNodeMenuItem as it has an edge_start",
+                        )
+                        .socket_id;
+                    let target = InputSocket::new(node_id, target_id.clone());
+                    graph.add_edge(target, source.clone(), cx);
+                }
+
+                None => {}
+            }
         });
         self.close(cx);
     }
@@ -113,6 +142,7 @@ fn get_filtered_items<D: GraphDef + 'static>(
                             socket_info: Some(SocketInfo {
                                 label: output.label().to_string().into(),
                                 data_type: output.data_type().clone(),
+                                socket_id: output.id().to_string(),
                             }),
                         });
                     }
@@ -128,6 +158,7 @@ fn get_filtered_items<D: GraphDef + 'static>(
                             socket_info: Some(SocketInfo {
                                 label: input.label().to_string().into(),
                                 data_type: input.data_type().clone(),
+                                socket_id: input.id().to_string(),
                             }),
                         });
                     }
@@ -303,4 +334,5 @@ struct NewNodeMenuItem<D: GraphDef> {
 struct SocketInfo<D: GraphDef> {
     label: SharedString,
     data_type: D::DataType,
+    socket_id: String,
 }
