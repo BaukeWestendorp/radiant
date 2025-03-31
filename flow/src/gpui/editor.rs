@@ -191,6 +191,10 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        self.graph().update(cx, |graph, _cx| {
+            graph.deselect_all_nodes();
+        });
+
         self.selection_corners = Some((event.position, event.position));
         cx.notify();
     }

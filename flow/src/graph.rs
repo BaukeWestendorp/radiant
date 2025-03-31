@@ -333,7 +333,6 @@ impl<D: GraphDef + 'static> Graph<D> {
     pub fn node_bounds(&self, node_id: &NodeId) -> Bounds<Pixels> {
         let position = self.visual_node_position(node_id);
         let size = self.node_size(node_id);
-        dbg!(bounds(*position, *size));
         bounds(*position, *size)
     }
 

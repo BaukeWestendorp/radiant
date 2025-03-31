@@ -192,7 +192,6 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
             .children([header, content])
             .child(
                 z_stack([bounds_updater(cx.entity(), |this, bounds, cx| {
-                    dbg!(&bounds);
                     this.graph(cx)
                         .update(cx, |graph, _cx| graph.cache_node_size(this.node_id, bounds.size))
                 })])

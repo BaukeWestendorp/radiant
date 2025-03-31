@@ -265,10 +265,6 @@ pub fn get_graph() -> EffectGraph {
         ),
     ]);
 
-    let mut state = ProcessingContext::new();
-    graph.process(&mut state);
-    dbg!(&state.value);
-
     graph
 }
 
