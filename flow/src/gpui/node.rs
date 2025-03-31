@@ -44,8 +44,6 @@ pub struct NodeView<D: GraphDef + 'static> {
     inputs: Vec<Entity<InputView<D>>>,
     outputs: Vec<Entity<OutputView<D>>>,
     controls: Vec<Entity<ControlView>>,
-
-    focus_handle: FocusHandle,
 }
 
 impl<D: GraphDef + 'static> NodeView<D> {
@@ -113,7 +111,7 @@ impl<D: GraphDef + 'static> NodeView<D> {
                 })
                 .collect();
 
-            Self { node_id, graph_view, inputs, outputs, controls, focus_handle: cx.focus_handle() }
+            Self { node_id, graph_view, inputs, outputs, controls }
         })
     }
 
@@ -122,6 +120,28 @@ impl<D: GraphDef + 'static> NodeView<D> {
     }
 }
 
+impl<D: GraphDef + 'static> NodeView<D> {
+    fn handle_mouse_down(
+        &mut self,
+        event: &MouseDownEvent,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.graph(cx).update(cx, |graph, _cx| {
+            if event.modifiers.shift {
+                graph.deselect_node(self.node_id);
+            } else {
+                if !event.modifiers.secondary() {
+                    graph.deselect_all_nodes();
+                }
+
+                graph.select_node(self.node_id);
+            }
+        });
+
+        cx.notify();
+    }
+}
 impl<D: GraphDef + 'static> Render for NodeView<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let graph = self.graph_view.read(cx).graph().read(cx);
@@ -190,6 +210,7 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
             .rounded(cx.theme().radius)
             .cursor_grab()
             .children([header, content])
+            .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_mouse_down))
             .child(
                 z_stack([bounds_updater(cx.entity(), |this, bounds, cx| {
                     this.graph(cx)
@@ -197,12 +218,6 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
                 })])
                 .size_full(),
             )
-    }
-}
-
-impl<D: GraphDef + 'static> Focusable for NodeView<D> {
-    fn focus_handle(&self, _cx: &App) -> FocusHandle {
-        self.focus_handle.clone()
     }
 }
 

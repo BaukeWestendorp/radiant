@@ -32,6 +32,7 @@ impl Pannable {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        dbg!(&event.event.pressed_button);
         if &self.id != event.drag(cx) {
             return;
         }
