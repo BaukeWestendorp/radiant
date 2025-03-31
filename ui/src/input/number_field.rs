@@ -14,6 +14,8 @@ pub struct NumberField {
     bounds: Bounds<Pixels>,
 
     prev_mouse_pos: Option<Point<Pixels>>,
+
+    unstepped_value: f64,
 }
 
 impl NumberField {
@@ -53,6 +55,7 @@ impl NumberField {
             max: None,
             bounds: Bounds::default(),
             prev_mouse_pos: None,
+            unstepped_value: 0.0,
         }
     }
 
@@ -77,11 +80,12 @@ impl NumberField {
         value_str.parse().unwrap_or_default()
     }
 
-    pub fn set_value(&self, value: f64, cx: &mut App) {
+    pub fn set_value(&mut self, value: f64, cx: &mut App) {
         // Clamp
         let min = self.min().unwrap_or(f64::MIN);
         let max = self.max().unwrap_or(f64::MAX);
         let mut value = value.clamp(min, max);
+        self.unstepped_value = value;
 
         // Step
         if let Some(step) = self.step() {
@@ -97,7 +101,7 @@ impl NumberField {
         })
     }
 
-    fn commit_value(&self, cx: &mut App) {
+    fn commit_value(&mut self, cx: &mut App) {
         self.set_value(self.value(cx), cx);
     }
 
@@ -167,10 +171,10 @@ impl NumberField {
         }
 
         let mouse_position = window.mouse_position();
-        let delta = self.prev_mouse_pos.map_or(Point::default(), |prev| mouse_position - prev);
+        let delta_x = self.prev_mouse_pos.map_or(px(0.0), |prev| mouse_position.x - prev.x);
 
         let factor = self.drag_factor();
-        self.set_value(self.value(cx) + delta.x.to_f64() * factor, cx);
+        self.set_value(self.unstepped_value + delta_x.to_f64() * factor, cx);
 
         self.prev_mouse_pos = Some(mouse_position);
     }

@@ -130,9 +130,8 @@ impl flow::Control<GraphDef> for Control {
                 let field = cx.new(|cx| {
                     let value = value.try_into().expect("should always be able to convert initial input value to the value used by it's control");
 
-                    let field = NumberField::new(id, cx.focus_handle(), window, cx);
+                    let mut field = NumberField::new(id, cx.focus_handle(), window, cx);
                     field.set_value(value, cx);
-
 
                     field
                 }).into();
