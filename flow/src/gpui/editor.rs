@@ -32,6 +32,8 @@ pub struct GraphEditorView<D: GraphDef> {
     visual_graph_offset: Point<Pixels>,
 
     focus_handle: FocusHandle,
+
+    rect_selection: Option<Bounds<Pixels>>,
 }
 
 impl<D: GraphDef + 'static> GraphEditorView<D> {
@@ -73,6 +75,7 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
                 graph,
                 visual_graph_offset: graph_offset,
                 focus_handle: cx.focus_handle(),
+                rect_selection: Some(bounds(point(px(20.0), px(50.0)), size(px(200.0), px(150.0)))),
             }
         });
 
@@ -188,9 +191,23 @@ impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
 
         let focused = self.focus_handle.is_focused(window);
 
+        let rect_selection = match &self.rect_selection {
+            Some(rect) => div()
+                .absolute()
+                .left(rect.origin.x)
+                .top(rect.origin.y)
+                .w(rect.size.width)
+                .h(rect.size.height)
+                .border_1()
+                .border_color(cx.theme().border_selected)
+                .bg(cx.theme().element_background_selected),
+            None => div(),
+        };
+
         z_stack([
             grid.into_any_element(),
             self.graph_view.clone().into_any_element(),
+            rect_selection.into_any_element(),
             self.new_node_menu_view
                 .clone()
                 .map(|e| e.into_any_element())
