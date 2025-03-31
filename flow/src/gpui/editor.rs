@@ -38,7 +38,10 @@ pub struct GraphEditorView<D: GraphDef> {
 
 impl<D: GraphDef + 'static> GraphEditorView<D> {
     pub fn build(graph: Entity<Graph<D>>, window: &mut Window, cx: &mut App) -> Entity<Self> {
-        let graph_view = GraphView::build(graph.clone(), window, cx);
+        let focus_handle = cx.focus_handle();
+
+        let graph_view =
+            cx.new(|cx| GraphView::new(graph.clone(), focus_handle.clone(), window, cx));
 
         let editor_view = cx.new(|cx| {
             cx.subscribe(&graph, |_editor, _graph_view, event: &GraphEvent, cx| {
@@ -74,7 +77,7 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
                 new_node_menu_view: None,
                 graph,
                 visual_graph_offset: graph_offset,
-                focus_handle: cx.focus_handle(),
+                focus_handle,
                 selection_corners: None,
             }
         });

@@ -129,7 +129,7 @@ impl<D: GraphDef + 'static> NodeView<D> {
     ) {
         self.graph(cx).update(cx, |graph, _cx| {
             if event.modifiers.shift {
-                graph.deselect_node(self.node_id);
+                graph.deselect_node(&self.node_id);
             } else {
                 if !event.modifiers.secondary() {
                     graph.deselect_all_nodes();

@@ -169,9 +169,12 @@ impl<D: GraphDef + 'static> Graph<D> {
         // Remove all edges that are connected to this node.
         self.edges
             .retain(|target, source| source.node_id != *node_id && target.node_id != *node_id);
+
+        self.deselect_node(node_id);
         self.remove_leaf_node(node_id);
         self.node_positions.remove(node_id);
         self.nodes.remove(node_id);
+
         cx.emit(GraphEvent::NodeRemoved(*node_id));
     }
 
@@ -356,7 +359,7 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.selected_nodes.contains(node_id)
     }
 
-    pub fn selected_nodes(&self) -> &Vec<NodeId> {
+    pub fn selected_nodes(&self) -> &[NodeId] {
         &self.selected_nodes
     }
 
@@ -366,14 +369,24 @@ impl<D: GraphDef + 'static> Graph<D> {
         }
     }
 
-    pub fn deselect_node(&mut self, node_id: NodeId) {
-        if let Some(index) = self.selected_nodes.iter().position(|id| *id == node_id) {
+    pub fn deselect_node(&mut self, node_id: &NodeId) {
+        if let Some(index) = self.selected_nodes.iter().position(|id| id == node_id) {
             self.selected_nodes.remove(index);
         }
     }
 
+    pub fn select_all_nodes(&mut self) {
+        self.selected_nodes = self.nodes.keys().cloned().collect();
+    }
+
     pub fn deselect_all_nodes(&mut self) {
         self.selected_nodes.clear();
+    }
+
+    pub fn delete_selected_nodes(&mut self, cx: &mut Context<Self>) {
+        for node_id in self.selected_nodes.clone() {
+            self.remove_node(&node_id, cx);
+        }
     }
 
     pub(crate) fn cache_node_size(&mut self, node_id: NodeId, size: Size<Pixels>) {

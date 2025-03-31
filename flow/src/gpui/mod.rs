@@ -6,6 +6,7 @@ pub(crate) mod graph;
 pub(crate) mod node;
 
 pub fn init(cx: &mut App) {
+    graph::init(cx);
     editor::init(cx);
 }
 
