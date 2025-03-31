@@ -58,8 +58,11 @@ pub struct Graph<D: GraphDef> {
     leaf_nodes: Vec<NodeId>,
 
     pub(crate) node_positions: HashMap<NodeId, Point<Pixels>>,
+    dragged_node_position: Option<(NodeId, Point<Pixels>)>,
     pub(crate) offset: Point<Pixels>,
-    pub(crate) dragged_node_position: Option<(NodeId, Point<Pixels>)>,
+
+    node_size_cache: HashMap<NodeId, Size<Pixels>>,
+    selected_nodes: Vec<NodeId>,
 }
 
 impl<D: GraphDef + 'static> Default for Graph<D> {
@@ -82,6 +85,9 @@ impl<D: GraphDef + 'static> Graph<D> {
             node_positions: HashMap::new(),
             offset: Point::default(),
             dragged_node_position: None,
+
+            node_size_cache: HashMap::new(),
+            selected_nodes: Vec::new(),
         }
     }
 
@@ -126,6 +132,10 @@ impl<D: GraphDef + 'static> Graph<D> {
 
     pub fn nodes(&self) -> impl Iterator<Item = (&NodeId, &Node<D>)> {
         self.nodes.iter()
+    }
+
+    pub fn nodes_mut(&mut self) -> impl Iterator<Item = (&NodeId, &mut Node<D>)> {
+        self.nodes.iter_mut()
     }
 
     pub fn node_ids(&self) -> impl Iterator<Item = &NodeId> {
@@ -320,6 +330,17 @@ impl<D: GraphDef + 'static> Graph<D> {
         }
     }
 
+    pub fn node_bounds(&self, node_id: &NodeId) -> Bounds<Pixels> {
+        let position = self.visual_node_position(node_id);
+        let size = self.node_size(node_id);
+        dbg!(bounds(*position, *size));
+        bounds(*position, *size)
+    }
+
+    pub fn node_size(&self, node_id: &NodeId) -> &Size<Pixels> {
+        self.node_size_cache.get(node_id).expect("should get cached node size")
+    }
+
     pub fn update_visual_node_position(&mut self, position: Option<(NodeId, Point<Pixels>)>) {
         self.dragged_node_position = position;
     }
@@ -330,6 +351,34 @@ impl<D: GraphDef + 'static> Graph<D> {
 
     pub fn set_offset(&mut self, offset: Point<Pixels>) {
         self.offset = offset;
+    }
+
+    pub fn is_node_selected(&self, node_id: &NodeId) -> bool {
+        self.selected_nodes.contains(node_id)
+    }
+
+    pub fn selected_nodes(&self) -> &Vec<NodeId> {
+        &self.selected_nodes
+    }
+
+    pub fn select_node(&mut self, node_id: NodeId) {
+        if !self.selected_nodes.contains(&node_id) {
+            self.selected_nodes.push(node_id);
+        }
+    }
+
+    pub fn deselect_node(&mut self, node_id: NodeId) {
+        if let Some(index) = self.selected_nodes.iter().position(|id| *id == node_id) {
+            self.selected_nodes.remove(index);
+        }
+    }
+
+    pub fn deselect_all_nodes(&mut self) {
+        self.selected_nodes.clear();
+    }
+
+    pub(crate) fn cache_node_size(&mut self, node_id: NodeId, size: Size<Pixels>) {
+        self.node_size_cache.insert(node_id, size);
     }
 }
 

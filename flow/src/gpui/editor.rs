@@ -204,6 +204,23 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
         if let Some(rect_selection) = &mut self.selection_corners {
             rect_selection.1 = event.position;
         }
+
+        if let Some(bounds) = self.selection_bounds() {
+            let graph = self.graph().read(cx);
+
+            let selected_nodes = graph
+                .node_ids()
+                .filter(|id| bounds.intersects(&(graph.node_bounds(id) + self.visual_graph_offset)))
+                .copied()
+                .collect::<Vec<_>>();
+
+            self.graph().update(cx, |graph, _cx| {
+                for node_id in selected_nodes {
+                    graph.select_node(node_id);
+                }
+            });
+        }
+
         cx.notify();
     }
 

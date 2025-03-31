@@ -5,18 +5,7 @@ use crate::{
 use super::{ControlEvent, ControlView, graph::GraphView};
 use gpui::*;
 use prelude::FluentBuilder;
-use ui::{styled_ext::StyledExt, theme::ActiveTheme};
-
-const KEY_CONTEXT: &str = "GraphNode";
-
-actions!(node, [Delete]);
-
-pub fn init(cx: &mut App) {
-    cx.bind_keys([
-        KeyBinding::new("delete", Delete, Some(KEY_CONTEXT)),
-        KeyBinding::new("backspace", Delete, Some(KEY_CONTEXT)),
-    ]);
-}
+use ui::{bounds_updater, styled_ext::StyledExt, theme::ActiveTheme, z_stack};
 
 pub struct NodeMeasurements {
     pub width: Pixels,
@@ -133,19 +122,13 @@ impl<D: GraphDef + 'static> NodeView<D> {
     }
 }
 
-impl<D: GraphDef + 'static> NodeView<D> {
-    fn handle_delete(&mut self, _: &Delete, _window: &mut Window, cx: &mut Context<Self>) {
-        self.graph(cx).update(cx, |graph, cx| graph.remove_node(&self.node_id, cx));
-    }
-}
-
 impl<D: GraphDef + 'static> Render for NodeView<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let graph = self.graph_view.read(cx).graph().read(cx);
         let template_id = graph.node(&self.node_id).template_id().clone();
         let template = graph.template(&template_id);
 
-        let focused = self.focus_handle.is_focused(window);
+        let selected = self.graph(cx).read(cx).is_node_selected(&self.node_id);
 
         let NodeMeasurements {
             sockets_padding_y: content_padding_top,
@@ -166,7 +149,7 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
                 .py_px()
                 .border_b_1()
                 .border_color(cx.theme().border)
-                .when(focused, |e| {
+                .when(selected, |e| {
                     e.bg(cx.theme().element_background_focused)
                         .border_color(cx.theme().border_focused)
                 })
@@ -190,7 +173,7 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
                         .gap_2()
                         .border_t_1()
                         .border_color(cx.theme().border)
-                        .when(focused, |e| {
+                        .when(selected, |e| {
                             e.bg(cx.theme().element_background_focused)
                                 .border_color(cx.theme().border_focused)
                         })
@@ -199,17 +182,22 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
             });
 
         div()
-            .track_focus(&self.focus_handle)
-            .key_context(KEY_CONTEXT)
             .w(width)
             .bg(cx.theme().background)
             .border_1()
             .border_color(cx.theme().border)
-            .when(focused, |e| e.border_color(cx.theme().border_focused))
+            .when(selected, |e| e.border_color(cx.theme().border_focused))
             .rounded(cx.theme().radius)
             .cursor_grab()
-            .on_action(cx.listener(Self::handle_delete))
             .children([header, content])
+            .child(
+                z_stack([bounds_updater(cx.entity(), |this, bounds, cx| {
+                    dbg!(&bounds);
+                    this.graph(cx)
+                        .update(cx, |graph, _cx| graph.cache_node_size(this.node_id, bounds.size))
+                })])
+                .size_full(),
+            )
     }
 }
 

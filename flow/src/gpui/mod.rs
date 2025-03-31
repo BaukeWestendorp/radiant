@@ -2,11 +2,10 @@ use crate::{Graph, GraphDef, InputSocket, NodeId, OutputSocket};
 use gpui::*;
 
 pub mod editor;
-mod graph;
-mod node;
+pub(crate) mod graph;
+pub(crate) mod node;
 
 pub fn init(cx: &mut App) {
-    node::init(cx);
     editor::init(cx);
 }
 
