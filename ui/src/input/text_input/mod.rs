@@ -79,10 +79,10 @@ pub fn init(cx: &mut App) {
         kb!(macos = "alt-right", other = "ctrl-right", MoveToNextWord),
         kb!(macos = "alt-shift-left", other = "shift-ctrl-left", SelectToStartOfWord),
         kb!(macos = "alt-shift-right", other = "shift-ctrl-right", SelectToEndOfWord),
-        kb!(macos = "cmd-a", other = "ctrl-a", SelectAll),
-        kb!(macos = "cmd-c", other = "ctrl-c", Copy),
-        kb!(macos = "cmd-x", other = "ctrl-x", Cut),
-        kb!(macos = "cmd-v", other = "ctrl-v", Paste),
+        kb!(all = "secondary-a", SelectAll),
+        kb!(all = "secondary-c", Copy),
+        kb!(all = "secondary-x", Cut),
+        kb!(all = "secondary-v", Paste),
     ]);
 }
 
