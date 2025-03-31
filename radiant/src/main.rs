@@ -12,7 +12,8 @@ fn main() {
         ui::init(cx);
         flow::gpui::init(cx);
 
-        cx.bind_keys([KeyBinding::new("ctrl-q", Quit, None)]);
+        #[cfg(target_os = "macos")]
+        cx.bind_keys([KeyBinding::new("secondary-q", Quit, None)]);
 
         cx.on_action::<Quit>(|_, cx| cx.quit());
 
