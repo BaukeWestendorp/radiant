@@ -638,6 +638,8 @@ impl TextInput {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        cx.stop_propagation();
+
         let point = event.position + point(self.scroll_offset, px(0.0));
         let Some(char_offset) = self.character_index_for_point(point, window, cx) else {
             return;
