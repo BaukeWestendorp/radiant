@@ -5,7 +5,7 @@ edition.workspace = true
 
 [dependencies]
 # crates
-flow = { workspace = true, features = ["serde"] }
+flow = { workspace = true, features = ["serde", "derive"] }
 frames.workspace = true
 ui.workspace = true
 

@@ -7,82 +7,18 @@ use ui::{NumberField, TextInputEvent};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, flow::Value)]
+#[value(graph_def = GraphDef, data_type = DataType)]
 pub enum Value {
+    #[value(color = 0xCE39FF)]
     Number(f64),
+    #[value(color = 0x1361FF)]
     Boolean(bool),
 }
 
-impl flow::Value<GraphDef> for Value {
-    fn data_type(&self) -> DataType {
-        match self {
-            Self::Number(_) => DataType::Number,
-            Self::Boolean(_) => DataType::Boolean,
-        }
-    }
-
-    fn cast_to(&self, to: &DataType) -> Option<Value> {
-        match (self, to) {
-            (Self::Number(_), DataType::Number) => Some(self.clone()),
-            (Self::Boolean(_), DataType::Boolean) => Some(self.clone()),
-            _ => None,
-        }
-    }
-}
-
-impl TryFrom<Value> for f64 {
-    type Error = eyre::Error;
-
-    fn try_from(value: Value) -> Result<Self, Self::Error> {
-        match value {
-            Value::Number(number) => Ok(number),
-            _ => eyre::bail!("Failed to cast value from {:?} to f64", value.data_type()),
-        }
-    }
-}
-
-impl TryFrom<Value> for bool {
-    type Error = eyre::Error;
-
-    fn try_from(value: Value) -> Result<Self, Self::Error> {
-        match value {
-            Value::Boolean(boolean) => Ok(boolean),
-            _ => eyre::bail!("Failed to cast value from {:?} to bool", value.data_type()),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum DataType {
-    Number,
-    Boolean,
-}
-
-impl flow::DataType<GraphDef> for DataType {
-    fn default_value(&self) -> <GraphDef as flow::GraphDef>::Value {
-        match self {
-            Self::Number => Value::Number(Default::default()),
-            Self::Boolean => Value::Boolean(Default::default()),
-        }
-    }
-
-    fn color(&self) -> gpui::Hsla {
-        match self {
-            Self::Number => gpui::rgb(0xCE39FF).into(),
-            Self::Boolean => gpui::rgb(0x1361FF).into(),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct State {
     pub value: f64,
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self { value: 0.0 }
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]

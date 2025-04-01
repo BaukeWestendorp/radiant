@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [features]
+derive = ["dep:flow_derive"]
 serde = ["dep:serde"]
 
 [dependencies]
@@ -13,5 +14,11 @@ ui.workspace = true
 # ui
 gpui.workspace = true
 
+# error handling
+thiserror.workspace = true
+
 # feature = "serde"
 serde = { workspace = true, optional = true }
+
+# feature = "derive"
+flow_derive = { workspace = true, optional = true }
