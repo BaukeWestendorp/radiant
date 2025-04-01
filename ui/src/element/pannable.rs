@@ -4,13 +4,12 @@ use crate::utils::z_stack;
 
 pub struct Pannable {
     id: ElementId,
-
     offset: Point<Pixels>,
+    child: AnyView,
+    mouse_button: MouseButton,
 
     prev_mouse_pos: Option<Point<Pixels>>,
-
-    child: AnyView,
-    scroll_handle: ScrollHandle,
+    dragging: bool,
 }
 
 impl Pannable {
@@ -18,10 +17,20 @@ impl Pannable {
         Self {
             id: id.into(),
             offset,
-            prev_mouse_pos: None,
             child: child.into(),
-            scroll_handle: ScrollHandle::new(),
+            mouse_button: MouseButton::Left,
+
+            prev_mouse_pos: None,
+            dragging: false,
         }
+    }
+
+    pub fn mouse_button(&self) -> &MouseButton {
+        &self.mouse_button
+    }
+
+    pub fn set_mouse_button(&mut self, mouse_button: MouseButton) {
+        self.mouse_button = mouse_button;
     }
 
     pub fn offset(&self) -> &Point<Pixels> {
@@ -33,30 +42,51 @@ impl Pannable {
         cx.emit(PannableEvent::OffsetCommitted(self.offset));
     }
 
-    // fn handle_drag_move(
-    //     &mut self,
-    //     event: &DragMoveEvent<ElementId>,
-    //     window: &mut Window,
-    //     cx: &mut Context<Self>,
-    // ) {
-    //     if &self.id != event.drag(cx) {
-    //         return;
-    //     }
+    pub fn dragging(&self) -> bool {
+        self.dragging
+    }
+}
 
-    //     let mouse_position = window.mouse_position();
+impl Pannable {
+    fn handle_mouse_down(
+        &mut self,
+        _event: &MouseDownEvent,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) {
+        self.dragging = true;
+    }
 
-    //     let diff = self.prev_mouse_pos.map_or(Point::default(), |prev| mouse_position - prev);
-    //     self.offset += diff;
+    fn handle_mouse_move(
+        &mut self,
+        _event: &MouseMoveEvent,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if !self.dragging {
+            return;
+        }
 
-    //     self.prev_mouse_pos = Some(mouse_position);
+        let mouse_position = window.mouse_position();
 
-    //     cx.emit(PannableEvent::OffsetChanged(self.offset));
-    // }
+        let diff = self.prev_mouse_pos.map_or(Point::default(), |prev| mouse_position - prev);
+        self.offset += diff;
 
-    // fn handle_mouse_up(&mut self, _: &MouseUpEvent, _window: &mut Window, cx: &mut Context<Self>) {
-    //     self.prev_mouse_pos = None;
-    //     cx.emit(PannableEvent::OffsetCommitted(self.offset));
-    // }
+        self.prev_mouse_pos = Some(mouse_position);
+
+        cx.emit(PannableEvent::OffsetChanged(self.offset));
+    }
+
+    fn handle_mouse_up(
+        &mut self,
+        _event: &MouseUpEvent,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.prev_mouse_pos = None;
+        self.dragging = false;
+        cx.emit(PannableEvent::OffsetCommitted(self.offset));
+    }
 
     fn handle_scroll_wheel(
         &mut self,
@@ -64,9 +94,20 @@ impl Pannable {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.offset += event.delta.pixel_delta(window.line_height());
-        cx.emit(PannableEvent::OffsetChanged(self.offset));
-        cx.notify();
+        if self.dragging {
+            return;
+        }
+
+        let pixel_delta = event.delta.pixel_delta(window.line_height());
+
+        self.offset += pixel_delta;
+
+        if pixel_delta.is_zero() {
+            cx.emit(PannableEvent::OffsetCommitted(self.offset));
+        } else {
+            cx.emit(PannableEvent::OffsetChanged(self.offset));
+            cx.notify();
+        }
     }
 }
 
@@ -74,11 +115,10 @@ impl Render for Pannable {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let hitbox = div()
             .id(self.id.clone())
-            // .on_drag(self.id.clone(), |_, _, _, cx| cx.new(|_cx| EmptyView))
-            // .on_drag_move(cx.listener(Self::handle_drag_move))
-            // .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
-            // .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up))
-            // .track_scroll(&self.scroll_handle)
+            .on_mouse_down(self.mouse_button, cx.listener(Self::handle_mouse_down))
+            .on_mouse_move(cx.listener(Self::handle_mouse_move))
+            .on_mouse_up(self.mouse_button, cx.listener(Self::handle_mouse_up))
+            .on_mouse_up_out(self.mouse_button, cx.listener(Self::handle_mouse_up))
             .on_scroll_wheel(cx.listener(Self::handle_scroll_wheel))
             .size_full();
 
