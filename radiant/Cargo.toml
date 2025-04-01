@@ -1,15 +1,24 @@
 [package]
 name = "radiant"
-version = "0.1.0"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
+# crates
 flow = { workspace = true, features = ["serde"] }
 frames.workspace = true
 ui.workspace = true
 
+# serialization
 serde.workspace = true
 serde_json = "1"
 
+# ui
 gpui.workspace = true
-eyre = "0.6.12"
+
+# error handling
+eyre.workspace = true
+
+# logging
+env_logger = "0.11.8"
+log.workspace = true

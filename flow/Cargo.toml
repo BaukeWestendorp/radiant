@@ -7,8 +7,11 @@ edition.workspace = true
 serde = ["dep:serde"]
 
 [dependencies]
-gpui.workspace = true
+# crates
 ui.workspace = true
+
+# ui
+gpui.workspace = true
 
 # feature = "serde"
 serde = { workspace = true, optional = true }

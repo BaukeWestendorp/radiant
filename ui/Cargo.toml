@@ -4,5 +4,6 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+# ui
 gpui.workspace = true
 smallvec = "1.14.0"

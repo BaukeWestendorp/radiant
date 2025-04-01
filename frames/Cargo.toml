@@ -4,6 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+# crates
 ui.workspace = true
 
+# ui
 gpui.workspace = true
