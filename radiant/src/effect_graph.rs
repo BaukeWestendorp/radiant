@@ -48,8 +48,7 @@ impl flow::Control<GraphDef> for Control {
                     field.set_step(*step);
 
                     field
-                })
-                .into();
+                });
 
                 cx.subscribe(&field, |_, field, event: &TextInputEvent, cx| {
                     if let TextInputEvent::Change(_) = event {
@@ -70,7 +69,7 @@ impl flow::Control<GraphDef> for Control {
                     field.set_value(value, cx);
 
                     field
-                }).into();
+                });
 
                 cx.subscribe(&field, |_, field, event: &TextInputEvent, cx| {
                     if let TextInputEvent::Change(_) = event {

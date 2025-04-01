@@ -6,6 +6,10 @@ resolver = "3"
 version = "0.1.0"
 edition = "2024"
 
+[workspace.lints.clippy]
+needless_return = "allow"
+single_match = "allow"
+
 [workspace.dependencies]
 # crates
 frames = { path = "frames" }

@@ -3,6 +3,9 @@ name = "ui"
 version.workspace = true
 edition.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
 # ui
 gpui.workspace = true

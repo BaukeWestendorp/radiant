@@ -3,6 +3,9 @@ name = "flow"
 version.workspace = true
 edition.workspace = true
 
+[lints]
+workspace = true
+
 [features]
 derive = ["dep:flow_derive"]
 serde = ["dep:serde"]

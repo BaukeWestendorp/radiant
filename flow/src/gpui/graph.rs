@@ -92,7 +92,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
                 // If the input already has an edge connected to it, remove it.
                 self.graph.update(cx, |graph, cx| {
                     if graph.edge_source(input).is_some() {
-                        graph.remove_edge(&input, cx);
+                        graph.remove_edge(input, cx);
                     }
                 });
 
@@ -227,7 +227,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
                     self.get_connector_position(&AnySocket::Output(source.clone()), window, cx);
                 let target_pos = relative_mouse_pos;
 
-                let source = self.graph.read(cx).output(&source);
+                let source = self.graph.read(cx).output(source);
                 (source_pos, target_pos, source.data_type(), source.data_type())
             }
             (Some(target), None) => {
@@ -235,7 +235,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
                     self.get_connector_position(&AnySocket::Input(target.clone()), window, cx);
                 let source_pos = relative_mouse_pos;
 
-                let target = self.graph.read(cx).input(&target);
+                let target = self.graph.read(cx).input(target);
                 (source_pos, target_pos, &target.data_type(), &target.data_type())
             }
             (Some(target), Some(source)) => {
@@ -244,8 +244,8 @@ impl<D: GraphDef + 'static> GraphView<D> {
                 let target_pos =
                     self.get_connector_position(&AnySocket::Input(target.clone()), window, cx);
 
-                let source = self.graph.read(cx).output(&source);
-                let target = self.graph.read(cx).input(&target);
+                let source = self.graph.read(cx).output(source);
+                let target = self.graph.read(cx).input(target);
                 (source_pos, target_pos, &target.data_type(), source.data_type())
             }
         };
@@ -356,11 +356,11 @@ impl<D: GraphDef + 'static> GraphView<D> {
                 .inputs()
                 .iter()
                 .position(|i| i.id() == input.id)
-                .expect(&format!("should get index of input for socket {:?}", socket)),
+                .unwrap_or_else(|| panic!("should get index of input for socket {:?}", socket)),
             AnySocket::Output(output) => {
                 template.inputs().len() + // Move past all input sockets.
                     template.outputs().iter().position(|o| o.id() == output.id)
-                    .expect(&format!("should get index of input for socket {:?}", socket))
+                    .unwrap_or_else(|| panic!("should get index of input for socket {:?}", socket))
             }
         };
 

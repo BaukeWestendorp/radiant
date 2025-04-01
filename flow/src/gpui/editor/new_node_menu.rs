@@ -81,7 +81,7 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
         self.editor_view.read(cx).graph().update(cx, |graph, cx| {
             let item = &self.items[item_ix];
             let template_id = &item.template_id;
-            let template = graph.template(&template_id);
+            let template = graph.template(template_id);
             let node = Node::new(template);
             let node_id = graph.add_node(node, position, cx);
 
@@ -133,7 +133,7 @@ fn get_filtered_items<D: GraphDef + 'static>(
 
         match &edge_start {
             Some(AnySocket::Input(input_socket)) => {
-                let input = graph.input(&input_socket);
+                let input = graph.input(input_socket);
                 for output in template.outputs() {
                     if output.data_type().can_cast_to(&input.data_type()) {
                         items.push(NewNodeMenuItem {
@@ -149,7 +149,7 @@ fn get_filtered_items<D: GraphDef + 'static>(
                 }
             }
             Some(AnySocket::Output(output_socket)) => {
-                let output = graph.output(&output_socket);
+                let output = graph.output(output_socket);
                 for input in template.inputs() {
                     if input.data_type().can_cast_to(output.data_type()) {
                         items.push(NewNodeMenuItem {

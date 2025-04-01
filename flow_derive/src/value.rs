@@ -142,7 +142,7 @@ fn gen_data_type_impl(
 
     let color_arms = variants.iter().map(|variant| {
         let VariantMeta { color, .. } =
-            VariantMeta::from_variant(&variant).expect("Failed to parse variant metadata");
+            VariantMeta::from_variant(variant).expect("Failed to parse variant metadata");
         let variant_ident = &variant.ident;
 
         quote! {

@@ -3,6 +3,9 @@ name = "radiant"
 version.workspace = true
 edition.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
 # crates
 flow = { workspace = true, features = ["serde", "derive"] }

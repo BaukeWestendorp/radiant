@@ -187,8 +187,8 @@ impl<D: GraphDef + 'static> Graph<D> {
     }
 
     fn validate_edge(&self, target: &InputSocket, source: &OutputSocket) -> bool {
-        let output = self.output(&source);
-        let input = self.input(&target);
+        let output = self.output(source);
+        let input = self.input(target);
 
         // An edge can't connect to itself.
         if source.node_id == target.node_id {
@@ -271,7 +271,7 @@ impl<D: GraphDef + 'static> Graph<D> {
 
         // Calculate outputs and update context.
         let mut output_values = Values::new();
-        template.process(&input_values, &control_values, &mut output_values, pcx);
+        template.process(&input_values, control_values, &mut output_values, pcx);
 
         // Update output value cache.
         pcx.cache_output_values(*node_id, output_values);
@@ -296,7 +296,7 @@ impl<D: GraphDef + 'static> Graph<D> {
     }
 
     pub fn set_control_value(&mut self, node_id: &NodeId, id: String, value: D::Value) {
-        self.node_mut(&node_id).control_values_mut().set_value(id, value)
+        self.node_mut(node_id).control_values_mut().set_value(id, value)
     }
 
     fn get_output_value(

@@ -752,7 +752,7 @@ impl EntityInputHandler for TextInput {
         &mut self,
         utf16_range: Option<std::ops::Range<usize>>,
         text: &str,
-        window: &mut Window,
+        _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
         if self.disabled {
@@ -762,7 +762,7 @@ impl EntityInputHandler for TextInput {
         if self.has_selection() {
             let selection_range = self.utf16_selection_range();
             self.unselect(cx);
-            self.replace_text_in_range(Some(selection_range), text, window, cx);
+            self.replace_text_in_range(Some(selection_range), text, _window, cx);
             return;
         }
 

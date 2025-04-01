@@ -241,7 +241,7 @@ impl<D: GraphDef + 'static> InputView<D> {
         cx: &mut App,
     ) -> Entity<Self> {
         cx.new(|cx| {
-            let socket = InputSocket::new(node_id.clone(), input.id().to_string());
+            let socket = InputSocket::new(node_id, input.id().to_string());
             let data_type = input.data_type().clone();
             let id = ElementId::Name(format!("input-{}-{}", node_id.0, input.id()).into());
             let control = input.control().build_view(value, id.clone(), window, cx);
