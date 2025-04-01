@@ -18,7 +18,7 @@ impl Pannable {
             id: id.into(),
             offset,
             child: child.into(),
-            mouse_button: MouseButton::Left,
+            mouse_button: MouseButton::Middle,
 
             prev_mouse_pos: None,
             dragging: false,
