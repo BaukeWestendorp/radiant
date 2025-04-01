@@ -188,6 +188,15 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
         self.close_new_node_menu(cx);
     }
 
+    fn handle_mouse_down_right(
+        &mut self,
+        _event: &MouseDownEvent,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.open_new_node_menu(None, window, cx);
+    }
+
     fn handle_mouse_down_left(
         &mut self,
         event: &MouseDownEvent,
@@ -289,7 +298,8 @@ impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
         .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up_left))
         .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up_left))
         .when(focused, |e| {
-            e.on_action(cx.listener(Self::handle_open_new_node_menu))
+            e.on_mouse_down(MouseButton::Right, cx.listener(Self::handle_mouse_down_right))
+                .on_action(cx.listener(Self::handle_open_new_node_menu))
                 .on_action(cx.listener(Self::handle_close_new_node_menu))
         })
     }
