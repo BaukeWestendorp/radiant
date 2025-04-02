@@ -1,5 +1,5 @@
 use super::TextInput;
-use crate::theme::ActiveTheme;
+use crate::ActiveTheme;
 use gpui::*;
 
 pub(super) struct TextElement {

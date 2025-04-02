@@ -1,6 +1,5 @@
+use crate::utils::snap_point;
 use gpui::*;
-
-use crate::snap_point;
 
 pub struct Draggable {
     id: ElementId,

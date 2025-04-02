@@ -19,6 +19,7 @@ pub fn bounds_updater<V: 'static>(
     .size_full()
 }
 
+/// Snap a point to the nearest multiple of the given threshold.
 pub fn snap_point(mut point: Point<Pixels>, threshold: Pixels) -> Point<Pixels> {
     point.x = (point.x / threshold).floor() * threshold;
     point.y = (point.y / threshold).floor() * threshold;

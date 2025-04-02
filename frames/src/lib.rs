@@ -1,6 +1,6 @@
 use gpui::*;
 use prelude::FluentBuilder;
-use ui::{theme::ActiveTheme, z_stack};
+use ui::{ActiveTheme, utils::z_stack};
 
 pub struct FrameContainer<F: Frame> {
     grid_size: Size<u32>,

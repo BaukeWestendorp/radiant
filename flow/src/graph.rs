@@ -1,11 +1,9 @@
-use std::collections::HashMap;
-
-use gpui::*;
-
 use crate::{
     Input, InputSocket, Node, NodeId, Output, OutputSocket, Template, TemplateId,
     gpui::{ControlView, GraphEvent},
 };
+use gpui::{Bounds, Pixels, Point, Size};
+use std::collections::HashMap;
 
 pub trait GraphDef: Clone {
     #[cfg(feature = "serde")]
@@ -36,13 +34,13 @@ pub trait DataType<D: GraphDef> {
 }
 
 pub trait Control<D: GraphDef> {
-    fn build_view(
+    fn view(
         &self,
         value: D::Value,
         id: gpui::ElementId,
         window: &mut gpui::Window,
         cx: &mut gpui::App,
-    ) -> Entity<ControlView>;
+    ) -> gpui::Entity<ControlView>;
 }
 
 #[derive(Clone)]
@@ -146,7 +144,7 @@ impl<D: GraphDef + 'static> Graph<D> {
         &mut self,
         node: Node<D>,
         position: Point<Pixels>,
-        cx: &mut Context<Self>,
+        cx: &mut gpui::Context<Self>,
     ) -> NodeId {
         let node_id = NodeId(self.next_node_id());
         self.add_node_internal(node_id, node, position);
@@ -165,7 +163,7 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.node_positions.insert(node_id, position);
     }
 
-    pub fn remove_node(&mut self, node_id: &NodeId, cx: &mut Context<Self>) {
+    pub fn remove_node(&mut self, node_id: &NodeId, cx: &mut gpui::Context<Self>) {
         // Remove all edges that are connected to this node.
         self.edges
             .retain(|target, source| source.node_id != *node_id && target.node_id != *node_id);
@@ -204,7 +202,12 @@ impl<D: GraphDef + 'static> Graph<D> {
         input.default().cast_to(output.data_type()).is_some()
     }
 
-    pub fn add_edge(&mut self, target: InputSocket, source: OutputSocket, cx: &mut Context<Self>) {
+    pub fn add_edge(
+        &mut self,
+        target: InputSocket,
+        source: OutputSocket,
+        cx: &mut gpui::Context<Self>,
+    ) {
         if !self.validate_edge(&target, &source) {
             return;
         }
@@ -219,7 +222,7 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.edges.insert(target, source);
     }
 
-    pub fn remove_edge(&mut self, target: &InputSocket, cx: &mut Context<Self>) {
+    pub fn remove_edge(&mut self, target: &InputSocket, cx: &mut gpui::Context<Self>) {
         self.edges.remove(target);
         cx.emit(GraphEvent::EdgeRemoved { target: target.clone() });
     }
@@ -336,7 +339,7 @@ impl<D: GraphDef + 'static> Graph<D> {
     pub fn node_bounds(&self, node_id: &NodeId) -> Bounds<Pixels> {
         let position = self.visual_node_position(node_id);
         let size = self.node_size(node_id);
-        bounds(*position, *size)
+        Bounds::new(*position, *size)
     }
 
     pub fn node_size(&self, node_id: &NodeId) -> &Size<Pixels> {
@@ -383,7 +386,7 @@ impl<D: GraphDef + 'static> Graph<D> {
         self.selected_nodes.clear();
     }
 
-    pub fn delete_selected_nodes(&mut self, cx: &mut Context<Self>) {
+    pub fn delete_selected_nodes(&mut self, cx: &mut gpui::Context<Self>) {
         for node_id in self.selected_nodes.clone() {
             self.remove_node(&node_id, cx);
         }

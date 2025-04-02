@@ -1,11 +1,7 @@
+use crate::{ActiveTheme, Disableable, InteractiveColor};
 use gpui::*;
 use prelude::FluentBuilder;
 use smallvec::SmallVec;
-
-use crate::{
-    Disableable,
-    theme::{ActiveTheme, InteractiveColor},
-};
 
 /// An interactive, styled container that can hold other elements.
 #[derive(IntoElement)]
@@ -79,9 +75,9 @@ impl RenderOnce for InteractiveContainer {
         let focused = self.focus_handle.is_focused(window);
 
         self.base
-            .bg(ContainerKind::Element.bg(cx))
+            .bg(cx.theme().element_background)
             .border_1()
-            .border_color(ContainerKind::Element.border_color(cx))
+            .border_color(cx.theme().border)
             .rounded(cx.theme().radius)
             .when(self.disabled, |e| {
                 e.bg(cx.theme().element_background.muted())
@@ -97,26 +93,5 @@ impl RenderOnce for InteractiveContainer {
                 })
             })
             .children(self.children)
-    }
-}
-
-pub enum ContainerKind {
-    Regular,
-    Element,
-}
-
-impl ContainerKind {
-    fn bg(&self, cx: &App) -> Hsla {
-        match self {
-            Self::Regular => cx.theme().background,
-            Self::Element => cx.theme().element_background,
-        }
-    }
-
-    fn border_color(&self, cx: &App) -> Hsla {
-        match self {
-            Self::Regular => cx.theme().border,
-            Self::Element => cx.theme().border,
-        }
     }
 }

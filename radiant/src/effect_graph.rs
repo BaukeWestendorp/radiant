@@ -28,7 +28,7 @@ pub enum Control {
 }
 
 impl flow::Control<GraphDef> for Control {
-    fn build_view(
+    fn view(
         &self,
         value: Value,
         id: ElementId,
@@ -122,7 +122,7 @@ pub fn get_graph() -> EffectGraph {
             ],
             vec![Output::new("sum", "Sum", DataType::Number)],
             vec![],
-            Box::new(|iv, _cv, ov, _: &mut ProcessingContext<GraphDef>| {
+            Box::new(|iv, _cv, ov, _pcx: &mut ProcessingContext<GraphDef>| {
                 let a = iv.value("a").expect("should get value");
                 let Some(Value::Number(a)) = a.cast_to(&DataType::Number) else { panic!() };
 

@@ -1,11 +1,13 @@
+use super::{ControlEvent, ControlView, graph::GraphView};
 use crate::{
     AnySocket, Control, DataType, GraphDef, Input, InputSocket, NodeId, Output, OutputSocket,
 };
-
-use super::{ControlEvent, ControlView, graph::GraphView};
 use gpui::*;
 use prelude::FluentBuilder;
-use ui::{bounds_updater, styled_ext::StyledExt, theme::ActiveTheme, z_stack};
+use ui::{
+    ActiveTheme, StyledExt,
+    utils::{bounds_updater, z_stack},
+};
 
 pub struct NodeMeasurements {
     pub width: Pixels,
@@ -47,72 +49,64 @@ pub struct NodeView<D: GraphDef + 'static> {
 }
 
 impl<D: GraphDef + 'static> NodeView<D> {
-    pub fn build(
+    pub fn new(
         node_id: NodeId,
         graph_view: Entity<GraphView<D>>,
         graph: Entity<crate::Graph<D>>,
         window: &mut Window,
-        cx: &mut App,
-    ) -> Entity<Self> {
-        cx.new(move |cx| {
-            let node = graph.read(cx).node(&node_id);
-            let template = graph.read(cx).template(node.template_id()).clone();
+        cx: &mut Context<Self>,
+    ) -> Self {
+        let node = graph.read(cx).node(&node_id);
+        let template = graph.read(cx).template(node.template_id()).clone();
 
-            let inputs = template
-                .inputs()
-                .iter()
-                .cloned()
-                .map(|input| {
-                    let socket = InputSocket::new(node_id, input.id().to_owned());
-                    let value = graph.read(cx).input_value(&socket);
-                    InputView::build(input, node_id, value.clone(), graph_view.clone(), window, cx)
-                })
-                .collect();
+        let inputs = template
+            .inputs()
+            .iter()
+            .cloned()
+            .map(|input| {
+                let socket = InputSocket::new(node_id, input.id().to_owned());
+                let value = graph.read(cx).input_value(&socket).clone();
+                cx.new(|cx| InputView::new(input, node_id, value, graph_view.clone(), window, cx))
+            })
+            .collect();
 
-            let outputs = template
-                .outputs()
-                .iter()
-                .cloned()
-                .map(|output| OutputView::build(output, node_id, graph_view.clone(), cx))
-                .collect();
+        let outputs = template
+            .outputs()
+            .iter()
+            .cloned()
+            .map(|output| cx.new(|cx| OutputView::new(output, node_id, graph_view.clone(), cx)))
+            .collect();
 
-            let controls = template
-                .controls()
-                .iter()
-                .cloned()
-                .map(|control| {
-                    let value = graph.read(cx).node_control_value(&node_id, control.id());
-                    let id = ElementId::Name(
-                        format!("node-control-{:?}-{}", node_id, control.id()).into(),
-                    );
+        let controls = template
+            .controls()
+            .iter()
+            .cloned()
+            .map(|control| {
+                let value = graph.read(cx).node_control_value(&node_id, control.id());
+                let id =
+                    ElementId::Name(format!("node-control-{:?}-{}", node_id, control.id()).into());
 
-                    let control_view = control.control().build_view(value.clone(), id, window, cx);
+                let control_view = control.control().view(value.clone(), id, window, cx);
 
-                    cx.subscribe(&control_view, {
-                        let graph = graph.clone();
-                        move |_control_view: &mut Self, _, event: &ControlEvent<D>, cx| match event
-                        {
-                            ControlEvent::Change(value) => {
-                                let value = value.clone();
-                                graph.update(cx, |graph, cx| {
-                                    graph.set_control_value(
-                                        &node_id,
-                                        control.id().to_owned(),
-                                        value,
-                                    );
-                                    cx.notify();
-                                })
-                            }
+                cx.subscribe(&control_view, {
+                    let graph = graph.clone();
+                    move |_control_view: &mut Self, _, event: &ControlEvent<D>, cx| match event {
+                        ControlEvent::Change(value) => {
+                            let value = value.clone();
+                            graph.update(cx, |graph, cx| {
+                                graph.set_control_value(&node_id, control.id().to_owned(), value);
+                                cx.notify();
+                            })
                         }
-                    })
-                    .detach();
-
-                    control_view
+                    }
                 })
-                .collect();
+                .detach();
 
-            Self { node_id, graph_view, inputs, outputs, controls }
-        })
+                control_view
+            })
+            .collect();
+
+        Self { node_id, graph_view, inputs, outputs, controls }
     }
 
     fn graph(&self, cx: &App) -> Entity<crate::Graph<D>> {
@@ -232,51 +226,45 @@ struct InputView<D: GraphDef + 'static> {
 }
 
 impl<D: GraphDef + 'static> InputView<D> {
-    pub fn build(
+    pub fn new(
         input: Input<D>,
         node_id: NodeId,
         value: D::Value,
         graph_view: Entity<GraphView<D>>,
         window: &mut Window,
-        cx: &mut App,
-    ) -> Entity<Self> {
-        cx.new(|cx| {
-            let socket = InputSocket::new(node_id, input.id().to_string());
-            let data_type = input.data_type().clone();
-            let id = ElementId::Name(format!("input-{}-{}", node_id.0, input.id()).into());
-            let control = input.control().build_view(value, id.clone(), window, cx);
+        cx: &mut Context<Self>,
+    ) -> Self {
+        let socket = InputSocket::new(node_id, input.id().to_string());
+        let data_type = input.data_type().clone();
+        let id = ElementId::Name(format!("input-{}-{}", node_id.0, input.id()).into());
+        let control = input.control().view(value, id.clone(), window, cx);
 
-            cx.subscribe(&control, {
-                let socket = socket.clone();
-                move |input_view: &mut Self, _, event: &ControlEvent<D>, cx| match event {
-                    ControlEvent::Change(value) => {
-                        let value = value.clone();
-                        let socket = socket.clone();
-                        input_view.graph_view.update(cx, move |graph_view, cx| {
-                            graph_view.graph().update(cx, |graph, cx| {
-                                graph.set_input_value(socket, value);
-                                cx.notify();
-                            })
-                        });
-                    }
+        cx.subscribe(&control, {
+            let socket = socket.clone();
+            move |input_view: &mut Self, _, event: &ControlEvent<D>, cx| match event {
+                ControlEvent::Change(value) => {
+                    let value = value.clone();
+                    let socket = socket.clone();
+                    input_view.graph_view.update(cx, move |graph_view, cx| {
+                        graph_view.graph().update(cx, |graph, cx| {
+                            graph.set_input_value(socket, value);
+                            cx.notify();
+                        })
+                    });
                 }
-            })
-            .detach();
-
-            Self {
-                input,
-                node_id,
-                graph_view: graph_view.clone(),
-                id,
-                connector: ConnectorView::build(
-                    AnySocket::Input(socket),
-                    data_type,
-                    graph_view,
-                    cx,
-                ),
-                control,
             }
         })
+        .detach();
+
+        Self {
+            input,
+            node_id,
+            graph_view: graph_view.clone(),
+            id,
+            connector: cx
+                .new(|_cx| ConnectorView::new(AnySocket::Input(socket), data_type, graph_view)),
+            control,
+        }
     }
 }
 
@@ -310,27 +298,21 @@ struct OutputView<D: GraphDef + 'static> {
 }
 
 impl<D: GraphDef + 'static> OutputView<D> {
-    pub fn build(
+    pub fn new(
         output: Output<D>,
         node_id: NodeId,
         graph_view: Entity<GraphView<D>>,
-        cx: &mut App,
-    ) -> Entity<Self> {
-        cx.new(|cx| {
-            let socket = OutputSocket::new(node_id, output.id().to_string());
-            let data_type = output.data_type().clone();
-            let id = ElementId::Name(format!("output-{}-{}", node_id.0, output.id()).into());
-            Self {
-                output,
-                id,
-                connector: ConnectorView::build(
-                    AnySocket::Output(socket),
-                    data_type,
-                    graph_view,
-                    cx,
-                ),
-            }
-        })
+        cx: &mut Context<Self>,
+    ) -> Self {
+        let socket = OutputSocket::new(node_id, output.id().to_string());
+        let data_type = output.data_type().clone();
+        let id = ElementId::Name(format!("output-{}-{}", node_id.0, output.id()).into());
+        Self {
+            output,
+            id,
+            connector: cx
+                .new(|_cx| ConnectorView::new(AnySocket::Output(socket), data_type, graph_view)),
+        }
     }
 }
 
@@ -364,13 +346,12 @@ struct ConnectorView<D: GraphDef + 'static> {
 impl<D: GraphDef + 'static> ConnectorView<D> {
     const HITBOX_SIZE: Pixels = px(22.0);
 
-    pub fn build(
+    pub fn new(
         socket: AnySocket,
         data_type: D::DataType,
         graph_view: Entity<GraphView<D>>,
-        cx: &mut App,
-    ) -> Entity<Self> {
-        cx.new(|_cx| Self { socket, data_type, hovering: false, graph_view })
+    ) -> Self {
+        Self { socket, data_type, hovering: false, graph_view }
     }
 }
 

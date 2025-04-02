@@ -1,5 +1,8 @@
 use super::{TextInput, TextInputEvent};
-use crate::{Disableable, InteractiveContainer, bounds_updater, theme::ActiveTheme, z_stack};
+use crate::{
+    ActiveTheme, Disableable, InteractiveContainer,
+    utils::{bounds_updater, z_stack},
+};
 use gpui::*;
 use prelude::FluentBuilder;
 

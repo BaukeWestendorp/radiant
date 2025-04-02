@@ -2,18 +2,26 @@ use super::node::{NodeMeasurements, NodeView};
 use crate::{AnySocket, DataType as _, GraphDef, InputSocket, NodeId, OutputSocket};
 use gpui::*;
 use std::collections::HashMap;
-use ui::{Draggable, DraggableEvent, z_stack};
+use ui::{Draggable, DraggableEvent, utils::z_stack};
 
-const KEY_CONTEXT: &str = "Graph";
+pub mod actions {
+    use gpui::{App, KeyBinding, actions};
 
-actions!(graph, [DeleteSelectedNodes, SelectAllNodes]);
+    pub const KEY_CONTEXT: &str = "Graph";
 
-pub fn init(cx: &mut App) {
-    cx.bind_keys([
-        KeyBinding::new("backspace", DeleteSelectedNodes, Some(KEY_CONTEXT)),
-        KeyBinding::new("delete", DeleteSelectedNodes, Some(KEY_CONTEXT)),
-        KeyBinding::new("secondary-a", SelectAllNodes, Some(KEY_CONTEXT)),
-    ]);
+    actions!(graph, [DeleteSelectedNodes, SelectAllNodes]);
+
+    pub fn init(cx: &mut App) {
+        bind_keys(cx);
+    }
+
+    fn bind_keys(cx: &mut App) {
+        cx.bind_keys([
+            KeyBinding::new("backspace", DeleteSelectedNodes, Some(KEY_CONTEXT)),
+            KeyBinding::new("delete", DeleteSelectedNodes, Some(KEY_CONTEXT)),
+            KeyBinding::new("secondary-a", SelectAllNodes, Some(KEY_CONTEXT)),
+        ]);
+    }
 }
 
 pub struct GraphView<D: GraphDef> {
@@ -56,7 +64,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
                 ElementId::NamedInteger("node".into(), node_id.0 as usize),
                 *self.graph.read(cx).node_position(&node_id),
                 Some(snap_size),
-                NodeView::build(node_id, graph_view, self.graph.clone(), window, cx),
+                cx.new(|cx| NodeView::new(node_id, graph_view, self.graph.clone(), window, cx)),
             )
         });
 
@@ -349,7 +357,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
 
         let template = self.graph.read(cx).template(node.template_id());
         let node_position =
-            ui::snap_point(*self.graph.read(cx).visual_node_position(&node_id), snap_size);
+            ui::utils::snap_point(*self.graph.read(cx).visual_node_position(&node_id), snap_size);
 
         let socket_index = match socket {
             AnySocket::Input(input) => template
@@ -390,7 +398,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
 
     fn handle_delete_selected_nodes(
         &mut self,
-        _: &DeleteSelectedNodes,
+        _: &actions::DeleteSelectedNodes,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -403,7 +411,8 @@ impl<D: GraphDef + 'static> GraphView<D> {
 
     fn handle_select_all_nodes(
         &mut self,
-        _: &SelectAllNodes,
+        _: &actions::SelectAllNodes,
+
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -422,7 +431,7 @@ impl<D: GraphDef + 'static> Render for GraphView<D> {
 
         z_stack([nodes, edges, new_edge])
             .track_focus(&self.focus_handle)
-            .key_context(KEY_CONTEXT)
+            .key_context(actions::KEY_CONTEXT)
             .size_full()
             .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
             .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up))

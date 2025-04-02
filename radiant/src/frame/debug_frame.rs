@@ -1,19 +1,14 @@
+use crate::effect_graph::EffectGraph;
 use flow::ProcessingContext;
 use gpui::*;
-
-use crate::effect_graph::EffectGraph;
 
 pub struct DebugFrame {
     effect_graph: Entity<EffectGraph>,
 }
 
 impl DebugFrame {
-    pub fn build(
-        effect_graph: Entity<EffectGraph>,
-        _window: &mut Window,
-        cx: &mut App,
-    ) -> Entity<Self> {
-        cx.new(|_cx| Self { effect_graph })
+    pub fn new(effect_graph: Entity<EffectGraph>) -> Self {
+        Self { effect_graph }
     }
 }
 

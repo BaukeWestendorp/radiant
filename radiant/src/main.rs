@@ -10,7 +10,8 @@ fn main() {
 
     Application::new().run(|cx: &mut App| {
         ui::init(cx);
-        flow::gpui::init(cx);
+        ui::actions::init(cx);
+        flow::gpui::actions::init(cx);
         actions::init(cx);
 
         let window_options = WindowOptions {
@@ -26,7 +27,7 @@ fn main() {
 
         cx.open_window(window_options, |window, cx| {
             window.set_rem_size(px(14.0));
-            RadiantApp::build(window, cx)
+            cx.new(|cx| RadiantApp::new(window, cx))
         })
         .expect("should open window");
     });

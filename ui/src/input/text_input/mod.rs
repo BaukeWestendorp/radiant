@@ -7,83 +7,84 @@ use std::ops::Range;
 mod blink;
 mod element;
 
-const KEY_CONTEXT: &str = "TextInput";
+pub mod actions {
+    use gpui::{App, KeyBinding, actions};
 
-// TODO:
-// - History
+    pub const KEY_CONTEXT: &str = "TextInput";
 
-actions!(
-    input,
-    [
-        MoveLeft,
-        MoveRight,
-        MoveToPreviousWord,
-        MoveToNextWord,
-        MoveToStartOfLine,
-        MoveToEndOfLine,
-        SelectLeft,
-        SelectRight,
-        SelectToStartOfWord,
-        SelectToEndOfWord,
-        SelectToStartOfLine,
-        SelectToEndOfLine,
-        SelectAll,
-        Copy,
-        Cut,
-        Paste,
-        Backspace,
-        Delete,
-        Submit
-    ]
-);
+    actions!(
+        text_input,
+        [
+            MoveLeft,
+            MoveRight,
+            MoveToPreviousWord,
+            MoveToNextWord,
+            MoveToStartOfLine,
+            MoveToEndOfLine,
+            SelectLeft,
+            SelectRight,
+            SelectToStartOfWord,
+            SelectToEndOfWord,
+            SelectToStartOfLine,
+            SelectToEndOfLine,
+            SelectAll,
+            Copy,
+            Cut,
+            Paste,
+            Backspace,
+            Delete,
+            Submit
+        ]
+    );
 
-pub fn init(cx: &mut App) {
-    macro_rules! kb {
-        (macos = $kb_macos:literal, other = $kb_other:literal, $action:expr) => {
-            if cfg!(target_os = "macos") {
+    pub fn init(cx: &mut App) {
+        macro_rules! kb {
+            (macos = $kb_macos:literal, other = $kb_other:literal, $action:expr) => {
+                if cfg!(target_os = "macos") {
+                    KeyBinding::new($kb_macos, $action, Some(KEY_CONTEXT))
+                } else {
+                    KeyBinding::new($kb_other, $action, Some(KEY_CONTEXT))
+                }
+            };
+            (macos = $kb_macos:literal, $action:expr) => {
+                #[cfg(target_os = "macos")]
                 KeyBinding::new($kb_macos, $action, Some(KEY_CONTEXT))
-            } else {
-                KeyBinding::new($kb_other, $action, Some(KEY_CONTEXT))
-            }
-        };
-        (macos = $kb_macos:literal, $action:expr) => {
-            #[cfg(target_os = "macos")]
-            KeyBinding::new($kb_macos, $action, Some(KEY_CONTEXT))
-        };
-        (all = $kb:literal, $action:expr) => {
-            kb!(macos = $kb, other = $kb, $action)
-        };
-    }
+            };
+            (all = $kb:literal, $action:expr) => {
+                kb!(macos = $kb, other = $kb, $action)
+            };
+        }
 
-    cx.bind_keys([
-        kb!(all = "left", MoveLeft),
-        kb!(all = "right", MoveRight),
-        //
-        kb!(all = "home", MoveToStartOfLine),
-        kb!(all = "pageup", MoveToStartOfLine),
-        kb!(macos = "cmd-left", MoveToStartOfLine),
-        //
-        kb!(all = "pagedown", MoveToEndOfLine),
-        kb!(all = "end", MoveToEndOfLine),
-        kb!(macos = "cmd-right", MoveToEndOfLine),
-        //
-        kb!(all = "shift-left", SelectLeft),
-        kb!(all = "shift-right", SelectRight),
-        kb!(all = "backspace", Backspace),
-        kb!(all = "delete", Delete),
-        kb!(all = "enter", Submit),
-        //
-        kb!(macos = "shift-cmd-left", other = "shift-home", SelectToStartOfLine),
-        kb!(macos = "shift-cmd-right", other = "shift-end", SelectToEndOfLine),
-        kb!(macos = "alt-left", other = "ctrl-left", MoveToPreviousWord),
-        kb!(macos = "alt-right", other = "ctrl-right", MoveToNextWord),
-        kb!(macos = "alt-shift-left", other = "shift-ctrl-left", SelectToStartOfWord),
-        kb!(macos = "alt-shift-right", other = "shift-ctrl-right", SelectToEndOfWord),
-        kb!(all = "secondary-a", SelectAll),
-        kb!(all = "secondary-c", Copy),
-        kb!(all = "secondary-x", Cut),
-        kb!(all = "secondary-v", Paste),
-    ]);
+        cx.bind_keys([
+            kb!(all = "left", MoveLeft),
+            kb!(all = "right", MoveRight),
+            //
+            kb!(all = "home", MoveToStartOfLine),
+            kb!(all = "pageup", MoveToStartOfLine),
+            kb!(macos = "cmd-left", MoveToStartOfLine),
+            //
+            kb!(all = "pagedown", MoveToEndOfLine),
+            kb!(all = "end", MoveToEndOfLine),
+            kb!(macos = "cmd-right", MoveToEndOfLine),
+            //
+            kb!(all = "shift-left", SelectLeft),
+            kb!(all = "shift-right", SelectRight),
+            kb!(all = "backspace", Backspace),
+            kb!(all = "delete", Delete),
+            kb!(all = "enter", Submit),
+            //
+            kb!(macos = "shift-cmd-left", other = "shift-home", SelectToStartOfLine),
+            kb!(macos = "shift-cmd-right", other = "shift-end", SelectToEndOfLine),
+            kb!(macos = "alt-left", other = "ctrl-left", MoveToPreviousWord),
+            kb!(macos = "alt-right", other = "ctrl-right", MoveToNextWord),
+            kb!(macos = "alt-shift-left", other = "shift-ctrl-left", SelectToStartOfWord),
+            kb!(macos = "alt-shift-right", other = "shift-ctrl-right", SelectToEndOfWord),
+            kb!(all = "secondary-a", SelectAll),
+            kb!(all = "secondary-c", Copy),
+            kb!(all = "secondary-x", Cut),
+            kb!(all = "secondary-v", Paste),
+        ]);
+    }
 }
 
 pub type Validator = dyn Fn(&str) -> bool;
@@ -441,7 +442,12 @@ impl TextInput {
 }
 
 impl TextInput {
-    fn handle_move_left(&mut self, _: &MoveLeft, _window: &mut Window, cx: &mut Context<Self>) {
+    fn handle_move_left(
+        &mut self,
+        _: &actions::MoveLeft,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if !self.has_selection() {
             self.move_left(cx);
         } else {
@@ -451,7 +457,12 @@ impl TextInput {
         self.unselect(cx);
     }
 
-    fn handle_move_right(&mut self, _: &MoveRight, _window: &mut Window, cx: &mut Context<Self>) {
+    fn handle_move_right(
+        &mut self,
+        _: &actions::MoveRight,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if !self.has_selection() {
             self.move_right(cx);
         } else {
@@ -463,7 +474,7 @@ impl TextInput {
 
     fn handle_move_to_start_of_word(
         &mut self,
-        _: &MoveToPreviousWord,
+        _: &actions::MoveToPreviousWord,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -476,7 +487,7 @@ impl TextInput {
 
     fn handle_move_to_end_of_word(
         &mut self,
-        _: &MoveToNextWord,
+        _: &actions::MoveToNextWord,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -489,7 +500,7 @@ impl TextInput {
 
     fn handle_move_to_start_of_line(
         &mut self,
-        _: &MoveToStartOfLine,
+        _: &actions::MoveToStartOfLine,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -502,7 +513,7 @@ impl TextInput {
 
     fn handle_move_to_end_of_line(
         &mut self,
-        _: &MoveToEndOfLine,
+        _: &actions::MoveToEndOfLine,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -513,7 +524,12 @@ impl TextInput {
         self.unselect(cx);
     }
 
-    fn handle_select_left(&mut self, _: &SelectLeft, _window: &mut Window, cx: &mut Context<Self>) {
+    fn handle_select_left(
+        &mut self,
+        _: &actions::SelectLeft,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         self.start_selection();
         self.move_left(cx);
         self.commit_current_selection(cx);
@@ -521,7 +537,7 @@ impl TextInput {
 
     fn handle_select_right(
         &mut self,
-        _: &SelectRight,
+        _: &actions::SelectRight,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -532,7 +548,7 @@ impl TextInput {
 
     fn handle_select_to_start_of_word(
         &mut self,
-        _: &SelectToStartOfWord,
+        _: &actions::SelectToStartOfWord,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -543,7 +559,7 @@ impl TextInput {
 
     fn handle_select_to_end_of_word(
         &mut self,
-        _: &SelectToEndOfWord,
+        _: &actions::SelectToEndOfWord,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -554,7 +570,7 @@ impl TextInput {
 
     fn handle_select_to_start_of_line(
         &mut self,
-        _: &SelectToStartOfLine,
+        _: &actions::SelectToStartOfLine,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -565,7 +581,7 @@ impl TextInput {
 
     fn handle_select_to_end_of_line(
         &mut self,
-        _: &SelectToEndOfLine,
+        _: &actions::SelectToEndOfLine,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -574,15 +590,20 @@ impl TextInput {
         self.commit_current_selection(cx);
     }
 
-    fn handle_select_all(&mut self, _: &SelectAll, _window: &mut Window, cx: &mut Context<Self>) {
+    fn handle_select_all(
+        &mut self,
+        _: &actions::SelectAll,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         self.select_all(cx);
     }
 
-    fn handle_copy(&mut self, _: &Copy, _window: &mut Window, cx: &mut Context<Self>) {
+    fn handle_copy(&mut self, _: &actions::Copy, _window: &mut Window, cx: &mut Context<Self>) {
         self.copy_selection(cx);
     }
 
-    fn handle_cut(&mut self, _: &Cut, window: &mut Window, cx: &mut Context<Self>) {
+    fn handle_cut(&mut self, _: &actions::Cut, window: &mut Window, cx: &mut Context<Self>) {
         if self.disabled {
             return;
         }
@@ -590,7 +611,7 @@ impl TextInput {
         self.cut_selection(window, cx);
     }
 
-    fn handle_paste(&mut self, _: &Paste, window: &mut Window, cx: &mut Context<Self>) {
+    fn handle_paste(&mut self, _: &actions::Paste, window: &mut Window, cx: &mut Context<Self>) {
         if self.disabled {
             return;
         }
@@ -598,7 +619,12 @@ impl TextInput {
         self.paste(window, cx);
     }
 
-    fn handle_backspace(&mut self, _: &Backspace, window: &mut Window, cx: &mut Context<Self>) {
+    fn handle_backspace(
+        &mut self,
+        _: &actions::Backspace,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if self.disabled {
             return;
         }
@@ -613,7 +639,7 @@ impl TextInput {
         self.replace_text_in_range(Some(utf16_range), "", window, cx);
     }
 
-    fn handle_delete(&mut self, _: &Delete, window: &mut Window, cx: &mut Context<Self>) {
+    fn handle_delete(&mut self, _: &actions::Delete, window: &mut Window, cx: &mut Context<Self>) {
         if self.disabled {
             return;
         }
@@ -628,7 +654,7 @@ impl TextInput {
         self.replace_text_in_range(Some(utf16_range), "", window, cx);
     }
 
-    fn handle_submit(&mut self, _: &Submit, _window: &mut Window, cx: &mut Context<Self>) {
+    fn handle_submit(&mut self, _: &actions::Submit, _window: &mut Window, cx: &mut Context<Self>) {
         cx.emit(TextInputEvent::Submit);
     }
 
@@ -828,7 +854,7 @@ impl Render for TextInput {
 
         div()
             .id(self.id.clone())
-            .key_context(KEY_CONTEXT)
+            .key_context(actions::KEY_CONTEXT)
             .track_focus(&self.focus_handle)
             .size_full()
             .px(self.padding_x)

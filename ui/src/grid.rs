@@ -1,5 +1,6 @@
 use gpui::*;
 
+/// Creates a canvas that draws a grid of dots.
 pub fn dot_grid(spacing: Pixels, color: impl Into<Background>) -> Canvas<()> {
     let color = color.into();
 
@@ -23,6 +24,7 @@ pub fn dot_grid(spacing: Pixels, color: impl Into<Background>) -> Canvas<()> {
     })
 }
 
+/// Creates a canvas that draws a grid of lines.
 pub fn line_grid(spacing: Pixels, color: impl Into<Background>) -> Canvas<()> {
     let color = color.into();
 
@@ -54,6 +56,7 @@ pub fn line_grid(spacing: Pixels, color: impl Into<Background>) -> Canvas<()> {
     })
 }
 
+/// Creates a canvas that draws a grid of lines with a specified offset.
 pub fn scrollable_line_grid(
     offset: &Point<Pixels>,
     spacing: Pixels,

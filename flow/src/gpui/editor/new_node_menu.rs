@@ -1,23 +1,26 @@
+use super::GraphEditorView;
+use crate::{AnySocket, DataType, Graph, GraphDef, InputSocket, Node, OutputSocket, TemplateId};
 use gpui::*;
 use prelude::FluentBuilder as _;
-use ui::{
-    TextField, TextInputEvent,
-    theme::{ActiveTheme as _, InteractiveColor as _},
-};
+use ui::{ActiveTheme as _, InteractiveColor as _, TextField, TextInputEvent};
 
-use crate::{AnySocket, DataType, Graph, GraphDef, InputSocket, Node, OutputSocket, TemplateId};
+pub mod actions {
+    use gpui::{App, KeyBinding, actions};
 
-use super::GraphEditorView;
+    pub const KEY_CONTEXT: &str = "NewNodeMenu";
 
-const KEY_CONTEXT: &str = "NewNodeMenu";
+    actions!(new_node_menu, [SelectNextItem, SelectPreviousItem]);
 
-actions!(new_node_menu, [SelectNextItem, SelectPreviousItem]);
+    pub fn init(cx: &mut App) {
+        bind_keys(cx);
+    }
 
-pub fn init(cx: &mut App) {
-    cx.bind_keys([
-        KeyBinding::new("up", SelectPreviousItem, Some(KEY_CONTEXT)),
-        KeyBinding::new("down", SelectNextItem, Some(KEY_CONTEXT)),
-    ]);
+    fn bind_keys(cx: &mut App) {
+        cx.bind_keys([
+            KeyBinding::new("up", SelectPreviousItem, Some(KEY_CONTEXT)),
+            KeyBinding::new("down", SelectNextItem, Some(KEY_CONTEXT)),
+        ]);
+    }
 }
 
 pub struct NewNodeMenuView<D: GraphDef> {
@@ -189,7 +192,7 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
 
     fn handle_select_next_item(
         &mut self,
-        _event: &SelectNextItem,
+        _event: &actions::SelectNextItem,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -205,7 +208,7 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
     }
     fn handle_select_previous_item(
         &mut self,
-        _event: &SelectPreviousItem,
+        _event: &actions::SelectPreviousItem,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -304,7 +307,7 @@ impl<D: GraphDef + 'static> Render for NewNodeMenuView<D> {
         .size_full();
 
         div()
-            .key_context(KEY_CONTEXT)
+            .key_context(actions::KEY_CONTEXT)
             .absolute()
             .w_80()
             .h_64()

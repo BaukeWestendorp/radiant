@@ -1,21 +1,29 @@
 mod container;
 mod element;
-mod input;
-pub mod styled_ext;
-pub mod theme;
-
 mod grid;
-mod utils;
+mod input;
+mod styled_ext;
+mod theme;
+
+pub mod utils;
 
 pub use container::*;
 pub use element::*;
 pub use grid::*;
 pub use input::*;
-pub use utils::*;
+pub use styled_ext::*;
+pub use theme::*;
+
+pub mod actions {
+    use gpui::App;
+
+    pub fn init(cx: &mut App) {
+        super::input::actions::init(cx);
+    }
+}
 
 pub fn init(cx: &mut gpui::App) {
     theme::Theme::init(cx);
-    input::init(cx);
 }
 
 pub trait Disableable {

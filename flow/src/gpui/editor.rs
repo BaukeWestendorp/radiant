@@ -7,21 +7,29 @@ use crate::{AnySocket, Graph, GraphDef};
 use gpui::*;
 use new_node_menu::NewNodeMenuView;
 use prelude::FluentBuilder;
-use ui::{Pannable, PannableEvent, theme::ActiveTheme, z_stack};
+use ui::{ActiveTheme, Pannable, PannableEvent, utils::z_stack};
 
 mod new_node_menu;
 
-const KEY_CONTEXT: &str = "GraphEditor";
+pub mod actions {
+    use gpui::{App, KeyBinding, actions};
 
-actions!(graph_editor, [OpenNewNodeMenu, CloseNewNodeMenu]);
+    pub const KEY_CONTEXT: &str = "GraphEditor";
 
-pub fn init(cx: &mut App) {
-    new_node_menu::init(cx);
+    actions!(graph_editor, [OpenNewNodeMenu, CloseNewNodeMenu]);
 
-    cx.bind_keys([
-        KeyBinding::new("space", OpenNewNodeMenu, Some(KEY_CONTEXT)),
-        KeyBinding::new("escape", CloseNewNodeMenu, Some(KEY_CONTEXT)),
-    ]);
+    pub fn init(cx: &mut App) {
+        super::new_node_menu::actions::init(cx);
+
+        bind_keys(cx);
+    }
+
+    fn bind_keys(cx: &mut App) {
+        cx.bind_keys([
+            KeyBinding::new("space", OpenNewNodeMenu, Some(KEY_CONTEXT)),
+            KeyBinding::new("escape", CloseNewNodeMenu, Some(KEY_CONTEXT)),
+        ]);
+    }
 }
 
 pub struct GraphEditorView<D: GraphDef> {
@@ -37,53 +45,40 @@ pub struct GraphEditorView<D: GraphDef> {
 }
 
 impl<D: GraphDef + 'static> GraphEditorView<D> {
-    pub fn build(graph: Entity<Graph<D>>, window: &mut Window, cx: &mut App) -> Entity<Self> {
+    pub fn new(graph: Entity<Graph<D>>, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let focus_handle = cx.focus_handle();
 
         let graph_view =
             cx.new(|cx| GraphView::new(graph.clone(), focus_handle.clone(), window, cx));
 
-        let editor_view = cx.new(|cx| {
-            cx.subscribe(&graph, |_editor, _graph_view, event: &GraphEvent, cx| {
-                cx.emit(event.clone())
-            })
+        cx.subscribe(&graph, |_editor, _graph_view, event: &GraphEvent, cx| cx.emit(event.clone()))
             .detach();
 
-            cx.subscribe(&graph_view, |_editor, _graph_view, event: &VisualGraphEvent, cx| {
-                cx.emit(event.clone())
-            })
-            .detach();
+        cx.subscribe(&graph_view, |_editor, _graph_view, event: &VisualGraphEvent, cx| {
+            cx.emit(event.clone())
+        })
+        .detach();
 
-            let graph_offset = *graph.read(cx).offset();
-            let pannable = cx.new(|_cx| Pannable::new("graph", graph_offset, graph_view.clone()));
+        let graph_offset = *graph.read(cx).offset();
+        let pannable = cx.new(|_cx| Pannable::new("graph", graph_offset, graph_view.clone()));
 
-            cx.subscribe(&pannable, |editor: &mut Self, _pannable, event: &PannableEvent, cx| {
-                match event {
-                    PannableEvent::OffsetChanged(position) => {
-                        editor.visual_graph_offset = *position;
-                    }
-                    PannableEvent::OffsetCommitted(position) => {
-                        editor.graph().update(cx, |graph, cx| {
-                            graph.set_offset(*position);
-                            cx.notify();
-                        });
-                    }
+        cx.subscribe(&pannable, |editor: &mut Self, _pannable, event: &PannableEvent, cx| {
+            match event {
+                PannableEvent::OffsetChanged(position) => {
+                    editor.visual_graph_offset = *position;
                 }
-            })
-            .detach();
-
-            Self {
-                graph_view: pannable,
-                new_node_menu_view: None,
-                graph,
-                visual_graph_offset: graph_offset,
-                focus_handle,
-                selection_corners: None,
+                PannableEvent::OffsetCommitted(position) => {
+                    editor.graph().update(cx, |graph, cx| {
+                        graph.set_offset(*position);
+                        cx.notify();
+                    });
+                }
             }
-        });
+        })
+        .detach();
 
         window
-            .subscribe(&editor_view, cx, {
+            .subscribe(&cx.entity(), cx, {
                 move |_editor, event: &GraphEvent, window, cx| match event {
                     GraphEvent::NodeAdded(node_id) => {
                         graph_view.update(cx, |graph, cx| {
@@ -102,7 +97,7 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
             .detach();
 
         window
-            .subscribe(&editor_view, cx, {
+            .subscribe(&cx.entity(), cx, {
                 move |editor, event: &VisualGraphEvent, window, cx| match event {
                     VisualGraphEvent::EdgeSourceRequested { target } => {
                         editor.update(cx, |editor, cx| {
@@ -126,7 +121,14 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
             })
             .detach();
 
-        editor_view
+        Self {
+            graph_view: pannable,
+            new_node_menu_view: None,
+            graph,
+            visual_graph_offset: graph_offset,
+            focus_handle,
+            selection_corners: None,
+        }
     }
 
     pub fn graph(&self) -> Entity<Graph<D>> {
@@ -172,7 +174,7 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
 impl<D: GraphDef + 'static> GraphEditorView<D> {
     fn handle_open_new_node_menu(
         &mut self,
-        _: &OpenNewNodeMenu,
+        _: &actions::OpenNewNodeMenu,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -181,7 +183,7 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
 
     fn handle_close_new_node_menu(
         &mut self,
-        _: &CloseNewNodeMenu,
+        _: &actions::CloseNewNodeMenu,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -289,7 +291,7 @@ impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
                 .unwrap_or_else(|| cx.new(|_cx| EmptyView).into_any_element()),
         ])
         .track_focus(&self.focus_handle)
-        .key_context(KEY_CONTEXT)
+        .key_context(actions::KEY_CONTEXT)
         .relative()
         .size_full()
         .overflow_hidden()

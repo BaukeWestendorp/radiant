@@ -43,3 +43,9 @@ impl<D: GraphDef> Node<D> {
         &mut self.control_values
     }
 }
+
+impl<D: GraphDef> From<&Template<D>> for Node<D> {
+    fn from(value: &Template<D>) -> Self {
+        Self::new(value)
+    }
+}

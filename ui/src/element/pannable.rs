@@ -1,6 +1,5 @@
-use gpui::*;
-
 use crate::utils::z_stack;
+use gpui::*;
 
 pub struct Pannable {
     id: ElementId,

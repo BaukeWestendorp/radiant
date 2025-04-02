@@ -5,9 +5,13 @@ pub mod editor;
 pub(crate) mod graph;
 pub(crate) mod node;
 
-pub fn init(cx: &mut App) {
-    graph::init(cx);
-    editor::init(cx);
+pub mod actions {
+    use gpui::App;
+
+    pub fn init(cx: &mut App) {
+        super::graph::actions::init(cx);
+        super::editor::actions::init(cx);
+    }
 }
 
 #[derive(Debug, Clone)]

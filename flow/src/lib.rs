@@ -3,11 +3,11 @@ pub mod serde;
 
 pub mod gpui;
 
-pub(crate) mod error;
-pub(crate) mod graph;
-pub(crate) mod node;
-pub(crate) mod socket;
-pub(crate) mod template;
+mod error;
+mod graph;
+mod node;
+mod socket;
+mod template;
 
 pub use error::*;
 pub use graph::*;
