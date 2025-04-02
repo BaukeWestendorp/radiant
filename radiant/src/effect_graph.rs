@@ -2,12 +2,11 @@ use flow::{
     Graph, Input, NodeControl, Output, ProcessingContext, Template, Value as _,
     gpui::{ControlEvent, ControlView},
 };
-use gpui::AppContext;
+use gpui::*;
 use ui::{NumberField, TextInputEvent};
 
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, flow::Value, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
-#[derive(Debug, Clone, flow::Value)]
 #[value(graph_def = GraphDef, data_type = DataType)]
 pub enum Value {
     #[value(color = 0xCE39FF)]
@@ -32,10 +31,10 @@ impl flow::Control<GraphDef> for Control {
     fn build_view(
         &self,
         value: Value,
-        id: gpui::ElementId,
-        window: &mut gpui::Window,
-        cx: &mut gpui::App,
-    ) -> gpui::Entity<ControlView> {
+        id: ElementId,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> Entity<ControlView> {
         ControlView::new(cx, |cx| match self {
             Control::Slider { min, max, step } => {
                 let field = cx.new(|cx| {
@@ -82,13 +81,12 @@ impl flow::Control<GraphDef> for Control {
 
                 field.into()
             }
-            Control::Checkbox => cx.new(|_cx| gpui::EmptyView).into(),
+            Control::Checkbox => cx.new(|_cx| EmptyView).into(),
         })
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct GraphDef;
 
 impl flow::GraphDef for GraphDef {
@@ -110,9 +108,9 @@ pub fn get_graph() -> EffectGraph {
             vec![],
             vec![Output::new("value", "Value", DataType::Number)],
             vec![NodeControl::new("value", "Value", Value::Number(0.0), Control::Float)],
-            Box::new(|_, control_values, output_values, _pcx: &mut ProcessingContext<GraphDef>| {
-                let value = control_values.value("value").expect("should get value from control");
-                output_values.set_value("value", value.clone());
+            Box::new(|_in, cv, ov, _pcx: &mut ProcessingContext<GraphDef>| {
+                let value = cv.value("value").expect("should get value from control");
+                ov.set_value("value", value.clone());
             }),
         ),
         Template::new(
@@ -124,14 +122,14 @@ pub fn get_graph() -> EffectGraph {
             ],
             vec![Output::new("sum", "Sum", DataType::Number)],
             vec![],
-            Box::new(|input_values, _, output_values, _: &mut ProcessingContext<GraphDef>| {
-                let a = input_values.value("a").expect("should get value");
+            Box::new(|iv, _cv, ov, _: &mut ProcessingContext<GraphDef>| {
+                let a = iv.value("a").expect("should get value");
                 let Some(Value::Number(a)) = a.cast_to(&DataType::Number) else { panic!() };
 
-                let b = input_values.value("b").expect("should get value");
+                let b = iv.value("b").expect("should get value");
                 let Some(Value::Number(b)) = b.cast_to(&DataType::Number) else { panic!() };
 
-                output_values.set_value("sum", Value::Number(a + b));
+                ov.set_value("sum", Value::Number(a + b));
             }),
         ),
         Template::new(
@@ -145,8 +143,8 @@ pub fn get_graph() -> EffectGraph {
             )],
             vec![],
             vec![],
-            Box::new(|input_values, _, _, pcx: &mut ProcessingContext<GraphDef>| {
-                let value = input_values.value("value").expect("should get value");
+            Box::new(|iv, _cv, _ov, pcx: &mut ProcessingContext<GraphDef>| {
+                let value = iv.value("value").expect("should get value");
                 let Some(Value::Number(value)) = value.cast_to(&DataType::Number) else { panic!() };
                 pcx.value = value;
             }),
@@ -157,9 +155,9 @@ pub fn get_graph() -> EffectGraph {
             vec![],
             vec![Output::new("value", "Value", DataType::Boolean)],
             vec![NodeControl::new("value", "Value", Value::Boolean(false), Control::Checkbox)],
-            Box::new(|_, control_values, output_values, _pcx: &mut ProcessingContext<GraphDef>| {
-                let value = control_values.value("value").expect("should get value from control");
-                output_values.set_value("value", value.clone());
+            Box::new(|_iv, cv, ov, _pcx: &mut ProcessingContext<GraphDef>| {
+                let value = cv.value("value").expect("should get value from control");
+                ov.set_value("value", value.clone());
             }),
         ),
         Template::new(
@@ -181,20 +179,20 @@ pub fn get_graph() -> EffectGraph {
             ],
             vec![Output::new("result", "Result", DataType::Number)],
             vec![],
-            Box::new(|input_values, _, output_values, _pcx: &mut ProcessingContext<GraphDef>| {
-                let Some(number) = input_values.value("number") else { panic!() };
+            Box::new(|iv, _cv, ov, _pcx: &mut ProcessingContext<GraphDef>| {
+                let Some(number) = iv.value("number") else { panic!() };
                 let Some(Value::Number(number)) = number.cast_to(&DataType::Number) else {
                     panic!()
                 };
 
-                let Some(should_invert) = input_values.value("should_invert") else { panic!() };
+                let Some(should_invert) = iv.value("should_invert") else { panic!() };
                 let Some(Value::Boolean(should_invert)) = should_invert.cast_to(&DataType::Boolean)
                 else {
                     panic!()
                 };
 
                 let factor = if should_invert { -1.0 } else { 1.0 };
-                output_values.set_value("result", Value::Number(number * factor));
+                ov.set_value("result", Value::Number(number * factor));
             }),
         ),
     ]);
