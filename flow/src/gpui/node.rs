@@ -377,6 +377,7 @@ impl<D: GraphDef> ConnectorView<D> {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        cx.stop_propagation();
         self.graph_view
             .update(cx, |graph_view, cx| graph_view.set_new_edge_socket(&self.socket, cx))
     }
