@@ -10,20 +10,8 @@ use ui::{NumberField, TextInputEvent};
 #[value(graph_def = GraphDef, data_type = DataType)]
 pub enum Value {
     #[value(color = 0xCE39FF)]
-    #[cast(
-        target = Boolean,
-        map = |number: &f64| if *number == 0.0 { false } else { true }
-    )]
-    #[cast(
-        target = Number,
-        map = |number: &f64| if *number == 0.0 { 2.0 } else { 3.0 }
-    )]
     Number(f64),
     #[value(color = 0x1361FF)]
-    #[cast(
-        target = Number,
-        map = |bool: &bool| if *bool { 1.0 } else { 0.0 }
-    )]
     Boolean(bool),
 }
 

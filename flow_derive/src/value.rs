@@ -87,7 +87,6 @@ fn gen_impl_value(
         quote! {
             (Self::#variant_ident(_), <#graph_def as flow::GraphDef>::DataType::#variant_ident) => Some(self.clone()),
             #(#other_casts)*
-            _ => None,
         }
     });
 
@@ -102,6 +101,7 @@ fn gen_impl_value(
             fn cast_to(&self, to: &<#graph_def as flow::GraphDef>::DataType) -> Option<Value> {
                 match (self, to) {
                     #(#cast_to_arms)*
+                    _ => None,
                 }
             }
         }
