@@ -53,35 +53,43 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
             get_filtered_items(edge_start.as_ref(), search_field.read(cx).value(cx), &graph);
         let selected_item_ix = if items.is_empty() { None } else { Some(0) };
 
-        cx.subscribe(&search_field, {
-            let required_socket = edge_start.clone();
-            move |menu, _search_field, event, cx| match event {
-                TextInputEvent::Change(value) => {
-                    let items = get_filtered_items(required_socket.as_ref(), value, &graph);
-                    menu.selected_item_ix = if items.is_empty() { None } else { Some(0) };
-                    menu.items = items;
-                }
-                TextInputEvent::Submit => {
-                    if let Some(ix) = menu.selected_item_ix {
-                        menu.create_node(ix, cx);
+        let menu = cx.entity().clone();
+        window
+            .subscribe(&search_field, cx, {
+                let required_socket = edge_start.clone();
+                move |_text_field, event, window, cx| match event {
+                    TextInputEvent::Change(value) => {
+                        let items = get_filtered_items(required_socket.as_ref(), value, &graph);
+                        menu.update(cx, |menu, _cx| {
+                            menu.selected_item_ix = if items.is_empty() { None } else { Some(0) };
+                            menu.items = items;
+                        });
                     }
+                    TextInputEvent::Submit => menu.update(cx, |menu, cx| {
+                        if let Some(ix) = menu.selected_item_ix {
+                            menu.create_node(ix, window, cx);
+                        }
+                    }),
+                    _ => {}
                 }
-                _ => {}
-            }
-        })
-        .detach();
+            })
+            .detach();
 
         Self { position, editor_view, search_field, items, selected_item_ix, edge_start }
     }
 
-    pub fn close(&self, cx: &mut App) {
-        self.editor_view.update(cx, |editor, cx| editor.close_new_node_menu(cx));
+    pub fn close(&self, window: &mut Window, cx: &mut Context<Self>) {
+        cx.focus_view(&self.editor_view, window);
+        self.editor_view.update(cx, |editor, cx| {
+            editor.close_new_node_menu(cx);
+        });
     }
 
-    pub fn create_node(&mut self, item_ix: usize, cx: &mut Context<Self>) {
-        let graph_offset = *self.editor_view.read(cx).graph().read(cx).offset();
+    pub fn create_node(&mut self, item_ix: usize, window: &mut Window, cx: &mut Context<Self>) {
+        let graph = self.editor_view.read(cx).graph();
+        let graph_offset = *graph.read(cx).offset();
         let position = self.position - graph_offset;
-        self.editor_view.read(cx).graph().update(cx, |graph, cx| {
+        graph.update(cx, |graph, cx| {
             let item = &self.items[item_ix];
             let template_id = &item.template_id;
             let template = graph.template(template_id);
@@ -115,7 +123,7 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
                 None => {}
             }
         });
-        self.close(cx);
+        self.close(window, cx);
     }
 }
 
@@ -184,10 +192,10 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
     fn handle_mouse_down_out(
         &mut self,
         _event: &MouseDownEvent,
-        _window: &mut Window,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.close(cx);
+        self.close(window, cx);
     }
 
     fn handle_select_next_item(
@@ -272,8 +280,8 @@ impl<D: GraphDef + 'static> Render for NewNodeMenuView<D> {
                             .cursor_pointer()
                             .on_mouse_down(
                                 MouseButton::Left,
-                                cx.listener(move |menu, _, _window, cx| {
-                                    menu.create_node(ix, cx);
+                                cx.listener(move |menu, _, window, cx| {
+                                    menu.create_node(ix, window, cx);
                                 }),
                             )
                             .child(div().flex().gap_2().child(item.node_label).when_some(
