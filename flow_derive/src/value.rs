@@ -1,7 +1,8 @@
 use darling::{FromDeriveInput, FromVariant};
 use quote::quote;
 use syn::{
-    Data, DataEnum, DeriveInput, Ident, Path, Variant, parse_macro_input, spanned::Spanned as _,
+    Data, DataEnum, DeriveInput, Expr, Ident, Path, Variant, parse_macro_input,
+    spanned::Spanned as _,
 };
 
 #[derive(FromDeriveInput)]
@@ -15,6 +16,15 @@ struct Attrs {
 #[darling(attributes(value))]
 struct VariantMeta {
     color: u32,
+}
+
+#[derive(FromVariant)]
+#[darling(attributes(cast))]
+struct VariantCast {
+    #[darling(multiple)]
+    target: Vec<Ident>,
+    #[darling(multiple)]
+    map: Vec<Expr>,
 }
 
 pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
@@ -59,6 +69,28 @@ fn gen_impl_value(
 ) -> proc_macro2::TokenStream {
     let variant_idents = variants.iter().map(|variant| &variant.ident);
 
+    let cast_to_arms = variants.iter().map(|variant| {
+        let VariantCast { target, map } =
+            VariantCast::from_variant(variant).expect("Failed to parse variant metadata");
+
+        let variant_ident = &variant.ident;
+
+        let other_casts = target.iter().zip(map).map(|(target, map)| {
+            quote! {
+                (Self::#variant_ident(value), <#graph_def as flow::GraphDef>::DataType::#target) => {
+                    let v = (#map)(value);
+                    Some(Self::#target(v))
+                }
+            }
+        });
+
+        quote! {
+            (Self::#variant_ident(_), <#graph_def as flow::GraphDef>::DataType::#variant_ident) => Some(self.clone()),
+            #(#other_casts)*
+            _ => None,
+        }
+    });
+
     quote! {
         impl flow::Value<#graph_def> for #value {
             fn data_type(&self) -> <#graph_def as flow::GraphDef>::DataType {
@@ -69,7 +101,7 @@ fn gen_impl_value(
 
             fn cast_to(&self, to: &<#graph_def as flow::GraphDef>::DataType) -> Option<Value> {
                 match (self, to) {
-                    _ => todo!(),
+                    #(#cast_to_arms)*
                 }
             }
         }
