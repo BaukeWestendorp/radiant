@@ -82,6 +82,7 @@ impl Render for Draggable {
             .child(self.child.clone())
             .on_drag(self.id.clone(), |_, _, _, cx| cx.new(|_cx| EmptyView))
             .on_drag_move(cx.listener(Self::handle_drag_move))
+            .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
             .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
             .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up))
     }

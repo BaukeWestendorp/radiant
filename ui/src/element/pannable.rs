@@ -51,8 +51,9 @@ impl Pannable {
         &mut self,
         _event: &MouseDownEvent,
         _window: &mut Window,
-        _cx: &mut Context<Self>,
+        cx: &mut Context<Self>,
     ) {
+        cx.stop_propagation();
         self.dragging = true;
     }
 
