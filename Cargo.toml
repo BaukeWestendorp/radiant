@@ -1,5 +1,5 @@
 [workspace]
-members = ["flow", "flow_derive", "frames", "radiant", "ui"]
+members = ["dmx", "flow", "flow_derive", "frames", "radiant", "ui"]
 resolver = "3"
 
 [workspace.package]
@@ -16,6 +16,7 @@ frames = { path = "frames" }
 ui = { path = "ui" }
 flow = { path = "flow" }
 flow_derive = { path = "flow_derive" }
+dmx = { path = "dmx" }
 
 
 # serialization
