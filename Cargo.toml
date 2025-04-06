@@ -1,5 +1,12 @@
 [workspace]
-members = ["dmx", "flow", "flow_derive", "frames", "radiant", "ui"]
+members = [
+    "crates/dmx",
+    "crates/flow",
+    "crates/flow_derive",
+    "crates/frames",
+    "crates/radiant",
+    "crates/ui",
+]
 resolver = "3"
 
 [workspace.package]
@@ -12,12 +19,11 @@ single_match = "allow"
 
 [workspace.dependencies]
 # crates
-frames = { path = "frames" }
-ui = { path = "ui" }
-flow = { path = "flow" }
-flow_derive = { path = "flow_derive" }
-dmx = { path = "dmx" }
-
+frames = { path = "crates/frames" }
+ui = { path = "crates/ui" }
+flow = { path = "crates/flow" }
+flow_derive = { path = "crates/flow_derive" }
+dmx = { path = "crates/dmx" }
 
 # serialization
 serde = "1"
