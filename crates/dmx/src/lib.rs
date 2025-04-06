@@ -59,6 +59,32 @@ impl Channel {
     }
 }
 
+impl From<Channel> for u16 {
+    fn from(channel: Channel) -> Self {
+        channel.0
+    }
+}
+
+impl From<u16> for Channel {
+    fn from(channel: u16) -> Self {
+        Self::new(channel).unwrap()
+    }
+}
+
+impl std::ops::Deref for Channel {
+    type Target = u16;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for Channel {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl std::fmt::Display for Channel {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", self.0)
@@ -87,6 +113,32 @@ impl<'de> ::serde::Deserialize<'de> for Channel {
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Value(pub u8);
+
+impl From<Value> for u8 {
+    fn from(value: Value) -> Self {
+        value.0
+    }
+}
+
+impl From<u8> for Value {
+    fn from(value: u8) -> Self {
+        Value(value)
+    }
+}
+
+impl std::ops::Deref for Value {
+    type Target = u8;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for Value {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -195,6 +247,34 @@ impl UniverseId {
         }
 
         Ok(Self(id))
+    }
+}
+
+impl TryFrom<u16> for UniverseId {
+    type Error = Error;
+
+    fn try_from(id: u16) -> Result<Self, Self::Error> {
+        Self::new(id)
+    }
+}
+
+impl From<UniverseId> for u16 {
+    fn from(universe_id: UniverseId) -> Self {
+        universe_id.0
+    }
+}
+
+impl std::ops::Deref for UniverseId {
+    type Target = u16;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for UniverseId {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
@@ -312,6 +392,12 @@ impl Universe {
     /// ```
     pub fn clear(&mut self) {
         self.values = [Value::default(); 512];
+    }
+}
+
+impl From<Universe> for Vec<u8> {
+    fn from(universe: Universe) -> Self {
+        universe.values.iter().map(|v| v.0).collect()
     }
 }
 

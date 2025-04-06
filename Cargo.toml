@@ -4,7 +4,7 @@ members = [
     "crates/flow",
     "crates/flow_derive",
     "crates/frames",
-    "crates/radiant",
+    "crates/radiant", "crates/sacn",
     "crates/ui",
 ]
 resolver = "3"

@@ -1,0 +1,20 @@
+[package]
+name = "sacn"
+version.workspace = true
+edition.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# crates
+dmx.workspace = true
+
+# errors
+thiserror.workspace = true
+
+# uuid
+uuid = { version = "1.16.0", features = ["v4"] }
+
+# network
+socket2 = "0.5.9"

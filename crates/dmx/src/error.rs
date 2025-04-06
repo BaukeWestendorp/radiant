@@ -1,7 +1,7 @@
 use crate::UniverseId;
 
 /// Error type for various error conditions that can occur during DMX operations.
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum Error {
     /// Error when a channel value is invalid
     #[error("Channel has invalid value: {0}. Should be in the range 1..=512.")]
