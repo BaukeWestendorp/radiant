@@ -417,28 +417,40 @@ mod tests {
     use crate::{Address, Channel, UniverseId};
 
     #[test]
-    fn address_new_valid() {
-        let address = Address::new(UniverseId::new(2).unwrap(), Channel::new(100).unwrap());
-        assert_eq!(address.universe, UniverseId::new(2).unwrap());
-        assert_eq!(address.channel, Channel::new(100).unwrap());
+    fn universe_id_value_in_range() {
+        let universe_id = Channel::new(3);
+        assert!(universe_id.is_ok());
     }
 
     #[test]
-    fn address_new_channel_value_in_range() {
+    fn universe_id_value_too_low() {
+        let universe_id = Channel::new(0);
+        assert!(universe_id.is_err());
+    }
+
+    #[test]
+    fn channel_value_in_range() {
         let channel = Channel::new(300);
         assert!(channel.is_ok());
     }
 
     #[test]
-    fn address_new_channel_value_too_high() {
+    fn channel_value_too_high() {
         let channel = Channel::new(513);
         assert!(channel.is_err());
     }
 
     #[test]
-    fn address_new_channel_value_too_low() {
+    fn channel_value_too_low() {
         let channel = Channel::new(0);
         assert!(channel.is_err());
+    }
+
+    #[test]
+    fn address_new_valid() {
+        let address = Address::new(UniverseId::new(2).unwrap(), Channel::new(100).unwrap());
+        assert_eq!(address.universe, UniverseId::new(2).unwrap());
+        assert_eq!(address.channel, Channel::new(100).unwrap());
     }
 
     #[test]
