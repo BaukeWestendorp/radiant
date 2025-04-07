@@ -12,3 +12,5 @@ mod packet;
 pub use error::Error;
 
 pub type ComponentIdentifier = uuid::Uuid;
+
+pub const DEFAULT_PORT: u16 = 5568;

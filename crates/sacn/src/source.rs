@@ -1,6 +1,6 @@
 use crate::{
-    ComponentIdentifier, Error,
-    packet::{ACN_SDT_MULTICAST_PORT, DataPacket, Pdu},
+    ComponentIdentifier, DEFAULT_PORT, Error,
+    packet::{DataPacket, Pdu},
 };
 use dmx::{Multiverse, UniverseId};
 use socket2::{Domain, SockAddr, Socket, Type};
@@ -12,7 +12,7 @@ use std::{
     time::Duration,
 };
 
-const DMX_UPDATE_DELAY: Duration = Duration::from_millis(500);
+const DMX_UPDATE_DELAY: Duration = Duration::from_millis(44);
 
 pub struct Source {
     config: SourceConfig,
@@ -102,7 +102,7 @@ impl Default for SourceConfig {
             name: "New sACN Source".to_string(),
 
             ip: Ipv4Addr::UNSPECIFIED.into(),
-            port: ACN_SDT_MULTICAST_PORT,
+            port: DEFAULT_PORT,
 
             priority: 100,
             preview_data: false,

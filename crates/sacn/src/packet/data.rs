@@ -1,9 +1,8 @@
+use super::{PACKET_IDENTIFIER, POSTAMBLE_SIZE, PREAMBLE_SIZE, VECTOR_ROOT_DATA};
 use crate::{ComponentIdentifier, Error, source::SourceConfig};
 
-use super::{
-    ACN_PACKET_IDENTIFIER, POSTAMBLE_SIZE, PREAMBLE_SIZE, VECTOR_DATA_PACKET,
-    VECTOR_DMP_SET_PROPERTY, VECTOR_ROOT_DATA,
-};
+const VECTOR_DMP_SET_PROPERTY: u8 = 0x02;
+const VECTOR_DATA_PACKET: u32 = 0x00000002;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DataPacket {
@@ -70,7 +69,7 @@ impl RootLayer {
         let mut bytes = Vec::with_capacity(54);
         bytes.extend(PREAMBLE_SIZE.to_be_bytes());
         bytes.extend(POSTAMBLE_SIZE.to_be_bytes());
-        bytes.extend(ACN_PACKET_IDENTIFIER);
+        bytes.extend(PACKET_IDENTIFIER);
         bytes.extend(flags_and_length(pdu_len - 16).to_be_bytes());
         bytes.extend(VECTOR_ROOT_DATA.to_be_bytes());
         bytes.extend(self.cid.as_bytes());
