@@ -15,4 +15,7 @@ pub enum Error {
     InvalidPriority(u8),
     #[error("Invalid source name length: {0}. Must be between 0 and 64.")]
     InvalidSourceNameLength(usize),
+
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
 }

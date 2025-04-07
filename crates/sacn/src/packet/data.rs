@@ -2,7 +2,7 @@ use crate::{ComponentIdentifier, Error, source::SourceConfig};
 
 use super::{
     ACN_PACKET_IDENTIFIER, POSTAMBLE_SIZE, PREAMBLE_SIZE, VECTOR_DATA_PACKET,
-    VECTOR_DMP_SET_PROPERTY,
+    VECTOR_DMP_SET_PROPERTY, VECTOR_ROOT_DATA,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -15,23 +15,22 @@ pub struct DataPacket {
 impl DataPacket {
     pub fn new(
         config: &SourceConfig,
-        cid: ComponentIdentifier,
+        sequence_number: u8,
+        stream_terminated: bool,
+        universe: u16,
         data: Vec<u8>,
     ) -> Result<Self, Error> {
-        let seq_number = 0;
-        let stream_terminated = false;
-
         Ok(DataPacket {
-            root: RootLayer::new(cid),
+            root: RootLayer::new(config.cid),
             framing: FramingLayer::new(
                 &config.name,
                 config.priority,
                 config.sync_addr,
-                seq_number,
+                sequence_number,
                 config.preview_data,
                 stream_terminated,
                 config.force_synchronization,
-                config.universe.0,
+                universe,
             )?,
             dmp: DmpLayer::new(data)?,
         })
@@ -72,8 +71,8 @@ impl RootLayer {
         bytes.extend(PREAMBLE_SIZE.to_be_bytes());
         bytes.extend(POSTAMBLE_SIZE.to_be_bytes());
         bytes.extend(ACN_PACKET_IDENTIFIER);
-        bytes.extend(flags_and_length(pdu_len).to_be_bytes());
-        bytes.extend(VECTOR_DATA_PACKET.to_be_bytes());
+        bytes.extend(flags_and_length(pdu_len - 16).to_be_bytes());
+        bytes.extend(VECTOR_ROOT_DATA.to_be_bytes());
         bytes.extend(self.cid.as_bytes());
         bytes
     }
@@ -132,7 +131,7 @@ impl FramingLayer {
 
     pub fn to_bytes(&self, pdu_len: u16) -> Vec<u8> {
         let mut bytes = Vec::new();
-        bytes.extend(flags_and_length(pdu_len).to_be_bytes());
+        bytes.extend(flags_and_length(pdu_len - 38).to_be_bytes());
         bytes.extend(VECTOR_DATA_PACKET.to_be_bytes());
         bytes.extend(self.source_name);
         bytes.push(self.priority);
@@ -159,7 +158,7 @@ impl DmpLayer {
         const START_CODE: u8 = 0x00;
 
         let mut bytes = Vec::new();
-        bytes.extend(flags_and_length(pdu_len).to_be_bytes());
+        bytes.extend(flags_and_length(pdu_len - 115).to_be_bytes());
         bytes.push(VECTOR_DMP_SET_PROPERTY);
         bytes.push(0xa1);
         bytes.extend(0x0000u16.to_be_bytes());

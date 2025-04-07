@@ -35,7 +35,7 @@ pub use error::Error;
 /// ```
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize))]
-pub struct Channel(pub u16);
+pub struct Channel(u16);
 
 impl Channel {
     /// Creates a new [Channel] within the valid DMX range 1..=512.
@@ -224,7 +224,7 @@ impl std::fmt::Display for Address {
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize))]
-pub struct UniverseId(pub u16);
+pub struct UniverseId(u16);
 
 impl UniverseId {
     /// Creates a new universe ID from the given number.
@@ -471,6 +471,11 @@ impl Multiverse {
     /// Returns `None` if no universe exists with that ID.
     pub fn universe_mut(&mut self, id: &UniverseId) -> Option<&mut Universe> {
         self.universes.get_mut(id)
+    }
+
+    /// Returns an iterator over a reference to every [Universe] in the [Multiverse].
+    pub fn universes(&self) -> impl Iterator<Item = &Universe> {
+        self.universes.values()
     }
 
     /// Sets a value at a given [Address].
