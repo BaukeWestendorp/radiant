@@ -1,7 +1,7 @@
 use super::{RootLayer, flags_and_length, source_name_from_str};
 use crate::{ComponentIdentifier, Error, source::SourceConfig};
 
-pub const VECTOR_EXTENDED_DISCOVERY: u32 = 0x00000002;
+const VECTOR_EXTENDED_DISCOVERY: u32 = 0x00000002;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UniverseDiscoveryPacket {
@@ -47,8 +47,9 @@ impl super::Pdu for UniverseDiscoveryPacket {
         .concat()
     }
 
-    fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
-        todo!()
+    fn from_bytes(_bytes: &[u8]) -> Result<Self, Error> {
+        eprintln!("UniverseDiscoveryPacket::from_bytes not implemented");
+        Err(Error::InvalidPacket)
     }
 
     fn len(&self) -> u16 {

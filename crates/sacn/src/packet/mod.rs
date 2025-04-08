@@ -8,11 +8,11 @@ mod data;
 mod discovery;
 mod sync;
 
-pub const ROOT_PREAMBLE_SIZE: u16 = 0x0010;
-pub const ROOT_POSTAMBLE_SIZE: u16 = 0x0000;
-pub const ROOT_VECTOR_ROOT_DATA: u32 = 0x00000004;
-pub const ROOT_VECTOR_ROOT_EXTENDED: u32 = 0x00000008;
-pub const ROOT_PACKET_IDENTIFIER: [u8; 12] =
+const ROOT_PREAMBLE_SIZE: u16 = 0x0010;
+const ROOT_POSTAMBLE_SIZE: u16 = 0x0000;
+const ROOT_VECTOR_ROOT_DATA: u32 = 0x00000004;
+const ROOT_VECTOR_ROOT_EXTENDED: u32 = 0x00000008;
+const ROOT_PACKET_IDENTIFIER: [u8; 12] =
     [0x41, 0x53, 0x43, 0x2d, 0x45, 0x31, 0x2e, 0x31, 0x37, 0x00, 0x00, 0x00];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -54,13 +54,51 @@ pub(crate) struct RootLayer {
 }
 
 impl RootLayer {
+    pub const SIZE: usize = 38;
+
     pub fn new(cid: ComponentIdentifier, extended: bool) -> Self {
         let vector = if extended { ROOT_VECTOR_ROOT_EXTENDED } else { ROOT_VECTOR_ROOT_DATA };
         RootLayer { cid, vector }
     }
 
+    pub fn from_bytes(bytes: &[u8], extended: bool) -> Result<Self, Error> {
+        // E1.31 5.1 Preamble Size
+        let preamble_size = u16::from_be_bytes([bytes[0], bytes[1]]);
+        if preamble_size != ROOT_PREAMBLE_SIZE {
+            return Err(Error::InvalidPreambleSize(preamble_size));
+        }
+
+        // E1.31 5.2 Post-amble Size
+        let post_amble_size = u16::from_be_bytes([bytes[2], bytes[3]]);
+        if post_amble_size != ROOT_POSTAMBLE_SIZE {
+            return Err(Error::InvalidPostambleSize(post_amble_size));
+        }
+
+        // E1.31 5.3 ACN Packet Identifier
+        let packet_identifier = &bytes[4..16];
+        if packet_identifier != ROOT_PACKET_IDENTIFIER {
+            return Err(Error::InvalidAcnPacketIdentifier);
+        }
+
+        // E1.31 5.5 Vector
+        let vector = &bytes[18..22];
+        let vector = u32::from_be_bytes([vector[0], vector[1], vector[2], vector[3]]);
+        if extended && vector != ROOT_VECTOR_ROOT_EXTENDED {
+            return Err(Error::InvalidExtendedRootVector(vector));
+        }
+        if !extended && vector != ROOT_VECTOR_ROOT_DATA {
+            return Err(Error::InvalidRootVector(vector));
+        }
+
+        // E1.31 5.6 CID
+        let cid = ComponentIdentifier::from_slice(&bytes[22..38])
+            .map_err(|_| Error::InvalidComponentId)?;
+
+        Ok(RootLayer { cid, vector })
+    }
+
     pub fn to_bytes(&self, pdu_len: u16) -> Vec<u8> {
-        let mut bytes = Vec::with_capacity(54);
+        let mut bytes = Vec::with_capacity(Self::SIZE);
         bytes.extend(ROOT_PREAMBLE_SIZE.to_be_bytes());
         bytes.extend(ROOT_POSTAMBLE_SIZE.to_be_bytes());
         bytes.extend(ROOT_PACKET_IDENTIFIER);

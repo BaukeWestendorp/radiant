@@ -1,7 +1,7 @@
 use super::{RootLayer, flags_and_length};
 use crate::{ComponentIdentifier, Error, source::SourceConfig};
 
-pub const VECTOR_EXTENDED_SYNCHRONIZATION: u32 = 0x00000001;
+const VECTOR_EXTENDED_SYNCHRONIZATION: u32 = 0x00000001;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SynchronizationPacket {
@@ -37,8 +37,9 @@ impl super::Pdu for SynchronizationPacket {
         vec![self.root.to_bytes(pdu_len), self.framing.to_bytes(pdu_len)].concat()
     }
 
-    fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
-        todo!()
+    fn from_bytes(_bytes: &[u8]) -> Result<Self, Error> {
+        eprintln!("SynchronizationPacket::from_bytes not implemented");
+        Err(Error::InvalidPacket)
     }
 
     fn len(&self) -> u16 {
