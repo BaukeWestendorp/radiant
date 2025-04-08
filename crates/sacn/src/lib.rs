@@ -10,7 +10,22 @@ pub mod source;
 pub mod packet;
 
 pub use error::Error;
+use uuid::Uuid;
 
-pub type ComponentIdentifier = uuid::Uuid;
+/// A CID ([ComponentIdentifier]) is a [Uuid].
+///
+/// Each piece of equipment should maintain the same CID for
+/// its entire lifetime (e.g. by storing it in read-only memory).
+/// This means that a particular component on the network can be identified
+/// as the same entity from day to day despite network
+/// interruptions, power down, or other disruptions.
+///
+/// However, in some systems there may be situations in which volatile components
+/// are dynamically created "on the fly" and,
+/// in these cases, the controlling process can generate CIDs as required.
+/// The choice of UUIDs for CIDs allows them to be generated as required
+/// without reference to any registration process or authority.
+pub type ComponentIdentifier = Uuid;
 
+/// The default port for sACN.
 pub const DEFAULT_PORT: u16 = 5568;
