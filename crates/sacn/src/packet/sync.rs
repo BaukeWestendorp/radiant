@@ -28,6 +28,18 @@ impl SynchronizationPacket {
     ) -> Result<Self, Error> {
         Self::new(config.cid, sequence_number, synchronization_address)
     }
+
+    pub fn cid(&self) -> &ComponentIdentifier {
+        &self.root.cid
+    }
+
+    pub fn sequence_number(&self) -> u8 {
+        self.framing.sequence_number
+    }
+
+    pub fn synchronization_address(&self) -> u16 {
+        self.framing.synchronization_address
+    }
 }
 
 impl super::Pdu for SynchronizationPacket {

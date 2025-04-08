@@ -33,6 +33,26 @@ impl UniverseDiscoveryPacket {
     ) -> Result<Self, Error> {
         Self::new(config.cid, &config.name, page, last, list_of_universes)
     }
+
+    pub fn cid(&self) -> &ComponentIdentifier {
+        &self.root.cid
+    }
+
+    pub fn source_name(&self) -> &str {
+        core::str::from_utf8(&self.framing.source_name).unwrap()
+    }
+
+    pub fn page(&self) -> u8 {
+        self.universe_discovery.page
+    }
+
+    pub fn last(&self) -> u8 {
+        self.universe_discovery.last
+    }
+
+    pub fn list_of_universes(&self) -> &[u8] {
+        &self.universe_discovery.list_of_universes
+    }
 }
 
 impl super::Pdu for UniverseDiscoveryPacket {

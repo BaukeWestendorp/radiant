@@ -7,6 +7,10 @@ const ADDRESS_INCREMENT: u16 = 0x0001;
 const FIRST_PROPERTY_ADDRESS: u16 = 0x0000;
 const ADDRESS_TYPE_AND_DATA_TYPE: u8 = 0xa1;
 
+const PREVIEW_DATA_BIT: u8 = 0x80;
+const STREAM_TERMINATED_BIT: u8 = 0x40;
+const FORCE_SYNCHRONIZATION_BIT: u8 = 0x20;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DataPacket {
     root: RootLayer,
@@ -62,6 +66,46 @@ impl DataPacket {
             universe,
             data,
         )
+    }
+
+    pub fn cid(&self) -> &ComponentIdentifier {
+        &self.root.cid
+    }
+
+    pub fn source_name(&self) -> &str {
+        core::str::from_utf8(&self.framing.source_name).unwrap()
+    }
+
+    pub fn priority(&self) -> u8 {
+        self.framing.priority
+    }
+
+    pub fn synchronization_address(&self) -> u16 {
+        self.framing.synchronization_address
+    }
+
+    pub fn preview_data(&self) -> bool {
+        self.framing.options & PREVIEW_DATA_BIT == PREVIEW_DATA_BIT
+    }
+
+    pub fn stream_terminated(&self) -> bool {
+        self.framing.options & STREAM_TERMINATED_BIT == STREAM_TERMINATED_BIT
+    }
+
+    pub fn force_synchronization(&self) -> bool {
+        self.framing.options & FORCE_SYNCHRONIZATION_BIT == FORCE_SYNCHRONIZATION_BIT
+    }
+
+    pub fn universe(&self) -> u16 {
+        self.framing.universe
+    }
+
+    pub fn values_start_code(&self) -> Option<u8> {
+        self.dmp.property_values.get(0).copied()
+    }
+
+    pub fn data(&self) -> &[u8] {
+        &self.dmp.property_values[1..]
     }
 }
 
@@ -124,9 +168,16 @@ impl FramingLayer {
             return Err(Error::InvalidPriority(priority));
         }
 
-        let options = (preview_data as u8) << 7
-            | (stream_terminated as u8) << 6
-            | (force_synchronization as u8) << 5;
+        let mut options = 0;
+        if preview_data {
+            options |= PREVIEW_DATA_BIT;
+        }
+        if stream_terminated {
+            options |= STREAM_TERMINATED_BIT;
+        }
+        if force_synchronization {
+            options |= FORCE_SYNCHRONIZATION_BIT;
+        }
 
         Ok(FramingLayer {
             source_name,
