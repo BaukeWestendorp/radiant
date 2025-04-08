@@ -26,4 +26,7 @@ pub enum Error {
     /// [std::io::Error] wrapper.
     #[error(transparent)]
     Io(#[from] std::io::Error),
+    /// Invalid packet.
+    #[error("Invalid packet")]
+    InvalidPacket,
 }

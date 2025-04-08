@@ -15,8 +15,34 @@ pub const ROOT_VECTOR_ROOT_EXTENDED: u32 = 0x00000008;
 pub const ROOT_PACKET_IDENTIFIER: [u8; 12] =
     [0x41, 0x53, 0x43, 0x2d, 0x45, 0x31, 0x2e, 0x31, 0x37, 0x00, 0x00, 0x00];
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Packet {
+    Data(DataPacket),
+    Discovery(UniverseDiscoveryPacket),
+    Sync(SynchronizationPacket),
+}
+
+impl Packet {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        if let Ok(data_packet) = DataPacket::from_bytes(bytes) {
+            return Ok(Packet::Data(data_packet));
+        }
+        if let Ok(discovery_packet) = UniverseDiscoveryPacket::from_bytes(bytes) {
+            return Ok(Packet::Discovery(discovery_packet));
+        }
+        if let Ok(sync_packet) = SynchronizationPacket::from_bytes(bytes) {
+            return Ok(Packet::Sync(sync_packet));
+        }
+        Err(Error::InvalidPacket)
+    }
+}
+
 pub trait Pdu {
     fn to_bytes(&self) -> Vec<u8>;
+
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Error>
+    where
+        Self: Sized;
 
     fn len(&self) -> u16;
 }

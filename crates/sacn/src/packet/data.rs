@@ -74,6 +74,10 @@ impl super::Pdu for DataPacket {
         .concat()
     }
 
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        todo!()
+    }
+
     fn len(&self) -> u16 {
         126 + self.dmp.data.len() as u16
     }

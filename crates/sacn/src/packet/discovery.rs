@@ -3,6 +3,7 @@ use crate::{ComponentIdentifier, Error, source::SourceConfig};
 
 pub const VECTOR_EXTENDED_DISCOVERY: u32 = 0x00000002;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UniverseDiscoveryPacket {
     root: RootLayer,
     framing: FramingLayer,
@@ -46,11 +47,16 @@ impl super::Pdu for UniverseDiscoveryPacket {
         .concat()
     }
 
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        todo!()
+    }
+
     fn len(&self) -> u16 {
         120 + self.universe_discovery.list_of_universes.len() as u16
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct FramingLayer {
     source_name: [u8; 64],
 }
@@ -72,6 +78,7 @@ impl FramingLayer {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct UniverseDiscoveryLayer {
     /// Packet Number.
     page: u8,

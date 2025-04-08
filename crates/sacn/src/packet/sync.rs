@@ -3,6 +3,7 @@ use crate::{ComponentIdentifier, Error, source::SourceConfig};
 
 pub const VECTOR_EXTENDED_SYNCHRONIZATION: u32 = 0x00000001;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SynchronizationPacket {
     root: RootLayer,
     framing: FramingLayer,
@@ -36,11 +37,16 @@ impl super::Pdu for SynchronizationPacket {
         vec![self.root.to_bytes(pdu_len), self.framing.to_bytes(pdu_len)].concat()
     }
 
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        todo!()
+    }
+
     fn len(&self) -> u16 {
         49
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct FramingLayer {
     sequence_number: u8,
     synchronization_address: u16,

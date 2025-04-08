@@ -5,6 +5,7 @@
 //! TODO: List features.
 
 mod error;
+pub mod receiver;
 pub mod source;
 
 pub mod packet;
