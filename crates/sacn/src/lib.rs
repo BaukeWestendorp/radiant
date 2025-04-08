@@ -1,3 +1,5 @@
+#![warn(missing_docs)]
+
 //! # sACN
 //! This library provides a Rust interface for working with sACN.
 //!

@@ -3,6 +3,9 @@ use crate::{ComponentIdentifier, Error, source::SourceConfig};
 
 const VECTOR_EXTENDED_SYNCHRONIZATION: u32 = 0x00000001;
 
+/// Represents an E1.31 Synchronization Packet.
+///
+/// This packed contains only universe synchronization information and no additional data.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SynchronizationPacket {
     root: RootLayer,
@@ -10,6 +13,7 @@ pub struct SynchronizationPacket {
 }
 
 impl SynchronizationPacket {
+    /// Creates a new [SynchronizationPacket].
     pub fn new(
         cid: ComponentIdentifier,
         sequence_number: u8,
@@ -21,6 +25,7 @@ impl SynchronizationPacket {
         })
     }
 
+    /// Creates a new [SynchronizationPacket] from a [SourceConfig].
     pub fn from_source_config(
         config: &SourceConfig,
         sequence_number: u8,
@@ -29,14 +34,17 @@ impl SynchronizationPacket {
         Self::new(config.cid, sequence_number, synchronization_address)
     }
 
+    /// The [ComponentIdentifier] in this packet.
     pub fn cid(&self) -> &ComponentIdentifier {
         &self.root.cid
     }
 
+    /// The Sequence Number in this packet.
     pub fn sequence_number(&self) -> u8 {
         self.framing.sequence_number
     }
 
+    /// The Synchronization Address in this packet.
     pub fn synchronization_address(&self) -> u16 {
         self.framing.synchronization_address
     }

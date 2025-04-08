@@ -1,3 +1,7 @@
+//! An sACN Receiver.
+//!
+//! Responsible for receiving and processing sACN packets.
+
 use std::{
     net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr},
     sync::{Arc, Mutex},
@@ -16,12 +20,16 @@ use crate::{
 const _NETWORK_DATA_LOSS_TIMEOUT: Duration = Duration::from_millis(2500);
 const _UNIVERSE_DISCOVERY_INTERVAL: Duration = Duration::from_secs(10);
 
+/// A sACN receiver.
+///
+/// Responsible for receiving and processing sACN packets.
 pub struct Receiver {
     config: ReceiverConfig,
     inner: Arc<Inner>,
 }
 
 impl Receiver {
+    /// Creates a new [Receiver].
     pub fn new(config: ReceiverConfig) -> Self {
         let domain = if config.ip.is_ipv4() { Domain::IPV4 } else { Domain::IPV6 };
         let socket = Socket::new(domain, Type::DGRAM, None).unwrap();
@@ -36,18 +44,24 @@ impl Receiver {
         }
     }
 
+    /// Returns the [ReceiverConfig] for this [Receiver].
     pub fn config(&self) -> &ReceiverConfig {
         &self.config
     }
 
+    /// Returns the data received by this [Receiver] represented as a [Multiverse].
     pub fn data(&self) -> Multiverse {
         self.inner.data.lock().unwrap().clone()
     }
 
+    /// Returns whether this [Receiver] is currently synchronizing.
     pub fn is_synchronizing(&self) -> bool {
         *self.inner.sync_state.lock().unwrap() == SynchronizationState::Synchronized
     }
 
+    /// Start this [Receiver].
+    ///
+    /// Calling this method will start the receiver in a new thread.
     pub fn start(&mut self) -> Result<(), Error> {
         let addr = SocketAddr::new(self.config.ip, self.config.port);
 
@@ -63,15 +77,19 @@ impl Receiver {
         Ok(())
     }
 
+    /// Stop this [Receiver].
     pub fn stop(&self) -> Result<(), Error> {
         self.inner.socket.shutdown(Shutdown::Both)?;
         Ok(())
     }
 }
 
+/// Configuration for a [Receiver].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReceiverConfig {
+    /// The IP address of the interface the receiver should bind to.
     pub ip: IpAddr,
+    /// The port the receiver should bind to.
     pub port: u16,
 }
 
@@ -81,10 +99,13 @@ impl Default for ReceiverConfig {
     }
 }
 
+/// Synchronization state of a [Receiver].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SynchronizationState {
+    /// This receiver is not handling synchronization packets.
     #[default]
     Unsynchronized,
+    /// This receiver is actively receiving synchronization packets within the minimum refresh window for DMX512-A packets.
     Synchronized,
 }
 

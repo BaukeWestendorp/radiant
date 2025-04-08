@@ -1,3 +1,7 @@
+//! An sACN Source.
+//!
+//! Responsible for sending sACN packets.
+
 use crate::{
     ComponentIdentifier, DEFAULT_PORT, Error,
     packet::{DataPacket, Pdu},
@@ -14,11 +18,15 @@ use std::{
 
 const DMX_SEND_INTERVAL: Duration = Duration::from_millis(44);
 
+/// An sACN Source.
+///
+/// Responsible for sending sACN packets.
 pub struct Source {
     inner: Arc<Inner>,
 }
 
 impl Source {
+    /// Creates a new [Source].
     pub fn new(config: SourceConfig) -> Result<Self, Error> {
         let domain = if config.ip.is_ipv4() { Domain::IPV4 } else { Domain::IPV6 };
         let socket = Socket::new(domain, Type::DGRAM, None)?;
@@ -26,14 +34,19 @@ impl Source {
         Ok(Source { inner: Arc::new(Inner::new(config, socket, Mutex::new(None))) })
     }
 
+    /// Returns the [SourceConfig] for this [Source].
     pub fn config(&self) -> &SourceConfig {
         &self.inner.config
     }
 
+    /// Sets the output data for this [Source].
     pub fn set_output(&mut self, data: Multiverse) {
         *self.inner.data.lock().unwrap() = Some(data);
     }
 
+    /// Starts the [Source].
+    ///
+    /// Calling this method will start the source in a new thread.
     pub fn start(&self) {
         thread::spawn({
             let inner = Arc::clone(&self.inner);
@@ -44,23 +57,33 @@ impl Source {
         });
     }
 
+    /// Stops the [Source].
     pub fn stop(&self) -> Result<(), Error> {
         self.inner.socket.shutdown(Shutdown::Both)?;
         Ok(())
     }
 }
 
+/// Configuration for a [Source].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SourceConfig {
+    /// [ComponentIdentifier] for the source.
     pub cid: ComponentIdentifier,
+    /// Name of the source.
     pub name: String,
 
+    /// IP address of the interface the source should send to .
     pub ip: IpAddr,
+    /// Port number of the source.
     pub port: u16,
 
+    /// The priority of the data packets sent by the source.
     pub priority: u8,
+    /// Whether the source should send preview data.
     pub preview_data: bool,
+    /// The synchronization universe of the source.
     pub synchronization_address: u16,
+    /// Whether the source should force synchronization.
     pub force_synchronization: bool,
 }
 

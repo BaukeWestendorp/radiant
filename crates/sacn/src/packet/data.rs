@@ -11,6 +11,9 @@ const PREVIEW_DATA_BIT: u8 = 0x80;
 const STREAM_TERMINATED_BIT: u8 = 0x40;
 const FORCE_SYNCHRONIZATION_BIT: u8 = 0x20;
 
+/// Represents an E1.31 Data Packet.
+///
+/// This packet carries a DMX512-A payload.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DataPacket {
     root: RootLayer,
@@ -19,6 +22,7 @@ pub struct DataPacket {
 }
 
 impl DataPacket {
+    /// Creates a new [DataPacket].
     pub fn new(
         cid: ComponentIdentifier,
         source_name: &str,
@@ -47,6 +51,7 @@ impl DataPacket {
         })
     }
 
+    /// Creates a new [DataPacket] from a [SourceConfig].
     pub fn from_source_config(
         config: &SourceConfig,
         sequence_number: u8,
@@ -68,42 +73,52 @@ impl DataPacket {
         )
     }
 
+    /// Returns the [ComponentIdentifier] in this packet.
     pub fn cid(&self) -> &ComponentIdentifier {
         &self.root.cid
     }
 
+    /// Returns the Source Name in this packet.
     pub fn source_name(&self) -> &str {
         core::str::from_utf8(&self.framing.source_name).unwrap()
     }
 
+    /// Returns the Priority in this packet.
     pub fn priority(&self) -> u8 {
         self.framing.priority
     }
 
+    /// Returns the synchronization address in this packet.
     pub fn synchronization_address(&self) -> u16 {
         self.framing.synchronization_address
     }
 
+    /// Returns the Preview Data flag in this packet.
     pub fn preview_data(&self) -> bool {
         self.framing.options & PREVIEW_DATA_BIT == PREVIEW_DATA_BIT
     }
 
+    /// Returns the Stream Terminated flag in this packet.
     pub fn stream_terminated(&self) -> bool {
         self.framing.options & STREAM_TERMINATED_BIT == STREAM_TERMINATED_BIT
     }
 
+    /// Returns the Force Synchronization flag in this packet.
     pub fn force_synchronization(&self) -> bool {
         self.framing.options & FORCE_SYNCHRONIZATION_BIT == FORCE_SYNCHRONIZATION_BIT
     }
 
+    /// Returns the Universe Number in this packet.
     pub fn universe(&self) -> u16 {
         self.framing.universe
     }
 
-    pub fn values_start_code(&self) -> Option<u8> {
+    /// Returns the DMX Start Code in this packet.
+    pub fn start_code(&self) -> Option<u8> {
         self.dmp.property_values.get(0).copied()
     }
 
+    /// Returns the DMX Data in this packet.
     pub fn data(&self) -> &[u8] {
         &self.dmp.property_values[1..]
     }

@@ -1,3 +1,10 @@
+//! # Packets
+//!
+//! sACN has three packet types:
+//! - Data Packets
+//! - Universe Discovery Packets
+//! - Synchronization Packets
+
 use crate::{ComponentIdentifier, Error};
 
 pub use data::DataPacket;
@@ -15,14 +22,30 @@ const ROOT_VECTOR_ROOT_EXTENDED: u32 = 0x00000008;
 const ROOT_PACKET_IDENTIFIER: [u8; 12] =
     [0x41, 0x53, 0x43, 0x2d, 0x45, 0x31, 0x2e, 0x31, 0x37, 0x00, 0x00, 0x00];
 
+/// An E1.31 Packet
+///
+/// Any of the set of packets containing E1.31 Data Packets, E1.31 Synchronization Packets, and E1.31 Universe Discovery Packets.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Packet {
+    /// E1.31 Data Packet
     Data(DataPacket),
+    /// E1.31 Universe Discovery Packet
     Discovery(UniverseDiscoveryPacket),
+    /// E1.31 Synchronization Packet
     Sync(SynchronizationPacket),
 }
 
 impl Packet {
+    /// Converts the packet into a network ordered byte vector.
+    pub fn to_bytes(&self) -> Vec<u8> {
+        match self {
+            Packet::Data(packet) => packet.to_bytes(),
+            Packet::Discovery(packet) => packet.to_bytes(),
+            Packet::Sync(packet) => packet.to_bytes(),
+        }
+    }
+
+    /// Converts a network ordered byte vector into a packet.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
         if let Ok(data_packet) = DataPacket::from_bytes(bytes) {
             return Ok(Packet::Data(data_packet));
@@ -37,13 +60,19 @@ impl Packet {
     }
 }
 
+/// [Pdu] (Protocol Data Unit) is a wrapper for packets in the ANSI E1.17.
+///
+/// This crate uses it to provide a common interface for working with every sACN packet.
 pub trait Pdu {
+    /// Converts the packet into a network ordered byte vector.
     fn to_bytes(&self) -> Vec<u8>;
 
+    /// Converts a network ordered byte vector into a packet.
     fn from_bytes(bytes: &[u8]) -> Result<Self, Error>
     where
         Self: Sized;
 
+    /// Returns the length of the PDU in bytes.
     fn len(&self) -> u16;
 }
 

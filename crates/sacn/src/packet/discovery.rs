@@ -3,6 +3,9 @@ use crate::{ComponentIdentifier, Error, source::SourceConfig};
 
 const VECTOR_EXTENDED_DISCOVERY: u32 = 0x00000002;
 
+/// Represents an E1.31 Universe Discovery Packet.
+///
+/// This packet contains a packed list of the universes upon which a source is actively operating.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UniverseDiscoveryPacket {
     root: RootLayer,
@@ -11,6 +14,7 @@ pub struct UniverseDiscoveryPacket {
 }
 
 impl UniverseDiscoveryPacket {
+    /// Creates a new [UniverseDiscoveryPacket].
     pub fn new(
         cid: ComponentIdentifier,
         source_name: &str,
@@ -25,6 +29,7 @@ impl UniverseDiscoveryPacket {
         })
     }
 
+    /// Creates a new [UniverseDiscoveryPacket] from a [SourceConfig].
     pub fn from_source_config(
         config: &SourceConfig,
         page: u8,
@@ -34,22 +39,27 @@ impl UniverseDiscoveryPacket {
         Self::new(config.cid, &config.name, page, last, list_of_universes)
     }
 
+    /// The [ComponentIdentifier] in this packet.
     pub fn cid(&self) -> &ComponentIdentifier {
         &self.root.cid
     }
 
+    /// The Source Name in this packet.
     pub fn source_name(&self) -> &str {
         core::str::from_utf8(&self.framing.source_name).unwrap()
     }
 
+    /// The Page Number in this packet.
     pub fn page(&self) -> u8 {
         self.universe_discovery.page
     }
 
+    /// The Last Page Number in this packet.
     pub fn last(&self) -> u8 {
         self.universe_discovery.last
     }
 
+    /// The List of Universes in this packet.
     pub fn list_of_universes(&self) -> &[u8] {
         &self.universe_discovery.list_of_universes
     }
