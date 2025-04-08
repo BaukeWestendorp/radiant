@@ -304,34 +304,28 @@ impl<'de> ::serde::Deserialize<'de> for UniverseId {
 ///
 /// ```
 /// # use dmx::{Universe, UniverseId, Value};
-/// let universe = Universe::new(UniverseId::new(1).unwrap());
+/// let universe = Universe::new();
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Universe {
-    id: UniverseId,
     #[cfg_attr(feature = "serde", serde(with = "serde_big_array::BigArray"))]
     values: [Value; 512],
 }
 
 impl Universe {
-    /// Creates a new universe with the given [UniverseId].
+    /// Creates a new universe.
     ///
     /// All values are initialized to 0.
     ///
     /// # Examples
     ///
     /// ```
-    /// # use dmx::{Universe, UniverseId};
-    /// let universe = Universe::new(UniverseId::new(1).unwrap());
+    /// # use dmx::Universe;
+    /// let universe = Universe::new();
     /// ```
-    pub fn new(id: UniverseId) -> Self {
-        Self { id, values: [Value::default(); 512] }
-    }
-
-    /// Returns the [UniverseId] of this [Universe].
-    pub fn id(&self) -> UniverseId {
-        self.id
+    pub fn new() -> Self {
+        Self { values: [Value::default(); 512] }
     }
 
     /// Get the value for the given channel.
@@ -339,8 +333,8 @@ impl Universe {
     /// # Examples
     ///
     /// ```
-    /// # use dmx::{Universe, UniverseId, Channel, Value};
-    /// let universe = Universe::new(UniverseId::new(1).unwrap());
+    /// # use dmx::{Universe, Channel, Value};
+    /// let universe = Universe::new();
     /// let channel = Channel::new(1).unwrap();
     /// assert_eq!(universe.get_value(&channel), Value(0));
     /// ```
@@ -353,8 +347,8 @@ impl Universe {
     /// # Examples
     ///
     /// ```
-    /// # use dmx::{Universe, UniverseId, Channel, Value};
-    /// let mut universe = Universe::new(UniverseId::new(1).unwrap());
+    /// # use dmx::{Universe, Channel, Value};
+    /// let mut universe = Universe::new();
     ///
     /// let channel = Channel::new(1).unwrap();
     /// universe.set_value(&channel, Value(128));
@@ -386,8 +380,8 @@ impl Universe {
     /// # Examples
     ///
     /// ```
-    /// # use dmx::{Universe, UniverseId};
-    /// let mut universe = Universe::new(UniverseId::new(1).unwrap());
+    /// # use dmx::Universe;
+    /// let mut universe = Universe::new();
     /// universe.clear();
     /// ```
     pub fn clear(&mut self) {
@@ -410,11 +404,12 @@ impl From<Universe> for Vec<u8> {
 /// let mut multiverse = Multiverse::new();
 ///
 /// // Add a universe
-/// let universe = Universe::new(UniverseId::new(1).unwrap());
-/// multiverse.create_universe(universe);
+/// let id = UniverseId::new(1).unwrap();
+/// let universe = Universe::new();
+/// multiverse.create_universe(id, universe);
 ///
 /// // Remove a universe
-/// let _removed_universe = multiverse.remove_universe(&UniverseId::new(1).unwrap());
+/// let _removed_universe = multiverse.remove_universe(&id);
 /// ```
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
@@ -428,6 +423,23 @@ impl Multiverse {
         Self { universes: HashMap::new() }
     }
 
+    /// Checks if a [Universe] with the given [UniverseId] exists in the [Multiverse].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use dmx::{Multiverse, Universe, UniverseId};
+    /// let mut multiverse = Multiverse::new();
+    /// let id = UniverseId::new(1).unwrap();
+    /// let universe = Universe::new();
+    /// multiverse.create_universe(id, universe);
+    ///
+    /// assert!(multiverse.has_universe(&id));
+    /// ```
+    pub fn has_universe(&self, id: &UniverseId) -> bool {
+        self.universes.contains_key(id)
+    }
+
     /// Creates a [Universe] and registers it in the [Multiverse].
     ///
     /// # Examples
@@ -435,24 +447,25 @@ impl Multiverse {
     /// ```
     /// # use dmx::{Multiverse, Universe, UniverseId};
     /// let mut multiverse = Multiverse::new();
-    /// multiverse.create_universe(Universe::new(UniverseId::new(1).unwrap()));
+    /// multiverse.create_universe(UniverseId::new(1).unwrap(), Universe::new());
     /// ```
-    pub fn create_universe(&mut self, universe: Universe) {
-        self.universes.insert(universe.id, universe);
+    pub fn create_universe(&mut self, id: UniverseId, universe: Universe) {
+        self.universes.insert(id, universe);
     }
 
     /// Removes a [Universe] with the given [UniverseId] from the [Multiverse].
     ///
-    /// Returns `Some(Universe)` if a universe with that ID was present, `None` otherwise.
+    /// Returns `Some(Universe)` if a universe for that ID was present, `None` otherwise.
     ///
     /// # Examples
     ///
     /// ```
     /// # use dmx::{Multiverse, Universe, UniverseId};
     /// let mut multiverse = Multiverse::new();
-    /// multiverse.create_universe(Universe::new(UniverseId::new(1).unwrap()));
+    /// let id = UniverseId::new(1).unwrap();
+    /// multiverse.create_universe(id, Universe::new());
     ///
-    /// let universe = multiverse.remove_universe(&UniverseId::new(1).unwrap());
+    /// let universe = multiverse.remove_universe(&id);
     /// assert!(universe.is_some());
     /// ```
     pub fn remove_universe(&mut self, id: &UniverseId) -> Option<Universe> {
@@ -474,8 +487,8 @@ impl Multiverse {
     }
 
     /// Returns an iterator over a reference to every [Universe] in the [Multiverse].
-    pub fn universes(&self) -> impl Iterator<Item = &Universe> {
-        self.universes.values()
+    pub fn universes(&self) -> impl Iterator<Item = (&UniverseId, &Universe)> {
+        self.universes.iter()
     }
 
     /// Sets a value at a given [Address].
@@ -487,9 +500,10 @@ impl Multiverse {
     /// ```
     /// # use dmx::{Multiverse, Universe, UniverseId, Address, Channel, Value};
     /// let mut multiverse = Multiverse::new();
-    /// multiverse.create_universe(Universe::new(UniverseId::new(1).unwrap()));
+    /// let id = UniverseId::new(1).unwrap();
+    /// multiverse.create_universe(id, Universe::new());
     ///
-    /// let address = Address::new(UniverseId::new(1).unwrap(), Channel::new(1).unwrap());
+    /// let address = Address::new(id, Channel::new(1).unwrap());
     /// multiverse.set_value(&address, Value(128)).unwrap();
     /// ```
     pub fn set_value(&mut self, address: &Address, value: Value) -> Result<(), Error> {
@@ -623,13 +637,6 @@ mod serde {
         fn deserialize_invalid_universe_id() {
             let result: Result<Channel, _> = serde_json::from_str("0");
             assert!(result.is_err());
-        }
-
-        #[test]
-        fn serialize_universe() {
-            let universe = Universe::new(UniverseId::new(1).unwrap());
-            let serialized = serde_json::to_string(&universe).unwrap();
-            assert!(serialized.contains("\"id\":1"));
         }
 
         #[test]
