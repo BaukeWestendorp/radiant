@@ -1,20 +1,12 @@
-use std::time::Duration;
+use crate::{ComponentIdentifier, Error};
 
 pub use data::DataPacket;
+pub use discovery::UniverseDiscoveryPacket;
 pub use sync::SynchronizationPacket;
 
-use crate::ComponentIdentifier;
-
 mod data;
+mod discovery;
 mod sync;
-
-// FIXME: These are to be used in the sync and discovery packets.
-const _VECTOR_EXTENDED_DISCOVERY: u32 = 0x00000002;
-const _VECTOR_UNIVERSE_DISCOVERY_UNIVERSE_LIST: u32 = 0x00000001;
-const _DISCOVERY_UNIVERSE: u32 = 64214;
-
-const _UNIVERSE_DISCOVERY_INTERVAL: Duration = Duration::from_secs(10);
-const _NETWORK_DATA_LOSS_TIMEOUT: Duration = Duration::from_millis(2500);
 
 pub trait Pdu {
     fn to_bytes(&self) -> Vec<u8>;
@@ -51,6 +43,19 @@ impl RootLayer {
         bytes.extend(self.cid.as_bytes());
         bytes
     }
+}
+
+pub(crate) fn source_name_from_str(source_name: &str) -> Result<[u8; 64], Error> {
+    // 6.2.2 E1.31 Data Packet: Source Name.
+    if source_name.len() > 64 {
+        return Err(Error::InvalidSourceNameLength(source_name.len()));
+    }
+
+    let bytes = source_name.as_bytes();
+    let mut source_name = [0u8; 64];
+    let len = bytes.len().min(64);
+    source_name[..len].copy_from_slice(&bytes[..len]);
+    Ok(source_name)
 }
 
 pub(crate) fn flags_and_length(pdu_len: u16) -> u16 {

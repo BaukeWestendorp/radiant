@@ -1,4 +1,4 @@
-use super::{RootLayer, flags_and_length};
+use super::{RootLayer, flags_and_length, source_name_from_str};
 use crate::{ComponentIdentifier, Error, source::SourceConfig};
 
 const VECTOR_DMP_SET_PROPERTY: u8 = 0x02;
@@ -106,15 +106,7 @@ impl FramingLayer {
         force_synchronization: bool,
         universe: u16,
     ) -> Result<Self, Error> {
-        // 6.2.2 E1.31 Data Packet: Source Name.
-        if source_name.len() > 64 {
-            return Err(Error::InvalidSourceNameLength(source_name.len()));
-        }
-
-        let bytes = source_name.as_bytes();
-        let mut source_name = [0u8; 64];
-        let len = bytes.len().min(64);
-        source_name[..len].copy_from_slice(&bytes[..len]);
+        let source_name = source_name_from_str(source_name)?;
 
         // 6.2.3 E1.31 Data Packet: Priority.
         if !(0..200).contains(&priority) {

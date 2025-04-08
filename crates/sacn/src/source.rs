@@ -13,6 +13,8 @@ use std::{
 };
 
 const DMX_UPDATE_DELAY: Duration = Duration::from_millis(44);
+const _NETWORK_DATA_LOSS_TIMEOUT: Duration = Duration::from_millis(2500);
+const _UNIVERSE_DISCOVERY_INTERVAL: Duration = Duration::from_secs(10);
 
 pub struct Source {
     config: SourceConfig,
