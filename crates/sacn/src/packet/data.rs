@@ -1,4 +1,4 @@
-use super::{PACKET_IDENTIFIER, POSTAMBLE_SIZE, PREAMBLE_SIZE, VECTOR_ROOT_DATA};
+use super::{RootLayer, flags_and_length};
 use crate::{ComponentIdentifier, Error, source::SourceConfig};
 
 const VECTOR_DMP_SET_PROPERTY: u8 = 0x02;
@@ -13,26 +13,52 @@ pub struct DataPacket {
 
 impl DataPacket {
     pub fn new(
+        cid: ComponentIdentifier,
+        source_name: &str,
+        priority: u8,
+        synchronization_address: u16,
+        sequence_number: u8,
+        preview_data: bool,
+        stream_terminated: bool,
+        force_synchronization: bool,
+        universe: u16,
+        data: Vec<u8>,
+    ) -> Result<Self, Error> {
+        Ok(DataPacket {
+            root: RootLayer::new(cid, false),
+            framing: FramingLayer::new(
+                source_name,
+                priority,
+                synchronization_address,
+                sequence_number,
+                preview_data,
+                stream_terminated,
+                force_synchronization,
+                universe,
+            )?,
+            dmp: DmpLayer::new(data)?,
+        })
+    }
+
+    pub fn from_source_config(
         config: &SourceConfig,
         sequence_number: u8,
         stream_terminated: bool,
         universe: u16,
         data: Vec<u8>,
     ) -> Result<Self, Error> {
-        Ok(DataPacket {
-            root: RootLayer::new(config.cid),
-            framing: FramingLayer::new(
-                &config.name,
-                config.priority,
-                config.sync_addr,
-                sequence_number,
-                config.preview_data,
-                stream_terminated,
-                config.force_synchronization,
-                universe,
-            )?,
-            dmp: DmpLayer::new(data)?,
-        })
+        Self::new(
+            config.cid,
+            &config.name,
+            config.priority,
+            config.synchronization_address,
+            sequence_number,
+            config.preview_data,
+            stream_terminated,
+            config.force_synchronization,
+            universe,
+            data,
+        )
     }
 }
 
@@ -54,43 +80,17 @@ impl super::Pdu for DataPacket {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct RootLayer {
-    cid: ComponentIdentifier,
-}
-
-impl RootLayer {
-    pub fn new(cid: ComponentIdentifier) -> Self {
-        RootLayer { cid }
-    }
-}
-
-impl RootLayer {
-    fn to_bytes(&self, pdu_len: u16) -> Vec<u8> {
-        let mut bytes = Vec::with_capacity(54);
-        bytes.extend(PREAMBLE_SIZE.to_be_bytes());
-        bytes.extend(POSTAMBLE_SIZE.to_be_bytes());
-        bytes.extend(PACKET_IDENTIFIER);
-        bytes.extend(flags_and_length(pdu_len - 16).to_be_bytes());
-        bytes.extend(VECTOR_ROOT_DATA.to_be_bytes());
-        bytes.extend(self.cid.as_bytes());
-        bytes
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
 struct FramingLayer {
     /// User Assigned Name of Source.
     source_name: [u8; 64],
     /// Data priority if multiple sources.
     priority: u8,
     /// Universe address on which sync packets will be sent.
-    sync_address: u16,
+    synchronization_address: u16,
     /// Sequence number.
     sequence_number: u8,
-
     /// Options
     options: u8,
-
     /// Universe number.
     universe: u16,
 }
@@ -99,7 +99,7 @@ impl FramingLayer {
     pub fn new(
         source_name: &str,
         priority: u8,
-        sync_address: u16,
+        synchronization_address: u16,
         sequence_number: u8,
         preview_data: bool,
         stream_terminated: bool,
@@ -125,16 +125,23 @@ impl FramingLayer {
             | (stream_terminated as u8) << 6
             | (force_synchronization as u8) << 5;
 
-        Ok(FramingLayer { source_name, priority, sync_address, sequence_number, options, universe })
+        Ok(FramingLayer {
+            source_name,
+            priority,
+            synchronization_address,
+            sequence_number,
+            options,
+            universe,
+        })
     }
 
     pub fn to_bytes(&self, pdu_len: u16) -> Vec<u8> {
-        let mut bytes = Vec::new();
+        let mut bytes = Vec::with_capacity(77);
         bytes.extend(flags_and_length(pdu_len - 38).to_be_bytes());
         bytes.extend(VECTOR_DATA_PACKET.to_be_bytes());
         bytes.extend(self.source_name);
         bytes.push(self.priority);
-        bytes.extend(self.sync_address.to_be_bytes());
+        bytes.extend(self.synchronization_address.to_be_bytes());
         bytes.push(self.sequence_number);
         bytes.push(self.options);
         bytes.extend(self.universe.to_be_bytes());
@@ -156,7 +163,7 @@ impl DmpLayer {
     pub fn to_bytes(&self, pdu_len: u16) -> Vec<u8> {
         const START_CODE: u8 = 0x00;
 
-        let mut bytes = Vec::new();
+        let mut bytes = Vec::with_capacity(self.prop_value_count as usize + 10);
         bytes.extend(flags_and_length(pdu_len - 115).to_be_bytes());
         bytes.push(VECTOR_DMP_SET_PROPERTY);
         bytes.push(0xa1);
@@ -167,11 +174,4 @@ impl DmpLayer {
         bytes.extend_from_slice(&self.data);
         bytes
     }
-}
-
-fn flags_and_length(pdu_len: u16) -> u16 {
-    // Low 12 bits = PDU length, high 4 bits = 0x7.
-    let flags = 0x7 << 12;
-    let length = pdu_len & 0xFFF;
-    flags | length
 }

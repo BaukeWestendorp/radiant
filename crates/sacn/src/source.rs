@@ -57,7 +57,7 @@ impl Source {
                             )
                             .unwrap_or_default();
 
-                        let packet = DataPacket::new(
+                        let packet = DataPacket::from_source_config(
                             &config,
                             sequence_number,
                             false,
@@ -91,7 +91,7 @@ pub struct SourceConfig {
 
     pub priority: u8,
     pub preview_data: bool,
-    pub sync_addr: u16,
+    pub synchronization_address: u16,
     pub force_synchronization: bool,
 }
 
@@ -106,7 +106,7 @@ impl Default for SourceConfig {
 
             priority: 100,
             preview_data: false,
-            sync_addr: 0,
+            synchronization_address: 0,
             force_synchronization: false,
         }
     }

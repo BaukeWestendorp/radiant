@@ -6,7 +6,7 @@ pub enum Error {
     InvalidPostambleSize(u16),
     #[error(
         "Invalid ACN packet identifier: {0:?}, expected {expected:?}",
-        expected = crate::packet::PACKET_IDENTIFIER
+        expected = crate::packet::RootLayer::PACKET_IDENTIFIER
     )]
     InvalidAcnPacketIdentifier([u8; 12]),
     #[error("Invalid component ID: {0:?}")]

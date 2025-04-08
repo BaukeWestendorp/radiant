@@ -7,7 +7,7 @@
 mod error;
 pub mod source;
 
-mod packet;
+pub mod packet;
 
 pub use error::Error;
 
