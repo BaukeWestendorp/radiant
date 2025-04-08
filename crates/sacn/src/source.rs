@@ -12,9 +12,7 @@ use std::{
     time::Duration,
 };
 
-const DMX_UPDATE_DELAY: Duration = Duration::from_millis(44);
-const _NETWORK_DATA_LOSS_TIMEOUT: Duration = Duration::from_millis(2500);
-const _UNIVERSE_DISCOVERY_INTERVAL: Duration = Duration::from_secs(10);
+const DMX_SEND_INTERVAL: Duration = Duration::from_millis(44);
 
 pub struct Source {
     config: SourceConfig,
@@ -29,6 +27,10 @@ impl Source {
         let socket = Arc::new(Socket::new(domain, Type::DGRAM, None).unwrap());
 
         Source { config, socket, data: Arc::new(Mutex::new(None)) }
+    }
+
+    pub fn config(&self) -> &SourceConfig {
+        &self.config
     }
 
     pub fn set_output(&mut self, data: Multiverse) {
@@ -71,7 +73,7 @@ impl Source {
                         socket.send_to(&bytes, &addr)?;
                     }
 
-                    thread::sleep(DMX_UPDATE_DELAY);
+                    thread::sleep(DMX_SEND_INTERVAL);
                 }
             }
         });

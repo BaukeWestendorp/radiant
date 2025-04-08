@@ -8,6 +8,13 @@ mod data;
 mod discovery;
 mod sync;
 
+pub const ROOT_PREAMBLE_SIZE: u16 = 0x0010;
+pub const ROOT_POSTAMBLE_SIZE: u16 = 0x0000;
+pub const ROOT_VECTOR_ROOT_DATA: u32 = 0x00000004;
+pub const ROOT_VECTOR_ROOT_EXTENDED: u32 = 0x00000008;
+pub const ROOT_PACKET_IDENTIFIER: [u8; 12] =
+    [0x41, 0x53, 0x43, 0x2d, 0x45, 0x31, 0x2e, 0x31, 0x37, 0x00, 0x00, 0x00];
+
 pub trait Pdu {
     fn to_bytes(&self) -> Vec<u8>;
 
@@ -21,23 +28,16 @@ pub(crate) struct RootLayer {
 }
 
 impl RootLayer {
-    pub const PREAMBLE_SIZE: u16 = 0x0010;
-    pub const POSTAMBLE_SIZE: u16 = 0x0000;
-    pub const VECTOR_ROOT_DATA: u32 = 0x00000004;
-    pub const VECTOR_ROOT_EXTENDED: u32 = 0x00000008;
-    pub const PACKET_IDENTIFIER: [u8; 12] =
-        [0x41, 0x53, 0x43, 0x2d, 0x45, 0x31, 0x2e, 0x31, 0x37, 0x00, 0x00, 0x00];
-
     pub fn new(cid: ComponentIdentifier, extended: bool) -> Self {
-        let vector = if extended { Self::VECTOR_ROOT_EXTENDED } else { Self::VECTOR_ROOT_DATA };
+        let vector = if extended { ROOT_VECTOR_ROOT_EXTENDED } else { ROOT_VECTOR_ROOT_DATA };
         RootLayer { cid, vector }
     }
 
     pub fn to_bytes(&self, pdu_len: u16) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(54);
-        bytes.extend(Self::PREAMBLE_SIZE.to_be_bytes());
-        bytes.extend(Self::POSTAMBLE_SIZE.to_be_bytes());
-        bytes.extend(Self::PACKET_IDENTIFIER);
+        bytes.extend(ROOT_PREAMBLE_SIZE.to_be_bytes());
+        bytes.extend(ROOT_POSTAMBLE_SIZE.to_be_bytes());
+        bytes.extend(ROOT_PACKET_IDENTIFIER);
         bytes.extend(flags_and_length(pdu_len - 16).to_be_bytes());
         bytes.extend(self.vector.to_be_bytes());
         bytes.extend(self.cid.as_bytes());

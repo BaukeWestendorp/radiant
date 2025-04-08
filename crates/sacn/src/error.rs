@@ -10,7 +10,7 @@ pub enum Error {
     /// Invalid ACN packet identifier.
     #[error(
         "Invalid ACN packet identifier: {0:?}, expected {expected:?}",
-        expected = crate::packet::RootLayer::PACKET_IDENTIFIER
+        expected = crate::packet::ROOT_PACKET_IDENTIFIER
     )]
     InvalidAcnPacketIdentifier([u8; 12]),
     /// Invalid component ID.

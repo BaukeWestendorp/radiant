@@ -1,8 +1,7 @@
+use super::{RootLayer, flags_and_length, source_name_from_str};
 use crate::{ComponentIdentifier, Error, source::SourceConfig};
 
-use super::{RootLayer, flags_and_length, source_name_from_str};
-
-const _DISCOVERY_UNIVERSE: u32 = 64214;
+pub const VECTOR_EXTENDED_DISCOVERY: u32 = 0x00000002;
 
 pub struct UniverseDiscoveryPacket {
     root: RootLayer,
@@ -57,8 +56,6 @@ struct FramingLayer {
 }
 
 impl FramingLayer {
-    const VECTOR_EXTENDED_DISCOVERY: u32 = 0x00000002;
-
     pub fn new(source_name: &str) -> Result<Self, Error> {
         let source_name = source_name_from_str(source_name)?;
 
@@ -68,7 +65,7 @@ impl FramingLayer {
     pub fn to_bytes(&self, pdu_len: u16) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(38);
         bytes.extend(flags_and_length(pdu_len).to_be_bytes());
-        bytes.extend(Self::VECTOR_EXTENDED_DISCOVERY.to_be_bytes());
+        bytes.extend(VECTOR_EXTENDED_DISCOVERY.to_be_bytes());
         bytes.extend(self.source_name);
         bytes.extend([0x00, 0x00, 0x00, 0x00]);
         bytes

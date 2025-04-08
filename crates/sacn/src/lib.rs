@@ -29,3 +29,6 @@ pub type ComponentIdentifier = Uuid;
 
 /// The default port for sACN.
 pub const DEFAULT_PORT: u16 = 5568;
+
+/// The universe number on which discovery packets will be sent.
+pub const DISCOVERY_UNIVERSE: u32 = 64214;

@@ -1,6 +1,7 @@
+use super::{RootLayer, flags_and_length};
 use crate::{ComponentIdentifier, Error, source::SourceConfig};
 
-use super::{RootLayer, flags_and_length};
+pub const VECTOR_EXTENDED_SYNCHRONIZATION: u32 = 0x00000001;
 
 pub struct SynchronizationPacket {
     root: RootLayer,
@@ -46,8 +47,6 @@ struct FramingLayer {
 }
 
 impl FramingLayer {
-    const VECTOR_EXTENDED_SYNCHRONIZATION: u32 = 0x00000001;
-
     pub fn new(sequence_number: u8, synchronization_address: u16) -> Self {
         Self { sequence_number, synchronization_address }
     }
@@ -55,7 +54,7 @@ impl FramingLayer {
     pub fn to_bytes(&self, pdu_len: u16) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(11);
         bytes.extend(flags_and_length(pdu_len - 38).to_be_bytes());
-        bytes.extend(Self::VECTOR_EXTENDED_SYNCHRONIZATION.to_be_bytes());
+        bytes.extend(VECTOR_EXTENDED_SYNCHRONIZATION.to_be_bytes());
         bytes.push(self.sequence_number);
         bytes.extend(self.synchronization_address.to_be_bytes());
         bytes.extend([0x00, 0x00]);

@@ -1,8 +1,8 @@
 use super::{RootLayer, flags_and_length, source_name_from_str};
 use crate::{ComponentIdentifier, Error, source::SourceConfig};
 
-const VECTOR_DMP_SET_PROPERTY: u8 = 0x02;
-const VECTOR_DATA_PACKET: u32 = 0x00000002;
+pub const VECTOR_DMP_SET_PROPERTY: u8 = 0x02;
+pub const VECTOR_DATA_PACKET: u32 = 0x00000002;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DataPacket {
