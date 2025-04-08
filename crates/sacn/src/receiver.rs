@@ -1,19 +1,24 @@
 use std::{
     net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr},
+    sync::{Arc, Mutex},
+    thread,
     time::Duration,
 };
 
+use dmx::{Channel, Multiverse, Universe, UniverseId};
 use socket2::{Domain, SockAddr, Socket, Type};
 
-use crate::{DEFAULT_PORT, Error, packet::Packet};
+use crate::{
+    DEFAULT_PORT, Error,
+    packet::{DataPacket, Packet},
+};
 
 const _NETWORK_DATA_LOSS_TIMEOUT: Duration = Duration::from_millis(2500);
 const _UNIVERSE_DISCOVERY_INTERVAL: Duration = Duration::from_secs(10);
 
 pub struct Receiver {
     config: ReceiverConfig,
-
-    socket: Socket,
+    inner: Arc<Inner>,
 }
 
 impl Receiver {
@@ -21,37 +26,46 @@ impl Receiver {
         let domain = if config.ip.is_ipv4() { Domain::IPV4 } else { Domain::IPV6 };
         let socket = Socket::new(domain, Type::DGRAM, None).unwrap();
 
-        Self { config, socket }
+        Self {
+            config,
+            inner: Arc::new(Inner {
+                socket,
+                data: Mutex::new(Multiverse::new()),
+                sync_state: Mutex::new(SynchronizationState::default()),
+            }),
+        }
     }
 
     pub fn config(&self) -> &ReceiverConfig {
         &self.config
     }
 
+    pub fn data(&self) -> Multiverse {
+        self.inner.data.lock().unwrap().clone()
+    }
+
+    pub fn is_synchronizing(&self) -> bool {
+        *self.inner.sync_state.lock().unwrap() == SynchronizationState::Synchronized
+    }
+
     pub fn start(&mut self) -> Result<(), Error> {
         let addr = SocketAddr::new(self.config.ip, self.config.port);
-        self.socket.bind(&addr.into())?;
+
+        thread::spawn({
+            let inner = Arc::clone(&self.inner);
+            move || -> Result<(), Error> {
+                inner.socket.bind(&addr.into())?;
+                inner.start_recv_loop()?;
+                Ok(())
+            }
+        });
+
         Ok(())
     }
 
     pub fn stop(&self) -> Result<(), Error> {
-        self.socket.shutdown(Shutdown::Both)?;
+        self.inner.socket.shutdown(Shutdown::Both)?;
         Ok(())
-    }
-
-    pub fn recv_packet_from(&self) -> Result<(Packet, SockAddr), Error> {
-        const MAX_PACKET_SIZE: usize = 1144;
-
-        let mut buffer = Vec::with_capacity(MAX_PACKET_SIZE);
-        let (received, addr) = self.socket.recv_from(buffer.spare_capacity_mut())?;
-        // SAFETY: just received into the `buffer`.
-        unsafe {
-            buffer.set_len(received);
-        }
-
-        let packet = Packet::from_bytes(&buffer)?;
-
-        Ok((packet, addr))
     }
 }
 
@@ -64,5 +78,71 @@ pub struct ReceiverConfig {
 impl Default for ReceiverConfig {
     fn default() -> Self {
         Self { ip: Ipv4Addr::UNSPECIFIED.into(), port: DEFAULT_PORT }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SynchronizationState {
+    #[default]
+    Unsynchronized,
+    Synchronized,
+}
+
+struct Inner {
+    socket: Socket,
+    data: Mutex<Multiverse>,
+    sync_state: Mutex<SynchronizationState>,
+}
+
+impl Inner {
+    pub fn start_recv_loop(&self) -> Result<(), Error> {
+        loop {
+            match self.recv_packet_from() {
+                Ok((packet, _)) => match packet {
+                    Packet::Data(packet) => self.handle_data_packet(packet)?,
+                    Packet::Discovery(_) => todo!(),
+                    Packet::Sync(_) => todo!(),
+                },
+                Err(err) => {
+                    eprintln!("Error receiving packet: {}", err);
+                }
+            }
+        }
+    }
+
+    fn handle_data_packet(&self, packet: DataPacket) -> Result<(), Error> {
+        if let Ok(universe_id) = UniverseId::new(packet.universe()) {
+            let mut data = self.data.lock().unwrap();
+
+            if !data.has_universe(&universe_id) {
+                data.create_universe(universe_id, Universe::new());
+            }
+
+            if let Some(universe) = data.universe_mut(&universe_id) {
+                for i in 0..512 {
+                    universe.set_value(
+                        &Channel::new(i + 1).unwrap(),
+                        packet.data().get(i as usize).copied().unwrap_or_default().into(),
+                    );
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn recv_packet_from(&self) -> Result<(Packet, SockAddr), Error> {
+        const MAX_PACKET_SIZE: usize = 1144;
+
+        let mut buffer = Vec::with_capacity(MAX_PACKET_SIZE);
+        let (received, addr) = self.socket.recv_from(buffer.spare_capacity_mut())?;
+        // SAFETY: just received into the `buffer`.
+        unsafe {
+            buffer.set_len(received);
+        }
+
+        let packet = Packet::from_bytes(&buffer)?;
+
+        Ok((packet, addr))
     }
 }

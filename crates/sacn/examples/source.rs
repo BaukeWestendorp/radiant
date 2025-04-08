@@ -5,14 +5,15 @@ use std::{thread, time::Duration};
 fn main() {
     let universe_id = UniverseId::new(1).unwrap();
     let mut multiverse = Multiverse::new();
-    multiverse.create_universe(Universe::new(universe_id));
+    multiverse.create_universe(universe_id, Universe::new());
 
     // Create the source.
     let mut source = Source::new(SourceConfig {
         name: "Example Source".to_string(),
         ip: "239.255.0.1".parse().unwrap(),
         ..Default::default()
-    });
+    })
+    .unwrap();
 
     // Start the source updater thread.
     source.start();

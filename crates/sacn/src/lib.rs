@@ -5,12 +5,12 @@
 //! TODO: List features.
 
 mod error;
+pub mod packet;
 pub mod receiver;
 pub mod source;
 
-pub mod packet;
-
 pub use error::Error;
+
 use uuid::Uuid;
 
 /// A CID ([ComponentIdentifier]) is a [Uuid].
