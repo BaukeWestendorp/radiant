@@ -13,7 +13,7 @@ use dmx::{Channel, Multiverse, Universe, UniverseId};
 use socket2::{Domain, SockAddr, Socket, Type};
 
 use crate::{
-    DEFAULT_PORT, Error,
+    DEFAULT_PORT, Error, MAX_UNIVERSE_SIZE,
     packet::{DataPacket, Packet},
 };
 
@@ -140,7 +140,7 @@ impl Inner {
             }
 
             if let Some(universe) = data.universe_mut(&universe_id) {
-                for i in 0..512 {
+                for i in 0..MAX_UNIVERSE_SIZE {
                     universe.set_value(
                         &Channel::new(i + 1).unwrap(),
                         packet.data().get(i as usize).copied().unwrap_or_default().into(),
