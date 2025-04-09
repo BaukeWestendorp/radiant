@@ -34,6 +34,14 @@ impl SynchronizationPacket {
         Self::new(config.cid, sequence_number, synchronization_address)
     }
 
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        Ok(Self { root: RootLayer::from_bytes(bytes)?, framing: FramingLayer::from_bytes(bytes)? })
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        vec![self.root.to_bytes(), self.framing.to_bytes()].concat()
+    }
+
     /// The [ComponentIdentifier] in this packet.
     pub fn cid(&self) -> &ComponentIdentifier {
         &self.root.cid
@@ -47,21 +55,6 @@ impl SynchronizationPacket {
     /// The synchronization address in this packet.
     pub fn synchronization_address(&self) -> u16 {
         self.framing.synchronization_address
-    }
-}
-
-impl super::Pdu for SynchronizationPacket {
-    fn to_bytes(&self) -> Vec<u8> {
-        let pdu_len = self.len();
-        vec![self.root.to_bytes(pdu_len), self.framing.to_bytes(pdu_len)].concat()
-    }
-
-    fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
-        Ok(Self { root: RootLayer::from_bytes(bytes)?, framing: FramingLayer::from_bytes(bytes)? })
-    }
-
-    fn len(&self) -> u16 {
-        49
     }
 }
 
@@ -92,9 +85,9 @@ impl FramingLayer {
         Ok(Self { sequence_number, synchronization_address })
     }
 
-    pub fn to_bytes(&self, pdu_len: u16) -> Vec<u8> {
+    pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(11);
-        bytes.extend(flags_and_length(pdu_len - 38).to_be_bytes());
+        bytes.extend(flags_and_length().to_be_bytes());
         bytes.extend(VECTOR_EXTENDED_SYNCHRONIZATION.to_be_bytes());
         bytes.push(self.sequence_number);
         bytes.extend(self.synchronization_address.to_be_bytes());

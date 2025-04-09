@@ -73,6 +73,18 @@ impl DataPacket {
         )
     }
 
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        Ok(Self {
+            root: RootLayer::from_bytes(&bytes)?,
+            framing: FramingLayer::from_bytes(&bytes)?,
+            dmp: DmpLayer::from_bytes(&bytes)?,
+        })
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        vec![self.root.to_bytes(), self.framing.to_bytes(), self.dmp.to_bytes()].concat()
+    }
+
     /// Returns the [ComponentIdentifier] in this packet.
     pub fn cid(&self) -> &ComponentIdentifier {
         &self.root.cid
@@ -121,31 +133,6 @@ impl DataPacket {
     /// Returns the DMX data in this packet.
     pub fn data(&self) -> &[u8] {
         &self.dmp.property_values[1..]
-    }
-}
-
-impl super::Pdu for DataPacket {
-    fn to_bytes(&self) -> Vec<u8> {
-        let pdu_len = self.len();
-
-        vec![
-            self.root.to_bytes(pdu_len),
-            self.framing.to_bytes(pdu_len),
-            self.dmp.to_bytes(pdu_len),
-        ]
-        .concat()
-    }
-
-    fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
-        Ok(Self {
-            root: RootLayer::from_bytes(&bytes)?,
-            framing: FramingLayer::from_bytes(&bytes)?,
-            dmp: DmpLayer::from_bytes(&bytes)?,
-        })
-    }
-
-    fn len(&self) -> u16 {
-        125 + self.dmp.property_values.len() as u16
     }
 }
 

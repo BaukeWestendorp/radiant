@@ -6,6 +6,7 @@
 //! # Features
 //! TODO: List features.
 
+pub(crate) mod acn;
 mod error;
 pub mod packet;
 pub mod receiver;

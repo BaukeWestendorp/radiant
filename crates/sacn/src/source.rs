@@ -4,7 +4,7 @@
 
 use crate::{
     ComponentIdentifier, DEFAULT_PORT, Error,
-    packet::{DataPacket, Pdu, UniverseDiscoveryPacket},
+    packet::{DataPacket, UniverseDiscoveryPacket},
 };
 use dmx::{Multiverse, Universe, UniverseId};
 use socket2::{Domain, SockAddr, Socket, Type};

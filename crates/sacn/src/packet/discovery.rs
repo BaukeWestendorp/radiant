@@ -42,6 +42,19 @@ impl UniverseDiscoveryPacket {
         Self::new(config.cid, &config.name, page, last, list_of_universes)
     }
 
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        Ok(Self {
+            root: RootLayer::from_bytes(bytes)?,
+            framing: FramingLayer::from_bytes(bytes)?,
+            universe_discovery: UniverseDiscoveryLayer::from_bytes(bytes)?,
+        })
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8> {
+        vec![self.root.to_bytes(), self.framing.to_bytes(), self.universe_discovery.to_bytes()]
+            .concat()
+    }
+
     /// The [ComponentIdentifier] in this packet.
     pub fn cid(&self) -> &ComponentIdentifier {
         &self.root.cid
@@ -65,30 +78,6 @@ impl UniverseDiscoveryPacket {
     /// The list of universes in this packet.
     pub fn list_of_universes(&self) -> &[u16] {
         &self.universe_discovery.list_of_universes
-    }
-}
-
-impl super::Pdu for UniverseDiscoveryPacket {
-    fn to_bytes(&self) -> Vec<u8> {
-        let pdu_len = self.len();
-        vec![
-            self.root.to_bytes(pdu_len),
-            self.framing.to_bytes(pdu_len),
-            self.universe_discovery.to_bytes(pdu_len),
-        ]
-        .concat()
-    }
-
-    fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
-        Ok(Self {
-            root: RootLayer::from_bytes(bytes)?,
-            framing: FramingLayer::from_bytes(bytes)?,
-            universe_discovery: UniverseDiscoveryLayer::from_bytes(bytes)?,
-        })
-    }
-
-    fn len(&self) -> u16 {
-        120 + self.universe_discovery.list_of_universes.len() as u16
     }
 }
 
@@ -117,9 +106,9 @@ impl FramingLayer {
         Ok(Self { source_name })
     }
 
-    pub fn to_bytes(&self, pdu_len: u16) -> Vec<u8> {
+    pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(38);
-        bytes.extend(flags_and_length(pdu_len).to_be_bytes());
+        bytes.extend(flags_and_length().to_be_bytes());
         bytes.extend(VECTOR_EXTENDED_DISCOVERY.to_be_bytes());
         bytes.extend(self.source_name);
         bytes.extend([0x00, 0x00, 0x00, 0x00]);
