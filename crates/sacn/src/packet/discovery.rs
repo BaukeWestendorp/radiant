@@ -23,6 +23,7 @@ impl UniverseDiscoveryPacket {
         mut list_of_universes: Vec<u16>,
     ) -> Result<Self, Error> {
         list_of_universes.truncate(512);
+        list_of_universes.sort();
         Ok(Self {
             root: RootLayer::new(cid, true),
             framing: FramingLayer::new(source_name)?,

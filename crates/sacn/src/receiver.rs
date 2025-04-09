@@ -120,11 +120,12 @@ impl Inner {
     pub fn start_recv_loop(&self) -> Result<(), Error> {
         loop {
             match self.recv_packet_from() {
-                Ok((packet, _)) => match packet {
+                Ok(Some((packet, _))) => match packet {
                     Packet::Data(packet) => self.handle_data_packet(packet)?,
                     Packet::Discovery(_) => todo!(),
                     Packet::Sync(_) => todo!(),
                 },
+                Ok(None) => {}
                 Err(err) => {
                     eprintln!("Error receiving packet: {}", err);
                 }
@@ -153,7 +154,7 @@ impl Inner {
         Ok(())
     }
 
-    fn recv_packet_from(&self) -> Result<(Packet, SockAddr), Error> {
+    fn recv_packet_from(&self) -> Result<Option<(Packet, SockAddr)>, Error> {
         const MAX_PACKET_SIZE: usize = 1144;
 
         let mut buffer = Vec::with_capacity(MAX_PACKET_SIZE);
@@ -163,8 +164,12 @@ impl Inner {
             buffer.set_len(received);
         }
 
-        let packet = Packet::from_bytes(&buffer)?;
-
-        Ok((packet, addr))
+        match Packet::from_bytes(&buffer) {
+            Ok(packet) => Ok(Some((packet, addr))),
+            Err(err) => {
+                eprintln!("Invalid packet discarded: {err:?}");
+                Ok(None)
+            }
+        }
     }
 }
