@@ -53,7 +53,6 @@ impl SynchronizationPacket {
 impl super::Pdu for SynchronizationPacket {
     fn to_bytes(&self) -> Vec<u8> {
         let pdu_len = self.len();
-
         vec![self.root.to_bytes(pdu_len), self.framing.to_bytes(pdu_len)].concat()
     }
 
@@ -78,13 +77,18 @@ impl FramingLayer {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        // E1.31 6.3.1 Synchronization Packet: Vector
         let vector = u32::from_be_bytes([bytes[40], bytes[41], bytes[42], bytes[43]]);
         if vector != VECTOR_EXTENDED_SYNCHRONIZATION {
             return Err(Error::InvalidFramingVector(vector));
         }
 
+        // E1.31 6.3.2 Synchronization Packet: Sequence Number
         let sequence_number = bytes[44];
+
+        // E1.31 6.3.3 Synchronization Packet: Synchronization Address
         let synchronization_address = u16::from_be_bytes([bytes[45], bytes[46]]);
+
         Ok(Self { sequence_number, synchronization_address })
     }
 

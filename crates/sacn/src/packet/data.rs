@@ -176,6 +176,7 @@ impl FramingLayer {
         force_synchronization: bool,
         universe: u16,
     ) -> Result<Self, Error> {
+        // E1.31 6.2.2 Data Packet: Source Name
         let source_name = source_name_from_str(source_name)?;
 
         // 6.2.3 E1.31 Data Packet: Priority.
@@ -183,16 +184,11 @@ impl FramingLayer {
             return Err(Error::InvalidPriority(priority));
         }
 
+        // E1.31 6.2.6 Data Packet: Options
         let mut options = 0;
-        if preview_data {
-            options |= PREVIEW_DATA_BIT;
-        }
-        if stream_terminated {
-            options |= STREAM_TERMINATED_BIT;
-        }
-        if force_synchronization {
-            options |= FORCE_SYNCHRONIZATION_BIT;
-        }
+        options |= (preview_data as u8) * PREVIEW_DATA_BIT;
+        options |= (stream_terminated as u8) * STREAM_TERMINATED_BIT;
+        options |= (force_synchronization as u8) * FORCE_SYNCHRONIZATION_BIT;
 
         Ok(FramingLayer {
             source_name,
@@ -205,16 +201,28 @@ impl FramingLayer {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        // E1.31 6.2.1 Data Packet: Vector
         let vector = u32::from_be_bytes([bytes[40], bytes[41], bytes[42], bytes[43]]);
         if vector != VECTOR_DATA_PACKET {
             return Err(Error::InvalidFramingVector(vector));
         }
 
+        // E1.31 6.2.2 Data Packet: Source Name
         let source_name = bytes[44..108].try_into().unwrap();
+
+        // E1.31 6.2.3 Data Packet: Priority
         let priority = bytes[108];
+
+        // E1.31 6.2.4 Data Packet: Synchronization Address
         let synchronization_address = u16::from_be_bytes([bytes[109], bytes[110]]);
+
+        // E1.31 6.2.5 Data Packet: Sequence Number
         let sequence_number = bytes[111];
+
+        // E1.31 6.2.6 Data Packet: Options
         let options = bytes[112];
+
+        // E1.31 6.2.7 Data Packet: Universe
         let universe = u16::from_be_bytes([bytes[113], bytes[114]]);
 
         Ok(FramingLayer {
@@ -280,8 +288,10 @@ impl DmpLayer {
             return Err(Error::InvalidDmpAddressIncrement(address_increment));
         }
 
+        // E1.13 7.6 Property Value Count
         let property_value_count = u16::from_be_bytes([bytes[123], bytes[124]]);
 
+        // E1.13 7.7 Property Values (DMX512-A Data)
         let mut property_values = bytes[125..125 + property_value_count as usize].to_vec();
         property_values.truncate(MAX_UNIVERSE_SIZE as usize);
 

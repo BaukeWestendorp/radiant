@@ -136,7 +136,6 @@ impl RootLayer {
 }
 
 pub(crate) fn source_name_from_str(source_name: &str) -> Result<[u8; 64], Error> {
-    // 6.2.2 E1.31 Data Packet: Source Name.
     if source_name.len() > 64 {
         return Err(Error::InvalidSourceNameLength(source_name.len()));
     }

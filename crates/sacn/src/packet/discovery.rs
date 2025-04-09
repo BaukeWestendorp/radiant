@@ -71,7 +71,6 @@ impl UniverseDiscoveryPacket {
 impl super::Pdu for UniverseDiscoveryPacket {
     fn to_bytes(&self) -> Vec<u8> {
         let pdu_len = self.len();
-
         vec![
             self.root.to_bytes(pdu_len),
             self.framing.to_bytes(pdu_len),
@@ -106,11 +105,13 @@ impl FramingLayer {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        // E1.31 6.4.1 Universe Discovery Packet: Vector
         let vector = u32::from_be_bytes([bytes[40], bytes[41], bytes[42], bytes[43]]);
         if vector != VECTOR_EXTENDED_DISCOVERY {
             return Err(Error::InvalidFramingVector(vector));
         }
 
+        // E1.31 6.4.2 Universe Discovery Packet: Source Name
         let source_name = bytes[44..108].try_into().unwrap();
 
         Ok(Self { source_name })

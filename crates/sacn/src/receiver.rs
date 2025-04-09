@@ -2,19 +2,17 @@
 //!
 //! Responsible for receiving and processing sACN packets.
 
+use crate::{
+    DEFAULT_PORT, Error, MAX_UNIVERSE_SIZE,
+    packet::{DataPacket, Packet},
+};
+use dmx::{Channel, Multiverse, Universe, UniverseId};
+use socket2::{Domain, SockAddr, Socket, Type};
 use std::{
     net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr},
     sync::{Arc, Mutex},
     thread,
     time::Duration,
-};
-
-use dmx::{Channel, Multiverse, Universe, UniverseId};
-use socket2::{Domain, SockAddr, Socket, Type};
-
-use crate::{
-    DEFAULT_PORT, Error, MAX_UNIVERSE_SIZE,
-    packet::{DataPacket, Packet},
 };
 
 const _NETWORK_DATA_LOSS_TIMEOUT: Duration = Duration::from_millis(2500);
