@@ -57,9 +57,11 @@ impl super::Pdu for SynchronizationPacket {
         vec![self.root.to_bytes(pdu_len), self.framing.to_bytes(pdu_len)].concat()
     }
 
-    fn from_bytes(_bytes: &[u8]) -> Result<Self, Error> {
-        eprintln!("SynchronizationPacket::from_bytes not implemented");
-        Err(Error::InvalidPacket)
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        Ok(Self {
+            root: RootLayer::from_bytes(bytes, true)?,
+            framing: FramingLayer::from_bytes(bytes)?,
+        })
     }
 
     fn len(&self) -> u16 {
@@ -76,6 +78,16 @@ struct FramingLayer {
 impl FramingLayer {
     pub fn new(sequence_number: u8, synchronization_address: u16) -> Self {
         Self { sequence_number, synchronization_address }
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        // NOTE: E1.31 6.3.1 does not explicitly specify we should
+        //       discard the packet if the vector
+        //       is not VECTOR_EXTENDED_SYNCHRONIZATION.
+
+        let sequence_number = bytes[44];
+        let synchronization_address = u16::from_be_bytes([bytes[45], bytes[46]]);
+        Ok(Self { sequence_number, synchronization_address })
     }
 
     pub fn to_bytes(&self, pdu_len: u16) -> Vec<u8> {
