@@ -19,9 +19,11 @@ pub enum Error {
     /// Invalid source name length.
     #[error("Invalid source name length: {0}. Must be between 0 and 64.")]
     InvalidSourceNameLength(usize),
+
     /// Invalid packet.
     #[error("Invalid packet")]
     InvalidPacket,
+
     /// Invalid extended root vector.
     #[error("Invalid extended root vector: {0:8x?}")]
     InvalidExtendedRootVector(u32),
@@ -34,6 +36,10 @@ pub enum Error {
     /// Invalid DMP vector.
     #[error("Invalid DMP vector: {0:2x?}")]
     InvalidDmpVector(u8),
+    /// Invalid Universe Discovery Universe List Vector.
+    #[error("Invalid Universe Discovery Universe List Vector: {0:8x?}")]
+    InvalidUniverseDiscoveryUniverseListVector(u32),
+
     /// Invalid DMP address type.
     #[error("Invalid DMP address type: {0:2x?}")]
     InvalidDmpAddressType(u8),

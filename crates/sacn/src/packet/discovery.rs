@@ -79,9 +79,12 @@ impl super::Pdu for UniverseDiscoveryPacket {
         .concat()
     }
 
-    fn from_bytes(_bytes: &[u8]) -> Result<Self, Error> {
-        eprintln!("UniverseDiscoveryPacket::from_bytes not implemented");
-        Err(Error::InvalidPacket)
+    fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        Ok(Self {
+            root: RootLayer::from_bytes(bytes)?,
+            framing: FramingLayer::from_bytes(bytes)?,
+            universe_discovery: UniverseDiscoveryLayer::from_bytes(bytes)?,
+        })
     }
 
     fn len(&self) -> u16 {
@@ -97,6 +100,16 @@ struct FramingLayer {
 impl FramingLayer {
     pub fn new(source_name: &str) -> Result<Self, Error> {
         let source_name = source_name_from_str(source_name)?;
+
+        Ok(Self { source_name })
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        // NOTE: E1.31 6.4.1 Does not explicitly specify that
+        //       we should discard the packet if the vector
+        //       is not VECTOR_EXTENDED_DISCOVERY.
+
+        let source_name = bytes[44..108].try_into().unwrap();
 
         Ok(Self { source_name })
     }
@@ -126,6 +139,25 @@ impl UniverseDiscoveryLayer {
 
     pub fn new(page: u8, last: u8, list_of_universes: Vec<u16>) -> Self {
         Self { page, last, list_of_universes }
+    }
+
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        // E1.31 8.2 Universe Discovery Layer: Vector.
+        let vector = &bytes[114..118];
+        if vector != Self::VECTOR_UNIVERSE_DISCOVERY_UNIVERSE_LIST.to_be_bytes() {
+            return Err(Error::InvalidUniverseDiscoveryUniverseListVector(u32::from_be_bytes(
+                vector.try_into().unwrap(),
+            )));
+        }
+
+        let page = bytes[118];
+        let last = bytes[119];
+        let list_of_universes = bytes[120..]
+            .chunks_exact(2)
+            .map(|chunk| u16::from_be_bytes(chunk.try_into().unwrap()))
+            .collect();
+
+        Ok(Self { page, last, list_of_universes })
     }
 
     pub fn to_bytes(&self, pdu_len: u16) -> Vec<u8> {
