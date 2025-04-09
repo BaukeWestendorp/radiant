@@ -113,7 +113,7 @@ impl RootLayer {
         let vector = &bytes[18..22];
         let vector = u32::from_be_bytes([vector[0], vector[1], vector[2], vector[3]]);
         if vector != ROOT_VECTOR_ROOT_EXTENDED || vector != ROOT_VECTOR_ROOT_DATA {
-            return Err(Error::InvalidExtendedRootVector(vector));
+            return Err(Error::InvalidRootVector(vector));
         }
 
         // E1.31 5.6 CID

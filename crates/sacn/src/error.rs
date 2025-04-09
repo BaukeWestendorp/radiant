@@ -1,6 +1,10 @@
 /// Error type for various error conditions that can occur.
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    /// Invalid packet.
+    #[error("Invalid packet")]
+    InvalidPacket,
+
     /// Invalid preamble size.
     #[error("Invalid preamble size: {0:4x?}")]
     InvalidPreambleSize(u16),
@@ -20,24 +24,17 @@ pub enum Error {
     #[error("Invalid source name length: {0}. Must be between 0 and 64.")]
     InvalidSourceNameLength(usize),
 
-    /// Invalid packet.
-    #[error("Invalid packet")]
-    InvalidPacket,
-
-    /// Invalid extended root vector.
-    #[error("Invalid extended root vector: {0:8x?}")]
-    InvalidExtendedRootVector(u32),
     /// Invalid root vector.
     #[error("Invalid root vector: {0:8x?}")]
     InvalidRootVector(u32),
-    /// Invalid data vector.
-    #[error("Invalid data vector: {0:8x?}")]
-    InvalidDataVector(u32),
-    /// Invalid DMP vector.
-    #[error("Invalid DMP vector: {0:2x?}")]
-    InvalidDmpVector(u8),
-    /// Invalid Universe Discovery Universe List Vector.
-    #[error("Invalid Universe Discovery Universe List Vector: {0:8x?}")]
+    /// Invalid framing vector.
+    #[error("Invalid framing vector: {0:8x?}")]
+    InvalidFramingVector(u32),
+    /// Invalid DMP Set Property vector.
+    #[error("Invalid DMP Set Property vector: {0:2x?}")]
+    InvalidDmpSetPropertyVector(u8),
+    /// Invalid Universe List Vector.
+    #[error("Invalid Universe List Vector: {0:8x?}")]
     InvalidUniverseDiscoveryUniverseListVector(u32),
 
     /// Invalid DMP address type.

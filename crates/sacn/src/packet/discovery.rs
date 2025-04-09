@@ -2,6 +2,7 @@ use super::{RootLayer, flags_and_length, source_name_from_str};
 use crate::{ComponentIdentifier, Error, source::SourceConfig};
 
 const VECTOR_EXTENDED_DISCOVERY: u32 = 0x00000002;
+const VECTOR_UNIVERSE_DISCOVERY_UNIVERSE_LIST: u32 = 0x00000001;
 
 /// Represents an E1.31 Universe Discovery Packet.
 ///
@@ -105,9 +106,10 @@ impl FramingLayer {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
-        // NOTE: E1.31 6.4.1 Does not explicitly specify that
-        //       we should discard the packet if the vector
-        //       is not VECTOR_EXTENDED_DISCOVERY.
+        let vector = u32::from_be_bytes([bytes[40], bytes[41], bytes[42], bytes[43]]);
+        if vector != VECTOR_EXTENDED_DISCOVERY {
+            return Err(Error::InvalidFramingVector(vector));
+        }
 
         let source_name = bytes[44..108].try_into().unwrap();
 
@@ -135,19 +137,15 @@ struct UniverseDiscoveryLayer {
 }
 
 impl UniverseDiscoveryLayer {
-    const VECTOR_UNIVERSE_DISCOVERY_UNIVERSE_LIST: u32 = 0x00000001;
-
     pub fn new(page: u8, last: u8, list_of_universes: Vec<u16>) -> Self {
         Self { page, last, list_of_universes }
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
         // E1.31 8.2 Universe Discovery Layer: Vector.
-        let vector = &bytes[114..118];
-        if vector != Self::VECTOR_UNIVERSE_DISCOVERY_UNIVERSE_LIST.to_be_bytes() {
-            return Err(Error::InvalidUniverseDiscoveryUniverseListVector(u32::from_be_bytes(
-                vector.try_into().unwrap(),
-            )));
+        let vector = u32::from_be_bytes([bytes[114], bytes[115], bytes[116], bytes[117]]);
+        if vector != VECTOR_UNIVERSE_DISCOVERY_UNIVERSE_LIST {
+            return Err(Error::InvalidUniverseDiscoveryUniverseListVector(vector));
         }
 
         let page = bytes[118];
@@ -163,7 +161,7 @@ impl UniverseDiscoveryLayer {
     pub fn to_bytes(&self, pdu_len: u16) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(8);
         bytes.extend(flags_and_length(pdu_len).to_be_bytes());
-        bytes.extend(Self::VECTOR_UNIVERSE_DISCOVERY_UNIVERSE_LIST.to_be_bytes());
+        bytes.extend(VECTOR_UNIVERSE_DISCOVERY_UNIVERSE_LIST.to_be_bytes());
         bytes.push(self.page);
         bytes.push(self.last);
         bytes.extend(self.list_of_universes.iter().flat_map(|u| u.to_be_bytes()));

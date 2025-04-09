@@ -205,6 +205,11 @@ impl FramingLayer {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        let vector = u32::from_be_bytes([bytes[40], bytes[41], bytes[42], bytes[43]]);
+        if vector != VECTOR_DATA_PACKET {
+            return Err(Error::InvalidFramingVector(vector));
+        }
+
         let source_name = bytes[44..108].try_into().unwrap();
         let priority = bytes[108];
         let synchronization_address = u16::from_be_bytes([bytes[109], bytes[110]]);
@@ -254,7 +259,7 @@ impl DmpLayer {
         // E1.13 7.2 DMP Layer: Vector
         let vector = bytes[117];
         if vector != VECTOR_DMP_SET_PROPERTY {
-            return Err(Error::InvalidDmpVector(vector));
+            return Err(Error::InvalidDmpSetPropertyVector(vector));
         }
 
         // E1.13 7.3 Address Type and Data Type

@@ -78,9 +78,10 @@ impl FramingLayer {
     }
 
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
-        // NOTE: E1.31 6.3.1 does not explicitly specify we should
-        //       discard the packet if the vector
-        //       is not VECTOR_EXTENDED_SYNCHRONIZATION.
+        let vector = u32::from_be_bytes([bytes[40], bytes[41], bytes[42], bytes[43]]);
+        if vector != VECTOR_EXTENDED_SYNCHRONIZATION {
+            return Err(Error::InvalidFramingVector(vector));
+        }
 
         let sequence_number = bytes[44];
         let synchronization_address = u16::from_be_bytes([bytes[45], bytes[46]]);
