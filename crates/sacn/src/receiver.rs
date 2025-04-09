@@ -16,7 +16,6 @@ use std::{
 };
 
 const _NETWORK_DATA_LOSS_TIMEOUT: Duration = Duration::from_millis(2500);
-const _UNIVERSE_DISCOVERY_INTERVAL: Duration = Duration::from_secs(10);
 
 /// A sACN receiver.
 ///

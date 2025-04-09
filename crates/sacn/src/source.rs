@@ -4,7 +4,7 @@
 
 use crate::{
     ComponentIdentifier, DEFAULT_PORT, Error,
-    packet::{DataPacket, Pdu},
+    packet::{DataPacket, Pdu, UniverseDiscoveryPacket},
 };
 use dmx::{Multiverse, Universe, UniverseId};
 use socket2::{Domain, SockAddr, Socket, Type};
@@ -13,10 +13,11 @@ use std::{
     net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr},
     sync::{Arc, Mutex},
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 const DMX_SEND_INTERVAL: Duration = Duration::from_millis(44);
+const UNIVERSE_DISCOVERY_INTERVAL: Duration = Duration::from_secs(10);
 
 /// An sACN Source.
 ///
@@ -157,6 +158,7 @@ struct Inner {
     socket: Socket,
     addr: SockAddr,
     sequence_numbers: Mutex<HashMap<UniverseId, u8>>,
+    last_universe_discovery_time: Mutex<Option<Instant>>,
 
     data: Mutex<Option<Multiverse>>,
 }
@@ -169,23 +171,29 @@ impl Inner {
             socket,
             addr,
             sequence_numbers: Mutex::new(HashMap::new()),
+            last_universe_discovery_time: Mutex::new(None),
             data,
         }
     }
 
     pub fn start_send_loop(&self) -> Result<(), Error> {
+        self.send_discovery_packet()?;
+
         loop {
+            thread::sleep(DMX_SEND_INTERVAL);
             let Some(multiverse) = self.data.lock().unwrap().clone() else { continue };
 
             for (id, universe) in multiverse.universes() {
-                self.send_universe_packet(*id, universe)?;
+                self.send_universe_data_packet(*id, universe)?;
             }
 
-            thread::sleep(DMX_SEND_INTERVAL);
+            if self.should_send_discovery_packet() {
+                self.send_discovery_packet()?;
+            }
         }
     }
 
-    fn send_universe_packet(&self, id: UniverseId, universe: &Universe) -> Result<(), Error> {
+    fn send_universe_data_packet(&self, id: UniverseId, universe: &Universe) -> Result<(), Error> {
         let sequence_number = self.next_sequence_number_for_universe(id);
 
         let packet = {
@@ -211,5 +219,49 @@ impl Inner {
         let next = current.wrapping_add(1);
         seq_nums.insert(universe_id, next);
         next
+    }
+
+    fn should_send_discovery_packet(&self) -> bool {
+        let last_discovery_time = self.last_universe_discovery_time.lock().unwrap();
+        match last_discovery_time.as_ref() {
+            Some(last_time) => {
+                Instant::now().duration_since(*last_time) > UNIVERSE_DISCOVERY_INTERVAL
+            }
+            _ => false,
+        }
+    }
+
+    fn send_discovery_packet(&self) -> Result<(), Error> {
+        let create_and_send_packet = |page, last, list_of_universes| -> Result<(), Error> {
+            let packet = {
+                let config = self.config.lock().unwrap();
+                UniverseDiscoveryPacket::from_source_config(&config, page, last, list_of_universes)?
+            };
+
+            let bytes = packet.to_bytes();
+            self.socket.send_to(&bytes, &self.addr)?;
+
+            Ok(())
+        };
+
+        let universe_ids = {
+            let data = self.data.lock().unwrap();
+            data.as_ref()
+                .map(|multiverse| multiverse.universes().map(|(id, _)| *id).collect::<Vec<_>>())
+                .unwrap_or_default()
+        };
+
+        let pages = universe_ids.chunks(512).take(u8::MAX as usize);
+
+        let last_page = (pages.len() - 1) as u8;
+        for (ix, page) in pages.enumerate() {
+            let list_of_universes = page.iter().map(|id| (*id).into()).collect();
+            create_and_send_packet(ix as u8, last_page, list_of_universes)?;
+        }
+
+        let mut last_time = self.last_universe_discovery_time.lock().unwrap();
+        *last_time = Some(Instant::now());
+
+        Ok(())
     }
 }

@@ -83,8 +83,6 @@ pub(crate) struct RootLayer {
 }
 
 impl RootLayer {
-    pub const SIZE: usize = 38;
-
     pub fn new(cid: ComponentIdentifier, extended: bool) -> Self {
         let vector = if extended { ROOT_VECTOR_ROOT_EXTENDED } else { ROOT_VECTOR_ROOT_DATA };
         RootLayer { cid, vector }
@@ -124,7 +122,7 @@ impl RootLayer {
     }
 
     pub fn to_bytes(&self, pdu_len: u16) -> Vec<u8> {
-        let mut bytes = Vec::with_capacity(Self::SIZE);
+        let mut bytes = Vec::with_capacity(38);
         bytes.extend(ROOT_PREAMBLE_SIZE.to_be_bytes());
         bytes.extend(ROOT_POSTAMBLE_SIZE.to_be_bytes());
         bytes.extend(ROOT_PACKET_IDENTIFIER);

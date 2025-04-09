@@ -10,7 +10,7 @@ fn main() {
     // Create the source.
     let mut source = Source::new(SourceConfig {
         name: "Example Source".to_string(),
-        ip: "239.255.0.1".parse().unwrap(),
+        ip: "127.0.0.1".parse().unwrap(),
         ..Default::default()
     })
     .unwrap();
@@ -23,7 +23,7 @@ fn main() {
         // Update a channel in the data.
         let value = dmx::Value(i % u8::MAX);
         let address = Address::new(universe_id, channel);
-        multiverse.set_value(&address, value).unwrap();
+        multiverse.set_value(&address, value);
 
         // Set the output for the source to send over the socket.
         source.set_output(multiverse.clone());

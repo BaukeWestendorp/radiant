@@ -493,7 +493,7 @@ impl Multiverse {
 
     /// Sets a value at a given [Address].
     ///
-    /// Returns an error if the target universe does not exist.
+    /// Creates a new universe if the target universe does not exist.
     ///
     /// # Examples
     ///
@@ -506,14 +506,16 @@ impl Multiverse {
     /// let address = Address::new(id, Channel::new(1).unwrap());
     /// multiverse.set_value(&address, Value(128)).unwrap();
     /// ```
-    pub fn set_value(&mut self, address: &Address, value: Value) -> Result<(), Error> {
-        let Some(universe) = self.universe_mut(&address.universe) else {
-            return Err(Error::UniverseNotFound(address.universe));
+    pub fn set_value(&mut self, address: &Address, value: Value) {
+        let universe = match self.universe_mut(&address.universe) {
+            Some(universe) => universe,
+            _ => {
+                self.create_universe(address.universe, Universe::new());
+                self.universe_mut(&address.universe).unwrap()
+            }
         };
 
         universe.set_value(&address.channel, value);
-
-        Ok(())
     }
 }
 
