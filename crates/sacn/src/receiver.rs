@@ -105,7 +105,8 @@ pub enum SynchronizationState {
     /// This receiver is not handling synchronization packets.
     #[default]
     Unsynchronized,
-    /// This receiver is actively receiving synchronization packets within the minimum refresh window for DMX512-A packets.
+    /// This receiver is actively receiving synchronization packets
+    /// within the minimum refresh window for DMX512-A packets.
     Synchronized,
 }
 

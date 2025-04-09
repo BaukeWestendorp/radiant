@@ -20,8 +20,9 @@ impl UniverseDiscoveryPacket {
         source_name: &str,
         page: u8,
         last: u8,
-        list_of_universes: Vec<u8>,
+        mut list_of_universes: Vec<u16>,
     ) -> Result<Self, Error> {
+        list_of_universes.truncate(512);
         Ok(Self {
             root: RootLayer::new(cid, true),
             framing: FramingLayer::new(source_name)?,
@@ -34,7 +35,7 @@ impl UniverseDiscoveryPacket {
         config: &SourceConfig,
         page: u8,
         last: u8,
-        list_of_universes: Vec<u8>,
+        list_of_universes: Vec<u16>,
     ) -> Result<Self, Error> {
         Self::new(config.cid, &config.name, page, last, list_of_universes)
     }
@@ -60,7 +61,7 @@ impl UniverseDiscoveryPacket {
     }
 
     /// The list of universes in this packet.
-    pub fn list_of_universes(&self) -> &[u8] {
+    pub fn list_of_universes(&self) -> &[u16] {
         &self.universe_discovery.list_of_universes
     }
 }
@@ -116,13 +117,13 @@ struct UniverseDiscoveryLayer {
     /// Final Page.
     last: u8,
     /// Sorted list of up to 512 16-bit universes.
-    list_of_universes: Vec<u8>,
+    list_of_universes: Vec<u16>,
 }
 
 impl UniverseDiscoveryLayer {
     const VECTOR_UNIVERSE_DISCOVERY_UNIVERSE_LIST: u32 = 0x00000001;
 
-    pub fn new(page: u8, last: u8, list_of_universes: Vec<u8>) -> Self {
+    pub fn new(page: u8, last: u8, list_of_universes: Vec<u16>) -> Self {
         Self { page, last, list_of_universes }
     }
 
@@ -132,7 +133,7 @@ impl UniverseDiscoveryLayer {
         bytes.extend(Self::VECTOR_UNIVERSE_DISCOVERY_UNIVERSE_LIST.to_be_bytes());
         bytes.push(self.page);
         bytes.push(self.last);
-        bytes.extend(&self.list_of_universes);
+        bytes.extend(self.list_of_universes.iter().flat_map(|u| u.to_be_bytes()));
         bytes
     }
 }
