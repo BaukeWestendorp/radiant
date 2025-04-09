@@ -138,7 +138,7 @@ impl super::Pdu for DataPacket {
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
         Ok(Self {
-            root: RootLayer::from_bytes(&bytes, false)?,
+            root: RootLayer::from_bytes(&bytes)?,
             framing: FramingLayer::from_bytes(&bytes)?,
             dmp: DmpLayer::from_bytes(&bytes)?,
         })

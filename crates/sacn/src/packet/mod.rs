@@ -90,7 +90,7 @@ impl RootLayer {
         RootLayer { cid, vector }
     }
 
-    pub fn from_bytes(bytes: &[u8], extended: bool) -> Result<Self, Error> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
         // E1.31 5.1 Preamble Size
         let preamble_size = u16::from_be_bytes([bytes[0], bytes[1]]);
         if preamble_size != ROOT_PREAMBLE_SIZE {
@@ -112,11 +112,8 @@ impl RootLayer {
         // E1.31 5.5 Vector
         let vector = &bytes[18..22];
         let vector = u32::from_be_bytes([vector[0], vector[1], vector[2], vector[3]]);
-        if extended && vector != ROOT_VECTOR_ROOT_EXTENDED {
+        if vector != ROOT_VECTOR_ROOT_EXTENDED || vector != ROOT_VECTOR_ROOT_DATA {
             return Err(Error::InvalidExtendedRootVector(vector));
-        }
-        if !extended && vector != ROOT_VECTOR_ROOT_DATA {
-            return Err(Error::InvalidRootVector(vector));
         }
 
         // E1.31 5.6 CID

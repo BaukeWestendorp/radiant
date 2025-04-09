@@ -58,10 +58,7 @@ impl super::Pdu for SynchronizationPacket {
     }
 
     fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
-        Ok(Self {
-            root: RootLayer::from_bytes(bytes, true)?,
-            framing: FramingLayer::from_bytes(bytes)?,
-        })
+        Ok(Self { root: RootLayer::from_bytes(bytes)?, framing: FramingLayer::from_bytes(bytes)? })
     }
 
     fn len(&self) -> u16 {
