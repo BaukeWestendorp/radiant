@@ -1,5 +1,5 @@
 use super::{RootLayer, flags_and_length, source_name_from_str};
-use crate::{ComponentIdentifier, Error, source::SourceConfig};
+use crate::{ComponentIdentifier, Error, MAX_UNIVERSE_SIZE, source::SourceConfig};
 
 const VECTOR_DMP_SET_PROPERTY: u8 = 0x02;
 const VECTOR_DATA_PACKET: u32 = 0x00000002;
@@ -282,7 +282,8 @@ impl DmpLayer {
 
         let property_value_count = u16::from_be_bytes([bytes[123], bytes[124]]);
 
-        let property_values = bytes[125..125 + property_value_count as usize].to_vec();
+        let mut property_values = bytes[125..125 + property_value_count as usize].to_vec();
+        property_values.truncate(MAX_UNIVERSE_SIZE as usize);
 
         Ok(DmpLayer { property_values })
     }
