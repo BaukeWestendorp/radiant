@@ -44,22 +44,22 @@ impl UniverseDiscoveryPacket {
         &self.root.cid
     }
 
-    /// The Source Name in this packet.
+    /// The source name in this packet.
     pub fn source_name(&self) -> &str {
         core::str::from_utf8(&self.framing.source_name).unwrap()
     }
 
-    /// The Page Number in this packet.
+    /// The page number in this packet.
     pub fn page(&self) -> u8 {
         self.universe_discovery.page
     }
 
-    /// The Last Page Number in this packet.
+    /// The last page number in this packet.
     pub fn last(&self) -> u8 {
         self.universe_discovery.last
     }
 
-    /// The List of Universes in this packet.
+    /// The list of universes in this packet.
     pub fn list_of_universes(&self) -> &[u8] {
         &self.universe_discovery.list_of_universes
     }

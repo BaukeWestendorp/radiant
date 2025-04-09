@@ -35,8 +35,43 @@ impl Source {
     }
 
     /// Returns the [SourceConfig] for this [Source].
-    pub fn config(&self) -> &SourceConfig {
-        &self.inner.config
+    pub fn config(&self) -> SourceConfig {
+        self.inner.config.lock().unwrap().clone()
+    }
+
+    /// Sets the configuration for this [Source].
+    pub fn set_config(&mut self, config: SourceConfig) {
+        *self.inner.config.lock().unwrap() = config;
+    }
+
+    /// Sets the CID for this [Source].
+    pub fn set_cid(&mut self, cid: ComponentIdentifier) {
+        self.inner.config.lock().unwrap().cid = cid;
+    }
+
+    /// Sets the name of this [Source].
+    pub fn set_name(&mut self, name: String) {
+        self.inner.config.lock().unwrap().name = name;
+    }
+
+    /// Sets the priority of this [Source].
+    pub fn set_priority(&mut self, priority: u8) {
+        self.inner.config.lock().unwrap().priority = priority;
+    }
+
+    /// Sets the preview data flag for this [Source].
+    pub fn set_preview_data(&mut self, enabled: bool) {
+        self.inner.config.lock().unwrap().preview_data = enabled;
+    }
+
+    /// Sets the synchronization address for this [Source].
+    pub fn set_synchronization(&mut self, address: u16) {
+        self.inner.config.lock().unwrap().synchronization_address = address;
+    }
+
+    /// Sets the force synchronization flag for this [Source].
+    pub fn set_forced_synchronization(&mut self, enabled: bool) {
+        self.inner.config.lock().unwrap().force_synchronization = enabled;
     }
 
     /// Sets the output data for this [Source].
@@ -72,18 +107,30 @@ pub struct SourceConfig {
     /// Name of the source.
     pub name: String,
 
-    /// IP address of the interface the source should send to .
+    /// IP address the source should send to.
     pub ip: IpAddr,
-    /// Port number of the source.
+    /// Port number the source should send to.
     pub port: u16,
 
     /// The priority of the data packets sent by the source.
     pub priority: u8,
     /// Whether the source should send preview data.
+    ///
+    /// The preview data flag indicates that the data sent is
+    /// intended for use in visualization or media server preview
+    /// applications and shall not be used to generate live output.
     pub preview_data: bool,
     /// The synchronization universe of the source.
     pub synchronization_address: u16,
-    /// Whether the source should force synchronization.
+    /// Indicates whether to lock or revert to an
+    /// unsynchronized state when synchronization is lost.
+    ///
+    /// When set to `false`, components that had been operating in a synchronized state
+    /// will not update with any new packets until synchronization resumes.
+    ///
+    /// When set to `true` once synchronization has been lost, components that had been
+    /// operating in a synchronized state don't have to wait for a
+    /// new synchronization packet in order to update to the next data packet.
     pub force_synchronization: bool,
 }
 
@@ -105,7 +152,7 @@ impl Default for SourceConfig {
 }
 
 struct Inner {
-    config: SourceConfig,
+    config: Mutex<SourceConfig>,
 
     socket: Socket,
     addr: SockAddr,
@@ -117,7 +164,13 @@ struct Inner {
 impl Inner {
     pub fn new(config: SourceConfig, socket: Socket, data: Mutex<Option<Multiverse>>) -> Self {
         let addr: SockAddr = SocketAddr::new(config.ip, config.port).into();
-        Self { config, socket, addr, sequence_numbers: Mutex::new(HashMap::new()), data }
+        Self {
+            config: Mutex::new(config),
+            socket,
+            addr,
+            sequence_numbers: Mutex::new(HashMap::new()),
+            data,
+        }
     }
 
     pub fn start_send_loop(&self) -> Result<(), Error> {
@@ -135,13 +188,16 @@ impl Inner {
     fn send_universe_packet(&self, id: UniverseId, universe: &Universe) -> Result<(), Error> {
         let sequence_number = self.next_sequence_number_for_universe(id);
 
-        let packet = DataPacket::from_source_config(
-            &self.config,
-            sequence_number,
-            false,
-            id.into(),
-            universe.clone().into(),
-        )?;
+        let packet = {
+            let config = self.config.lock().unwrap();
+            DataPacket::from_source_config(
+                &config,
+                sequence_number,
+                false,
+                id.into(),
+                universe.clone().into(),
+            )?
+        };
 
         let bytes = packet.to_bytes();
         self.socket.send_to(&bytes, &self.addr)?;

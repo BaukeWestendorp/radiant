@@ -87,7 +87,7 @@ impl Receiver {
 /// Configuration for a [Receiver].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReceiverConfig {
-    /// The IP address of the interface the receiver should bind to.
+    /// The IP address the receiver should bind to.
     pub ip: IpAddr,
     /// The port the receiver should bind to.
     pub port: u16,

@@ -78,12 +78,12 @@ impl DataPacket {
         &self.root.cid
     }
 
-    /// Returns the Source Name in this packet.
+    /// Returns the source name in this packet.
     pub fn source_name(&self) -> &str {
         core::str::from_utf8(&self.framing.source_name).unwrap()
     }
 
-    /// Returns the Priority in this packet.
+    /// Returns the priority in this packet.
     pub fn priority(&self) -> u8 {
         self.framing.priority
     }
@@ -93,32 +93,32 @@ impl DataPacket {
         self.framing.synchronization_address
     }
 
-    /// Returns the Preview Data flag in this packet.
+    /// Returns the preview data flag in this packet.
     pub fn preview_data(&self) -> bool {
         self.framing.options & PREVIEW_DATA_BIT == PREVIEW_DATA_BIT
     }
 
-    /// Returns the Stream Terminated flag in this packet.
+    /// Returns the stream terminated flag in this packet.
     pub fn stream_terminated(&self) -> bool {
         self.framing.options & STREAM_TERMINATED_BIT == STREAM_TERMINATED_BIT
     }
 
-    /// Returns the Force Synchronization flag in this packet.
+    /// Returns the force synchronization flag in this packet.
     pub fn force_synchronization(&self) -> bool {
         self.framing.options & FORCE_SYNCHRONIZATION_BIT == FORCE_SYNCHRONIZATION_BIT
     }
 
-    /// Returns the Universe Number in this packet.
+    /// Returns the universe number in this packet.
     pub fn universe(&self) -> u16 {
         self.framing.universe
     }
 
-    /// Returns the DMX Start Code in this packet.
+    /// Returns the DMX start code in this packet.
     pub fn start_code(&self) -> Option<u8> {
         self.dmp.property_values.get(0).copied()
     }
 
-    /// Returns the DMX Data in this packet.
+    /// Returns the DMX data in this packet.
     pub fn data(&self) -> &[u8] {
         &self.dmp.property_values[1..]
     }

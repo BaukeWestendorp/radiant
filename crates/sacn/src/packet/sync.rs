@@ -39,12 +39,12 @@ impl SynchronizationPacket {
         &self.root.cid
     }
 
-    /// The Sequence Number in this packet.
+    /// The sequence number in this packet.
     pub fn sequence_number(&self) -> u8 {
         self.framing.sequence_number
     }
 
-    /// The Synchronization Address in this packet.
+    /// The synchronization address in this packet.
     pub fn synchronization_address(&self) -> u16 {
         self.framing.synchronization_address
     }
