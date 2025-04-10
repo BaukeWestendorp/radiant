@@ -11,7 +11,7 @@ use socket2::{Domain, SockAddr, Socket, Type};
 use std::{
     collections::HashMap,
     net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr},
-    sync::{Arc, Mutex},
+    sync::Mutex,
     thread,
     time::{Duration, Instant},
 };
@@ -23,136 +23,6 @@ const UNIVERSE_DISCOVERY_INTERVAL: Duration = Duration::from_secs(10);
 ///
 /// Responsible for sending sACN packets.
 pub struct Source {
-    inner: Arc<Inner>,
-}
-
-impl Source {
-    /// Creates a new [Source].
-    pub fn new(config: SourceConfig) -> Result<Self, Error> {
-        let domain = if config.ip.is_ipv4() { Domain::IPV4 } else { Domain::IPV6 };
-        let socket = Socket::new(domain, Type::DGRAM, None)?;
-
-        Ok(Source { inner: Arc::new(Inner::new(config, socket, Mutex::new(None))) })
-    }
-
-    /// Returns the [SourceConfig] for this [Source].
-    pub fn config(&self) -> SourceConfig {
-        self.inner.config.lock().unwrap().clone()
-    }
-
-    /// Sets the configuration for this [Source].
-    pub fn set_config(&mut self, config: SourceConfig) {
-        *self.inner.config.lock().unwrap() = config;
-    }
-
-    /// Sets the CID for this [Source].
-    pub fn set_cid(&mut self, cid: ComponentIdentifier) {
-        self.inner.config.lock().unwrap().cid = cid;
-    }
-
-    /// Sets the name of this [Source].
-    pub fn set_name(&mut self, name: String) {
-        self.inner.config.lock().unwrap().name = name;
-    }
-
-    /// Sets the priority of this [Source].
-    pub fn set_priority(&mut self, priority: u8) {
-        self.inner.config.lock().unwrap().priority = priority;
-    }
-
-    /// Sets the preview data flag for this [Source].
-    pub fn set_preview_data(&mut self, enabled: bool) {
-        self.inner.config.lock().unwrap().preview_data = enabled;
-    }
-
-    /// Sets the synchronization address for this [Source].
-    pub fn set_synchronization(&mut self, address: u16) {
-        self.inner.config.lock().unwrap().synchronization_address = address;
-    }
-
-    /// Sets the force synchronization flag for this [Source].
-    pub fn set_forced_synchronization(&mut self, enabled: bool) {
-        self.inner.config.lock().unwrap().force_synchronization = enabled;
-    }
-
-    /// Sets the output data for this [Source].
-    pub fn set_output(&mut self, data: Multiverse) {
-        *self.inner.data.lock().unwrap() = Some(data);
-    }
-
-    /// Starts the [Source].
-    ///
-    /// Calling this method will start the source in a new thread.
-    pub fn start(&self) {
-        thread::spawn({
-            let inner = Arc::clone(&self.inner);
-            move || -> Result<(), Error> {
-                inner.start_send_loop()?;
-                Ok(())
-            }
-        });
-    }
-
-    /// Stops the [Source].
-    pub fn stop(&self) -> Result<(), Error> {
-        self.inner.socket.shutdown(Shutdown::Both)?;
-        Ok(())
-    }
-}
-
-/// Configuration for a [Source].
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SourceConfig {
-    /// [ComponentIdentifier] for the source.
-    pub cid: ComponentIdentifier,
-    /// Name of the source.
-    pub name: String,
-
-    /// IP address the source should send to.
-    pub ip: IpAddr,
-    /// Port number the source should send to.
-    pub port: u16,
-
-    /// The priority of the data packets sent by the source.
-    pub priority: u8,
-    /// Whether the source should send preview data.
-    ///
-    /// The preview data flag indicates that the data sent is
-    /// intended for use in visualization or media server preview
-    /// applications and shall not be used to generate live output.
-    pub preview_data: bool,
-    /// The synchronization universe of the source.
-    pub synchronization_address: u16,
-    /// Indicates whether to lock or revert to an
-    /// unsynchronized state when synchronization is lost.
-    ///
-    /// When set to `false`, components that had been operating in a synchronized state
-    /// will not update with any new packets until synchronization resumes.
-    ///
-    /// When set to `true` once synchronization has been lost, components that had been
-    /// operating in a synchronized state don't have to wait for a
-    /// new synchronization packet in order to update to the next data packet.
-    pub force_synchronization: bool,
-}
-
-impl Default for SourceConfig {
-    fn default() -> Self {
-        Self {
-            cid: ComponentIdentifier::new_v4(),
-            name: "New sACN Source".to_string(),
-
-            ip: Ipv4Addr::UNSPECIFIED.into(),
-            port: DEFAULT_PORT,
-
-            priority: 100,
-            preview_data: false,
-            synchronization_address: 0,
-            force_synchronization: false,
-        }
-    }
-}
-
-struct Inner {
     config: Mutex<SourceConfig>,
 
     socket: Socket,
@@ -163,20 +33,70 @@ struct Inner {
     data: Mutex<Option<Multiverse>>,
 }
 
-impl Inner {
-    pub fn new(config: SourceConfig, socket: Socket, data: Mutex<Option<Multiverse>>) -> Self {
+impl Source {
+    /// Creates a new [Source].
+    pub fn new(config: SourceConfig) -> Result<Self, Error> {
+        let domain = if config.ip.is_ipv4() { Domain::IPV4 } else { Domain::IPV6 };
+        let socket = Socket::new(domain, Type::DGRAM, None)?;
         let addr: SockAddr = SocketAddr::new(config.ip, config.port).into();
-        Self {
+
+        Ok(Source {
             config: Mutex::new(config),
             socket,
             addr,
             sequence_numbers: Mutex::new(HashMap::new()),
             last_universe_discovery_time: Mutex::new(None),
-            data,
-        }
+            data: Mutex::new(Some(Multiverse::new())),
+        })
     }
 
-    pub fn start_send_loop(&self) -> Result<(), Error> {
+    /// Returns the [SourceConfig] for this [Source].
+    pub fn config(&self) -> SourceConfig {
+        self.config.lock().unwrap().clone()
+    }
+
+    /// Sets the configuration for this [Source].
+    pub fn set_config(&self, config: SourceConfig) {
+        *self.config.lock().unwrap() = config;
+    }
+
+    /// Sets the CID for this [Source].
+    pub fn set_cid(&self, cid: ComponentIdentifier) {
+        self.config.lock().unwrap().cid = cid;
+    }
+
+    /// Sets the name of this [Source].
+    pub fn set_name(&self, name: String) {
+        self.config.lock().unwrap().name = name;
+    }
+
+    /// Sets the priority of this [Source].
+    pub fn set_priority(&self, priority: u8) {
+        self.config.lock().unwrap().priority = priority;
+    }
+
+    /// Sets the preview data flag for this [Source].
+    pub fn set_preview_data(&self, enabled: bool) {
+        self.config.lock().unwrap().preview_data = enabled;
+    }
+
+    /// Sets the synchronization address for this [Source].
+    pub fn set_synchronization(&self, address: u16) {
+        self.config.lock().unwrap().synchronization_address = address;
+    }
+
+    /// Sets the force synchronization flag for this [Source].
+    pub fn set_forced_synchronization(&self, enabled: bool) {
+        self.config.lock().unwrap().force_synchronization = enabled;
+    }
+
+    /// Sets the output data for this [Source].
+    pub fn set_output(&self, data: Multiverse) {
+        *self.data.lock().unwrap() = Some(data);
+    }
+
+    /// Starts the [Source].
+    pub fn start(&self) -> Result<(), Error> {
         self.send_discovery_packet()?;
 
         loop {
@@ -191,6 +111,12 @@ impl Inner {
                 self.send_discovery_packet()?;
             }
         }
+    }
+
+    /// Stops the [Source].
+    pub fn stop(&self) -> Result<(), Error> {
+        self.socket.shutdown(Shutdown::Both)?;
+        Ok(())
     }
 
     fn send_universe_data_packet(&self, id: UniverseId, universe: &Universe) -> Result<(), Error> {
@@ -269,5 +195,57 @@ impl Inner {
         *last_time = Some(Instant::now());
 
         Ok(())
+    }
+}
+
+/// Configuration for a [Source].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceConfig {
+    /// [ComponentIdentifier] for the source.
+    pub cid: ComponentIdentifier,
+    /// Name of the source.
+    pub name: String,
+
+    /// IP address the source should send to.
+    pub ip: IpAddr,
+    /// Port number the source should send to.
+    pub port: u16,
+
+    /// The priority of the data packets sent by the source.
+    pub priority: u8,
+    /// Whether the source should send preview data.
+    ///
+    /// The preview data flag indicates that the data sent is
+    /// intended for use in visualization or media server preview
+    /// applications and shall not be used to generate live output.
+    pub preview_data: bool,
+    /// The synchronization universe of the source.
+    pub synchronization_address: u16,
+    /// Indicates whether to lock or revert to an
+    /// unsynchronized state when synchronization is lost.
+    ///
+    /// When set to `false`, components that had been operating in a synchronized state
+    /// will not update with any new packets until synchronization resumes.
+    ///
+    /// When set to `true` once synchronization has been lost, components that had been
+    /// operating in a synchronized state don't have to wait for a
+    /// new synchronization packet in order to update to the next data packet.
+    pub force_synchronization: bool,
+}
+
+impl Default for SourceConfig {
+    fn default() -> Self {
+        Self {
+            cid: ComponentIdentifier::new_v4(),
+            name: "New sACN Source".to_string(),
+
+            ip: Ipv4Addr::UNSPECIFIED.into(),
+            port: DEFAULT_PORT,
+
+            priority: 100,
+            preview_data: false,
+            synchronization_address: 0,
+            force_synchronization: false,
+        }
     }
 }

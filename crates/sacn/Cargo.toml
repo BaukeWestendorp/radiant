@@ -18,3 +18,6 @@ uuid = { version = "1.16.0", features = ["v4"] }
 
 # network
 socket2 = { version = "0.5.9", features = ["all"] }
+
+# timing
+spin_sleep = "1.3.1"
