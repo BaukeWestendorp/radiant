@@ -5,6 +5,7 @@ const PREVIEW_DATA_BIT: u8 = 0x80;
 const STREAM_TERMINATED_BIT: u8 = 0x40;
 const FORCE_SYNCHRONIZATION_BIT: u8 = 0x20;
 
+/// An E1.31 Data Packet Framing Layer.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DataFraming {
     /// User Assigned Name of Source.
@@ -20,12 +21,14 @@ pub struct DataFraming {
     /// Universe number.
     universe: u16,
 
+    // DMP
     dmp: Dmp,
 }
 
 impl DataFraming {
     const VECTOR: [u8; 4] = [0x00, 0x00, 0x00, 0x02];
 
+    /// Creates a new [DataFraming] layer.
     pub fn new(
         source_name: &str,
         priority: u8,
@@ -62,6 +65,7 @@ impl DataFraming {
         })
     }
 
+    /// Creates a new [DataFraming] layer from a [SourceConfig].
     pub fn from_source_config(
         config: &SourceConfig,
         sequence_number: u8,
@@ -82,42 +86,42 @@ impl DataFraming {
         )
     }
 
-    /// Returns the source name in this packet.
+    /// Returns the source name in this layer.
     pub fn source_name(&self) -> &str {
         core::str::from_utf8(&self.source_name).unwrap()
     }
 
-    /// Returns the priority in this packet.
+    /// Returns the priority in this layer.
     pub fn priority(&self) -> u8 {
         self.priority
     }
 
-    /// Returns the synchronization address in this packet.
+    /// Returns the synchronization address in this layer.
     pub fn synchronization_address(&self) -> u16 {
         self.synchronization_address
     }
 
-    /// Returns the preview data flag in this packet.
+    /// Returns the preview data flag in this layer.
     pub fn preview_data(&self) -> bool {
         self.options & PREVIEW_DATA_BIT == PREVIEW_DATA_BIT
     }
 
-    /// Returns the stream terminated flag in this packet.
+    /// Returns the stream terminated flag in this layer.
     pub fn stream_terminated(&self) -> bool {
         self.options & STREAM_TERMINATED_BIT == STREAM_TERMINATED_BIT
     }
 
-    /// Returns the force synchronization flag in this packet.
+    /// Returns the force synchronization flag in this layer.
     pub fn force_synchronization(&self) -> bool {
         self.options & FORCE_SYNCHRONIZATION_BIT == FORCE_SYNCHRONIZATION_BIT
     }
 
-    /// Returns the universe number in this packet.
+    /// Returns the universe number in this layer.
     pub fn universe(&self) -> u16 {
         self.universe
     }
 
-    /// Returns the DMP in this packet.
+    /// Returns the DMP PDU in this layer.
     pub fn dmp(&self) -> &Dmp {
         &self.dmp
     }
@@ -185,6 +189,7 @@ impl acn::Pdu for DataFraming {
     }
 }
 
+/// The DMP (Device Management Protocol) Layer of an E1.31 Data Packet.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Dmp {
     property_values: Vec<u8>,
@@ -198,6 +203,7 @@ impl Dmp {
 
     const DEFAULT_START_CODE: u8 = 0x00;
 
+    /// Creates a new [Dmp] layer.
     pub fn new(data: Vec<u8>) -> Result<Self, crate::Error> {
         let mut property_values = vec![Self::DEFAULT_START_CODE];
         property_values.extend(data);

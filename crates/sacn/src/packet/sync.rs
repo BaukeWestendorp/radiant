@@ -2,6 +2,7 @@ use crate::{Error, acn};
 
 use super::flags_and_length;
 
+/// An E1.31 Synchronization Framing Layer.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SyncFraming {
     sequence_number: u8,
@@ -11,16 +12,17 @@ pub struct SyncFraming {
 impl SyncFraming {
     const VECTOR: [u8; 4] = [0x00, 0x00, 0x00, 0x01];
 
+    /// Creates a new [SyncFraming] layer.
     pub fn new(sequence_number: u8, synchronization_address: u16) -> Self {
         Self { sequence_number, synchronization_address }
     }
 
-    /// The sequence number in this packet.
+    /// The sequence number in this layer.
     pub fn sequence_number(&self) -> u8 {
         self.sequence_number
     }
 
-    /// The synchronization address in this packet.
+    /// The synchronization address in this layer.
     pub fn synchronization_address(&self) -> u16 {
         self.synchronization_address
     }

@@ -4,7 +4,7 @@
 
 use crate::{
     DEFAULT_PORT, Error, MAX_UNIVERSE_SIZE,
-    packet::{Packet, Pdu, data::DataFraming},
+    packet::{DataFraming, Packet, Pdu},
 };
 use dmx::{Channel, Multiverse, Universe, UniverseId};
 use socket2::{Domain, SockAddr, Socket, Type};

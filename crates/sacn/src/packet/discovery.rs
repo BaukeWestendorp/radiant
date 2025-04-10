@@ -1,6 +1,7 @@
 use super::{flags_and_length, source_name_from_str};
 use crate::{acn, source::SourceConfig};
 
+/// An E1.31 Universe Discovery Packet Framing Layer.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DiscoveryFraming {
     source_name: [u8; 64],
@@ -10,6 +11,7 @@ pub struct DiscoveryFraming {
 impl DiscoveryFraming {
     const VECTOR: [u8; 4] = [0x00, 0x00, 0x00, 0x02];
 
+    /// Creates a new [DiscoveryFraming] layer.
     pub fn new(
         source_name: &str,
         universe_discovery: UniverseDiscovery,
@@ -66,6 +68,7 @@ impl acn::Pdu for DiscoveryFraming {
     }
 }
 
+/// An E1.31 Universe Discovery Layer.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UniverseDiscovery {
     /// Packet Number.
@@ -79,23 +82,24 @@ pub struct UniverseDiscovery {
 impl UniverseDiscovery {
     const VECTOR: [u8; 4] = [0x00, 0x00, 0x00, 0x02];
 
+    /// Creates a new [UniverseDiscovery] layer.
     pub fn new(page: u8, last: u8, mut list_of_universes: Vec<u16>) -> Self {
         list_of_universes.truncate(512);
         list_of_universes.sort();
         Self { page, last, list_of_universes }
     }
 
-    /// The page number in this packet.
+    /// The page number in this layer.
     pub fn page(&self) -> u8 {
         self.page
     }
 
-    /// The last page number in this packet.
+    /// The last page number in this layer.
     pub fn last(&self) -> u8 {
         self.last
     }
 
-    /// The list of universes in this packet.
+    /// The list of universes in this layer.
     pub fn list_of_universes(&self) -> &[u16] {
         &self.list_of_universes
     }

@@ -7,19 +7,22 @@
 
 use crate::ComponentIdentifier;
 use crate::acn::{self, Pdu as _, PduBlock};
-use crate::packet::data::DataFraming;
-use discovery::DiscoveryFraming;
-use root::RootLayer;
-use sync::SyncFraming;
 
-pub mod data;
-pub mod discovery;
-pub mod root;
-pub mod sync;
+mod data;
+mod discovery;
+mod root;
+mod sync;
 
+pub use data::{DataFraming, Dmp};
+pub use discovery::{DiscoveryFraming, UniverseDiscovery};
+pub use root::RootLayer;
+pub use sync::SyncFraming;
+
+/// An E1.31 Packet.
 pub struct Packet(acn::Packet<Preamble, RootLayer, Postamble>);
 
 impl Packet {
+    /// Creates a new [Packet].
     pub fn new(cid: ComponentIdentifier, pdu: Pdu) -> Self {
         let extended = match pdu {
             Pdu::DataFraming(_) => false,
@@ -32,13 +35,15 @@ impl Packet {
         Self(packet)
     }
 
+    /// Decodes a network ordered slice of bytes into a new [Packet].
     pub fn decode(data: &[u8]) -> Result<Self, crate::Error> {
         let root_layer = RootLayer::decode(data)?;
         Ok(Self(acn::Packet::new(Preamble, PduBlock::new(vec![root_layer]), Postamble)))
     }
 
-    pub fn encode(&self) -> impl Into<Vec<u8>> {
-        self.0.encode()
+    /// Encodes this [Packet] into a network ordered [Vec<u8>].
+    pub fn encode(&self) -> Vec<u8> {
+        self.0.encode().into()
     }
 }
 
@@ -50,11 +55,12 @@ impl std::ops::Deref for Packet {
     }
 }
 
+/// The preamble for an E1.31 Root Layer.
 pub struct Preamble;
 
 impl Preamble {
     #[rustfmt::skip]
-    pub const BYTES: [u8; 16 as usize] = {
+    const BYTES: [u8; 16 as usize] = {
         [
             0x00, 0x10, // E1.31 RLP Preamble Size
             0x00, 0x00, // E1.31 RLP Postamble Size
@@ -96,6 +102,7 @@ impl acn::Preamble for Preamble {
     }
 }
 
+/// The postamble for an E1.31 Root Layer.
 pub struct Postamble;
 
 impl acn::Postamble for Postamble {
@@ -114,10 +121,14 @@ impl acn::Postamble for Postamble {
     }
 }
 
+/// Any E1.31 PDU.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Pdu {
+    /// Data Framing PDU.
     DataFraming(DataFraming),
+    /// Synchronization Framing PDU.
     SyncFraming(SyncFraming),
+    /// DiscoveryFraming PDU.
     DiscoveryFraming(DiscoveryFraming),
 }
 

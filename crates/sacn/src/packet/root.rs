@@ -5,6 +5,7 @@ use crate::{
 
 use super::{Pdu, Postamble, Preamble, flags_and_length};
 
+/// An E1.31 Root Layer.
 pub struct RootLayer {
     cid: ComponentIdentifier,
     extended: bool,
@@ -15,18 +16,17 @@ impl RootLayer {
     const VECTOR: [u8; 4] = [0x00, 0x00, 0x00, 0x04];
     const VECTOR_EXTENDED: [u8; 4] = [0x00, 0x00, 0x00, 0x08];
 
+    /// Creates a new [RootLayer].
     pub fn new(cid: ComponentIdentifier, extended: bool, pdu: Pdu) -> Self {
         Self { cid, extended, pdu }
     }
 
+    /// The CID in this layer.
     pub fn cid(&self) -> &ComponentIdentifier {
         &self.cid
     }
 
-    pub fn extended(&self) -> bool {
-        self.extended
-    }
-
+    /// The PDU in this layer.
     pub fn pdu(&self) -> &Pdu {
         &self.pdu
     }

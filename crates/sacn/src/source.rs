@@ -4,11 +4,7 @@
 
 use crate::{
     ComponentIdentifier, DEFAULT_PORT, Error,
-    packet::{
-        Packet, Pdu,
-        data::{DataFraming, Dmp},
-        discovery::{DiscoveryFraming, UniverseDiscovery},
-    },
+    packet::{DataFraming, DiscoveryFraming, Dmp, Packet, Pdu, UniverseDiscovery},
 };
 use dmx::{Multiverse, Universe, UniverseId};
 use socket2::{Domain, SockAddr, Socket, Type};
@@ -213,7 +209,7 @@ impl Inner {
             Packet::new(config.cid, pdu)
         };
 
-        let bytes = packet.encode().into();
+        let bytes = packet.encode();
         self.socket.send_to(&bytes, &self.addr)?;
 
         Ok(())
@@ -248,7 +244,7 @@ impl Inner {
                 Packet::new(config.cid, pdu)
             };
 
-            let bytes = packet.encode().into();
+            let bytes = packet.encode();
             self.socket.send_to(&bytes, &self.addr)?;
 
             Ok(())
