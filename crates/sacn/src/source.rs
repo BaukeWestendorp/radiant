@@ -69,6 +69,7 @@ impl Source {
     /// # Examples
     ///
     /// ```
+    /// # use sacn::source::{SourceConfig, Source};
     /// let source = Source::new(SourceConfig::default()).unwrap();
     /// source.set_universe(1, vec![0; 512]);
     /// ```
@@ -84,6 +85,7 @@ impl Source {
     /// # Examples
     ///
     /// ```
+    /// # use sacn::source::{SourceConfig, Source};
     /// let source = Source::new(SourceConfig::default()).unwrap();
     /// source.set_universe(1, vec![0; 512]);
     /// source.remove_universe(1);
