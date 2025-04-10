@@ -1,6 +1,5 @@
-use crate::{Error, acn};
-
-use super::flags_and_length;
+use super::{PacketError, flags_and_length};
+use crate::acn;
 
 /// An E1.31 Synchronization Framing Layer.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -29,13 +28,13 @@ impl SyncFraming {
 }
 
 impl acn::Pdu for SyncFraming {
-    type DecodeError = Error;
+    type DecodeError = PacketError;
 
     fn decode(bytes: &[u8]) -> Result<Self, Self::DecodeError> {
         // E1.31 6.3.1 Synchronization Packet: Vector
         let vector = [bytes[40], bytes[41], bytes[42], bytes[43]];
         if vector != Self::VECTOR {
-            return Err(Error::InvalidFramingLayerVector(vector.to_vec()));
+            return Err(PacketError::InvalidFramingLayerVector(vector.to_vec()));
         }
 
         // E1.31 6.3.2 Synchronization Packet: Sequence Number

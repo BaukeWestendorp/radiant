@@ -7,12 +7,9 @@
 //! TODO: List features.
 
 pub(crate) mod acn;
-mod error;
 pub mod packet;
 pub mod receiver;
 pub mod source;
-
-pub use error::Error;
 
 use uuid::Uuid;
 

@@ -1,4 +1,4 @@
-use super::{flags_and_length, source_name_from_str};
+use super::{PacketError, flags_and_length, source_name_from_str};
 use crate::{MAX_UNIVERSE_SIZE, acn, source::SourceConfig};
 
 const PREVIEW_DATA_BIT: u8 = 0x80;
@@ -39,13 +39,13 @@ impl DataFraming {
         force_synchronization: bool,
         universe: u16,
         dmp: Dmp,
-    ) -> Result<Self, crate::Error> {
+    ) -> Result<Self, PacketError> {
         // E1.31 6.2.2 Data Packet: Source Name
         let source_name = source_name_from_str(source_name)?;
 
         // 6.2.3 E1.31 Data Packet: Priority.
         if !(0..200).contains(&priority) {
-            return Err(crate::Error::InvalidPriority(priority));
+            return Err(PacketError::InvalidPriority(priority));
         }
 
         // E1.31 6.2.6 Data Packet: Options
@@ -72,7 +72,7 @@ impl DataFraming {
         stream_terminated: bool,
         universe: u16,
         dmp: Dmp,
-    ) -> Result<Self, crate::Error> {
+    ) -> Result<Self, PacketError> {
         Self::new(
             &config.name,
             config.priority,
@@ -128,7 +128,7 @@ impl DataFraming {
 }
 
 impl acn::Pdu for DataFraming {
-    type DecodeError = crate::Error;
+    type DecodeError = PacketError;
 
     fn encode(&self) -> impl Into<Vec<u8>> {
         let flags_and_length = flags_and_length(self.size()).to_be_bytes();
@@ -150,7 +150,7 @@ impl acn::Pdu for DataFraming {
         // E1.31 6.2.1 Data Packet: Vector
         let vector = [bytes[2], bytes[3], bytes[4], bytes[5]];
         if vector != Self::VECTOR {
-            return Err(crate::Error::InvalidFramingLayerVector(vector.to_vec()));
+            return Err(PacketError::InvalidFramingLayerVector(vector.to_vec()));
         }
 
         // E1.31 6.2.2 Data Packet: Source Name
@@ -204,7 +204,7 @@ impl Dmp {
     const DEFAULT_START_CODE: u8 = 0x00;
 
     /// Creates a new [Dmp] layer.
-    pub fn new(data: Vec<u8>) -> Result<Self, crate::Error> {
+    pub fn new(data: Vec<u8>) -> Result<Self, PacketError> {
         let mut property_values = vec![Self::DEFAULT_START_CODE];
         property_values.extend(data);
         Ok(Dmp { property_values })
@@ -222,7 +222,7 @@ impl Dmp {
 }
 
 impl acn::Pdu for Dmp {
-    type DecodeError = crate::Error;
+    type DecodeError = PacketError;
 
     fn encode(&self) -> impl Into<Vec<u8>> {
         let flags_and_length = flags_and_length(self.size()).to_be_bytes();
@@ -243,19 +243,19 @@ impl acn::Pdu for Dmp {
         // E1.13 7.2 DMP Layer: Vector
         let vector = bytes[2];
         if vector != Self::VECTOR {
-            return Err(crate::Error::InvalidDmpLayerVector(vec![vector]));
+            return Err(PacketError::InvalidDmpLayerVector(vec![vector]));
         }
 
         // E1.13 7.3 Address Type and Data Type
         let address_type_and_data_type = bytes[3];
         if address_type_and_data_type != Self::ADDRESS_TYPE_AND_DATA_TYPE {
-            return Err(crate::Error::InvalidDmpAddressType(address_type_and_data_type));
+            return Err(PacketError::InvalidDmpAddressType(address_type_and_data_type));
         }
 
         // E1.13 7.4 First Property Address
         let first_property_address = [bytes[4], bytes[5]];
         if first_property_address != Self::FIRST_PROPERTY_ADDRESS {
-            return Err(crate::Error::InvalidDmpFirstPropertyAddress(u16::from_be_bytes(
+            return Err(PacketError::InvalidDmpFirstPropertyAddress(u16::from_be_bytes(
                 first_property_address,
             )));
         }
@@ -263,7 +263,7 @@ impl acn::Pdu for Dmp {
         // E1.13 7.5 Address Increment
         let address_increment = [bytes[6], bytes[7]];
         if address_increment != Self::ADDRESS_INCREMENT {
-            return Err(crate::Error::InvalidDmpAddressIncrement(u16::from_be_bytes(
+            return Err(PacketError::InvalidDmpAddressIncrement(u16::from_be_bytes(
                 address_increment,
             )));
         }

@@ -1,6 +1,6 @@
 /// Error type for various error conditions that can occur.
 #[derive(Debug, thiserror::Error)]
-pub enum Error {
+pub enum PacketError {
     /// Invalid packet.
     #[error("Invalid packet")]
     InvalidPacket,
@@ -51,8 +51,4 @@ pub enum Error {
     /// Invalid DMP address increment.
     #[error("Invalid DMP address increment: {0:4x?}")]
     InvalidDmpAddressIncrement(u16),
-
-    /// [std::io::Error] wrapper.
-    #[error(transparent)]
-    Io(#[from] std::io::Error),
 }

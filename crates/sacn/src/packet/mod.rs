@@ -10,11 +10,13 @@ use crate::acn::{self, Pdu as _, PduBlock};
 
 mod data;
 mod discovery;
+mod error;
 mod root;
 mod sync;
 
 pub use data::{DataFraming, Dmp};
 pub use discovery::{DiscoveryFraming, UniverseDiscovery};
+pub use error::PacketError;
 pub use root::RootLayer;
 pub use sync::SyncFraming;
 
@@ -36,7 +38,7 @@ impl Packet {
     }
 
     /// Decodes a network ordered slice of bytes into a new [Packet].
-    pub fn decode(data: &[u8]) -> Result<Self, crate::Error> {
+    pub fn decode(data: &[u8]) -> Result<Self, PacketError> {
         let root_layer = RootLayer::decode(data)?;
         Ok(Self(acn::Packet::new(Preamble, PduBlock::new(vec![root_layer]), Postamble)))
     }
@@ -70,7 +72,7 @@ impl Preamble {
 }
 
 impl acn::Preamble for Preamble {
-    type DecodeError = crate::Error;
+    type DecodeError = PacketError;
 
     const SIZE: usize = Self::BYTES.len();
 
@@ -81,21 +83,21 @@ impl acn::Preamble for Preamble {
     fn decode(data: &[u8]) -> Result<Self, Self::DecodeError> {
         // E1.31 5.1 Preamble Size
         if data[0..2] != Self::BYTES[0..2] {
-            return Err(crate::Error::InvalidPreamblePreambleSize(u16::from_be_bytes([
+            return Err(PacketError::InvalidPreamblePreambleSize(u16::from_be_bytes([
                 data[0], data[1],
             ])));
         }
 
         // E1.31 5.2 Postamble Size
         if data[2..4] != Self::BYTES[2..4] {
-            return Err(crate::Error::InvalidPreamblePostambleSize(u16::from_be_bytes([
+            return Err(PacketError::InvalidPreamblePostambleSize(u16::from_be_bytes([
                 data[2], data[3],
             ])));
         }
 
         // E1.31 5.3 ACN Packet Identifier
         if data[4..16] != Self::BYTES[4..16] {
-            return Err(crate::Error::InvalidPreambleAcnPacketIdentifier(data[4..16].to_vec()));
+            return Err(PacketError::InvalidPreambleAcnPacketIdentifier(data[4..16].to_vec()));
         }
 
         Ok(Self)
@@ -106,7 +108,7 @@ impl acn::Preamble for Preamble {
 pub struct Postamble;
 
 impl acn::Postamble for Postamble {
-    type DecodeError = crate::Error;
+    type DecodeError = PacketError;
 
     fn encode(&self) -> impl Into<Vec<u8>> {
         vec![]
@@ -133,7 +135,7 @@ pub enum Pdu {
 }
 
 impl acn::Pdu for Pdu {
-    type DecodeError = crate::Error;
+    type DecodeError = PacketError;
 
     fn encode(&self) -> impl Into<Vec<u8>> {
         match self {
@@ -156,7 +158,7 @@ impl acn::Pdu for Pdu {
             return Ok(Pdu::DiscoveryFraming(discovery_framing));
         }
 
-        Err(crate::Error::InvalidPacket)
+        Err(PacketError::InvalidPacket)
     }
 
     fn size(&self) -> usize {
@@ -168,9 +170,9 @@ impl acn::Pdu for Pdu {
     }
 }
 
-pub(crate) fn source_name_from_str(source_name: &str) -> Result<[u8; 64], crate::Error> {
+pub(crate) fn source_name_from_str(source_name: &str) -> Result<[u8; 64], PacketError> {
     if source_name.len() > 64 {
-        return Err(crate::Error::InvalidSourceNameLength(source_name.len()));
+        return Err(PacketError::InvalidSourceNameLength(source_name.len()));
     }
 
     let bytes = source_name.as_bytes();

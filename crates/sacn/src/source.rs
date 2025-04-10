@@ -3,10 +3,9 @@
 //! Responsible for sending sACN packets.
 
 use crate::{
-    ComponentIdentifier, DEFAULT_PORT, Error,
-    packet::{DataFraming, DiscoveryFraming, Dmp, Packet, Pdu, UniverseDiscovery},
+    ComponentIdentifier, DEFAULT_PORT,
+    packet::{DataFraming, DiscoveryFraming, Dmp, Packet, PacketError, Pdu, UniverseDiscovery},
 };
-use dmx::{Multiverse, Universe, UniverseId};
 use socket2::{Domain, SockAddr, Socket, Type};
 use std::{
     collections::HashMap,
@@ -19,6 +18,18 @@ use std::{
 const DMX_SEND_INTERVAL: Duration = Duration::from_millis(44);
 const UNIVERSE_DISCOVERY_INTERVAL: Duration = Duration::from_secs(10);
 
+/// Error type returned by a [Source].
+#[derive(Debug, thiserror::Error)]
+pub enum SourceError {
+    /// An [std::io::Error] wrapper.
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+
+    /// An [PacketError] wrapper.
+    #[error(transparent)]
+    Packet(#[from] PacketError),
+}
+
 /// An sACN Source.
 ///
 /// Responsible for sending sACN packets.
@@ -27,15 +38,15 @@ pub struct Source {
 
     socket: Socket,
     addr: SockAddr,
-    sequence_numbers: Mutex<HashMap<UniverseId, u8>>,
+    sequence_numbers: Mutex<HashMap<u16, u8>>,
     last_universe_discovery_time: Mutex<Option<Instant>>,
 
-    data: Mutex<Option<Multiverse>>,
+    data: Mutex<HashMap<u16, Vec<u8>>>,
 }
 
 impl Source {
     /// Creates a new [Source].
-    pub fn new(config: SourceConfig) -> Result<Self, Error> {
+    pub fn new(config: SourceConfig) -> Result<Self, SourceError> {
         let domain = if config.ip.is_ipv4() { Domain::IPV4 } else { Domain::IPV6 };
         let socket = Socket::new(domain, Type::DGRAM, None)?;
         let addr: SockAddr = SocketAddr::new(config.ip, config.port).into();
@@ -46,8 +57,39 @@ impl Source {
             addr,
             sequence_numbers: Mutex::new(HashMap::new()),
             last_universe_discovery_time: Mutex::new(None),
-            data: Mutex::new(Some(Multiverse::new())),
+            data: Mutex::new(HashMap::new()),
         })
+    }
+
+    /// Sets the universe data for this [Source].
+    ///
+    /// This method updates the universe data for the specified universe ID.
+    /// If the universe ID does not exist, it will be created.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let source = Source::new(SourceConfig::default()).unwrap();
+    /// source.set_universe(1, vec![0; 512]);
+    /// ```
+    pub fn set_universe(&self, universe_id: u16, data: Vec<u8>) {
+        self.data.lock().unwrap().insert(universe_id, data);
+    }
+
+    /// Removes the universe data for the specified universe ID.
+    ///
+    /// This method removes the universe data for the specified universe ID.
+    /// If the universe ID does not exist, it will do nothing.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let source = Source::new(SourceConfig::default()).unwrap();
+    /// source.set_universe(1, vec![0; 512]);
+    /// source.remove_universe(1);
+    /// ```
+    pub fn remove_universe(&self, universe_id: u16) {
+        self.data.lock().unwrap().remove(&universe_id);
     }
 
     /// Returns the [SourceConfig] for this [Source].
@@ -90,21 +132,16 @@ impl Source {
         self.config.lock().unwrap().force_synchronization = enabled;
     }
 
-    /// Sets the output data for this [Source].
-    pub fn set_output(&self, data: Multiverse) {
-        *self.data.lock().unwrap() = Some(data);
-    }
-
     /// Starts the [Source].
-    pub fn start(&self) -> Result<(), Error> {
+    pub fn start(&self) -> Result<(), SourceError> {
         self.send_discovery_packet()?;
 
         loop {
             thread::sleep(DMX_SEND_INTERVAL);
-            let Some(multiverse) = self.data.lock().unwrap().clone() else { continue };
+            let data = self.data.lock().unwrap().clone();
 
-            for (id, universe) in multiverse.universes() {
-                self.send_universe_data_packet(*id, universe)?;
+            for (universe, data) in data.iter() {
+                self.send_universe_data_packet(*universe, data.clone())?;
             }
 
             if self.should_send_discovery_packet() {
@@ -114,17 +151,17 @@ impl Source {
     }
 
     /// Stops the [Source].
-    pub fn stop(&self) -> Result<(), Error> {
+    pub fn stop(&self) -> Result<(), SourceError> {
         self.socket.shutdown(Shutdown::Both)?;
         Ok(())
     }
 
-    fn send_universe_data_packet(&self, id: UniverseId, universe: &Universe) -> Result<(), Error> {
+    fn send_universe_data_packet(&self, id: u16, data: Vec<u8>) -> Result<(), SourceError> {
         let sequence_number = self.next_sequence_number_for_universe(id);
 
         let packet = {
             let config = self.config.lock().unwrap();
-            let dmp = Dmp::new(universe.clone().into())?;
+            let dmp = Dmp::new(data)?;
             let pdu = Pdu::DataFraming(DataFraming::from_source_config(
                 &config,
                 sequence_number,
@@ -141,7 +178,7 @@ impl Source {
         Ok(())
     }
 
-    fn next_sequence_number_for_universe(&self, universe_id: UniverseId) -> u8 {
+    fn next_sequence_number_for_universe(&self, universe_id: u16) -> u8 {
         let mut seq_nums = self.sequence_numbers.lock().unwrap();
         let current = seq_nums.get(&universe_id).copied().unwrap_or_default();
         let next = current.wrapping_add(1);
@@ -159,8 +196,8 @@ impl Source {
         }
     }
 
-    fn send_discovery_packet(&self) -> Result<(), Error> {
-        let create_and_send_packet = |page, last, list_of_universes| -> Result<(), Error> {
+    fn send_discovery_packet(&self) -> Result<(), SourceError> {
+        let create_and_send_packet = |page, last, list_of_universes| -> Result<(), SourceError> {
             let packet = {
                 let config = self.config.lock().unwrap();
                 let pdu = Pdu::DiscoveryFraming(DiscoveryFraming::from_source_config(
@@ -178,17 +215,14 @@ impl Source {
 
         let universe_ids = {
             let data = self.data.lock().unwrap();
-            data.as_ref()
-                .map(|multiverse| multiverse.universes().map(|(id, _)| *id).collect::<Vec<_>>())
-                .unwrap_or_default()
+            data.keys().copied().collect::<Vec<_>>()
         };
 
         let pages = universe_ids.chunks(512).take(u8::MAX as usize);
 
         let last_page = (pages.len() - 1) as u8;
-        for (ix, page) in pages.enumerate() {
-            let list_of_universes = page.iter().map(|id| (*id).into()).collect();
-            create_and_send_packet(ix as u8, last_page, list_of_universes)?;
+        for (ix, list_of_universes) in pages.enumerate() {
+            create_and_send_packet(ix as u8, last_page, list_of_universes.to_vec())?;
         }
 
         let mut last_time = self.last_universe_discovery_time.lock().unwrap();

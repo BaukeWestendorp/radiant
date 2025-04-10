@@ -1,4 +1,4 @@
-use super::{flags_and_length, source_name_from_str};
+use super::{PacketError, flags_and_length, source_name_from_str};
 use crate::{acn, source::SourceConfig};
 
 /// An E1.31 Universe Discovery Packet Framing Layer.
@@ -15,7 +15,7 @@ impl DiscoveryFraming {
     pub fn new(
         source_name: &str,
         universe_discovery: UniverseDiscovery,
-    ) -> Result<Self, crate::Error> {
+    ) -> Result<Self, PacketError> {
         let source_name = source_name_from_str(source_name)?;
 
         Ok(Self { source_name, universe_discovery })
@@ -29,13 +29,13 @@ impl DiscoveryFraming {
     pub(crate) fn from_source_config(
         config: &SourceConfig,
         universe_discovery: UniverseDiscovery,
-    ) -> Result<Self, crate::Error> {
+    ) -> Result<Self, PacketError> {
         Self::new(&config.name, universe_discovery)
     }
 }
 
 impl acn::Pdu for DiscoveryFraming {
-    type DecodeError = crate::Error;
+    type DecodeError = PacketError;
 
     fn encode(&self) -> impl Into<Vec<u8>> {
         let flags_and_length = flags_and_length(self.size()).to_be_bytes();
@@ -52,7 +52,7 @@ impl acn::Pdu for DiscoveryFraming {
         // E1.31 6.4.1 Universe Discovery Packet: Vector
         let vector = [bytes[40], bytes[41], bytes[42], bytes[43]];
         if vector != Self::VECTOR {
-            return Err(crate::Error::InvalidUniverseDiscoveryLayerVector(vector.to_vec()));
+            return Err(PacketError::InvalidUniverseDiscoveryLayerVector(vector.to_vec()));
         }
 
         // E1.31 6.4.2 Universe Discovery Packet: Source Name
@@ -106,7 +106,7 @@ impl UniverseDiscovery {
 }
 
 impl acn::Pdu for UniverseDiscovery {
-    type DecodeError = crate::Error;
+    type DecodeError = PacketError;
 
     fn encode(&self) -> impl Into<Vec<u8>> {
         let flags_and_length = flags_and_length(self.size()).to_be_bytes();
@@ -124,7 +124,7 @@ impl acn::Pdu for UniverseDiscovery {
         // E1.31 8.2 Universe Discovery Layer: Vector.
         let vector = [bytes[114], bytes[115], bytes[116], bytes[117]];
         if vector != Self::VECTOR {
-            return Err(crate::Error::InvalidUniverseDiscoveryLayerVector(vector.to_vec()));
+            return Err(PacketError::InvalidUniverseDiscoveryLayerVector(vector.to_vec()));
         }
 
         let page = bytes[118];

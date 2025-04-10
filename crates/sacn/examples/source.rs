@@ -1,17 +1,14 @@
-use dmx::{Address, Channel, Multiverse, Universe, UniverseId};
 use sacn::source::{Source, SourceConfig};
-use std::{sync::Arc, thread, time::Duration};
+use std::{sync::Arc, thread};
 
 fn main() {
-    let universe_id = UniverseId::new(1).unwrap();
-    let mut multiverse = Multiverse::new();
-    multiverse.create_universe(universe_id, Universe::new());
-
     // Create the source.
     let source = SourceConfig { name: "Example Source".to_string(), ..Default::default() };
     let source = Arc::new(Source::new(source).unwrap());
 
-    // Start the source updater thread.
+    source.set_universe(1, vec![0u8; 512]);
+
+    // Start the source thread.
     thread::spawn({
         let source = Arc::clone(&source);
         move || {
@@ -19,17 +16,17 @@ fn main() {
         }
     });
 
-    let channel = Channel::new(1).unwrap();
-    for i in 0.. {
-        // Update a channel in the data.
-        let value = dmx::Value(i % u8::MAX);
-        let address = Address::new(universe_id, channel);
-        multiverse.set_value(&address, value);
+    for ix in 0.. {
+        let mut data = vec![0u8; 512];
+        // Create a wave pattern
+        for i in 0..512 {
+            let wave1 = ((i as f32 * 0.1 + ix as f32 * 0.05).sin() * 127.0 + 127.0) as u8;
+            let wave2 = ((i as f32 * 0.2 - ix as f32 * 0.03).cos() * 127.0 + 127.0) as u8;
+            let wave3 = ((i as f32 * 0.15 + ix as f32 * 0.07).sin() * 127.0 + 127.0) as u8;
+            data[i] = ((wave1 as u16 + wave2 as u16 + wave3 as u16) / 3) as u8;
+        }
+        source.set_universe(1, data);
 
-        // Set the output for the source to send over the socket.
-        source.set_output(multiverse.clone());
-
-        // Wait 250ms before updating the data.
-        thread::sleep(Duration::from_millis(50));
+        spin_sleep::sleep(std::time::Duration::from_millis(250));
     }
 }

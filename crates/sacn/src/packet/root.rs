@@ -1,9 +1,8 @@
+use super::{PacketError, Pdu, Postamble, Preamble, flags_and_length};
 use crate::{
     ComponentIdentifier,
     acn::{self, Postamble as _, Preamble as _},
 };
-
-use super::{Pdu, Postamble, Preamble, flags_and_length};
 
 /// An E1.31 Root Layer.
 pub struct RootLayer {
@@ -33,7 +32,7 @@ impl RootLayer {
 }
 
 impl acn::Pdu for RootLayer {
-    type DecodeError = crate::Error;
+    type DecodeError = PacketError;
 
     fn encode(&self) -> impl Into<Vec<u8>> {
         // E1.31 Flags & Length
@@ -57,7 +56,7 @@ impl acn::Pdu for RootLayer {
         const MIN_ROOT_LAYER_SIZE: usize = 37;
 
         if data.len() < MIN_ROOT_LAYER_SIZE {
-            return Err(crate::Error::InvalidRootLayerSize(data.len()));
+            return Err(PacketError::InvalidRootLayerSize(data.len()));
         }
 
         // E1.31 Vector
@@ -65,7 +64,7 @@ impl acn::Pdu for RootLayer {
         let extended = match vector {
             Self::VECTOR => false,
             Self::VECTOR_EXTENDED => true,
-            _ => return Err(crate::Error::InvalidRootLayerVector(vector.to_vec())),
+            _ => return Err(PacketError::InvalidRootLayerVector(vector.to_vec())),
         };
 
         // E1.31 CID (Component Identifier)
