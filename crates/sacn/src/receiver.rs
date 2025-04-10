@@ -4,7 +4,7 @@
 
 use crate::{
     DEFAULT_PORT, Error, MAX_UNIVERSE_SIZE,
-    packet::{DataPacket, Packet},
+    packet::{Packet, Pdu, data::DataFraming},
 };
 use dmx::{Channel, Multiverse, Universe, UniverseId};
 use socket2::{Domain, SockAddr, Socket, Type};
@@ -29,7 +29,10 @@ impl Receiver {
     /// Creates a new [Receiver].
     pub fn new(config: ReceiverConfig) -> Self {
         let domain = if config.ip.is_ipv4() { Domain::IPV4 } else { Domain::IPV6 };
-        let socket = Socket::new(domain, Type::DGRAM, None).unwrap();
+
+        let socket: Socket = Socket::new(domain, Type::DGRAM, None).unwrap();
+        socket.set_reuse_address(true).unwrap();
+        socket.set_reuse_port(true).unwrap();
 
         Self {
             config,
@@ -117,10 +120,10 @@ impl Inner {
     pub fn start_recv_loop(&self) -> Result<(), Error> {
         loop {
             match self.recv_packet_from() {
-                Ok(Some((packet, _))) => match packet {
-                    Packet::Data(packet) => self.handle_data_packet(packet)?,
-                    Packet::Discovery(_) => todo!(),
-                    Packet::Sync(_) => todo!(),
+                Ok(Some((packet, _))) => match &packet.block.pdus()[0].pdu() {
+                    Pdu::DataFraming(pdu) => self.handle_data_framing_pdu(pdu)?,
+                    Pdu::SyncFraming(_) => todo!(),
+                    Pdu::DiscoveryFraming(_) => todo!(),
                 },
                 Ok(None) => {}
                 Err(err) => {
@@ -130,8 +133,8 @@ impl Inner {
         }
     }
 
-    fn handle_data_packet(&self, packet: DataPacket) -> Result<(), Error> {
-        if let Ok(universe_id) = UniverseId::new(packet.universe()) {
+    fn handle_data_framing_pdu(&self, data_framing: &DataFraming) -> Result<(), Error> {
+        if let Ok(universe_id) = UniverseId::new(data_framing.universe()) {
             let mut data = self.data.lock().unwrap();
 
             if !data.has_universe(&universe_id) {
@@ -139,10 +142,11 @@ impl Inner {
             }
 
             if let Some(universe) = data.universe_mut(&universe_id) {
+                let data = data_framing.dmp().data();
                 for i in 0..MAX_UNIVERSE_SIZE {
                     universe.set_value(
                         &Channel::new(i + 1).unwrap(),
-                        packet.data().get(i as usize).copied().unwrap_or_default().into(),
+                        data.get(i as usize).copied().unwrap_or_default().into(),
                     );
                 }
             }
@@ -154,14 +158,14 @@ impl Inner {
     fn recv_packet_from(&self) -> Result<Option<(Packet, SockAddr)>, Error> {
         const MAX_PACKET_SIZE: usize = 1144;
 
-        let mut buffer = Vec::with_capacity(MAX_PACKET_SIZE);
-        let (received, addr) = self.socket.recv_from(buffer.spare_capacity_mut())?;
+        let mut data = Vec::with_capacity(MAX_PACKET_SIZE);
+        let (received, addr) = self.socket.recv_from(data.spare_capacity_mut())?;
         // SAFETY: just received into the `buffer`.
         unsafe {
-            buffer.set_len(received);
+            data.set_len(received);
         }
 
-        match Packet::from_bytes(&buffer) {
+        match Packet::decode(&data) {
             Ok(packet) => Ok(Some((packet, addr))),
             Err(err) => {
                 eprintln!("Invalid packet discarded: {err:?}");

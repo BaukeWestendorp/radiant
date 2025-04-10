@@ -5,40 +5,56 @@
 //! - Universe Discovery Packets
 //! - Synchronization Packets
 
-use crate::acn::{self, Postamble as _, Preamble as _};
+use crate::ComponentIdentifier;
+use crate::acn::{self, Pdu as _, PduBlock};
+use crate::packet::data::DataFraming;
+use discovery::DiscoveryFraming;
+use root::RootLayer;
+use sync::SyncFraming;
 
-pub use data::DataPacket;
-pub use discovery::UniverseDiscoveryPacket;
-pub use sync::SynchronizationPacket;
+pub mod data;
+pub mod discovery;
+pub mod root;
+pub mod sync;
 
-mod data;
-mod discovery;
-mod root;
-mod sync;
-
-pub struct Packet {
-    packet: acn::Packet<Preamble, Pdu, Postamble>,
-}
+pub struct Packet(acn::Packet<Preamble, RootLayer, Postamble>);
 
 impl Packet {
-    pub fn new(packet: acn::Packet<Preamble, Pdu, Postamble>) -> Self {
-        Self { packet }
+    pub fn new(cid: ComponentIdentifier, pdu: Pdu) -> Self {
+        let extended = match pdu {
+            Pdu::DataFraming(_) => false,
+            Pdu::SyncFraming(_) | Pdu::DiscoveryFraming(_) => true,
+        };
+
+        let root_layer_pdu = RootLayer::new(cid, extended, pdu);
+        let packet = acn::Packet::new(Preamble, PduBlock::new(vec![root_layer_pdu]), Postamble);
+
+        Self(packet)
+    }
+
+    pub fn decode(data: &[u8]) -> Result<Self, crate::Error> {
+        let root_layer = RootLayer::decode(data)?;
+        Ok(Self(acn::Packet::new(Preamble, PduBlock::new(vec![root_layer]), Postamble)))
+    }
+
+    pub fn encode(&self) -> impl Into<Vec<u8>> {
+        self.0.encode()
     }
 }
 
 impl std::ops::Deref for Packet {
-    type Target = acn::Packet<Preamble, Pdu, Postamble>;
+    type Target = acn::Packet<Preamble, RootLayer, Postamble>;
 
     fn deref(&self) -> &Self::Target {
-        &self.packet
+        &self.0
     }
 }
 
-pub struct Preamble([u8; Preamble::SIZE]);
+pub struct Preamble;
 
 impl Preamble {
     #[rustfmt::skip]
-    const BYTES: [u8; 16 as usize] = {
+    pub const BYTES: [u8; 16 as usize] = {
         [
             0x00, 0x10, // E1.31 RLP Preamble Size
             0x00, 0x00, // E1.31 RLP Postamble Size
@@ -48,7 +64,7 @@ impl Preamble {
 }
 
 impl acn::Preamble for Preamble {
-    type Error = crate::Error;
+    type DecodeError = crate::Error;
 
     const SIZE: usize = Self::BYTES.len();
 
@@ -56,26 +72,40 @@ impl acn::Preamble for Preamble {
         Self::BYTES
     }
 
-    fn decode(data: &[u8]) -> Result<Self, acn::DecodeError> {
+    fn decode(data: &[u8]) -> Result<Self, Self::DecodeError> {
         // E1.31 5.1 Preamble Size
-        // E1.31 5.2 Postamble Size
-        // E1.31 5.3 ACN Packet Identifier
-        if data[0..Self::SIZE] != Self::BYTES {
-            return Err(acn::DecodeError::InvalidPreamble);
+        if data[0..2] != Self::BYTES[0..2] {
+            return Err(crate::Error::InvalidPreamblePreambleSize(u16::from_be_bytes([
+                data[0], data[1],
+            ])));
         }
 
-        Ok(Self(data[0..16].try_into().unwrap()))
+        // E1.31 5.2 Postamble Size
+        if data[2..4] != Self::BYTES[2..4] {
+            return Err(crate::Error::InvalidPreamblePostambleSize(u16::from_be_bytes([
+                data[2], data[3],
+            ])));
+        }
+
+        // E1.31 5.3 ACN Packet Identifier
+        if data[4..16] != Self::BYTES[4..16] {
+            return Err(crate::Error::InvalidPreambleAcnPacketIdentifier(data[4..16].to_vec()));
+        }
+
+        Ok(Self)
     }
 }
 
 pub struct Postamble;
 
 impl acn::Postamble for Postamble {
+    type DecodeError = crate::Error;
+
     fn encode(&self) -> impl Into<Vec<u8>> {
         vec![]
     }
 
-    fn decode(_data: &[u8]) -> Result<Self, acn::DecodeError> {
+    fn decode(_data: &[u8]) -> Result<Self, Self::DecodeError> {
         Ok(Self)
     }
 
@@ -84,46 +114,45 @@ impl acn::Postamble for Postamble {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Pdu {
     DataFraming(DataFraming),
-    Dmp(Dmp),
     SyncFraming(SyncFraming),
     DiscoveryFraming(DiscoveryFraming),
-    UniverseDiscovery(UniverseDiscovery),
 }
 
 impl acn::Pdu for Pdu {
+    type DecodeError = crate::Error;
+
     fn encode(&self) -> impl Into<Vec<u8>> {
         match self {
-            Self::DataFraming(pdu)
-            | Self::Dmp(pdu)
-            | Self::SyncFraming(pdu)
-            | Self::DiscoveryFraming(pdu)
-            | Self::UniverseDiscovery(pdu) => pdu.encode(),
+            Pdu::DataFraming(pdu) => pdu.encode().into(),
+            Pdu::SyncFraming(pdu) => pdu.encode().into(),
+            Pdu::DiscoveryFraming(pdu) => pdu.encode().into(),
         }
     }
 
-    fn decode(data: &[u8]) -> Result<Self, acn::DecodeError> {
-        let result = DataFraming::decode(data)
-            .map(Pdu::DataFraming)
-            .or_else(|_| Dmp::decode(data).map(Pdu::Dmp))
-            .or_else(|_| SyncFraming::decode(data).map(Pdu::SyncFraming))
-            .or_else(|_| DiscoveryFraming::decode(data).map(Pdu::DiscoveryFraming))
-            .or_else(|_| UniverseDiscovery::decode(data).map(Pdu::UniverseDiscovery));
-
-        match result {
-            Ok(pdu) => Ok(pdu),
-            Err(_) => Err(acn::DecodeError::InvalidPdu),
+    fn decode(data: &[u8]) -> Result<Self, Self::DecodeError> {
+        if let Ok(data_framing) = DataFraming::decode(data) {
+            return Ok(Pdu::DataFraming(data_framing));
         }
+
+        if let Ok(sync_framing) = SyncFraming::decode(data) {
+            return Ok(Pdu::SyncFraming(sync_framing));
+        }
+
+        if let Ok(discovery_framing) = DiscoveryFraming::decode(data) {
+            return Ok(Pdu::DiscoveryFraming(discovery_framing));
+        }
+
+        Err(crate::Error::InvalidPacket)
     }
 
     fn size(&self) -> usize {
         match self {
-            Self::DataFraming(pdu)
-            | Self::Dmp(pdu)
-            | Self::SyncFraming(pdu)
-            | Self::DiscoveryFraming(pdu)
-            | Self::UniverseDiscovery(pdu) => pdu.size(),
+            Pdu::DataFraming(pdu) => pdu.size(),
+            Pdu::SyncFraming(pdu) => pdu.size(),
+            Pdu::DiscoveryFraming(pdu) => pdu.size(),
         }
     }
 }

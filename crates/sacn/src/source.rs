@@ -4,7 +4,11 @@
 
 use crate::{
     ComponentIdentifier, DEFAULT_PORT, Error,
-    packet::{DataPacket, UniverseDiscoveryPacket},
+    packet::{
+        Packet, Pdu,
+        data::{DataFraming, Dmp},
+        discovery::{DiscoveryFraming, UniverseDiscovery},
+    },
 };
 use dmx::{Multiverse, Universe, UniverseId};
 use socket2::{Domain, SockAddr, Socket, Type};
@@ -198,16 +202,18 @@ impl Inner {
 
         let packet = {
             let config = self.config.lock().unwrap();
-            DataPacket::from_source_config(
+            let dmp = Dmp::new(universe.clone().into())?;
+            let pdu = Pdu::DataFraming(DataFraming::from_source_config(
                 &config,
                 sequence_number,
                 false,
                 id.into(),
-                universe.clone().into(),
-            )?
+                dmp,
+            )?);
+            Packet::new(config.cid, pdu)
         };
 
-        let bytes = packet.to_bytes();
+        let bytes = packet.encode().into();
         self.socket.send_to(&bytes, &self.addr)?;
 
         Ok(())
@@ -235,10 +241,14 @@ impl Inner {
         let create_and_send_packet = |page, last, list_of_universes| -> Result<(), Error> {
             let packet = {
                 let config = self.config.lock().unwrap();
-                UniverseDiscoveryPacket::from_source_config(&config, page, last, list_of_universes)?
+                let pdu = Pdu::DiscoveryFraming(DiscoveryFraming::from_source_config(
+                    &config,
+                    UniverseDiscovery::new(page, last, list_of_universes),
+                )?);
+                Packet::new(config.cid, pdu)
             };
 
-            let bytes = packet.to_bytes();
+            let bytes = packet.encode().into();
             self.socket.send_to(&bytes, &self.addr)?;
 
             Ok(())

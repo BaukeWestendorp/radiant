@@ -1,3 +1,10 @@
+use crate::{
+    ComponentIdentifier,
+    acn::{self, Postamble as _, Preamble as _},
+};
+
+use super::{Pdu, Postamble, Preamble, flags_and_length};
+
 pub struct RootLayer {
     cid: ComponentIdentifier,
     extended: bool,
@@ -8,12 +15,26 @@ impl RootLayer {
     const VECTOR: [u8; 4] = [0x00, 0x00, 0x00, 0x04];
     const VECTOR_EXTENDED: [u8; 4] = [0x00, 0x00, 0x00, 0x08];
 
-    fn new(cid: ComponentIdentifier, extended: bool, pdu: Pdu) -> Self {
+    pub fn new(cid: ComponentIdentifier, extended: bool, pdu: Pdu) -> Self {
         Self { cid, extended, pdu }
+    }
+
+    pub fn cid(&self) -> &ComponentIdentifier {
+        &self.cid
+    }
+
+    pub fn extended(&self) -> bool {
+        self.extended
+    }
+
+    pub fn pdu(&self) -> &Pdu {
+        &self.pdu
     }
 }
 
 impl acn::Pdu for RootLayer {
+    type DecodeError = crate::Error;
+
     fn encode(&self) -> impl Into<Vec<u8>> {
         // E1.31 Flags & Length
         let flags_and_length = flags_and_length(self.size()).to_be_bytes();
@@ -28,14 +49,15 @@ impl acn::Pdu for RootLayer {
         bytes.extend_from_slice(&flags_and_length);
         bytes.extend_from_slice(&vector);
         bytes.extend_from_slice(cid);
+        bytes.extend(self.pdu.encode().into());
         bytes
     }
 
-    fn decode(data: &[u8]) -> Result<Self, acn::DecodeError> {
+    fn decode(data: &[u8]) -> Result<Self, Self::DecodeError> {
         const MIN_ROOT_LAYER_SIZE: usize = 37;
 
         if data.len() < MIN_ROOT_LAYER_SIZE {
-            return Err(acn::DecodeError::InvalidPdu);
+            return Err(crate::Error::InvalidRootLayerSize(data.len()));
         }
 
         // E1.31 Vector
@@ -43,7 +65,7 @@ impl acn::Pdu for RootLayer {
         let extended = match vector {
             Self::VECTOR => false,
             Self::VECTOR_EXTENDED => true,
-            _ => return Err(acn::DecodeError::InvalidPdu),
+            _ => return Err(crate::Error::InvalidRootLayerVector(vector.to_vec())),
         };
 
         // E1.31 CID (Component Identifier)

@@ -6,17 +6,22 @@ pub enum Error {
     InvalidPacket,
 
     /// Invalid preamble size.
-    #[error("Invalid preamble size: {0:4x?}")]
-    InvalidPreambleSize(u16),
+    #[error("Invalid preamble size in preamble: {0:4x?}")]
+    InvalidPreamblePreambleSize(u16),
     /// Invalid postamble size.
-    #[error("Invalid postamble size: {0:4x?}")]
-    InvalidPostambleSize(u16),
+    #[error("Invalid postamble size in preamble: {0:4x?}")]
+    InvalidPreamblePostambleSize(u16),
     /// Invalid ACN packet identifier.
-    #[error("Invalid ACN packet identifier")]
-    InvalidAcnPacketIdentifier,
+    #[error("Invalid ACN packet identifier in preamble: {0:?}")]
+    InvalidPreambleAcnPacketIdentifier(Vec<u8>),
+
+    /// Invalid Root Layer Size
+    #[error("Invalid Root Layer Size: {0}")]
+    InvalidRootLayerSize(usize),
     /// Invalid component ID.
     #[error("Invalid component ID")]
     InvalidComponentId,
+
     /// Invalid priority.
     #[error("Invalid priority: {0}. Must be between 0 and 200.")]
     InvalidPriority(u8),
@@ -25,17 +30,17 @@ pub enum Error {
     InvalidSourceNameLength(usize),
 
     /// Invalid root vector.
-    #[error("Invalid root vector: {0:8x?}")]
-    InvalidRootVector(u32),
+    #[error("Invalid root vector: {0:2x?}")]
+    InvalidRootLayerVector(Vec<u8>),
     /// Invalid framing vector.
-    #[error("Invalid framing vector: {0:8x?}")]
-    InvalidFramingVector(u32),
-    /// Invalid DMP Set Property vector.
-    #[error("Invalid DMP Set Property vector: {0:2x?}")]
-    InvalidDmpSetPropertyVector(u8),
-    /// Invalid Universe List Vector.
-    #[error("Invalid Universe List Vector: {0:8x?}")]
-    InvalidUniverseDiscoveryUniverseListVector(u32),
+    #[error("Invalid framing vector: {0:2x?}")]
+    InvalidFramingLayerVector(Vec<u8>),
+    /// Invalid DMP Layer Property vector.
+    #[error("Invalid DMP Layer vector: {0:2x?}")]
+    InvalidDmpLayerVector(Vec<u8>),
+    /// Invalid Universe Discovery Vector.
+    #[error("Invalid Universe List Vector: {0:2x?}")]
+    InvalidUniverseDiscoveryLayerVector(Vec<u8>),
 
     /// Invalid DMP address type.
     #[error("Invalid DMP address type: {0:2x?}")]

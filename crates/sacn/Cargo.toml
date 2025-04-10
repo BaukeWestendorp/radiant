@@ -17,4 +17,4 @@ thiserror.workspace = true
 uuid = { version = "1.16.0", features = ["v4"] }
 
 # network
-socket2 = "0.5.9"
+socket2 = { version = "0.5.9", features = ["all"] }

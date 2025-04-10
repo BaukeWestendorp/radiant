@@ -4,7 +4,14 @@ pub struct Packet<Pre: Preamble, P: Pdu, Post: Postamble> {
     pub postamble: Post,
 }
 
-impl<Pre: Preamble, R: Pdu, Post: Postamble> Pdu for Packet<Pre, R, Post> {
+impl<
+    Pre: Preamble<DecodeError = Root::DecodeError>,
+    Root: Pdu,
+    Post: Postamble<DecodeError = Root::DecodeError>,
+> Pdu for Packet<Pre, Root, Post>
+{
+    type DecodeError = Root::DecodeError;
+
     fn encode(&self) -> impl Into<Vec<u8>> {
         let mut buffer = Vec::new();
         buffer.extend(self.preamble.encode().into());
@@ -13,7 +20,7 @@ impl<Pre: Preamble, R: Pdu, Post: Postamble> Pdu for Packet<Pre, R, Post> {
         buffer
     }
 
-    fn decode(data: &[u8]) -> Result<Self, DecodeError> {
+    fn decode(data: &[u8]) -> Result<Self, Self::DecodeError> {
         let preamble = Pre::decode(&data[..Pre::SIZE])?;
         let block = PduBlock::decode(&data[Pre::SIZE..])?;
         let postamble = Post::decode(&data[Pre::SIZE + block.size()..])?;
@@ -38,8 +45,8 @@ impl<P: Pdu> PduBlock<P> {
         Self(pdus)
     }
 
-    pub fn size(&self) -> usize {
-        self.0.iter().map(|pdu| pdu.size()).sum()
+    pub fn pdus(&self) -> &[P] {
+        &self.0
     }
 
     pub fn encode(&self) -> Vec<u8> {
@@ -50,7 +57,7 @@ impl<P: Pdu> PduBlock<P> {
         buffer
     }
 
-    pub fn decode(data: &[u8]) -> Result<Self, DecodeError> {
+    pub fn decode(data: &[u8]) -> Result<Self, P::DecodeError> {
         let mut pdus = Vec::new();
         let mut offset = 0;
         while offset < data.len() {
@@ -60,12 +67,18 @@ impl<P: Pdu> PduBlock<P> {
         }
         Ok(PduBlock(pdus))
     }
+
+    pub fn size(&self) -> usize {
+        self.0.iter().map(|pdu| pdu.size()).sum()
+    }
 }
 
 pub trait Pdu {
+    type DecodeError: std::error::Error;
+
     fn encode(&self) -> impl Into<Vec<u8>>;
 
-    fn decode(data: &[u8]) -> Result<Self, DecodeError>
+    fn decode(data: &[u8]) -> Result<Self, Self::DecodeError>
     where
         Self: Sized;
 
@@ -73,29 +86,25 @@ pub trait Pdu {
 }
 
 pub trait Preamble {
-    type Error;
+    type DecodeError: std::error::Error;
 
     const SIZE: usize;
 
     fn encode(&self) -> impl Into<Vec<u8>>;
 
-    fn decode(data: &[u8]) -> Result<Self, DecodeError>
+    fn decode(data: &[u8]) -> Result<Self, Self::DecodeError>
     where
         Self: Sized;
 }
 
 pub trait Postamble {
+    type DecodeError: std::error::Error;
+
     fn encode(&self) -> impl Into<Vec<u8>>;
 
-    fn decode(data: &[u8]) -> Result<Self, DecodeError>
+    fn decode(data: &[u8]) -> Result<Self, Self::DecodeError>
     where
         Self: Sized;
 
     fn size(&self) -> usize;
-}
-
-pub enum DecodeError {
-    InvalidPreamble,
-    InvalidPdu,
-    InvalidPostamble,
 }

@@ -8,12 +8,9 @@ fn main() {
     multiverse.create_universe(universe_id, Universe::new());
 
     // Create the source.
-    let mut source = Source::new(SourceConfig {
-        name: "Example Source".to_string(),
-        ip: "127.0.0.1".parse().unwrap(),
-        ..Default::default()
-    })
-    .unwrap();
+    let mut source =
+        Source::new(SourceConfig { name: "Example Source".to_string(), ..Default::default() })
+            .unwrap();
 
     // Start the source updater thread.
     source.start();

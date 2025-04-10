@@ -1,79 +1,39 @@
-use super::{RootLayer, flags_and_length};
-use crate::{ComponentIdentifier, Error, source::SourceConfig};
+use crate::{Error, acn};
 
-const VECTOR_EXTENDED_SYNCHRONIZATION: u32 = 0x00000001;
-
-/// Represents an E1.31 Synchronization Packet.
-///
-/// This packed contains only universe synchronization information and no additional data.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SynchronizationPacket {
-    root: RootLayer,
-    framing: FramingLayer,
-}
-
-impl SynchronizationPacket {
-    /// Creates a new [SynchronizationPacket].
-    pub fn new(
-        cid: ComponentIdentifier,
-        sequence_number: u8,
-        synchronization_address: u16,
-    ) -> Result<Self, Error> {
-        Ok(Self {
-            root: RootLayer::new(cid, true),
-            framing: FramingLayer::new(sequence_number, synchronization_address),
-        })
-    }
-
-    /// Creates a new [SynchronizationPacket] from a [SourceConfig].
-    pub fn from_source_config(
-        config: &SourceConfig,
-        sequence_number: u8,
-        synchronization_address: u16,
-    ) -> Result<Self, Error> {
-        Self::new(config.cid, sequence_number, synchronization_address)
-    }
-
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
-        Ok(Self { root: RootLayer::from_bytes(bytes)?, framing: FramingLayer::from_bytes(bytes)? })
-    }
-
-    pub fn to_bytes(&self) -> Vec<u8> {
-        vec![self.root.to_bytes(), self.framing.to_bytes()].concat()
-    }
-
-    /// The [ComponentIdentifier] in this packet.
-    pub fn cid(&self) -> &ComponentIdentifier {
-        &self.root.cid
-    }
-
-    /// The sequence number in this packet.
-    pub fn sequence_number(&self) -> u8 {
-        self.framing.sequence_number
-    }
-
-    /// The synchronization address in this packet.
-    pub fn synchronization_address(&self) -> u16 {
-        self.framing.synchronization_address
-    }
-}
+use super::flags_and_length;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct FramingLayer {
+pub struct SyncFraming {
     sequence_number: u8,
     synchronization_address: u16,
 }
 
-impl FramingLayer {
+impl SyncFraming {
+    const VECTOR: [u8; 4] = [0x00, 0x00, 0x00, 0x01];
+
     pub fn new(sequence_number: u8, synchronization_address: u16) -> Self {
         Self { sequence_number, synchronization_address }
     }
 
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+    /// The sequence number in this packet.
+    pub fn sequence_number(&self) -> u8 {
+        self.sequence_number
+    }
+
+    /// The synchronization address in this packet.
+    pub fn synchronization_address(&self) -> u16 {
+        self.synchronization_address
+    }
+}
+
+impl acn::Pdu for SyncFraming {
+    type DecodeError = Error;
+
+    fn decode(bytes: &[u8]) -> Result<Self, Self::DecodeError> {
         // E1.31 6.3.1 Synchronization Packet: Vector
-        let vector = u32::from_be_bytes([bytes[40], bytes[41], bytes[42], bytes[43]]);
-        if vector != VECTOR_EXTENDED_SYNCHRONIZATION {
-            return Err(Error::InvalidFramingVector(vector));
+        let vector = [bytes[40], bytes[41], bytes[42], bytes[43]];
+        if vector != Self::VECTOR {
+            return Err(Error::InvalidFramingLayerVector(vector.to_vec()));
         }
 
         // E1.31 6.3.2 Synchronization Packet: Sequence Number
@@ -85,13 +45,19 @@ impl FramingLayer {
         Ok(Self { sequence_number, synchronization_address })
     }
 
-    pub fn to_bytes(&self) -> Vec<u8> {
-        let mut bytes = Vec::with_capacity(11);
-        bytes.extend(flags_and_length().to_be_bytes());
-        bytes.extend(VECTOR_EXTENDED_SYNCHRONIZATION.to_be_bytes());
+    fn encode(&self) -> impl Into<Vec<u8>> {
+        let flags_and_length = flags_and_length(self.size()).to_be_bytes();
+
+        let mut bytes = Vec::with_capacity(self.size());
+        bytes.extend(flags_and_length);
+        bytes.extend(Self::VECTOR);
         bytes.push(self.sequence_number);
         bytes.extend(self.synchronization_address.to_be_bytes());
         bytes.extend([0x00, 0x00]);
         bytes
+    }
+
+    fn size(&self) -> usize {
+        11
     }
 }

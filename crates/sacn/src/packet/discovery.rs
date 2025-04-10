@@ -1,123 +1,73 @@
-use super::{RootLayer, flags_and_length, source_name_from_str};
-use crate::{ComponentIdentifier, Error, source::SourceConfig};
+use super::{flags_and_length, source_name_from_str};
+use crate::{acn, source::SourceConfig};
 
-const VECTOR_EXTENDED_DISCOVERY: u32 = 0x00000002;
-const VECTOR_UNIVERSE_DISCOVERY_UNIVERSE_LIST: u32 = 0x00000001;
-
-/// Represents an E1.31 Universe Discovery Packet.
-///
-/// This packet contains a packed list of the universes upon which a source is actively operating.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct UniverseDiscoveryPacket {
-    root: RootLayer,
-    framing: FramingLayer,
-    universe_discovery: UniverseDiscoveryLayer,
+pub struct DiscoveryFraming {
+    source_name: [u8; 64],
+    universe_discovery: UniverseDiscovery,
 }
 
-impl UniverseDiscoveryPacket {
-    /// Creates a new [UniverseDiscoveryPacket].
+impl DiscoveryFraming {
+    const VECTOR: [u8; 4] = [0x00, 0x00, 0x00, 0x02];
+
     pub fn new(
-        cid: ComponentIdentifier,
         source_name: &str,
-        page: u8,
-        last: u8,
-        mut list_of_universes: Vec<u16>,
-    ) -> Result<Self, Error> {
-        list_of_universes.truncate(512);
-        list_of_universes.sort();
-        Ok(Self {
-            root: RootLayer::new(cid, true),
-            framing: FramingLayer::new(source_name)?,
-            universe_discovery: UniverseDiscoveryLayer::new(page, last, list_of_universes),
-        })
-    }
+        universe_discovery: UniverseDiscovery,
+    ) -> Result<Self, crate::Error> {
+        let source_name = source_name_from_str(source_name)?;
 
-    /// Creates a new [UniverseDiscoveryPacket] from a [SourceConfig].
-    pub fn from_source_config(
-        config: &SourceConfig,
-        page: u8,
-        last: u8,
-        list_of_universes: Vec<u16>,
-    ) -> Result<Self, Error> {
-        Self::new(config.cid, &config.name, page, last, list_of_universes)
-    }
-
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
-        Ok(Self {
-            root: RootLayer::from_bytes(bytes)?,
-            framing: FramingLayer::from_bytes(bytes)?,
-            universe_discovery: UniverseDiscoveryLayer::from_bytes(bytes)?,
-        })
-    }
-
-    pub fn to_bytes(&self) -> Vec<u8> {
-        vec![self.root.to_bytes(), self.framing.to_bytes(), self.universe_discovery.to_bytes()]
-            .concat()
-    }
-
-    /// The [ComponentIdentifier] in this packet.
-    pub fn cid(&self) -> &ComponentIdentifier {
-        &self.root.cid
+        Ok(Self { source_name, universe_discovery })
     }
 
     /// The source name in this packet.
     pub fn source_name(&self) -> &str {
-        core::str::from_utf8(&self.framing.source_name).unwrap()
+        core::str::from_utf8(&self.source_name).unwrap()
     }
 
-    /// The page number in this packet.
-    pub fn page(&self) -> u8 {
-        self.universe_discovery.page
-    }
-
-    /// The last page number in this packet.
-    pub fn last(&self) -> u8 {
-        self.universe_discovery.last
-    }
-
-    /// The list of universes in this packet.
-    pub fn list_of_universes(&self) -> &[u16] {
-        &self.universe_discovery.list_of_universes
+    pub(crate) fn from_source_config(
+        config: &SourceConfig,
+        universe_discovery: UniverseDiscovery,
+    ) -> Result<Self, crate::Error> {
+        Self::new(&config.name, universe_discovery)
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct FramingLayer {
-    source_name: [u8; 64],
-}
+impl acn::Pdu for DiscoveryFraming {
+    type DecodeError = crate::Error;
 
-impl FramingLayer {
-    pub fn new(source_name: &str) -> Result<Self, Error> {
-        let source_name = source_name_from_str(source_name)?;
+    fn encode(&self) -> impl Into<Vec<u8>> {
+        let flags_and_length = flags_and_length(self.size()).to_be_bytes();
 
-        Ok(Self { source_name })
+        let mut bytes = Vec::with_capacity(self.size());
+        bytes.extend(flags_and_length);
+        bytes.extend(Self::VECTOR);
+        bytes.extend(self.source_name);
+        bytes.extend([0x00, 0x00, 0x00, 0x00]);
+        bytes
     }
 
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+    fn decode(bytes: &[u8]) -> Result<Self, Self::DecodeError> {
         // E1.31 6.4.1 Universe Discovery Packet: Vector
-        let vector = u32::from_be_bytes([bytes[40], bytes[41], bytes[42], bytes[43]]);
-        if vector != VECTOR_EXTENDED_DISCOVERY {
-            return Err(Error::InvalidFramingVector(vector));
+        let vector = [bytes[40], bytes[41], bytes[42], bytes[43]];
+        if vector != Self::VECTOR {
+            return Err(crate::Error::InvalidUniverseDiscoveryLayerVector(vector.to_vec()));
         }
 
         // E1.31 6.4.2 Universe Discovery Packet: Source Name
         let source_name = bytes[44..108].try_into().unwrap();
 
-        Ok(Self { source_name })
+        let universe_discovery = UniverseDiscovery::decode(&bytes[109..])?;
+
+        Ok(Self { source_name, universe_discovery })
     }
 
-    pub fn to_bytes(&self) -> Vec<u8> {
-        let mut bytes = Vec::with_capacity(38);
-        bytes.extend(flags_and_length().to_be_bytes());
-        bytes.extend(VECTOR_EXTENDED_DISCOVERY.to_be_bytes());
-        bytes.extend(self.source_name);
-        bytes.extend([0x00, 0x00, 0x00, 0x00]);
-        bytes
+    fn size(&self) -> usize {
+        74 + self.universe_discovery.size()
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct UniverseDiscoveryLayer {
+pub struct UniverseDiscovery {
     /// Packet Number.
     page: u8,
     /// Final Page.
@@ -126,16 +76,51 @@ struct UniverseDiscoveryLayer {
     list_of_universes: Vec<u16>,
 }
 
-impl UniverseDiscoveryLayer {
-    pub fn new(page: u8, last: u8, list_of_universes: Vec<u16>) -> Self {
+impl UniverseDiscovery {
+    const VECTOR: [u8; 4] = [0x00, 0x00, 0x00, 0x02];
+
+    pub fn new(page: u8, last: u8, mut list_of_universes: Vec<u16>) -> Self {
+        list_of_universes.truncate(512);
+        list_of_universes.sort();
         Self { page, last, list_of_universes }
     }
 
-    pub fn from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+    /// The page number in this packet.
+    pub fn page(&self) -> u8 {
+        self.page
+    }
+
+    /// The last page number in this packet.
+    pub fn last(&self) -> u8 {
+        self.last
+    }
+
+    /// The list of universes in this packet.
+    pub fn list_of_universes(&self) -> &[u16] {
+        &self.list_of_universes
+    }
+}
+
+impl acn::Pdu for UniverseDiscovery {
+    type DecodeError = crate::Error;
+
+    fn encode(&self) -> impl Into<Vec<u8>> {
+        let flags_and_length = flags_and_length(self.size()).to_be_bytes();
+
+        let mut bytes = Vec::with_capacity(self.size());
+        bytes.extend(flags_and_length);
+        bytes.extend(Self::VECTOR);
+        bytes.push(self.page);
+        bytes.push(self.last);
+        bytes.extend(self.list_of_universes.iter().flat_map(|u| u.to_be_bytes()));
+        bytes
+    }
+
+    fn decode(bytes: &[u8]) -> Result<Self, Self::DecodeError> {
         // E1.31 8.2 Universe Discovery Layer: Vector.
-        let vector = u32::from_be_bytes([bytes[114], bytes[115], bytes[116], bytes[117]]);
-        if vector != VECTOR_UNIVERSE_DISCOVERY_UNIVERSE_LIST {
-            return Err(Error::InvalidUniverseDiscoveryUniverseListVector(vector));
+        let vector = [bytes[114], bytes[115], bytes[116], bytes[117]];
+        if vector != Self::VECTOR {
+            return Err(crate::Error::InvalidUniverseDiscoveryLayerVector(vector.to_vec()));
         }
 
         let page = bytes[118];
@@ -148,13 +133,7 @@ impl UniverseDiscoveryLayer {
         Ok(Self { page, last, list_of_universes })
     }
 
-    pub fn to_bytes(&self, pdu_len: u16) -> Vec<u8> {
-        let mut bytes = Vec::with_capacity(8);
-        bytes.extend(flags_and_length(pdu_len).to_be_bytes());
-        bytes.extend(VECTOR_UNIVERSE_DISCOVERY_UNIVERSE_LIST.to_be_bytes());
-        bytes.push(self.page);
-        bytes.push(self.last);
-        bytes.extend(self.list_of_universes.iter().flat_map(|u| u.to_be_bytes()));
-        bytes
+    fn size(&self) -> usize {
+        8 + self.list_of_universes.len() * 2
     }
 }
