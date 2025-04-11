@@ -1,5 +1,7 @@
+use arrayvec::ArrayVec;
+
 use super::{PacketError, flags_and_length, source_name_from_str};
-use crate::{MAX_UNIVERSE_SIZE, acn, source::SourceConfig};
+use crate::{MAX_UNIVERSE_SIZE, Slot, acn, source::SourceConfig};
 
 const PREVIEW_DATA_BIT: u8 = 0x80;
 const STREAM_TERMINATED_BIT: u8 = 0x40;
@@ -147,6 +149,10 @@ impl acn::Pdu for DataFraming {
     }
 
     fn decode(bytes: &[u8]) -> Result<Self, Self::DecodeError> {
+        if bytes.len() < 77 {
+            return Err(PacketError::InvalidLength(bytes.len()));
+        }
+
         // E1.31 6.2.1 Data Packet: Vector
         let vector = [bytes[2], bytes[3], bytes[4], bytes[5]];
         if vector != Self::VECTOR {
@@ -192,7 +198,7 @@ impl acn::Pdu for DataFraming {
 /// The DMP (Device Management Protocol) Layer of an E1.31 Data Packet.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Dmp {
-    property_values: Vec<u8>,
+    property_values: ArrayVec<Slot, { 1 + MAX_UNIVERSE_SIZE }>,
 }
 
 impl Dmp {
@@ -201,23 +207,24 @@ impl Dmp {
     const FIRST_PROPERTY_ADDRESS: [u8; 2] = [0x00, 0x00];
     const ADDRESS_TYPE_AND_DATA_TYPE: u8 = 0xa1;
 
-    const DEFAULT_START_CODE: u8 = 0x00;
-
     /// Creates a new [Dmp] layer.
-    pub fn new(data: Vec<u8>) -> Result<Self, PacketError> {
-        let mut property_values = vec![Self::DEFAULT_START_CODE];
-        property_values.extend(data);
-        Ok(Dmp { property_values })
+    pub fn new(property_values: ArrayVec<Slot, { 1 + MAX_UNIVERSE_SIZE }>) -> Self {
+        Dmp { property_values }
     }
 
-    /// Returns the DMX start code in this packet.
-    pub fn start_code(&self) -> Option<u8> {
-        self.property_values.get(0).copied()
+    /// Returns the start code slot.
+    pub fn start_code_slot(&self) -> Slot {
+        self.property_values[0]
     }
 
-    /// Returns the DMX data in this packet.
-    pub fn data(&self) -> &[u8] {
+    /// Returns the data slots.
+    pub fn data_slots(&self) -> &[Slot] {
         &self.property_values[1..]
+    }
+
+    /// Returns all slots.
+    pub fn slots(&self) -> &[Slot] {
+        &self.property_values
     }
 }
 
@@ -272,8 +279,8 @@ impl acn::Pdu for Dmp {
         let property_value_count = u16::from_be_bytes([bytes[8], bytes[9]]);
 
         // E1.13 7.7 Property Values (DMX512-A Data)
-        let mut property_values = bytes[10..10 + property_value_count as usize].to_vec();
-        property_values.truncate(MAX_UNIVERSE_SIZE as usize);
+        let mut property_values = ArrayVec::new();
+        property_values.extend(bytes[10..10 + property_value_count as usize].to_vec());
 
         Ok(Dmp { property_values })
     }

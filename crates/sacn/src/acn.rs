@@ -1,3 +1,4 @@
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Packet<Pre: Preamble, P: Pdu, Post: Postamble> {
     pub preamble: Pre,
     pub block: PduBlock<P>,
@@ -38,6 +39,7 @@ impl<Pre: Preamble, P: Pdu, Post: Postamble> Packet<Pre, P, Post> {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PduBlock<P: Pdu>(Vec<P>);
 
 impl<P: Pdu> PduBlock<P> {

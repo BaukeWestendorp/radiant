@@ -21,6 +21,7 @@ pub use root::RootLayer;
 pub use sync::SyncFraming;
 
 /// An E1.31 Packet.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Packet(acn::Packet<Preamble, RootLayer, Postamble>);
 
 impl Packet {
@@ -58,6 +59,7 @@ impl std::ops::Deref for Packet {
 }
 
 /// The preamble for an E1.31 Root Layer.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Preamble;
 
 impl Preamble {
@@ -105,6 +107,7 @@ impl acn::Preamble for Preamble {
 }
 
 /// The postamble for an E1.31 Root Layer.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Postamble;
 
 impl acn::Postamble for Postamble {

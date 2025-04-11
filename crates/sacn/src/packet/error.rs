@@ -51,4 +51,7 @@ pub enum PacketError {
     /// Invalid DMP address increment.
     #[error("Invalid DMP address increment: {0:4x?}")]
     InvalidDmpAddressIncrement(u16),
+    /// Invalid length.
+    #[error("Invalid length: {0}")]
+    InvalidLength(usize),
 }

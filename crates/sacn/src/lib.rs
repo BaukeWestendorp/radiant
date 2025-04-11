@@ -17,14 +17,18 @@ pub mod source;
 ///
 /// A set of up to 512 data slots identified by universe number.
 /// Note: In E1.31 there may be multiple sources for a universe. See also: [Slot].
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Universe {
     /// The universe number.
     pub number: UniverseNumber,
     /// The start code slot.
     pub start_code_slot: Slot,
     /// The data [Slot]s in the universe.
-    pub data_slots: ArrayVec<Slot, MAX_UNIVERSE_SIZE>,
+    pub data_slots: UniverseData,
 }
+
+/// A set of up to 512 data slots.
+pub type UniverseData = ArrayVec<Slot, MAX_UNIVERSE_SIZE>;
 
 impl Universe {
     /// Creates a new universe with the given number.

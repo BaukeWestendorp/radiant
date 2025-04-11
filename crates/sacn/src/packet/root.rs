@@ -5,6 +5,7 @@ use crate::{
 };
 
 /// An E1.31 Root Layer.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RootLayer {
     cid: ComponentIdentifier,
     extended: bool,

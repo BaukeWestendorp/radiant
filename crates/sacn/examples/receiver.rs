@@ -4,8 +4,8 @@ fn main() {
     let receiver = Receiver::start(ReceiverConfig::default()).unwrap();
 
     loop {
-        if let Ok((id, universe)) = receiver.recv() {
-            println!("Universe: {id}: {universe:?}");
+        if let Ok(universe) = receiver.recv() {
+            println!("Universe: {universe:?}");
         }
     }
 }

@@ -3,14 +3,14 @@
 //! Responsible for receiving and processing sACN packets.
 
 use crate::{
-    DEFAULT_PORT, MAX_UNIVERSE_SIZE,
-    packet::{DataFraming, Packet, Pdu, SyncFraming},
+    DEFAULT_PORT, Universe,
+    packet::{DataFraming, DiscoveryFraming, Packet, PacketError, Pdu, SyncFraming},
 };
-use socket2::{Domain, SockAddr, Socket, Type};
+use socket2::{Domain, Socket, Type};
 use std::{
     net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr},
-    sync::{Arc, mpsc},
-    thread,
+    sync::{Arc, Mutex, mpsc},
+    thread::{self, JoinHandle},
     time::Duration,
 };
 
@@ -22,15 +22,23 @@ pub enum ReceiverError {
     /// An [std::io::Error] wrapper.
     #[error(transparent)]
     Io(#[from] std::io::Error),
+
+    /// A [PacketError] wrapper.
+    #[error(transparent)]
+    Packet(#[from] PacketError),
+
+    /// The connection was closed.
+    #[error("Connection closed")]
+    ConnectionClosed,
 }
 
 /// A sACN receiver.
 ///
 /// Responsible for receiving and processing sACN packets.
 pub struct Receiver {
-    config: ReceiverConfig,
     inner: Arc<Inner>,
-    rx: mpsc::Receiver<(u16, Vec<u8>)>,
+    rx: mpsc::Receiver<Universe>,
+    thread_handle: Option<JoinHandle<()>>,
 }
 
 impl Receiver {
@@ -43,22 +51,23 @@ impl Receiver {
         socket.set_reuse_port(true)?;
         socket.bind(&addr.into())?;
 
-        let inner = Arc::new(Inner { socket });
+        let inner = Arc::new(Inner { config: Mutex::new(config), socket });
 
         let (tx, rx) = mpsc::channel();
-        thread::spawn({
+        let thread_handle = thread::spawn({
             let inner = Arc::clone(&inner);
             move || {
-                inner.start(tx).unwrap();
+                inner.start(&tx).unwrap();
             }
         });
 
-        Ok(Self { config, inner, rx })
+        Ok(Self { thread_handle: Some(thread_handle), inner, rx })
     }
 
     /// Shut down this [Receiver].
-    pub fn shutdown(&self) -> Result<(), ReceiverError> {
+    pub fn shutdown(&mut self) -> Result<(), ReceiverError> {
         self.inner.socket.shutdown(Shutdown::Both)?;
+        self.thread_handle.take().unwrap().join().ok();
         Ok(())
     }
 
@@ -69,7 +78,7 @@ impl Receiver {
     /// # Errors
     ///
     /// This function will return an error if the receiver has been shut down.
-    pub fn recv(&self) -> Result<(u16, Vec<u8>), mpsc::RecvError> {
+    pub fn recv(&self) -> Result<Universe, mpsc::RecvError> {
         self.rx.recv()
     }
 
@@ -81,10 +90,7 @@ impl Receiver {
     /// # Errors
     ///
     /// This function will return an error if the receiver has been shut down or the timeout is reached.
-    pub fn recv_timeout(
-        &self,
-        timeout: Duration,
-    ) -> Result<(u16, Vec<u8>), mpsc::RecvTimeoutError> {
+    pub fn recv_timeout(&self, timeout: Duration) -> Result<Universe, mpsc::RecvTimeoutError> {
         self.rx.recv_timeout(timeout)
     }
 
@@ -99,13 +105,24 @@ impl Receiver {
     /// # Errors
     ///
     /// This function will return an error if the receiver has been shut down or
-    pub fn try_recv(&self) -> Result<(u16, Vec<u8>), mpsc::TryRecvError> {
+    pub fn try_recv(&self) -> Result<Universe, mpsc::TryRecvError> {
         self.rx.try_recv()
     }
 
     /// Returns the [ReceiverConfig] for this [Receiver].
-    pub fn config(&self) -> &ReceiverConfig {
-        &self.config
+    pub fn config(&self) -> ReceiverConfig {
+        self.inner.config.lock().unwrap().clone()
+    }
+
+    /// Sets the configuration for this [Source].
+    pub fn set_config(&self, config: ReceiverConfig) {
+        *self.inner.config.lock().unwrap() = config;
+    }
+}
+
+impl Drop for Receiver {
+    fn drop(&mut self) {
+        self.shutdown().ok();
     }
 }
 
@@ -125,66 +142,77 @@ impl Default for ReceiverConfig {
 }
 
 struct Inner {
+    config: Mutex<ReceiverConfig>,
     socket: Socket,
 }
 
 impl Inner {
-    pub fn start(&self, tx: mpsc::Sender<(u16, Vec<u8>)>) -> Result<(), ReceiverError> {
+    pub fn start(&self, tx: &mpsc::Sender<Universe>) -> Result<(), ReceiverError> {
         loop {
-            match self.recv_packet_from()? {
-                Some((packet, _)) => match &packet.block.pdus()[0].pdu() {
-                    Pdu::DataFraming(pdu) => {
-                        let (id, universe) = self.universe_from_data_framing(pdu)?;
-                        tx.send((id, universe)).expect("channel should not be closed");
-                    }
-                    Pdu::SyncFraming(sync_framing) => self.handle_sync_framing(sync_framing),
-                    Pdu::DiscoveryFraming(_) => self.handle_discovery_framing(),
-                },
-                None => {}
+            let packet = match self.recv_packet() {
+                Ok(packet) => packet,
+                Err(ReceiverError::Packet(packet_err)) => {
+                    eprintln!("Invalid packet received: {}", packet_err);
+                    continue;
+                }
+                Err(ReceiverError::ConnectionClosed) => return Ok(()),
+                Err(err) => return Err(err),
+            };
+
+            let root = &packet.block.pdus()[0];
+
+            match &root.pdu() {
+                Pdu::DataFraming(pdu) => {
+                    let universe = self.universe_from_data_framing(pdu)?;
+                    tx.send(universe).expect("channel should not be closed");
+                }
+                Pdu::SyncFraming(sync_framing) => self.handle_sync_framing(sync_framing),
+                Pdu::DiscoveryFraming(discovery_framing) => {
+                    self.handle_discovery_framing(discovery_framing)
+                }
             }
         }
     }
 
-    fn recv_packet_from(&self) -> Result<Option<(Packet, SockAddr)>, ReceiverError> {
+    fn recv_packet(&self) -> Result<Packet, ReceiverError> {
         const MAX_PACKET_SIZE: usize = 1144;
 
         let mut data = Vec::with_capacity(MAX_PACKET_SIZE);
-        let (received, addr) = self.socket.recv_from(data.spare_capacity_mut())?;
+        let buffer = data.spare_capacity_mut();
+        let received = self.socket.recv(buffer)?;
+
+        if received == 0 {
+            return Err(ReceiverError::ConnectionClosed);
+        }
+
         // SAFETY: just received into the `buffer`.
         unsafe {
             data.set_len(received);
         }
 
-        match Packet::decode(&data) {
-            Ok(packet) => Ok(Some((packet, addr))),
-            Err(err) => {
-                eprintln!("Invalid packet discarded: {err:?}");
-                Ok(None)
-            }
-        }
+        Ok(Packet::decode(&data)?)
     }
 
     fn universe_from_data_framing(
         &self,
         data_framing: &DataFraming,
-    ) -> Result<(u16, Vec<u8>), ReceiverError> {
-        let universe_id = data_framing.universe();
-        let data = data_framing.dmp().data();
+    ) -> Result<Universe, ReceiverError> {
+        let universe_number = data_framing.universe();
+        let start_code_slot = data_framing.dmp().start_code_slot();
+        let data_slots = data_framing.dmp().data_slots();
 
-        let mut universe = Vec::new();
-        for i in 0..MAX_UNIVERSE_SIZE {
-            let value = data.get(i as usize).copied().unwrap_or_default().into();
-            universe.push(value);
-        }
+        let mut universe = Universe::new(universe_number);
+        universe.start_code_slot = start_code_slot;
+        universe.data_slots.extend(data_slots.to_owned());
 
-        Ok((universe_id, universe))
+        Ok(universe)
     }
 
     fn handle_sync_framing(&self, _sync_framing: &SyncFraming) {
         // Handle sync framing logic here
     }
 
-    fn handle_discovery_framing(&self) {
+    fn handle_discovery_framing(&self, _discovery_framing: &DiscoveryFraming) {
         // Handle discovery framing logic here
     }
 }
