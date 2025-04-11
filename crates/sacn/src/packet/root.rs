@@ -15,6 +15,7 @@ pub struct RootLayer {
 impl RootLayer {
     const VECTOR: [u8; 4] = [0x00, 0x00, 0x00, 0x04];
     const VECTOR_EXTENDED: [u8; 4] = [0x00, 0x00, 0x00, 0x08];
+    const MIN_ROOT_LAYER_SIZE: usize = 38;
 
     /// Creates a new [RootLayer].
     pub fn new(cid: ComponentIdentifier, extended: bool, pdu: Pdu) -> Self {
@@ -54,9 +55,7 @@ impl acn::Pdu for RootLayer {
     }
 
     fn decode(data: &[u8]) -> Result<Self, Self::DecodeError> {
-        const MIN_ROOT_LAYER_SIZE: usize = 37;
-
-        if data.len() < MIN_ROOT_LAYER_SIZE {
+        if data.len() < Self::MIN_ROOT_LAYER_SIZE {
             return Err(PacketError::InvalidRootLayerSize(data.len()));
         }
 
@@ -78,6 +77,6 @@ impl acn::Pdu for RootLayer {
     }
 
     fn size(&self) -> usize {
-        self.pdu.size() - Preamble::SIZE - Postamble.size()
+        Self::MIN_ROOT_LAYER_SIZE + self.pdu.size() - Preamble::SIZE - Postamble.size()
     }
 }

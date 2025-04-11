@@ -25,7 +25,7 @@ fn main() {
         let mut universe = Universe::new(1);
 
         // Create a wave pattern
-        for i in 0..universe.data_slots.capacity() {
+        for i in 0..20 {
             let wave1 = ((i as f32 * 0.1 + ix as f32 * 0.05).sin() * 127.0 + 127.0) as u8;
             let wave2 = ((i as f32 * 0.2 - ix as f32 * 0.03).cos() * 127.0 + 127.0) as u8;
             let wave3 = ((i as f32 * 0.15 + ix as f32 * 0.07).sin() * 127.0 + 127.0) as u8;

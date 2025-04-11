@@ -45,6 +45,7 @@ impl acn::Pdu for DiscoveryFraming {
         bytes.extend(Self::VECTOR);
         bytes.extend(self.source_name);
         bytes.extend([0x00, 0x00, 0x00, 0x00]);
+        bytes.extend(self.universe_discovery.encode().into());
         bytes
     }
 
@@ -80,7 +81,7 @@ pub struct UniverseDiscovery {
 }
 
 impl UniverseDiscovery {
-    const VECTOR: [u8; 4] = [0x00, 0x00, 0x00, 0x02];
+    const VECTOR: [u8; 4] = [0x00, 0x00, 0x00, 0x01];
 
     /// Creates a new [UniverseDiscovery] layer.
     pub fn new(page: u8, last: u8, mut list_of_universes: Vec<u16>) -> Self {

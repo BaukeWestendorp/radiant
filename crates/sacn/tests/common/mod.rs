@@ -63,7 +63,7 @@ macro_rules! create_test_universe {
         create_test_universe!(42)
     };
     ($number:expr) => {{
-        let mut universe = Universe::new($number);
+        let mut universe = sacn::Universe::new($number);
         universe.start_code_slot = 25;
         for i in 0..universe.data_slots.capacity() {
             universe.data_slots.push(i as sacn::Slot);

@@ -29,7 +29,7 @@ pub enum ReceiverError {
 
     /// The connection was closed.
     #[error("Connection closed")]
-    ConnectionClosed,
+    NoData,
 }
 
 /// A sACN receiver.
@@ -162,8 +162,7 @@ impl Inner {
                     log::warn!("Received invalid packet: {}", packet_err);
                     continue;
                 }
-                Err(ReceiverError::ConnectionClosed) => {
-                    log::info!("sACN Receiver connection closed");
+                Err(ReceiverError::NoData) => {
                     return Ok(());
                 }
                 Err(err) => return Err(err),
@@ -193,7 +192,7 @@ impl Inner {
         let received = self.socket.recv(buffer)?;
 
         if received == 0 {
-            return Err(ReceiverError::ConnectionClosed);
+            return Err(ReceiverError::NoData);
         }
 
         // SAFETY: just received into the `buffer`.
