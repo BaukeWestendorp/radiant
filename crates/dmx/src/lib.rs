@@ -504,7 +504,7 @@ impl Multiverse {
     /// multiverse.create_universe(id, Universe::new());
     ///
     /// let address = Address::new(id, Channel::new(1).unwrap());
-    /// multiverse.set_value(&address, Value(128)).unwrap();
+    /// multiverse.set_value(&address, Value(128));
     /// ```
     pub fn set_value(&mut self, address: &Address, value: Value) {
         let universe = match self.universe_mut(&address.universe) {

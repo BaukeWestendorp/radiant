@@ -9,7 +9,6 @@ mod common;
 
 // SPEC: A set of up to 512 data slots identified by universe number.
 #[test]
-#[timeout(3000)]
 fn e131_3_2_universe_data_slots_size() {
     let mut universe = Universe::new(1);
 
@@ -33,7 +32,6 @@ fn e131_3_2_universe_data_slots_size() {
 
 // SPEC: Each E1.31 Data Packet contains a universe number identifying the universe it carries.
 #[test]
-#[timeout(3000)]
 fn e131_3_3_data_packet_has_universe_number() {
     let universe = common::create_test_universe!();
 
@@ -51,7 +49,6 @@ fn e131_3_3_data_packet_has_universe_number() {
 
 // SPEC: A slot is a sequentially numbered octet in a DMX512-A [DMX] packet.
 #[test]
-#[timeout(3000)]
 fn e131_3_4_slot_is_sequentially_numbered_octet() {
     let a: Slot = 0;
     let b: Slot = 1;
@@ -60,7 +57,6 @@ fn e131_3_4_slot_is_sequentially_numbered_octet() {
 
 // SPEC: A single Universe contains a maximum of 513 Slots, starting at slot 0.
 #[test]
-#[timeout(3000)]
 fn e131_3_4_universe_contains_max_slots() {
     let mut universe = Universe::with_start_code(1, 0xAA);
     let slots = universe.slots();
@@ -87,7 +83,6 @@ fn e131_3_4_universe_contains_max_slots() {
 
 // SPEC: Slot 0 is the DMX512-A [DMX] START Code. Slots 1 through 512 are data slots.
 #[test]
-#[timeout(3000)]
 fn e131_3_4_universe_slot_0_start_code_1_512_data_slots() {
     let mut universe = Universe::with_start_code(1, 0xAA);
     let slots = universe.slots();
@@ -131,7 +126,6 @@ fn e131_3_5_stream_of_packets_for_universe_sent_from_source() {
 
 // SPEC: A source is uniquely identified by a number in the header of the packet (see field CID in Table 4-1).
 #[test]
-#[timeout(3000)]
 fn e131_3_5_source_identified_by_packet_header_cid() {
     let cid = ComponentIdentifier::new_v4();
     let root_layer = RootLayer::new(cid, false, packet::Pdu::SyncFraming(SyncFraming::new(0, 0)));

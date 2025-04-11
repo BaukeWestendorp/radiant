@@ -25,7 +25,7 @@ pub enum ReceiverError {
 
     /// A [PacketError] wrapper.
     #[error(transparent)]
-    Packet(#[from] PacketError),
+    InvalidPacket(#[from] PacketError),
 
     /// The connection was closed.
     #[error("Connection closed")]
@@ -51,6 +51,8 @@ impl Receiver {
         socket.set_reuse_port(true)?;
         socket.bind(&addr.into())?;
 
+        log::info!("Bound sACN Receiver on {}:{}", addr, config.port);
+
         let inner = Arc::new(Inner { config: Mutex::new(config), socket });
 
         let (tx, rx) = mpsc::channel();
@@ -66,6 +68,7 @@ impl Receiver {
 
     /// Shut down this [Receiver].
     pub fn shutdown(&mut self) -> Result<(), ReceiverError> {
+        log::info!("Shutting down sACN Receiver");
         self.inner.socket.shutdown(Shutdown::Both)?;
         self.thread_handle.take().unwrap().join().ok();
         Ok(())
@@ -148,18 +151,26 @@ struct Inner {
 
 impl Inner {
     pub fn start(&self, tx: &mpsc::Sender<Universe>) -> Result<(), ReceiverError> {
+        log::debug!("Starting sACN Receiver");
         loop {
             let packet = match self.recv_packet() {
-                Ok(packet) => packet,
-                Err(ReceiverError::Packet(packet_err)) => {
-                    eprintln!("Invalid packet received: {}", packet_err);
+                Ok(packet) => {
+                    log::debug!("Received packet: {:?}", packet);
+                    packet
+                }
+                Err(ReceiverError::InvalidPacket(packet_err)) => {
+                    log::warn!("Received invalid packet: {}", packet_err);
                     continue;
                 }
-                Err(ReceiverError::ConnectionClosed) => return Ok(()),
+                Err(ReceiverError::ConnectionClosed) => {
+                    log::info!("sACN Receiver connection closed");
+                    return Ok(());
+                }
                 Err(err) => return Err(err),
             };
 
-            let root = &packet.block.pdus()[0];
+            let root =
+                &packet.block.pdus().first().expect("sACN packet should contain at least one PDU");
 
             match &root.pdu() {
                 Pdu::DataFraming(pdu) => {

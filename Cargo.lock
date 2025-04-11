@@ -3987,6 +3987,7 @@ name = "sacn"
 version = "0.1.0"
 dependencies = [
  "arrayvec",
+ "log",
  "ntest",
  "serial_test",
  "socket2",

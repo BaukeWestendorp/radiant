@@ -136,6 +136,11 @@ impl Source {
 
     /// Starts the [Source].
     pub fn start(&self) -> Result<(), SourceError> {
+        log::info!(
+            "Starting sACN Source on {}:{}",
+            self.config.lock().unwrap().ip,
+            self.config.lock().unwrap().port
+        );
         self.send_discovery_packet()?;
 
         loop {
@@ -154,6 +159,7 @@ impl Source {
 
     /// Shut down this [Source].
     pub fn shutdown(&self) -> Result<(), SourceError> {
+        log::info!("Shutting down sACN Source");
         self.socket.shutdown(Shutdown::Both)?;
         Ok(())
     }
@@ -166,6 +172,8 @@ impl Source {
     }
 
     fn send_universe_data_packet(&self, universe: Universe) -> Result<(), SourceError> {
+        log::debug!("Sending sACN data packet for universe {}", universe.number);
+
         let sequence_number = self.next_sequence_number_for_universe(universe.number);
 
         let packet = {
@@ -207,6 +215,8 @@ impl Source {
     }
 
     fn send_discovery_packet(&self) -> Result<(), SourceError> {
+        log::info!("Sending sACN discovery packet");
+
         if self.universes.lock().unwrap().is_empty() {
             return Ok(());
         }
