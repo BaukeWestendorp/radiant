@@ -50,16 +50,17 @@ impl acn::Pdu for DiscoveryFraming {
     }
 
     fn decode(bytes: &[u8]) -> Result<Self, Self::DecodeError> {
+        dbg!(&bytes);
         // E1.31 6.4.1 Universe Discovery Packet: Vector
-        let vector = [bytes[40], bytes[41], bytes[42], bytes[43]];
+        let vector = [bytes[2], bytes[3], bytes[4], bytes[5]];
         if vector != Self::VECTOR {
             return Err(PacketError::InvalidUniverseDiscoveryLayerVector(vector.to_vec()));
         }
 
         // E1.31 6.4.2 Universe Discovery Packet: Source Name
-        let source_name = bytes[44..108].try_into().unwrap();
+        let source_name = bytes[6..70].try_into().unwrap();
 
-        let universe_discovery = UniverseDiscovery::decode(&bytes[109..])?;
+        let universe_discovery = UniverseDiscovery::decode(&bytes[74..])?;
 
         Ok(Self { source_name, universe_discovery })
     }
@@ -123,14 +124,14 @@ impl acn::Pdu for UniverseDiscovery {
 
     fn decode(bytes: &[u8]) -> Result<Self, Self::DecodeError> {
         // E1.31 8.2 Universe Discovery Layer: Vector.
-        let vector = [bytes[114], bytes[115], bytes[116], bytes[117]];
+        let vector = [bytes[2], bytes[3], bytes[4], bytes[5]];
         if vector != Self::VECTOR {
             return Err(PacketError::InvalidUniverseDiscoveryLayerVector(vector.to_vec()));
         }
 
-        let page = bytes[118];
-        let last = bytes[119];
-        let list_of_universes = bytes[120..]
+        let page = bytes[6];
+        let last = bytes[7];
+        let list_of_universes = bytes[8..]
             .chunks_exact(2)
             .map(|chunk| u16::from_be_bytes(chunk.try_into().unwrap()))
             .collect();

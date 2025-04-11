@@ -32,16 +32,16 @@ impl acn::Pdu for SyncFraming {
 
     fn decode(bytes: &[u8]) -> Result<Self, Self::DecodeError> {
         // E1.31 6.3.1 Synchronization Packet: Vector
-        let vector = [bytes[40], bytes[41], bytes[42], bytes[43]];
+        let vector = [bytes[2], bytes[3], bytes[4], bytes[5]];
         if vector != Self::VECTOR {
             return Err(PacketError::InvalidFramingLayerVector(vector.to_vec()));
         }
 
         // E1.31 6.3.2 Synchronization Packet: Sequence Number
-        let sequence_number = bytes[44];
+        let sequence_number = bytes[6];
 
         // E1.31 6.3.3 Synchronization Packet: Synchronization Address
-        let synchronization_address = u16::from_be_bytes([bytes[45], bytes[46]]);
+        let synchronization_address = u16::from_be_bytes([bytes[7], bytes[8]]);
 
         Ok(Self { sequence_number, synchronization_address })
     }

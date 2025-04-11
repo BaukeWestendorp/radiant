@@ -1,15 +1,14 @@
 use sacn::{
-    ComponentIdentifier, Universe,
+    ComponentIdentifier, Universe, UniverseData,
     packet::{DataFraming, DiscoveryFraming, Dmp, Packet, Pdu, SyncFraming, UniverseDiscovery},
     source::SourceConfig,
 };
 
 mod common;
 
-#[test]
-fn e131_4_1_encode_data_packet_512_slots() {
+fn create_data_packet(data_slots: UniverseData) -> Packet {
     let mut universe = Universe::new(1);
-    universe.data_slots = [0x00; 512].into();
+    universe.data_slots = data_slots;
 
     let cid = ComponentIdentifier::from_bytes([
         0xa1, 0xa2, 0xa3, 0xa4, 0xb1, 0xb2, 0xc1, 0xc2, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7,
@@ -35,7 +34,38 @@ fn e131_4_1_encode_data_packet_512_slots() {
     .unwrap();
 
     let pdu = Pdu::DataFraming(data_framing);
-    let packet = Packet::new(cid, pdu);
+    Packet::new(cid, pdu)
+}
+
+fn create_sync_packet() -> Packet {
+    let cid = ComponentIdentifier::from_bytes([
+        0xa1, 0xa2, 0xa3, 0xa4, 0xb1, 0xb2, 0xc1, 0xc2, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7,
+        0xd8,
+    ]);
+
+    let sync_framing = SyncFraming::new(0, 42);
+    let pdu = Pdu::SyncFraming(sync_framing);
+    Packet::new(cid, pdu)
+}
+
+fn create_discovery_packet() -> Packet {
+    let cid = ComponentIdentifier::from_bytes([
+        0xa1, 0xa2, 0xa3, 0xa4, 0xb1, 0xb2, 0xc1, 0xc2, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7,
+        0xd8,
+    ]);
+
+    let page = 0;
+    let last = 0;
+    let list = vec![42, 25];
+    let universe_discovery = UniverseDiscovery::new(page, last, list);
+    let discovery_framing = DiscoveryFraming::new("TEST_NAME", universe_discovery).unwrap();
+    let pdu = Pdu::DiscoveryFraming(discovery_framing);
+    Packet::new(cid, pdu)
+}
+
+#[test]
+fn e131_4_1_encode_data_packet_512_slots() {
+    let packet = create_data_packet([0x00; 512].into());
     let packet_bytes = packet.encode();
 
     assert_eq!(
@@ -82,35 +112,19 @@ fn e131_4_1_encode_data_packet_512_slots() {
 }
 
 #[test]
+fn e131_4_1_decode_data_packet_512_slots() {
+    let packet = create_data_packet([0x00; 512].into());
+    let packet_bytes = packet.encode();
+
+    let decoded_packet = Packet::decode(&packet_bytes).unwrap();
+    assert_eq!(packet, decoded_packet);
+}
+
+#[test]
 fn e131_4_1_encode_data_packet_20_slots() {
-    let mut universe = Universe::new(1);
-    universe.data_slots.extend(vec![0x00; 20]);
-
-    let cid = ComponentIdentifier::from_bytes([
-        0xa1, 0xa2, 0xa3, 0xa4, 0xb1, 0xb2, 0xc1, 0xc2, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7,
-        0xd8,
-    ]);
-
-    let dmp = Dmp::new(universe.slots());
-    let data_framing = DataFraming::from_source_config(
-        &SourceConfig {
-            cid,
-            name: "TEST_NAME".to_string(),
-            priority: 100,
-            preview_data: false,
-            synchronization_address: 0,
-            force_synchronization: false,
-            ..Default::default()
-        },
-        3,
-        false,
-        universe.number,
-        dmp,
-    )
-    .unwrap();
-
-    let pdu = Pdu::DataFraming(data_framing);
-    let packet = Packet::new(cid, pdu);
+    let mut data_slots = UniverseData::new();
+    data_slots.extend(vec![0x00; 20]);
+    let packet = create_data_packet(data_slots);
     let packet_bytes = packet.encode();
 
     assert_eq!(
@@ -127,15 +141,19 @@ fn e131_4_1_encode_data_packet_20_slots() {
 }
 
 #[test]
-fn e131_4_2_encode_sync_packet() {
-    let cid = ComponentIdentifier::from_bytes([
-        0xa1, 0xa2, 0xa3, 0xa4, 0xb1, 0xb2, 0xc1, 0xc2, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7,
-        0xd8,
-    ]);
+fn e131_4_1_decode_data_packet_20_slots() {
+    let mut data_slots = UniverseData::new();
+    data_slots.extend(vec![0x00; 20]);
+    let packet = create_data_packet(data_slots);
+    let packet_bytes = packet.encode();
 
-    let sync_framing = SyncFraming::new(0, 42);
-    let pdu = Pdu::SyncFraming(sync_framing);
-    let packet = Packet::new(cid, pdu);
+    let decoded_packet = Packet::decode(&packet_bytes).unwrap();
+    assert_eq!(packet, decoded_packet);
+}
+
+#[test]
+fn e131_4_2_encode_sync_packet() {
+    let packet = create_sync_packet();
     let packet_bytes = packet.encode();
 
     assert_eq!(
@@ -149,19 +167,17 @@ fn e131_4_2_encode_sync_packet() {
 }
 
 #[test]
-fn e131_4_3_encode_discovery_packet() {
-    let cid = ComponentIdentifier::from_bytes([
-        0xa1, 0xa2, 0xa3, 0xa4, 0xb1, 0xb2, 0xc1, 0xc2, 0xd1, 0xd2, 0xd3, 0xd4, 0xd5, 0xd6, 0xd7,
-        0xd8,
-    ]);
+fn e131_4_2_decode_sync_packet() {
+    let packet = create_sync_packet();
+    let packet_bytes = packet.encode();
 
-    let page = 0;
-    let last = 0;
-    let list = vec![42, 25];
-    let universe_discovery = UniverseDiscovery::new(page, last, list);
-    let discovery_framing = DiscoveryFraming::new("TEST_NAME", universe_discovery).unwrap();
-    let pdu = Pdu::DiscoveryFraming(discovery_framing);
-    let packet = Packet::new(cid, pdu);
+    let decoded_packet = Packet::decode(&packet_bytes).unwrap();
+    assert_eq!(packet, decoded_packet);
+}
+
+#[test]
+fn e131_4_3_encode_discovery_packet() {
+    let packet = create_discovery_packet();
     let packet_bytes = packet.encode();
 
     assert_eq!(
@@ -175,4 +191,13 @@ fn e131_4_3_encode_discovery_packet() {
             42
         ]
     );
+}
+
+#[test]
+fn e131_4_3_decode_discovery_packet() {
+    let packet = create_discovery_packet();
+    let packet_bytes = packet.encode();
+
+    let decoded_packet = Packet::decode(&packet_bytes).unwrap();
+    assert_eq!(packet, decoded_packet);
 }
