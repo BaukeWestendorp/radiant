@@ -2,6 +2,7 @@ use app::RadiantApp;
 use gpui::*;
 
 mod app;
+mod dmx_io;
 mod effect_graph;
 mod frame;
 

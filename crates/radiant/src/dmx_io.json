@@ -1,0 +1,21 @@
+{
+  "interface": {
+    "name": "lo"
+  },
+  "sacn": {
+    "outputs": [
+      {
+        "name": "Test sACN Input",
+        "local_universes": [1, 3, 4],
+        "destination_universe": 1,
+        "priority": 142,
+        "preview_data": false,
+        "type": {
+          "unicast": {
+            "destination_ip": "127.0.0.1"
+          }
+        }
+      }
+    ]
+  }
+}

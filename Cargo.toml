@@ -19,11 +19,12 @@ single_match = "allow"
 
 [workspace.dependencies]
 # crates
-frames = { path = "crates/frames" }
-ui = { path = "crates/ui" }
+dmx = { path = "crates/dmx" }
 flow = { path = "crates/flow" }
 flow_derive = { path = "crates/flow_derive" }
-dmx = { path = "crates/dmx" }
+frames = { path = "crates/frames" }
+ui = { path = "crates/ui" }
+sacn = { path = "crates/sacn" }
 
 # serialization
 serde = "1"

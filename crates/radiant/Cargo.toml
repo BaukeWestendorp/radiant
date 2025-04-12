@@ -10,6 +10,7 @@ workspace = true
 # crates
 flow = { workspace = true, features = ["serde", "derive"] }
 frames.workspace = true
+sacn.workspace = true
 ui.workspace = true
 
 # serialization

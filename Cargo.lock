@@ -3598,6 +3598,7 @@ dependencies = [
  "frames",
  "gpui",
  "log",
+ "sacn",
  "serde",
  "serde_json",
  "ui",
