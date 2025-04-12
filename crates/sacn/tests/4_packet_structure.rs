@@ -152,6 +152,10 @@ fn e131_4_1_decode_data_packet_20_slots() {
 }
 
 #[test]
+#[ignore = "TODO"]
+fn e131_4_1_data_packet_carries_vector() {}
+
+#[test]
 fn e131_4_2_encode_sync_packet() {
     let packet = create_sync_packet();
     let packet_bytes = packet.encode();
@@ -174,6 +178,20 @@ fn e131_4_2_decode_sync_packet() {
     let decoded_packet = Packet::decode(&packet_bytes).unwrap();
     assert_eq!(packet, decoded_packet);
 }
+
+// The E1.31 Synchronization Packet is used to trigger synchronization.
+#[test]
+#[serial_test::serial]
+#[ntest::timeout(3000)]
+#[ignore = "TODO"]
+fn e131_4_2_sync_packet_triggers_synchronization() {}
+
+// The E1.31 Synchronization Packet is used to trigger synchronization.
+#[test]
+#[serial_test::serial]
+#[ntest::timeout(3000)]
+#[ignore = "TODO"]
+fn e131_4_2_sync_address_does_not_preclude_data_packets() {}
 
 #[test]
 fn e131_4_3_encode_discovery_packet() {
@@ -201,3 +219,7 @@ fn e131_4_3_decode_discovery_packet() {
     let decoded_packet = Packet::decode(&packet_bytes).unwrap();
     assert_eq!(packet, decoded_packet);
 }
+
+#[test]
+#[ignore = "TODO"]
+fn e131_4_2_sync_packet_carries_vector() {}
