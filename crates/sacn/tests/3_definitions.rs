@@ -5,7 +5,7 @@ use sacn::{
     *,
 };
 
-mod common;
+pub mod common;
 
 // SPEC: A set of up to 512 data slots identified by universe number.
 #[test]

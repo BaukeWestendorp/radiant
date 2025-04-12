@@ -4,7 +4,7 @@ use sacn::{
     source::SourceConfig,
 };
 
-mod common;
+pub mod common;
 
 fn create_data_packet(data_slots: UniverseData) -> Packet {
     let mut universe = Universe::new(1);

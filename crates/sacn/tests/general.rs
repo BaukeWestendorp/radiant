@@ -4,7 +4,7 @@ use sacn::{
     source::SourceConfig,
 };
 
-mod common;
+pub mod common;
 
 #[test]
 fn packet_pdu_block_size() {
