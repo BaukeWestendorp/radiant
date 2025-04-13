@@ -86,7 +86,8 @@ impl flow::Control<GraphDef> for Control {
     }
 }
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone)]
 pub struct GraphDef;
 
 impl flow::GraphDef for GraphDef {
@@ -98,9 +99,7 @@ impl flow::GraphDef for GraphDef {
 
 pub type EffectGraph = Graph<GraphDef>;
 
-pub fn get_graph() -> EffectGraph {
-    let mut graph = load_graph();
-
+pub fn insert_templates(graph: &mut EffectGraph) {
     graph.add_templates([
         Template::new(
             "number_new",
@@ -196,11 +195,4 @@ pub fn get_graph() -> EffectGraph {
             }),
         ),
     ]);
-
-    graph
-}
-
-fn load_graph() -> EffectGraph {
-    let graph_json = include_str!("effect_graph.json");
-    serde_json::from_str(graph_json).unwrap()
 }

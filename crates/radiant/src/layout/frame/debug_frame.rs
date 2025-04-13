@@ -1,4 +1,4 @@
-use crate::effect_graph::EffectGraph;
+use crate::showfile::effect_graph::EffectGraph;
 use flow::ProcessingContext;
 use gpui::*;
 
