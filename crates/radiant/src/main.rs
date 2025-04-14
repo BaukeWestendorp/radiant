@@ -9,8 +9,8 @@ mod showfile;
 #[derive(Debug, clap::Parser)]
 #[command(version, about, long_about = None)]
 struct Args {
-    #[arg(short, long)]
     /// Path to the showfile. Leave empty to open a new showfile.
+    #[arg(short, long)]
     showfile: Option<PathBuf>,
 }
 
@@ -30,5 +30,5 @@ fn main() {
         None => showfile::Showfile::default(),
     };
 
-    app::run(showfile);
+    app::RadiantApp::new(showfile).run();
 }

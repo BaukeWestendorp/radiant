@@ -95,6 +95,7 @@
   },
   "layout": {
     "main_window": {
+      "size": { "width": 19, "height": 12 },
       "frames": [
         {
           "bounds": {
@@ -108,7 +109,7 @@
             "origin": { "x": 15, "y": 0 },
             "size": { "width": 2, "height": 4 }
           },
-          "kind": "Debug"
+          "kind": "Debugger"
         }
       ]
     }

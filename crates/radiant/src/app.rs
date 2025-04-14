@@ -1,46 +1,27 @@
-use crate::{
-    layout,
-    showfile::{Showfile, effect_graph},
-};
+use crate::{layout::MainWindow, showfile::Showfile};
 use gpui::*;
-use ui::ActiveTheme;
 
 pub struct RadiantApp {
-    main_window: Entity<LayoutWindow>,
+    showfile: Showfile,
 }
 
 impl RadiantApp {
-    pub fn new(showfile: Showfile, window: &mut Window, cx: &mut Context<Self>) -> Self {
-        cx.activate(true);
+    pub fn new(showfile: Showfile) -> Self {
+        Self { showfile }
+    }
 
-        let effect_graph = cx.new(|_cx| {
-            let mut effect_graph = showfile.effect_graph;
-            effect_graph::insert_templates(&mut effect_graph);
-            effect_graph
+    pub fn run(self) {
+        Application::new().run(|cx: &mut App| {
+            cx.activate(true);
+
+            ui::init(cx);
+            ui::actions::init(cx);
+            flow::gpui::actions::init(cx);
+            actions::init(cx);
+
+            let _main_window = MainWindow::open(self.showfile.layout.main_window, cx);
         });
-
-        Self { main_window: LayoutWindow::from_showfile(window, cx) }
     }
-}
-
-impl Render for RadiantApp {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .bg(cx.theme().background)
-            .text_color(cx.theme().text_primary)
-            .child(self.main_window.clone())
-    }
-}
-
-pub fn run(showfile: Showfile) {
-    Application::new().run(|cx: &mut App| {
-        ui::init(cx);
-        ui::actions::init(cx);
-        flow::gpui::actions::init(cx);
-        actions::init(cx);
-
-        let _main_window = layout::MainWindow::open(cx);
-    });
 }
 
 mod actions {

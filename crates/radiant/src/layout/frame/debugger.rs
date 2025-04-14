@@ -2,17 +2,17 @@ use crate::showfile::effect_graph::EffectGraph;
 use flow::ProcessingContext;
 use gpui::*;
 
-pub struct DebugFrame {
+pub struct Debugger {
     effect_graph: Entity<EffectGraph>,
 }
 
-impl DebugFrame {
+impl Debugger {
     pub fn new(effect_graph: Entity<EffectGraph>) -> Self {
         Self { effect_graph }
     }
 }
 
-impl Render for DebugFrame {
+impl Render for Debugger {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let value = self.effect_graph.update(cx, |effect_graph, _cx| {
             let mut pcx = ProcessingContext::new();

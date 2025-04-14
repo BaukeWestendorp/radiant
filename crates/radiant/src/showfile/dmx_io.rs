@@ -1,6 +1,5 @@
-use std::net::IpAddr;
-
 use gpui::SharedString;
+use std::net::IpAddr;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
