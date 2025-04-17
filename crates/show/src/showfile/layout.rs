@@ -1,13 +1,14 @@
+use crate::showfile::AssetId;
 use gpui::{Bounds, Size};
 
 #[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Clone, Default)]
 pub struct Layout {
     pub main_window: MainWindow,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone)]
 pub struct MainWindow {
     pub size: Size<u32>,
     pub frames: Vec<Frame<MainFrameKind>>,
@@ -15,19 +16,19 @@ pub struct MainWindow {
 
 impl Default for MainWindow {
     fn default() -> Self {
-        Self { size: Size::new(20, 12), frames: Vec::default() }
+        Self { size: Size { width: 20, height: 12 }, frames: Vec::default() }
     }
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum MainFrameKind {
-    Debugger,
-    EffectGraphEditor,
+    Debugger(AssetId),
+    EffectGraphEditor(AssetId),
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Clone, Default)]
 pub struct Frame<K> {
     pub bounds: Bounds<u32>,
     pub kind: K,

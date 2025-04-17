@@ -5,10 +5,15 @@ use flow::{
 use gpui::*;
 use ui::{NumberField, TextInputEvent};
 
-#[derive(Debug, Clone, flow::Value, serde::Serialize, serde::Deserialize)]
+use crate::define_asset;
+
+define_asset!(EffectGraph, EffectGraphAsset, EffectGraphId);
+
+#[derive(Debug, Clone, flow::Value)]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
-#[value(graph_def = GraphDef, data_type = DataType)]
-pub enum Value {
+#[value(graph_def = EffectGraphDef, data_type = DataType)]
+pub enum EffectGraphValue {
     #[value(color = 0xCE39FF)]
     Number(f64),
     #[value(color = 0x1361FF)]
@@ -16,27 +21,27 @@ pub enum Value {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct State {
+pub struct EffectGraphState {
     pub value: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Control {
+pub enum EffectGraphControl {
     Slider { min: f64, max: f64, step: Option<f64> },
     Float,
     Checkbox,
 }
 
-impl flow::Control<GraphDef> for Control {
+impl flow::Control<EffectGraphDef> for EffectGraphControl {
     fn view(
         &self,
-        value: Value,
+        value: EffectGraphValue,
         id: ElementId,
         window: &mut Window,
         cx: &mut App,
     ) -> Entity<ControlView> {
         ControlView::new(cx, |cx| match self {
-            Control::Slider { min, max, step } => {
+            EffectGraphControl::Slider { min, max, step } => {
                 let field = cx.new(|cx| {
                     let value = value.try_into().expect("should always be able to convert initial input value to the value used by it's control");
 
@@ -52,7 +57,9 @@ impl flow::Control<GraphDef> for Control {
                 cx.subscribe(&field, |_, field, event: &TextInputEvent, cx| {
                     if let TextInputEvent::Change(_) = event {
                         let value = field.read(cx).value(cx);
-                        cx.emit(ControlEvent::<GraphDef>::Change(Value::Number(value)));
+                        cx.emit(ControlEvent::<EffectGraphDef>::Change(EffectGraphValue::Number(
+                            value,
+                        )));
                         cx.notify();
                     }
                 })
@@ -60,7 +67,7 @@ impl flow::Control<GraphDef> for Control {
 
                 field.into()
             }
-            Control::Float => {
+            EffectGraphControl::Float => {
                 let field = cx.new(|cx| {
                     let value = value.try_into().expect("should always be able to convert initial input value to the value used by it's control");
 
@@ -73,7 +80,9 @@ impl flow::Control<GraphDef> for Control {
                 cx.subscribe(&field, |_, field, event: &TextInputEvent, cx| {
                     if let TextInputEvent::Change(_) = event {
                         let value = field.read(cx).value(cx);
-                        cx.emit(ControlEvent::<GraphDef>::Change(Value::Number(value)));
+                        cx.emit(ControlEvent::<EffectGraphDef>::Change(EffectGraphValue::Number(
+                            value,
+                        )));
                         cx.notify();
                     }
                 })
@@ -81,23 +90,23 @@ impl flow::Control<GraphDef> for Control {
 
                 field.into()
             }
-            Control::Checkbox => cx.new(|_cx| EmptyView).into(),
+            EffectGraphControl::Checkbox => cx.new(|_cx| EmptyView).into(),
         })
     }
 }
 
-#[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone)]
-pub struct GraphDef;
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct EffectGraphDef;
 
-impl flow::GraphDef for GraphDef {
-    type ProcessingState = State;
-    type Value = Value;
+impl flow::GraphDef for EffectGraphDef {
+    type ProcessingState = EffectGraphState;
+    type Value = EffectGraphValue;
     type DataType = DataType;
-    type Control = Control;
+    type Control = EffectGraphControl;
 }
 
-pub type EffectGraph = Graph<GraphDef>;
+pub type EffectGraph = Graph<EffectGraphDef>;
 
 pub fn insert_templates(graph: &mut EffectGraph) {
     graph.add_templates([
@@ -106,8 +115,13 @@ pub fn insert_templates(graph: &mut EffectGraph) {
             "New Number",
             vec![],
             vec![Output::new("value", "Value", DataType::Number)],
-            vec![NodeControl::new("value", "Value", Value::Number(0.0), Control::Float)],
-            Box::new(|_in, cv, ov, _pcx: &mut ProcessingContext<GraphDef>| {
+            vec![NodeControl::new(
+                "value",
+                "Value",
+                EffectGraphValue::Number(0.0),
+                EffectGraphControl::Float,
+            )],
+            Box::new(|_in, cv, ov, _pcx: &mut ProcessingContext<EffectGraphDef>| {
                 let value = cv.value("value").expect("should get value from control");
                 ov.set_value("value", value.clone());
             }),
@@ -116,19 +130,23 @@ pub fn insert_templates(graph: &mut EffectGraph) {
             "number_add",
             "Add Number",
             vec![
-                Input::new("a", "A", Value::Number(0.0), Control::Float),
-                Input::new("b", "B", Value::Number(0.0), Control::Float),
+                Input::new("a", "A", EffectGraphValue::Number(0.0), EffectGraphControl::Float),
+                Input::new("b", "B", EffectGraphValue::Number(0.0), EffectGraphControl::Float),
             ],
             vec![Output::new("sum", "Sum", DataType::Number)],
             vec![],
-            Box::new(|iv, _cv, ov, _pcx: &mut ProcessingContext<GraphDef>| {
+            Box::new(|iv, _cv, ov, _pcx: &mut ProcessingContext<EffectGraphDef>| {
                 let a = iv.value("a").expect("should get value");
-                let Some(Value::Number(a)) = a.cast_to(&DataType::Number) else { panic!() };
+                let Some(EffectGraphValue::Number(a)) = a.cast_to(&DataType::Number) else {
+                    panic!()
+                };
 
                 let b = iv.value("b").expect("should get value");
-                let Some(Value::Number(b)) = b.cast_to(&DataType::Number) else { panic!() };
+                let Some(EffectGraphValue::Number(b)) = b.cast_to(&DataType::Number) else {
+                    panic!()
+                };
 
-                ov.set_value("sum", Value::Number(a + b));
+                ov.set_value("sum", EffectGraphValue::Number(a + b));
             }),
         ),
         Template::new(
@@ -137,14 +155,16 @@ pub fn insert_templates(graph: &mut EffectGraph) {
             vec![Input::new(
                 "value",
                 "Value",
-                Value::Number(0.0),
-                Control::Slider { min: 0.0, max: 1.0, step: None },
+                EffectGraphValue::Number(0.0),
+                EffectGraphControl::Slider { min: 0.0, max: 1.0, step: None },
             )],
             vec![],
             vec![],
-            Box::new(|iv, _cv, _ov, pcx: &mut ProcessingContext<GraphDef>| {
+            Box::new(|iv, _cv, _ov, pcx: &mut ProcessingContext<EffectGraphDef>| {
                 let value = iv.value("value").expect("should get value");
-                let Some(Value::Number(value)) = value.cast_to(&DataType::Number) else { panic!() };
+                let Some(EffectGraphValue::Number(value)) = value.cast_to(&DataType::Number) else {
+                    panic!()
+                };
                 pcx.value = value;
             }),
         ),
@@ -153,8 +173,13 @@ pub fn insert_templates(graph: &mut EffectGraph) {
             "New Boolean",
             vec![],
             vec![Output::new("value", "Value", DataType::Boolean)],
-            vec![NodeControl::new("value", "Value", Value::Boolean(false), Control::Checkbox)],
-            Box::new(|_iv, cv, ov, _pcx: &mut ProcessingContext<GraphDef>| {
+            vec![NodeControl::new(
+                "value",
+                "Value",
+                EffectGraphValue::Boolean(false),
+                EffectGraphControl::Checkbox,
+            )],
+            Box::new(|_iv, cv, ov, _pcx: &mut ProcessingContext<EffectGraphDef>| {
                 let value = cv.value("value").expect("should get value from control");
                 ov.set_value("value", value.clone());
             }),
@@ -166,32 +191,34 @@ pub fn insert_templates(graph: &mut EffectGraph) {
                 Input::new(
                     "number",
                     "Number",
-                    Value::Number(0.0),
-                    Control::Slider { min: 0.0, max: 100.0, step: Some(5.0) },
+                    EffectGraphValue::Number(0.0),
+                    EffectGraphControl::Slider { min: 0.0, max: 100.0, step: Some(5.0) },
                 ),
                 Input::new(
                     "should_invert",
                     "Should Invert",
-                    Value::Boolean(false),
-                    Control::Checkbox,
+                    EffectGraphValue::Boolean(false),
+                    EffectGraphControl::Checkbox,
                 ),
             ],
             vec![Output::new("result", "Result", DataType::Number)],
             vec![],
-            Box::new(|iv, _cv, ov, _pcx: &mut ProcessingContext<GraphDef>| {
+            Box::new(|iv, _cv, ov, _pcx: &mut ProcessingContext<EffectGraphDef>| {
                 let Some(number) = iv.value("number") else { panic!() };
-                let Some(Value::Number(number)) = number.cast_to(&DataType::Number) else {
+                let Some(EffectGraphValue::Number(number)) = number.cast_to(&DataType::Number)
+                else {
                     panic!()
                 };
 
                 let Some(should_invert) = iv.value("should_invert") else { panic!() };
-                let Some(Value::Boolean(should_invert)) = should_invert.cast_to(&DataType::Boolean)
+                let Some(EffectGraphValue::Boolean(should_invert)) =
+                    should_invert.cast_to(&DataType::Boolean)
                 else {
                     panic!()
                 };
 
                 let factor = if should_invert { -1.0 } else { 1.0 };
-                ov.set_value("result", Value::Number(number * factor));
+                ov.set_value("result", EffectGraphValue::Number(number * factor));
             }),
         ),
     ]);

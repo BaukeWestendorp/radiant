@@ -1,10 +1,8 @@
-use std::path::PathBuf;
-
 use clap::Parser;
+use std::path::PathBuf;
 
 mod app;
 mod layout;
-mod showfile;
 
 #[derive(Debug, clap::Parser)]
 #[command(version, about, long_about = None)]
@@ -19,16 +17,5 @@ fn main() {
 
     let args = Args::parse();
 
-    let showfile = match args.showfile {
-        Some(path) => match showfile::open_from_file(&path) {
-            Ok(showfile) => showfile,
-            Err(err) => {
-                log::error!("Error opening showfile: {}", err);
-                std::process::exit(1);
-            }
-        },
-        None => showfile::Showfile::default(),
-    };
-
-    app::RadiantApp::new(showfile).run();
+    app::RadiantApp::new(args.showfile).run();
 }

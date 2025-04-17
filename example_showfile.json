@@ -20,78 +20,85 @@
       ]
     }
   },
-  "effect_graph": {
-    "nodes": {
-      "0": {
-        "template_id": "number_new",
-        "control_values": {
-          "value": { "number": 42 }
-        }
-      },
-      "3": {
-        "template_id": "number_new",
-        "control_values": {
-          "value": { "number": 10 }
-        }
-      },
+  "assets": {
+    "effect_graphs": {
       "1": {
-        "template_id": "number_add",
-        "input_values": {
-          "a": { "number": 200 },
-          "b": { "number": 27 }
-        }
-      },
-      "2": {
-        "template_id": "output",
-        "input_values": {
-          "value": { "number": 200 }
-        }
-      },
-      "4": {
-        "template_id": "boolean_new",
-        "control_values": {
-          "value": { "boolean": true }
-        }
-      },
-      "5": {
-        "template_id": "number_invert",
-        "input_values": {
-          "number": { "number": 203467 },
-          "should_invert": { "boolean": false }
+        "id": 1,
+        "data": {
+          "nodes": {
+            "0": {
+              "template_id": "number_new",
+              "control_values": {
+                "value": { "number": 42 }
+              }
+            },
+            "3": {
+              "template_id": "number_new",
+              "control_values": {
+                "value": { "number": 10 }
+              }
+            },
+            "1": {
+              "template_id": "number_add",
+              "input_values": {
+                "a": { "number": 200 },
+                "b": { "number": 27 }
+              }
+            },
+            "2": {
+              "template_id": "output",
+              "input_values": {
+                "value": { "number": 200 }
+              }
+            },
+            "4": {
+              "template_id": "boolean_new",
+              "control_values": {
+                "value": { "boolean": true }
+              }
+            },
+            "5": {
+              "template_id": "number_invert",
+              "input_values": {
+                "number": { "number": 203467 },
+                "should_invert": { "boolean": false }
+              }
+            }
+          },
+          "edges": [
+            {
+              "source": {
+                "node_id": 0,
+                "id": "value"
+              },
+              "target": {
+                "node_id": 1,
+                "id": "a"
+              }
+            },
+            {
+              "source": {
+                "node_id": 1,
+                "id": "sum"
+              },
+              "target": {
+                "node_id": 2,
+                "id": "value"
+              }
+            }
+          ],
+          "node_positions": {
+            "0": { "x": 100, "y": 100 },
+            "1": { "x": 350, "y": 250 },
+            "2": { "x": 600, "y": 250 },
+            "3": { "x": 100, "y": 400 },
+            "4": { "x": 700, "y": 200 },
+            "5": { "x": 700, "y": 300 }
+          },
+          "offset": { "x": 0, "y": 0 }
         }
       }
-    },
-    "edges": [
-      {
-        "source": {
-          "node_id": 0,
-          "id": "value"
-        },
-        "target": {
-          "node_id": 1,
-          "id": "a"
-        }
-      },
-      {
-        "source": {
-          "node_id": 1,
-          "id": "sum"
-        },
-        "target": {
-          "node_id": 2,
-          "id": "value"
-        }
-      }
-    ],
-    "node_positions": {
-      "0": { "x": 100, "y": 100 },
-      "1": { "x": 350, "y": 250 },
-      "2": { "x": 600, "y": 250 },
-      "3": { "x": 100, "y": 400 },
-      "4": { "x": 700, "y": 200 },
-      "5": { "x": 700, "y": 300 }
-    },
-    "offset": { "x": 0, "y": 0 }
+    }
   },
   "layout": {
     "main_window": {
@@ -102,14 +109,18 @@
             "origin": { "x": 0, "y": 0 },
             "size": { "width": 15, "height": 12 }
           },
-          "kind": "EffectGraphEditor"
+          "kind": {
+            "EffectGraphEditor": 1
+          }
         },
         {
           "bounds": {
             "origin": { "x": 15, "y": 0 },
             "size": { "width": 2, "height": 4 }
           },
-          "kind": "Debugger"
+          "kind": {
+            "Debugger": 1
+          }
         }
       ]
     }

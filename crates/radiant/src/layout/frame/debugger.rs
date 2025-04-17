@@ -1,13 +1,13 @@
-use crate::showfile::effect_graph::EffectGraph;
 use flow::ProcessingContext;
 use gpui::*;
+use show::assets::EffectGraphAsset;
 
 pub struct Debugger {
-    effect_graph: Entity<EffectGraph>,
+    effect_graph: Entity<EffectGraphAsset>,
 }
 
 impl Debugger {
-    pub fn new(effect_graph: Entity<EffectGraph>) -> Self {
+    pub fn new(effect_graph: Entity<EffectGraphAsset>) -> Self {
         Self { effect_graph }
     }
 }
@@ -16,7 +16,7 @@ impl Render for Debugger {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let value = self.effect_graph.update(cx, |effect_graph, _cx| {
             let mut pcx = ProcessingContext::new();
-            effect_graph.process(&mut pcx);
+            effect_graph.data.process(&mut pcx);
             pcx.value
         });
 

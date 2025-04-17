@@ -1,13 +1,16 @@
-use crate::{layout::MainWindow, showfile::Showfile};
+use std::path::PathBuf;
+
+use crate::layout::MainWindow;
 use gpui::*;
+use show::Show;
 
 pub struct RadiantApp {
-    showfile: Showfile,
+    showfile_path: Option<PathBuf>,
 }
 
 impl RadiantApp {
-    pub fn new(showfile: Showfile) -> Self {
-        Self { showfile }
+    pub fn new(showfile_path: Option<PathBuf>) -> Self {
+        Self { showfile_path }
     }
 
     pub fn run(self) {
@@ -19,7 +22,20 @@ impl RadiantApp {
             flow::gpui::actions::init(cx);
             actions::init(cx);
 
-            let _main_window = MainWindow::open(self.showfile.layout.main_window, cx);
+            let show = match self.showfile_path {
+                Some(path) => match show::open_from_file(&path, cx) {
+                    Ok(showfile) => showfile,
+                    Err(err) => {
+                        log::error!("Error opening showfile: {}", err);
+                        std::process::exit(1);
+                    }
+                },
+                None => Show::default(),
+            };
+
+            cx.set_global(show);
+
+            let _main_window = MainWindow::open(cx);
         });
     }
 }

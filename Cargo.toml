@@ -4,7 +4,9 @@ members = [
     "crates/flow",
     "crates/flow_derive",
     "crates/frames",
-    "crates/radiant", "crates/sacn",
+    "crates/radiant",
+    "crates/sacn",
+    "crates/show",
     "crates/ui",
 ]
 resolver = "3"
@@ -23,8 +25,9 @@ dmx = { path = "crates/dmx" }
 flow = { path = "crates/flow" }
 flow_derive = { path = "crates/flow_derive" }
 frames = { path = "crates/frames" }
-ui = { path = "crates/ui" }
 sacn = { path = "crates/sacn" }
+show = { path = "crates/show" }
+ui = { path = "crates/ui" }
 
 # serialization
 serde = "1"
@@ -33,7 +36,7 @@ serde = "1"
 gpui = { git = "https://github.com/zed-industries/zed" }
 
 # error handling
-eyre = "0.6.12"
+anyhow = "1.0"
 thiserror = "2.0.12"
 
 # logging
