@@ -141,6 +141,8 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        window.prevent_default();
+
         // TODO: Account for editor bounds origin.
         let position = window.mouse_position();
         let editor_view = cx.entity().clone();
