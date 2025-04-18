@@ -45,6 +45,8 @@ impl Render for MainWindow {
     }
 }
 
+// We can't really put this in the `frames` crate,
+// so let's just add a helper function here.
 fn frame_container_from_showfile(
     window: &mut Window,
     cx: &mut Context<FrameContainer<MainFrame>>,

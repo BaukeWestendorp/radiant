@@ -12,26 +12,14 @@ impl<D: GraphDef + 'static> GraphEditor<D> {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
-        let graph_model = cx.new(|cx| graph.read(cx).data.clone());
-        cx.observe(&graph, {
-            let graph_model = graph_model.clone();
-            move |_, graph, cx| {
-                graph_model.update(cx, |gm, cx| *gm = graph.read(cx).data.clone());
-            }
-        })
-        .detach();
+        let graph = crate::utils::map_model(
+            graph,
+            |source, cx| source.read(cx).data.clone(),
+            |source, target, cx| source.data = target.read(cx).clone(),
+            cx,
+        );
 
-        cx.observe(&graph_model, {
-            let graph = graph.clone();
-            move |_, graph_model, cx| {
-                graph.update(cx, |g, cx| {
-                    g.data = graph_model.read(cx).clone();
-                });
-            }
-        })
-        .detach();
-
-        let graph_editor_view = cx.new(|cx| GraphEditorView::new(graph_model, window, cx));
+        let graph_editor_view = cx.new(|cx| GraphEditorView::new(graph, window, cx));
         Self { graph_editor_view }
     }
 }
