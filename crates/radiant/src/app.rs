@@ -4,6 +4,8 @@ use crate::layout::MainWindow;
 use gpui::*;
 use show::Show;
 
+pub const APP_ID: &str = "radiant";
+
 pub struct RadiantApp {
     showfile_path: Option<PathBuf>,
 }
@@ -24,7 +26,7 @@ impl RadiantApp {
 
             let show = match self.showfile_path {
                 Some(path) => match show::open_from_file(&path, cx) {
-                    Ok(showfile) => showfile,
+                    Ok(show) => show,
                     Err(err) => {
                         log::error!("Error opening showfile: {}", err);
                         std::process::exit(1);
@@ -35,7 +37,7 @@ impl RadiantApp {
 
             cx.set_global(show);
 
-            let _main_window = MainWindow::open(cx);
+            MainWindow::open(cx).expect("should open main window");
         });
     }
 }

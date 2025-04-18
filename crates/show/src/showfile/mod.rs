@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{io, path::PathBuf};
 
 pub use assets::*;
 pub use dmx_io::*;
@@ -16,7 +16,7 @@ pub struct Showfile {
     pub layout: Layout,
 }
 
-pub fn open_from_file(path: &PathBuf) -> Result<Showfile, std::io::Error> {
+pub fn open_from_file(path: &PathBuf) -> io::Result<Showfile> {
     let file = std::fs::File::open(path)?;
     let showfile: Showfile = serde_json::from_reader(file)?;
     Ok(showfile)

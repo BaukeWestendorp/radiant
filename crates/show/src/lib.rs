@@ -1,5 +1,5 @@
 use showfile::Showfile;
-use std::path::PathBuf;
+use std::{io, path::PathBuf};
 
 pub mod assets;
 pub(crate) mod showfile;
@@ -22,7 +22,7 @@ impl Show {
 
 impl gpui::Global for Show {}
 
-pub fn open_from_file(path: &PathBuf, cx: &mut gpui::App) -> Result<Show, std::io::Error> {
+pub fn open_from_file(path: &PathBuf, cx: &mut gpui::App) -> io::Result<Show> {
     let showfile = showfile::open_from_file(path)?;
     Ok(Show::from_showfile(showfile, cx))
 }
