@@ -1,0 +1,156 @@
+(
+    dmx_io: (
+        interface: (
+            name: "lo",
+        ),
+        sacn: (
+            outputs: [(
+                name: "Test sACN Input",
+                local_universes: [1, 3, 4],
+                destination_universe: 1,
+                priority: 142,
+                preview_data: false,
+                type: unicast(
+                    destination_ip: Some("127.0.0.1"),
+                ),
+            )],
+        ),
+    ),
+    assets: (
+        effect_graphs: {
+            1: (
+                id: 1,
+                data: (
+                    nodes: {
+                        (2): (
+                            template_id: ("output"),
+                            input_values: ({
+                                "value": number(200.0),
+                            }),
+                            control_values: ({}),
+                        ),
+                        (5): (
+                            template_id: ("number_invert"),
+                            input_values: ({
+                                "should_invert": boolean(false),
+                                "number": number(203467.0),
+                            }),
+                            control_values: ({}),
+                        ),
+                        (1): (
+                            template_id: ("number_add"),
+                            input_values: ({
+                                "b": number(27.0),
+                                "a": number(200.0),
+                            }),
+                            control_values: ({}),
+                        ),
+                        (3): (
+                            template_id: ("number_new"),
+                            input_values: ({}),
+                            control_values: ({
+                                "value": number(10.0),
+                            }),
+                        ),
+                        (0): (
+                            template_id: ("number_new"),
+                            input_values: ({}),
+                            control_values: ({
+                                "value": number(42.0),
+                            }),
+                        ),
+                        (4): (
+                            template_id: ("boolean_new"),
+                            input_values: ({}),
+                            control_values: ({
+                                "value": boolean(true),
+                            }),
+                        ),
+                    },
+                    edges: [(
+                        target: (
+                            node_id: (1),
+                            id: "a",
+                        ),
+                        source: (
+                            node_id: (0),
+                            id: "value",
+                        ),
+                    ), (
+                        target: (
+                            node_id: (2),
+                            id: "value",
+                        ),
+                        source: (
+                            node_id: (1),
+                            id: "sum",
+                        ),
+                    )],
+                    node_positions: {
+                        (5): (
+                            x: (700.0),
+                            y: (300.0),
+                        ),
+                        (0): (
+                            x: (100.0),
+                            y: (100.0),
+                        ),
+                        (4): (
+                            x: (700.0),
+                            y: (200.0),
+                        ),
+                        (3): (
+                            x: (100.0),
+                            y: (400.0),
+                        ),
+                        (1): (
+                            x: (350.0),
+                            y: (250.0),
+                        ),
+                        (2): (
+                            x: (600.0),
+                            y: (250.0),
+                        ),
+                    },
+                    offset: (
+                        x: (0.0),
+                        y: (0.0),
+                    ),
+                ),
+            ),
+        },
+    ),
+    layout: (
+        main_window: (
+            size: (
+                width: 19,
+                height: 12,
+            ),
+            frames: [(
+                bounds: (
+                    origin: (
+                        x: 0,
+                        y: 0,
+                    ),
+                    size: (
+                        width: 15,
+                        height: 12,
+                    ),
+                ),
+                kind: EffectGraphEditor(1),
+            ), (
+                bounds: (
+                    origin: (
+                        x: 15,
+                        y: 0,
+                    ),
+                    size: (
+                        width: 2,
+                        height: 4,
+                    ),
+                ),
+                kind: Debugger(1),
+            )],
+        ),
+    ),
+)
