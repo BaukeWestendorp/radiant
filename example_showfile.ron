@@ -10,7 +10,7 @@
                 destination_universe: 1,
                 priority: 142,
                 preview_data: false,
-                type: unicast(
+                type: Unicast(
                     destination_ip: Some("127.0.0.1"),
                 ),
             )],
@@ -25,23 +25,23 @@
                         (2): (
                             template_id: ("output"),
                             input_values: ({
-                                "value": number(200.0),
+                                "value": Number(200.0),
                             }),
                             control_values: ({}),
                         ),
                         (5): (
                             template_id: ("number_invert"),
                             input_values: ({
-                                "should_invert": boolean(false),
-                                "number": number(203467.0),
+                                "should_invert": Boolean(false),
+                                "number": Number(203467.0),
                             }),
                             control_values: ({}),
                         ),
                         (1): (
                             template_id: ("number_add"),
                             input_values: ({
-                                "b": number(27.0),
-                                "a": number(200.0),
+                                "b": Number(27.0),
+                                "a": Number(200.0),
                             }),
                             control_values: ({}),
                         ),
@@ -49,21 +49,21 @@
                             template_id: ("number_new"),
                             input_values: ({}),
                             control_values: ({
-                                "value": number(10.0),
+                                "value": Number(10.0),
                             }),
                         ),
                         (0): (
                             template_id: ("number_new"),
                             input_values: ({}),
                             control_values: ({
-                                "value": number(42.0),
+                                "value": Number(42.0),
                             }),
                         ),
                         (4): (
                             template_id: ("boolean_new"),
                             input_values: ({}),
                             control_values: ({
-                                "value": boolean(true),
+                                "value": Boolean(true),
                             }),
                         ),
                     },

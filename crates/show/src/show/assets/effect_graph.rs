@@ -11,7 +11,6 @@ define_asset!(EffectGraph, EffectGraphAsset, EffectGraphId);
 
 #[derive(Debug, Clone, flow::Value)]
 #[derive(serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "snake_case")]
 #[value(graph_def = EffectGraphDef, data_type = DataType)]
 pub enum EffectGraphValue {
     #[value(color = 0xCE39FF)]

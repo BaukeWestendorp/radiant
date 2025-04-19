@@ -45,7 +45,6 @@ pub struct SacnOutput {
 
 /// The type of sACN output to use.
 #[derive(serde::Serialize, serde::Deserialize)]
-#[serde(rename_all = "snake_case")]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SacnOutputType {
     /// Sends sACN packets using Unicast UDP.

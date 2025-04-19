@@ -1,6 +1,6 @@
 use gpui::{App, AppContext as _, Entity};
 
-pub fn map_model<S: 'static, T: 'static>(
+pub fn map_entity<S: 'static, T: 'static>(
     source: Entity<S>,
     get_data: impl Fn(&Entity<S>, &mut App) -> T + 'static,
     set_data: impl Fn(&mut S, Entity<T>, &mut App) + 'static,

@@ -12,7 +12,7 @@ impl<D: GraphDef + 'static> GraphEditor<D> {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
-        let graph = crate::utils::map_model(
+        let graph = crate::utils::map_entity(
             graph,
             |source, cx| source.read(cx).data.clone(),
             |source, target, cx| source.data = target.read(cx).clone(),
