@@ -9,7 +9,7 @@ pub mod layout;
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, Default)]
 pub struct Showfile {
-    pub dmx_io: DmxIo,
+    pub dmx_io_settings: DmxIoSettings,
     pub assets: Assets,
     pub layout: Layout,
 }

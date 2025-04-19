@@ -1,8 +1,7 @@
-use std::path::PathBuf;
-
-use crate::layout::MainWindow;
+use crate::{dmx_io::DmxIo, layout::MainWindow};
 use gpui::*;
 use show::Show;
+use std::path::PathBuf;
 
 pub const APP_ID: &str = "radiant";
 
@@ -36,6 +35,11 @@ impl RadiantApp {
             };
 
             cx.set_global(show);
+
+            cx.set_global(
+                DmxIo::new(&Show::global(cx).dmx_io_settings)
+                    .expect("should create dmx io manager"),
+            );
 
             MainWindow::open(cx).expect("should open main window");
         });

@@ -2,6 +2,7 @@ use clap::Parser;
 use std::path::PathBuf;
 
 mod app;
+mod dmx_io;
 mod layout;
 mod utils;
 

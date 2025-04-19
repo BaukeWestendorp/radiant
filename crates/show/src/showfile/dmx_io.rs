@@ -2,33 +2,33 @@ use std::net::IpAddr;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-/// DMX IO preferences.
-pub struct DmxIo {
+/// DMX IO settings.
+pub struct DmxIoSettings {
     /// The interface to use for DMX IO.
-    pub interface: Interface,
-    /// sACN DMX IO preferences.
-    pub sacn: Sacn,
+    pub interface: InterfaceSettings,
+    /// sACN DMX IO settings.
+    pub sacn: SacnSettings,
 }
 
 /// Preferences about the interface to use for DMX IO.
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Interface {
+pub struct InterfaceSettings {
     /// The name of the interface to use (e.g. 'en0').
-    name: String,
+    pub name: String,
 }
 
-/// sACN DMX IO preferences.
+/// sACN DMX IO settings.
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Sacn {
-    pub outputs: Vec<SacnOutput>,
+pub struct SacnSettings {
+    pub sources: Vec<SacnSourceSettings>,
 }
 
-/// sACN DMX Output preferences.
+/// sACN DMX source settings.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub struct SacnOutput {
+pub struct SacnSourceSettings {
     /// The name of this sACN source.
     pub name: String,
     /// The local universes to send over this sACN source.

@@ -2864,6 +2864,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "network-interface"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3329f515506e4a2de3aa6e07027a6758e22e0f0e8eaf64fa47261cec2282602"
+dependencies = [
+ "cc",
+ "libc",
+ "thiserror 1.0.69",
+ "winapi",
+]
+
+[[package]]
 name = "new_debug_unreachable"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3626,6 +3638,8 @@ dependencies = [
  "frames",
  "gpui",
  "log",
+ "network-interface",
+ "sacn",
  "serde",
  "show",
  "ui",

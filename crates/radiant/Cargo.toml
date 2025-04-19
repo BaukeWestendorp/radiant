@@ -9,6 +9,7 @@ workspace = true
 [dependencies]
 # crates
 frames.workspace = true
+sacn.workspace = true
 show.workspace = true
 ui.workspace = true
 flow.workspace = true
@@ -26,3 +27,4 @@ anyhow.workspace = true
 env_logger = "0.11.8"
 log.workspace = true
 clap = { version = "4.5.36", features = ["derive"] }
+network-interface = "2.0.1"
