@@ -36,10 +36,10 @@ impl RadiantApp {
 
             cx.set_global(show);
 
-            cx.set_global(
-                DmxIo::new(&Show::global(cx).dmx_io_settings)
-                    .expect("should create dmx io manager"),
-            );
+            let mut dmx_io = DmxIo::new(&Show::global(cx).dmx_io_settings.clone())
+                .expect("should create dmx io manager");
+            dmx_io.start(cx);
+            cx.set_global(dmx_io);
 
             MainWindow::open(cx).expect("should open main window");
         });
