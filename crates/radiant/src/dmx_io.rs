@@ -13,15 +13,23 @@ pub struct DmxIo {
 
 impl DmxIo {
     pub fn new(settings: &DmxIoSettings) -> anyhow::Result<Self> {
-        let interface = NetworkInterface::show()
-            .context("get network interfaces")?
-            .into_iter()
-            .find(|i| i.name == settings.interface.name)
-            .with_context(|| {
-                format!("find network interface with name {}", settings.interface.name)
-            })?;
+        let interfaces = NetworkInterface::show().context("get network interfaces")?;
 
-        dbg!(&interface.addr);
+        let interface = interfaces
+            .iter()
+            .find(|i| i.name == settings.interface.name)
+            .or_else(|| {
+                let new_if = interfaces.iter().find(|i| i.addr.len() > 0)?;
+                log::warn!(
+                    "Could not find network interface with name '{}'. using '{}' instead",
+                    settings.interface.name,
+                    new_if.name
+                );
+                Some(new_if)
+            })
+            .context("no network interface (with an available address) not found")?;
+
+        dbg!(&interface);
 
         let sacn_sources = settings
             .sacn
@@ -41,7 +49,7 @@ impl DmxIo {
                     synchronization_address: SYNCHRONIZATION_ADDRESS,
                     force_synchronization: FORCE_SYNCHRONIZATION,
                 };
-                sacn::Source::new(config).context("create sacn source")
+                sacn::Source::new(config).context("create sACN source")
             })
             .collect::<Result<Vec<_>, _>>()?;
 
