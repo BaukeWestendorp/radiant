@@ -4,6 +4,7 @@ use std::path::PathBuf;
 mod app;
 mod dmx_io;
 mod layout;
+mod output_processor;
 mod utils;
 
 #[derive(Debug, clap::Parser)]

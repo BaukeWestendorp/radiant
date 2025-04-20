@@ -10,13 +10,16 @@ const CID: sacn::ComponentIdentifier = sacn::ComponentIdentifier::from_bytes([
 ]);
 
 pub struct DmxIo {
-    pub multiverse: dmx::Multiverse,
+    pub multiverse: Entity<dmx::Multiverse>,
 
     sacn_sources: Vec<Arc<SacnSource>>,
 }
 
 impl DmxIo {
-    pub fn new(settings: &DmxIoSettings) -> anyhow::Result<Self> {
+    pub fn new(
+        multiverse: Entity<dmx::Multiverse>,
+        settings: &DmxIoSettings,
+    ) -> anyhow::Result<Self> {
         let interfaces = NetworkInterface::show().context("get network interfaces")?;
 
         let interface = interfaces
@@ -64,17 +67,29 @@ impl DmxIo {
             })
             .collect::<Result<Vec<_>, _>>()?;
 
-        Ok(Self { multiverse: dmx::Multiverse::new(), sacn_sources })
+        Ok(Self { multiverse, sacn_sources })
     }
 
-    pub fn start(cx: &mut App) {
-        cx.observe_global::<Self>(|cx| {
-            Self::update_sacn_sources_from_multiverse(cx);
+    pub fn start(&self, cx: &mut App) {
+        cx.observe(&self.multiverse, {
+            let sacn_sources = self.sacn_sources.clone();
+            move |multiverse, cx| {
+                for sacn_source in &sacn_sources {
+                    sacn_source.source.clear_universes();
+                    for (id, universe) in multiverse.read(cx).universes() {
+                        if sacn_source.local_universes.contains(id) {
+                            let mut sacn_universe = sacn::Universe::new((*id).into());
+                            sacn_universe.data_slots =
+                                universe.values().iter().map(|v| v.0).collect();
+                            sacn_source.source.set_universe(sacn_universe);
+                        }
+                    }
+                }
+            }
         })
         .detach();
 
-        let this = Self::global(cx);
-        for sacn_source in this.sacn_sources.clone() {
+        for sacn_source in self.sacn_sources.clone() {
             cx.background_spawn(async move {
                 if let Err(err) = sacn_source.source.start() {
                     log::error!("Failed to start sACN source: {err}")
@@ -83,23 +98,7 @@ impl DmxIo {
             .detach();
         }
     }
-
-    fn update_sacn_sources_from_multiverse(cx: &App) {
-        let this = Self::global(cx);
-        for sacn_source in &this.sacn_sources {
-            sacn_source.source.clear_universes();
-            for (id, universe) in this.multiverse.universes() {
-                if sacn_source.local_universes.contains(id) {
-                    let mut sacn_universe = sacn::Universe::new((*id).into());
-                    sacn_universe.data_slots = universe.values().iter().map(|v| v.0).collect();
-                    sacn_source.source.set_universe(sacn_universe);
-                }
-            }
-        }
-    }
 }
-
-impl Global for DmxIo {}
 
 struct SacnSource {
     local_universes: Vec<dmx::UniverseId>,

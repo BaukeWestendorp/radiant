@@ -23,7 +23,6 @@ impl Default for MainWindow {
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, Eq)]
 pub enum MainFrameKind {
-    Debugger(AssetId),
     EffectGraphEditor(AssetId),
 }
 

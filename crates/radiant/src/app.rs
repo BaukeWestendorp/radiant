@@ -1,4 +1,4 @@
-use crate::{dmx_io::DmxIo, layout::MainWindow};
+use crate::{dmx_io::DmxIo, layout::MainWindow, output_processor};
 use gpui::*;
 use show::Show;
 use std::path::PathBuf;
@@ -15,7 +15,7 @@ impl RadiantApp {
     }
 
     pub fn run(self) {
-        Application::new().run(|cx: &mut App| {
+        Application::new().run(move |cx: &mut App| {
             cx.activate(true);
 
             ui::init(cx);
@@ -23,25 +23,36 @@ impl RadiantApp {
             flow::gpui::actions::init(cx);
             actions::init(cx);
 
-            let show = match self.showfile_path {
-                Some(path) => match show::open_from_file(&path, cx) {
-                    Ok(show) => show,
-                    Err(err) => {
-                        log::error!("Error opening showfile: {}", err);
-                        std::process::exit(1);
-                    }
-                },
-                None => Show::default(),
-            };
+            let multiverse = cx.new(|_cx| dmx::Multiverse::new());
 
-            cx.set_global(show);
-
-            let dmx_io_settings = Show::global(cx).dmx_io_settings.clone();
-            cx.set_global(DmxIo::new(&dmx_io_settings).expect("should create dmx io manager"));
-            DmxIo::start(cx);
+            self.init_show(cx);
+            self.init_dmx_io(multiverse.clone(), cx);
+            output_processor::start(multiverse, cx);
 
             MainWindow::open(cx).expect("should open main window");
         });
+    }
+
+    fn init_show(&self, cx: &mut App) {
+        let show = match &self.showfile_path {
+            Some(path) => match show::open_from_file(&path, cx) {
+                Ok(show) => show,
+                Err(err) => {
+                    log::error!("Error opening showfile: {}", err);
+                    std::process::exit(1);
+                }
+            },
+            None => Show::default(),
+        };
+
+        cx.set_global(show);
+    }
+
+    fn init_dmx_io(&self, multiverse: Entity<dmx::Multiverse>, cx: &mut App) {
+        let dmx_io_config = Show::global(cx).dmx_io_settings.clone();
+        let dmx_io =
+            DmxIo::new(multiverse.clone(), &dmx_io_config).expect("should create dmx io manager");
+        dmx_io.start(cx);
     }
 }
 

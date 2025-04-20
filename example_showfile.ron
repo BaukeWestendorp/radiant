@@ -138,18 +138,6 @@
                     ),
                 ),
                 kind: EffectGraphEditor(1),
-            ), (
-                bounds: (
-                    origin: (
-                        x: 15,
-                        y: 0,
-                    ),
-                    size: (
-                        width: 2,
-                        height: 4,
-                    ),
-                ),
-                kind: Debugger(1),
             )],
         ),
     ),
