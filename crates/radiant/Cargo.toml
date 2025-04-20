@@ -8,6 +8,7 @@ workspace = true
 
 [dependencies]
 # crates
+dmx.workspace = true
 frames.workspace = true
 sacn.workspace = true
 show.workspace = true
