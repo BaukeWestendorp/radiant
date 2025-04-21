@@ -35,7 +35,7 @@ impl RadiantApp {
 
     fn init_show(&self, cx: &mut App) {
         let show = match &self.showfile_path {
-            Some(path) => match show::open_from_file(&path, cx) {
+            Some(path) => match show::open_from_file(path.clone(), cx) {
                 Ok(show) => show,
                 Err(err) => {
                     log::error!("Error opening showfile: {}", err);
@@ -58,8 +58,9 @@ impl RadiantApp {
 
 mod actions {
     use gpui::*;
+    use show::Show;
 
-    actions!(app, [Quit]);
+    actions!(app, [Quit, Save]);
 
     pub fn init(cx: &mut App) {
         bind_global_keys(cx);
@@ -68,9 +69,38 @@ mod actions {
 
     fn bind_global_keys(cx: &mut App) {
         cx.bind_keys([KeyBinding::new("secondary-q", Quit, None)]);
+        cx.bind_keys([KeyBinding::new("secondary-s", Save, None)]);
     }
 
     fn handle_global_actions(cx: &mut App) {
         cx.on_action::<Quit>(|_, cx| cx.quit());
+
+        cx.on_action::<Save>(|_, cx| {
+            let path = Show::global(cx).path.clone();
+
+            match &path {
+                Some(path) => {
+                    log::info!("Saving show to {}", path.display());
+                    todo!("SAVE TO PATH")
+                }
+                None => {
+                    let dir = dirs::home_dir().expect("home dir should exist");
+                    let path = cx.prompt_for_new_path(&dir.to_path_buf());
+                    cx.spawn(async move |_cx| match path.await.unwrap() {
+                        Ok(Some(path)) => {
+                            log::info!("Saving show to {}", path.display());
+                            todo!("SAVE TO PATH")
+                        }
+                        Ok(None) => {
+                            log::error!("No path selected");
+                        }
+                        Err(err) => {
+                            log::error!("Error opening showfile: {}", err);
+                        }
+                    })
+                    .detach();
+                }
+            };
+        });
     }
 }
