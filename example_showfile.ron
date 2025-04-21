@@ -1,3 +1,4 @@
+#![enable(unwrap_newtypes)]
 (
     dmx_io_settings: (
         interface: (
@@ -21,12 +22,29 @@
             1: (
                 id: 1,
                 data: (
-                    nodes: {},
+                    nodes: {
+                        1: (
+                            template_id: "out_set_dmx_address",
+                            input_values: {
+                                "address": DmxAddress((
+                                    universe: 1,
+                                    channel: 1,
+                                )),
+                                "value": Number(0.0),
+                            },
+                            control_values: {},
+                        ),
+                    },
                     edges: [],
-                    node_positions: {},
+                    node_positions: {
+                        1: (
+                            x: 23.121094,
+                            y: 24.257813,
+                        ),
+                    },
                     offset: (
-                        x: (0.0),
-                        y: (0.0),
+                        x: 542.0,
+                        y: -132.0,
                     ),
                 ),
             ),

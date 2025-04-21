@@ -14,8 +14,19 @@ pub struct Showfile {
     pub layout: Layout,
 }
 
-pub fn open_from_file(path: &std::path::PathBuf) -> ron::Result<Showfile> {
-    let file = std::fs::File::open(path)?;
-    let showfile: Showfile = ron::de::from_reader(file)?;
-    Ok(showfile)
+impl Showfile {
+    pub fn open_from_file(path: &std::path::PathBuf) -> ron::Result<Self> {
+        let file = std::fs::File::open(path)?;
+        let showfile: Self = ron::de::from_reader(file)?;
+        Ok(showfile)
+    }
+
+    pub fn save_to_file(&self, path: &std::path::PathBuf) -> std::io::Result<()> {
+        let extensions = ron::extensions::Extensions::UNWRAP_NEWTYPES;
+        let config = ron::ser::PrettyConfig::default().compact_arrays(true).extensions(extensions);
+        let serialized = ron::ser::to_string_pretty(self, config)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+
+        std::fs::write(path, serialized)
+    }
 }

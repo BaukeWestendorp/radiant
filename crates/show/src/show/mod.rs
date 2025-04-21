@@ -28,11 +28,23 @@ impl Show {
             layout: showfile.layout,
         }
     }
+
+    pub fn open_from_file(path: PathBuf, cx: &mut gpui::App) -> ron::Result<Show> {
+        let showfile = Showfile::open_from_file(&path)?;
+        Ok(Show::from_showfile(Some(path), showfile, cx))
+    }
+
+    pub fn save_to_file(&mut self, path: &PathBuf, cx: &gpui::App) -> Result<(), std::io::Error> {
+        let showfile = Showfile {
+            dmx_io_settings: self.dmx_io_settings.clone(),
+            layout: self.layout.clone(),
+            assets: self.assets.to_showfile(cx),
+        };
+
+        self.path = Some(path.clone());
+
+        showfile.save_to_file(path)
+    }
 }
 
 impl gpui::Global for Show {}
-
-pub fn open_from_file(path: PathBuf, cx: &mut gpui::App) -> ron::Result<Show> {
-    let showfile = showfile::open_from_file(&path)?;
-    Ok(Show::from_showfile(Some(path), showfile, cx))
-}

@@ -1,5 +1,5 @@
-use crate::showfile::Showfile;
-use gpui::{AppContext as _, Entity};
+use crate::showfile::{self, Showfile};
+use gpui::{App, AppContext as _, Entity};
 use std::collections::HashMap;
 
 pub use effect_graph::*;
@@ -44,7 +44,7 @@ macro_rules! define_asset {
     };
 }
 
-pub trait AssetId {
+pub trait AssetId: std::hash::Hash + Eq {
     fn as_u32(&self) -> u32;
 
     fn from_u32(id: u32) -> Self;
@@ -70,11 +70,20 @@ impl Assets {
         }
         Assets { effect_graphs }
     }
+
+    pub(crate) fn to_showfile(&self, cx: &App) -> showfile::Assets {
+        let mut effect_graphs = showfile::AssetPool::new();
+        for (id, asset) in self.effect_graphs.assets.clone() {
+            effect_graphs.insert(id.into(), asset.read(cx).to_showfile());
+        }
+
+        showfile::Assets { effect_graphs }
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct AssetPool<T, Id: AssetId> {
-    assets: HashMap<u32, Entity<Asset<T, Id>>>,
+    assets: HashMap<Id, Entity<Asset<T, Id>>>,
 }
 
 impl<T, Id: AssetId> AssetPool<T, Id> {
@@ -83,11 +92,11 @@ impl<T, Id: AssetId> AssetPool<T, Id> {
     }
 
     pub fn get(&self, id: &Id) -> Option<&Entity<Asset<T, Id>>> {
-        self.assets.get(&id.as_u32())
+        self.assets.get(id)
     }
 
     pub fn insert(&mut self, id: Id, asset: Entity<Asset<T, Id>>) {
-        self.assets.insert(id.as_u32(), asset);
+        self.assets.insert(id, asset);
     }
 }
 
@@ -104,7 +113,14 @@ pub struct Asset<T, Id: AssetId> {
 }
 
 impl<T, Id: AssetId> Asset<T, Id> {
-    pub fn from_showfile(asset: crate::showfile::Asset<T>) -> Self {
+    pub(crate) fn from_showfile(asset: crate::showfile::Asset<T>) -> Self {
         Asset { id: Id::from_u32(asset.id), data: asset.data }
+    }
+
+    pub(crate) fn to_showfile(&self) -> crate::showfile::Asset<T>
+    where
+        T: Clone,
+    {
+        showfile::Asset { id: self.id.as_u32(), data: self.data.clone() }
     }
 }

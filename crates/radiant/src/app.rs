@@ -35,10 +35,10 @@ impl RadiantApp {
 
     fn init_show(&self, cx: &mut App) {
         let show = match &self.showfile_path {
-            Some(path) => match show::open_from_file(path.clone(), cx) {
+            Some(path) => match Show::open_from_file(path.clone(), cx) {
                 Ok(show) => show,
                 Err(err) => {
-                    log::error!("Error opening showfile: {}", err);
+                    log::error!("Error opening showfile: '{}'", err);
                     std::process::exit(1);
                 }
             },
@@ -77,30 +77,46 @@ mod actions {
 
         cx.on_action::<Save>(|_, cx| {
             let path = Show::global(cx).path.clone();
+            if let Some(path) = &path {
+                log::info!("Saving show to '{}'", path.display());
+                match Show::update_global(cx, |show, cx| show.save_to_file(path, cx)) {
+                    Ok(_) => log::info!("Show saved successfully"),
+                    Err(err) => log::error!("Error saving show: '{}'", err),
+                }
+                return;
+            }
 
-            match &path {
-                Some(path) => {
-                    log::info!("Saving show to {}", path.display());
-                    todo!("SAVE TO PATH")
-                }
-                None => {
-                    let dir = dirs::home_dir().expect("home dir should exist");
-                    let path = cx.prompt_for_new_path(&dir.to_path_buf());
-                    cx.spawn(async move |_cx| match path.await.unwrap() {
-                        Ok(Some(path)) => {
-                            log::info!("Saving show to {}", path.display());
-                            todo!("SAVE TO PATH")
-                        }
-                        Ok(None) => {
-                            log::error!("No path selected");
-                        }
-                        Err(err) => {
-                            log::error!("Error opening showfile: {}", err);
-                        }
-                    })
-                    .detach();
-                }
+            let Some(dir) = dirs::home_dir() else {
+                log::error!("Could not determine home directory");
+                return;
             };
+
+            let path = cx.prompt_for_new_path(&dir.to_path_buf());
+            cx.spawn(async move |cx| {
+                let Ok(result) = path.await else {
+                    log::error!("Error awaiting path selection");
+                    return;
+                };
+
+                let Ok(Some(path)) = result else {
+                    if let Ok(None) = result {
+                        log::info!("Save cancelled - no path selected");
+                    } else if let Err(err) = result {
+                        log::error!("Error prompting for path: '{}'", err);
+                    }
+                    return;
+                };
+
+                log::info!("Saving show to '{}'", path.display());
+                let result = cx.update_global(|show: &mut Show, cx| show.save_to_file(&path, cx));
+
+                match result {
+                    Ok(Ok(_)) => log::info!("Show saved successfully"),
+                    Ok(Err(err)) => log::error!("Error saving show: '{}'", err),
+                    Err(err) => log::error!("Error updating global show: '{}'", err),
+                }
+            })
+            .detach();
         });
     }
 }
