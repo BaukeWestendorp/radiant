@@ -27,6 +27,7 @@ pub struct NewNodeMenuView<D: GraphDef> {
     position: Point<Pixels>,
     editor_view: Entity<GraphEditorView<D>>,
     search_field: Entity<TextField>,
+    focus_handle: FocusHandle,
     items: Vec<NewNodeMenuItem<D>>,
     selected_item_ix: Option<usize>,
     edge_start: Option<AnySocket>,
@@ -41,13 +42,14 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
+        let focus_handle = cx.focus_handle();
+        focus_handle.focus(window);
+
         let search_field = cx.new(|cx| {
-            let field = TextField::new("search_field", cx.focus_handle(), window, cx);
+            let field = TextField::new("search_field", focus_handle.clone(), window, cx);
             field.set_placeholder("Search...".into(), cx);
             field
         });
-
-        cx.focus_view(&search_field, window);
 
         let items =
             get_filtered_items(edge_start.as_ref(), search_field.read(cx).value(cx), &graph);
@@ -75,7 +77,15 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
             })
             .detach();
 
-        Self { position, editor_view, search_field, items, selected_item_ix, edge_start }
+        Self {
+            position,
+            editor_view,
+            search_field,
+            focus_handle,
+            items,
+            selected_item_ix,
+            edge_start,
+        }
     }
 
     pub fn close(&self, window: &mut Window, cx: &mut Context<Self>) {
@@ -331,6 +341,12 @@ impl<D: GraphDef + 'static> Render for NewNodeMenuView<D> {
             .on_action(cx.listener(Self::handle_select_previous_item))
             .child(header)
             .child(list)
+    }
+}
+
+impl<D: GraphDef + 'static> Focusable for NewNodeMenuView<D> {
+    fn focus_handle(&self, _cx: &App) -> FocusHandle {
+        self.focus_handle.clone()
     }
 }
 

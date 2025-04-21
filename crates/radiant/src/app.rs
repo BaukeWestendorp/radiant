@@ -1,47 +1,76 @@
-use crate::{
-    effect_graph::{self},
-    frame::{DebugFrame, GraphEditor, MainFrame},
-};
-use frames::FrameContainer;
+use crate::{dmx_io::DmxIo, layout::MainWindow, output_processor};
 use gpui::*;
-use ui::ActiveTheme;
+use show::Show;
+use std::path::PathBuf;
+
+pub const APP_ID: &str = "radiant";
 
 pub struct RadiantApp {
-    frame_container: Entity<FrameContainer<MainFrame>>,
+    showfile_path: Option<PathBuf>,
 }
 
 impl RadiantApp {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        cx.activate(true);
+    pub fn new(showfile_path: Option<PathBuf>) -> Self {
+        Self { showfile_path }
+    }
 
-        let effect_graph = cx.new(|_cx| effect_graph::get_graph());
+    pub fn run(self) {
+        Application::new().run(move |cx: &mut App| {
+            cx.activate(true);
 
-        Self {
-            frame_container: cx.new(|cx| {
-                let mut container = FrameContainer::new(size(20, 12), px(80.0));
-                container.add_frame(
-                    MainFrame::EffectGraphEditor(
-                        cx.new(|cx| GraphEditor::new(effect_graph.clone(), window, cx)),
-                    ),
-                    bounds(point(0, 0), size(15, 12)),
-                    cx,
-                );
-                container.add_frame(
-                    MainFrame::DebugFrame(cx.new(|_cx| DebugFrame::new(effect_graph))),
-                    bounds(point(15, 0), size(2, 4)),
-                    cx,
-                );
-                container
-            }),
-        }
+            ui::init(cx);
+            ui::actions::init(cx);
+            flow::gpui::actions::init(cx);
+            actions::init(cx);
+
+            let multiverse = cx.new(|_cx| dmx::Multiverse::new());
+
+            self.init_show(cx);
+            self.init_dmx_io(multiverse.clone(), cx);
+            output_processor::start(multiverse, cx);
+
+            MainWindow::open(cx).expect("should open main window");
+        });
+    }
+
+    fn init_show(&self, cx: &mut App) {
+        let show = match &self.showfile_path {
+            Some(path) => match show::open_from_file(&path, cx) {
+                Ok(show) => show,
+                Err(err) => {
+                    log::error!("Error opening showfile: {}", err);
+                    std::process::exit(1);
+                }
+            },
+            None => Show::default(),
+        };
+
+        cx.set_global(show);
+    }
+
+    fn init_dmx_io(&self, multiverse: Entity<dmx::Multiverse>, cx: &mut App) {
+        let dmx_io_config = Show::global(cx).dmx_io_settings.clone();
+        let dmx_io =
+            DmxIo::new(multiverse.clone(), &dmx_io_config).expect("should create dmx io manager");
+        dmx_io.start(cx);
     }
 }
 
-impl Render for RadiantApp {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .bg(cx.theme().background)
-            .text_color(cx.theme().text_primary)
-            .child(self.frame_container.clone())
+mod actions {
+    use gpui::*;
+
+    actions!(app, [Quit]);
+
+    pub fn init(cx: &mut App) {
+        bind_global_keys(cx);
+        handle_global_actions(cx);
+    }
+
+    fn bind_global_keys(cx: &mut App) {
+        cx.bind_keys([KeyBinding::new("secondary-q", Quit, None)]);
+    }
+
+    fn handle_global_actions(cx: &mut App) {
+        cx.on_action::<Quit>(|_, cx| cx.quit());
     }
 }

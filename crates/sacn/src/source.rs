@@ -94,6 +94,22 @@ impl Source {
         self.universes.lock().unwrap().retain(|u| u.number != number);
     }
 
+    /// Removes all universe data.
+    ///
+    /// This method removes all universe data.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use sacn::{source::{SourceConfig, Source}, Universe};
+    /// let source = Source::new(SourceConfig::default()).unwrap();
+    /// source.set_universe(Universe::new(1));
+    /// source.clear_universes();
+    /// ```
+    pub fn clear_universes(&self) {
+        self.universes.lock().unwrap().clear();
+    }
+
     /// Returns the [SourceConfig] for this [Source].
     pub fn config(&self) -> SourceConfig {
         self.config.lock().unwrap().clone()

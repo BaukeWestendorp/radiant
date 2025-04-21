@@ -1,0 +1,21 @@
+[package]
+name = "show"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+# crates
+dmx = { workspace = true, features = ["serde"] }
+flow = { workspace = true, features = ["serde", "derive"] }
+sacn.workspace = true
+ui.workspace = true
+
+# serialization
+serde.workspace = true
+ron = "0.10"
+
+# ui
+gpui.workspace = true
+
+[lints]
+workspace = true

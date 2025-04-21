@@ -8,20 +8,24 @@ workspace = true
 
 [dependencies]
 # crates
-flow = { workspace = true, features = ["serde", "derive"] }
+dmx.workspace = true
 frames.workspace = true
+sacn.workspace = true
+show.workspace = true
 ui.workspace = true
+flow.workspace = true
 
 # serialization
 serde.workspace = true
-serde_json = "1"
 
 # ui
 gpui.workspace = true
 
 # error handling
-eyre.workspace = true
+anyhow.workspace = true
 
 # logging
 env_logger = "0.11.8"
 log.workspace = true
+clap = { version = "4.5.36", features = ["derive"] }
+network-interface = "2.0.1"

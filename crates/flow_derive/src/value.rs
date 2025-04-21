@@ -98,7 +98,7 @@ fn gen_impl_value(
                 }
             }
 
-            fn cast_to(&self, to: &<#graph_def as flow::GraphDef>::DataType) -> Option<Value> {
+            fn cast_to(&self, to: &<#graph_def as flow::GraphDef>::DataType) -> Option<#value> {
                 match (self, to) {
                     #(#cast_to_arms)*
                     _ => None,
