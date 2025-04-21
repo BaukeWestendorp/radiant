@@ -1,8 +1,7 @@
-use std::time::Duration;
-
 use flow::ProcessingContext;
 use gpui::{App, AsyncApp, Entity, ReadGlobal, Timer};
 use show::{Show, assets::EffectGraphId};
+use std::time::Duration;
 
 const INTERVAL: Duration = Duration::from_millis(16);
 

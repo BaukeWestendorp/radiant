@@ -1,7 +1,6 @@
-use arrayvec::ArrayVec;
-
 use super::{PacketError, flags_and_length, source_name_from_str};
 use crate::{MAX_UNIVERSE_SIZE, Slot, acn, source::SourceConfig};
+use arrayvec::ArrayVec;
 
 const PREVIEW_DATA_BIT: u8 = 0x80;
 const STREAM_TERMINATED_BIT: u8 = 0x40;

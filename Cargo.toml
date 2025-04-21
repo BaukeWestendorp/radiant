@@ -18,6 +18,7 @@ edition = "2024"
 [workspace.lints.clippy]
 needless_return = "allow"
 single_match = "allow"
+too_many_arguments = "allow"
 
 [workspace.dependencies]
 # crates

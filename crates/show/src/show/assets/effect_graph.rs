@@ -143,9 +143,8 @@ impl flow::Control<EffectGraphDef> for EffectGraphControl {
 
                 field.into()
             }),
-            EffectGraphControl::DmxValue => Self::Slider { min: 0.0, max: 1.0 as f64, step: None }
-                .view(value, id, window, cx)
-                .into(),
+            EffectGraphControl::DmxValue => Self::Slider { min: 0.0, max: 1.0_f64, step: None }
+                .view(value, id, window, cx),
         }
     }
 }

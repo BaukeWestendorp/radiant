@@ -1,8 +1,8 @@
 use frames::{Frame, FrameWrapper};
 use gpui::*;
+use show::{Show, assets::EffectGraphDef};
 
 pub use graph_editor::GraphEditor;
-use show::{Show, assets::EffectGraphDef};
 
 mod graph_editor;
 

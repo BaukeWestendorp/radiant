@@ -13,7 +13,7 @@ pub struct FrameContainer<F: Frame> {
 
 impl<F: Frame + 'static> FrameContainer<F> {
     pub fn new(grid_size: Size<u32>, cell_size: Pixels) -> Self {
-        Self { grid_size: grid_size.into(), cell_size, show_grid: true, frames: Vec::new() }
+        Self { grid_size, cell_size, show_grid: true, frames: Vec::new() }
     }
 
     pub fn add_frame(&mut self, frame: F, bounds: Bounds<u32>, cx: &mut Context<Self>) {

@@ -109,7 +109,7 @@ impl<'de> ::serde::Deserialize<'de> for Channel {
     where
         D: ::serde::Deserializer<'de>,
     {
-        Self::new(u16::deserialize(deserializer)?).map_err(|e| ::serde::de::Error::custom(e))
+        Self::new(u16::deserialize(deserializer)?).map_err(::serde::de::Error::custom)
     }
 }
 
@@ -322,7 +322,7 @@ impl<'de> ::serde::Deserialize<'de> for UniverseId {
     where
         D: ::serde::Deserializer<'de>,
     {
-        Self::new(u16::deserialize(deserializer)?).map_err(|e| ::serde::de::Error::custom(e))
+        Self::new(u16::deserialize(deserializer)?).map_err(::serde::de::Error::custom)
     }
 }
 
@@ -343,6 +343,12 @@ impl<'de> ::serde::Deserialize<'de> for UniverseId {
 pub struct Universe {
     #[cfg_attr(feature = "serde", serde(with = "serde_big_array::BigArray"))]
     values: [Value; 512],
+}
+
+impl Default for Universe {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Universe {

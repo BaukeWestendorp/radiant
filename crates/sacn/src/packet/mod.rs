@@ -64,7 +64,7 @@ pub struct Preamble;
 
 impl Preamble {
     #[rustfmt::skip]
-    const BYTES: [u8; 16 as usize] = {
+    const BYTES: [u8; 16_usize] = {
         [
             0x00, 0x10, // E1.31 RLP Preamble Size
             0x00, 0x00, // E1.31 RLP Postamble Size

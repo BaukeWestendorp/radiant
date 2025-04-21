@@ -1,6 +1,5 @@
 use anyhow::Context;
 use gpui::*;
-use network_interface::{NetworkInterface, NetworkInterfaceConfig as _};
 use sacn::Universe;
 use show::dmx_io::{DmxIoSettings, SacnOutputType};
 use std::sync::Arc;
@@ -20,22 +19,6 @@ impl DmxIo {
         multiverse: Entity<dmx::Multiverse>,
         settings: &DmxIoSettings,
     ) -> anyhow::Result<Self> {
-        let interfaces = NetworkInterface::show().context("get network interfaces")?;
-
-        let interface = interfaces
-            .iter()
-            .find(|i| i.name == settings.interface.name)
-            .or_else(|| {
-                let new_if = interfaces.iter().find(|i| i.addr.len() > 0)?;
-                log::warn!(
-                    "Could not find network interface with name '{}'. using '{}' instead",
-                    settings.interface.name,
-                    new_if.name
-                );
-                Some(new_if)
-            })
-            .context("no network interface (with an available address) not found")?;
-
         let sacn_sources = settings
             .sacn
             .sources

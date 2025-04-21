@@ -53,12 +53,12 @@ fn frame_container_from_showfile(
 ) -> FrameContainer<MainFrame> {
     let main_window = Show::global(cx).layout.main_window.clone();
 
-    let mut container = FrameContainer::new(main_window.size.into(), FRAME_CELL_SIZE);
+    let mut container = FrameContainer::new(main_window.size, FRAME_CELL_SIZE);
 
     for frame in &main_window.frames {
         container.add_frame(
-            MainFrame::from_show(&frame, window, cx),
-            frame.bounds.clone().into(),
+            MainFrame::from_show(frame, window, cx),
+            frame.bounds,
             cx,
         );
     }
