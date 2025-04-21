@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 # crates
+dmx = { workspace = true, features = ["serde"] }
 flow = { workspace = true, features = ["serde", "derive"] }
 sacn.workspace = true
 ui.workspace = true

@@ -7,6 +7,9 @@ edition.workspace = true
 workspace = true
 
 [dependencies]
+# crates
+dmx.workspace = true
+
 # ui
 gpui.workspace = true
 smallvec = "1.14.0"

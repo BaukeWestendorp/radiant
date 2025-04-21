@@ -33,11 +33,17 @@ pub use error::Error;
 /// let invalid_channel = Channel::new(513);
 /// assert!(invalid_channel.is_err());
 /// ```
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize))]
 pub struct Channel(u16);
 
 impl Channel {
+    /// The minimum valid channel number.
+    pub const MIN: Self = Self(1);
+
+    /// The maximum valid channel number.
+    pub const MAX: Self = Self(512);
+
     /// Creates a new [Channel] within the valid DMX range 1..=512.
     ///
     /// Returns an error if the channel number is outside the valid range.
@@ -56,6 +62,12 @@ impl Channel {
             1..=512 => Ok(Self(channel)),
             other => Err(Error::InvalidChannel(other)),
         }
+    }
+}
+
+impl Default for Channel {
+    fn default() -> Self {
+        Self::new(1).unwrap()
     }
 }
 
@@ -114,6 +126,14 @@ impl<'de> ::serde::Deserialize<'de> for Channel {
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Value(pub u8);
 
+impl Value {
+    /// The minimum valid DMX value.
+    pub const MIN: Self = Value(0);
+
+    /// The maximum valid DMX value.
+    pub const MAX: Self = Value(255);
+}
+
 impl From<Value> for u8 {
     fn from(value: Value) -> Self {
         value.0
@@ -167,7 +187,7 @@ impl std::fmt::Display for Value {
 /// assert_eq!(addr.universe, UniverseId::new(2).unwrap());
 /// assert_eq!(addr.channel, Channel::new(488).unwrap());
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Default, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Address {
     /// The universe id for this address.
@@ -227,6 +247,12 @@ impl std::fmt::Display for Address {
 pub struct UniverseId(u16);
 
 impl UniverseId {
+    /// The minimum valid universe ID.
+    pub const MIN: Self = Self(1);
+
+    /// The maximum valid universe ID.
+    pub const MAX: Self = Self(u16::MAX);
+
     /// Creates a new universe ID from the given number.
     ///
     /// Universe IDs must be greater than 0.
@@ -247,6 +273,12 @@ impl UniverseId {
         }
 
         Ok(Self(id))
+    }
+}
+
+impl Default for UniverseId {
+    fn default() -> Self {
+        Self::new(1).unwrap()
     }
 }
 

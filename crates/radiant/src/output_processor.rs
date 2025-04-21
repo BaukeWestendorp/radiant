@@ -21,13 +21,7 @@ pub fn start(multiverse: Entity<dmx::Multiverse>, cx: &mut App) {
                 });
 
                 multiverse.update(cx, |multiverse, cx| {
-                    multiverse.set_value(
-                        &dmx::Address::new(
-                            dmx::UniverseId::new(1).unwrap(),
-                            dmx::Channel::new(1).unwrap(),
-                        ),
-                        dmx::Value(state.value as u8),
-                    );
+                    *multiverse = state.multiverse;
                     cx.notify();
                 });
             })
