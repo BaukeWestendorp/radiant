@@ -29,6 +29,7 @@ impl Tab {
 
 pub struct SettingsWindow {
     active_tab: Tab,
+    dmx_io_view: Entity<DmxIoView>,
 }
 
 impl SettingsWindow {
@@ -45,7 +46,10 @@ impl SettingsWindow {
 
         cx.open_window(window_options, |window, cx| {
             window.set_rem_size(DEFAULT_REM_SIZE);
-            cx.new(|_cx| Self { active_tab: Tab::Patch })
+            cx.new(|cx| Self {
+                active_tab: Tab::DmxIo,
+                dmx_io_view: cx.new(|cx| DmxIoView::new(cx)),
+            })
         })
         .context("open settings window")
     }
@@ -90,8 +94,8 @@ impl SettingsWindow {
 
     fn render_content(&self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         div().size_full().child(match self.active_tab {
-            Tab::Patch => div().child("PATCH"),
-            Tab::DmxIo => div().child("DMX IO"),
+            Tab::Patch => div().child("Patch View").into_any_element(),
+            Tab::DmxIo => self.dmx_io_view.clone().into_any_element(),
         })
     }
 }
@@ -105,5 +109,19 @@ impl Render for SettingsWindow {
             .text_color(cx.theme().text_primary)
             .child(self.render_sidebar(window, cx))
             .child(self.render_content(window, cx))
+    }
+}
+
+struct DmxIoView {}
+
+impl DmxIoView {
+    pub fn new(cx: &mut Context<Self>) -> Self {
+        Self {}
+    }
+}
+
+impl Render for DmxIoView {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        "dmx io view"
     }
 }
