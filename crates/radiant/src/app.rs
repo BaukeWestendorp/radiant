@@ -1,8 +1,4 @@
-use crate::{
-    dmx_io::DmxIo,
-    layout::{main::MainWindow, settings::SettingsWindow},
-    output_processor,
-};
+use crate::{dmx_io::DmxIo, layout::main::MainWindow, output_processor};
 use gpui::*;
 use show::Show;
 use std::path::PathBuf;
@@ -32,8 +28,6 @@ impl RadiantApp {
             self.init_show(cx);
             self.init_dmx_io(multiverse.clone(), cx);
             output_processor::start(multiverse, cx);
-
-            SettingsWindow::open(cx).expect("should open settings window");
 
             MainWindow::open(cx).expect("should open main window");
         });
@@ -66,7 +60,9 @@ mod actions {
     use gpui::*;
     use show::Show;
 
-    actions!(app, [Quit, Save]);
+    use crate::layout::settings::SettingsWindow;
+
+    actions!(app, [Quit, Save, OpenSettings]);
 
     pub fn init(cx: &mut App) {
         bind_global_keys(cx);
@@ -76,6 +72,7 @@ mod actions {
     fn bind_global_keys(cx: &mut App) {
         cx.bind_keys([KeyBinding::new("secondary-q", Quit, None)]);
         cx.bind_keys([KeyBinding::new("secondary-s", Save, None)]);
+        cx.bind_keys([KeyBinding::new("secondary-,", OpenSettings, None)])
     }
 
     fn handle_global_actions(cx: &mut App) {
@@ -123,6 +120,10 @@ mod actions {
                 }
             })
             .detach();
+        });
+
+        cx.on_action::<OpenSettings>(|_, cx| {
+            SettingsWindow::open(cx).expect("should open settings window");
         });
     }
 }
