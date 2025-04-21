@@ -1,4 +1,8 @@
-use crate::{dmx_io::DmxIo, layout::MainWindow, output_processor};
+use crate::{
+    dmx_io::DmxIo,
+    layout::{main::MainWindow, settings::SettingsWindow},
+    output_processor,
+};
 use gpui::*;
 use show::Show;
 use std::path::PathBuf;
@@ -28,6 +32,8 @@ impl RadiantApp {
             self.init_show(cx);
             self.init_dmx_io(multiverse.clone(), cx);
             output_processor::start(multiverse, cx);
+
+            SettingsWindow::open(cx).expect("should open settings window");
 
             MainWindow::open(cx).expect("should open main window");
         });

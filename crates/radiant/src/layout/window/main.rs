@@ -1,13 +1,13 @@
-use super::MainFrame;
-use crate::app::APP_ID;
+use crate::{app::APP_ID, layout::MainFrame};
 use anyhow::Context as _;
 use frames::FrameContainer;
 use gpui::*;
 use show::Show;
 use ui::ActiveTheme as _;
 
+use super::DEFAULT_REM_SIZE;
+
 const FRAME_CELL_SIZE: Pixels = px(80.0);
-pub const DEFAULT_REM_SIZE: Pixels = px(14.0);
 
 pub struct MainWindow {
     frame_container: Entity<FrameContainer<MainFrame>>,
@@ -31,7 +31,7 @@ impl MainWindow {
                 frame_container: cx.new(|cx| frame_container_from_showfile(window, cx)),
             })
         })
-        .context("open window")
+        .context("open main window")
     }
 }
 
@@ -56,11 +56,7 @@ fn frame_container_from_showfile(
     let mut container = FrameContainer::new(main_window.size, FRAME_CELL_SIZE);
 
     for frame in &main_window.frames {
-        container.add_frame(
-            MainFrame::from_show(frame, window, cx),
-            frame.bounds,
-            cx,
-        );
+        container.add_frame(MainFrame::from_show(frame, window, cx), frame.bounds, cx);
     }
 
     container
