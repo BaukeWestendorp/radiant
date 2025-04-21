@@ -13,8 +13,11 @@ pub fn start(multiverse: Entity<dmx::Multiverse>, cx: &mut App) {
         loop {
             cx.update(|cx| {
                 let show = Show::global(cx);
-                let effect_graph = show.assets.effect_graphs.get(&EFFECT_GRAPH_ID).unwrap().clone();
-                let state = effect_graph.update(cx, |effect_graph, _cx| {
+                let Some(effect_graph) = show.assets.effect_graphs.get(&EFFECT_GRAPH_ID) else {
+                    log::warn!("No effect graph to process!");
+                    return;
+                };
+                let state = effect_graph.clone().update(cx, |effect_graph, _cx| {
                     let mut pcx = ProcessingContext::default();
                     effect_graph.data.process(&mut pcx);
                     pcx.state().clone()
