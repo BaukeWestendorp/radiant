@@ -2,7 +2,7 @@ use anyhow::Context;
 use gpui::*;
 use network_interface::{NetworkInterface, NetworkInterfaceConfig as _};
 use sacn::Universe;
-use show::dmx_io::DmxIoSettings;
+use show::dmx_io::{DmxIoSettings, SacnOutputType};
 use std::sync::Arc;
 
 const CID: sacn::ComponentIdentifier = sacn::ComponentIdentifier::from_bytes([
@@ -44,10 +44,16 @@ impl DmxIo {
                 const SYNCHRONIZATION_ADDRESS: u16 = 0;
                 const FORCE_SYNCHRONIZATION: bool = false;
 
+                let ip = match s.r#type {
+                    SacnOutputType::Unicast { destination_ip } => {
+                        destination_ip.expect("destination ip required")
+                    }
+                };
+
                 let config = sacn::SourceConfig {
                     cid: CID,
                     name: s.name.to_string(),
-                    ip: interface.addr.first().unwrap().ip(),
+                    ip,
                     port: sacn::DEFAULT_PORT,
                     priority: s.priority,
                     preview_data: s.preview_data,

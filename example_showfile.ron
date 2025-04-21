@@ -2,17 +2,44 @@
 (
     dmx_io_settings: (
         interface: (
-            name: "lo0",
+            name: "wlp3s0f0u2",
         ),
         sacn: (
             sources: [(
-                name: "Test sACN Input",
-                local_universes: [1, 3, 4],
+                name: "sACN Universe 1",
+                local_universes: [1],
                 destination_universe: 1,
-                priority: 142,
+                priority: 100,
                 preview_data: false,
                 type: Unicast(
-                    destination_ip: Some("127.0.0.1"),
+                    destination_ip: Some("192.168.2.5"),
+                ),
+            ), (
+                name: "sACN Universe 2",
+                local_universes: [2],
+                destination_universe: 2,
+                priority: 100,
+                preview_data: false,
+                type: Unicast(
+                    destination_ip: Some("192.168.2.5"),
+                ),
+            ), (
+                name: "sACN Universe 3",
+                local_universes: [3],
+                destination_universe: 3,
+                priority: 100,
+                preview_data: false,
+                type: Unicast(
+                    destination_ip: Some("192.168.2.5"),
+                ),
+            ), (
+                name: "sACN Universe 4",
+                local_universes: [4],
+                destination_universe: 4,
+                priority: 100,
+                preview_data: false,
+                type: Unicast(
+                    destination_ip: Some("192.168.2.5"),
                 ),
             )],
         ),
@@ -23,6 +50,72 @@
                 id: 1,
                 data: (
                     nodes: {
+                        12: (
+                            template_id: "out_set_dmx_address",
+                            input_values: {
+                                "address": DmxAddress((
+                                    universe: 3,
+                                    channel: 3,
+                                )),
+                                "value": Number(0.2664),
+                            },
+                            control_values: {},
+                        ),
+                        6: (
+                            template_id: "out_set_dmx_address",
+                            input_values: {
+                                "address": DmxAddress((
+                                    universe: 3,
+                                    channel: 21,
+                                )),
+                                "value": Number(1.0),
+                            },
+                            control_values: {},
+                        ),
+                        9: (
+                            template_id: "out_set_dmx_address",
+                            input_values: {
+                                "address": DmxAddress((
+                                    universe: 3,
+                                    channel: 7,
+                                )),
+                                "value": Number(1.0),
+                            },
+                            control_values: {},
+                        ),
+                        8: (
+                            template_id: "out_set_dmx_address",
+                            input_values: {
+                                "value": Number(0.3098),
+                                "address": DmxAddress((
+                                    universe: 3,
+                                    channel: 6,
+                                )),
+                            },
+                            control_values: {},
+                        ),
+                        13: (
+                            template_id: "out_set_dmx_address",
+                            input_values: {
+                                "address": DmxAddress((
+                                    universe: 3,
+                                    channel: 23,
+                                )),
+                                "value": Number(1.0),
+                            },
+                            control_values: {},
+                        ),
+                        10: (
+                            template_id: "out_set_dmx_address",
+                            input_values: {
+                                "address": DmxAddress((
+                                    universe: 3,
+                                    channel: 1,
+                                )),
+                                "value": Number(0.4495),
+                            },
+                            control_values: {},
+                        ),
                         1: (
                             template_id: "out_set_dmx_address",
                             input_values: {
@@ -34,12 +127,66 @@
                             },
                             control_values: {},
                         ),
+                        7: (
+                            template_id: "out_set_dmx_address",
+                            input_values: {
+                                "address": DmxAddress((
+                                    universe: 3,
+                                    channel: 5,
+                                )),
+                                "value": Number(1.0),
+                            },
+                            control_values: {},
+                        ),
+                        4: (
+                            template_id: "out_set_dmx_address",
+                            input_values: {
+                                "value": Number(1.0),
+                                "address": DmxAddress((
+                                    universe: 3,
+                                    channel: 22,
+                                )),
+                            },
+                            control_values: {},
+                        ),
                     },
                     edges: [],
                     node_positions: {
+                        9: (
+                            x: 116.03125,
+                            y: 747.46484,
+                        ),
+                        13: (
+                            x: 123.71094,
+                            y: 918.47266,
+                        ),
+                        7: (
+                            x: 115.32031,
+                            y: 529.70703,
+                        ),
+                        12: (
+                            x: -263.41797,
+                            y: 375.85547,
+                        ),
+                        4: (
+                            x: -204.38281,
+                            y: 632.4453,
+                        ),
                         1: (
-                            x: 23.121094,
-                            y: 24.257813,
+                            x: -41.601563,
+                            y: -13.3828125,
+                        ),
+                        10: (
+                            x: -279.6172,
+                            y: 258.9375,
+                        ),
+                        8: (
+                            x: 118.77344,
+                            y: 630.08203,
+                        ),
+                        6: (
+                            x: -212.9414,
+                            y: 778.71875,
                         ),
                     },
                     offset: (
