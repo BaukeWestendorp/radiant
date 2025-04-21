@@ -62,7 +62,7 @@ mod actions {
 
     use crate::layout::settings::SettingsWindow;
 
-    actions!(app, [Quit, Save, OpenSettings]);
+    actions!(app, [Quit, Save, OpenSettings, CloseActiveWindow]);
 
     pub fn init(cx: &mut App) {
         bind_global_keys(cx);
@@ -72,7 +72,8 @@ mod actions {
     fn bind_global_keys(cx: &mut App) {
         cx.bind_keys([KeyBinding::new("secondary-q", Quit, None)]);
         cx.bind_keys([KeyBinding::new("secondary-s", Save, None)]);
-        cx.bind_keys([KeyBinding::new("secondary-,", OpenSettings, None)])
+        cx.bind_keys([KeyBinding::new("secondary-,", OpenSettings, None)]);
+        cx.bind_keys([KeyBinding::new("secondary-w", CloseActiveWindow, None)]);
     }
 
     fn handle_global_actions(cx: &mut App) {
@@ -123,7 +124,23 @@ mod actions {
         });
 
         cx.on_action::<OpenSettings>(|_, cx| {
+            log::info!("Opening settings window");
             SettingsWindow::open(cx).expect("should open settings window");
+        });
+
+        cx.on_action::<CloseActiveWindow>(|_, cx| {
+            let Some(window) = cx.active_window() else {
+                log::warn!("No active window found");
+                return;
+            };
+
+            log::info!("Closing active window");
+
+            if let Err(err) = window.update(cx, |_, window, cx| {
+                window.defer(cx, |window, _cx| window.remove_window());
+            }) {
+                log::warn!("Could not close active window: {err}");
+            }
         });
     }
 }
