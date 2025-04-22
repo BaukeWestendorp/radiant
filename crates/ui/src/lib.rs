@@ -4,8 +4,7 @@ mod grid;
 mod input;
 mod styled_ext;
 mod theme;
-
-pub mod utils;
+mod toggle_button;
 
 pub use container::*;
 pub use element::*;
@@ -13,6 +12,9 @@ pub use grid::*;
 pub use input::*;
 pub use styled_ext::*;
 pub use theme::*;
+pub use toggle_button::*;
+
+pub mod utils;
 
 pub mod actions {
     use gpui::App;

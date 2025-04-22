@@ -1,8 +1,8 @@
 use crate::app::APP_ID;
 use anyhow::Context as _;
-use gpui::{prelude::FluentBuilder, *};
+use gpui::*;
 use show::{Show, dmx_io::SacnSourceSettings};
-use ui::{ActiveTheme as _, InteractiveColor as _};
+use ui::{ActiveTheme as _, ToggleButton};
 
 use super::DEFAULT_REM_SIZE;
 
@@ -60,26 +60,9 @@ impl SettingsWindow {
 
         div()
             .children(TABS.iter().map(|tab| {
-                div()
-                    .id(ElementId::Name(format!("settings-tab-{}", tab.id()).into()))
-                    .bg(cx.theme().element_background)
-                    .p_1()
-                    .border_1()
-                    .border_color(cx.theme().border)
-                    .hover(|e| {
-                        e.bg(cx.theme().background.hovered())
-                            .border_color(cx.theme().border.hovered())
-                    })
-                    .when(self.active_tab == *tab, |e| {
-                        e.bg(cx.theme().element_background_selected)
-                            .border_color(cx.theme().border_selected)
-                            .hover(|e| {
-                                e.bg(cx.theme().element_background_selected.hovered())
-                                    .border_color(cx.theme().border_selected.hovered())
-                            })
-                    })
-                    .rounded(cx.theme().radius)
-                    .cursor_pointer()
+                let id = ElementId::Name(format!("settings-tab-{}", tab.id()).into());
+                ToggleButton::new(id)
+                    .toggled(self.active_tab == *tab)
                     .on_click(cx.listener(|view, _, _window, _cx| view.active_tab = *tab))
                     .child(tab.label())
             }))
@@ -143,13 +126,13 @@ struct SacnSourceSettingsView {
 }
 
 impl SacnSourceSettingsView {
-    pub fn new(source: Entity<SacnSourceSettings>, cx: &mut Context<Self>) -> Self {
+    pub fn new(source: Entity<SacnSourceSettings>, _cx: &mut Context<Self>) -> Self {
         Self { source }
     }
 }
 
 impl Render for SacnSourceSettingsView {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         self.source.read(cx).name.to_string()
     }
 }
