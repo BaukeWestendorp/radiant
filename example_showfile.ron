@@ -47,101 +47,13 @@
                 id: 1,
                 data: (
                     nodes: {
-                        12: (
+                        14: (
                             template_id: "out_set_dmx_address",
                             input_values: {
-                                "address": DmxAddress((
-                                    universe: 3,
-                                    channel: 3,
-                                )),
-                                "value": Number(0.2664),
-                            },
-                            control_values: {},
-                        ),
-                        6: (
-                            template_id: "out_set_dmx_address",
-                            input_values: {
-                                "address": DmxAddress((
-                                    universe: 3,
-                                    channel: 21,
-                                )),
-                                "value": Number(1.0),
-                            },
-                            control_values: {},
-                        ),
-                        9: (
-                            template_id: "out_set_dmx_address",
-                            input_values: {
-                                "address": DmxAddress((
-                                    universe: 3,
-                                    channel: 7,
-                                )),
-                                "value": Number(1.0),
-                            },
-                            control_values: {},
-                        ),
-                        8: (
-                            template_id: "out_set_dmx_address",
-                            input_values: {
-                                "value": Number(0.3098),
-                                "address": DmxAddress((
-                                    universe: 3,
-                                    channel: 6,
-                                )),
-                            },
-                            control_values: {},
-                        ),
-                        13: (
-                            template_id: "out_set_dmx_address",
-                            input_values: {
-                                "address": DmxAddress((
-                                    universe: 3,
-                                    channel: 23,
-                                )),
-                                "value": Number(1.0),
-                            },
-                            control_values: {},
-                        ),
-                        10: (
-                            template_id: "out_set_dmx_address",
-                            input_values: {
-                                "address": DmxAddress((
-                                    universe: 3,
-                                    channel: 1,
-                                )),
-                                "value": Number(0.4495),
-                            },
-                            control_values: {},
-                        ),
-                        1: (
-                            template_id: "out_set_dmx_address",
-                            input_values: {
+                                "value": Number(0.25),
                                 "address": DmxAddress((
                                     universe: 1,
                                     channel: 1,
-                                )),
-                                "value": Number(0.0),
-                            },
-                            control_values: {},
-                        ),
-                        7: (
-                            template_id: "out_set_dmx_address",
-                            input_values: {
-                                "address": DmxAddress((
-                                    universe: 3,
-                                    channel: 5,
-                                )),
-                                "value": Number(1.0),
-                            },
-                            control_values: {},
-                        ),
-                        4: (
-                            template_id: "out_set_dmx_address",
-                            input_values: {
-                                "value": Number(1.0),
-                                "address": DmxAddress((
-                                    universe: 3,
-                                    channel: 22,
                                 )),
                             },
                             control_values: {},
@@ -149,45 +61,13 @@
                     },
                     edges: [],
                     node_positions: {
-                        9: (
-                            x: 116.03125,
-                            y: 747.46484,
-                        ),
-                        13: (
-                            x: 123.71094,
-                            y: 918.47266,
-                        ),
-                        7: (
-                            x: 115.32031,
-                            y: 529.70703,
-                        ),
-                        12: (
-                            x: -263.41797,
-                            y: 375.85547,
-                        ),
-                        4: (
-                            x: -204.38281,
-                            y: 632.4453,
-                        ),
-                        1: (
-                            x: -41.601563,
-                            y: -13.3828125,
-                        ),
-                        10: (
-                            x: -279.6172,
-                            y: 258.9375,
-                        ),
-                        8: (
-                            x: 118.77344,
-                            y: 630.08203,
-                        ),
-                        6: (
-                            x: -212.9414,
-                            y: 778.71875,
+                        14: (
+                            x: -2.6953125,
+                            y: 627.66406,
                         ),
                     },
                     offset: (
-                        x: 542.0,
+                        x: 522.0,
                         y: -132.0,
                     ),
                 ),
