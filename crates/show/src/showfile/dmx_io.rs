@@ -4,18 +4,8 @@ use std::net::IpAddr;
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 /// DMX IO settings.
 pub struct DmxIoSettings {
-    /// The interface to use for DMX IO.
-    pub interface: InterfaceSettings,
     /// sACN DMX IO settings.
     pub sacn: SacnSettings,
-}
-
-/// Preferences about the interface to use for DMX IO.
-#[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct InterfaceSettings {
-    /// The name of the interface to use (e.g. 'en0').
-    pub name: String,
 }
 
 /// sACN DMX IO settings.

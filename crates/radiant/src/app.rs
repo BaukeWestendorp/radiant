@@ -50,8 +50,8 @@ impl RadiantApp {
 
     fn init_dmx_io(&self, multiverse: Entity<dmx::Multiverse>, cx: &mut App) {
         let dmx_io_config = Show::global(cx).dmx_io_settings.clone();
-        let dmx_io =
-            DmxIo::new(multiverse.clone(), &dmx_io_config).expect("should create dmx io manager");
+        let dmx_io = DmxIo::new(multiverse.clone(), &dmx_io_config, cx)
+            .expect("should create dmx io manager");
         dmx_io.start(cx);
     }
 }

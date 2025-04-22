@@ -1,6 +1,7 @@
 use crate::app::APP_ID;
 use anyhow::Context as _;
 use gpui::{prelude::FluentBuilder, *};
+use show::{Show, dmx_io::SacnSourceSettings};
 use ui::{ActiveTheme as _, InteractiveColor as _};
 
 use super::DEFAULT_REM_SIZE;
@@ -112,16 +113,43 @@ impl Render for SettingsWindow {
     }
 }
 
-struct DmxIoView {}
+struct DmxIoView {
+    sacn_source_views: Vec<Entity<SacnSourceSettingsView>>,
+}
 
 impl DmxIoView {
     pub fn new(cx: &mut Context<Self>) -> Self {
-        Self {}
+        let sacn_source_views = Show::global(cx)
+            .dmx_io_settings
+            .sacn
+            .sources
+            .clone()
+            .into_iter()
+            .map(|s| cx.new(|cx| SacnSourceSettingsView::new(s, cx)))
+            .collect();
+
+        Self { sacn_source_views }
     }
 }
 
 impl Render for DmxIoView {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        div().m_2().children(self.sacn_source_views.clone()).size_full()
+    }
+}
+
+struct SacnSourceSettingsView {
+    source: Entity<SacnSourceSettings>,
+}
+
+impl SacnSourceSettingsView {
+    pub fn new(source: Entity<SacnSourceSettings>, cx: &mut Context<Self>) -> Self {
+        Self { source }
+    }
+}
+
+impl Render for SacnSourceSettingsView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        "dmx io view"
+        self.source.read(cx).name.to_string()
     }
 }

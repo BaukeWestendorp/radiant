@@ -1,9 +1,6 @@
 #![enable(unwrap_newtypes)]
 (
     dmx_io_settings: (
-        interface: (
-            name: "wlp3s0f0u2",
-        ),
         sacn: (
             sources: [(
                 name: "sACN Universe 1",

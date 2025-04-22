@@ -18,6 +18,7 @@ impl DmxIo {
     pub fn new(
         multiverse: Entity<dmx::Multiverse>,
         settings: &DmxIoSettings,
+        cx: &App,
     ) -> anyhow::Result<Self> {
         let sacn_sources = settings
             .sacn
@@ -26,6 +27,7 @@ impl DmxIo {
             .map(|s| -> anyhow::Result<_> {
                 const SYNCHRONIZATION_ADDRESS: u16 = 0;
                 const FORCE_SYNCHRONIZATION: bool = false;
+                let s = s.read(cx);
 
                 let ip = match s.r#type {
                     SacnOutputType::Unicast { destination_ip } => {

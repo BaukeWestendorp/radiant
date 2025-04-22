@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use crate::showfile::{self, Showfile};
 use assets::Assets;
+use dmx_io::DmxIoSettings;
 
 pub mod assets;
 pub mod dmx_io;
@@ -24,7 +25,7 @@ impl Show {
         Show {
             path,
             assets: Assets::from_showfile(&showfile, cx),
-            dmx_io_settings: showfile.dmx_io_settings,
+            dmx_io_settings: DmxIoSettings::from_showfile(showfile.dmx_io_settings, cx),
             layout: showfile.layout,
         }
     }
@@ -36,7 +37,7 @@ impl Show {
 
     pub fn save_to_file(&mut self, path: &PathBuf, cx: &gpui::App) -> Result<(), std::io::Error> {
         let showfile = Showfile {
-            dmx_io_settings: self.dmx_io_settings.clone(),
+            dmx_io_settings: self.dmx_io_settings.to_showfile(cx),
             layout: self.layout.clone(),
             assets: self.assets.to_showfile(cx),
         };
