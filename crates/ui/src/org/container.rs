@@ -1,0 +1,236 @@
+use crate::{ActiveTheme, Disableable, InteractiveColor, Selectable};
+use gpui::{
+    AnyElement, App, Div, ElementId, FocusHandle, Focusable, Hsla, Interactivity, Stateful,
+    StyleRefinement, Window, div, prelude::*,
+};
+use smallvec::SmallVec;
+
+pub fn container(style: ContainerStyle) -> Container {
+    Container::new(style)
+}
+
+#[derive(IntoElement)]
+pub struct Container {
+    disabled: bool,
+
+    base: Div,
+    children: SmallVec<[AnyElement; 4]>,
+    style: ContainerStyle,
+}
+
+impl Container {
+    fn new(style: ContainerStyle) -> Self {
+        Self { disabled: false, base: div(), children: SmallVec::new(), style }
+    }
+}
+
+impl Disableable for Container {
+    fn disabled(mut self, disabled: bool) -> Self {
+        self.disabled = disabled;
+        self
+    }
+}
+
+impl ParentElement for Container {
+    fn extend(&mut self, elements: impl IntoIterator<Item = AnyElement>) {
+        self.children.extend(elements);
+    }
+}
+
+impl Styled for Container {
+    fn style(&mut self) -> &mut StyleRefinement {
+        self.base.style()
+    }
+}
+
+impl RenderOnce for Container {
+    fn render(self, _w: &mut Window, cx: &mut App) -> impl IntoElement {
+        let style = match self.disabled {
+            true => self.style.disabled(),
+            false => self.style,
+        };
+
+        self.base
+            .bg(style.background)
+            .border_1()
+            .border_color(style.border)
+            .rounded(cx.theme().radius)
+            .text_color(style.text_color)
+            .children(self.children)
+    }
+}
+
+pub struct ContainerStyle {
+    pub border: Hsla,
+    pub background: Hsla,
+    pub text_color: Hsla,
+}
+
+impl ContainerStyle {
+    pub fn normal(w: &Window, cx: &App) -> Self {
+        Self {
+            border: cx.theme().border,
+            background: cx.theme().element_background,
+            text_color: w.text_style().color,
+        }
+    }
+
+    pub fn focused(w: &Window, cx: &App) -> Self {
+        Self {
+            border: cx.theme().border_focused,
+            background: cx.theme().element_background_focused,
+            text_color: w.text_style().color,
+        }
+    }
+
+    pub fn selected(w: &Window, cx: &App) -> Self {
+        Self {
+            border: cx.theme().border_selected,
+            background: cx.theme().element_background_selected,
+            text_color: w.text_style().color,
+        }
+    }
+
+    pub fn disabled(&self) -> Self {
+        Self {
+            border: self.border.muted(),
+            background: self.background.muted(),
+            text_color: self.text_color.muted(),
+        }
+    }
+
+    pub fn hovered(&self) -> Self {
+        Self {
+            border: self.border.hovered(),
+            background: self.background.hovered(),
+            text_color: self.text_color.hovered(),
+        }
+    }
+
+    pub fn active(&self) -> Self {
+        Self {
+            border: self.border.active(),
+            background: self.background.active(),
+            text_color: self.text_color.active(),
+        }
+    }
+}
+
+pub fn interactive_container(
+    id: impl Into<ElementId>,
+    focus_handle: FocusHandle,
+) -> InteractiveContainer {
+    InteractiveContainer::new(id, focus_handle)
+}
+
+#[derive(IntoElement)]
+pub struct InteractiveContainer {
+    disabled: bool,
+    selected: bool,
+
+    base: Stateful<Div>,
+    children: SmallVec<[AnyElement; 2]>,
+    focus_handle: FocusHandle,
+
+    disabled_interactivity: Interactivity,
+}
+
+impl InteractiveContainer {
+    fn new(id: impl Into<ElementId>, focus_handle: FocusHandle) -> Self {
+        Self {
+            disabled: false,
+            selected: false,
+            base: div().id(id.into()),
+            children: SmallVec::new(),
+            focus_handle,
+
+            disabled_interactivity: Interactivity::default(),
+        }
+    }
+}
+
+impl Disableable for InteractiveContainer {
+    fn disabled(mut self, disabled: bool) -> Self {
+        self.disabled = disabled;
+        self
+    }
+}
+
+impl Selectable for InteractiveContainer {
+    fn selected(mut self, selected: bool) -> Self {
+        self.selected = selected;
+        self
+    }
+}
+
+impl Focusable for InteractiveContainer {
+    fn focus_handle(&self, _cx: &App) -> FocusHandle {
+        self.focus_handle.clone()
+    }
+}
+
+impl ParentElement for InteractiveContainer {
+    fn extend(&mut self, elements: impl IntoIterator<Item = AnyElement>) {
+        self.children.extend(elements);
+    }
+}
+
+impl Styled for InteractiveContainer {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.interactivity().base_style
+    }
+}
+
+impl InteractiveElement for InteractiveContainer {
+    fn interactivity(&mut self) -> &mut Interactivity {
+        if self.disabled { &mut self.disabled_interactivity } else { self.base.interactivity() }
+    }
+}
+
+impl StatefulInteractiveElement for InteractiveContainer {}
+
+impl From<InteractiveContainer> for AnyElement {
+    fn from(container: InteractiveContainer) -> Self {
+        container.into_any_element()
+    }
+}
+
+impl RenderOnce for InteractiveContainer {
+    fn render(self, w: &mut Window, cx: &mut App) -> impl IntoElement {
+        let focused = self.focus_handle.is_focused(w);
+
+        let mut style = if focused {
+            ContainerStyle::focused(w, cx)
+        } else if self.selected {
+            ContainerStyle::selected(w, cx)
+        } else {
+            ContainerStyle::normal(w, cx)
+        };
+
+        if self.disabled {
+            style = style.disabled();
+        }
+
+        if self.disabled || self.selected {
+            self.base
+                .focusable()
+                // We have to use this instead of .block_mouse_down()
+                // because that implementation only blocks MouseButton::Left.
+                .on_any_mouse_down(|_, _, cx| cx.stop_propagation())
+        } else {
+            self.base.track_focus(&self.focus_handle)
+        }
+        .bg(style.background)
+        .cursor_not_allowed()
+        .border_1()
+        .border_color(style.border)
+        .rounded(cx.theme().radius)
+        .text_color(style.text_color)
+        .when(!self.disabled, |e| {
+            e.cursor_pointer()
+                .hover(|e| e.bg(style.hovered().background).border_color(style.hovered().border))
+                .active(|e| e.bg(style.active().background).border_color(style.active().border))
+        })
+        .children(self.children)
+    }
+}

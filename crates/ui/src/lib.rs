@@ -1,4 +1,3 @@
-mod container;
 mod element;
 mod grid;
 mod input;
@@ -11,7 +10,6 @@ mod org;
 mod typo;
 pub mod utils;
 
-pub use container::*;
 pub use element::*;
 pub use grid::*;
 pub use input::*;
@@ -37,4 +35,8 @@ pub fn init(cx: &mut gpui::App) {
 
 pub trait Disableable {
     fn disabled(self, disabled: bool) -> Self;
+}
+
+pub trait Selectable {
+    fn selected(self, selected: bool) -> Self;
 }

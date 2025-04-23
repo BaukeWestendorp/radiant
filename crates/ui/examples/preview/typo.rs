@@ -26,8 +26,8 @@ impl Render for TypographyTab {
 
         div()
             .p_2()
-            .child(ui::section("Headers", headers, cx).mb_4())
-            .child(ui::section("Paragraphs", paragraphs, cx).mb_4())
-            .child(ui::section("Links", links, cx).mb_4())
+            .child(ui::section("Headers").mb_4().child(headers))
+            .child(ui::section("Paragraphs").mb_4().child(paragraphs))
+            .child(ui::section("Links").mb_4().child(links))
     }
 }

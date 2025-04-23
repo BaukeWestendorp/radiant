@@ -88,6 +88,8 @@ pub trait InteractiveColor {
 
     fn muted(self) -> Self;
 
+    fn active(self) -> Self;
+
     fn with_opacity(&self, factor: f32) -> Self;
 
     fn lighten(&self, factor: f32) -> Self;
@@ -102,6 +104,10 @@ impl InteractiveColor for Hsla {
 
     fn muted(self) -> Self {
         self.darken(0.4)
+    }
+
+    fn active(self) -> Self {
+        self.lighten(0.2).with_opacity(self.a + 0.2)
     }
 
     fn with_opacity(&self, opacity: f32) -> Self {
