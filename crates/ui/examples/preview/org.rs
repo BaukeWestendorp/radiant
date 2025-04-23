@@ -21,10 +21,11 @@ impl OrganizationTab {
 
 impl Render for OrganizationTab {
     fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let section =
-            ui::section("Section Header").child(div().child("This is a section's content").mb_4());
+        let section = ui::section("Section Header")
+            .child(div().child("This is a section's content").mb_4())
+            .w_64();
 
-        let divider = ui::divider(cx);
+        let divider = ui::divider(cx).w_64();
 
         let c_normal = container(ContainerStyle::normal(w, cx))
             .w_64()
