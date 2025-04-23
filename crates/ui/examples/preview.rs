@@ -65,7 +65,6 @@ impl TypographyTab {
 impl Render for TypographyTab {
     fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let headers = div()
-            .child(ui::h2("Headers"))
             .child(ui::h1("Header Level 1"))
             .child(ui::h2("Header Level 2"))
             .child(ui::h3("Header Level 3"))
@@ -74,16 +73,15 @@ impl Render for TypographyTab {
             .child(ui::h6("Header Level 6"));
 
         let paragraphs = div()
-            .child(ui::h2("Paragraphs"))
             .child(ui::p("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."));
 
-        let links = div().child(ui::h2("Links")).child(ui::link(
-            "example-link",
-            "https://example.com",
-            "Example Link",
-            cx,
-        ));
+        let links =
+            div().child(ui::link("example-link", "https://example.com", "Example Link", cx));
 
-        div().child(ui::h1("Typography")).child(headers).child(paragraphs).child(links)
+        div()
+            .p_2()
+            .child(ui::section("Headers", headers.mb_4(), cx))
+            .child(ui::section("Paragraphs", paragraphs.mb_4(), cx))
+            .child(ui::section("Links", links.mb_4(), cx))
     }
 }
