@@ -23,7 +23,7 @@ pub fn section(title: &'static str, content: impl IntoElement, cx: &App) -> Div 
     div().child(header).child(content)
 }
 
-pub fn container(cx: &App, content: impl IntoElement) -> Div {
+pub fn container(content: impl IntoElement, cx: &App) -> Div {
     div()
         .bg(cx.theme().element_background)
         .border_1()
