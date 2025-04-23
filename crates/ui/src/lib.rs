@@ -1,20 +1,19 @@
 mod element;
-mod grid;
 mod input;
-mod tabs_view;
-mod theme;
-
+mod misc;
+mod nav;
 mod org;
+mod theme;
 mod typo;
+
 pub mod utils;
 
 pub use element::*;
-pub use grid::*;
 pub use input::*;
-pub use tabs_view::*;
-pub use theme::*;
-
+pub use misc::*;
+pub use nav::*;
 pub use org::*;
+pub use theme::*;
 pub use typo::*;
 
 pub mod actions {
