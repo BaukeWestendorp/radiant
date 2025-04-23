@@ -1,0 +1,93 @@
+use gpui::Hsla;
+
+pub struct Colors {
+    pub bg_primary: Hsla,
+    pub bg_secondary: Hsla,
+    pub bg_tertiary: Hsla,
+    pub bg_selected: Hsla,
+    pub bg_focused: Hsla,
+
+    pub text: Hsla,
+
+    pub border: Hsla,
+    pub border_focused: Hsla,
+    pub border_selected: Hsla,
+
+    pub accent: Hsla,
+    pub highlight: Hsla,
+    pub cursor: Hsla,
+
+    pub grid_color: Hsla,
+}
+
+impl Default for Colors {
+    fn default() -> Self {
+        let accent: Hsla = gpui::rgb(0xffc416).into();
+        let selected = accent;
+
+        Self {
+            bg_primary: gpui::hsla(0.0, 0.0, 0.0, 1.0),
+            bg_secondary: gpui::hsla(0.0, 0.0, 0.0, 1.0),
+            bg_tertiary: gpui::hsla(0.0, 0.0, 0.2, 1.0),
+            bg_focused: gpui::hsla(0.0, 0.0, 0.1, 1.0),
+            bg_selected: selected.darken(0.5).with_opacity(0.3),
+
+            text: gpui::hsla(0.0, 0.0, 1.0, 1.0),
+
+            border: gpui::hsla(0.0, 0.0, 0.5, 1.0),
+            border_focused: accent,
+            border_selected: selected,
+
+            accent,
+            highlight: accent.with_opacity(0.2),
+            cursor: accent,
+
+            grid_color: gpui::rgba(0xffc41680).into(),
+        }
+    }
+}
+
+pub trait InteractiveColor {
+    fn hovered(self) -> Self;
+
+    fn muted(self) -> Self;
+
+    fn active(self) -> Self;
+
+    fn with_opacity(&self, factor: f32) -> Self;
+
+    fn lighten(&self, factor: f32) -> Self;
+
+    fn darken(&self, factor: f32) -> Self;
+}
+
+impl InteractiveColor for Hsla {
+    fn hovered(self) -> Self {
+        self.lighten(0.1).with_opacity(self.a + 0.1)
+    }
+
+    fn muted(self) -> Self {
+        self.darken(0.4)
+    }
+
+    fn active(self) -> Self {
+        self.lighten(0.2).with_opacity(self.a + 0.2)
+    }
+
+    fn with_opacity(&self, opacity: f32) -> Self {
+        Self { a: opacity, ..*self }
+    }
+
+    fn lighten(&self, factor: f32) -> Self {
+        let l = match self.l {
+            0.0 => factor,
+            l => l * (1.0 + factor),
+        };
+        Hsla { l, ..*self }
+    }
+
+    fn darken(&self, factor: f32) -> Self {
+        let l = self.l * (1.0 - factor);
+        Self { l, ..*self }
+    }
+}
