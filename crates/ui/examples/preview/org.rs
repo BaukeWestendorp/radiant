@@ -45,17 +45,17 @@ impl Render for OrganizationTab {
             .w_64()
             .child(div().m_2().child("This is a selected container's content"));
 
-        let ic_1 = interactive_container("interactive_c_1", self.c1_fh.clone())
+        let ic_1 = interactive_container("interactive_c_1", Some(self.c1_fh.clone()))
             .w_64()
             .child(div().m_2().child("This is an interactive container's content"));
-        let ic_2 = interactive_container("interactive_c_2", self.c2_fh.clone())
+        let ic_2 = interactive_container("interactive_c_2", Some(self.c2_fh.clone()))
             .w_64()
             .child(div().m_2().child("This is another interactive container's content"));
-        let ic_selected = interactive_container("interactive_c_3", self.c3_fh.clone())
+        let ic_selected = interactive_container("interactive_c_3", Some(self.c3_fh.clone()))
             .w_64()
             .child(div().m_2().child("This is a selected interactive container's content"))
             .selected(true);
-        let ic_disabled = interactive_container("interactive_c_4", self.c4_fh.clone())
+        let ic_disabled = interactive_container("interactive_c_4", Some(self.c4_fh.clone()))
             .w_64()
             .child(div().m_2().child("This is a disabled interactive container's content"))
             .disabled(true);

@@ -1,6 +1,6 @@
 use gpui::{AnyElement, AnyView, Div, SharedString, Window, div, prelude::*};
 
-use crate::{Disableable, ToggleButton};
+use crate::{Disableable, Selectable, interactive_container};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Tab {
@@ -89,14 +89,14 @@ impl TabsView {
 impl TabsView {
     pub fn render_tabs(&mut self, cx: &mut Context<Self>) -> Div {
         let tabs = self.tabs.clone().into_iter().map(|tab| {
-            ToggleButton::new(tab.id.clone())
+            interactive_container(tab.id.clone(), None)
                 .w_full()
                 .disabled(tab.disabled)
-                .toggled(self.selected_tab_id() == Some(&tab.id))
+                .selected(self.selected_tab_id() == Some(&tab.id))
                 .on_click(cx.listener(move |this, _, _, _| {
                     this.selected_tab = Some(tab.id.clone());
                 }))
-                .child(tab.label.clone())
+                .child(div().px_2().py_1().child(tab.label.clone()))
         });
 
         div().w_full().flex().gap_2().children(tabs)

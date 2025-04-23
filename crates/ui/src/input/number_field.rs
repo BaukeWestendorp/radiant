@@ -200,7 +200,7 @@ impl Render for NumberField {
             None => div().size_full(),
         };
 
-        interactive_container(self.id.clone(), focus_handle)
+        interactive_container(self.id.clone(), Some(focus_handle))
             .disabled(self.disabled(cx))
             .when(!self.disabled(cx), |e| {
                 e.on_click(cx.listener(Self::handle_on_click)).when(is_interactive, |e| {

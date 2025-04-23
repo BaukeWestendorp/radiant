@@ -1,7 +1,7 @@
 use crate::{ActiveTheme, Disableable, InteractiveColor, Selectable};
 use gpui::{
-    AnyElement, App, Div, ElementId, FocusHandle, Focusable, Hsla, Interactivity, Stateful,
-    StyleRefinement, Window, div, prelude::*,
+    AnyElement, App, Div, ElementId, FocusHandle, Hsla, Interactivity, Stateful, StyleRefinement,
+    Window, div, prelude::*,
 };
 use smallvec::SmallVec;
 
@@ -118,7 +118,7 @@ impl ContainerStyle {
 
 pub fn interactive_container(
     id: impl Into<ElementId>,
-    focus_handle: FocusHandle,
+    focus_handle: Option<FocusHandle>,
 ) -> InteractiveContainer {
     InteractiveContainer::new(id, focus_handle)
 }
@@ -130,13 +130,13 @@ pub struct InteractiveContainer {
 
     base: Stateful<Div>,
     children: SmallVec<[AnyElement; 2]>,
-    focus_handle: FocusHandle,
+    focus_handle: Option<FocusHandle>,
 
     disabled_interactivity: Interactivity,
 }
 
 impl InteractiveContainer {
-    fn new(id: impl Into<ElementId>, focus_handle: FocusHandle) -> Self {
+    fn new(id: impl Into<ElementId>, focus_handle: Option<FocusHandle>) -> Self {
         Self {
             disabled: false,
             selected: false,
@@ -160,12 +160,6 @@ impl Selectable for InteractiveContainer {
     fn selected(mut self, selected: bool) -> Self {
         self.selected = selected;
         self
-    }
-}
-
-impl Focusable for InteractiveContainer {
-    fn focus_handle(&self, _cx: &App) -> FocusHandle {
-        self.focus_handle.clone()
     }
 }
 
@@ -197,7 +191,7 @@ impl From<InteractiveContainer> for AnyElement {
 
 impl RenderOnce for InteractiveContainer {
     fn render(self, w: &mut Window, cx: &mut App) -> impl IntoElement {
-        let focused = self.focus_handle.is_focused(w);
+        let focused = self.focus_handle.as_ref().is_some_and(|fh| fh.is_focused(w));
 
         let mut style = if focused {
             ContainerStyle::focused(w, cx)
@@ -217,8 +211,10 @@ impl RenderOnce for InteractiveContainer {
                 // We have to use this instead of .block_mouse_down()
                 // because that implementation only blocks MouseButton::Left.
                 .on_any_mouse_down(|_, _, cx| cx.stop_propagation())
+        } else if let Some(focus_handle) = &self.focus_handle {
+            self.base.track_focus(focus_handle)
         } else {
-            self.base.track_focus(&self.focus_handle)
+            self.base.focusable()
         }
         .bg(style.background)
         .cursor_not_allowed()

@@ -66,7 +66,7 @@ impl Render for TextField {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let focus_handle = self.input.read(cx).focus_handle(cx);
 
-        interactive_container(ElementId::View(cx.entity_id()), focus_handle)
+        interactive_container(ElementId::View(cx.entity_id()), Some(focus_handle))
             .disabled(self.disabled(cx))
             .cursor_text()
             .child(self.input.clone())
