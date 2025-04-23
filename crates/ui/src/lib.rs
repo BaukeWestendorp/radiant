@@ -6,6 +6,7 @@ mod styled_ext;
 mod tabs_view;
 mod theme;
 mod toggle_button;
+mod typography;
 
 pub use container::*;
 pub use element::*;
@@ -15,6 +16,7 @@ pub use styled_ext::*;
 pub use tabs_view::*;
 pub use theme::*;
 pub use toggle_button::*;
+pub use typography::*;
 
 pub mod utils;
 
