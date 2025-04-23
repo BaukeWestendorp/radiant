@@ -38,8 +38,8 @@ struct ContentView {
 impl ContentView {
     pub fn new(w: &mut Window, cx: &mut Context<Self>) -> Self {
         let tabs = vec![
-            ui::Tab::new("typo", "Typography", cx.new(|cx| TypographyTab::new(cx)).into()),
             ui::Tab::new("org", "Organization", cx.new(|cx| OrganizationTab::new(cx)).into()),
+            ui::Tab::new("typo", "Typography", cx.new(|cx| TypographyTab::new(cx)).into()),
             ui::Tab::new("color", "Colors", cx.new(|_| EmptyView).into()).disabled(true),
             ui::Tab::new("input", "Input", cx.new(|_| EmptyView).into()).disabled(true),
         ];
