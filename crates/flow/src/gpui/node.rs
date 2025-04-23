@@ -156,7 +156,9 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
             let label = template.label().to_string();
 
             div()
-                .h_flex()
+                .flex()
+                .flex_row()
+                .items_center()
                 .h(header_height)
                 .gap_1()
                 .px_1()
@@ -173,7 +175,8 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
         let content = div()
             .child(
                 div()
-                    .v_flex()
+                    .flex()
+                    .flex_col()
                     .gap(socket_gap_y)
                     .py(content_padding_top)
                     .children(self.inputs.clone())
@@ -280,7 +283,9 @@ impl<D: GraphDef + 'static> Render for InputView<D> {
 
         div()
             .id(self.id.clone())
-            .h_flex()
+            .flex()
+            .flex_row()
+            .items_center()
             .pr_2()
             .h(socket_height)
             .gap_2()
@@ -325,7 +330,9 @@ impl<D: GraphDef + 'static> Render for OutputView<D> {
         div()
             .id(self.id.clone())
             .pl_2()
-            .h_flex()
+            .flex()
+            .flex_row()
+            .items_center()
             .h(socket_height)
             .w_full()
             .flex_row_reverse()
