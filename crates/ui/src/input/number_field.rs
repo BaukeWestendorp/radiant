@@ -195,7 +195,7 @@ impl Render for NumberField {
         let slider_bar = match self.relative_value(cx) {
             Some(relative_value) => {
                 let slider_width = self.bounds.size.width * relative_value as f32;
-                div().w(slider_width).h_full().bg(cx.theme().input_slider_bar_color)
+                div().w(slider_width).h_full().bg(cx.theme().colors.bg_tertiary)
             }
             None => div().size_full(),
         };

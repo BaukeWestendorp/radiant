@@ -9,9 +9,9 @@ pub use section::*;
 
 pub fn root(cx: &App) -> gpui::Div {
     use gpui::Styled as _;
-    gpui::div().text_color(cx.theme().text_primary)
+    gpui::div().text_color(cx.theme().colors.text)
 }
 
 pub fn divider(cx: &App) -> Div {
-    div().w_full().h(px(1.0)).bg(cx.theme().border.muted())
+    div().w_full().h(px(1.0)).bg(cx.theme().colors.border.muted())
 }

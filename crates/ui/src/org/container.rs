@@ -61,56 +61,56 @@ impl RenderOnce for Container {
 }
 
 pub struct ContainerStyle {
-    pub border: Hsla,
     pub background: Hsla,
+    pub border: Hsla,
     pub text_color: Hsla,
 }
 
 impl ContainerStyle {
     pub fn normal(w: &Window, cx: &App) -> Self {
         Self {
-            border: cx.theme().border,
-            background: cx.theme().element_background,
+            background: cx.theme().colors.bg_secondary,
+            border: cx.theme().colors.border,
             text_color: w.text_style().color,
         }
     }
 
     pub fn focused(w: &Window, cx: &App) -> Self {
         Self {
-            border: cx.theme().border_focused,
-            background: cx.theme().element_background_focused,
+            background: cx.theme().colors.bg_focused,
+            border: cx.theme().colors.border_focused,
             text_color: w.text_style().color,
         }
     }
 
     pub fn selected(w: &Window, cx: &App) -> Self {
         Self {
-            border: cx.theme().border_selected,
-            background: cx.theme().element_background_selected,
+            background: cx.theme().colors.bg_selected,
+            border: cx.theme().colors.border_selected,
             text_color: w.text_style().color,
         }
     }
 
     pub fn disabled(&self) -> Self {
         Self {
-            border: self.border.muted(),
             background: self.background.muted(),
+            border: self.border.muted(),
             text_color: self.text_color.muted(),
         }
     }
 
     pub fn hovered(&self) -> Self {
         Self {
-            border: self.border.hovered(),
             background: self.background.hovered(),
+            border: self.border.hovered(),
             text_color: self.text_color.hovered(),
         }
     }
 
     pub fn active(&self) -> Self {
         Self {
-            border: self.border.active(),
             background: self.background.active(),
+            border: self.border.active(),
             text_color: self.text_color.active(),
         }
     }

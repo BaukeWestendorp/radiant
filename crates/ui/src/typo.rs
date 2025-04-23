@@ -42,9 +42,9 @@ pub fn link(
     div()
         .id(id.into())
         .underline()
-        .text_color(cx.theme().accent)
+        .text_color(cx.theme().colors.accent)
         .on_click(|_event, _w, cx| cx.open_url(url))
-        .hover(|e| e.text_color(cx.theme().accent.hovered()))
+        .hover(|e| e.text_color(cx.theme().colors.accent.hovered()))
         .cursor_pointer()
         .child(text)
 }

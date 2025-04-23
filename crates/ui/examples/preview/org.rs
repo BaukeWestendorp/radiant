@@ -1,7 +1,8 @@
-use gpui::{FocusHandle, Window, div, prelude::*};
+use gpui::{FocusHandle, ScrollHandle, Window, div, prelude::*};
 use ui::{ContainerStyle, Disableable, Selectable, container, interactive_container};
 
 pub struct OrganizationTab {
+    scroll_handle: ScrollHandle,
     c1_fh: FocusHandle,
     c2_fh: FocusHandle,
     c3_fh: FocusHandle,
@@ -11,6 +12,7 @@ pub struct OrganizationTab {
 impl OrganizationTab {
     pub fn new(cx: &mut Context<Self>) -> Self {
         Self {
+            scroll_handle: ScrollHandle::new(),
             c1_fh: cx.focus_handle(),
             c2_fh: cx.focus_handle(),
             c3_fh: cx.focus_handle(),
@@ -82,7 +84,11 @@ impl Render for OrganizationTab {
             .child(ui::section("Interactive Container Disabled").mb_4().child(ic_disabled));
 
         div()
-            .p_2()
+            .id("organization-tab")
+            .track_scroll(&self.scroll_handle)
+            .overflow_y_scroll()
+            .size_full()
+            .m_2()
             .child(ui::section("Section").mb_4().child(section))
             .child(ui::section("Divider").mb_4().child(divider))
             .child(noninteractive_containers)

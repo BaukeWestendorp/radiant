@@ -38,7 +38,7 @@ impl RenderOnce for Section {
             .flex()
             .items_center()
             .gap_2()
-            .text_color(cx.theme().text_primary.muted())
+            .text_color(cx.theme().colors.text.muted())
             .child(self.title)
             .child(crate::divider(cx));
 

@@ -130,11 +130,11 @@ impl Element for TextElement {
         _ = line.paint(bounds.origin + text_offset, window.line_height(), window, cx);
 
         // Paint selection.
-        window.paint_quad(fill(*selection_bounds + text_offset, cx.theme().highlight));
+        window.paint_quad(fill(*selection_bounds + text_offset, cx.theme().colors.highlight));
 
         // Paint cursor if visible and field is not disabled.
         if should_show_cursor {
-            window.paint_quad(fill(*cursor_bounds + text_offset, cx.theme().cursor));
+            window.paint_quad(fill(*cursor_bounds + text_offset, cx.theme().colors.cursor));
         }
     }
 }

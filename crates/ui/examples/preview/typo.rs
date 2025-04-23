@@ -1,10 +1,12 @@
-use gpui::{Window, div, prelude::*};
+use gpui::{ScrollHandle, Window, div, prelude::*};
 
-pub struct TypographyTab {}
+pub struct TypographyTab {
+    scroll_handle: ScrollHandle,
+}
 
 impl TypographyTab {
     pub fn new(_cx: &mut Context<Self>) -> Self {
-        Self {}
+        Self { scroll_handle: ScrollHandle::new() }
     }
 }
 
@@ -25,7 +27,11 @@ impl Render for TypographyTab {
             div().child(ui::link("example-link", "https://example.com", "Example Link", cx));
 
         div()
-            .p_2()
+            .id("typography-tab")
+            .track_scroll(&self.scroll_handle)
+            .overflow_y_scroll()
+            .size_full()
+            .m_2()
             .child(ui::section("Headers").mb_4().child(headers))
             .child(ui::section("Paragraphs").mb_4().child(paragraphs))
             .child(ui::section("Links").mb_4().child(links))

@@ -49,6 +49,7 @@ pub enum Orientation {
 pub struct TabsView {
     tabs: Vec<Tab>,
     selected_tab: Option<SharedString>,
+    // FIXME: Implement TabsView orientation.
     orientation: Orientation,
 }
 
@@ -116,6 +117,6 @@ impl Render for TabsView {
         let tabs = self.render_tabs(cx);
         let content = self.render_content(cx);
 
-        div().size_full().child(tabs).child(content)
+        div().flex().flex_col().size_full().child(tabs).child(content)
     }
 }
