@@ -3,6 +3,7 @@ mod element;
 mod grid;
 mod input;
 mod styled_ext;
+mod tabs_view;
 mod theme;
 mod toggle_button;
 
@@ -11,6 +12,7 @@ pub use element::*;
 pub use grid::*;
 pub use input::*;
 pub use styled_ext::*;
+pub use tabs_view::*;
 pub use theme::*;
 pub use toggle_button::*;
 
