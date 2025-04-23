@@ -2,25 +2,26 @@ mod container;
 mod element;
 mod grid;
 mod input;
-mod org;
 mod styled_ext;
 mod tabs_view;
 mod theme;
 mod toggle_button;
-mod typography;
+
+mod org;
+mod typo;
+pub mod utils;
 
 pub use container::*;
 pub use element::*;
 pub use grid::*;
 pub use input::*;
-pub use org::*;
 pub use styled_ext::*;
 pub use tabs_view::*;
 pub use theme::*;
 pub use toggle_button::*;
-pub use typography::*;
 
-pub mod utils;
+pub use org::*;
+pub use typo::*;
 
 pub mod actions {
     use gpui::App;
@@ -32,11 +33,6 @@ pub mod actions {
 
 pub fn init(cx: &mut gpui::App) {
     theme::Theme::init(cx);
-}
-
-pub fn root(cx: &mut gpui::App) -> gpui::Div {
-    use gpui::Styled as _;
-    gpui::div().text_color(cx.theme().text_primary)
 }
 
 pub trait Disableable {

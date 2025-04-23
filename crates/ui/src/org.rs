@@ -1,6 +1,11 @@
 use crate::{ActiveTheme, InteractiveColor};
 use gpui::{App, Div, div, prelude::*, px};
 
+pub fn root(cx: &App) -> gpui::Div {
+    use gpui::Styled as _;
+    gpui::div().text_color(cx.theme().text_primary)
+}
+
 pub fn divider(cx: &App) -> Div {
     div().w_full().h(px(1.0)).bg(cx.theme().border.muted())
 }
@@ -16,4 +21,13 @@ pub fn section(title: &'static str, content: impl IntoElement, cx: &App) -> Div 
         .child(divider(cx));
 
     div().child(header).child(content)
+}
+
+pub fn container(cx: &App, content: impl IntoElement) -> Div {
+    div()
+        .bg(cx.theme().element_background)
+        .border_1()
+        .border_color(cx.theme().border.muted())
+        .rounded(cx.theme().radius)
+        .child(content)
 }
