@@ -1,4 +1,4 @@
-use super::{NumberField, TextInputEvent};
+use crate::{NumberField, TextInputEvent};
 use gpui::*;
 
 pub struct DmxChannelField {

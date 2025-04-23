@@ -1,4 +1,4 @@
-use super::{DmxChannelField, DmxUniverseIdField, TextInputEvent};
+use crate::{DmxChannelField, DmxUniverseIdField, TextInputEvent};
 use gpui::*;
 
 pub struct DmxAddressField {

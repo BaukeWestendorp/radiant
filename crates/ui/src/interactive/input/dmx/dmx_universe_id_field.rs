@@ -1,5 +1,6 @@
-use super::{NumberField, TextInputEvent};
 use gpui::*;
+
+use crate::{NumberField, TextInputEvent};
 
 pub struct DmxUniverseIdField {
     field: Entity<NumberField>,
