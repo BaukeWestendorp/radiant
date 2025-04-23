@@ -1,4 +1,4 @@
-use gpui::{AnyView, Div, SharedString, Window, div, prelude::*};
+use gpui::{AnyElement, AnyView, Div, SharedString, Window, div, prelude::*};
 
 use crate::{Disableable, ToggleButton};
 
@@ -69,7 +69,11 @@ impl TabsView {
         self.selected_tab = id;
     }
 
-    pub fn selected_tab(&self) -> Option<&SharedString> {
+    pub fn selected_tab(&self) -> Option<&Tab> {
+        self.selected_tab.as_ref().and_then(|id| self.tabs.iter().find(|tab| tab.id == *id))
+    }
+
+    pub fn selected_tab_id(&self) -> Option<&SharedString> {
         self.selected_tab.as_ref()
     }
 
@@ -85,16 +89,25 @@ impl TabsView {
 impl TabsView {
     pub fn render_tabs(&mut self, cx: &mut Context<Self>) -> Div {
         let tabs = self.tabs.clone().into_iter().map(|tab| {
-            ToggleButton::new(tab.id.clone()).disabled(tab.disabled).on_click(
-                cx.listener(move |this, _, _, _| this.selected_tab = Some(tab.id.clone())),
-            )
+            ToggleButton::new(tab.id.clone())
+                .w_full()
+                .disabled(tab.disabled)
+                .toggled(self.selected_tab_id() == Some(&tab.id))
+                .on_click(cx.listener(move |this, _, _, _| {
+                    this.selected_tab = Some(tab.id.clone());
+                }))
+                .child(tab.label.clone())
         });
 
-        div().children(tabs)
+        div().w_full().flex().gap_2().children(tabs)
     }
 
-    pub fn render_content(&mut self, cx: &mut Context<Self>) -> Div {
-        div().child("content")
+    pub fn render_content(&mut self, _cx: &mut Context<Self>) -> AnyElement {
+        let Some(tab) = self.selected_tab() else {
+            return div().into_any_element();
+        };
+
+        tab.content.clone().into_any_element()
     }
 }
 

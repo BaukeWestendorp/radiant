@@ -30,6 +30,11 @@ pub fn init(cx: &mut gpui::App) {
     theme::Theme::init(cx);
 }
 
+pub fn root(cx: &mut gpui::App) -> gpui::Div {
+    use gpui::Styled as _;
+    gpui::div().text_color(cx.theme().text_primary)
+}
+
 pub trait Disableable {
     fn disabled(self, disabled: bool) -> Self;
 }

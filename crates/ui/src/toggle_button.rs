@@ -10,6 +10,8 @@ pub struct ToggleButton {
 
     base: Stateful<Div>,
     children: SmallVec<[AnyElement; 2]>,
+
+    disabled_interactivity: Interactivity,
 }
 
 impl ToggleButton {
@@ -19,6 +21,8 @@ impl ToggleButton {
             toggled: false,
             base: div().id(id.into()).px_2().py_1(),
             children: SmallVec::new(),
+
+            disabled_interactivity: Interactivity::default(),
         }
     }
 
@@ -53,7 +57,7 @@ impl Styled for ToggleButton {
 
 impl InteractiveElement for ToggleButton {
     fn interactivity(&mut self) -> &mut Interactivity {
-        self.base.interactivity()
+        if self.disabled { &mut self.disabled_interactivity } else { self.base.interactivity() }
     }
 }
 
@@ -66,7 +70,7 @@ impl From<ToggleButton> for AnyElement {
 }
 
 impl RenderOnce for ToggleButton {
-    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(self, _w: &mut Window, cx: &mut App) -> impl IntoElement {
         self.base
             .bg(cx.theme().element_background)
             .border_1()

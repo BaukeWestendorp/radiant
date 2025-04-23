@@ -1,8 +1,8 @@
 use gpui::{
-    App, Application, Bounds, Entity, Window, WindowBounds, WindowOptions, div, prelude::*, px,
-    size,
+    App, Application, Bounds, EmptyView, Entity, Window, WindowBounds, WindowOptions, div,
+    prelude::*, px, size,
 };
-use ui::TabsView;
+use ui::{Disableable, TabsView, root};
 
 fn main() {
     Application::new().run(move |cx: &mut App| {
@@ -32,15 +32,38 @@ struct ContentView {
 
 impl ContentView {
     pub fn new(w: &mut Window, cx: &mut Context<Self>) -> Self {
-        let tabs =
-            vec![ui::Tab { label: todo!(), id: todo!(), disabled: todo!(), content: todo!() }];
+        let tabs = vec![
+            ui::Tab::new("typography", "Typography", cx.new(|cx| TypographyTab::new(cx)).into()),
+            ui::Tab::new("colors", "Colors", cx.new(|_| EmptyView).into()).disabled(true),
+            ui::Tab::new("input", "Input", cx.new(|_| EmptyView).into()).disabled(true),
+        ];
 
-        Self { tab_view: cx.new(|cx| ui::TabsView::new(tabs, w, cx)) }
+        Self {
+            tab_view: cx.new(|cx| {
+                let mut tabs_view = ui::TabsView::new(tabs, w, cx);
+                tabs_view.select_tab_ix(0);
+                tabs_view
+            }),
+        }
     }
 }
 
 impl Render for ContentView {
+    fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        root(cx).size_full().child(self.tab_view.clone())
+    }
+}
+
+struct TypographyTab {}
+
+impl TypographyTab {
+    pub fn new(_cx: &mut Context<Self>) -> Self {
+        Self {}
+    }
+}
+
+impl Render for TypographyTab {
     fn render(&mut self, _w: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().child(self.tab_view.clone())
+        div().child("typography tab")
     }
 }
