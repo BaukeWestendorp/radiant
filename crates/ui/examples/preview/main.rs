@@ -1,13 +1,14 @@
 use color::ColorTab;
 use gpui::{
-    App, Application, Bounds, EmptyView, Entity, Window, WindowBounds, WindowOptions, prelude::*,
-    px, size,
+    App, Application, Bounds, Entity, Window, WindowBounds, WindowOptions, prelude::*, px, size,
 };
+use interactive::InteractiveTab;
 use org::OrganizationTab;
 use typo::TypographyTab;
-use ui::{Disableable, TabsView, root};
+use ui::{TabsView, root};
 
 mod color;
+mod interactive;
 mod org;
 mod typo;
 
@@ -43,7 +44,7 @@ impl ContentView {
             ui::Tab::new("org", "Organization", cx.new(|cx| OrganizationTab::new(cx)).into()),
             ui::Tab::new("typo", "Typography", cx.new(|cx| TypographyTab::new(cx)).into()),
             ui::Tab::new("color", "Colors", cx.new(|cx| ColorTab::new(cx)).into()),
-            ui::Tab::new("input", "Input", cx.new(|_| EmptyView).into()).disabled(true),
+            ui::Tab::new("interactive", "Interactive", cx.new(|cx| InteractiveTab::new(cx)).into()),
         ];
 
         Self {
