@@ -58,7 +58,7 @@ impl Element for TextElement {
         let text_len = display_text.len();
         let mut run = style.to_run(text_len);
         if field.text().is_empty() {
-            run.color = run.color.mute()
+            run.color = run.color.muted()
         };
         let line = window.text_system().shape_line(display_text.into(), font_size, &[run]).unwrap();
 
