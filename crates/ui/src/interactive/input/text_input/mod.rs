@@ -654,7 +654,8 @@ impl TextInput {
         self.replace_text_in_range(Some(utf16_range), "", window, cx);
     }
 
-    fn handle_submit(&mut self, _: &actions::Submit, _window: &mut Window, cx: &mut Context<Self>) {
+    fn handle_submit(&mut self, _: &actions::Submit, w: &mut Window, cx: &mut Context<Self>) {
+        w.blur();
         cx.emit(TextInputEvent::Submit);
     }
 
@@ -731,14 +732,12 @@ impl TextInput {
         cx.emit(TextInputEvent::Focus);
     }
 
-    fn handle_blur(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if self.is_focused(window) {
-            self.unselect(cx);
-            self.blink_cursor.update(cx, |blink_cursor, cx| {
-                blink_cursor.stop(cx);
-            });
-            cx.emit(TextInputEvent::Blur);
-        }
+    fn handle_blur(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
+        self.unselect(cx);
+        self.blink_cursor.update(cx, |blink_cursor, cx| {
+            blink_cursor.stop(cx);
+        });
+        cx.emit(TextInputEvent::Blur);
     }
 }
 
@@ -879,9 +878,7 @@ impl Render for TextInput {
                     .on_action(cx.listener(Self::handle_delete))
                     .on_action(cx.listener(Self::handle_submit))
                     .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_mouse_down))
-                    .on_mouse_down_out(
-                        cx.listener(|this, _, window, cx| this.handle_blur(window, cx)),
-                    )
+                    .on_mouse_down_out(cx.listener(|_, _, w, _| w.blur()))
                     .on_drag(self.id.clone(), |_, _, _, cx| cx.new(|_| EmptyView))
                     .on_drag_move(cx.listener(Self::handle_drag_move))
                     .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
