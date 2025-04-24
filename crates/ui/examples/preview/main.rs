@@ -6,7 +6,7 @@ use interactive::InteractiveTab;
 use misc::MiscTab;
 use org::OrganizationTab;
 use typo::TypographyTab;
-use ui::{TabsView, root};
+use ui::{TabView, root};
 
 mod color;
 mod interactive;
@@ -37,7 +37,7 @@ fn main() {
 }
 
 struct ContentView {
-    tab_view: Entity<TabsView>,
+    tab_view: Entity<TabView>,
 }
 
 impl ContentView {
@@ -56,9 +56,9 @@ impl ContentView {
 
         Self {
             tab_view: cx.new(|cx| {
-                let mut tabs_view = ui::TabsView::new(tabs, w, cx);
-                tabs_view.select_tab_ix(0);
-                tabs_view
+                let mut tab_view = ui::TabView::new(tabs, w, cx);
+                tab_view.select_tab_ix(0);
+                tab_view
             }),
         }
     }

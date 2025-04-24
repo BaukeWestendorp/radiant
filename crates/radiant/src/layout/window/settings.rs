@@ -2,12 +2,12 @@ use crate::app::APP_ID;
 use anyhow::Context as _;
 use gpui::*;
 use show::{Show, dmx_io::SacnSourceSettings};
-use ui::{ActiveTheme as _, Checkbox, DmxUniverseIdField, NumberField, TabsView, TextField, root};
+use ui::{ActiveTheme as _, Checkbox, DmxUniverseIdField, NumberField, TabView, TextField, root};
 
 use super::DEFAULT_REM_SIZE;
 
 pub struct SettingsWindow {
-    tabs_view: Entity<TabsView>,
+    tab_view: Entity<TabView>,
 }
 
 impl SettingsWindow {
@@ -30,13 +30,13 @@ impl SettingsWindow {
                     ui::Tab::new("patch", "Patch", cx.new(|_| EmptyView).into()),
                 ];
 
-                let tabs_view = cx.new(|cx| {
-                    let mut tabs_view = TabsView::new(tabs, w, cx);
-                    tabs_view.select_tab_ix(0);
-                    tabs_view
+                let tab_view = cx.new(|cx| {
+                    let mut tab_view = TabView::new(tabs, w, cx);
+                    tab_view.select_tab_ix(0);
+                    tab_view
                 });
 
-                Self { tabs_view }
+                Self { tab_view }
             })
         })
         .context("open settings window")
@@ -45,7 +45,7 @@ impl SettingsWindow {
 
 impl Render for SettingsWindow {
     fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        root(cx).size_full().child(self.tabs_view.clone())
+        root(cx).size_full().child(self.tab_view.clone())
     }
 }
 

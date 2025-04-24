@@ -1,3 +1,3 @@
-mod tabs_view;
+mod tab_view;
 
-pub use tabs_view::*;
+pub use tab_view::*;

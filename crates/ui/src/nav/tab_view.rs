@@ -46,14 +46,14 @@ pub enum Orientation {
     Vertical,
 }
 
-pub struct TabsView {
+pub struct TabView {
     tabs: Vec<Tab>,
     selected_tab: Option<SharedString>,
     // FIXME: Implement TabsView orientation.
     orientation: Orientation,
 }
 
-impl TabsView {
+impl TabView {
     pub fn new(tabs: Vec<Tab>, _w: &mut Window, _cx: &mut Context<Self>) -> Self {
         Self { tabs, selected_tab: None, orientation: Orientation::default() }
     }
@@ -87,7 +87,7 @@ impl TabsView {
     }
 }
 
-impl TabsView {
+impl TabView {
     pub fn render_tabs(&mut self, cx: &mut Context<Self>) -> Div {
         let tabs = self.tabs.clone().into_iter().map(|tab| {
             interactive_container(tab.id.clone(), None)
@@ -113,7 +113,7 @@ impl TabsView {
     }
 }
 
-impl Render for TabsView {
+impl Render for TabView {
     fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let tabs = self.render_tabs(cx);
         let content = self.render_content(cx);
