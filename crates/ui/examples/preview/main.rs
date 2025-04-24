@@ -3,12 +3,14 @@ use gpui::{
     App, Application, Bounds, Entity, Window, WindowBounds, WindowOptions, prelude::*, px, size,
 };
 use interactive::InteractiveTab;
+use misc::MiscTab;
 use org::OrganizationTab;
 use typo::TypographyTab;
 use ui::{TabsView, root};
 
 mod color;
 mod interactive;
+mod misc;
 mod org;
 mod typo;
 
@@ -49,6 +51,7 @@ impl ContentView {
                 "Interactive",
                 cx.new(|cx| InteractiveTab::new(w, cx)).into(),
             ),
+            ui::Tab::new("misc", "Misc", cx.new(|cx| MiscTab::new(cx)).into()),
         ];
 
         Self {

@@ -83,9 +83,9 @@ impl Render for InteractiveTab {
             .flex()
             .flex_col()
             .gap_2()
-            .child(ui::section("Inputs").child(inputs).mb_4())
-            .child(ui::section("Draggable").child(draggable).mb_4())
-            .child(ui::section("Pannable").child(pannable).mb_4())
+            .child(ui::section("Inputs").mb_4().child(inputs))
+            .child(ui::section("Draggable").mb_4().child(draggable))
+            .child(ui::section("Pannable").mb_4().child(pannable))
     }
 }
 

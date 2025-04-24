@@ -66,11 +66,8 @@ impl Render for ColorTab {
             .child(color_swatches("highlight", cx.theme().colors.highlight))
             .child(color_swatches("cursor", cx.theme().colors.cursor));
 
-        let misc_colors = div()
-            .flex()
-            .flex_col()
-            .gap_1()
-            .child(color_swatches("grid_color", cx.theme().colors.grid_color));
+        let misc_colors =
+            div().flex().flex_col().gap_1().child(color_swatches("grid", cx.theme().colors.grid));
 
         div()
             .id("colors-tab")

@@ -17,7 +17,7 @@ pub struct Colors {
     pub highlight: Hsla,
     pub cursor: Hsla,
 
-    pub grid_color: Hsla,
+    pub grid: Hsla,
 }
 
 impl Default for Colors {
@@ -42,7 +42,7 @@ impl Default for Colors {
             highlight: accent.with_opacity(0.2),
             cursor: accent,
 
-            grid_color: gpui::rgba(0xffc41680).into(),
+            grid: gpui::rgba(0xffc41680).into(),
         }
     }
 }
