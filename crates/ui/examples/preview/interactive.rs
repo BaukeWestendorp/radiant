@@ -62,17 +62,11 @@ impl Render for InteractiveTab {
                 self.dmx_universe_id_field.clone().into_any_element(),
             ));
 
-        let draggable = container(ContainerStyle::normal(w, cx))
-            .w_full()
-            .h_64()
-            .overflow_hidden()
-            .child(self.draggable.clone());
+        let draggable =
+            container(ContainerStyle::normal(w, cx)).w_full().h_64().child(self.draggable.clone());
 
-        let pannable = container(ContainerStyle::normal(w, cx))
-            .w_full()
-            .h_64()
-            .overflow_hidden()
-            .child(self.pannable.clone());
+        let pannable =
+            container(ContainerStyle::normal(w, cx)).w_full().h_64().child(self.pannable.clone());
 
         div()
             .id("typography-tab")

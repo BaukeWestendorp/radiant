@@ -31,7 +31,7 @@ impl Render for TypographyTab {
             .track_scroll(&self.scroll_handle)
             .overflow_y_scroll()
             .size_full()
-            .m_2()
+            .p_2()
             .child(ui::section("Headers").mb_4().child(headers))
             .child(ui::section("Paragraphs").mb_4().child(paragraphs))
             .child(ui::section("Links").mb_4().child(links))

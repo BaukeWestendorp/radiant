@@ -27,7 +27,7 @@ impl Render for MiscTab {
             .track_scroll(&self.scroll_handle)
             .overflow_y_scroll()
             .size_full()
-            .m_2()
+            .p_2()
             .child(ui::section("Line Grid").mb_4().child(line_grid))
             .child(ui::section("Dot Grid").mb_4().child(dot_grid))
     }

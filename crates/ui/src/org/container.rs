@@ -56,6 +56,7 @@ impl RenderOnce for Container {
             .border_color(style.border)
             .rounded(cx.theme().radius)
             .text_color(style.text_color)
+            .overflow_hidden()
             .children(self.children)
     }
 }
@@ -227,6 +228,7 @@ impl RenderOnce for InteractiveContainer {
                 .hover(|e| e.bg(style.hovered().background).border_color(style.hovered().border))
                 .active(|e| e.bg(style.active().background).border_color(style.active().border))
         })
+        .overflow_hidden()
         .children(self.children)
     }
 }

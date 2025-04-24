@@ -13,7 +13,7 @@ pub fn dot_grid(spacing: Pixels, color: impl Into<Background>) -> Canvas<()> {
                 for y in 0..(height + 1) {
                     window.paint_quad(fill(
                         Bounds::centered_at(
-                            point(x as f32 * spacing, y as f32 * spacing),
+                            point(x as f32 * spacing, y as f32 * spacing) + bounds.origin,
                             gpui::size(px(2.0), px(2.0)),
                         ),
                         color,
