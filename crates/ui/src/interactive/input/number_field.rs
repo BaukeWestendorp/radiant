@@ -33,7 +33,7 @@ impl NumberField {
         let input = cx.new(|cx| {
             let mut input =
                 TextInput::new(id.clone(), focus_handle, window, cx).px(window.rem_size() * 0.25);
-            input.set_is_interactive(false);
+            input.interactive(false);
             input
         });
 
@@ -43,7 +43,7 @@ impl NumberField {
             match event {
                 TextInputEvent::Blur => {
                     number_field.commit_value(cx);
-                    input.update(cx, |input, _cx| input.set_is_interactive(false));
+                    input.update(cx, |input, _cx| input.interactive(false));
                 }
                 _ => {}
             }
@@ -160,7 +160,10 @@ impl NumberField {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.input.update(cx, |input, _cx| input.set_is_interactive(true));
+        self.input.update(cx, |input, cx| {
+            input.interactive(true);
+            input.select_all(cx);
+        });
     }
 
     fn handle_drag_move(

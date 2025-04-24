@@ -97,7 +97,7 @@ pub struct TextInput {
     disabled: bool,
     masked: bool,
     validator: Option<Box<Validator>>,
-    is_interactive: bool,
+    interactive: bool,
 
     utf16_selection: Range<usize>,
     new_selection_start_utf16_offset: Option<usize>,
@@ -131,7 +131,7 @@ impl TextInput {
             disabled: false,
             masked: false,
             validator: None,
-            is_interactive: true,
+            interactive: true,
 
             utf16_selection: 0..0,
             new_selection_start_utf16_offset: None,
@@ -195,11 +195,11 @@ impl TextInput {
     }
 
     pub fn is_interactive(&self) -> bool {
-        self.is_interactive
+        self.interactive
     }
 
-    pub fn set_is_interactive(&mut self, is_interactive: bool) {
-        self.is_interactive = is_interactive;
+    pub fn interactive(&mut self, interactive: bool) {
+        self.interactive = interactive;
     }
 
     pub fn is_focused(&self, window: &Window) -> bool {
@@ -213,7 +213,7 @@ impl TextInput {
     pub fn move_to(&mut self, mut utf16_offset: usize, cx: &mut Context<Self>) {
         utf16_offset = utf16_offset.clamp(0, self.text.len());
         self.utf16_selection = utf16_offset..utf16_offset;
-        self.hold_cursor_blink(cx);
+        self.hold_and_start_cursor_blink(cx);
         cx.notify();
     }
 
@@ -264,6 +264,14 @@ impl TextInput {
         cx.notify();
     }
 
+    pub fn select_all(&mut self, cx: &mut Context<Self>) {
+        self.end_current_selection(cx);
+        self.move_to(0, cx);
+        self.start_selection();
+        self.move_to(self.text().len(), cx);
+        self.end_current_selection(cx);
+    }
+
     pub fn unselect(&mut self, cx: &mut Context<Self>) {
         self.utf16_selection.start = self.cursor_utf16_offset();
         cx.notify();
@@ -288,14 +296,6 @@ impl TextInput {
         self.commit_current_selection(cx);
         self.new_selection_start_utf16_offset = None;
         cx.notify();
-    }
-
-    fn select_all(&mut self, cx: &mut Context<Self>) {
-        self.end_current_selection(cx);
-        self.move_to(0, cx);
-        self.start_selection();
-        self.move_to(self.text().len(), cx);
-        self.end_current_selection(cx);
     }
 
     fn delete_selection(&mut self, window: &mut Window, cx: &mut Context<Self>) {
@@ -426,9 +426,9 @@ impl TextInput {
         start..end
     }
 
-    fn hold_cursor_blink(&mut self, cx: &mut Context<Self>) {
+    fn hold_and_start_cursor_blink(&mut self, cx: &mut App) {
         self.blink_cursor.update(cx, |blink_cursor, cx| {
-            blink_cursor.hold(cx);
+            blink_cursor.hold_and_start(cx);
         });
     }
 
@@ -669,7 +669,7 @@ impl TextInput {
             return;
         };
 
-        self.hold_cursor_blink(cx);
+        self.hold_and_start_cursor_blink(cx);
 
         let utf16_offset = self.char_offset_to_utf16(char_offset);
         self.move_to(utf16_offset, cx);
