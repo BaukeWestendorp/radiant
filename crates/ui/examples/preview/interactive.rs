@@ -7,6 +7,7 @@ use ui::{
 pub struct InteractiveTab {
     scroll_handle: ScrollHandle,
     text_field: Entity<TextField>,
+    masked_text_field: Entity<TextField>,
     number_field: Entity<NumberField>,
     dmx_address_field: Entity<DmxAddressField>,
     dmx_channel_field: Entity<DmxChannelField>,
@@ -23,6 +24,12 @@ impl InteractiveTab {
             text_field: cx.new(|cx| {
                 let field = TextField::new("text", cx.focus_handle(), w, cx);
                 field.set_placeholder("Text Field Placeholder".into(), cx);
+                field
+            }),
+            masked_text_field: cx.new(|cx| {
+                let field = TextField::new("masked-text", cx.focus_handle(), w, cx);
+                field.set_placeholder("Masked Text Field Placeholder".into(), cx);
+                field.set_masked(true, cx);
                 field
             }),
             number_field: cx.new(|cx| NumberField::new("number", cx.focus_handle(), w, cx)),
@@ -58,6 +65,7 @@ impl Render for InteractiveTab {
             .gap_2()
             .w_full()
             .child(input_row("Text", self.text_field.clone().into_any_element()))
+            .child(input_row("Masked Text", self.masked_text_field.clone().into_any_element()))
             .child(input_row("Number", self.number_field.clone().into_any_element()))
             .child(input_row("DMX Address", self.dmx_address_field.clone().into_any_element()))
             .child(input_row("DMX Channel", self.dmx_channel_field.clone().into_any_element()))
