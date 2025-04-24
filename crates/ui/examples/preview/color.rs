@@ -74,7 +74,6 @@ impl Render for ColorTab {
             .track_scroll(&self.scroll_handle)
             .overflow_y_scroll()
             .size_full()
-            .p_2()
             .child(ui::section("Background Colors").child(bg_colors))
             .child(ui::section("Text Colors").child(text_colors))
             .child(ui::section("Border Colors").child(border_colors))

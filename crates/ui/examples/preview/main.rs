@@ -66,6 +66,6 @@ impl ContentView {
 
 impl Render for ContentView {
     fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        root(cx).size_full().child(self.tab_view.clone())
+        root(cx).size_full().p_2().child(self.tab_view.clone())
     }
 }

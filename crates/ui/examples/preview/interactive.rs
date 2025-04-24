@@ -73,7 +73,6 @@ impl Render for InteractiveTab {
             .track_scroll(&self.scroll_handle)
             .overflow_y_scroll()
             .size_full()
-            .p_2()
             .flex()
             .flex_col()
             .gap_2()
