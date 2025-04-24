@@ -50,7 +50,7 @@ impl NumberField {
         })
         .detach();
 
-        Self {
+        let mut this = Self {
             id,
             input,
             step: None,
@@ -59,7 +59,11 @@ impl NumberField {
             bounds: Bounds::default(),
             prev_mouse_pos: None,
             unstepped_value: 0.0,
-        }
+        };
+
+        this.set_value(0.0, cx);
+
+        this
     }
 
     pub fn disabled(&self, cx: &App) -> bool {
