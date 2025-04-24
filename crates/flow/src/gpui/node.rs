@@ -5,7 +5,7 @@ use crate::{
 use gpui::*;
 use prelude::FluentBuilder;
 use ui::{
-    ActiveTheme, StyledExt,
+    ActiveTheme,
     utils::{bounds_updater, z_stack},
 };
 
@@ -164,10 +164,10 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
                 .px_1()
                 .py_px()
                 .border_b_1()
-                .border_color(cx.theme().border)
+                .border_color(cx.theme().colors.border)
                 .when(selected, |e| {
-                    e.bg(cx.theme().element_background_focused)
-                        .border_color(cx.theme().border_focused)
+                    e.bg(cx.theme().colors.bg_focused)
+                        .border_color(cx.theme().colors.border_focused)
                 })
                 .child(label)
         };
@@ -189,10 +189,10 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
                         .p_2()
                         .gap_2()
                         .border_t_1()
-                        .border_color(cx.theme().border)
+                        .border_color(cx.theme().colors.border)
                         .when(selected, |e| {
-                            e.bg(cx.theme().element_background_focused)
-                                .border_color(cx.theme().border_focused)
+                            e.bg(cx.theme().colors.bg_focused)
+                                .border_color(cx.theme().colors.border_focused)
                         })
                         .children(self.controls.iter().map(|c| c.read(cx).view.clone())),
                 )
@@ -200,10 +200,10 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
 
         div()
             .w(width)
-            .bg(cx.theme().background)
+            .bg(cx.theme().colors.bg_primary)
             .border_1()
-            .border_color(cx.theme().border)
-            .when(selected, |e| e.border_color(cx.theme().border_focused))
+            .border_color(cx.theme().colors.border)
+            .when(selected, |e| e.border_color(cx.theme().colors.border_focused))
             .rounded(cx.theme().radius)
             .cursor_grab()
             .children([header, content])

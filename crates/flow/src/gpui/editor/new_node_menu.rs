@@ -247,7 +247,7 @@ impl<D: GraphDef + 'static> Render for NewNodeMenuView<D> {
         let header = div()
             .p_2()
             .border_b_1()
-            .border_color(cx.theme().border)
+            .border_color(cx.theme().colors.border)
             .child(self.search_field.clone());
 
         let list = uniform_list(
@@ -269,22 +269,22 @@ impl<D: GraphDef + 'static> Render for NewNodeMenuView<D> {
                             .border_1()
                             .hover(|e| {
                                 let bg = if selected {
-                                    cx.theme().element_background_selected
+                                    cx.theme().colors.bg_secondary
                                 } else {
-                                    cx.theme().element_background
+                                    cx.theme().colors.bg_secondary
                                 };
 
                                 let border_color = if selected {
-                                    cx.theme().border_selected
+                                    cx.theme().colors.border_selected
                                 } else {
-                                    cx.theme().border.muted()
+                                    cx.theme().colors.border.muted()
                                 };
 
                                 e.bg(bg.hovered()).border_color(border_color)
                             })
                             .when(selected, |e| {
-                                e.bg(cx.theme().element_background_selected)
-                                    .border_color(cx.theme().border_selected)
+                                e.bg(cx.theme().colors.bg_secondary)
+                                    .border_color(cx.theme().colors.border_selected)
                             })
                             .rounded(cx.theme().radius)
                             .cursor_pointer()
@@ -299,7 +299,7 @@ impl<D: GraphDef + 'static> Render for NewNodeMenuView<D> {
                                 |e, socket_info| {
                                     e.child(
                                         div()
-                                            .text_color(cx.theme().text_primary.muted())
+                                            .text_color(cx.theme().colors.text.muted())
                                             .child(socket_info.label),
                                     )
                                 },
@@ -331,9 +331,9 @@ impl<D: GraphDef + 'static> Render for NewNodeMenuView<D> {
             .h_64()
             .left(self.position.x)
             .top(self.position.y)
-            .bg(cx.theme().element_background)
+            .bg(cx.theme().colors.bg_secondary)
             .border_1()
-            .border_color(cx.theme().border)
+            .border_color(cx.theme().colors.border)
             .rounded(cx.theme().radius)
             .block_mouse_down()
             .on_mouse_down_out(cx.listener(Self::handle_mouse_down_out))

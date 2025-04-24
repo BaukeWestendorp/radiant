@@ -39,8 +39,8 @@ impl Render for MainWindow {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .size_full()
-            .bg(cx.theme().background)
-            .text_color(cx.theme().text_primary)
+            .bg(cx.theme().colors.bg_primary)
+            .text_color(cx.theme().colors.text)
             .child(self.frame_container.clone())
     }
 }

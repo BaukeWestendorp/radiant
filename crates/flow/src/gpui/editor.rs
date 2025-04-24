@@ -261,12 +261,9 @@ impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let NodeMeasurements { snap_size, .. } = NodeMeasurements::new(window);
 
-        let grid = ui::scrollable_line_grid(
-            &self.visual_graph_offset,
-            snap_size,
-            cx.theme().line_grid_color,
-        )
-        .size_full();
+        let grid =
+            ui::scrollable_line_grid(&self.visual_graph_offset, snap_size, cx.theme().colors.grid)
+                .size_full();
 
         let focused = self.focus_handle.is_focused(window);
 
@@ -278,8 +275,8 @@ impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
                 .w(bounds.size.width)
                 .h(bounds.size.height)
                 .border_1()
-                .border_color(cx.theme().border_selected)
-                .bg(cx.theme().element_background_selected),
+                .border_color(cx.theme().colors.border_selected)
+                .bg(cx.theme().colors.bg_secondary),
             None => div(),
         };
 

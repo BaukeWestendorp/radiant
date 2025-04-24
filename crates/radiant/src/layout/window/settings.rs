@@ -2,7 +2,10 @@ use crate::app::APP_ID;
 use anyhow::Context as _;
 use gpui::*;
 use show::{Show, dmx_io::SacnSourceSettings};
-use ui::{ActiveTheme as _, DmxUniverseIdField, NumberField, TextField, ToggleButton};
+use ui::{
+    ActiveTheme as _, Checkbox, DmxUniverseIdField, NumberField, Selectable, TextField,
+    interactive_container,
+};
 
 use super::DEFAULT_REM_SIZE;
 
@@ -61,8 +64,8 @@ impl SettingsWindow {
         div()
             .children(TABS.iter().map(|tab| {
                 let id = ElementId::Name(format!("settings-tab-{}", tab.id()).into());
-                ToggleButton::new(id)
-                    .toggled(self.active_tab == *tab)
+                interactive_container(id, None)
+                    .selected(self.active_tab == *tab)
                     .on_click(cx.listener(|view, _, _window, _cx| view.active_tab = *tab))
                     .child(tab.label())
             }))
@@ -71,7 +74,7 @@ impl SettingsWindow {
             .gap_2()
             .p_2()
             .border_r_1()
-            .border_color(cx.theme().border)
+            .border_color(cx.theme().colors.border)
             .w_56()
             .h_full()
     }
@@ -89,8 +92,8 @@ impl Render for SettingsWindow {
         div()
             .size_full()
             .flex()
-            .bg(cx.theme().background)
-            .text_color(cx.theme().text_primary)
+            .bg(cx.theme().colors.bg_primary)
+            .text_color(cx.theme().colors.text)
             .child(self.render_sidebar(window, cx))
             .child(self.render_content(window, cx))
     }
@@ -123,10 +126,12 @@ impl Render for DmxIoView {
 
 struct SacnSourceSettingsView {
     source: Entity<SacnSourceSettings>,
+
     name_field: Entity<TextField>,
     local_universes_field: Entity<TextField>,
     destination_universe_field: Entity<DmxUniverseIdField>,
     priority_field: Entity<NumberField>,
+    preview_data_checkbox: Entity<Checkbox>,
 }
 
 impl SacnSourceSettingsView {
@@ -146,9 +151,11 @@ impl SacnSourceSettingsView {
             field.set_placeholder("Local Universes".into(), cx);
             field
         });
+
         let destination_universe_field = cx.new(|cx| {
             DmxUniverseIdField::new("destination_universe", cx.focus_handle(), window, cx)
         });
+
         let priority_field = cx.new(|cx| {
             let mut field = NumberField::new("priority", cx.focus_handle(), window, cx);
             field.set_value(100.0, cx);
@@ -158,34 +165,35 @@ impl SacnSourceSettingsView {
             field
         });
 
+        let preview_data_checkbox = cx.new(|_| Checkbox::new("preview_data"));
+
         Self {
             source,
             name_field,
             local_universes_field,
             destination_universe_field,
             priority_field,
+            preview_data_checkbox,
         }
     }
 }
 
 impl Render for SacnSourceSettingsView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let preview_data_toggle = ToggleButton::new("preview_data")
-            .toggled(self.source.read(cx).preview_data)
-            .on_click(cx.listener(|view, _event, _window, cx| {
-                view.source.update(cx, |source, _cx| {
-                    source.preview_data = !source.preview_data;
-                });
-            }))
-            .child("Preview Data");
-
-        div().w_full().flex().gap_2().border_b_1().border_color(cx.theme().border).p_2().children([
-            div().min_w_24().child(self.name_field.clone()),
-            div().min_w_24().child(self.local_universes_field.clone()),
-            div().min_w_24().child(self.destination_universe_field.clone()),
-            div().min_w_24().child(self.priority_field.clone()),
-            div().min_w_24().child(preview_data_toggle),
-            // self.sacn_output_type_dropdown.clone().into_any_element(),
-        ])
+        div()
+            .w_full()
+            .flex()
+            .gap_2()
+            .border_b_1()
+            .border_color(cx.theme().colors.border)
+            .p_2()
+            .children([
+                div().min_w_24().child(self.name_field.clone()),
+                div().min_w_24().child(self.local_universes_field.clone()),
+                div().min_w_24().child(self.destination_universe_field.clone()),
+                div().min_w_24().child(self.priority_field.clone()),
+                div().min_w_24().child(self.preview_data_checkbox.clone()),
+                // self.sacn_output_type_dropdown.clone().into_any_element(),
+            ])
     }
 }

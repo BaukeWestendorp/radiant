@@ -35,7 +35,7 @@ impl<F: Frame + 'static> FrameContainer<F> {
 impl<F: Frame + 'static> Render for FrameContainer<F> {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let grid = self.show_grid.then(|| {
-            ui::dot_grid(self.cell_size, cx.theme().dot_grid_color)
+            ui::dot_grid(self.cell_size, cx.theme().colors.grid)
                 .w(self.grid_size.width as f32 * self.cell_size)
                 .h(self.grid_size.height as f32 * self.cell_size)
                 .into_any_element()
@@ -76,10 +76,10 @@ impl<F: Frame + 'static> Render for FrameWrapper<F> {
             .top(self.bounds.origin.y as f32 * cell_size)
             .w(self.bounds.size.width as f32 * cell_size)
             .h(self.bounds.size.height as f32 * cell_size)
-            .bg(cx.theme().background)
+            .bg(cx.theme().colors.bg_primary)
             .border_1()
-            .border_color(cx.theme().border)
-            .when(focus_within, |e| e.border_color(cx.theme().border_focused))
+            .border_color(cx.theme().colors.border)
+            .when(focus_within, |e| e.border_color(cx.theme().colors.border_focused))
             .rounded(cx.theme().radius)
             .child(self.frame.render(window, cx))
     }
