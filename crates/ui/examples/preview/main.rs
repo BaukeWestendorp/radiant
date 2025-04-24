@@ -4,6 +4,7 @@ use gpui::{
 };
 use interactive::InteractiveTab;
 use misc::MiscTab;
+use nav::NavigationTab;
 use org::OrganizationTab;
 use typo::TypographyTab;
 use ui::{TabView, root};
@@ -11,6 +12,7 @@ use ui::{TabView, root};
 mod color;
 mod interactive;
 mod misc;
+mod nav;
 mod org;
 mod typo;
 
@@ -51,6 +53,7 @@ impl ContentView {
                 "Interactive",
                 cx.new(|cx| InteractiveTab::new(w, cx)).into(),
             ),
+            ui::Tab::new("nav", "Navigation", cx.new(|cx| NavigationTab::new(w, cx)).into()),
             ui::Tab::new("misc", "Misc", cx.new(|cx| MiscTab::new(cx)).into()),
         ];
 
