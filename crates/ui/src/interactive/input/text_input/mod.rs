@@ -656,7 +656,7 @@ impl TextInput {
 
     fn handle_submit(&mut self, _: &actions::Submit, w: &mut Window, cx: &mut Context<Self>) {
         w.blur();
-        cx.emit(TextInputEvent::Submit);
+        cx.emit(TextInputEvent::Submit(self.text.clone()));
     }
 
     fn handle_mouse_down(
@@ -899,7 +899,7 @@ impl Focusable for TextInput {
 pub enum TextInputEvent {
     Focus,
     Blur,
-    Submit,
+    Submit(SharedString),
     ValidationRejected,
     Change(SharedString),
 }

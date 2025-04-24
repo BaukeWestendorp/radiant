@@ -67,7 +67,7 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
                             menu.items = items;
                         });
                     }
-                    TextInputEvent::Submit => menu.update(cx, |menu, cx| {
+                    TextInputEvent::Submit(_) => menu.update(cx, |menu, cx| {
                         if let Some(ix) = menu.selected_item_ix {
                             menu.create_node(ix, window, cx);
                         }

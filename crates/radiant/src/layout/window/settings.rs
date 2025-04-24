@@ -2,7 +2,10 @@ use crate::app::APP_ID;
 use anyhow::Context as _;
 use gpui::*;
 use show::{Show, dmx_io::SacnSourceSettings};
-use ui::{ActiveTheme as _, Checkbox, DmxUniverseIdField, NumberField, TabView, TextField, root};
+use ui::{
+    ActiveTheme as _, Checkbox, DmxUniverseIdField, NumberField, TabView, TextField,
+    TextInputEvent, root,
+};
 
 use super::DEFAULT_REM_SIZE;
 
@@ -26,7 +29,7 @@ impl SettingsWindow {
             w.set_rem_size(DEFAULT_REM_SIZE);
             cx.new(|cx| {
                 let tabs = vec![
-                    ui::Tab::new("dmx_io", "DmxIo", cx.new(|cx| DmxIoView::new(w, cx)).into()),
+                    ui::Tab::new("dmx_io", "Dmx Io", cx.new(|cx| DmxIoView::new(w, cx)).into()),
                     ui::Tab::new("patch", "Patch", cx.new(|_| EmptyView).into()),
                 ];
 
@@ -61,7 +64,8 @@ impl DmxIoView {
             .sources
             .clone()
             .into_iter()
-            .map(|s| cx.new(|cx| SacnSourceSettingsView::new(s, window, cx)))
+            .enumerate()
+            .map(|(ix, s)| cx.new(|cx| SacnSourceSettingsView::new(s, ix, window, cx)))
             .collect();
 
         Self { sacn_source_views }
@@ -87,27 +91,60 @@ struct SacnSourceSettingsView {
 impl SacnSourceSettingsView {
     pub fn new(
         source: Entity<SacnSourceSettings>,
+        ix: usize,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
         let name_field = cx.new(|cx| {
-            let field = TextField::new("name", cx.focus_handle(), window, cx);
-            field.set_placeholder("Source Name".into(), cx);
+            let field = TextField::new(
+                ElementId::NamedInteger("name".into(), ix),
+                cx.focus_handle(),
+                window,
+                cx,
+            );
+            field.set_placeholder("Name".into(), cx);
+            field.set_value(source.read(cx).name.clone().into(), cx);
             field
         });
 
+        cx.subscribe(&name_field, |this, _, event, cx| match event {
+            TextInputEvent::Submit(new_name) => {
+                this.source.update(cx, |source, cx| {
+                    source.name = new_name.to_string();
+                    cx.notify();
+                });
+            }
+            _ => {}
+        })
+        .detach();
+
         let local_universes_field = cx.new(|cx| {
-            let field = TextField::new("local_universes", cx.focus_handle(), window, cx);
+            let field = TextField::new(
+                ElementId::NamedInteger("local_universes".into(), ix),
+                cx.focus_handle(),
+                window,
+                cx,
+            );
             field.set_placeholder("Local Universes".into(), cx);
             field
         });
 
         let destination_universe_field = cx.new(|cx| {
-            DmxUniverseIdField::new("destination_universe", cx.focus_handle(), window, cx)
+            DmxUniverseIdField::new(
+                ElementId::NamedInteger("destination_universe".into(), ix),
+                cx.focus_handle(),
+                window,
+                cx,
+            )
         });
 
         let priority_field = cx.new(|cx| {
-            let mut field = NumberField::new("priority", cx.focus_handle(), window, cx);
+            let mut field = NumberField::new(
+                ElementId::NamedInteger("priority".into(), ix),
+                cx.focus_handle(),
+                window,
+                cx,
+            );
             field.set_value(100.0, cx);
             field.set_min(Some(0.0));
             field.set_max(Some(200.0));
@@ -115,7 +152,8 @@ impl SacnSourceSettingsView {
             field
         });
 
-        let preview_data_checkbox = cx.new(|_| Checkbox::new("preview_data"));
+        let preview_data_checkbox =
+            cx.new(|_| Checkbox::new(ElementId::NamedInteger("preview_data".into(), ix)));
 
         Self {
             source,
@@ -133,16 +171,17 @@ impl Render for SacnSourceSettingsView {
         div()
             .w_full()
             .flex()
+            .items_center()
             .gap_2()
             .border_b_1()
             .border_color(cx.theme().colors.border)
             .p_2()
             .children([
-                div().min_w_24().child(self.name_field.clone()),
-                div().min_w_24().child(self.local_universes_field.clone()),
-                div().min_w_24().child(self.destination_universe_field.clone()),
-                div().min_w_24().child(self.priority_field.clone()),
-                div().min_w_24().child(self.preview_data_checkbox.clone()),
+                div().min_w_32().child(self.name_field.clone()),
+                div().min_w_32().child(self.local_universes_field.clone()),
+                div().min_w_32().child(self.destination_universe_field.clone()),
+                div().min_w_32().child(self.priority_field.clone()),
+                div().min_w_32().child(self.preview_data_checkbox.clone()),
                 // self.sacn_output_type_dropdown.clone().into_any_element(),
             ])
     }

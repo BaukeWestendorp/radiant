@@ -296,6 +296,15 @@ impl From<UniverseId> for u16 {
     }
 }
 
+impl std::str::FromStr for UniverseId {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let v = u16::from_str(s).map_err(|_| Error::ParseUniverseIdFailed(s.to_string()))?;
+        UniverseId::new(v)
+    }
+}
+
 impl std::ops::Deref for UniverseId {
     type Target = u16;
 

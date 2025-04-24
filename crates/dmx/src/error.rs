@@ -12,4 +12,7 @@ pub enum Error {
     /// Error when a universe with the specified ID cannot be found
     #[error("Universe with id {0} not found.")]
     UniverseNotFound(UniverseId),
+    /// Parsing universe id failed.
+    #[error("Failed to parse universe id: '{0}'")]
+    ParseUniverseIdFailed(String),
 }
