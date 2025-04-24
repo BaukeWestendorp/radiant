@@ -30,7 +30,7 @@ impl BlinkCursor {
         cx.notify();
     }
 
-    pub fn hold(&mut self, cx: &mut Context<Self>) {
+    pub fn hold_and_start(&mut self, cx: &mut Context<Self>) {
         self.paused = true;
         cx.notify();
 

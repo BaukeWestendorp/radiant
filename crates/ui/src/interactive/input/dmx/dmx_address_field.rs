@@ -1,4 +1,4 @@
-use super::{DmxChannelField, DmxUniverseIdField, TextInputEvent};
+use crate::{DmxChannelField, DmxUniverseIdField, TextInputEvent};
 use gpui::*;
 
 pub struct DmxAddressField {
@@ -41,6 +41,15 @@ impl DmxAddressField {
         let universe_id = self.universe_field.read(cx).value(cx);
         let channel = self.channel_field.read(cx).value(cx);
         dmx::Address::new(universe_id, channel)
+    }
+
+    pub fn disabled(&self, cx: &App) -> bool {
+        self.universe_field.read(cx).disabled(cx)
+    }
+
+    pub fn set_disabled(&self, disabled: bool, cx: &mut App) {
+        self.universe_field.update(cx, |field, cx| field.set_disabled(disabled, cx));
+        self.channel_field.update(cx, |field, cx| field.set_disabled(disabled, cx));
     }
 }
 

@@ -1,0 +1,71 @@
+use color::ColorTab;
+use gpui::{
+    App, Application, Bounds, Entity, Window, WindowBounds, WindowOptions, prelude::*, px, size,
+};
+use interactive::InteractiveTab;
+use misc::MiscTab;
+use org::OrganizationTab;
+use typo::TypographyTab;
+use ui::{TabsView, root};
+
+mod color;
+mod interactive;
+mod misc;
+mod org;
+mod typo;
+
+fn main() {
+    Application::new().run(move |cx: &mut App| {
+        cx.activate(true);
+
+        ui::init(cx);
+        ui::actions::init(cx);
+
+        let window_options = WindowOptions {
+            window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
+                None,
+                size(px(800.0), px(600.0)),
+                cx,
+            ))),
+            app_id: Some("radiant".to_string()),
+            ..Default::default()
+        };
+
+        cx.open_window(window_options, |w, cx| cx.new(|cx| ContentView::new(w, cx)))
+            .expect("open main window");
+    });
+}
+
+struct ContentView {
+    tab_view: Entity<TabsView>,
+}
+
+impl ContentView {
+    pub fn new(w: &mut Window, cx: &mut Context<Self>) -> Self {
+        let tabs = vec![
+            ui::Tab::new("org", "Organization", cx.new(|cx| OrganizationTab::new(cx)).into()),
+            ui::Tab::new("typo", "Typography", cx.new(|cx| TypographyTab::new(cx)).into()),
+            ui::Tab::new("color", "Colors", cx.new(|cx| ColorTab::new(cx)).into()),
+            ui::Tab::new(
+                "interactive",
+                "Interactive",
+                cx.new(|cx| InteractiveTab::new(w, cx)).into(),
+            ),
+            ui::Tab::new("misc", "Misc", cx.new(|cx| MiscTab::new(cx)).into()),
+        ];
+
+        Self {
+            tab_view: cx.new(|cx| {
+                let mut tabs_view = ui::TabsView::new(tabs, w, cx);
+                tabs_view.select_tab_ix(0);
+                tabs_view
+            }),
+        }
+    }
+}
+
+impl Render for ContentView {
+    fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        root(cx).size_full().p_2().child(self.tab_view.clone())
+    }
+}

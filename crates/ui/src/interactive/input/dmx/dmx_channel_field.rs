@@ -1,4 +1,4 @@
-use super::{NumberField, TextInputEvent};
+use crate::{NumberField, TextInputEvent};
 use gpui::*;
 
 pub struct DmxChannelField {
@@ -41,6 +41,14 @@ impl DmxChannelField {
             .clamp(u16::from(dmx::Channel::MIN) as f64, u16::from(dmx::Channel::MAX) as f64)
             as u16;
         dmx::Channel::new(valid_u16_value).expect("should convert field value to valid universe id")
+    }
+
+    pub fn disabled(&self, cx: &App) -> bool {
+        self.field.read(cx).disabled(cx)
+    }
+
+    pub fn set_disabled(&self, disabled: bool, cx: &mut App) {
+        self.field.update(cx, |field, cx| field.set_disabled(disabled, cx));
     }
 }
 

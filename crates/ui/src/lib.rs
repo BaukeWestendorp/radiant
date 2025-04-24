@@ -1,26 +1,24 @@
-mod container;
-mod element;
-mod grid;
-mod input;
-mod styled_ext;
+mod interactive;
+mod misc;
+mod nav;
+mod org;
 mod theme;
-mod toggle_button;
-
-pub use container::*;
-pub use element::*;
-pub use grid::*;
-pub use input::*;
-pub use styled_ext::*;
-pub use theme::*;
-pub use toggle_button::*;
+mod typo;
 
 pub mod utils;
+
+pub use interactive::*;
+pub use misc::*;
+pub use nav::*;
+pub use org::*;
+pub use theme::*;
+pub use typo::*;
 
 pub mod actions {
     use gpui::App;
 
     pub fn init(cx: &mut App) {
-        super::input::actions::init(cx);
+        super::interactive::actions::init(cx);
     }
 }
 
@@ -30,4 +28,8 @@ pub fn init(cx: &mut gpui::App) {
 
 pub trait Disableable {
     fn disabled(self, disabled: bool) -> Self;
+}
+
+pub trait Selectable {
+    fn selected(self, selected: bool) -> Self;
 }

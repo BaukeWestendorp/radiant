@@ -1,6 +1,6 @@
 use super::{TextInput, TextInputEvent};
 use crate::{
-    ActiveTheme, Disableable, InteractiveContainer,
+    ActiveTheme, Disableable, interactive_container,
     utils::{bounds_updater, z_stack},
 };
 use gpui::*;
@@ -33,7 +33,7 @@ impl NumberField {
         let input = cx.new(|cx| {
             let mut input =
                 TextInput::new(id.clone(), focus_handle, window, cx).px(window.rem_size() * 0.25);
-            input.set_is_interactive(false);
+            input.interactive(false);
             input
         });
 
@@ -43,14 +43,14 @@ impl NumberField {
             match event {
                 TextInputEvent::Blur => {
                     number_field.commit_value(cx);
-                    input.update(cx, |input, _cx| input.set_is_interactive(false));
+                    input.update(cx, |input, _cx| input.interactive(false));
                 }
                 _ => {}
             }
         })
         .detach();
 
-        Self {
+        let mut this = Self {
             id,
             input,
             step: None,
@@ -59,7 +59,11 @@ impl NumberField {
             bounds: Bounds::default(),
             prev_mouse_pos: None,
             unstepped_value: 0.0,
-        }
+        };
+
+        this.set_value(0.0, cx);
+
+        this
     }
 
     pub fn disabled(&self, cx: &App) -> bool {
@@ -160,7 +164,12 @@ impl NumberField {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.input.update(cx, |input, _cx| input.set_is_interactive(true));
+        self.input.update(cx, |input, cx| {
+            if !input.is_interactive() {
+                input.interactive(true);
+                input.select_all(cx);
+            }
+        });
     }
 
     fn handle_drag_move(
@@ -195,17 +204,16 @@ impl Render for NumberField {
         let slider_bar = match self.relative_value(cx) {
             Some(relative_value) => {
                 let slider_width = self.bounds.size.width * relative_value as f32;
-                div().w(slider_width).h_full().bg(cx.theme().input_slider_bar_color)
+                div().w(slider_width).h_full().bg(cx.theme().colors.bg_tertiary)
             }
             None => div().size_full(),
         };
 
-        InteractiveContainer::new(self.id.clone(), focus_handle)
-            .disabled(self.disabled(cx))
+        interactive_container(self.id.clone(), Some(focus_handle))
+            .cursor_ew_resize()
             .when(!self.disabled(cx), |e| {
                 e.on_click(cx.listener(Self::handle_on_click)).when(is_interactive, |e| {
-                    e.cursor_ew_resize()
-                        .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
+                    e.on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
                         .on_drag(self.id.clone(), |_, _, _, cx| cx.new(|_cx| EmptyView))
                         .on_drag_move(cx.listener(Self::handle_drag_move))
                         .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
@@ -213,6 +221,7 @@ impl Render for NumberField {
             })
             .w_full()
             .flex()
+            .disabled(self.disabled(cx))
             .child(
                 z_stack([
                     slider_bar.into_any_element(),
