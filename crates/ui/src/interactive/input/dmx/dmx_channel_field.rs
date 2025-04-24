@@ -42,6 +42,14 @@ impl DmxChannelField {
             as u16;
         dmx::Channel::new(valid_u16_value).expect("should convert field value to valid universe id")
     }
+
+    pub fn disabled(&self, cx: &App) -> bool {
+        self.field.read(cx).disabled(cx)
+    }
+
+    pub fn set_disabled(&self, disabled: bool, cx: &mut App) {
+        self.field.update(cx, |field, cx| field.set_disabled(disabled, cx));
+    }
 }
 
 impl Render for DmxChannelField {
