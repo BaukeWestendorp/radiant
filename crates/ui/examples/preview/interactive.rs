@@ -1,7 +1,8 @@
 use gpui::{Entity, ScrollHandle, Window, div, point, prelude::*, px};
 use ui::{
     Checkbox, CheckboxEvent, ContainerStyle, Disableable, DmxAddressField, DmxChannelField,
-    DmxUniverseIdField, Draggable, NumberField, Pannable, TextField, container,
+    DmxUniverseIdField, DmxUniverseIdListField, Draggable, NumberField, Pannable, TextField,
+    container,
 };
 
 pub struct InteractiveTab {
@@ -14,6 +15,7 @@ pub struct InteractiveTab {
     dmx_address_field: Entity<DmxAddressField>,
     dmx_channel_field: Entity<DmxChannelField>,
     dmx_universe_id_field: Entity<DmxUniverseIdField>,
+    dmx_universe_id_list_field: Entity<DmxUniverseIdListField>,
 
     checkbox: Entity<Checkbox>,
     checkbox_disabled: Entity<Checkbox>,
@@ -35,6 +37,8 @@ impl InteractiveTab {
                     this.dmx_address_field.update(cx, |f, cx| f.set_disabled(*selected, cx));
                     this.dmx_channel_field.update(cx, |f, cx| f.set_disabled(*selected, cx));
                     this.dmx_universe_id_field.update(cx, |f, cx| f.set_disabled(*selected, cx));
+                    this.dmx_universe_id_list_field
+                        .update(cx, |f, cx| f.set_disabled(*selected, cx));
                 }
             }
         })
@@ -60,7 +64,10 @@ impl InteractiveTab {
             dmx_channel_field: cx
                 .new(|cx| DmxChannelField::new("channel", cx.focus_handle(), w, cx)),
             dmx_universe_id_field: cx
-                .new(|cx| DmxUniverseIdField::new("universe_id", cx.focus_handle(), w, cx)),
+                .new(|cx| DmxUniverseIdField::new("universe-id", cx.focus_handle(), w, cx)),
+            dmx_universe_id_list_field: cx.new(|cx| {
+                DmxUniverseIdListField::new("universe-id-list", cx.focus_handle(), w, cx)
+            }),
 
             checkbox: cx.new(|_| Checkbox::new("checkbox")),
             checkbox_disabled: cx.new(|_| Checkbox::new("checkbox-disabled").disabled(true)),
@@ -97,7 +104,11 @@ impl Render for InteractiveTab {
             .child(row("Number", self.number_field.clone().into_any_element()))
             .child(row("DMX Address", self.dmx_address_field.clone().into_any_element()))
             .child(row("DMX Channel", self.dmx_channel_field.clone().into_any_element()))
-            .child(row("DMX Universe ID", self.dmx_universe_id_field.clone().into_any_element()));
+            .child(row("DMX Universe ID", self.dmx_universe_id_field.clone().into_any_element()))
+            .child(row(
+                "DMX Universe ID List",
+                self.dmx_universe_id_list_field.clone().into_any_element(),
+            ));
 
         let checkboxes = div()
             .flex()
