@@ -68,7 +68,6 @@ impl Render for TextField {
 
         interactive_container(ElementId::View(cx.entity_id()), Some(focus_handle))
             .disabled(self.disabled(cx))
-            .cursor_text()
             .child(self.input.clone())
     }
 }

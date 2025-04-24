@@ -218,14 +218,13 @@ impl RenderOnce for InteractiveContainer {
             self.base.focusable()
         }
         .bg(style.background)
-        .cursor_not_allowed()
         .border_1()
         .border_color(style.border)
         .rounded(cx.theme().radius)
         .text_color(style.text_color)
+        .when(self.disabled, |e| e.cursor_not_allowed())
         .when(!self.disabled, |e| {
-            e.cursor_pointer()
-                .hover(|e| e.bg(style.hovered().background).border_color(style.hovered().border))
+            e.hover(|e| e.bg(style.hovered().background).border_color(style.hovered().border))
                 .active(|e| e.bg(style.active().background).border_color(style.active().border))
         })
         .overflow_hidden()

@@ -91,6 +91,7 @@ impl TabsView {
     pub fn render_tabs(&mut self, cx: &mut Context<Self>) -> Div {
         let tabs = self.tabs.clone().into_iter().map(|tab| {
             interactive_container(tab.id.clone(), None)
+                .cursor_pointer()
                 .w_full()
                 .disabled(tab.disabled)
                 .selected(self.selected_tab_id() == Some(&tab.id))

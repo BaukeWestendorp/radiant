@@ -202,10 +202,10 @@ impl Render for NumberField {
 
         interactive_container(self.id.clone(), Some(focus_handle))
             .disabled(self.disabled(cx))
+            .cursor_ew_resize()
             .when(!self.disabled(cx), |e| {
                 e.on_click(cx.listener(Self::handle_on_click)).when(is_interactive, |e| {
-                    e.cursor_ew_resize()
-                        .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
+                    e.on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
                         .on_drag(self.id.clone(), |_, _, _, cx| cx.new(|_cx| EmptyView))
                         .on_drag_move(cx.listener(Self::handle_drag_move))
                         .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
