@@ -101,7 +101,12 @@ impl TabView {
                 .child(div().px_2().py_1().child(tab.label.clone()))
         });
 
-        div().w_full().flex().gap_2().children(tabs)
+        div()
+            .flex()
+            .w_full()
+            .when(self.orientation == Orientation::Vertical, |e| e.max_w_32().flex_col())
+            .gap_2()
+            .children(tabs)
     }
 
     pub fn render_content(&mut self, _cx: &mut Context<Self>) -> AnyElement {
@@ -118,6 +123,11 @@ impl Render for TabView {
         let tabs = self.render_tabs(cx);
         let content = self.render_content(cx);
 
-        div().flex().flex_col().size_full().child(tabs).child(content)
+        div()
+            .flex()
+            .when(self.orientation == Orientation::Horizontal, |e| e.flex_col())
+            .size_full()
+            .child(tabs)
+            .child(content)
     }
 }

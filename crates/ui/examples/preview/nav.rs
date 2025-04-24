@@ -1,5 +1,5 @@
 use gpui::{Entity, ScrollHandle, SharedString, Window, div, prelude::*};
-use ui::{ContainerStyle, TabView, container};
+use ui::{ContainerStyle, Orientation, TabView, container};
 
 pub struct NavigationTab {
     scroll_handle: ScrollHandle,
@@ -33,11 +33,13 @@ impl NavigationTab {
             h_tab_view: cx.new(|cx| {
                 let mut tab_view = TabView::new(tabs.clone(), w, cx);
                 tab_view.select_tab_ix(0);
+                tab_view.set_orientation(Orientation::Horizontal);
                 tab_view
             }),
             v_tab_view: cx.new(|cx| {
                 let mut tab_view = TabView::new(tabs.clone(), w, cx);
                 tab_view.select_tab_ix(0);
+                tab_view.set_orientation(Orientation::Vertical);
                 tab_view
             }),
         }
@@ -70,6 +72,6 @@ struct TabContent {
 
 impl Render for TabContent {
     fn render(&mut self, _w: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().child(self.content.clone())
+        div().size_full().p_2().child(self.content.clone())
     }
 }
