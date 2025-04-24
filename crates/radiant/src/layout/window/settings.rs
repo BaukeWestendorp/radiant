@@ -2,38 +2,12 @@ use crate::app::APP_ID;
 use anyhow::Context as _;
 use gpui::*;
 use show::{Show, dmx_io::SacnSourceSettings};
-use ui::{
-    ActiveTheme as _, Checkbox, DmxUniverseIdField, NumberField, Selectable, TextField,
-    interactive_container,
-};
+use ui::{ActiveTheme as _, Checkbox, DmxUniverseIdField, NumberField, TabsView, TextField, root};
 
 use super::DEFAULT_REM_SIZE;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Tab {
-    Patch,
-    DmxIo,
-}
-
-impl Tab {
-    pub fn label(&self) -> &str {
-        match self {
-            Tab::Patch => "Patch",
-            Tab::DmxIo => "DMX IO",
-        }
-    }
-
-    pub fn id(&self) -> &str {
-        match self {
-            Tab::Patch => "patch",
-            Tab::DmxIo => "dmx_io",
-        }
-    }
-}
-
 pub struct SettingsWindow {
-    active_tab: Tab,
-    dmx_io_view: Entity<DmxIoView>,
+    tabs_view: Entity<TabsView>,
 }
 
 impl SettingsWindow {
@@ -48,54 +22,30 @@ impl SettingsWindow {
             ..Default::default()
         };
 
-        cx.open_window(window_options, |window, cx| {
-            window.set_rem_size(DEFAULT_REM_SIZE);
-            cx.new(|cx| Self {
-                active_tab: Tab::DmxIo,
-                dmx_io_view: cx.new(|cx| DmxIoView::new(window, cx)),
+        cx.open_window(window_options, |w, cx| {
+            w.set_rem_size(DEFAULT_REM_SIZE);
+            cx.new(|cx| {
+                let tabs = vec![
+                    ui::Tab::new("dmx_io", "DmxIo", cx.new(|cx| DmxIoView::new(w, cx)).into()),
+                    ui::Tab::new("patch", "Patch", cx.new(|_| EmptyView).into()),
+                ];
+
+                let tabs_view = cx.new(|cx| {
+                    let mut tabs_view = TabsView::new(tabs, w, cx);
+                    tabs_view.select_tab_ix(0);
+                    tabs_view
+                });
+
+                Self { tabs_view }
             })
         })
         .context("open settings window")
     }
-
-    fn render_sidebar(&self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        const TABS: [Tab; 2] = [Tab::Patch, Tab::DmxIo];
-
-        div()
-            .children(TABS.iter().map(|tab| {
-                let id = ElementId::Name(format!("settings-tab-{}", tab.id()).into());
-                interactive_container(id, None)
-                    .selected(self.active_tab == *tab)
-                    .on_click(cx.listener(|view, _, _window, _cx| view.active_tab = *tab))
-                    .child(tab.label())
-            }))
-            .flex()
-            .flex_col()
-            .gap_2()
-            .p_2()
-            .border_r_1()
-            .border_color(cx.theme().colors.border)
-            .w_56()
-            .h_full()
-    }
-
-    fn render_content(&self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().child(match self.active_tab {
-            Tab::Patch => div().child("Patch View").into_any_element(),
-            Tab::DmxIo => self.dmx_io_view.clone().into_any_element(),
-        })
-    }
 }
 
 impl Render for SettingsWindow {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .size_full()
-            .flex()
-            .bg(cx.theme().colors.bg_primary)
-            .text_color(cx.theme().colors.text)
-            .child(self.render_sidebar(window, cx))
-            .child(self.render_content(window, cx))
+    fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        root(cx).size_full().child(self.tabs_view.clone())
     }
 }
 
@@ -120,7 +70,7 @@ impl DmxIoView {
 
 impl Render for DmxIoView {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().m_2().children(self.sacn_source_views.clone()).size_full()
+        div().p_2().children(self.sacn_source_views.clone()).size_full()
     }
 }
 
