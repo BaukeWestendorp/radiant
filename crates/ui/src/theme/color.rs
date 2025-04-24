@@ -5,6 +5,7 @@ pub struct Colors {
     pub bg_secondary: Hsla,
     pub bg_tertiary: Hsla,
     pub bg_selected: Hsla,
+    pub bg_selected_bright: Hsla,
     pub bg_focused: Hsla,
 
     pub text: Hsla,
@@ -31,6 +32,7 @@ impl Default for Colors {
             bg_tertiary: gpui::hsla(0.0, 0.0, 0.2, 1.0),
             bg_focused: gpui::hsla(0.0, 0.0, 0.1, 1.0),
             bg_selected: selected.darken(0.5).with_opacity(0.3),
+            bg_selected_bright: selected.darken(0.2),
 
             text: gpui::hsla(0.0, 0.0, 1.0, 1.0),
 

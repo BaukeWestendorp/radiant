@@ -1,8 +1,10 @@
+mod checkbox;
 mod dmx;
 mod number_field;
 mod text_field;
 mod text_input;
 
+pub use checkbox::*;
 pub use dmx::*;
 pub use number_field::*;
 pub use text_field::*;

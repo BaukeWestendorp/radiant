@@ -210,7 +210,6 @@ impl Render for NumberField {
         };
 
         interactive_container(self.id.clone(), Some(focus_handle))
-            .disabled(self.disabled(cx))
             .cursor_ew_resize()
             .when(!self.disabled(cx), |e| {
                 e.on_click(cx.listener(Self::handle_on_click)).when(is_interactive, |e| {
@@ -222,6 +221,7 @@ impl Render for NumberField {
             })
             .w_full()
             .flex()
+            .disabled(self.disabled(cx))
             .child(
                 z_stack([
                     slider_bar.into_any_element(),
