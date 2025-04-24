@@ -59,6 +59,7 @@ impl Render for NavigationTab {
             .track_scroll(&self.scroll_handle)
             .overflow_y_scroll()
             .size_full()
+            .p_2()
             .flex()
             .gap_2()
             .child(ui::section("Horizontal TabView").size_full().mb_4().child(h_tab_view))

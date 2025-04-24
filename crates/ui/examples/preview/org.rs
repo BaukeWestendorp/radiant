@@ -88,6 +88,7 @@ impl Render for OrganizationTab {
             .track_scroll(&self.scroll_handle)
             .overflow_y_scroll()
             .size_full()
+            .p_2()
             .child(ui::section("Section").mb_4().child(section))
             .child(ui::section("Divider").mb_4().child(divider))
             .child(noninteractive_containers)

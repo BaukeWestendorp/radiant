@@ -1,6 +1,6 @@
 use gpui::{AnyElement, AnyView, Div, SharedString, Window, div, prelude::*};
 
-use crate::{Disableable, Selectable, interactive_container};
+use crate::{ActiveTheme, Disableable, Selectable, interactive_container};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Tab {
@@ -104,8 +104,13 @@ impl TabView {
         div()
             .flex()
             .w_full()
-            .when(self.orientation == Orientation::Vertical, |e| e.max_w_32().flex_col())
+            .border_color(cx.theme().colors.border)
+            .when(self.orientation == Orientation::Vertical, |e| {
+                e.max_w_32().flex_col().border_r_1()
+            })
+            .when(self.orientation == Orientation::Horizontal, |e| e.border_b_1())
             .gap_2()
+            .p_2()
             .children(tabs)
     }
 
