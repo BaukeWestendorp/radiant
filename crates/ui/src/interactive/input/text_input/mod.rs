@@ -849,10 +849,10 @@ impl Render for TextInput {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let can_interact = self.is_interactive() && !self.disabled();
 
-        if can_interact {
-            div().id(self.id.clone()).track_focus(&self.focus_handle)
-        } else {
+        if self.disabled() {
             div().id(self.id.clone()).focusable()
+        } else {
+            div().id(self.id.clone()).track_focus(&self.focus_handle)
         }
         .key_context(actions::KEY_CONTEXT)
         .size_full()
