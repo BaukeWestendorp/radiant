@@ -161,8 +161,10 @@ impl NumberField {
         cx: &mut Context<Self>,
     ) {
         self.input.update(cx, |input, cx| {
-            input.interactive(true);
-            input.select_all(cx);
+            if !input.is_interactive() {
+                input.interactive(true);
+                input.select_all(cx);
+            }
         });
     }
 
