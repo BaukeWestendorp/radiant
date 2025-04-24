@@ -44,7 +44,11 @@ impl ContentView {
             ui::Tab::new("org", "Organization", cx.new(|cx| OrganizationTab::new(cx)).into()),
             ui::Tab::new("typo", "Typography", cx.new(|cx| TypographyTab::new(cx)).into()),
             ui::Tab::new("color", "Colors", cx.new(|cx| ColorTab::new(cx)).into()),
-            ui::Tab::new("interactive", "Interactive", cx.new(|cx| InteractiveTab::new(cx)).into()),
+            ui::Tab::new(
+                "interactive",
+                "Interactive",
+                cx.new(|cx| InteractiveTab::new(w, cx)).into(),
+            ),
         ];
 
         Self {
