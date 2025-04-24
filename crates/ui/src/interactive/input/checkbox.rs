@@ -1,5 +1,5 @@
 use crate::{ActiveTheme, Disableable, Selectable, interactive_container};
-use gpui::{ClickEvent, ElementId, Window, div, prelude::*, px};
+use gpui::{ClickEvent, ElementId, EventEmitter, Window, div, prelude::*, px};
 
 pub struct Checkbox {
     id: ElementId,
@@ -14,8 +14,9 @@ impl Checkbox {
 }
 
 impl Checkbox {
-    fn handle_on_click(&mut self, _event: &ClickEvent, _w: &mut Window, _cx: &mut Context<Self>) {
+    fn handle_on_click(&mut self, _event: &ClickEvent, _w: &mut Window, cx: &mut Context<Self>) {
         self.selected = !self.selected;
+        cx.emit(CheckboxEvent::Selected(self.selected));
     }
 }
 
@@ -54,3 +55,9 @@ impl Render for Checkbox {
             .children(mark)
     }
 }
+
+pub enum CheckboxEvent {
+    Selected(bool),
+}
+
+impl EventEmitter<CheckboxEvent> for Checkbox {}
