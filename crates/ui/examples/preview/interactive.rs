@@ -1,7 +1,7 @@
 use gpui::{Entity, ScrollHandle, Window, div, point, prelude::*, px};
 use ui::{
-    ContainerStyle, DmxAddressField, DmxChannelField, DmxUniverseIdField, Draggable, NumberField,
-    Pannable, TextField, container,
+    Checkbox, ContainerStyle, Disableable, DmxAddressField, DmxChannelField, DmxUniverseIdField,
+    Draggable, NumberField, Pannable, TextField, container,
 };
 
 pub struct InteractiveTab {
@@ -12,6 +12,8 @@ pub struct InteractiveTab {
     dmx_address_field: Entity<DmxAddressField>,
     dmx_channel_field: Entity<DmxChannelField>,
     dmx_universe_id_field: Entity<DmxUniverseIdField>,
+    checkbox: Entity<Checkbox>,
+    checkbox_disabled: Entity<Checkbox>,
     draggable: Entity<Draggable>,
     pannable: Entity<Pannable>,
 }
@@ -38,6 +40,8 @@ impl InteractiveTab {
                 .new(|cx| DmxChannelField::new("channel", cx.focus_handle(), w, cx)),
             dmx_universe_id_field: cx
                 .new(|cx| DmxUniverseIdField::new("universe_id", cx.focus_handle(), w, cx)),
+            checkbox: cx.new(|_| Checkbox::new("checkbox")),
+            checkbox_disabled: cx.new(|_| Checkbox::new("checkbox").disabled(true)),
             draggable: cx.new(|cx| {
                 Draggable::new("draggable", point(px(40.0), px(40.0)), None, cx.new(|_| ExampleBox))
             }),
@@ -74,6 +78,14 @@ impl Render for InteractiveTab {
                 self.dmx_universe_id_field.clone().into_any_element(),
             ));
 
+        let checkboxes = div()
+            .flex()
+            .flex_col()
+            .gap_2()
+            .w_full()
+            .child(input_row("Checkbox", self.checkbox.clone().into_any_element()))
+            .child(input_row("Disabled", self.checkbox_disabled.clone().into_any_element()));
+
         let draggable =
             container(ContainerStyle::normal(w, cx)).w_full().h_64().child(self.draggable.clone());
 
@@ -89,6 +101,7 @@ impl Render for InteractiveTab {
             .flex_col()
             .gap_2()
             .child(ui::section("Inputs").mb_4().child(inputs))
+            .child(ui::section("Checkboxes").mb_4().child(checkboxes))
             .child(ui::section("Draggable").mb_4().child(draggable))
             .child(ui::section("Pannable").mb_4().child(pannable))
     }
