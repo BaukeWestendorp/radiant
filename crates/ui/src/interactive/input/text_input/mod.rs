@@ -664,8 +664,6 @@ impl TextInput {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        cx.stop_propagation();
-
         let point = event.position + point(self.scroll_offset, px(0.0));
         let Some(char_offset) = self.character_index_for_point(point, window, cx) else {
             return;
@@ -729,8 +727,8 @@ impl TextInput {
             self.blink_cursor.update(cx, |blink_cursor, cx| {
                 blink_cursor.start(cx);
             });
-            cx.emit(TextInputEvent::Focus);
         }
+        cx.emit(TextInputEvent::Focus);
     }
 
     fn handle_blur(&mut self, window: &mut Window, cx: &mut Context<Self>) {
