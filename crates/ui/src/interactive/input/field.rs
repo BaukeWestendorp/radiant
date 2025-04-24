@@ -2,11 +2,12 @@ use super::{TextInput, TextInputEvent};
 use crate::{Disableable, interactive_container};
 use gpui::*;
 
-pub struct TextField {
+pub struct Field<V: FieldValue + Default> {
     input: Entity<TextInput>,
+    _marker: std::marker::PhantomData<V>,
 }
 
-impl TextField {
+impl<V: FieldValue + Default + 'static> Field<V> {
     pub fn new(
         id: impl Into<ElementId>,
         focus_handle: FocusHandle,
@@ -16,13 +17,37 @@ impl TextField {
         let input =
             cx.new(|cx| TextInput::new(id, focus_handle, window, cx).px(window.rem_size() * 0.25));
 
-        cx.subscribe(&input, |_number_field, _input, event, cx| {
+        cx.subscribe(&input, |this, _, event, cx| {
             cx.emit(event.clone());
             cx.notify();
+            match event {
+                TextInputEvent::Blur => {
+                    this.commit_value(cx);
+                    this.input.update(cx, |input, _cx| input.interactive(false));
+                }
+                _ => {}
+            }
         })
         .detach();
 
-        Self { input }
+        let this = Self { input, _marker: Default::default() };
+        this.set_value(&V::default(), cx);
+        this
+    }
+
+    pub fn value<'a>(&self, cx: &'a App) -> Result<V, V::DeError> {
+        let string = self.input.read(cx).text();
+        V::deserialize(&string)
+    }
+
+    pub fn set_value(&self, value: &V, cx: &mut App) {
+        self.input.update(cx, |text_field, cx| {
+            text_field.set_text(V::serialize(value), cx);
+        })
+    }
+
+    fn commit_value(&self, cx: &mut App) {
+        self.set_value(&self.value(cx).unwrap_or_default(), cx);
     }
 
     pub fn placeholder<'a>(&self, cx: &'a App) -> &'a SharedString {
@@ -50,19 +75,9 @@ impl TextField {
     pub fn set_masked(&self, masked: bool, cx: &mut App) {
         self.input.update(cx, |text_field, _cx| text_field.set_masked(masked));
     }
-
-    pub fn value<'a>(&self, cx: &'a App) -> &'a str {
-        self.input.read(cx).text()
-    }
-
-    pub fn set_value(&self, value: SharedString, cx: &mut App) {
-        self.input.update(cx, |text_field, cx| {
-            text_field.set_text(value, cx);
-        })
-    }
 }
 
-impl Render for TextField {
+impl<V: FieldValue + Default + 'static> Render for Field<V> {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let focus_handle = self.input.read(cx).focus_handle(cx);
 
@@ -72,10 +87,35 @@ impl Render for TextField {
     }
 }
 
-impl Focusable for TextField {
+impl<V: FieldValue + Default + 'static> Focusable for Field<V> {
     fn focus_handle(&self, cx: &App) -> FocusHandle {
         self.input.focus_handle(cx)
     }
 }
 
-impl EventEmitter<TextInputEvent> for TextField {}
+impl<V: FieldValue + Default + 'static> EventEmitter<TextInputEvent> for Field<V> {}
+
+pub trait FieldValue {
+    type DeError;
+
+    fn serialize(value: &Self) -> SharedString;
+
+    fn deserialize(string: &SharedString) -> Result<Self, Self::DeError>
+    where
+        Self: Sized;
+}
+
+impl<T> FieldValue for T
+where
+    T: std::str::FromStr + std::fmt::Display + 'static,
+{
+    type DeError = T::Err;
+
+    fn serialize(value: &Self) -> SharedString {
+        value.to_string().into()
+    }
+
+    fn deserialize(string: &SharedString) -> Result<Self, Self::DeError> {
+        T::from_str(string)
+    }
+}

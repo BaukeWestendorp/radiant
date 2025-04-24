@@ -2,7 +2,7 @@ use super::GraphEditorView;
 use crate::{AnySocket, DataType, Graph, GraphDef, InputSocket, Node, OutputSocket, TemplateId};
 use gpui::*;
 use prelude::FluentBuilder as _;
-use ui::{ActiveTheme as _, InteractiveColor as _, TextField, TextInputEvent};
+use ui::{ActiveTheme as _, Field, InteractiveColor as _, TextInputEvent};
 
 pub mod actions {
     use gpui::{App, KeyBinding, actions};
@@ -26,7 +26,7 @@ pub mod actions {
 pub struct NewNodeMenuView<D: GraphDef> {
     position: Point<Pixels>,
     editor_view: Entity<GraphEditorView<D>>,
-    search_field: Entity<TextField>,
+    search_field: Entity<Field>,
     focus_handle: FocusHandle,
     items: Vec<NewNodeMenuItem<D>>,
     selected_item_ix: Option<usize>,
@@ -46,7 +46,7 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
         focus_handle.focus(window);
 
         let search_field = cx.new(|cx| {
-            let field = TextField::new("search_field", focus_handle.clone(), window, cx);
+            let field = Field::new("search_field", focus_handle.clone(), window, cx);
             field.set_placeholder("Search...".into(), cx);
             field
         });

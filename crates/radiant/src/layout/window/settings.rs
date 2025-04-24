@@ -3,8 +3,8 @@ use anyhow::Context as _;
 use gpui::*;
 use show::{Show, dmx_io::SacnSourceSettings};
 use ui::{
-    ActiveTheme as _, Checkbox, DmxUniverseIdField, NumberField, TabView, TextField,
-    TextInputEvent, root,
+    ActiveTheme as _, Checkbox, DmxUniverseIdField, DmxUniverseIdListField, Field, NumberField,
+    TabView, TextInputEvent, root,
 };
 
 use super::DEFAULT_REM_SIZE;
@@ -81,8 +81,8 @@ impl Render for DmxIoView {
 struct SacnSourceSettingsView {
     source: Entity<SacnSourceSettings>,
 
-    name_field: Entity<TextField>,
-    local_universes_field: Entity<TextField>,
+    name_field: Entity<Field>,
+    local_universes_field: Entity<DmxUniverseIdListField>,
     destination_universe_field: Entity<DmxUniverseIdField>,
     priority_field: Entity<NumberField>,
     preview_data_checkbox: Entity<Checkbox>,
@@ -96,7 +96,7 @@ impl SacnSourceSettingsView {
         cx: &mut Context<Self>,
     ) -> Self {
         let name_field = cx.new(|cx| {
-            let field = TextField::new(
+            let field = Field::new(
                 ElementId::NamedInteger("name".into(), ix),
                 cx.focus_handle(),
                 window,
@@ -119,15 +119,26 @@ impl SacnSourceSettingsView {
         .detach();
 
         let local_universes_field = cx.new(|cx| {
-            let field = TextField::new(
+            let field = DmxUniverseIdListField::new(
                 ElementId::NamedInteger("local_universes".into(), ix),
                 cx.focus_handle(),
                 window,
                 cx,
             );
-            field.set_placeholder("Local Universes".into(), cx);
+            field.set_placeholder("Local Universes (e.g. '1 2 3')".into(), cx);
             field
         });
+
+        cx.subscribe(&local_universes_field, |this, _, event, cx| match event {
+            TextInputEvent::Submit(new_local_universes) => {
+                this.source.update(cx, |source, cx| {
+                    source.name = new_name.to_string();
+                    cx.notify();
+                });
+            }
+            _ => {}
+        })
+        .detach();
 
         let destination_universe_field = cx.new(|cx| {
             DmxUniverseIdField::new(

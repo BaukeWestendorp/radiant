@@ -83,6 +83,15 @@ impl From<u16> for Channel {
     }
 }
 
+impl std::str::FromStr for Channel {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let channel = s.parse::<u16>().map_err(|_| Error::ParseChannelFailed(s.to_string()))?;
+        Self::new(channel)
+    }
+}
+
 impl std::ops::Deref for Channel {
     type Target = u16;
 
@@ -217,6 +226,22 @@ impl Address {
             universe: UniverseId(1 + (absolute_address / 512) as u16),
             channel: Channel::new((absolute_address % 512) as u16)?,
         })
+    }
+}
+
+impl std::str::FromStr for Address {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<&str> = s.split('.').collect();
+        if parts.len() != 2 {
+            return Err(Error::ParseAddressFailed(s.to_string()));
+        }
+
+        let universe = parts[0].parse::<UniverseId>()?;
+        let channel = parts[1].parse::<Channel>()?;
+
+        Ok(Self { universe, channel })
     }
 }
 
