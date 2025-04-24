@@ -7,7 +7,7 @@ use crate::{AnySocket, Graph, GraphDef};
 use gpui::*;
 use new_node_menu::NewNodeMenuView;
 use prelude::FluentBuilder;
-use ui::{ActiveTheme, Pannable, PannableEvent, utils::z_stack};
+use ui::{ActiveTheme, InteractiveColor, Pannable, PannableEvent, utils::z_stack};
 
 mod new_node_menu;
 
@@ -261,9 +261,12 @@ impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let NodeMeasurements { snap_size, .. } = NodeMeasurements::new(window);
 
-        let grid =
-            ui::scrollable_line_grid(&self.visual_graph_offset, snap_size, cx.theme().colors.grid)
-                .size_full();
+        let grid = ui::scrollable_line_grid(
+            &self.visual_graph_offset,
+            snap_size,
+            cx.theme().colors.border.with_opacity(0.1),
+        )
+        .size_full();
 
         let focused = self.focus_handle.is_focused(window);
 
