@@ -1,5 +1,8 @@
-use gpui::{Entity, ScrollHandle, Window, div, prelude::*};
-use ui::{DmxAddressField, DmxChannelField, DmxUniverseIdField, NumberField, TextField};
+use gpui::{Entity, ScrollHandle, Window, div, point, prelude::*, px};
+use ui::{
+    ContainerStyle, DmxAddressField, DmxChannelField, DmxUniverseIdField, Draggable, NumberField,
+    Pannable, TextField, container,
+};
 
 pub struct InteractiveTab {
     scroll_handle: ScrollHandle,
@@ -8,6 +11,8 @@ pub struct InteractiveTab {
     dmx_address_field: Entity<DmxAddressField>,
     dmx_channel_field: Entity<DmxChannelField>,
     dmx_universe_id_field: Entity<DmxUniverseIdField>,
+    draggable: Entity<Draggable>,
+    pannable: Entity<Pannable>,
 }
 
 impl InteractiveTab {
@@ -22,12 +27,18 @@ impl InteractiveTab {
                 .new(|cx| DmxChannelField::new("channel", cx.focus_handle(), w, cx)),
             dmx_universe_id_field: cx
                 .new(|cx| DmxUniverseIdField::new("universe_id", cx.focus_handle(), w, cx)),
+            draggable: cx.new(|cx| {
+                Draggable::new("draggable", point(px(40.0), px(40.0)), None, cx.new(|_| ExampleBox))
+            }),
+            pannable: cx.new(|cx| {
+                Pannable::new("pannable", point(px(40.0), px(40.0)), cx.new(|_| ExampleBox))
+            }),
         }
     }
 }
 
 impl Render for InteractiveTab {
-    fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let input_row = |label, input| {
             div()
                 .w_full()
@@ -51,6 +62,18 @@ impl Render for InteractiveTab {
                 self.dmx_universe_id_field.clone().into_any_element(),
             ));
 
+        let draggable = container(ContainerStyle::normal(w, cx))
+            .w_full()
+            .h_64()
+            .overflow_hidden()
+            .child(self.draggable.clone());
+
+        let pannable = container(ContainerStyle::normal(w, cx))
+            .w_full()
+            .h_64()
+            .overflow_hidden()
+            .child(self.pannable.clone());
+
         div()
             .id("typography-tab")
             .track_scroll(&self.scroll_handle)
@@ -60,6 +83,16 @@ impl Render for InteractiveTab {
             .flex()
             .flex_col()
             .gap_2()
-            .child(ui::section("Inputs").child(inputs))
+            .child(ui::section("Inputs").child(inputs).mb_4())
+            .child(ui::section("Draggable").child(draggable).mb_4())
+            .child(ui::section("Pannable").child(pannable).mb_4())
+    }
+}
+
+struct ExampleBox;
+
+impl Render for ExampleBox {
+    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        container(ContainerStyle::normal(w, cx)).size_20().child("Draggable Box")
     }
 }
