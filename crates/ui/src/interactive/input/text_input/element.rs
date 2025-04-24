@@ -1,5 +1,5 @@
 use super::TextInput;
-use crate::ActiveTheme;
+use crate::{ActiveTheme, InteractiveColor};
 use gpui::*;
 
 pub(super) struct TextElement {
@@ -56,10 +56,11 @@ impl Element for TextElement {
         // Line.
         let font_size = style.font_size.to_pixels(window.rem_size());
         let text_len = display_text.len();
-        let line = window
-            .text_system()
-            .shape_line(display_text.into(), font_size, &[style.to_run(text_len)])
-            .unwrap();
+        let mut run = style.to_run(text_len);
+        if field.text().is_empty() {
+            run.color = run.color.mute()
+        };
+        let line = window.text_system().shape_line(display_text.into(), font_size, &[run]).unwrap();
 
         // Cursor.
         let cursor_x_offset = line.x_for_index(field.cursor_char_offset());

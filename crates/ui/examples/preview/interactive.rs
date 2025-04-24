@@ -20,7 +20,11 @@ impl InteractiveTab {
         Self {
             scroll_handle: ScrollHandle::new(),
 
-            text_field: cx.new(|cx| TextField::new("text", cx.focus_handle(), w, cx)),
+            text_field: cx.new(|cx| {
+                let field = TextField::new("text", cx.focus_handle(), w, cx);
+                field.set_placeholder("Text Field Placeholder".into(), cx);
+                field
+            }),
             number_field: cx.new(|cx| NumberField::new("number", cx.focus_handle(), w, cx)),
             dmx_address_field: cx.new(|cx| DmxAddressField::new("address", w, cx)),
             dmx_channel_field: cx
