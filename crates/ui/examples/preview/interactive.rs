@@ -25,7 +25,7 @@ impl InteractiveTab {
 
         cx.subscribe(&disable_fields_checkbox, |this: &mut Self, _, event: &CheckboxEvent, cx| {
             match event {
-                CheckboxEvent::Selected(selected) => {
+                CheckboxEvent::Changed(selected) => {
                     this.text_field.update(cx, |f, cx| f.set_disabled(*selected, cx));
                     this.masked_text_field.update(cx, |f, cx| f.set_disabled(*selected, cx));
                     this.f32_field.update(cx, |f, cx| f.set_disabled(*selected, cx));

@@ -3,7 +3,10 @@ use crate::app::APP_ID;
 use anyhow::Context as _;
 use gpui::*;
 use show::{Show, dmx_io::SacnSourceSettings};
-use ui::{ActiveTheme as _, Field, FieldEvent, FieldImpl, NumberField, TabView, root};
+use ui::{
+    ActiveTheme as _, Checkbox, CheckboxEvent, Field, FieldEvent, FieldImpl, NumberField, TabView,
+    root,
+};
 
 pub struct SettingsWindow {
     tab_view: Entity<TabView>,
@@ -81,7 +84,7 @@ struct SacnSourceSettingsView {
     local_universes_field: Entity<Field<UniverseIdList>>,
     destination_universe_field: Entity<Field<UniverseIdFieldImpl>>,
     priority_field: Entity<NumberField<u8>>,
-    // preview_data_checkbox: Entity<Checkbox>,
+    preview_data_checkbox: Entity<Checkbox>,
 }
 
 impl SacnSourceSettingsView {
@@ -202,8 +205,18 @@ impl SacnSourceSettingsView {
         })
         .detach();
 
-        // let preview_data_checkbox =
-        //     cx.new(|_| Checkbox::new(ElementId::NamedInteger("preview_data".into(), ix)));
+        let preview_data_checkbox =
+            cx.new(|_| Checkbox::new(ElementId::NamedInteger("preview_data".into(), ix)));
+
+        cx.subscribe(&preview_data_checkbox, |this, _, event, cx| match event {
+            CheckboxEvent::Changed(new_preview_data) => {
+                this.source.update(cx, |source, cx| {
+                    source.preview_data = *new_preview_data;
+                    cx.notify();
+                });
+            }
+        })
+        .detach();
 
         Self {
             source,
@@ -211,7 +224,7 @@ impl SacnSourceSettingsView {
             local_universes_field,
             destination_universe_field,
             priority_field,
-            // preview_data_checkbox,
+            preview_data_checkbox,
         }
     }
 }
@@ -231,8 +244,7 @@ impl Render for SacnSourceSettingsView {
                 div().min_w_32().child(self.local_universes_field.clone()),
                 div().min_w_32().child(self.destination_universe_field.clone()),
                 div().min_w_32().child(self.priority_field.clone()),
-                // div().min_w_32().child(self.preview_data_checkbox.clone()),
-                // self.sacn_output_type_dropdown.clone().into_any_element(),
+                div().min_w_32().child(self.preview_data_checkbox.clone()),
             ])
     }
 }
