@@ -77,7 +77,7 @@ impl<I: NumberFieldImpl + 'static> NumberField<I> {
         self.min.map(I::from_f32)
     }
 
-    pub fn set_min(&mut self, min: Option<I::Value>, cx: &mut App) {
+    pub fn set_min(&mut self, min: Option<I::Value>, cx: &mut Context<Self>) {
         if self.min.is_some() && min.is_none() {
             return;
         }
@@ -91,7 +91,7 @@ impl<I: NumberFieldImpl + 'static> NumberField<I> {
 
         self.min = min.as_ref().map(I::as_f32);
 
-        self.set_value(self.value(cx), cx);
+        self.commit_value(cx);
     }
 
     fn min_as_f32(&self) -> f32 {
@@ -102,7 +102,7 @@ impl<I: NumberFieldImpl + 'static> NumberField<I> {
         self.max.map(I::from_f32)
     }
 
-    pub fn set_max(&mut self, max: Option<I::Value>, cx: &mut App) {
+    pub fn set_max(&mut self, max: Option<I::Value>, cx: &mut Context<Self>) {
         if self.max.is_some() && max.is_none() {
             return;
         }
@@ -116,7 +116,7 @@ impl<I: NumberFieldImpl + 'static> NumberField<I> {
 
         self.max = max.as_ref().map(I::as_f32);
 
-        self.set_value(self.value(cx), cx);
+        self.commit_value(cx);
     }
 
     fn max_as_f32(&self) -> f32 {
@@ -127,9 +127,10 @@ impl<I: NumberFieldImpl + 'static> NumberField<I> {
         self.step.map(I::from_f32)
     }
 
-    pub fn set_step(&mut self, step: Option<f32>, cx: &mut App) {
+    pub fn set_step(&mut self, step: Option<f32>, cx: &mut Context<Self>) {
         self.step = step;
-        self.set_value(self.value(cx), cx);
+
+        self.commit_value(cx);
     }
 
     pub fn disabled(&self, cx: &App) -> bool {
@@ -173,8 +174,9 @@ impl<I: NumberFieldImpl + 'static> NumberField<I> {
         })
     }
 
-    fn commit_value(&mut self, cx: &mut App) {
+    fn commit_value(&mut self, cx: &mut Context<Self>) {
         self.set_value(self.value(cx), cx);
+        cx.emit(FieldEvent::Submit(self.value(cx)))
     }
 
     pub fn is_slider(&self) -> bool {
@@ -235,6 +237,7 @@ impl<I: NumberFieldImpl + 'static> NumberField<I> {
         let factor = self.drag_factor();
         let f32_value = start_value + delta_x * factor;
         self.set_value(I::from_f32(f32_value), cx);
+        self.commit_value(cx);
 
         self.prev_mouse_pos = Some(mouse_position);
     }
