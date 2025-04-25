@@ -2,7 +2,7 @@ use super::GraphEditorView;
 use crate::{AnySocket, DataType, Graph, GraphDef, InputSocket, Node, OutputSocket, TemplateId};
 use gpui::*;
 use prelude::FluentBuilder as _;
-use ui::{ActiveTheme as _, Field, InteractiveColor as _, TextInputEvent};
+use ui::{ActiveTheme as _, Field, FieldEvent, InteractiveColor as _};
 
 pub mod actions {
     use gpui::{App, KeyBinding, actions};
@@ -26,7 +26,7 @@ pub mod actions {
 pub struct NewNodeMenuView<D: GraphDef> {
     position: Point<Pixels>,
     editor_view: Entity<GraphEditorView<D>>,
-    search_field: Entity<Field>,
+    search_field: Entity<Field<String>>,
     focus_handle: FocusHandle,
     items: Vec<NewNodeMenuItem<D>>,
     selected_item_ix: Option<usize>,
@@ -46,13 +46,13 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
         focus_handle.focus(window);
 
         let search_field = cx.new(|cx| {
-            let field = Field::new("search_field", focus_handle.clone(), window, cx);
-            field.set_placeholder("Search...".into(), cx);
+            let field = Field::<String>::new("search_field", focus_handle.clone(), window, cx);
+            field.set_placeholder("Search...", cx);
             field
         });
 
         let items =
-            get_filtered_items(edge_start.as_ref(), search_field.read(cx).value(cx), &graph);
+            get_filtered_items(edge_start.as_ref(), &search_field.read(cx).value(cx), &graph);
         let selected_item_ix = if items.is_empty() { None } else { Some(0) };
 
         let menu = cx.entity().clone();
@@ -60,14 +60,14 @@ impl<D: GraphDef + 'static> NewNodeMenuView<D> {
             .subscribe(&search_field, cx, {
                 let required_socket = edge_start.clone();
                 move |_text_field, event, window, cx| match event {
-                    TextInputEvent::Change(value) => {
+                    FieldEvent::Change(value) => {
                         let items = get_filtered_items(required_socket.as_ref(), value, &graph);
                         menu.update(cx, |menu, _cx| {
                             menu.selected_item_ix = if items.is_empty() { None } else { Some(0) };
                             menu.items = items;
                         });
                     }
-                    TextInputEvent::Submit(_) => menu.update(cx, |menu, cx| {
+                    FieldEvent::Submit(_) => menu.update(cx, |menu, cx| {
                         if let Some(ix) = menu.selected_item_ix {
                             menu.create_node(ix, window, cx);
                         }

@@ -87,8 +87,6 @@ pub mod actions {
     }
 }
 
-pub type Validator = dyn Fn(&str) -> bool;
-
 pub struct TextInput {
     id: ElementId,
 
@@ -96,7 +94,6 @@ pub struct TextInput {
     placeholder: SharedString,
     disabled: bool,
     masked: bool,
-    validator: Option<Box<Validator>>,
     interactive: bool,
 
     utf16_selection: Range<usize>,
@@ -130,7 +127,6 @@ impl TextInput {
             placeholder: "".into(),
             disabled: false,
             masked: false,
-            validator: None,
             interactive: true,
 
             utf16_selection: 0..0,
@@ -151,11 +147,6 @@ impl TextInput {
     }
 
     pub fn set_text(&mut self, text: SharedString, cx: &mut Context<Self>) {
-        if self.validator.as_ref().is_some_and(|validator| !validator(&text)) {
-            cx.emit(TextInputEvent::ValidationRejected);
-            return;
-        }
-
         self.text = text;
         cx.emit(TextInputEvent::Change(self.text.clone()));
         cx.notify();
@@ -188,10 +179,6 @@ impl TextInput {
 
     pub fn set_masked(&mut self, masked: bool) {
         self.masked = masked;
-    }
-
-    pub fn set_validator(&mut self, validator: Option<Box<Validator>>) {
-        self.validator = validator;
     }
 
     pub fn is_interactive(&self) -> bool {
@@ -900,7 +887,6 @@ pub enum TextInputEvent {
     Focus,
     Blur,
     Submit(SharedString),
-    ValidationRejected,
     Change(SharedString),
 }
 

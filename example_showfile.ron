@@ -50,7 +50,7 @@
                         14: (
                             template_id: "out_set_dmx_address",
                             input_values: {
-                                "value": Number(0.25),
+                                "value": DmxValue(0.25),
                                 "address": DmxAddress((
                                     universe: 1,
                                     channel: 1,
@@ -62,8 +62,8 @@
                     edges: [],
                     node_positions: {
                         14: (
-                            x: -2.6953125,
-                            y: 627.66406,
+                            x: -6.0351563,
+                            y: 533.27734,
                         ),
                     },
                     offset: (

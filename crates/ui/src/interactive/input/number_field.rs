@@ -1,4 +1,4 @@
-use super::{TextInput, TextInputEvent};
+use super::{FieldEvent, TextInput, TextInputEvent};
 use crate::{
     ActiveTheme, Disableable, interactive_container,
     utils::{bounds_updater, z_stack},
@@ -6,22 +6,21 @@ use crate::{
 use gpui::*;
 use prelude::FluentBuilder;
 
-pub struct NumberField<V>
-where
-    V: NumberFieldValue,
-{
+pub struct NumberField<I: NumberFieldImpl> {
     id: ElementId,
     input: Entity<TextInput>,
+
+    min: Option<f32>,
+    max: Option<f32>,
+    step: Option<f32>,
+
     bounds: Bounds<Pixels>,
     prev_mouse_pos: Option<Point<Pixels>>,
-    unstepped_value: f32,
-    _marker: std::marker::PhantomData<V>,
+
+    _marker: std::marker::PhantomData<I>,
 }
 
-impl<V> NumberField<V>
-where
-    V: NumberFieldValue + Default + 'static,
-{
+impl<I: NumberFieldImpl + 'static> NumberField<I> {
     pub fn new(
         id: impl Into<ElementId>,
         focus_handle: FocusHandle,
@@ -37,15 +36,17 @@ where
             input
         });
 
-        cx.subscribe(&input, |number_field, input, event, cx| {
-            cx.emit(event.clone());
+        cx.subscribe(&input, |this, _, event, cx| {
             cx.notify();
             match event {
+                TextInputEvent::Focus => cx.emit(FieldEvent::Focus),
                 TextInputEvent::Blur => {
-                    number_field.commit_value(cx);
-                    input.update(cx, |input, _cx| input.interactive(false));
+                    this.commit_value(cx);
+                    this.input.update(cx, |input, _cx| input.interactive(false));
+                    cx.emit(FieldEvent::Blur);
                 }
-                _ => {}
+                TextInputEvent::Submit(_) => cx.emit(FieldEvent::Submit(this.value(cx))),
+                TextInputEvent::Change(_) => cx.emit(FieldEvent::Change(this.value(cx))),
             }
         })
         .detach();
@@ -53,15 +54,82 @@ where
         let mut this = Self {
             id,
             input,
+
+            min: None,
+            max: None,
+            step: None,
+
             bounds: Bounds::default(),
             prev_mouse_pos: None,
-            unstepped_value: 0.0,
-            _marker: Default::default(),
+
+            _marker: std::marker::PhantomData,
         };
 
-        this.set_value(V::default(), cx);
+        this.set_min(I::MIN, cx);
+        this.set_max(I::MAX, cx);
+        this.set_step(I::STEP, cx);
+        this.set_value(I::from_f32(0.0), cx);
 
         this
+    }
+
+    pub fn min(&self) -> Option<I::Value> {
+        self.min.map(I::from_f32)
+    }
+
+    pub fn set_min(&mut self, min: Option<I::Value>, cx: &mut App) {
+        if self.min.is_some() && min.is_none() {
+            return;
+        }
+
+        if self.min.is_some()
+            && min.is_some()
+            && I::as_f32(min.as_ref().unwrap()) < self.min_as_f32()
+        {
+            return;
+        }
+
+        self.min = min.as_ref().map(I::as_f32);
+
+        self.set_value(self.value(cx), cx);
+    }
+
+    fn min_as_f32(&self) -> f32 {
+        self.min.unwrap_or(f32::MIN)
+    }
+
+    pub fn max(&self) -> Option<I::Value> {
+        self.max.map(I::from_f32)
+    }
+
+    pub fn set_max(&mut self, max: Option<I::Value>, cx: &mut App) {
+        if self.max.is_some() && max.is_none() {
+            return;
+        }
+
+        if self.max.is_some()
+            && max.is_some()
+            && I::as_f32(max.as_ref().unwrap()) > self.max_as_f32()
+        {
+            return;
+        }
+
+        self.max = max.as_ref().map(I::as_f32);
+
+        self.set_value(self.value(cx), cx);
+    }
+
+    fn max_as_f32(&self) -> f32 {
+        self.max.unwrap_or(f32::MAX)
+    }
+
+    pub fn step(&self) -> Option<I::Value> {
+        self.step.map(I::from_f32)
+    }
+
+    pub fn set_step(&mut self, step: Option<I::Value>, cx: &mut App) {
+        self.step = step.as_ref().map(I::as_f32);
+        self.set_value(self.value(cx), cx);
     }
 
     pub fn disabled(&self, cx: &App) -> bool {
@@ -80,21 +148,19 @@ where
         self.input.update(cx, |text_field, _cx| text_field.set_masked(masked));
     }
 
-    pub fn value(&self, cx: &App) -> Result<V, V::DeError> {
+    pub fn value(&self, cx: &App) -> I::Value {
         let value_str = self.input.read(cx).text();
-        V::deserialize(value_str)
+        I::from_str_or_default(value_str)
     }
 
-    pub fn set_value(&mut self, value: V, cx: &mut App) {
+    pub fn set_value(&mut self, value: I::Value, cx: &mut App) {
         // Clamp
-        let min = V::MIN.map(|v| v.as_f32()).unwrap_or(f32::MIN);
-        let max = V::MAX.map(|v| v.as_f32()).unwrap_or(f32::MAX);
-
-        let mut value = value.as_f32().clamp(min, max);
-        self.unstepped_value = value;
+        let min = self.min_as_f32();
+        let max = self.max_as_f32();
+        let mut value = I::as_f32(&value).clamp(min, max);
 
         // Step
-        if let Some(step) = V::STEP.map(|v| v.as_f32()) {
+        if let Some(step) = self.step().map(|v| I::as_f32(&v)) {
             value = (value / step).round() * step;
         }
 
@@ -108,23 +174,27 @@ where
     }
 
     fn commit_value(&mut self, cx: &mut App) {
-        self.set_value(self.value(cx).unwrap_or_default(), cx);
+        self.set_value(self.value(cx), cx);
     }
 
     pub fn is_slider(&self) -> bool {
-        V::MIN.is_some() && V::MAX.is_some()
+        self.min().is_some() && self.max().is_some()
     }
 
     pub fn relative_value(&self, cx: &App) -> Option<f32> {
-        let min = V::MIN?.as_f32();
-        let max = V::MAX?.as_f32();
-        let value = self.value(cx).unwrap_or_default().as_f32().clamp(min, max);
+        if !self.is_slider() {
+            return None;
+        }
+
+        let min = self.min_as_f32();
+        let max = self.max_as_f32();
+        let value = I::as_f32(&self.value(cx)).clamp(min, max);
         Some((value - min) / (max - min))
     }
 
     fn drag_factor(&self) -> f32 {
         if self.is_slider() {
-            let delta = V::MAX.unwrap().as_f32() - V::MIN.unwrap().as_f32();
+            let delta = self.max_as_f32() - self.min_as_f32();
             delta / self.bounds.size.width.0
         } else {
             0.5
@@ -132,10 +202,7 @@ where
     }
 }
 
-impl<V> NumberField<V>
-where
-    V: NumberFieldValue + Default + 'static,
-{
+impl<I: NumberFieldImpl + 'static> NumberField<I> {
     fn handle_on_click(
         &mut self,
         _event: &ClickEvent,
@@ -152,19 +219,22 @@ where
 
     fn handle_drag_move(
         &mut self,
-        event: &DragMoveEvent<ElementId>,
+        event: &DragMoveEvent<(ElementId, f32, Pixels)>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if &self.id != event.drag(cx) {
+        let (id, start_value, x_start) = event.drag(cx);
+
+        if &self.id != id {
             return;
         }
 
         let mouse_position = window.mouse_position();
-        let delta_x = self.prev_mouse_pos.map_or(px(0.0), |prev| mouse_position.x - prev.x);
+        let delta_x = mouse_position.x.0 - x_start.0;
 
         let factor = self.drag_factor();
-        self.set_value(V::from_f32(self.unstepped_value + delta_x.0 * factor), cx);
+        let f32_value = start_value + delta_x * factor;
+        self.set_value(I::from_f32(f32_value), cx);
 
         self.prev_mouse_pos = Some(mouse_position);
     }
@@ -174,18 +244,14 @@ where
     }
 }
 
-impl<V> Render for NumberField<V>
-where
-    V: NumberFieldValue + Default + 'static,
-{
+impl<I: NumberFieldImpl + 'static> Render for NumberField<I> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let is_interactive = !self.input.read(cx).is_interactive();
         let focus_handle = self.input.read(cx).focus_handle(cx);
 
         let slider_bar = match self.relative_value(cx) {
             Some(relative_value) => {
-                let slider_width = self.bounds.size.width * relative_value as f32;
-                div().w(slider_width).h_full().bg(cx.theme().colors.bg_tertiary)
+                div().w(relative(relative_value)).h_full().bg(cx.theme().colors.bg_tertiary)
             }
             None => div().size_full(),
         };
@@ -194,8 +260,10 @@ where
             .cursor_ew_resize()
             .when(!self.disabled(cx), |e| {
                 e.on_click(cx.listener(Self::handle_on_click)).when(is_interactive, |e| {
+                    let drag =
+                        (self.id.clone(), I::as_f32(&self.value(cx)), window.mouse_position().x);
                     e.on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
-                        .on_drag(self.id.clone(), |_, _, _, cx| cx.new(|_cx| EmptyView))
+                        .on_drag(drag, |_, _, _, cx| cx.new(|_cx| EmptyView))
                         .on_drag_move(cx.listener(Self::handle_drag_move))
                         .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
                 })
@@ -218,74 +286,65 @@ where
     }
 }
 
-impl<V> Focusable for NumberField<V>
-where
-    V: NumberFieldValue + 'static,
-{
-    fn focus_handle(&self, cx: &App) -> FocusHandle {
-        self.input.focus_handle(cx)
-    }
-}
+impl<I: NumberFieldImpl + 'static> EventEmitter<FieldEvent<I::Value>> for NumberField<I> {}
 
-impl<V> EventEmitter<TextInputEvent> for NumberField<V> where V: NumberFieldValue + 'static {}
+pub trait NumberFieldImpl {
+    type Value: Default;
 
-pub trait NumberFieldValue: Sized {
-    type DeError;
+    const MIN: Option<Self::Value>;
+    const MAX: Option<Self::Value>;
+    const STEP: Option<Self::Value>;
 
-    const MIN: Option<Self>;
-    const MAX: Option<Self>;
-    const STEP: Option<Self>;
+    fn from_str_or_default(s: &str) -> Self::Value;
 
-    fn serialize(value: Self) -> SharedString;
+    fn to_shared_string(value: &Self::Value) -> SharedString;
 
-    fn deserialize(string: &SharedString) -> Result<Self, Self::DeError>
-    where
-        Self: Sized;
+    fn from_f32(v: f32) -> Self::Value;
 
-    fn from_f32(f: f32) -> Self;
-
-    fn as_f32(&self) -> f32;
+    fn as_f32(value: &Self::Value) -> f32;
 }
 
 macro_rules! impl_number_field_value {
-    ($t:ty, $err:ty, $step:expr) => {
-        impl NumberFieldValue for $t {
-            type DeError = $err;
+    ($ty:ty, $min:expr, $max:expr, $step:expr) => {
+        impl NumberFieldImpl for $ty {
+            type Value = $ty;
 
-            const MIN: Option<Self> = Some(<$t>::MIN);
-            const MAX: Option<Self> = Some(<$t>::MAX);
-            const STEP: Option<Self> = Some($step);
+            const MIN: Option<Self::Value> = $min;
+            const MAX: Option<Self::Value> = $max;
+            const STEP: Option<Self::Value> = $step;
 
-            fn serialize(value: Self) -> SharedString {
+            fn from_str_or_default(s: &str) -> Self::Value {
+                let f64_value = s.parse::<f64>().unwrap_or_default();
+                f64_value.clamp(
+                    $min.map(|v: $ty| v as f64).unwrap_or(<$ty>::MIN as f64),
+                    $max.map(|v: $ty| v as f64).unwrap_or(<$ty>::MAX as f64),
+                ) as Self
+            }
+
+            fn to_shared_string(value: &Self::Value) -> SharedString {
                 value.to_string().into()
             }
 
-            fn deserialize(string: &SharedString) -> Result<Self, Self::DeError> {
-                string.parse()
+            fn from_f32(v: f32) -> Self::Value {
+                v as Self
             }
 
-            fn from_f32(f: f32) -> Self {
-                f as $t
-            }
-
-            fn as_f32(&self) -> f32 {
-                *self as f32
+            fn as_f32(value: &Self::Value) -> f32 {
+                *value as f32
             }
         }
     };
 }
 
-impl_number_field_value!(i8, std::num::ParseIntError, 1);
-impl_number_field_value!(i16, std::num::ParseIntError, 1);
-impl_number_field_value!(i32, std::num::ParseIntError, 1);
-impl_number_field_value!(i64, std::num::ParseIntError, 1);
-impl_number_field_value!(i128, std::num::ParseIntError, 1);
-impl_number_field_value!(isize, std::num::ParseIntError, 1);
-impl_number_field_value!(u8, std::num::ParseIntError, 1);
-impl_number_field_value!(u16, std::num::ParseIntError, 1);
-impl_number_field_value!(u32, std::num::ParseIntError, 1);
-impl_number_field_value!(u64, std::num::ParseIntError, 1);
-impl_number_field_value!(u128, std::num::ParseIntError, 1);
-impl_number_field_value!(usize, std::num::ParseIntError, 1);
-impl_number_field_value!(f32, std::num::ParseFloatError, 1.0);
-impl_number_field_value!(f64, std::num::ParseFloatError, 1.0);
+impl_number_field_value!(f32, None, None, None);
+impl_number_field_value!(f64, None, None, None);
+impl_number_field_value!(u8, Some(u8::MIN), Some(u8::MAX), Some(1));
+impl_number_field_value!(u16, Some(u16::MIN), Some(u16::MAX), Some(1));
+impl_number_field_value!(u32, Some(u32::MIN), Some(u32::MAX), Some(1));
+impl_number_field_value!(u64, Some(u64::MIN), Some(u64::MAX), Some(1));
+impl_number_field_value!(u128, Some(u128::MIN), Some(u128::MAX), Some(1));
+impl_number_field_value!(i8, Some(i8::MIN), Some(i8::MAX), Some(1));
+impl_number_field_value!(i16, Some(i16::MIN), Some(i16::MAX), Some(1));
+impl_number_field_value!(i32, Some(i32::MIN), Some(i32::MAX), Some(1));
+impl_number_field_value!(i64, Some(i64::MIN), Some(i64::MAX), Some(1));
+impl_number_field_value!(i128, Some(i128::MIN), Some(i128::MAX), Some(1));

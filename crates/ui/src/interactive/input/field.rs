@@ -2,12 +2,13 @@ use super::{TextInput, TextInputEvent};
 use crate::{Disableable, interactive_container};
 use gpui::*;
 
-pub struct Field<V: FieldValue + Default> {
+pub struct Field<I: FieldImpl> {
     input: Entity<TextInput>,
-    _marker: std::marker::PhantomData<V>,
+
+    _marker: std::marker::PhantomData<I>,
 }
 
-impl<V: FieldValue + Default + 'static> Field<V> {
+impl<I: FieldImpl + 'static> Field<I> {
     pub fn new(
         id: impl Into<ElementId>,
         focus_handle: FocusHandle,
@@ -18,45 +19,45 @@ impl<V: FieldValue + Default + 'static> Field<V> {
             cx.new(|cx| TextInput::new(id, focus_handle, window, cx).px(window.rem_size() * 0.25));
 
         cx.subscribe(&input, |this, _, event, cx| {
-            cx.emit(event.clone());
             cx.notify();
             match event {
+                TextInputEvent::Focus => cx.emit(FieldEvent::Focus),
                 TextInputEvent::Blur => {
                     this.commit_value(cx);
-                    this.input.update(cx, |input, _cx| input.interactive(false));
+                    cx.emit(FieldEvent::Blur);
                 }
-                _ => {}
+                TextInputEvent::Submit(_) => cx.emit(FieldEvent::Submit(this.value(cx))),
+                TextInputEvent::Change(_) => cx.emit(FieldEvent::Change(this.value(cx))),
             }
         })
         .detach();
 
-        let this = Self { input, _marker: Default::default() };
-        this.set_value(&V::default(), cx);
+        let this = Self { input, _marker: std::marker::PhantomData };
         this
     }
 
-    pub fn value<'a>(&self, cx: &'a App) -> Result<V, V::DeError> {
-        let string = self.input.read(cx).text();
-        V::deserialize(&string)
+    pub fn value<'a>(&self, cx: &'a App) -> I::Value {
+        let s = self.input.read(cx).text();
+        I::from_str_or_default(s)
     }
 
-    pub fn set_value(&self, value: &V, cx: &mut App) {
+    pub fn set_value(&self, value: &I::Value, cx: &mut App) {
         self.input.update(cx, |text_field, cx| {
-            text_field.set_text(V::serialize(value), cx);
+            text_field.set_text(I::to_shared_string(value), cx);
         })
     }
 
     fn commit_value(&self, cx: &mut App) {
-        self.set_value(&self.value(cx).unwrap_or_default(), cx);
+        self.set_value(&self.value(cx), cx);
     }
 
     pub fn placeholder<'a>(&self, cx: &'a App) -> &'a SharedString {
         self.input.read(cx).placeholder()
     }
 
-    pub fn set_placeholder(&self, placeholder: SharedString, cx: &mut App) {
+    pub fn set_placeholder(&self, placeholder: impl Into<SharedString>, cx: &mut App) {
         self.input.update(cx, |input, cx| {
-            input.set_placeholder(placeholder, cx);
+            input.set_placeholder(placeholder.into(), cx);
         })
     }
 
@@ -77,45 +78,51 @@ impl<V: FieldValue + Default + 'static> Field<V> {
     }
 }
 
-impl<V: FieldValue + Default + 'static> Render for Field<V> {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let focus_handle = self.input.read(cx).focus_handle(cx);
-
-        interactive_container(ElementId::View(cx.entity_id()), Some(focus_handle))
-            .disabled(self.disabled(cx))
-            .child(self.input.clone())
-    }
-}
-
-impl<V: FieldValue + Default + 'static> Focusable for Field<V> {
+impl<I: FieldImpl + 'static> Focusable for Field<I> {
     fn focus_handle(&self, cx: &App) -> FocusHandle {
         self.input.focus_handle(cx)
     }
 }
 
-impl<V: FieldValue + Default + 'static> EventEmitter<TextInputEvent> for Field<V> {}
+impl<I: FieldImpl + 'static> Render for Field<I> {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let focus_handle = self.input.read(cx).focus_handle(cx);
 
-pub trait FieldValue {
-    type DeError;
-
-    fn serialize(value: &Self) -> SharedString;
-
-    fn deserialize(string: &SharedString) -> Result<Self, Self::DeError>
-    where
-        Self: Sized;
+        interactive_container(ElementId::View(cx.entity_id()), Some(focus_handle))
+            .w_full()
+            .disabled(self.disabled(cx))
+            .child(self.input.clone())
+    }
 }
 
-impl<T> FieldValue for T
-where
-    T: std::str::FromStr + std::fmt::Display + 'static,
-{
-    type DeError = T::Err;
+impl<I: FieldImpl + 'static> EventEmitter<FieldEvent<I::Value>> for Field<I> {}
 
-    fn serialize(value: &Self) -> SharedString {
+pub trait FieldImpl {
+    type Value: Default;
+
+    fn from_str_or_default(s: &str) -> Self::Value;
+
+    fn to_shared_string(value: &Self::Value) -> SharedString;
+}
+
+impl<T> FieldImpl for T
+where
+    T: Default + std::str::FromStr + std::fmt::Display,
+{
+    type Value = T;
+
+    fn from_str_or_default(s: &str) -> Self::Value {
+        s.parse().unwrap_or_default()
+    }
+
+    fn to_shared_string(value: &Self::Value) -> SharedString {
         value.to_string().into()
     }
+}
 
-    fn deserialize(string: &SharedString) -> Result<Self, Self::DeError> {
-        T::from_str(string)
-    }
+pub enum FieldEvent<T> {
+    Focus,
+    Blur,
+    Submit(T),
+    Change(T),
 }

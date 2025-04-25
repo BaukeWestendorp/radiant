@@ -7,8 +7,6 @@ edition.workspace = true
 workspace = true
 
 [dependencies]
-# crates
-dmx.workspace = true
 
 # ui
 gpui.workspace = true
