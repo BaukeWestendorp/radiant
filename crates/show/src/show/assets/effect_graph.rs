@@ -23,7 +23,7 @@ impl NumberFieldImpl for FloatingDmxValue {
 
     const MIN: Option<Self> = Some(FloatingDmxValue(0.0));
     const MAX: Option<Self> = Some(FloatingDmxValue(1.0));
-    const STEP: Option<Self> = None;
+    const STEP: Option<f32> = None;
 
     fn from_str_or_default(s: &str) -> Self::Value {
         Self(s.parse().unwrap_or_default())

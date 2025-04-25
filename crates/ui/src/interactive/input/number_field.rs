@@ -127,8 +127,8 @@ impl<I: NumberFieldImpl + 'static> NumberField<I> {
         self.step.map(I::from_f32)
     }
 
-    pub fn set_step(&mut self, step: Option<I::Value>, cx: &mut App) {
-        self.step = step.as_ref().map(I::as_f32);
+    pub fn set_step(&mut self, step: Option<f32>, cx: &mut App) {
+        self.step = step;
         self.set_value(self.value(cx), cx);
     }
 
@@ -293,7 +293,7 @@ pub trait NumberFieldImpl {
 
     const MIN: Option<Self::Value>;
     const MAX: Option<Self::Value>;
-    const STEP: Option<Self::Value>;
+    const STEP: Option<f32>;
 
     fn from_str_or_default(s: &str) -> Self::Value;
 
@@ -311,7 +311,7 @@ macro_rules! impl_number_field_value {
 
             const MIN: Option<Self::Value> = $min;
             const MAX: Option<Self::Value> = $max;
-            const STEP: Option<Self::Value> = $step;
+            const STEP: Option<f32> = $step;
 
             fn from_str_or_default(s: &str) -> Self::Value {
                 let f64_value = s.parse::<f64>().unwrap_or_default();
@@ -338,13 +338,13 @@ macro_rules! impl_number_field_value {
 
 impl_number_field_value!(f32, None, None, None);
 impl_number_field_value!(f64, None, None, None);
-impl_number_field_value!(u8, Some(u8::MIN), Some(u8::MAX), Some(1));
-impl_number_field_value!(u16, Some(u16::MIN), Some(u16::MAX), Some(1));
-impl_number_field_value!(u32, Some(u32::MIN), Some(u32::MAX), Some(1));
-impl_number_field_value!(u64, Some(u64::MIN), Some(u64::MAX), Some(1));
-impl_number_field_value!(u128, Some(u128::MIN), Some(u128::MAX), Some(1));
-impl_number_field_value!(i8, Some(i8::MIN), Some(i8::MAX), Some(1));
-impl_number_field_value!(i16, Some(i16::MIN), Some(i16::MAX), Some(1));
-impl_number_field_value!(i32, Some(i32::MIN), Some(i32::MAX), Some(1));
-impl_number_field_value!(i64, Some(i64::MIN), Some(i64::MAX), Some(1));
-impl_number_field_value!(i128, Some(i128::MIN), Some(i128::MAX), Some(1));
+impl_number_field_value!(u8, Some(u8::MIN), Some(u8::MAX), Some(1.0));
+impl_number_field_value!(u16, Some(u16::MIN), Some(u16::MAX), Some(1.0));
+impl_number_field_value!(u32, Some(u32::MIN), Some(u32::MAX), Some(1.0));
+impl_number_field_value!(u64, Some(u64::MIN), Some(u64::MAX), Some(1.0));
+impl_number_field_value!(u128, Some(u128::MIN), Some(u128::MAX), Some(1.0));
+impl_number_field_value!(i8, Some(i8::MIN), Some(i8::MAX), Some(1.0));
+impl_number_field_value!(i16, Some(i16::MIN), Some(i16::MAX), Some(1.0));
+impl_number_field_value!(i32, Some(i32::MIN), Some(i32::MAX), Some(1.0));
+impl_number_field_value!(i64, Some(i64::MIN), Some(i64::MAX), Some(1.0));
+impl_number_field_value!(i128, Some(i128::MIN), Some(i128::MAX), Some(1.0));

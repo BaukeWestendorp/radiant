@@ -292,7 +292,7 @@ impl UniverseId {
     /// let invalid = UniverseId::new(0);
     /// assert!(invalid.is_err());
     /// ```
-    pub fn new(id: u16) -> Result<Self, Error> {
+    pub const fn new(id: u16) -> Result<Self, Error> {
         if id == 0 {
             return Err(Error::InvalidUniverseId(id));
         }

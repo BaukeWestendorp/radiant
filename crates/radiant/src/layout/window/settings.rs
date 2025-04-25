@@ -74,29 +74,12 @@ impl Render for DmxIoView {
     }
 }
 
-#[derive(Default)]
-struct UniverseIdList(Vec<dmx::UniverseId>);
-
-impl FieldImpl for UniverseIdList {
-    type Value = Self;
-
-    fn to_shared_string(value: &Self::Value) -> SharedString {
-        value.0.iter().map(|id| id.to_string()).collect::<Vec<_>>().join(",").into()
-    }
-
-    fn from_str_or_default(s: &str) -> Self {
-        let universe_ids =
-            s.split(',').filter_map(|s| s.trim().parse::<dmx::UniverseId>().ok()).collect();
-        Self(universe_ids)
-    }
-}
-
 struct SacnSourceSettingsView {
     source: Entity<SacnSourceSettings>,
 
     name_field: Entity<Field<String>>,
     local_universes_field: Entity<Field<UniverseIdList>>,
-    // destination_universe_field: Entity<NumberField>,
+    destination_universe_field: Entity<Field<UniverseIdFieldImpl>>,
     // priority_field: Entity<NumberField>,
     // preview_data_checkbox: Entity<Checkbox>,
 }
@@ -169,14 +152,30 @@ impl SacnSourceSettingsView {
         })
         .detach();
 
-        // let destination_universe_field = cx.new(|cx| {
-        //     NumberField::<dmx::UniverseId>::new(
-        //         ElementId::NamedInteger("destination_universe".into(), ix),
-        //         cx.focus_handle(),
-        //         window,
-        //         cx,
-        //     )
-        // });
+        let destination_universe_field = cx.new(|cx| {
+            let field = Field::<UniverseIdFieldImpl>::new(
+                ElementId::NamedInteger("destination_universe".into(), ix),
+                cx.focus_handle(),
+                window,
+                cx,
+            );
+            field.set_placeholder("Destination Universe Id", cx);
+            let value = dmx::UniverseId::new(source.read(cx).destination_universe)
+                .expect("should get a valid universe id");
+            field.set_value(&value, cx);
+            field
+        });
+
+        cx.subscribe(&destination_universe_field, |this, _, event, cx| match event {
+            FieldEvent::Submit(new_destination_universe) => {
+                this.source.update(cx, |source, cx| {
+                    source.destination_universe = (*new_destination_universe).into();
+                    cx.notify();
+                });
+            }
+            _ => {}
+        })
+        .detach();
 
         // let priority_field = cx.new(|cx| {
         //     let mut field = NumberField::new(
@@ -196,7 +195,7 @@ impl SacnSourceSettingsView {
             source,
             name_field,
             local_universes_field,
-            // destination_universe_field,
+            destination_universe_field,
             // priority_field,
             // preview_data_checkbox,
         }
@@ -216,10 +215,49 @@ impl Render for SacnSourceSettingsView {
             .children([
                 div().min_w_32().child(self.name_field.clone()),
                 div().min_w_32().child(self.local_universes_field.clone()),
-                // div().min_w_32().child(self.destination_universe_field.clone()),
+                div().min_w_32().child(self.destination_universe_field.clone()),
                 // div().min_w_32().child(self.priority_field.clone()),
                 // div().min_w_32().child(self.preview_data_checkbox.clone()),
                 // self.sacn_output_type_dropdown.clone().into_any_element(),
             ])
+    }
+}
+
+pub struct UniverseIdFieldImpl;
+
+impl FieldImpl for UniverseIdFieldImpl {
+    type Value = dmx::UniverseId;
+
+    fn from_str_or_default(s: &str) -> Self::Value {
+        let f64_value = s
+            .parse::<f64>()
+            .unwrap_or_default()
+            .clamp(u16::from(dmx::UniverseId::MIN) as f64, u16::from(dmx::UniverseId::MAX) as f64);
+
+        dmx::UniverseId::new(f64_value as u16).unwrap_or_default()
+    }
+
+    fn to_shared_string(value: &Self::Value) -> SharedString {
+        value.to_string().into()
+    }
+}
+
+#[derive(Default)]
+struct UniverseIdList(Vec<dmx::UniverseId>);
+
+impl std::fmt::Display for UniverseIdList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = self.0.iter().map(|id| id.to_string()).collect::<Vec<_>>().join(",");
+        write!(f, "{s}")
+    }
+}
+
+impl std::str::FromStr for UniverseIdList {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let universe_ids =
+            s.split(',').filter_map(|s| s.trim().parse::<dmx::UniverseId>().ok()).collect();
+        Ok(Self(universe_ids))
     }
 }
