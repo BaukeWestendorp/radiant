@@ -59,6 +59,13 @@ impl Render for ColorTab {
             .child(color_swatches("border_selected", cx.theme().colors.border_selected))
             .child(color_swatches("border_focused", cx.theme().colors.border_focused));
 
+        let header_colors = div()
+            .flex()
+            .flex_col()
+            .gap_1()
+            .child(color_swatches("header_background", cx.theme().colors.header_background))
+            .child(color_swatches("header_border", cx.theme().colors.header_border));
+
         let accent_colors = div()
             .flex()
             .flex_col()
@@ -79,6 +86,7 @@ impl Render for ColorTab {
             .child(ui::section("Background Colors").child(bg_colors))
             .child(ui::section("Text Colors").child(text_colors))
             .child(ui::section("Border Colors").child(border_colors))
+            .child(ui::section("Header Colors").child(header_colors))
             .child(ui::section("Accent Colors").child(accent_colors))
             .child(ui::section("Misc Colors").child(misc_colors))
     }

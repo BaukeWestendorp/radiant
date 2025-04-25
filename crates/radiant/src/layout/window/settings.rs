@@ -1,11 +1,9 @@
+use super::{VirtualWindow, VirtualWindowDelegate, main::MainWindow};
 use gpui::*;
 use show::{Show, dmx_io::SacnSourceSettings};
 use ui::{
     ActiveTheme as _, Checkbox, CheckboxEvent, Field, FieldEvent, FieldImpl, NumberField, TabView,
-    root,
 };
-
-use super::{VirtualWindow, main::MainWindow};
 
 pub struct SettingsWindow {
     main_window: Entity<MainWindow>,
@@ -13,7 +11,11 @@ pub struct SettingsWindow {
 }
 
 impl SettingsWindow {
-    pub fn new(main_window: Entity<MainWindow>, w: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(
+        main_window: Entity<MainWindow>,
+        w: &mut Window,
+        cx: &mut Context<VirtualWindow<Self>>,
+    ) -> Self {
         let tabs = vec![
             ui::Tab::new("dmx_io", "Dmx Io", cx.new(|cx| DmxIoView::new(w, cx)).into()),
             ui::Tab::new("patch", "Patch", cx.new(|_| EmptyView).into()),
@@ -29,15 +31,23 @@ impl SettingsWindow {
     }
 }
 
-impl VirtualWindow for SettingsWindow {
+impl VirtualWindowDelegate for SettingsWindow {
     fn title(&self, _cx: &App) -> &str {
         "Settings"
     }
-}
 
-impl Render for SettingsWindow {
-    fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        root(cx).size_full().child(self.tab_view.clone())
+    fn on_close_window(&mut self, _w: &mut Window, cx: &mut Context<VirtualWindow<Self>>) {
+        self.main_window.update(cx, |main_window, cx| {
+            main_window.close_settings_window(cx);
+        })
+    }
+
+    fn render_content(
+        &mut self,
+        _w: &mut Window,
+        _cx: &mut Context<VirtualWindow<Self>>,
+    ) -> impl IntoElement {
+        div().size_full().child(self.tab_view.clone())
     }
 }
 

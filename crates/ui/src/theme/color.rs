@@ -14,6 +14,9 @@ pub struct Colors {
     pub border_focused: Hsla,
     pub border_selected: Hsla,
 
+    pub header_background: Hsla,
+    pub header_border: Hsla,
+
     pub accent: Hsla,
     pub highlight: Hsla,
     pub cursor: Hsla,
@@ -35,6 +38,9 @@ impl Default for Colors {
             bg_selected_bright: selected.darken(0.2),
 
             text: gpui::hsla(0.0, 0.0, 1.0, 1.0),
+
+            header_background: gpui::rgb(0x1317a0).into(),
+            header_border: gpui::rgb(0x383eed).into(),
 
             border: gpui::hsla(0.0, 0.0, 0.5, 1.0),
             border_focused: accent,

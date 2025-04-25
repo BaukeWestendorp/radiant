@@ -3,15 +3,15 @@ use anyhow::Context as _;
 use frames::FrameContainer;
 use gpui::*;
 use show::Show;
-use ui::{ActiveTheme as _, utils::z_stack};
+use ui::{ActiveTheme as _, root, utils::z_stack};
 
-use super::{DEFAULT_REM_SIZE, settings::SettingsWindow};
+use super::{DEFAULT_REM_SIZE, VirtualWindow, settings::SettingsWindow};
 
-const FRAME_CELL_SIZE: Pixels = px(80.0);
+pub const FRAME_CELL_SIZE: Pixels = px(80.0);
 
 pub struct MainWindow {
     frame_container: Entity<FrameContainer<MainFrame>>,
-    settings_window: Option<Entity<SettingsWindow>>,
+    settings_window: Option<Entity<VirtualWindow<SettingsWindow>>>,
 }
 
 impl MainWindow {
@@ -39,7 +39,8 @@ impl MainWindow {
     pub fn open_settings_window(&mut self, w: &mut Window, cx: &mut Context<Self>) {
         if self.settings_window.is_none() {
             let this = cx.entity();
-            self.settings_window = Some(cx.new(|cx| SettingsWindow::new(this, w, cx)));
+            let vw = cx.new(|cx| VirtualWindow::new(SettingsWindow::new(this, w, cx)));
+            self.settings_window = Some(vw);
             cx.notify();
         }
     }
@@ -70,13 +71,15 @@ impl Render for MainWindow {
             .child(self.frame_container.clone());
 
         let settings_window = match &self.settings_window {
-            Some(settings_window) => div().size_full().m_2().child(settings_window.clone()),
+            Some(settings_window) => div().size_full().p_2().child(settings_window.clone()),
             None => div(),
         };
 
-        z_stack([main_layout, settings_window])
-            .size_full()
-            .on_action(cx.listener(Self::handle_open_settings))
+        root(cx).size_full().child(
+            z_stack([main_layout, settings_window])
+                .size_full()
+                .on_action(cx.listener(Self::handle_open_settings)),
+        )
     }
 }
 
