@@ -50,11 +50,11 @@
                         14: (
                             template_id: "out_set_dmx_address",
                             input_values: {
+                                "value": DmxValue(0.25),
                                 "address": DmxAddress((
                                     universe: 1,
                                     channel: 1,
                                 )),
-                                "value": DmxValue(0.25),
                             },
                             control_values: {},
                         ),

@@ -3,7 +3,7 @@ use crate::app::APP_ID;
 use anyhow::Context as _;
 use gpui::*;
 use show::{Show, dmx_io::SacnSourceSettings};
-use ui::{ActiveTheme as _, Field, FieldEvent, FieldImpl, TabView, root};
+use ui::{ActiveTheme as _, Field, FieldEvent, FieldImpl, NumberField, TabView, root};
 
 pub struct SettingsWindow {
     tab_view: Entity<TabView>,
@@ -80,7 +80,7 @@ struct SacnSourceSettingsView {
     name_field: Entity<Field<String>>,
     local_universes_field: Entity<Field<UniverseIdList>>,
     destination_universe_field: Entity<Field<UniverseIdFieldImpl>>,
-    // priority_field: Entity<NumberField>,
+    priority_field: Entity<NumberField<u8>>,
     // preview_data_checkbox: Entity<Checkbox>,
 }
 
@@ -177,16 +177,30 @@ impl SacnSourceSettingsView {
         })
         .detach();
 
-        // let priority_field = cx.new(|cx| {
-        //     let mut field = NumberField::new(
-        //         ElementId::NamedInteger("priority".into(), ix),
-        //         cx.focus_handle(),
-        //         window,
-        //         cx,
-        //     );
-        //     field.set_max(Some(200u8), cx);
-        //     field
-        // });
+        let priority_field = cx.new(|cx| {
+            let mut field = NumberField::new(
+                ElementId::NamedInteger("priority".into(), ix),
+                cx.focus_handle(),
+                window,
+                cx,
+            );
+            field.set_min(Some(0u8), cx);
+            field.set_max(Some(200u8), cx);
+            field.set_step(Some(1.0), cx);
+            field.set_value(source.read(cx).priority, cx);
+            field
+        });
+
+        cx.subscribe(&priority_field, |this, _, event, cx| match event {
+            FieldEvent::Submit(new_priority) => {
+                this.source.update(cx, |source, cx| {
+                    source.priority = *new_priority;
+                    cx.notify();
+                });
+            }
+            _ => {}
+        })
+        .detach();
 
         // let preview_data_checkbox =
         //     cx.new(|_| Checkbox::new(ElementId::NamedInteger("preview_data".into(), ix)));
@@ -196,7 +210,7 @@ impl SacnSourceSettingsView {
             name_field,
             local_universes_field,
             destination_universe_field,
-            // priority_field,
+            priority_field,
             // preview_data_checkbox,
         }
     }
@@ -216,7 +230,7 @@ impl Render for SacnSourceSettingsView {
                 div().min_w_32().child(self.name_field.clone()),
                 div().min_w_32().child(self.local_universes_field.clone()),
                 div().min_w_32().child(self.destination_universe_field.clone()),
-                // div().min_w_32().child(self.priority_field.clone()),
+                div().min_w_32().child(self.priority_field.clone()),
                 // div().min_w_32().child(self.preview_data_checkbox.clone()),
                 // self.sacn_output_type_dropdown.clone().into_any_element(),
             ])
