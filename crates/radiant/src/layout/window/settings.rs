@@ -1,6 +1,3 @@
-use super::DEFAULT_REM_SIZE;
-use crate::app::APP_ID;
-use anyhow::Context as _;
 use gpui::*;
 use show::{Show, dmx_io::SacnSourceSettings};
 use ui::{
@@ -8,40 +5,33 @@ use ui::{
     root,
 };
 
+use super::{VirtualWindow, main::MainWindow};
+
 pub struct SettingsWindow {
+    main_window: Entity<MainWindow>,
     tab_view: Entity<TabView>,
 }
 
 impl SettingsWindow {
-    pub fn open(cx: &mut App) -> anyhow::Result<WindowHandle<Self>> {
-        let window_options = WindowOptions {
-            window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
-                None,
-                size(px(800.0), px(600.0)),
-                cx,
-            ))),
-            app_id: Some(APP_ID.to_string()),
-            ..Default::default()
-        };
+    pub fn new(main_window: Entity<MainWindow>, w: &mut Window, cx: &mut Context<Self>) -> Self {
+        let tabs = vec![
+            ui::Tab::new("dmx_io", "Dmx Io", cx.new(|cx| DmxIoView::new(w, cx)).into()),
+            ui::Tab::new("patch", "Patch", cx.new(|_| EmptyView).into()),
+        ];
 
-        cx.open_window(window_options, |w, cx| {
-            w.set_rem_size(DEFAULT_REM_SIZE);
-            cx.new(|cx| {
-                let tabs = vec![
-                    ui::Tab::new("dmx_io", "Dmx Io", cx.new(|cx| DmxIoView::new(w, cx)).into()),
-                    ui::Tab::new("patch", "Patch", cx.new(|_| EmptyView).into()),
-                ];
+        let tab_view = cx.new(|cx| {
+            let mut tab_view = TabView::new(tabs, w, cx);
+            tab_view.select_tab_ix(0);
+            tab_view
+        });
 
-                let tab_view = cx.new(|cx| {
-                    let mut tab_view = TabView::new(tabs, w, cx);
-                    tab_view.select_tab_ix(0);
-                    tab_view
-                });
+        Self { main_window, tab_view }
+    }
+}
 
-                Self { tab_view }
-            })
-        })
-        .context("open settings window")
+impl VirtualWindow for SettingsWindow {
+    fn title(&self, _cx: &App) -> &str {
+        "Settings"
     }
 }
 

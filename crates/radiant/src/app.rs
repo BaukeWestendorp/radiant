@@ -1,4 +1,8 @@
-use crate::{dmx_io::DmxIo, layout::main::MainWindow, output_processor};
+use crate::{
+    dmx_io::DmxIo,
+    layout::{self, main::MainWindow},
+    output_processor,
+};
 use gpui::*;
 use show::Show;
 use std::path::PathBuf;
@@ -21,6 +25,7 @@ impl RadiantApp {
             ui::init(cx);
             ui::actions::init(cx);
             flow::gpui::actions::init(cx);
+            layout::main::actions::init(cx);
             actions::init(cx);
 
             let multiverse = cx.new(|_cx| dmx::Multiverse::new());
@@ -60,9 +65,7 @@ mod actions {
     use gpui::*;
     use show::Show;
 
-    use crate::layout::settings::SettingsWindow;
-
-    actions!(app, [Quit, Save, OpenSettings, CloseActiveWindow]);
+    actions!(app, [Quit, Save]);
 
     pub fn init(cx: &mut App) {
         bind_global_keys(cx);
@@ -72,12 +75,10 @@ mod actions {
     fn bind_global_keys(cx: &mut App) {
         cx.bind_keys([KeyBinding::new("secondary-q", Quit, None)]);
         cx.bind_keys([KeyBinding::new("secondary-s", Save, None)]);
-        cx.bind_keys([KeyBinding::new("secondary-,", OpenSettings, None)]);
-        cx.bind_keys([KeyBinding::new("secondary-w", CloseActiveWindow, None)]);
     }
 
     fn handle_global_actions(cx: &mut App) {
-        cx.on_action::<Quit>(|_, cx| cx.quit());
+        cx.on_action::<Quit>(|_, cx| cx.shutdown());
 
         cx.on_action::<Save>(|_, cx| {
             let path = Show::global(cx).path.clone();
@@ -121,26 +122,6 @@ mod actions {
                 }
             })
             .detach();
-        });
-
-        cx.on_action::<OpenSettings>(|_, cx| {
-            log::info!("Opening settings window");
-            SettingsWindow::open(cx).expect("should open settings window");
-        });
-
-        cx.on_action::<CloseActiveWindow>(|_, cx| {
-            let Some(window) = cx.active_window() else {
-                log::warn!("No active window found");
-                return;
-            };
-
-            log::info!("Closing active window");
-
-            if let Err(err) = window.update(cx, |_, window, cx| {
-                window.defer(cx, |window, _cx| window.remove_window());
-            }) {
-                log::warn!("Could not close active window: {err}");
-            }
         });
     }
 }
