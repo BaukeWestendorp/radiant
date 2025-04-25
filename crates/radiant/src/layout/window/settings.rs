@@ -95,7 +95,7 @@ struct SacnSourceSettingsView {
     source: Entity<SacnSourceSettings>,
 
     name_field: Entity<Field<String>>,
-    // local_universes_field: Entity<Field<UniverseIdList>>,
+    local_universes_field: Entity<Field<UniverseIdList>>,
     // destination_universe_field: Entity<NumberField>,
     // priority_field: Entity<NumberField>,
     // preview_data_checkbox: Entity<Checkbox>,
@@ -131,27 +131,43 @@ impl SacnSourceSettingsView {
         })
         .detach();
 
-        // let local_universes_field = cx.new(|cx| {
-        //     let field = Field::<UniverseIdList>::new(
-        //         ElementId::NamedInteger("local_universes".into(), ix),
-        //         cx.focus_handle(),
-        //         window,
-        //         cx,
-        //     );
-        //     field.set_placeholder("Local Universes (e.g. '1 2 3')".into(), cx);
-        //     field
-        // });
+        let local_universes_field = cx.new(|cx| {
+            let field = Field::<UniverseIdList>::new(
+                ElementId::NamedInteger("local_universes".into(), ix),
+                cx.focus_handle(),
+                window,
+                cx,
+            );
+            field.set_placeholder("Local Universes (e.g. '1 2 3')", cx);
+            let universe_ids = source
+                .read(cx)
+                .local_universes
+                .iter()
+                .filter_map(|u| match dmx::UniverseId::new(*u) {
+                    Ok(universe_id) => Some(universe_id),
+                    Err(err) => {
+                        log::warn!(
+                            "Failed to parse UniverseId when generating settings field: {err}"
+                        );
+                        None
+                    }
+                })
+                .collect::<Vec<_>>();
+            field.set_value(&UniverseIdList(universe_ids), cx);
+            field
+        });
 
-        // cx.subscribe(&local_universes_field, |this, _, event, cx| match event {
-        //     FieldEvent::Submit(new_local_universes) => {
-        //         this.source.update(cx, |source, cx| {
-        //             source.name = new_name.to_string();
-        //             cx.notify();
-        //         });
-        //     }
-        //     _ => {}
-        // })
-        // .detach();
+        cx.subscribe(&local_universes_field, |this, _, event, cx| match event {
+            FieldEvent::Submit(new_local_universes) => {
+                this.source.update(cx, |source, cx| {
+                    source.local_universes =
+                        new_local_universes.0.iter().map(|u| (*u).into()).collect();
+                    cx.notify();
+                });
+            }
+            _ => {}
+        })
+        .detach();
 
         // let destination_universe_field = cx.new(|cx| {
         //     NumberField::<dmx::UniverseId>::new(
@@ -179,7 +195,7 @@ impl SacnSourceSettingsView {
         Self {
             source,
             name_field,
-            // local_universes_field,
+            local_universes_field,
             // destination_universe_field,
             // priority_field,
             // preview_data_checkbox,
@@ -199,7 +215,7 @@ impl Render for SacnSourceSettingsView {
             .p_2()
             .children([
                 div().min_w_32().child(self.name_field.clone()),
-                // div().min_w_32().child(self.local_universes_field.clone()),
+                div().min_w_32().child(self.local_universes_field.clone()),
                 // div().min_w_32().child(self.destination_universe_field.clone()),
                 // div().min_w_32().child(self.priority_field.clone()),
                 // div().min_w_32().child(self.preview_data_checkbox.clone()),

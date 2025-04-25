@@ -4,7 +4,7 @@
         sacn: (
             sources: [(
                 name: "sACN Universe 1",
-                local_universes: [1],
+                local_universes: [1, 2, 3, 4],
                 destination_universe: 1,
                 priority: 100,
                 preview_data: false,
