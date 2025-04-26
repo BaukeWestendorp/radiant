@@ -19,12 +19,18 @@ impl<D: VirtualWindowDelegate> VirtualWindow<D> {
 
 impl<D: VirtualWindowDelegate + 'static> Render for VirtualWindow<D> {
     fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let content = container(ContainerStyle::normal(w, cx))
+        let style = ContainerStyle::normal(w, cx);
+        let content = div()
+            .bg(style.background)
+            .border_color(style.border)
+            .rounded_b(cx.theme().radius)
+            .border_1()
+            .border_t_0()
             .size_full()
             .child(self.delegate.render_content(w, cx));
         let header = self.delegate.render_header(w, cx);
 
-        div().flex().flex_col().gap_2().child(header).child(content).size_full()
+        div().flex().flex_col().child(header).child(content).size_full()
     }
 }
 
@@ -50,19 +56,19 @@ pub trait VirtualWindowDelegate {
             .py(px(2.0))
             .child("Close");
 
-        container(ContainerStyle {
-            background: cx.theme().colors.header_background,
-            border: cx.theme().colors.header_border,
-            text_color: w.text_style().color,
-        })
-        .w_full()
-        .h(FRAME_CELL_SIZE / 2.0)
-        .flex()
-        .justify_between()
-        .items_center()
-        .px_2()
-        .child(div().font_weight(FontWeight::BOLD).child(self.title(cx).to_string()))
-        .child(close_button)
+        div()
+            .bg(cx.theme().colors.header_background)
+            .border_color(cx.theme().colors.header_border)
+            .rounded_t(cx.theme().radius)
+            .border_1()
+            .w_full()
+            .h(FRAME_CELL_SIZE / 2.0)
+            .flex()
+            .justify_between()
+            .items_center()
+            .px_2()
+            .child(div().font_weight(FontWeight::BOLD).child(self.title(cx).to_string()))
+            .child(close_button)
     }
 
     fn render_content(
