@@ -25,6 +25,7 @@ impl MainWindow {
                 cx,
             ))),
             app_id: Some(APP_ID.to_string()),
+            titlebar: Some(TitlebarOptions { title: Some("Radiant".into()), ..Default::default() }),
             ..Default::default()
         };
 
