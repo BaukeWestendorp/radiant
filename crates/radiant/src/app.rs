@@ -30,6 +30,17 @@ impl RadiantApp {
             layout::main::actions::init(cx);
             actions::init(cx);
 
+            cx.set_menus(vec![
+                Menu {
+                    name: "".into(),
+                    items: vec![
+                        MenuItem::action("Quit", actions::Quit),
+                        MenuItem::action("Settings", layout::main::actions::OpenSettings),
+                    ],
+                },
+                Menu { name: "File".into(), items: vec![MenuItem::action("Save", actions::Save)] },
+            ]);
+
             let multiverse = cx.new(|_cx| dmx::Multiverse::new());
 
             self.init_dmx_io(multiverse.clone(), cx);
