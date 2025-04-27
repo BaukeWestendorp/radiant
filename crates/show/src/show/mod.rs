@@ -3,20 +3,25 @@ use std::path::PathBuf;
 use crate::showfile::{self, Showfile};
 use assets::Assets;
 use dmx_io::DmxIoSettings;
+use gpui::{AppContext, Entity};
 
 pub mod assets;
 pub mod dmx_io;
 pub mod layout;
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct Show {
     pub path: Option<PathBuf>,
     pub dmx_io_settings: dmx_io::DmxIoSettings,
     pub assets: assets::Assets,
-    pub layout: showfile::Layout,
+    pub layout: Entity<showfile::Layout>,
 }
 
 impl Show {
+    pub fn new(cx: &mut gpui::App) -> Self {
+        Self::from_showfile(None, Showfile::default(), cx)
+    }
+
     pub(crate) fn from_showfile(
         path: Option<PathBuf>,
         showfile: Showfile,
@@ -26,7 +31,7 @@ impl Show {
             path,
             assets: Assets::from_showfile(&showfile, cx),
             dmx_io_settings: DmxIoSettings::from_showfile(showfile.dmx_io_settings, cx),
-            layout: showfile.layout,
+            layout: cx.new(|_| showfile.layout),
         }
     }
 
@@ -38,7 +43,7 @@ impl Show {
     pub fn save_to_file(&mut self, path: &PathBuf, cx: &gpui::App) -> Result<(), std::io::Error> {
         let showfile = Showfile {
             dmx_io_settings: self.dmx_io_settings.to_showfile(cx),
-            layout: self.layout.clone(),
+            layout: self.layout.read(cx).clone(),
             assets: self.assets.to_showfile(cx),
         };
 

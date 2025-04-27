@@ -50,7 +50,7 @@ impl RadiantApp {
                     std::process::exit(1);
                 }
             },
-            None => Show::default(),
+            None => Show::new(cx),
         };
 
         cx.set_global(show);
@@ -72,16 +72,25 @@ impl RadiantApp {
                     MenuItem::action("Settings", layout::main::actions::OpenSettings),
                 ],
             },
-            Menu { name: "File".into(), items: vec![MenuItem::action("Save", actions::Save)] },
+            Menu {
+                name: "File".into(),
+                items: vec![
+                    MenuItem::action("Save", actions::Save),
+                    MenuItem::action("Open", actions::Open),
+                ],
+            },
         ]);
     }
 }
 
 mod actions {
+    use anyhow::Context;
     use gpui::*;
     use show::Show;
 
-    actions!(app, [Quit, Save, OpenSettings]);
+    use crate::layout::main::MainWindow;
+
+    actions!(app, [Quit, Save, Open, OpenSettings]);
 
     pub fn init(cx: &mut App) {
         bind_global_keys(cx);
@@ -91,7 +100,7 @@ mod actions {
     fn bind_global_keys(cx: &mut App) {
         cx.bind_keys([KeyBinding::new("secondary-q", Quit, None)]);
         cx.bind_keys([KeyBinding::new("secondary-s", Save, None)]);
-        cx.bind_keys([KeyBinding::new("secondary-,", OpenSettings, None)]);
+        cx.bind_keys([KeyBinding::new("secondary-o", Open, None)]);
     }
 
     fn handle_global_actions(cx: &mut App) {
@@ -139,6 +148,64 @@ mod actions {
                 }
             })
             .detach();
+        });
+
+        cx.on_action::<Open>(|_, cx| {
+            let paths = cx.prompt_for_paths(PathPromptOptions {
+                files: true,
+                directories: false,
+                multiple: false,
+            });
+
+            cx.spawn(async move |cx| -> anyhow::Result<()> {
+                let Ok(result) = paths.await else {
+                    anyhow::bail!("Error awaiting path selection");
+                };
+
+                let Ok(Some(paths)) = result else {
+                    if let Ok(None) = result {
+                        log::info!("Open cancelled - no path selected");
+                    } else if let Err(err) = result {
+                        anyhow::bail!("Error prompting for path: '{}'", err);
+                    }
+                    return Ok(());
+                };
+
+                let Some(path) = paths.first() else {
+                    anyhow::bail!("No path selected");
+                };
+
+                log::info!("Closing main window");
+                cx.update(|cx| {
+                    cx.active_window()
+                        .map(|w| {
+                            w.update(cx, |_, w, _| {
+                                w.remove_window();
+                            })
+                            .context("removing window")
+                        })
+                        .context("closing window")
+                })???;
+
+                log::info!("Opening show from '{}'", path.display());
+                cx.update_global(|show: &mut Show, cx| {
+                    Show::open_from_file(path.clone(), cx).map(|new_show| {
+                        *show = new_show;
+                    })
+                })
+                .context("Failed to open show")??;
+
+                log::info!("Opening main window");
+                cx.update(|cx| {
+                    MainWindow::open(cx).expect("should open main window");
+                })
+                .context("open main window")?;
+
+                log::info!("Show opened successfully");
+
+                Ok(())
+            })
+            .detach_and_log_err(cx);
         });
     }
 }

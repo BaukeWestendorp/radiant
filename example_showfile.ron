@@ -47,10 +47,10 @@
                 id: 1,
                 data: (
                     nodes: {
-                        15: (
+                        14: (
                             template_id: "out_set_dmx_address",
                             input_values: {
-                                "value": DmxValue(0.0),
+                                "value": DmxValue(0.5467),
                                 "address": DmxAddress((
                                     universe: 1,
                                     channel: 1,
@@ -58,27 +58,27 @@
                             },
                             control_values: {},
                         ),
-                        14: (
+                        15: (
                             template_id: "out_set_dmx_address",
                             input_values: {
                                 "address": DmxAddress((
                                     universe: 1,
                                     channel: 1,
                                 )),
-                                "value": DmxValue(0.25),
+                                "value": DmxValue(0.0),
                             },
                             control_values: {},
                         ),
                     },
                     edges: [],
                     node_positions: {
-                        15: (
-                            x: -156.82813,
-                            y: 402.23438,
-                        ),
                         14: (
                             x: -6.0351563,
                             y: 533.27734,
+                        ),
+                        15: (
+                            x: -156.82813,
+                            y: 402.23438,
                         ),
                     },
                     offset: (

@@ -32,10 +32,9 @@ impl MainWindow {
         cx.open_window(window_options, |w, cx| {
             w.set_rem_size(DEFAULT_REM_SIZE);
 
-            cx.new(|cx| Self {
-                frame_container: cx.new(|cx| frame_container_from_showfile(w, cx)),
-                settings_window: None,
-                focus_handle: cx.focus_handle(),
+            cx.new(|cx| {
+                let frame_container = cx.new(|cx| frame_container_from_showfile(w, cx));
+                Self { frame_container, settings_window: None, focus_handle: cx.focus_handle() }
             })
         })
         .context("open main window")
@@ -95,7 +94,7 @@ fn frame_container_from_showfile(
     window: &mut Window,
     cx: &mut Context<FrameContainer<MainFrame>>,
 ) -> FrameContainer<MainFrame> {
-    let main_window = Show::global(cx).layout.main_window.clone();
+    let main_window = Show::global(cx).layout.read(cx).main_window.clone();
 
     let mut container = FrameContainer::new(main_window.size, FRAME_CELL_SIZE);
 
