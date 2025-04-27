@@ -130,8 +130,12 @@ impl SacnSourceTableRow {
         cx: &mut App,
     ) -> Self {
         let name_field = cx.new(|cx| {
-            let field =
-                Field::new(ElementId::NamedInteger("name".into(), ix), cx.focus_handle(), w, cx);
+            let field = Field::new(
+                ElementId::NamedInteger("name".into(), ix as u64),
+                cx.focus_handle(),
+                w,
+                cx,
+            );
             field.set_placeholder("Name", cx);
             field.set_value(&source.read(cx).name.clone(), cx);
             field
@@ -153,7 +157,7 @@ impl SacnSourceTableRow {
 
         let local_universes_field = cx.new(|cx| {
             let field = Field::<UniverseIdList>::new(
-                ElementId::NamedInteger("local_universes".into(), ix),
+                ElementId::NamedInteger("local_universes".into(), ix as u64),
                 cx.focus_handle(),
                 w,
                 cx,
@@ -194,7 +198,7 @@ impl SacnSourceTableRow {
 
         let destination_universe_field = cx.new(|cx| {
             let field = Field::<UniverseIdFieldImpl>::new(
-                ElementId::NamedInteger("destination_universe".into(), ix),
+                ElementId::NamedInteger("destination_universe".into(), ix as u64),
                 cx.focus_handle(),
                 w,
                 cx,
@@ -222,7 +226,7 @@ impl SacnSourceTableRow {
 
         let priority_field = cx.new(|cx| {
             let mut field = NumberField::new(
-                ElementId::NamedInteger("priority".into(), ix),
+                ElementId::NamedInteger("priority".into(), ix as u64),
                 cx.focus_handle(),
                 w,
                 cx,
@@ -249,7 +253,7 @@ impl SacnSourceTableRow {
         .detach();
 
         let preview_data_checkbox =
-            cx.new(|_| Checkbox::new(ElementId::NamedInteger("preview_data".into(), ix)));
+            cx.new(|_| Checkbox::new(ElementId::NamedInteger("preview_data".into(), ix as u64)));
 
         cx.subscribe(&preview_data_checkbox, {
             let source = source.clone();

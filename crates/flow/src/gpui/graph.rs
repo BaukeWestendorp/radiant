@@ -61,7 +61,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
         let graph_view = cx.entity().clone();
         let draggable = cx.new(|cx| {
             Draggable::new(
-                ElementId::NamedInteger("node".into(), node_id.0 as usize),
+                ElementId::NamedInteger("node".into(), node_id.0 as u64),
                 *self.graph.read(cx).node_position(&node_id),
                 Some(snap_size),
                 cx.new(|cx| NodeView::new(node_id, graph_view, self.graph.clone(), window, cx)),
