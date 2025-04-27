@@ -34,7 +34,7 @@ ui = { path = "crates/ui" }
 serde = "1"
 
 # ui
-gpui = { git = "https://github.com/zed-industries/zed" }
+gpui = { git = "https://github.com/zed-industries/zed", rev = "60ec55b1799d5d898921a230464ae361bfae85d9" }
 
 # error handling
 anyhow = "1.0"
