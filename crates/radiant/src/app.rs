@@ -22,6 +22,8 @@ impl RadiantApp {
         Application::new().run(move |cx: &mut App| {
             cx.activate(true);
 
+            self.init_show(cx);
+
             ui::init(cx);
             ui::actions::init(cx);
             flow::gpui::actions::init(cx);
@@ -30,7 +32,6 @@ impl RadiantApp {
 
             let multiverse = cx.new(|_cx| dmx::Multiverse::new());
 
-            self.init_show(cx);
             self.init_dmx_io(multiverse.clone(), cx);
             output_processor::start(multiverse, cx);
 
@@ -65,7 +66,7 @@ mod actions {
     use gpui::*;
     use show::Show;
 
-    actions!(app, [Quit, Save]);
+    actions!(app, [Quit, Save, OpenSettings]);
 
     pub fn init(cx: &mut App) {
         bind_global_keys(cx);

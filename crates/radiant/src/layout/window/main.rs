@@ -12,6 +12,8 @@ pub const FRAME_CELL_SIZE: Pixels = px(80.0);
 pub struct MainWindow {
     frame_container: Entity<FrameContainer<MainFrame>>,
     settings_window: Option<Entity<VirtualWindow<SettingsWindow>>>,
+
+    focus_handle: FocusHandle,
 }
 
 impl MainWindow {
@@ -28,9 +30,11 @@ impl MainWindow {
 
         cx.open_window(window_options, |w, cx| {
             w.set_rem_size(DEFAULT_REM_SIZE);
+
             cx.new(|cx| Self {
                 frame_container: cx.new(|cx| frame_container_from_showfile(w, cx)),
                 settings_window: None,
+                focus_handle: cx.focus_handle(),
             })
         })
         .context("open main window")
@@ -75,11 +79,12 @@ impl Render for MainWindow {
             None => div(),
         };
 
-        root(cx).size_full().child(
-            z_stack([main_layout, settings_window])
-                .size_full()
-                .on_action(cx.listener(Self::handle_open_settings)),
-        )
+        root(cx)
+            .track_focus(&self.focus_handle)
+            .key_context(actions::KEY_CONTEXT)
+            .size_full()
+            .on_action(cx.listener(Self::handle_open_settings))
+            .child(z_stack([main_layout, settings_window]).size_full())
     }
 }
 
@@ -102,7 +107,8 @@ fn frame_container_from_showfile(
 
 pub mod actions {
     use gpui::*;
-    use show::Show;
+
+    pub const KEY_CONTEXT: &str = "MainWindow";
 
     actions!(main_window, [OpenSettings]);
 
@@ -112,52 +118,12 @@ pub mod actions {
     }
 
     fn bind_global_keys(cx: &mut App) {
-        cx.bind_keys([KeyBinding::new("secondary-,", OpenSettings, None)]);
+        cx.bind_keys([KeyBinding::new("secondary-,", OpenSettings, Some(KEY_CONTEXT))]);
     }
 
     fn handle_global_actions(cx: &mut App) {
-        cx.on_action::<OpenSettings>(|_, cx| {
-            let path = Show::global(cx).path.clone();
-            if let Some(path) = &path {
-                log::info!("Saving show to '{}'", path.display());
-                match Show::update_global(cx, |show, cx| show.save_to_file(path, cx)) {
-                    Ok(_) => log::info!("Show saved successfully"),
-                    Err(err) => log::error!("Error saving show: '{}'", err),
-                }
-                return;
-            }
-
-            let Some(dir) = dirs::home_dir() else {
-                log::error!("Could not determine home directory");
-                return;
-            };
-
-            let path = cx.prompt_for_new_path(&dir.to_path_buf());
-            cx.spawn(async move |cx| {
-                let Ok(result) = path.await else {
-                    log::error!("Error awaiting path selection");
-                    return;
-                };
-
-                let Ok(Some(path)) = result else {
-                    if let Ok(None) = result {
-                        log::info!("Save cancelled - no path selected");
-                    } else if let Err(err) = result {
-                        log::error!("Error prompting for path: '{}'", err);
-                    }
-                    return;
-                };
-
-                log::info!("Saving show to '{}'", path.display());
-                let result = cx.update_global(|show: &mut Show, cx| show.save_to_file(&path, cx));
-
-                match result {
-                    Ok(Ok(_)) => log::info!("Show saved successfully"),
-                    Ok(Err(err)) => log::error!("Error saving show: '{}'", err),
-                    Err(err) => log::error!("Error updating global show: '{}'", err),
-                }
-            })
-            .detach();
+        cx.on_action::<OpenSettings>(|_, _cx| {
+            eprintln!("Opening settings window");
         });
     }
 }
