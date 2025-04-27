@@ -76,10 +76,11 @@ mod actions {
     fn bind_global_keys(cx: &mut App) {
         cx.bind_keys([KeyBinding::new("secondary-q", Quit, None)]);
         cx.bind_keys([KeyBinding::new("secondary-s", Save, None)]);
+        cx.bind_keys([KeyBinding::new("secondary-,", OpenSettings, None)]);
     }
 
     fn handle_global_actions(cx: &mut App) {
-        cx.on_action::<Quit>(|_, cx| cx.shutdown());
+        cx.on_action::<Quit>(|_, cx| cx.quit());
 
         cx.on_action::<Save>(|_, cx| {
             let path = Show::global(cx).path.clone();
