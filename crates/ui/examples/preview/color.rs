@@ -47,7 +47,8 @@ impl Render for ColorTab {
             .child(color_swatches("bg_tertiary", cx.theme().colors.bg_tertiary))
             .child(color_swatches("bg_selected", cx.theme().colors.bg_selected))
             .child(color_swatches("bg_selected_bright", cx.theme().colors.bg_selected_bright))
-            .child(color_swatches("bg_focused", cx.theme().colors.bg_focused));
+            .child(color_swatches("bg_focused", cx.theme().colors.bg_focused))
+            .child(color_swatches("bg_alternating", cx.theme().colors.bg_alternating));
 
         let text_colors = div().child(color_swatches("text", cx.theme().colors.text));
 

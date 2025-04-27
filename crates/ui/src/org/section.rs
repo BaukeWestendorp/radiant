@@ -34,7 +34,6 @@ impl Styled for Section {
 impl RenderOnce for Section {
     fn render(self, _w: &mut Window, cx: &mut App) -> impl IntoElement {
         let header = div()
-            .w_full()
             .flex()
             .items_center()
             .gap_2()

@@ -1,7 +1,7 @@
 use gpui::{Entity, ScrollHandle, Window, div, point, prelude::*, px};
 use ui::{
     Checkbox, CheckboxEvent, ContainerStyle, Disableable, Draggable, Field, NumberField, Pannable,
-    container,
+    Table, TableColumn, TableDelegate, TableRow, container,
 };
 
 pub struct InteractiveTab {
@@ -14,6 +14,8 @@ pub struct InteractiveTab {
     i8_field: Entity<NumberField<i8>>,
     checkbox: Entity<Checkbox>,
     checkbox_disabled: Entity<Checkbox>,
+
+    table: Entity<Table<ExampleTable>>,
 
     draggable: Entity<Draggable>,
     pannable: Entity<Pannable>,
@@ -55,6 +57,8 @@ impl InteractiveTab {
             checkbox: cx.new(|_| Checkbox::new("checkbox")),
             checkbox_disabled: cx.new(|_| Checkbox::new("checkbox-disabled").disabled(true)),
 
+            table: cx.new(|cx| Table::new(ExampleTable::new(), "table", w, cx)),
+
             draggable: cx.new(|cx| {
                 Draggable::new("draggable", point(px(40.0), px(40.0)), None, cx.new(|_| ExampleBox))
             }),
@@ -95,6 +99,8 @@ impl Render for InteractiveTab {
             .child(row("Checkbox", self.checkbox.clone().into_any_element()))
             .child(row("Disabled", self.checkbox_disabled.clone().into_any_element()));
 
+        let table = div().h_64().child(self.table.clone());
+
         let draggable =
             container(ContainerStyle::normal(w, cx)).w_full().h_64().child(self.draggable.clone());
 
@@ -112,6 +118,7 @@ impl Render for InteractiveTab {
             .gap_2()
             .child(ui::section("Inputs").mb_4().child(inputs))
             .child(ui::section("Checkboxes").mb_4().child(checkboxes))
+            .child(ui::section("Table").mb_4().child(table))
             .child(ui::section("Draggable").mb_4().child(draggable))
             .child(ui::section("Pannable").mb_4().child(pannable))
     }
@@ -122,5 +129,72 @@ struct ExampleBox;
 impl Render for ExampleBox {
     fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         container(ContainerStyle::normal(w, cx)).size_20().child("Draggable Box")
+    }
+}
+
+struct ExampleTable {
+    rows: Vec<ExampleRow>,
+}
+
+impl ExampleTable {
+    pub fn new() -> Self {
+        Self {
+            rows: vec![
+                ExampleRow { text: "Text 1".to_string(), state: false, value: 42.25 },
+                ExampleRow { text: "Text 2".to_string(), state: true, value: 3.14 },
+                ExampleRow { text: "Text 3".to_string(), state: false, value: 1.618 },
+            ],
+        }
+    }
+}
+
+impl TableDelegate for ExampleTable {
+    type Row = ExampleRow;
+    type Column = ExampleColumn;
+
+    fn rows(&self) -> &[Self::Row] {
+        &self.rows
+    }
+}
+
+struct ExampleRow {
+    text: String,
+    state: bool,
+    value: f32,
+}
+
+impl TableRow<ExampleTable> for ExampleRow {
+    fn render_cell(
+        &self,
+        column: &ExampleColumn,
+        _w: &mut Window,
+        _cx: &mut Context<Table<ExampleTable>>,
+    ) -> impl IntoElement {
+        match column {
+            ExampleColumn::Text => div().child(self.text.clone()),
+            ExampleColumn::State => div().child(self.state.to_string()),
+            ExampleColumn::Value => div().child(self.value.to_string()),
+        }
+    }
+}
+
+#[derive(Hash, PartialEq, Eq)]
+enum ExampleColumn {
+    Text,
+    State,
+    Value,
+}
+
+impl TableColumn for ExampleColumn {
+    fn label(&self) -> &str {
+        match self {
+            ExampleColumn::Text => "Text",
+            ExampleColumn::State => "State",
+            ExampleColumn::Value => "Value",
+        }
+    }
+
+    fn all<'a>() -> &'a [Self] {
+        &[Self::Text, Self::State, Self::Value]
     }
 }

@@ -1,6 +1,6 @@
 use gpui::{App, FontWeight, Window, div, prelude::*, px};
 use main::FRAME_CELL_SIZE;
-use ui::{ActiveTheme, ContainerStyle, container, interactive_container};
+use ui::{ActiveTheme, ContainerStyle, interactive_container};
 
 pub mod main;
 pub mod settings;
@@ -43,7 +43,7 @@ pub trait VirtualWindowDelegate {
 
     fn render_header(
         &mut self,
-        w: &mut Window,
+        _w: &mut Window,
         cx: &mut Context<VirtualWindow<Self>>,
     ) -> impl IntoElement
     where
