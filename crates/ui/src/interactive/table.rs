@@ -44,22 +44,24 @@ impl<D: TableDelegate> Table<D> {
 
 impl<D: TableDelegate> Table<D> {
     fn render_header_row(&self, w: &mut Window, cx: &mut Context<Table<D>>) -> Div {
-        let cells = D::Column::all().iter().enumerate().map(|(ix, col)| {
+        let cells = D::Column::all().iter().map(|col| {
             div()
                 .w(self.width_for_column(col))
                 .h_full()
-                .border_1()
-                .when(ix != 0, |e| e.border_l_0())
+                .px_1()
+                .border_r_1()
                 .border_color(cx.theme().colors.border)
+                .text_ellipsis()
                 .child(col.label().to_string())
         });
 
-        let total_width = D::Column::all().iter().map(|c| self.width_for_column(c).0).sum();
         div()
-            .w(px(total_width))
-            .h(self.row_height(w, cx))
+            .w_full()
+            .when_some(self.row_height(w, cx), |e, h| e.h(h))
             .flex()
             .bg(cx.theme().colors.bg_tertiary)
+            .border_color(cx.theme().colors.border)
+            .border_b_1()
             .children(cells)
     }
 }
@@ -79,18 +81,18 @@ impl<D: TableDelegate + 'static> Render for Table<D> {
                     .map(|(row_ix, row)| {
                         let alternating_color = cx.theme().colors.bg_alternating;
 
-                        let cells = D::Column::all().iter().enumerate().map(|(col_ix, col)| {
+                        let cells = D::Column::all().iter().map(|col| {
                             div()
                                 .w(this.width_for_column(col))
-                                .h(this.row_height(w, cx))
-                                .border_r_1()
+                                .when_some(this.row_height(w, cx), |e, h| e.h(h))
                                 .border_b_1()
-                                .when(col_ix == 0, |e| e.border_l_1())
+                                .border_r_1()
                                 .border_color(cx.theme().colors.border)
                                 .child(row.render_cell(col, w, cx))
                         });
 
                         div()
+                            .w_full()
                             .when(row_ix % 2 == 0, |e| e.bg(alternating_color))
                             .flex()
                             .children(cells)
@@ -98,28 +100,24 @@ impl<D: TableDelegate + 'static> Render for Table<D> {
                     .collect()
             },
         )
-        .h_full();
+        .size_full();
 
-        div()
-            .h_full()
-            .bg(cx.theme().colors.bg_secondary)
-            .child(header_row)
-            .child(data_rows)
-            .debug_below()
+        div().h_full().bg(cx.theme().colors.bg_secondary).child(header_row).child(data_rows)
     }
 }
 
 pub trait TableDelegate: Sized {
     type Row: TableRow<Self>;
+
     type Column: TableColumn + std::hash::Hash + Eq;
 
     fn rows(&self) -> &[Self::Row];
 
-    fn row_height(&self, w: &Window, _cx: &Context<Table<Self>>) -> Pixels
+    fn row_height(&self, _w: &Window, _cx: &Context<Table<Self>>) -> Option<Pixels>
     where
         Self: Sized,
     {
-        w.line_height()
+        None
     }
 }
 

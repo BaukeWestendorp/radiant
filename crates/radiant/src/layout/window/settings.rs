@@ -2,7 +2,8 @@ use super::{VirtualWindow, VirtualWindowDelegate, main::MainWindow};
 use gpui::*;
 use show::{Show, dmx_io::SacnSourceSettings};
 use ui::{
-    ActiveTheme as _, Checkbox, CheckboxEvent, Field, FieldEvent, FieldImpl, NumberField, TabView,
+    Checkbox, CheckboxEvent, ContainerStyle, Field, FieldEvent, FieldImpl, NumberField, TabView,
+    Table, TableColumn, TableDelegate, TableRow, container, section,
 };
 
 pub struct SettingsWindow {
@@ -52,34 +53,68 @@ impl VirtualWindowDelegate for SettingsWindow {
 }
 
 struct DmxIoView {
-    sacn_source_views: Vec<Entity<SacnSourceSettingsView>>,
+    sacn_source_table: Entity<Table<SacnSourceTable>>,
 }
 
 impl DmxIoView {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let sacn_source_views = Show::global(cx)
+    pub fn new(w: &mut Window, cx: &mut Context<Self>) -> Self {
+        let sacn_source_table =
+            cx.new(|cx| Table::new(SacnSourceTable::new(w, cx), "sacn-source-table", w, cx));
+
+        Self { sacn_source_table }
+    }
+}
+
+impl Render for DmxIoView {
+    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        div()
+            .flex()
+            .flex_col()
+            .p_2()
+            .child(
+                section("sACN Inputs & Outputs")
+                    .child(
+                        container(ContainerStyle::normal(w, cx))
+                            .size_full()
+                            .child(self.sacn_source_table.clone()),
+                    )
+                    .h_1_2(),
+            )
+            .size_full()
+    }
+}
+
+struct SacnSourceTable {
+    rows: Vec<SacnSourceTableRow>,
+}
+
+impl SacnSourceTable {
+    pub fn new(w: &mut Window, cx: &mut App) -> Self {
+        let rows = Show::global(cx)
             .dmx_io_settings
             .sacn
             .sources
             .clone()
             .into_iter()
             .enumerate()
-            .map(|(ix, s)| cx.new(|cx| SacnSourceSettingsView::new(s, ix, window, cx)))
+            .map(|(ix, s)| SacnSourceTableRow::new(s, ix, w, cx))
             .collect();
 
-        Self { sacn_source_views }
+        Self { rows }
     }
 }
 
-impl Render for DmxIoView {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().p_2().children(self.sacn_source_views.clone()).size_full()
+impl TableDelegate for SacnSourceTable {
+    type Row = SacnSourceTableRow;
+
+    type Column = SacnSourceTableColumn;
+
+    fn rows(&self) -> &[Self::Row] {
+        &self.rows
     }
 }
 
-struct SacnSourceSettingsView {
-    source: Entity<SacnSourceSettings>,
-
+struct SacnSourceTableRow {
     name_field: Entity<Field<String>>,
     local_universes_field: Entity<Field<UniverseIdList>>,
     destination_universe_field: Entity<Field<UniverseIdFieldImpl>>,
@@ -87,33 +122,32 @@ struct SacnSourceSettingsView {
     preview_data_checkbox: Entity<Checkbox>,
 }
 
-impl SacnSourceSettingsView {
+impl SacnSourceTableRow {
     pub fn new(
         source: Entity<SacnSourceSettings>,
         ix: usize,
-        window: &mut Window,
-        cx: &mut Context<Self>,
+        w: &mut Window,
+        cx: &mut App,
     ) -> Self {
         let name_field = cx.new(|cx| {
-            let field = Field::new(
-                ElementId::NamedInteger("name".into(), ix),
-                cx.focus_handle(),
-                window,
-                cx,
-            );
+            let field =
+                Field::new(ElementId::NamedInteger("name".into(), ix), cx.focus_handle(), w, cx);
             field.set_placeholder("Name", cx);
             field.set_value(&source.read(cx).name.clone(), cx);
             field
         });
 
-        cx.subscribe(&name_field, |this, _, event: &FieldEvent<String>, cx| match event {
-            FieldEvent::Submit(new_name) => {
-                this.source.update(cx, |source, cx| {
-                    source.name = new_name.clone();
-                    cx.notify();
-                });
+        cx.subscribe(&name_field, {
+            let source = source.clone();
+            move |_, event: &FieldEvent<String>, cx| match event {
+                FieldEvent::Submit(new_name) => {
+                    source.update(cx, |source, cx| {
+                        source.name = new_name.clone();
+                        cx.notify();
+                    });
+                }
+                _ => {}
             }
-            _ => {}
         })
         .detach();
 
@@ -121,7 +155,7 @@ impl SacnSourceSettingsView {
             let field = Field::<UniverseIdList>::new(
                 ElementId::NamedInteger("local_universes".into(), ix),
                 cx.focus_handle(),
-                window,
+                w,
                 cx,
             );
             field.set_placeholder("Local Universes (e.g. '1 2 3')", cx);
@@ -143,15 +177,18 @@ impl SacnSourceSettingsView {
             field
         });
 
-        cx.subscribe(&local_universes_field, |this, _, event, cx| match event {
-            FieldEvent::Submit(new_local_universes) => {
-                this.source.update(cx, |source, cx| {
-                    source.local_universes =
-                        new_local_universes.0.iter().map(|u| (*u).into()).collect();
-                    cx.notify();
-                });
+        cx.subscribe(&local_universes_field, {
+            let source = source.clone();
+            move |_, event, cx| match event {
+                FieldEvent::Submit(new_local_universes) => {
+                    source.update(cx, |source, cx| {
+                        source.local_universes =
+                            new_local_universes.0.iter().map(|u| (*u).into()).collect();
+                        cx.notify();
+                    });
+                }
+                _ => {}
             }
-            _ => {}
         })
         .detach();
 
@@ -159,7 +196,7 @@ impl SacnSourceSettingsView {
             let field = Field::<UniverseIdFieldImpl>::new(
                 ElementId::NamedInteger("destination_universe".into(), ix),
                 cx.focus_handle(),
-                window,
+                w,
                 cx,
             );
             field.set_placeholder("Destination Universe Id", cx);
@@ -169,14 +206,17 @@ impl SacnSourceSettingsView {
             field
         });
 
-        cx.subscribe(&destination_universe_field, |this, _, event, cx| match event {
-            FieldEvent::Submit(new_destination_universe) => {
-                this.source.update(cx, |source, cx| {
-                    source.destination_universe = (*new_destination_universe).into();
-                    cx.notify();
-                });
+        cx.subscribe(&destination_universe_field, {
+            let source = source.clone();
+            move |_, event, cx| match event {
+                FieldEvent::Submit(new_destination_universe) => {
+                    source.update(cx, |source, cx| {
+                        source.destination_universe = (*new_destination_universe).into();
+                        cx.notify();
+                    });
+                }
+                _ => {}
             }
-            _ => {}
         })
         .detach();
 
@@ -184,7 +224,7 @@ impl SacnSourceSettingsView {
             let mut field = NumberField::new(
                 ElementId::NamedInteger("priority".into(), ix),
                 cx.focus_handle(),
-                window,
+                w,
                 cx,
             );
             field.set_min(Some(0u8), cx);
@@ -194,32 +234,37 @@ impl SacnSourceSettingsView {
             field
         });
 
-        cx.subscribe(&priority_field, |this, _, event, cx| match event {
-            FieldEvent::Submit(new_priority) => {
-                this.source.update(cx, |source, cx| {
-                    source.priority = *new_priority;
-                    cx.notify();
-                });
+        cx.subscribe(&priority_field, {
+            let source = source.clone();
+            move |_, event, cx| match event {
+                FieldEvent::Submit(new_priority) => {
+                    source.update(cx, |source, cx| {
+                        source.priority = *new_priority;
+                        cx.notify();
+                    });
+                }
+                _ => {}
             }
-            _ => {}
         })
         .detach();
 
         let preview_data_checkbox =
             cx.new(|_| Checkbox::new(ElementId::NamedInteger("preview_data".into(), ix)));
 
-        cx.subscribe(&preview_data_checkbox, |this, _, event, cx| match event {
-            CheckboxEvent::Changed(new_preview_data) => {
-                this.source.update(cx, |source, cx| {
-                    source.preview_data = *new_preview_data;
-                    cx.notify();
-                });
+        cx.subscribe(&preview_data_checkbox, {
+            let source = source.clone();
+            move |_, event, cx| match event {
+                CheckboxEvent::Changed(new_preview_data) => {
+                    source.update(cx, |source, cx| {
+                        source.preview_data = *new_preview_data;
+                        cx.notify();
+                    });
+                }
             }
         })
         .detach();
 
         Self {
-            source,
             name_field,
             local_universes_field,
             destination_universe_field,
@@ -229,23 +274,64 @@ impl SacnSourceSettingsView {
     }
 }
 
-impl Render for SacnSourceSettingsView {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .w_full()
-            .flex()
-            .items_center()
-            .gap_2()
-            .border_b_1()
-            .border_color(cx.theme().colors.border)
-            .p_2()
-            .children([
-                div().min_w_32().child(self.name_field.clone()),
-                div().min_w_32().child(self.local_universes_field.clone()),
-                div().min_w_32().child(self.destination_universe_field.clone()),
-                div().min_w_32().child(self.priority_field.clone()),
-                div().min_w_32().child(self.preview_data_checkbox.clone()),
-            ])
+impl TableRow<SacnSourceTable> for SacnSourceTableRow {
+    fn render_cell(
+        &self,
+        column: &SacnSourceTableColumn,
+        _w: &mut Window,
+        _cx: &mut Context<Table<SacnSourceTable>>,
+    ) -> impl IntoElement
+    where
+        Self: Sized,
+    {
+        match column {
+            SacnSourceTableColumn::Name => {
+                div().p_1().child(self.name_field.clone()).into_any_element()
+            }
+            SacnSourceTableColumn::LocalUniverses => {
+                div().p_1().child(self.local_universes_field.clone()).into_any_element()
+            }
+            SacnSourceTableColumn::DestinationUniverse => {
+                div().p_1().child(self.destination_universe_field.clone()).into_any_element()
+            }
+            SacnSourceTableColumn::Priority => {
+                div().p_1().child(self.priority_field.clone()).into_any_element()
+            }
+            SacnSourceTableColumn::PreviewData => {
+                div().p_1().child(self.preview_data_checkbox.clone()).into_any_element()
+            }
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Hash)]
+enum SacnSourceTableColumn {
+    Name,
+    LocalUniverses,
+    DestinationUniverse,
+    Priority,
+    PreviewData,
+}
+
+impl TableColumn for SacnSourceTableColumn {
+    fn label(&self) -> &str {
+        match self {
+            SacnSourceTableColumn::Name => "Name",
+            SacnSourceTableColumn::LocalUniverses => "Local Universes",
+            SacnSourceTableColumn::DestinationUniverse => "Destination Universe",
+            SacnSourceTableColumn::Priority => "Priority",
+            SacnSourceTableColumn::PreviewData => "Preview Data",
+        }
+    }
+
+    fn all<'a>() -> &'a [Self] {
+        &[
+            Self::Name,
+            Self::LocalUniverses,
+            Self::DestinationUniverse,
+            Self::Priority,
+            Self::PreviewData,
+        ]
     }
 }
 
