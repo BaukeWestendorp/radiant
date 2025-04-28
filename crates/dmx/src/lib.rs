@@ -77,9 +77,11 @@ impl From<Channel> for u16 {
     }
 }
 
-impl From<u16> for Channel {
-    fn from(channel: u16) -> Self {
-        Self::new(channel).unwrap()
+impl TryFrom<u16> for Channel {
+    type Error = Error;
+
+    fn try_from(value: u16) -> Result<Self, Self::Error> {
+        Self::new(value)
     }
 }
 
@@ -222,10 +224,31 @@ impl Address {
     /// assert_eq!(address.channel, Channel::new(488).unwrap());
     /// ```
     pub fn from_absolute(absolute_address: u32) -> Result<Self, Error> {
+        // Handle case where absolute_address is 0
+        if absolute_address == 0 {
+            return Err(Error::InvalidChannel(0));
+        }
+
+        let universe_idx = (absolute_address - 1) / 512;
+        let channel_num = (absolute_address - 1) % 512 + 1;
+
         Ok(Self {
-            universe: UniverseId(1 + (absolute_address / 512) as u16),
-            channel: Channel::new((absolute_address % 512) as u16)?,
+            universe: UniverseId(1 + universe_idx as u16),
+            channel: Channel::new(channel_num as u16)?,
         })
+    }
+
+    /// Converts the [Address] to an absolute address.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use dmx::{Address, Channel, UniverseId};
+    /// let address = Address::new(UniverseId::new(2).unwrap(), Channel::new(488).unwrap());
+    /// assert_eq!(address.to_absolute(), 1000);
+    /// ```
+    pub fn to_absolute(&self) -> u32 {
+        (self.universe.0 as u32 - 1) * 512 + self.channel.0 as u32
     }
 }
 
@@ -463,7 +486,7 @@ impl Universe {
 
 impl From<Universe> for Vec<u8> {
     fn from(universe: Universe) -> Self {
-        universe.values.iter().map(|v| v.0).collect()
+        universe.values.into_iter().map(|v| v.0).collect()
     }
 }
 
