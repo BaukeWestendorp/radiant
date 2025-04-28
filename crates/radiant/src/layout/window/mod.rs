@@ -21,12 +21,13 @@ impl<D: VirtualWindowDelegate + 'static> Render for VirtualWindow<D> {
     fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let style = ContainerStyle::normal(w, cx);
         let content = div()
+            .size_full()
             .bg(style.background)
             .border_color(style.border)
             .rounded_b(cx.theme().radius)
             .border_1()
             .border_t_0()
-            .size_full()
+            .occlude()
             .child(self.delegate.render_content(w, cx));
         let header = self.delegate.render_header(w, cx);
 
