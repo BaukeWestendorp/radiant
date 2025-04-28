@@ -22,13 +22,15 @@ impl RadiantApp {
         Application::new().run(move |cx: &mut App| {
             cx.activate(true);
 
-            self.init_show(cx);
+            Show::init(cx, self.showfile_path.as_ref());
+
+            let main_window = MainWindow::open(cx).expect("should open main window");
 
             ui::init(cx);
             ui::actions::init(cx);
             flow::gpui::actions::init(cx);
             layout::main::actions::init(cx);
-            actions::init(cx);
+            actions::init(main_window, cx);
 
             self.init_menus(cx);
 
@@ -36,24 +38,7 @@ impl RadiantApp {
 
             self.init_dmx_io(multiverse.clone(), cx);
             output_processor::start(multiverse, cx);
-
-            MainWindow::open(cx).expect("should open main window");
         });
-    }
-
-    fn init_show(&self, cx: &mut App) {
-        let show = match &self.showfile_path {
-            Some(path) => match Show::open_from_file(path.clone(), cx) {
-                Ok(show) => show,
-                Err(err) => {
-                    log::error!("Error opening showfile: '{}'", err);
-                    std::process::exit(1);
-                }
-            },
-            None => Show::new(cx),
-        };
-
-        cx.set_global(show);
     }
 
     fn init_dmx_io(&self, multiverse: Entity<dmx::Multiverse>, cx: &mut App) {
@@ -92,9 +77,9 @@ mod actions {
 
     actions!(app, [Quit, Save, Open, OpenSettings]);
 
-    pub fn init(cx: &mut App) {
+    pub fn init(main_window: WindowHandle<MainWindow>, cx: &mut App) {
         bind_global_keys(cx);
-        handle_global_actions(cx);
+        handle_global_actions(main_window, cx);
     }
 
     fn bind_global_keys(cx: &mut App) {
@@ -103,8 +88,54 @@ mod actions {
         cx.bind_keys([KeyBinding::new("secondary-o", Open, None)]);
     }
 
-    fn handle_global_actions(cx: &mut App) {
-        cx.on_action::<Quit>(|_, cx| cx.quit());
+    fn handle_global_actions(main_window: WindowHandle<MainWindow>, cx: &mut App) {
+        cx.on_action::<Quit>(move |_, cx| {
+            if let Err(err) = handle_quit(main_window, cx) {
+                log::error!("Error handling quit: {}", err);
+            }
+        });
+
+        fn handle_quit(main_window: WindowHandle<MainWindow>, cx: &mut App) -> Result<()> {
+            cx.spawn(async move |cx| {
+                let answer = main_window.update(cx, |_, w, cx| {
+                    w.prompt(
+                        PromptLevel::Warning,
+                        "Save before exiting?",
+                        None,
+                        &["Yes", "No", "Cancel"],
+                        cx,
+                    )
+                });
+
+                match answer.unwrap().await {
+                    Ok(ix) => match ix {
+                        0 => {
+                            cx.update(|cx| {
+                                cx.dispatch_action(&Save);
+                                cx.quit();
+                            })
+                            .context("update app state")
+                            .unwrap();
+                        }
+                        1 => {
+                            cx.update(|cx| {
+                                cx.quit();
+                            })
+                            .context("update app state")
+                            .unwrap();
+                        }
+                        2 => {}
+                        _ => {}
+                    },
+                    Err(err) => {
+                        log::error!("Failed to get answer: {}", err);
+                    }
+                };
+            })
+            .detach();
+
+            Ok(())
+        }
 
         cx.on_action::<Save>(|_, cx| {
             let path = Show::global(cx).path.clone();

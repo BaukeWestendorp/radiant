@@ -4417,6 +4417,7 @@ dependencies = [
  "dmx",
  "flow",
  "gpui",
+ "log",
  "ron",
  "sacn",
  "serde",

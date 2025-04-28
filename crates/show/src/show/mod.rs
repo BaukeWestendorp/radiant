@@ -22,6 +22,21 @@ impl Show {
         Self::from_showfile(None, Showfile::default(), cx)
     }
 
+    pub fn init(cx: &mut gpui::App, showfile_path: Option<&PathBuf>) {
+        let show = match showfile_path {
+            Some(path) => match Show::open_from_file(path.clone(), cx) {
+                Ok(show) => show,
+                Err(err) => {
+                    log::error!("Error opening showfile: '{}'", err);
+                    std::process::exit(1);
+                }
+            },
+            None => Show::new(cx),
+        };
+
+        cx.set_global(show);
+    }
+
     pub(crate) fn from_showfile(
         path: Option<PathBuf>,
         showfile: Showfile,
