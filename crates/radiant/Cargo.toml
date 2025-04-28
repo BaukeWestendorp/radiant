@@ -29,4 +29,4 @@ env_logger = "0.11.8"
 log.workspace = true
 
 clap = { version = "4.5.36", features = ["derive"] }
-dirs = "6.0.0"
+dirs.workspace = true

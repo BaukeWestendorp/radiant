@@ -44,6 +44,8 @@ macro_rules! define_asset {
     };
 }
 
+pub use define_asset;
+
 pub trait AssetId: std::hash::Hash + Eq {
     fn as_u32(&self) -> u32;
 

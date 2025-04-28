@@ -1,4 +1,3 @@
-use crate::define_asset;
 use flow::{
     Graph, Input, ProcessingContext, Template, Value as _,
     gpui::{ControlEvent, ControlView},
@@ -6,7 +5,7 @@ use flow::{
 use gpui::*;
 use ui::{Field, FieldEvent, NumberField, NumberFieldImpl};
 
-define_asset!(EffectGraph, EffectGraphAsset, EffectGraphId);
+crate::define_asset!(EffectGraph, EffectGraphAsset, EffectGraphId);
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
 #[derive(serde::Serialize, serde::Deserialize)]

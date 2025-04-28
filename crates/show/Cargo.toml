@@ -4,21 +4,19 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-# crates
 dmx = { workspace = true, features = ["serde"] }
 flow = { workspace = true, features = ["serde", "derive"] }
 sacn.workspace = true
 ui.workspace = true
 
-# serialization
-serde.workspace = true
-ron = "0.10"
-
-# ui
+anyhow.workspace = true
+dirs.workspace = true
 gpui.workspace = true
-
-# logging
 log.workspace = true
+serde.workspace = true
+
+gdtf = { git = "https://github.com/matteolutz/gdtf-rs" }
+ron = "0.10"
 
 [lints]
 workspace = true

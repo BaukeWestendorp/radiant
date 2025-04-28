@@ -22,7 +22,7 @@ impl RadiantApp {
         Application::new().run(move |cx: &mut App| {
             cx.activate(true);
 
-            Show::init(cx, self.showfile_path.as_ref());
+            Show::init(cx, self.showfile_path.as_ref()).expect("should initialize show");
 
             let main_window = MainWindow::open(cx).expect("should open main window");
 

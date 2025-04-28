@@ -110,4 +110,32 @@
             )],
         ),
     ),
+    patch: (
+        fixtures: [
+            (
+                id: 101,
+                address: (universe: 1, channel: 1),
+                gdtf_file_name: "Martin_Professional@MAC_Viper_Performance@20230516NoMeas.gdtf",
+                dmx_mode: "Basic"
+            ),
+            (
+                id: 102,
+                address: (universe: 1, channel: 33),
+                gdtf_file_name: "Martin_Professional@MAC_Viper_Performance@20230516NoMeas.gdtf",
+                dmx_mode: "Basic"
+            ),
+            (
+                id: 103,
+                address: (universe: 1, channel: 66),
+                gdtf_file_name: "Martin_Professional@MAC_Viper_Performance@20230516NoMeas.gdtf",
+                dmx_mode: "Basic"
+            ),
+            (
+                id: 104,
+                address: (universe: 1, channel: 97),
+                gdtf_file_name: "Martin_Professional@MAC_Viper_Performance@20230516NoMeas.gdtf",
+                dmx_mode: "Basic"
+            )
+        ]
+    )
 )
