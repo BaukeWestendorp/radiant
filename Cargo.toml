@@ -21,7 +21,6 @@ single_match = "allow"
 too_many_arguments = "allow"
 
 [workspace.dependencies]
-# crates
 dmx = { path = "crates/dmx" }
 flow = { path = "crates/flow" }
 flow_derive = { path = "crates/flow_derive" }

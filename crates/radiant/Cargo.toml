@@ -7,26 +7,18 @@ edition.workspace = true
 workspace = true
 
 [dependencies]
-# crates
 dmx.workspace = true
+flow.workspace = true
 frames.workspace = true
 sacn.workspace = true
 show.workspace = true
 ui.workspace = true
-flow.workspace = true
 
-# serialization
+anyhow.workspace = true
+dirs.workspace = true
+gpui.workspace = true
+log.workspace = true
 serde.workspace = true
 
-# ui
-gpui.workspace = true
-
-# error handling
-anyhow.workspace = true
-
-# logging
-env_logger = "0.11.8"
-log.workspace = true
-
 clap = { version = "4.5.36", features = ["derive"] }
-dirs.workspace = true
+env_logger = "0.11.8"

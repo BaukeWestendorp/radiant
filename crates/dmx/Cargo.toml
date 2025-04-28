@@ -10,7 +10,6 @@ workspace = true
 serde = ["dep:serde", "dep:serde-big-array"]
 
 [dependencies]
-# errors
 thiserror.workspace = true
 
 # feature = "serde"
