@@ -102,12 +102,9 @@ impl Pannable {
 
         self.offset += pixel_delta;
 
-        if pixel_delta.is_zero() {
-            cx.emit(PannableEvent::OffsetCommitted(self.offset));
-        } else {
-            cx.emit(PannableEvent::OffsetChanged(self.offset));
-            cx.notify();
-        }
+        cx.emit(PannableEvent::OffsetCommitted(self.offset));
+        cx.emit(PannableEvent::OffsetChanged(self.offset));
+        cx.notify();
     }
 }
 
