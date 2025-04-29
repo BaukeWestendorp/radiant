@@ -1,10 +1,8 @@
-use crate::showfile::{self, Showfile};
+use crate::showfile::{self, effect_graph};
 use gpui::{App, AppContext as _, Entity};
 use std::collections::HashMap;
 
-pub use effect_graph::*;
-
-mod effect_graph;
+pub use crate::showfile::assets::{effect_graph::*, fixture_group::*};
 
 #[macro_export]
 macro_rules! define_asset {
@@ -55,12 +53,13 @@ pub trait AssetId: std::hash::Hash + Eq {
 #[derive(Clone, Default)]
 pub struct Assets {
     pub effect_graphs: AssetPool<EffectGraph, EffectGraphId>,
+    pub fixture_groups: AssetPool<FixtureGroup, FixtureGroupId>,
 }
 
 impl Assets {
-    pub(crate) fn from_showfile(showfile: &Showfile, cx: &mut gpui::App) -> Self {
+    pub(crate) fn from_showfile(assets: &showfile::Assets, cx: &mut gpui::App) -> Self {
         let mut effect_graphs = AssetPool::new();
-        for (id, asset) in showfile.assets.effect_graphs.clone() {
+        for (id, asset) in assets.effect_graphs.clone() {
             effect_graphs.insert(
                 id.into(),
                 cx.new(|_cx| {
@@ -70,7 +69,13 @@ impl Assets {
                 }),
             );
         }
-        Assets { effect_graphs }
+
+        let mut fixture_groups = AssetPool::new();
+        for (id, asset) in assets.fixture_groups.clone() {
+            fixture_groups.insert(id.into(), cx.new(|_cx| Asset::from_showfile(asset)));
+        }
+
+        Assets { effect_graphs, fixture_groups }
     }
 
     pub(crate) fn to_showfile(&self, cx: &App) -> showfile::Assets {
@@ -79,7 +84,12 @@ impl Assets {
             effect_graphs.insert(id.into(), asset.read(cx).to_showfile());
         }
 
-        showfile::Assets { effect_graphs }
+        let mut fixture_groups = showfile::AssetPool::new();
+        for (id, asset) in self.fixture_groups.assets.clone() {
+            fixture_groups.insert(id.into(), asset.read(cx).to_showfile());
+        }
+
+        showfile::Assets { effect_graphs, fixture_groups }
     }
 }
 

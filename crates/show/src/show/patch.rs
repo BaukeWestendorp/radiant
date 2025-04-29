@@ -87,7 +87,8 @@ impl Patch {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct FixtureId(pub u32);
 
 impl std::ops::Deref for FixtureId {

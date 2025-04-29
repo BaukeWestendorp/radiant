@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
-use crate::assets::EffectGraph;
+use effect_graph::EffectGraph;
+use fixture_group::FixtureGroup;
+
+pub mod effect_graph;
+pub mod fixture_group;
 
 pub type AssetId = u32;
 
@@ -8,6 +12,7 @@ pub type AssetId = u32;
 #[derive(Clone, Default)]
 pub struct Assets {
     pub effect_graphs: AssetPool<EffectGraph>,
+    pub fixture_groups: AssetPool<FixtureGroup>,
 }
 
 pub type AssetPool<T> = HashMap<AssetId, Asset<T>>;

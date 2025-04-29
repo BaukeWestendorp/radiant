@@ -46,7 +46,7 @@ impl Show {
 
         Ok(Show {
             path,
-            assets: Assets::from_showfile(&showfile, cx),
+            assets: Assets::from_showfile(&showfile.assets, cx),
             dmx_io_settings: DmxIoSettings::from_showfile(showfile.dmx_io_settings, cx),
             layout: cx.new(|_| showfile.layout),
             patch: cx.new(|_| patch),
