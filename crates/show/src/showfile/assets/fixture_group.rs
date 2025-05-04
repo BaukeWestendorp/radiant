@@ -3,8 +3,8 @@ use crate::patch::FixtureId;
 crate::define_asset!(FixtureGroup, FixtureGroupAsset, FixtureGroupId);
 
 #[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Clone, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct FixtureGroup {
-    label: String,
-    fixtures: Vec<FixtureId>,
+    pub label: String,
+    pub fixtures: Vec<FixtureId>,
 }

@@ -405,13 +405,13 @@ pub struct ProcessingContext<D: GraphDef> {
 
 impl<D: GraphDef> Default for ProcessingContext<D> {
     fn default() -> Self {
-        Self::new()
+        Self::new(D::ProcessingState::default())
     }
 }
 
 impl<D: GraphDef> ProcessingContext<D> {
-    pub fn new() -> Self {
-        Self { state: D::ProcessingState::default(), output_value_cache: HashMap::new() }
+    pub fn new(state: D::ProcessingState) -> Self {
+        Self { state, output_value_cache: HashMap::new() }
     }
 
     pub fn state(&self) -> &D::ProcessingState {

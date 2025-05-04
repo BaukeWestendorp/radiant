@@ -1,9 +1,11 @@
 use flow::{
-    Graph, Input, ProcessingContext, Template, Value as _,
+    Graph, Input, Output, ProcessingContext, Template, Value as _,
     gpui::{ControlEvent, ControlView},
 };
 use gpui::*;
 use ui::{Field, FieldEvent, NumberField, NumberFieldImpl};
+
+use crate::{assets::FixtureGroup, patch::FixtureId};
 
 crate::define_asset!(EffectGraph, EffectGraphAsset, EffectGraphId);
 
@@ -50,17 +52,23 @@ pub enum EffectGraphValue {
 
     #[value(color = 0x1361FF)]
     DmxValue(FloatingDmxValue),
+
+    #[value(color = 0xffff00)]
+    FixtureId(FixtureId),
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct EffectGraphState {
     pub multiverse: dmx::Multiverse,
+    pub fixture_group: FixtureGroup,
+    pub fixture_id_index: Option<usize>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum EffectGraphControl {
     DmxAddress,
     DmxValue,
+    FixtureId,
 }
 
 impl flow::Control<EffectGraphDef> for EffectGraphControl {
@@ -117,6 +125,28 @@ impl flow::Control<EffectGraphDef> for EffectGraphControl {
 
                 field.into()
             }),
+            EffectGraphControl::FixtureId => ControlView::new(cx, |cx| {
+                let field = cx.new(|cx| {
+                    let value: FixtureId = value.try_into().expect(
+                        "should convert initial input value to the value used by it's control",
+                    );
+                    let field = Field::<FixtureId>::new(id, cx.focus_handle(), window, cx);
+                    field.set_value(&value, cx);
+                    field
+                });
+
+                cx.subscribe(&field, |_, _, event: &FieldEvent<FixtureId>, cx| {
+                    if let FieldEvent::Change(value) = event {
+                        cx.emit(ControlEvent::<EffectGraphDef>::Change(
+                            EffectGraphValue::FixtureId(*value),
+                        ));
+                        cx.notify();
+                    }
+                })
+                .detach();
+
+                field.into()
+            }),
         }
     }
 }
@@ -152,17 +182,36 @@ pub fn insert_templates(graph: &mut EffectGraph) {
 
                 let Some(EffectGraphValue::DmxAddress(address)) =
                     address.cast_to(&EffectGraphDataType::DmxAddress)
-                    else {
-                        panic!()
-                    };
+                            else {
+                                panic!()
+                            };
 
-                let Some(EffectGraphValue::DmxValue(value)) =
-                    value.cast_to(&EffectGraphDataType::DmxValue)
-                    else {
-                        panic!()
-                    };
+                        let Some(EffectGraphValue::DmxValue(value)) =
+                            value.cast_to(&EffectGraphDataType::DmxValue)
+                            else {
+                                panic!()
+                            };
 
-                pcx.multiverse.set_value(&address, value.into());
+                        pcx.multiverse.set_value(&address, value.into());
             }),
-    )]);
+        ),
+        Template::new(
+            "get_current_fixture_id",
+            "Current Fixture Id",
+            vec![],
+            vec![
+                Output::new("fixture_id", "Fixture Id", EffectGraphDataType::FixtureId),
+            ],
+            vec![],
+            Box::new(|_iv, _cv, ov, pcx: &mut ProcessingContext<EffectGraphDef>| {
+                let fixture_id = pcx.fixture_id_index
+                    .and_then(|ix| pcx.fixture_group.fixtures.get(ix))
+                    .copied();
+
+                if let Some(fixture_id) = fixture_id {
+                    ov.set_value("fixture_id", EffectGraphValue::FixtureId(fixture_id));
+                }
+            }),
+        )
+    ]);
 }
