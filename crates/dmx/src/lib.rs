@@ -63,11 +63,6 @@ impl Channel {
             other => Err(Error::InvalidChannel(other)),
         }
     }
-
-    pub fn with_offset(mut self, offset: u16) -> Self {
-        self.0 += offset;
-        self
-    }
 }
 
 impl Default for Channel {
@@ -256,9 +251,33 @@ impl Address {
         (self.universe.0 as u32 - 1) * 512 + self.channel.0 as u32
     }
 
-    pub fn with_channel_offset(mut self, offset: u16) -> Self {
-        self.channel = self.channel.with_offset(offset);
-        self
+    /// Returns a new [Address] with the channel offset by the specified amount.
+    ///
+    /// This method adds the given offset to the current channel value and ensures
+    /// the resulting channel is valid (within 1..=512 range).
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use dmx::{Address, Channel, UniverseId};
+    /// let address = Address::new(UniverseId::new(1).unwrap(), Channel::new(500).unwrap());
+    /// let new_address = address.with_channel_offset(10).unwrap();
+    /// assert_eq!(new_address.channel, Channel::new(510).unwrap());
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the resulting channel would be outside the valid range (1..=512).
+    ///
+    /// ```rust
+    /// # use dmx::{Address, Channel, UniverseId};
+    /// let address = Address::new(UniverseId::new(1).unwrap(), Channel::new(500).unwrap());
+    /// let result = address.with_channel_offset(20); // Would be channel 520
+    /// assert!(result.is_err());
+    /// ```
+    pub fn with_channel_offset(mut self, offset: u16) -> Result<Self, Error> {
+        self.channel = Channel::new(self.channel.0 + offset)?;
+        Ok(self)
     }
 }
 

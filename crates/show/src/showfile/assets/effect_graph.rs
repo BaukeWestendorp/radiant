@@ -277,11 +277,14 @@ pub fn insert_templates(graph: &mut EffectGraph) {
                     return;
                 };
 
-                let address = fixture.address().with_channel_offset(
-                    *channel_offset.first().expect("Should have at least one channel offset")
-                        as u16
-                        - 1,
-                );
+                let address = fixture
+                    .address()
+                    .with_channel_offset(
+                        *channel_offset.first().expect("Should have at least one channel offset")
+                            as u16
+                            - 1,
+                    )
+                    .unwrap();
 
                 pcx.multiverse.update(cx, |multiverse, cx| {
                     multiverse.set_value(&address, value.into());
