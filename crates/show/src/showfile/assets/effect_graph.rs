@@ -5,10 +5,7 @@ use flow::{
 use gpui::*;
 use ui::{Field, FieldEvent, NumberField, NumberFieldImpl};
 
-use crate::{
-    assets::{FixtureGroup, FixtureGroupAsset},
-    patch::FixtureId,
-};
+use crate::{assets::FixtureGroupAsset, patch::FixtureId};
 
 crate::define_asset!(EffectGraph, EffectGraphAsset, EffectGraphId);
 

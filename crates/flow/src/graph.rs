@@ -117,15 +117,15 @@ impl<D: GraphDef + 'static> Graph<D> {
     }
 
     pub fn node(&self, node_id: &NodeId) -> &Node<D> {
-        self.nodes.get(node_id).unwrap_or_else(|| {
-            panic!("should always return a node for given node_id: found '{node_id:?}'")
-        })
+        self.nodes
+            .get(node_id)
+            .unwrap_or_else(|| panic!("should always return a node for given node_id"))
     }
 
     pub fn node_mut(&mut self, node_id: &NodeId) -> &mut Node<D> {
-        self.nodes.get_mut(node_id).unwrap_or_else(|| {
-            panic!("should always return a node for given node_id: found '{node_id:?}'")
-        })
+        self.nodes
+            .get_mut(node_id)
+            .unwrap_or_else(|| panic!("should always return a node for given node_id"))
     }
 
     pub fn nodes(&self) -> impl Iterator<Item = (&NodeId, &Node<D>)> {

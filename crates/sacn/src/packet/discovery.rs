@@ -50,7 +50,6 @@ impl acn::Pdu for DiscoveryFraming {
     }
 
     fn decode(bytes: &[u8]) -> Result<Self, Self::DecodeError> {
-        dbg!(&bytes);
         // E1.31 6.4.1 Universe Discovery Packet: Vector
         let vector = [bytes[2], bytes[3], bytes[4], bytes[5]];
         if vector != Self::VECTOR {

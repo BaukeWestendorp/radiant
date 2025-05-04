@@ -113,17 +113,10 @@ pub mod actions {
     actions!(main_window, [OpenSettings]);
 
     pub fn init(cx: &mut App) {
-        bind_global_keys(cx);
-        handle_global_actions(cx);
+        bind_keys(cx);
     }
 
-    fn bind_global_keys(cx: &mut App) {
+    fn bind_keys(cx: &mut App) {
         cx.bind_keys([KeyBinding::new("secondary-,", OpenSettings, Some(KEY_CONTEXT))]);
-    }
-
-    fn handle_global_actions(cx: &mut App) {
-        cx.on_action::<OpenSettings>(|_, _cx| {
-            eprintln!("Opening settings window");
-        });
     }
 }
