@@ -152,11 +152,10 @@ impl Source {
 
     /// Starts the [Source].
     pub fn start(&self) -> Result<(), SourceError> {
-        log::info!(
-            "Starting sACN Source on {}:{}",
-            self.config.lock().unwrap().ip,
-            self.config.lock().unwrap().port
-        );
+        let config = self.config.lock().unwrap();
+        log::info!("Starting sACN Source on {}:{}", config.ip, config.port);
+        drop(config);
+
         self.send_discovery_packet()?;
 
         loop {
@@ -233,6 +232,9 @@ impl Source {
     fn send_discovery_packet(&self) -> Result<(), SourceError> {
         log::info!("Sending sACN discovery packet");
 
+        let mut last_time = self.last_universe_discovery_time.lock().unwrap();
+        *last_time = Some(Instant::now());
+
         if self.universes.lock().unwrap().is_empty() {
             return Ok(());
         }
@@ -264,9 +266,6 @@ impl Source {
         for (ix, list_of_universes) in pages.enumerate() {
             create_and_send_packet(ix as u8, last_page, list_of_universes.to_vec())?;
         }
-
-        let mut last_time = self.last_universe_discovery_time.lock().unwrap();
-        *last_time = Some(Instant::now());
 
         Ok(())
     }
