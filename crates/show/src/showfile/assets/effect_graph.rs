@@ -229,10 +229,64 @@ pub fn insert_templates(graph: &mut EffectGraph) {
                     .patch
                     .read(cx)
                     .fixture(fixture_id)
-                    .expect("Should find a fixture with given id");
+                    .expect(&format!("Should find a fixture with id {fixture_id}"));
 
                 ov.set_value("fixture_id", EffectGraphValue::FixtureId(fixture_id));
                 ov.set_value("address", EffectGraphValue::DmxAddress(*fixture.address()));
+            }),
+        ),
+        Template::new(
+            "set_gdtf_attr_dimmer",
+            "Set Dimmer",
+            vec![
+                Input::new(
+                    "fixture_id",
+                    "Fixture Id",
+                    EffectGraphValue::FixtureId(Default::default()),
+                    EffectGraphControl::FixtureId,
+                ),
+                Input::new(
+                    "value",
+                    "Value",
+                    EffectGraphValue::DmxValue(Default::default()),
+                    EffectGraphControl::DmxValue,
+                ),
+            ],
+            vec![],
+            vec![],
+            Box::new(|iv, _cv, _ov, pcx: &mut ProcessingContext<EffectGraphDef>, cx| {
+                let value = iv.value("value").expect("should get value");
+                let Some(EffectGraphValue::DmxValue(value)) =
+                    value.cast_to(&EffectGraphDataType::DmxValue)
+                else {
+                    panic!()
+                };
+                let fixture_id = iv.value("fixture_id").expect("should get fixture id");
+                let Some(EffectGraphValue::FixtureId(fixture_id)) =
+                    fixture_id.cast_to(&EffectGraphDataType::FixtureId)
+                else {
+                    panic!()
+                };
+
+                let patch = &crate::Show::global(cx).patch.read(cx);
+
+                let Some(fixture) = patch.fixture(fixture_id) else { return };
+
+                let Some(channel_offset) = fixture.channel_offset_for_attribute("Dimmer", patch)
+                else {
+                    return;
+                };
+
+                let address = fixture.address().with_channel_offset(
+                    *channel_offset.first().expect("Should have at least one channel offset")
+                        as u16
+                        - 1,
+                );
+
+                pcx.multiverse.update(cx, |multiverse, cx| {
+                    multiverse.set_value(&address, value.into());
+                    cx.notify();
+                });
             }),
         ),
     ]);

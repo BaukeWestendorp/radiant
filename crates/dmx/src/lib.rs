@@ -63,6 +63,11 @@ impl Channel {
             other => Err(Error::InvalidChannel(other)),
         }
     }
+
+    pub fn with_offset(mut self, offset: u16) -> Self {
+        self.0 += offset;
+        self
+    }
 }
 
 impl Default for Channel {
@@ -249,6 +254,11 @@ impl Address {
     /// ```
     pub fn to_absolute(&self) -> u32 {
         (self.universe.0 as u32 - 1) * 512 + self.channel.0 as u32
+    }
+
+    pub fn with_channel_offset(mut self, offset: u16) -> Self {
+        self.channel = self.channel.with_offset(offset);
+        self
     }
 }
 
