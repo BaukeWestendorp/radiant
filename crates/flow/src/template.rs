@@ -16,7 +16,8 @@ impl From<&str> for TemplateId {
     }
 }
 
-pub type Processor<D> = fn(&Values<D>, &Values<D>, &mut Values<D>, &mut ProcessingContext<D>);
+pub type Processor<D> =
+    fn(&Values<D>, &Values<D>, &mut Values<D>, &mut ProcessingContext<D>, &mut gpui::App);
 
 #[derive(Clone)]
 pub struct Template<D: GraphDef> {
@@ -106,8 +107,9 @@ impl<D: GraphDef> Template<D> {
         control_values: &Values<D>,
         output_values: &mut Values<D>,
         state: &mut ProcessingContext<D>,
+        cx: &mut gpui::App,
     ) {
-        (self.processor)(input_values, control_values, output_values, state)
+        (self.processor)(input_values, control_values, output_values, state, cx)
     }
 }
 

@@ -5,7 +5,10 @@ use flow::{
 use gpui::*;
 use ui::{Field, FieldEvent, NumberField, NumberFieldImpl};
 
-use crate::{assets::FixtureGroup, patch::FixtureId};
+use crate::{
+    assets::{FixtureGroup, FixtureGroupAsset},
+    patch::FixtureId,
+};
 
 crate::define_asset!(EffectGraph, EffectGraphAsset, EffectGraphId);
 
@@ -57,10 +60,10 @@ pub enum EffectGraphValue {
     FixtureId(FixtureId),
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct EffectGraphState {
-    pub multiverse: dmx::Multiverse,
-    pub fixture_group: FixtureGroup,
+    pub multiverse: Entity<dmx::Multiverse>,
+    pub fixture_group: Entity<FixtureGroupAsset>,
     pub fixture_id_index: Option<usize>,
 }
 
@@ -165,53 +168,75 @@ impl flow::GraphDef for EffectGraphDef {
 pub type EffectGraph = Graph<EffectGraphDef>;
 
 pub fn insert_templates(graph: &mut EffectGraph) {
-    #[rustfmt::skip]
     graph.add_templates([
         Template::new(
             "out_set_dmx_address",
             "Set DMX Address",
             vec![
-                Input::new("address", "Address", EffectGraphValue::DmxAddress(Default::default()), EffectGraphControl::DmxAddress),
-                Input::new("value", "Value", EffectGraphValue::DmxValue(Default::default()), EffectGraphControl::DmxValue),
+                Input::new(
+                    "address",
+                    "Address",
+                    EffectGraphValue::DmxAddress(Default::default()),
+                    EffectGraphControl::DmxAddress,
+                ),
+                Input::new(
+                    "value",
+                    "Value",
+                    EffectGraphValue::DmxValue(Default::default()),
+                    EffectGraphControl::DmxValue,
+                ),
             ],
             vec![],
             vec![],
-            Box::new(|iv, _cv, _ov, pcx: &mut ProcessingContext<EffectGraphDef>| {
+            Box::new(|iv, _cv, _ov, pcx: &mut ProcessingContext<EffectGraphDef>, cx| {
                 let address = iv.value("address").expect("should get address");
                 let value = iv.value("value").expect("should get value");
 
                 let Some(EffectGraphValue::DmxAddress(address)) =
                     address.cast_to(&EffectGraphDataType::DmxAddress)
-                            else {
-                                panic!()
-                            };
+                else {
+                    panic!()
+                };
 
-                        let Some(EffectGraphValue::DmxValue(value)) =
-                            value.cast_to(&EffectGraphDataType::DmxValue)
-                            else {
-                                panic!()
-                            };
+                let Some(EffectGraphValue::DmxValue(value)) =
+                    value.cast_to(&EffectGraphDataType::DmxValue)
+                else {
+                    panic!()
+                };
 
-                        pcx.multiverse.set_value(&address, value.into());
+                pcx.multiverse.update(cx, |multiverse, cx| {
+                    multiverse.set_value(&address, value.into());
+                    cx.notify();
+                })
             }),
         ),
         Template::new(
-            "get_current_fixture_id",
-            "Current Fixture Id",
+            "get_current_fixture",
+            "Current Fixture",
             vec![],
             vec![
                 Output::new("fixture_id", "Fixture Id", EffectGraphDataType::FixtureId),
+                Output::new("address", "Address", EffectGraphDataType::DmxAddress),
             ],
             vec![],
-            Box::new(|_iv, _cv, ov, pcx: &mut ProcessingContext<EffectGraphDef>| {
-                let fixture_id = pcx.fixture_id_index
-                    .and_then(|ix| pcx.fixture_group.fixtures.get(ix))
-                    .copied();
+            Box::new(|_iv, _cv, ov, pcx: &mut ProcessingContext<EffectGraphDef>, cx| {
+                let fixture_group = &pcx.fixture_group.read(cx).data;
 
-                if let Some(fixture_id) = fixture_id {
-                    ov.set_value("fixture_id", EffectGraphValue::FixtureId(fixture_id));
-                }
+                let fixture_id = pcx
+                    .fixture_id_index
+                    .and_then(|ix| fixture_group.fixtures.get(ix))
+                    .copied()
+                    .expect("Should have a fixture id available");
+
+                let fixture = crate::Show::global(cx)
+                    .patch
+                    .read(cx)
+                    .fixture(fixture_id)
+                    .expect("Should find a fixture with given id");
+
+                ov.set_value("fixture_id", EffectGraphValue::FixtureId(fixture_id));
+                ov.set_value("address", EffectGraphValue::DmxAddress(*fixture.address()));
             }),
-        )
+        ),
     ]);
 }

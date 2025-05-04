@@ -22,29 +22,25 @@ pub fn start(multiverse: Entity<dmx::Multiverse>, cx: &mut App) {
                     return;
                 };
 
-                let Some(fixture_group) = show.assets.fixture_groups.get(&FIXTURE_GROUP_ID) else {
+                let Some(fixture_group) =
+                    show.assets.fixture_groups.get(&FIXTURE_GROUP_ID).cloned()
+                else {
                     log::warn!("No fixture group to process!");
                     return;
                 };
-                let fixture_group = fixture_group.read(cx).data.clone();
-                let fixture_group_len = fixture_group.fixtures.len();
+                let fixture_group_len = fixture_group.read(cx).data.fixtures.len();
 
-                let mut pcx = ProcessingContext::<EffectGraphDef>::new(EffectGraphState {
-                    multiverse: Default::default(),
-                    fixture_group,
-                    fixture_id_index: None,
-                });
                 for ix in 0..fixture_group_len {
-                    effect_graph.update(cx, |effect_graph, _cx| {
-                        pcx.fixture_id_index = Some(ix);
-                        effect_graph.data.process(&mut pcx);
+                    let mut pcx = ProcessingContext::<EffectGraphDef>::new(EffectGraphState {
+                        multiverse: multiverse.clone(),
+                        fixture_group: fixture_group.clone(),
+                        fixture_id_index: Some(ix),
+                    });
+
+                    effect_graph.update(cx, |effect_graph, cx| {
+                        effect_graph.data.process(&mut pcx, cx);
                     });
                 }
-
-                multiverse.update(cx, |multiverse, cx| {
-                    *multiverse = pcx.multiverse.clone();
-                    cx.notify();
-                });
             })
             .expect("should update context");
 

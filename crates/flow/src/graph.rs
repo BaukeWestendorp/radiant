@@ -14,7 +14,7 @@ pub trait GraphDef: Clone {
     type DataType: DataType<Self> + PartialEq + Clone;
     type Control: Control<Self> + Clone;
 
-    type ProcessingState: Default;
+    type ProcessingState;
 }
 
 pub trait Value<D: GraphDef> {
@@ -245,13 +245,13 @@ impl<D: GraphDef + 'static> Graph<D> {
             .expect("should have found output")
     }
 
-    pub fn process(&self, pcx: &mut ProcessingContext<D>) {
+    pub fn process(&self, pcx: &mut ProcessingContext<D>, cx: &mut gpui::App) {
         for node_id in &self.leaf_nodes {
-            self.process_node(node_id, pcx);
+            self.process_node(node_id, pcx, cx);
         }
     }
 
-    fn process_node(&self, node_id: &NodeId, pcx: &mut ProcessingContext<D>) {
+    fn process_node(&self, node_id: &NodeId, pcx: &mut ProcessingContext<D>, cx: &mut gpui::App) {
         let node = self.node(node_id);
         let template = self.template(node.template_id());
 
@@ -261,7 +261,7 @@ impl<D: GraphDef + 'static> Graph<D> {
             let socket = InputSocket::new(*node_id, input_id.clone());
 
             let value = if let Some(source) = self.edge_source(&socket) {
-                self.get_output_value(source, pcx)
+                self.get_output_value(source, pcx, cx)
             } else {
                 value.clone()
             };
@@ -274,7 +274,7 @@ impl<D: GraphDef + 'static> Graph<D> {
 
         // Calculate outputs and update context.
         let mut output_values = Values::new();
-        template.process(&input_values, control_values, &mut output_values, pcx);
+        template.process(&input_values, control_values, &mut output_values, pcx, cx);
 
         // Update output value cache.
         pcx.cache_output_values(*node_id, output_values);
@@ -306,12 +306,13 @@ impl<D: GraphDef + 'static> Graph<D> {
         &self,
         output_socket: &OutputSocket,
         pcx: &mut ProcessingContext<D>,
+        cx: &mut gpui::App,
     ) -> D::Value {
         if let Some(value) = pcx.get_cached_output_value(output_socket) {
             return value.clone();
         }
 
-        self.process_node(&output_socket.node_id, pcx);
+        self.process_node(&output_socket.node_id, pcx, cx);
         pcx.get_cached_output_value(output_socket)
             .expect("output value should have been calculated by processing the node")
             .clone()
@@ -401,12 +402,6 @@ impl<D: GraphDef + 'static> Graph<D> {
 pub struct ProcessingContext<D: GraphDef> {
     state: D::ProcessingState,
     output_value_cache: HashMap<OutputSocket, D::Value>,
-}
-
-impl<D: GraphDef> Default for ProcessingContext<D> {
-    fn default() -> Self {
-        Self::new(D::ProcessingState::default())
-    }
 }
 
 impl<D: GraphDef> ProcessingContext<D> {
