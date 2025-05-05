@@ -47,39 +47,11 @@
                 id: 1,
                 data: (
                     nodes: {
-                        2: (
-                            template_id: "get_current_fixture",
-                            input_values: {},
-                            control_values: {},
-                        ),
-                        3: (
-                            template_id: "set_gdtf_attr_dimmer",
-                            input_values: {
-                                "value": DmxValue(0.4698),
-                                "fixture_id": FixtureId(0),
-                            },
-                            control_values: {},
-                        ),
+
                     },
-                    edges: [(
-                        target: (
-                            node_id: 3,
-                            id: "fixture_id",
-                        ),
-                        source: (
-                            node_id: 2,
-                            id: "fixture_id",
-                        ),
-                    )],
+                    edges: [],
                     node_positions: {
-                        2: (
-                            x: 352.8203,
-                            y: 214.59766,
-                        ),
-                        3: (
-                            x: 606.35547,
-                            y: 217.8711,
-                        ),
+
                     },
                     offset: (
                         x: 0.0,
@@ -96,48 +68,6 @@
                     fixtures: [401, 403, 405, 407],
                 ),
             ),
-            101: (
-                id: 101,
-                data: (
-                    label: "All",
-                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 301, 302, 303, 304, 305, 306, 307, 308, 401, 402, 403, 404, 405, 406, 407, 408],
-                ),
-            ),
-            2: (
-                id: 2,
-                data: (
-                    label: "House Even",
-                    fixtures: [102, 104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126, 128, 130, 132, 134, 136, 138, 140, 142, 144, 146, 148],
-                ),
-            ),
-            13: (
-                id: 13,
-                data: (
-                    label: "Wash Side Odd",
-                    fixtures: [201, 203, 205, 207, 209, 211],
-                ),
-            ),
-            22: (
-                id: 22,
-                data: (
-                    label: "Wash Back Even",
-                    fixtures: [302, 304, 306, 308],
-                ),
-            ),
-            23: (
-                id: 23,
-                data: (
-                    label: "Wash Back Odd",
-                    fixtures: [301, 303, 305, 307],
-                ),
-            ),
-            31: (
-                id: 21,
-                data: (
-                    label: "Spot Back",
-                    fixtures: [401, 402, 403, 404, 405, 406, 407, 408],
-                ),
-            ),
             21: (
                 id: 21,
                 data: (
@@ -152,11 +82,11 @@
                     fixtures: [202, 204, 206, 208, 210, 212],
                 ),
             ),
-            1: (
-                id: 1,
+            22: (
+                id: 22,
                 data: (
-                    label: "House",
-                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148],
+                    label: "Wash Back Even",
+                    fixtures: [302, 304, 306, 308],
                 ),
             ),
             11: (
@@ -166,11 +96,53 @@
                     fixtures: [201, 202, 203, 304, 305, 306, 307, 308, 309, 310, 311, 312],
                 ),
             ),
+            13: (
+                id: 13,
+                data: (
+                    label: "Wash Side Odd",
+                    fixtures: [201, 203, 205, 207, 209, 211],
+                ),
+            ),
+            23: (
+                id: 23,
+                data: (
+                    label: "Wash Back Odd",
+                    fixtures: [301, 303, 305, 307],
+                ),
+            ),
+            2: (
+                id: 2,
+                data: (
+                    label: "House Even",
+                    fixtures: [102, 104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126, 128, 130, 132, 134, 136, 138, 140, 142, 144, 146, 148],
+                ),
+            ),
             3: (
                 id: 3,
                 data: (
                     label: "House Odd",
                     fixtures: [101, 103, 105, 107, 109, 111, 113, 115, 117, 119, 121, 123, 125, 127, 129, 131, 133, 135, 137, 139, 141, 143, 145, 147],
+                ),
+            ),
+            101: (
+                id: 101,
+                data: (
+                    label: "All",
+                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 301, 302, 303, 304, 305, 306, 307, 308, 401, 402, 403, 404, 405, 406, 407, 408],
+                ),
+            ),
+            31: (
+                id: 21,
+                data: (
+                    label: "Spot Back",
+                    fixtures: [401, 402, 403, 404, 405, 406, 407, 408],
+                ),
+            ),
+            1: (
+                id: 1,
+                data: (
+                    label: "House",
+                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148],
                 ),
             ),
             32: (
@@ -594,7 +566,7 @@
                 universe: 2,
                 channel: 1,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 202,
@@ -602,7 +574,7 @@
                 universe: 2,
                 channel: 33,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 203,
@@ -610,7 +582,7 @@
                 universe: 2,
                 channel: 65,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 204,
@@ -618,7 +590,7 @@
                 universe: 2,
                 channel: 97,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 205,
@@ -626,7 +598,7 @@
                 universe: 2,
                 channel: 129,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 206,
@@ -634,7 +606,7 @@
                 universe: 2,
                 channel: 161,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 207,
@@ -642,7 +614,7 @@
                 universe: 2,
                 channel: 193,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 208,
@@ -650,7 +622,7 @@
                 universe: 2,
                 channel: 225,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 209,
@@ -658,7 +630,7 @@
                 universe: 2,
                 channel: 257,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 210,
@@ -666,7 +638,7 @@
                 universe: 2,
                 channel: 289,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 211,
@@ -674,7 +646,7 @@
                 universe: 2,
                 channel: 321,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 212,
@@ -682,7 +654,7 @@
                 universe: 2,
                 channel: 353,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 301,
@@ -690,7 +662,7 @@
                 universe: 3,
                 channel: 1,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 302,
@@ -698,7 +670,7 @@
                 universe: 3,
                 channel: 33,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 303,
@@ -706,7 +678,7 @@
                 universe: 3,
                 channel: 65,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 304,
@@ -714,7 +686,7 @@
                 universe: 3,
                 channel: 97,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 305,
@@ -722,7 +694,7 @@
                 universe: 3,
                 channel: 129,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 306,
@@ -730,7 +702,7 @@
                 universe: 3,
                 channel: 161,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 307,
@@ -738,7 +710,7 @@
                 universe: 3,
                 channel: 193,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 308,
@@ -746,7 +718,7 @@
                 universe: 3,
                 channel: 225,
             ),
-            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            gdtf_file_name: "Elation@Platinum_Wash_Zfx_Pro@version_003.gdtf",
             dmx_mode: "Basic",
         ), (
             id: 401,

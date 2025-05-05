@@ -170,7 +170,7 @@ impl Fixture {
         })
     }
 
-    pub fn channel_offset_for_attribute<'p>(
+    pub fn channel_offset_for_attr<'p>(
         &self,
         attribute_name: &str,
         patch: &'p Patch,

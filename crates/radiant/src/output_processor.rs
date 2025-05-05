@@ -2,7 +2,7 @@ use flow::ProcessingContext;
 use gpui::{App, AsyncApp, Entity, ReadGlobal, Timer};
 use show::{
     Show,
-    assets::{EffectGraphDef, EffectGraphId, EffectGraphState, FixtureGroupId},
+    assets::{EffectGraphDef, EffectGraphId, FixtureGroupId, State},
 };
 use std::time::Duration;
 
@@ -31,7 +31,7 @@ pub fn start(multiverse: Entity<dmx::Multiverse>, cx: &mut App) {
                 let fixture_group_len = fixture_group.read(cx).data.fixtures.len();
 
                 for ix in 0..fixture_group_len {
-                    let mut pcx = ProcessingContext::<EffectGraphDef>::new(EffectGraphState {
+                    let mut pcx = ProcessingContext::<EffectGraphDef>::new(State {
                         multiverse: multiverse.clone(),
                         fixture_group: fixture_group.clone(),
                         fixture_id_index: Some(ix),
