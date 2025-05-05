@@ -9,7 +9,6 @@ pub mod actions {
     use gpui::App;
 
     pub fn init(cx: &mut App) {
-        super::graph::actions::init(cx);
         super::editor::actions::init(cx);
     }
 }

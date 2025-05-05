@@ -4,44 +4,20 @@ use gpui::*;
 use std::collections::HashMap;
 use ui::{Draggable, DraggableEvent, utils::z_stack};
 
-pub mod actions {
-    use gpui::{App, KeyBinding, actions};
-
-    pub const KEY_CONTEXT: &str = "Graph";
-
-    actions!(graph, [DeleteSelectedNodes, SelectAllNodes]);
-
-    pub fn init(cx: &mut App) {
-        bind_keys(cx);
-    }
-
-    fn bind_keys(cx: &mut App) {
-        cx.bind_keys([
-            KeyBinding::new("backspace", DeleteSelectedNodes, Some(KEY_CONTEXT)),
-            KeyBinding::new("delete", DeleteSelectedNodes, Some(KEY_CONTEXT)),
-            KeyBinding::new("secondary-a", SelectAllNodes, Some(KEY_CONTEXT)),
-        ]);
-    }
-}
-
 pub struct GraphView<D: GraphDef> {
     graph: Entity<crate::Graph<D>>,
 
     node_views: HashMap<NodeId, Entity<Draggable>>,
     new_edge: (Option<InputSocket>, Option<OutputSocket>),
-
-    focus_handle: FocusHandle,
 }
 
 impl<D: GraphDef + 'static> GraphView<D> {
     pub fn new(
         graph: Entity<crate::Graph<D>>,
-        focus_handle: FocusHandle,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
-        let mut this =
-            Self { graph, node_views: HashMap::new(), new_edge: (None, None), focus_handle };
+        let mut this = Self { graph, node_views: HashMap::new(), new_edge: (None, None) };
 
         let node_ids = this.graph.read(cx).node_ids().copied().collect::<Vec<_>>();
         for node_id in node_ids {
@@ -395,32 +371,6 @@ impl<D: GraphDef + 'static> GraphView<D> {
     ) {
         self.finish_new_edge(cx);
     }
-
-    fn handle_delete_selected_nodes(
-        &mut self,
-        _: &actions::DeleteSelectedNodes,
-        _window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        self.graph().update(cx, |graph, cx| {
-            graph.delete_selected_nodes(cx);
-            cx.notify();
-        });
-        cx.notify();
-    }
-
-    fn handle_select_all_nodes(
-        &mut self,
-        _: &actions::SelectAllNodes,
-
-        _window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        self.graph().update(cx, |graph, cx| {
-            graph.select_all_nodes();
-            cx.notify();
-        })
-    }
 }
 
 impl<D: GraphDef + 'static> Render for GraphView<D> {
@@ -430,13 +380,9 @@ impl<D: GraphDef + 'static> Render for GraphView<D> {
         let new_edge = self.render_new_edge(window, cx);
 
         z_stack([nodes, edges, new_edge])
-            .track_focus(&self.focus_handle)
-            .key_context(actions::KEY_CONTEXT)
             .size_full()
             .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
             .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up))
-            .on_action(cx.listener(Self::handle_delete_selected_nodes))
-            .on_action(cx.listener(Self::handle_select_all_nodes))
     }
 }
 

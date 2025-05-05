@@ -6,7 +6,6 @@ use super::{
 use crate::{AnySocket, Graph, GraphDef};
 use gpui::*;
 use new_node_menu::NewNodeMenuView;
-use prelude::FluentBuilder;
 use ui::{ActiveTheme, InteractiveColor, Pannable, PannableEvent, utils::z_stack};
 
 mod new_node_menu;
@@ -16,7 +15,10 @@ pub mod actions {
 
     pub const KEY_CONTEXT: &str = "GraphEditor";
 
-    actions!(graph_editor, [OpenNewNodeMenu, CloseNewNodeMenu]);
+    actions!(
+        graph_editor,
+        [OpenNewNodeMenu, CloseNewNodeMenu, DeleteSelectedNodes, SelectAllNodes]
+    );
 
     pub fn init(cx: &mut App) {
         super::new_node_menu::actions::init(cx);
@@ -28,6 +30,9 @@ pub mod actions {
         cx.bind_keys([
             KeyBinding::new("space", OpenNewNodeMenu, Some(KEY_CONTEXT)),
             KeyBinding::new("escape", CloseNewNodeMenu, Some(KEY_CONTEXT)),
+            KeyBinding::new("backspace", DeleteSelectedNodes, Some(KEY_CONTEXT)),
+            KeyBinding::new("delete", DeleteSelectedNodes, Some(KEY_CONTEXT)),
+            KeyBinding::new("secondary-a", SelectAllNodes, Some(KEY_CONTEXT)),
         ]);
     }
 }
@@ -48,8 +53,7 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
     pub fn new(graph: Entity<Graph<D>>, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let focus_handle = cx.focus_handle();
 
-        let graph_view =
-            cx.new(|cx| GraphView::new(graph.clone(), focus_handle.clone(), window, cx));
+        let graph_view = cx.new(|cx| GraphView::new(graph.clone(), window, cx));
 
         cx.subscribe(&graph, |_editor, _graph_view, event: &GraphEvent, cx| cx.emit(event.clone()))
             .detach();
@@ -192,12 +196,39 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
         self.close_new_node_menu(cx);
     }
 
+    fn handle_delete_selected_nodes(
+        &mut self,
+        _: &actions::DeleteSelectedNodes,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.graph().update(cx, |graph, cx| {
+            graph.delete_selected_nodes(cx);
+            cx.notify();
+        });
+        cx.notify();
+    }
+
+    fn handle_select_all_nodes(
+        &mut self,
+        _: &actions::SelectAllNodes,
+
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.graph().update(cx, |graph, cx| {
+            graph.select_all_nodes();
+            cx.notify();
+        })
+    }
+
     fn handle_mouse_down_right(
         &mut self,
         _event: &MouseDownEvent,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        cx.stop_propagation();
         self.open_new_node_menu(None, window, cx);
     }
 
@@ -268,8 +299,6 @@ impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
         )
         .size_full();
 
-        let focused = self.focus_handle.is_focused(window);
-
         let rect_selection = match &self.selection_bounds() {
             Some(bounds) => div()
                 .absolute()
@@ -298,14 +327,14 @@ impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
         .size_full()
         .overflow_hidden()
         .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_mouse_down_left))
+        .on_mouse_down(MouseButton::Right, cx.listener(Self::handle_mouse_down_right))
         .on_mouse_move(cx.listener(Self::handle_mouse_move))
         .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up_left))
         .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up_left))
-        .when(focused, |e| {
-            e.on_mouse_down(MouseButton::Right, cx.listener(Self::handle_mouse_down_right))
-                .on_action(cx.listener(Self::handle_open_new_node_menu))
-                .on_action(cx.listener(Self::handle_close_new_node_menu))
-        })
+        .on_action(cx.listener(Self::handle_open_new_node_menu))
+        .on_action(cx.listener(Self::handle_close_new_node_menu))
+        .on_action(cx.listener(Self::handle_delete_selected_nodes))
+        .on_action(cx.listener(Self::handle_select_all_nodes))
     }
 }
 
