@@ -11,7 +11,7 @@ const INTERVAL: Duration = Duration::from_millis(16);
 pub fn start(multiverse: Entity<dmx::Multiverse>, cx: &mut App) {
     cx.spawn(async move |cx: &mut AsyncApp| {
         const EFFECT_GRAPH_ID: EffectGraphId = EffectGraphId::new(1);
-        const FIXTURE_GROUP_ID: FixtureGroupId = FixtureGroupId::new(1);
+        const FIXTURE_GROUP_ID: FixtureGroupId = FixtureGroupId::new(101);
 
         loop {
             cx.update(|cx| {

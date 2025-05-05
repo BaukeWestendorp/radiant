@@ -42,40 +42,142 @@
         ),
     ),
     assets: (
-        fixture_groups: {
+        effect_graphs: {
             1: (
                 id: 1,
                 data: (
-                    label: "Vipers",
-                    fixtures: [101, 102, 103, 104],
+                    nodes: {
+                        2: (
+                            template_id: "get_current_fixture",
+                            input_values: {},
+                            control_values: {},
+                        ),
+                        3: (
+                            template_id: "set_gdtf_attr_dimmer",
+                            input_values: {
+                                "value": DmxValue(0.4698),
+                                "fixture_id": FixtureId(0),
+                            },
+                            control_values: {},
+                        ),
+                    },
+                    edges: [(
+                        target: (
+                            node_id: 3,
+                            id: "fixture_id",
+                        ),
+                        source: (
+                            node_id: 2,
+                            id: "fixture_id",
+                        ),
+                    )],
+                    node_positions: {
+                        2: (
+                            x: 352.8203,
+                            y: 214.59766,
+                        ),
+                        3: (
+                            x: 606.35547,
+                            y: 217.8711,
+                        ),
+                    },
+                    offset: (
+                        x: 0.0,
+                        y: 0.0,
+                    ),
+                ),
+            ),
+        },
+        fixture_groups: {
+            33: (
+                id: 23,
+                data: (
+                    label: "Spot Back Odd",
+                    fixtures: [401, 403, 405, 407],
+                ),
+            ),
+            101: (
+                id: 101,
+                data: (
+                    label: "All",
+                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 301, 302, 303, 304, 305, 306, 307, 308, 401, 402, 403, 404, 405, 406, 407, 408],
                 ),
             ),
             2: (
                 id: 2,
                 data: (
-                    label: "Vipers Even",
-                    fixtures: [102, 104],
+                    label: "House Even",
+                    fixtures: [102, 104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126, 128, 130, 132, 134, 136, 138, 140, 142, 144, 146, 148],
+                ),
+            ),
+            13: (
+                id: 13,
+                data: (
+                    label: "Wash Side Odd",
+                    fixtures: [201, 203, 205, 207, 209, 211],
+                ),
+            ),
+            22: (
+                id: 22,
+                data: (
+                    label: "Wash Back Even",
+                    fixtures: [302, 304, 306, 308],
+                ),
+            ),
+            23: (
+                id: 23,
+                data: (
+                    label: "Wash Back Odd",
+                    fixtures: [301, 303, 305, 307],
+                ),
+            ),
+            31: (
+                id: 21,
+                data: (
+                    label: "Spot Back",
+                    fixtures: [401, 402, 403, 404, 405, 406, 407, 408],
+                ),
+            ),
+            21: (
+                id: 21,
+                data: (
+                    label: "Wash Back",
+                    fixtures: [301, 302, 303, 304, 305, 306, 307, 308],
+                ),
+            ),
+            12: (
+                id: 12,
+                data: (
+                    label: "Wash Side Even",
+                    fixtures: [202, 204, 206, 208, 210, 212],
+                ),
+            ),
+            1: (
+                id: 1,
+                data: (
+                    label: "House",
+                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148],
+                ),
+            ),
+            11: (
+                id: 11,
+                data: (
+                    label: "Wash Side",
+                    fixtures: [201, 202, 203, 304, 305, 306, 307, 308, 309, 310, 311, 312],
                 ),
             ),
             3: (
                 id: 3,
                 data: (
-                    label: "Vipers Uneven",
-                    fixtures: [101, 103],
+                    label: "House Odd",
+                    fixtures: [101, 103, 105, 107, 109, 111, 113, 115, 117, 119, 121, 123, 125, 127, 129, 131, 133, 135, 137, 139, 141, 143, 145, 147],
                 ),
             ),
-        },
-        effect_graphs: {
-            1: (
-                id: 1,
+            32: (
+                id: 22,
                 data: (
-                    nodes: {},
-                    edges: [],
-                    node_positions: {},
-                    offset: (
-                        x: 0,
-                        y: 0,
-                    ),
+                    label: "Spot Back Even",
+                    fixtures: [402, 404, 406, 408],
                 ),
             ),
         },
@@ -102,31 +204,614 @@
         ),
     ),
     patch: (
-        fixtures: [
-            (
-                id: 101,
-                address: (universe: 1, channel: 1),
-                gdtf_file_name: "Martin_Professional@MAC_Viper_Performance@20230516NoMeas.gdtf",
-                dmx_mode: "Basic"
+        fixtures: [(
+            id: 101,
+            address: (
+                universe: 1,
+                channel: 1,
             ),
-            (
-                id: 102,
-                address: (universe: 1, channel: 33),
-                gdtf_file_name: "Martin_Professional@MAC_Viper_Performance@20230516NoMeas.gdtf",
-                dmx_mode: "Basic"
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 102,
+            address: (
+                universe: 1,
+                channel: 2,
             ),
-            (
-                id: 103,
-                address: (universe: 1, channel: 66),
-                gdtf_file_name: "Martin_Professional@MAC_Viper_Performance@20230516NoMeas.gdtf",
-                dmx_mode: "Basic"
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 103,
+            address: (
+                universe: 1,
+                channel: 3,
             ),
-            (
-                id: 104,
-                address: (universe: 1, channel: 97),
-                gdtf_file_name: "Martin_Professional@MAC_Viper_Performance@20230516NoMeas.gdtf",
-                dmx_mode: "Basic"
-            )
-        ]
-    )
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 104,
+            address: (
+                universe: 1,
+                channel: 4,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 105,
+            address: (
+                universe: 1,
+                channel: 5,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 106,
+            address: (
+                universe: 1,
+                channel: 6,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 107,
+            address: (
+                universe: 1,
+                channel: 7,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 108,
+            address: (
+                universe: 1,
+                channel: 8,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 109,
+            address: (
+                universe: 1,
+                channel: 9,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 110,
+            address: (
+                universe: 1,
+                channel: 10,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 111,
+            address: (
+                universe: 1,
+                channel: 11,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 112,
+            address: (
+                universe: 1,
+                channel: 12,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 113,
+            address: (
+                universe: 1,
+                channel: 13,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 114,
+            address: (
+                universe: 1,
+                channel: 14,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 115,
+            address: (
+                universe: 1,
+                channel: 15,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 116,
+            address: (
+                universe: 1,
+                channel: 16,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 117,
+            address: (
+                universe: 1,
+                channel: 17,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 118,
+            address: (
+                universe: 1,
+                channel: 18,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 119,
+            address: (
+                universe: 1,
+                channel: 19,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 120,
+            address: (
+                universe: 1,
+                channel: 20,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 121,
+            address: (
+                universe: 1,
+                channel: 21,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 122,
+            address: (
+                universe: 1,
+                channel: 22,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 123,
+            address: (
+                universe: 1,
+                channel: 23,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 124,
+            address: (
+                universe: 1,
+                channel: 24,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 125,
+            address: (
+                universe: 1,
+                channel: 25,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 126,
+            address: (
+                universe: 1,
+                channel: 26,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 127,
+            address: (
+                universe: 1,
+                channel: 27,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 128,
+            address: (
+                universe: 1,
+                channel: 28,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 129,
+            address: (
+                universe: 1,
+                channel: 29,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 130,
+            address: (
+                universe: 1,
+                channel: 30,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 131,
+            address: (
+                universe: 1,
+                channel: 31,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 132,
+            address: (
+                universe: 1,
+                channel: 32,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 133,
+            address: (
+                universe: 1,
+                channel: 33,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 134,
+            address: (
+                universe: 1,
+                channel: 34,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 135,
+            address: (
+                universe: 1,
+                channel: 35,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 136,
+            address: (
+                universe: 1,
+                channel: 36,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 137,
+            address: (
+                universe: 1,
+                channel: 37,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 138,
+            address: (
+                universe: 1,
+                channel: 38,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 139,
+            address: (
+                universe: 1,
+                channel: 39,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 140,
+            address: (
+                universe: 1,
+                channel: 40,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 141,
+            address: (
+                universe: 1,
+                channel: 41,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 142,
+            address: (
+                universe: 1,
+                channel: 42,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 143,
+            address: (
+                universe: 1,
+                channel: 43,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 144,
+            address: (
+                universe: 1,
+                channel: 44,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 145,
+            address: (
+                universe: 1,
+                channel: 45,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 146,
+            address: (
+                universe: 1,
+                channel: 46,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 147,
+            address: (
+                universe: 1,
+                channel: 47,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 148,
+            address: (
+                universe: 1,
+                channel: 48,
+            ),
+            gdtf_file_name: "Generic@Dimmer@Generic.gdtf",
+            dmx_mode: "Default",
+        ), (
+            id: 201,
+            address: (
+                universe: 2,
+                channel: 1,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 202,
+            address: (
+                universe: 2,
+                channel: 33,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 203,
+            address: (
+                universe: 2,
+                channel: 65,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 204,
+            address: (
+                universe: 2,
+                channel: 97,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 205,
+            address: (
+                universe: 2,
+                channel: 129,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 206,
+            address: (
+                universe: 2,
+                channel: 161,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 207,
+            address: (
+                universe: 2,
+                channel: 193,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 208,
+            address: (
+                universe: 2,
+                channel: 225,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 209,
+            address: (
+                universe: 2,
+                channel: 257,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 210,
+            address: (
+                universe: 2,
+                channel: 289,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 211,
+            address: (
+                universe: 2,
+                channel: 321,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 212,
+            address: (
+                universe: 2,
+                channel: 353,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 301,
+            address: (
+                universe: 3,
+                channel: 1,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 302,
+            address: (
+                universe: 3,
+                channel: 33,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 303,
+            address: (
+                universe: 3,
+                channel: 65,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 304,
+            address: (
+                universe: 3,
+                channel: 97,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 305,
+            address: (
+                universe: 3,
+                channel: 129,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 306,
+            address: (
+                universe: 3,
+                channel: 161,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 307,
+            address: (
+                universe: 3,
+                channel: 193,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 308,
+            address: (
+                universe: 3,
+                channel: 225,
+            ),
+            gdtf_file_name: "Elation@Platinum Wash Zfx Pro.gdtf",
+            dmx_mode: "Basic",
+        ), (
+            id: 401,
+            address: (
+                universe: 4,
+                channel: 1,
+            ),
+            gdtf_file_name: "Martin@Mac 250 Entour.gdtf",
+            dmx_mode: "16 bit",
+        ), (
+            id: 402,
+            address: (
+                universe: 4,
+                channel: 16,
+            ),
+            gdtf_file_name: "Martin@Mac 250 Entour.gdtf",
+            dmx_mode: "16 bit",
+        ), (
+            id: 403,
+            address: (
+                universe: 4,
+                channel: 31,
+            ),
+            gdtf_file_name: "Martin@Mac 250 Entour.gdtf",
+            dmx_mode: "16 bit",
+        ), (
+            id: 404,
+            address: (
+                universe: 4,
+                channel: 46,
+            ),
+            gdtf_file_name: "Martin@Mac 250 Entour.gdtf",
+            dmx_mode: "16 bit",
+        ), (
+            id: 405,
+            address: (
+                universe: 4,
+                channel: 61,
+            ),
+            gdtf_file_name: "Martin@Mac 250 Entour.gdtf",
+            dmx_mode: "16 bit",
+        ), (
+            id: 406,
+            address: (
+                universe: 4,
+                channel: 76,
+            ),
+            gdtf_file_name: "Martin@Mac 250 Entour.gdtf",
+            dmx_mode: "16 bit",
+        ), (
+            id: 407,
+            address: (
+                universe: 4,
+                channel: 91,
+            ),
+            gdtf_file_name: "Martin@Mac 250 Entour.gdtf",
+            dmx_mode: "16 bit",
+        ), (
+            id: 408,
+            address: (
+                universe: 4,
+                channel: 106,
+            ),
+            gdtf_file_name: "Martin@Mac 250 Entour.gdtf",
+            dmx_mode: "16 bit",
+        )],
+    ),
 )
