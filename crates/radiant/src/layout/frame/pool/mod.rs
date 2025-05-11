@@ -2,7 +2,10 @@ use std::ops::{Deref, DerefMut};
 
 use gpui::{Size, Window, div, prelude::*, px};
 use show::assets::AssetId;
-use ui::{ActiveTheme, ContainerStyle, container, interactive_container, utils::z_stack};
+use ui::{
+    ActiveTheme, ContainerStyle, Disableable, InteractiveColor, container, interactive_container,
+    utils::z_stack,
+};
 
 use crate::layout::main::FRAME_CELL_SIZE;
 
@@ -75,12 +78,31 @@ pub trait PoolDelegate {
         cx: &mut Context<Pool<Self>>,
     ) -> impl IntoElement
     where
-        Self: Sized,
+        Self: Sized + 'static,
     {
+        let cell_content = self.render_cell_content(asset_id, w, cx).map(|e| e.into_any_element());
+        let has_content = cell_content.is_some();
+        let cell_content = cell_content.unwrap_or_else(|| div().into_any_element());
+
+        let overlay = div()
+            .size_full()
+            .pt_neg_0p5()
+            .pl_0p5()
+            .text_color(cx.theme().colors.text.muted())
+            .child(asset_id.as_u32().to_string());
+
         interactive_container(asset_id.as_u32() as usize, None)
-            .m_px()
             .size(FRAME_CELL_SIZE - px(2.0))
-            .children(self.render_cell_content(asset_id, w, cx))
+            .m_px()
+            .cursor_pointer()
+            .disabled(!has_content)
+            .on_click(cx.listener(move |this, _event, _w, cx| {
+                this.on_select(asset_id, cx);
+                cx.notify();
+            }))
+            .child(
+                z_stack([cell_content.into_any_element(), overlay.into_any_element()]).size_full(),
+            )
     }
 
     fn render_cell_content(
@@ -91,4 +113,10 @@ pub trait PoolDelegate {
     ) -> Option<impl IntoElement>
     where
         Self: Sized;
+
+    fn on_select(&mut self, _asset_id: AssetId<Self::Item>, _cx: &mut Context<Pool<Self>>)
+    where
+        Self: Sized,
+    {
+    }
 }

@@ -4,7 +4,7 @@ use std::{collections::HashMap, marker::PhantomData};
 
 pub use crate::showfile::assets::{effect_graph::*, fixture_group::*};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AssetId<T>(u32, PhantomData<T>);
 
 impl<T> AssetId<T> {
@@ -16,6 +16,14 @@ impl<T> AssetId<T> {
         self.0
     }
 }
+
+impl<T> Clone for AssetId<T> {
+    fn clone(&self) -> Self {
+        Self::new(self.as_u32())
+    }
+}
+
+impl<T> Copy for AssetId<T> {}
 
 #[derive(Clone, Default)]
 pub struct Assets {
