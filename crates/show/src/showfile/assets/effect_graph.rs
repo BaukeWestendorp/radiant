@@ -2,12 +2,13 @@ use flow::{
     Graph, Input, Output, ProcessingContext, Template, Value as _,
     gpui::{ControlEvent, ControlView},
 };
-use gpui::*;
+use gpui::{App, ElementId, Entity, ReadGlobal, SharedString, Window, prelude::*};
 use ui::{Field, FieldEvent, NumberField, NumberFieldImpl};
 
-use crate::{assets::FixtureGroupAsset, patch::FixtureId};
-
-crate::define_asset!(EffectGraph, EffectGraphAsset, EffectGraphId);
+use crate::{
+    assets::{Asset, FixtureGroup},
+    patch::FixtureId,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -60,7 +61,7 @@ pub enum Value {
 #[derive(Debug, Clone)]
 pub struct State {
     pub multiverse: Entity<dmx::Multiverse>,
-    pub fixture_group: Entity<FixtureGroupAsset>,
+    pub fixture_group: Entity<Asset<FixtureGroup>>,
     pub fixture_id_index: Option<usize>,
 }
 

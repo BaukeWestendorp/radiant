@@ -1,13 +1,19 @@
 use frames::{Frame, FrameWrapper};
 use gpui::*;
-use show::{Show, assets::EffectGraphDef};
+use pool::{Pool, effect_graph::EffectGraphPool};
+use show::{
+    Show,
+    assets::{AssetId, EffectGraphDef},
+};
 
 pub use graph_editor::GraphEditor;
 
 mod graph_editor;
+mod pool;
 
 pub enum MainFrame {
     EffectGraphEditor(Entity<GraphEditor<EffectGraphDef>>),
+    EffectGraphPool(Entity<Pool<EffectGraphPool>>),
 }
 
 impl MainFrame {
@@ -21,7 +27,7 @@ impl MainFrame {
                 let graph = Show::global(cx)
                     .assets
                     .effect_graphs
-                    .get(&(*effect_graph_id).into())
+                    .get(&AssetId::new(*effect_graph_id))
                     .unwrap()
                     .clone();
 
@@ -29,6 +35,11 @@ impl MainFrame {
                     cx.new(|cx| super::GraphEditor::new(graph, window, cx)),
                 )
             }
+            show::layout::MainFrameKind::Pool(kind) => match kind {
+                show::layout::PoolKind::EffectGraphs => MainFrame::EffectGraphPool(
+                    cx.new(|_| Pool::new(EffectGraphPool::new(), frame.bounds.size)),
+                ),
+            },
         }
     }
 }
@@ -36,11 +47,12 @@ impl MainFrame {
 impl Frame for MainFrame {
     fn render(
         &mut self,
-        _window: &mut Window,
+        _w: &mut Window,
         _cx: &mut Context<FrameWrapper<Self>>,
     ) -> impl IntoElement {
         match self {
             MainFrame::EffectGraphEditor(entity) => entity.clone().into_any_element(),
+            MainFrame::EffectGraphPool(pool) => pool.clone().into_any_element(),
         }
     }
 }

@@ -1,14 +1,14 @@
 use flow::{Graph, GraphDef, gpui::editor::GraphEditorView};
-use gpui::*;
-use show::assets::AssetId;
+use gpui::{Entity, Window, div, prelude::*};
+use show::assets::Asset;
 
 pub struct GraphEditor<D: GraphDef> {
     graph_editor_view: Entity<GraphEditorView<D>>,
 }
 
 impl<D: GraphDef + 'static> GraphEditor<D> {
-    pub fn new<Id: AssetId + 'static>(
-        graph: Entity<show::assets::Asset<Graph<D>, Id>>,
+    pub fn new(
+        graph: Entity<Asset<Graph<D>>>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {

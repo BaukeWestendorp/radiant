@@ -2,7 +2,7 @@ use flow::ProcessingContext;
 use gpui::{App, AsyncApp, Entity, ReadGlobal, Timer};
 use show::{
     Show,
-    assets::{EffectGraphDef, EffectGraphId, FixtureGroupId, State},
+    assets::{AssetId, EffectGraph, EffectGraphDef, FixtureGroup, State},
 };
 use std::time::Duration;
 
@@ -10,20 +10,20 @@ const INTERVAL: Duration = Duration::from_millis(16);
 
 pub fn start(multiverse: Entity<dmx::Multiverse>, cx: &mut App) {
     cx.spawn(async move |cx: &mut AsyncApp| {
-        const EFFECT_GRAPH_ID: EffectGraphId = EffectGraphId::new(1);
-        const FIXTURE_GROUP_ID: FixtureGroupId = FixtureGroupId::new(101);
+        let effect_graph_id: AssetId<EffectGraph> = AssetId::new(1);
+        let fixture_group_id: AssetId<FixtureGroup> = AssetId::new(101);
 
         loop {
             cx.update(|cx| {
                 let show = Show::global(cx);
-                let Some(effect_graph) = show.assets.effect_graphs.get(&EFFECT_GRAPH_ID).cloned()
+                let Some(effect_graph) = show.assets.effect_graphs.get(&effect_graph_id).cloned()
                 else {
                     log::warn!("No effect graph to process!");
                     return;
                 };
 
                 let Some(fixture_group) =
-                    show.assets.fixture_groups.get(&FIXTURE_GROUP_ID).cloned()
+                    show.assets.fixture_groups.get(&fixture_group_id).cloned()
                 else {
                     log::warn!("No fixture group to process!");
                     return;

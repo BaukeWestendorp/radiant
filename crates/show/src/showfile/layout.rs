@@ -24,6 +24,13 @@ impl Default for MainWindow {
 #[derive(Clone, PartialEq, Eq)]
 pub enum MainFrameKind {
     EffectGraphEditor(AssetId),
+    Pool(PoolKind),
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, PartialEq, Eq)]
+pub enum PoolKind {
+    EffectGraphs,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
