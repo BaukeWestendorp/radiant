@@ -1,5 +1,8 @@
-use gpui::{Entity, prelude::*};
-use show::assets::{Asset, EffectGraph};
+use gpui::{ReadGlobal, div, prelude::*};
+use show::{
+    Show,
+    assets::{AssetId, EffectGraph},
+};
 
 use super::{Pool, PoolDelegate};
 
@@ -12,7 +15,7 @@ impl EffectGraphPool {
 }
 
 impl PoolDelegate for EffectGraphPool {
-    type Item = Entity<Asset<EffectGraph>>;
+    type Item = EffectGraph;
 
     fn title(&self, _cx: &mut Context<Pool<Self>>) -> &str
     where
@@ -23,13 +26,19 @@ impl PoolDelegate for EffectGraphPool {
 
     fn render_cell_content(
         &mut self,
-        asset_id: show::assets::AssetId<Self::Item>,
-        w: &mut gpui::Window,
+        asset_id: AssetId<Self::Item>,
+        _w: &mut gpui::Window,
         cx: &mut Context<Pool<Self>>,
-    ) -> impl IntoElement
+    ) -> Option<impl IntoElement>
     where
         Self: Sized,
     {
-        "cell content"
+        let Some(effect_graph) =
+            Show::global(cx).assets.effect_graphs.get(&asset_id).map(|eg| eg.read(cx))
+        else {
+            return None;
+        };
+
+        Some(div().child("EG"))
     }
 }

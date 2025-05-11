@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use gpui::{FontWeight, Size, Window, div, prelude::*};
+use gpui::{FontWeight, Size, Window, div, prelude::*, px};
 use show::assets::AssetId;
 use ui::{ActiveTheme, ContainerStyle, container, utils::z_stack};
 
@@ -23,24 +23,24 @@ impl<D: PoolDelegate> Pool<D> {
         let split_title = title
             .split_whitespace()
             .map(String::from)
-            .map(|s| div().child(s).flex().items_center().justify_center().h(w.line_height()))
+            .map(|s| div().child(s).flex().justify_center().h(w.line_height()))
             .collect::<Vec<_>>();
 
         container(ContainerStyle {
             background: cx.theme().colors.header_background,
             border: cx.theme().colors.header_border,
-            text_color: w.text_style().color,
+            text_color: cx.theme().colors.text,
         })
         .size(FRAME_CELL_SIZE)
+        .flex()
+        .justify_center()
+        .items_center()
         .child(
             div()
-                .size_full()
-                .flex()
+                .flex_col()
                 .items_center()
                 .justify_center()
-                .font_weight(FontWeight::SEMIBOLD)
-                .text_sm()
-                .text_color(cx.theme().colors.header_border)
+                .font_weight(FontWeight::BOLD)
                 .children(split_title),
         )
     }
@@ -93,8 +93,9 @@ pub trait PoolDelegate {
         Self: Sized,
     {
         container(ContainerStyle::normal(w, cx))
-            .size(FRAME_CELL_SIZE)
-            .child(self.render_cell_content(asset_id, w, cx))
+            .m_px()
+            .size(FRAME_CELL_SIZE - px(2.0))
+            .children(self.render_cell_content(asset_id, w, cx))
     }
 
     fn render_cell_content(
@@ -102,7 +103,7 @@ pub trait PoolDelegate {
         asset_id: AssetId<Self::Item>,
         w: &mut Window,
         cx: &mut Context<Pool<Self>>,
-    ) -> impl IntoElement
+    ) -> Option<impl IntoElement>
     where
         Self: Sized;
 }
