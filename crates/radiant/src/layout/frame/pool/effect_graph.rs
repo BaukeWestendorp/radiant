@@ -39,6 +39,14 @@ impl PoolDelegate for EffectGraphPool {
             return None;
         };
 
-        Some(div().child("EG"))
+        Some(
+            div()
+                .h_full()
+                .flex()
+                .flex_col()
+                .justify_center()
+                .text_center()
+                .child(effect_graph.label.clone()),
+        )
     }
 }

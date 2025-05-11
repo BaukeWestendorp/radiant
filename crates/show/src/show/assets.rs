@@ -1,5 +1,5 @@
 use crate::showfile::{self, effect_graph};
-use gpui::{App, AppContext as _, Entity};
+use gpui::{App, AppContext as _, Entity, SharedString};
 use std::{collections::HashMap, marker::PhantomData};
 
 pub use crate::showfile::assets::{effect_graph::*, fixture_group::*};
@@ -92,18 +92,23 @@ impl<T> Default for AssetPool<T> {
 #[derive(Debug, Clone)]
 pub struct Asset<T> {
     pub id: AssetId<T>,
+    pub label: SharedString,
     pub data: T,
 }
 
 impl<T> Asset<T> {
     pub(crate) fn from_showfile(asset: crate::showfile::Asset<T>) -> Self {
-        Asset { id: AssetId::new(asset.id), data: asset.data }
+        Asset { id: AssetId::new(asset.id), label: asset.label.into(), data: asset.data }
     }
 
     pub(crate) fn to_showfile(&self) -> crate::showfile::Asset<T>
     where
         T: Clone,
     {
-        showfile::Asset { id: self.id.as_u32(), data: self.data.clone() }
+        showfile::Asset {
+            id: self.id.as_u32(),
+            label: self.label.to_string(),
+            data: self.data.clone(),
+        }
     }
 }

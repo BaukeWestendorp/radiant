@@ -20,6 +20,7 @@ pub type AssetPool<T> = HashMap<AssetId, Asset<T>>;
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Debug, Clone, Default)]
 pub struct Asset<T> {
+    pub label: String,
     pub id: AssetId,
     pub data: T,
 }

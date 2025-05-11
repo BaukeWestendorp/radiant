@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use gpui::{FontWeight, Size, Window, div, prelude::*, px};
+use gpui::{Size, Window, div, prelude::*, px};
 use show::assets::AssetId;
 use ui::{ActiveTheme, ContainerStyle, container, utils::z_stack};
 
@@ -18,13 +18,8 @@ impl<D: PoolDelegate> Pool<D> {
         Self { delegate, size }
     }
 
-    fn render_header_cell(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render_header_cell(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let title = self.title(cx).to_string();
-        let split_title = title
-            .split_whitespace()
-            .map(String::from)
-            .map(|s| div().child(s).flex().justify_center().h(w.line_height()))
-            .collect::<Vec<_>>();
 
         container(ContainerStyle {
             background: cx.theme().colors.header_background,
@@ -32,17 +27,7 @@ impl<D: PoolDelegate> Pool<D> {
             text_color: cx.theme().colors.text,
         })
         .size(FRAME_CELL_SIZE)
-        .flex()
-        .justify_center()
-        .items_center()
-        .child(
-            div()
-                .flex_col()
-                .items_center()
-                .justify_center()
-                .font_weight(FontWeight::BOLD)
-                .children(split_title),
-        )
+        .child(div().h_full().flex().flex_col().justify_center().text_center().child(title))
     }
 }
 
