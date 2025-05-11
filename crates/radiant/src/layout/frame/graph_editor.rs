@@ -1,6 +1,7 @@
 use flow::{Graph, GraphDef, gpui::editor::GraphEditorView};
-use gpui::{Entity, Window, div, prelude::*};
+use gpui::{Entity, Focusable, Window, div, prelude::*};
 use show::assets::Asset;
+use ui::ActiveTheme;
 
 pub struct GraphEditor<D: GraphDef> {
     graph_editor_view: Entity<GraphEditorView<D>>,
@@ -25,7 +26,16 @@ impl<D: GraphDef + 'static> GraphEditor<D> {
 }
 
 impl<D: GraphDef + 'static> Render for GraphEditor<D> {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().child(self.graph_editor_view.clone())
+    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let contains_focus = self.graph_editor_view.focus_handle(cx).contains_focused(w, cx);
+
+        div()
+            .size_full()
+            .bg(cx.theme().colors.bg_primary)
+            .border_1()
+            .border_color(cx.theme().colors.border)
+            .when(contains_focus, |e| e.border_color(cx.theme().colors.border_focused))
+            .rounded(cx.theme().radius)
+            .child(self.graph_editor_view.clone())
     }
 }

@@ -68,19 +68,12 @@ impl<F: Frame + 'static> Render for FrameWrapper<F> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let cell_size = self.container.read(cx).cell_size;
 
-        let contains_focus = self.focus_handle.contains_focused(window, cx);
-
         div()
             .track_focus(&self.focus_handle)
             .left(self.bounds.origin.x as f32 * cell_size)
             .top(self.bounds.origin.y as f32 * cell_size)
             .w(self.bounds.size.width as f32 * cell_size)
             .h(self.bounds.size.height as f32 * cell_size)
-            .bg(cx.theme().colors.bg_primary)
-            .border_1()
-            .border_color(cx.theme().colors.border)
-            .when(contains_focus, |e| e.border_color(cx.theme().colors.border_focused))
-            .rounded(cx.theme().radius)
             .child(self.frame.render(window, cx))
     }
 }
