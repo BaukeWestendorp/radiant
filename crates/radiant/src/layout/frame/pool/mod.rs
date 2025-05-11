@@ -2,7 +2,7 @@ use std::ops::{Deref, DerefMut};
 
 use gpui::{Size, Window, div, prelude::*, px};
 use show::assets::AssetId;
-use ui::{ActiveTheme, ContainerStyle, container, utils::z_stack};
+use ui::{ActiveTheme, ContainerStyle, container, interactive_container, utils::z_stack};
 
 use crate::layout::main::FRAME_CELL_SIZE;
 
@@ -77,7 +77,7 @@ pub trait PoolDelegate {
     where
         Self: Sized,
     {
-        container(ContainerStyle::normal(w, cx))
+        interactive_container(asset_id.as_u32() as usize, None)
             .m_px()
             .size(FRAME_CELL_SIZE - px(2.0))
             .children(self.render_cell_content(asset_id, w, cx))
