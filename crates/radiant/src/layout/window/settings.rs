@@ -33,8 +33,8 @@ impl SettingsWindow {
 }
 
 impl VirtualWindowDelegate for SettingsWindow {
-    fn title(&self, _cx: &App) -> &str {
-        "Settings"
+    fn title(&self, _cx: &App) -> SharedString {
+        "Settings".into()
     }
 
     fn on_close_window(&mut self, _w: &mut Window, cx: &mut Context<VirtualWindow<Self>>) {

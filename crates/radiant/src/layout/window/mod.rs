@@ -1,4 +1,4 @@
-use gpui::{App, Focusable, FontWeight, Window, div, prelude::*, px};
+use gpui::{App, Focusable, FontWeight, SharedString, Window, div, prelude::*, px};
 use main::FRAME_CELL_SIZE;
 use ui::{ActiveTheme, ContainerStyle, interactive_container};
 
@@ -40,7 +40,7 @@ impl<D: VirtualWindowDelegate + 'static> Render for VirtualWindow<D> {
 }
 
 pub trait VirtualWindowDelegate: Focusable {
-    fn title(&self, cx: &App) -> &str;
+    fn title(&self, cx: &App) -> SharedString;
 
     fn on_close_window(&mut self, _w: &mut Window, _cx: &mut Context<VirtualWindow<Self>>)
     where
