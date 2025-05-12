@@ -9,7 +9,7 @@ pub struct AssetId<T>(u32, PhantomData<T>);
 
 impl<T> AssetId<T> {
     pub fn new(id: u32) -> Self {
-        Self(id, PhantomData::default())
+        Self(id, PhantomData)
     }
 
     pub fn as_u32(&self) -> u32 {
@@ -19,7 +19,7 @@ impl<T> AssetId<T> {
 
 impl<T> Clone for AssetId<T> {
     fn clone(&self) -> Self {
-        Self::new(self.as_u32())
+        *self
     }
 }
 

@@ -115,7 +115,7 @@ impl flow::Control<EffectGraphDef> for Control {
                 cx.subscribe(&field, |_, _, event: &FieldEvent<FloatingDmxValue>, cx| {
                     if let FieldEvent::Change(value) = event {
                         cx.emit(ControlEvent::<EffectGraphDef>::Change(Value::DmxValue(
-                            value.clone(),
+                            *value,
                         )));
                         cx.notify();
                     }
@@ -351,7 +351,7 @@ fn set_dmx_value_at_offset(
             vec![(int_value >> 16) as u8, ((int_value >> 8) & 0xFF) as u8, (int_value & 0xFF) as u8]
         }
         4 => {
-            let int_value = (value * 0xffffffff as u32 as f32) as u32;
+            let int_value = (value * 0xffffffff_u32 as f32) as u32;
             vec![
                 (int_value >> 24) as u8,
                 ((int_value >> 16) & 0xFF) as u8,

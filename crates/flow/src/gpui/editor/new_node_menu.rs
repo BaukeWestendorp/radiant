@@ -268,11 +268,7 @@ impl<D: GraphDef + 'static> Render for NewNodeMenuView<D> {
                             .px_1()
                             .border_1()
                             .hover(|e| {
-                                let bg = if selected {
-                                    cx.theme().colors.bg_secondary
-                                } else {
-                                    cx.theme().colors.bg_secondary
-                                };
+                                let bg = cx.theme().colors.bg_secondary;
 
                                 let border_color = if selected {
                                     cx.theme().colors.border_selected

@@ -32,11 +32,11 @@ impl<I: FieldImpl + 'static> Field<I> {
         })
         .detach();
 
-        let this = Self { input, _marker: std::marker::PhantomData };
-        this
+        
+        Self { input, _marker: std::marker::PhantomData }
     }
 
-    pub fn value<'a>(&self, cx: &'a App) -> I::Value {
+    pub fn value(&self, cx: &App) -> I::Value {
         let s = self.input.read(cx).text();
         I::from_str_or_default(s)
     }

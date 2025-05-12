@@ -40,7 +40,7 @@ impl Patch {
             .expect("should get cache directory")
             .join("radiant")
             .join("gdtf_share_fixtures")
-            .join(gdtf_file_name.to_string());
+            .join(&gdtf_file_name);
         log::debug!("Loading cached gdtf file {}", path.display());
         let file = std::fs::File::open(path).context("open cached gdtf file")?;
         self.gdtf_descriptions.insert(
