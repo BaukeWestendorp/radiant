@@ -1,5 +1,4 @@
 use gpui::*;
-use prelude::FluentBuilder;
 use ui::{ActiveTheme, utils::z_stack};
 
 pub struct FrameContainer<F: Frame> {
