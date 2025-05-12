@@ -38,7 +38,7 @@ impl MainWindow {
 
                     cx.observe_in(&layout, w, |this, layout, w, cx| {
                         *this = frame_container_from_showfile(layout, w, cx);
-                        log::debug!("Updating main frame container");
+                        log::debug!("Updating FrameContainer<MainFrame>");
                         cx.notify();
                     })
                     .detach();
