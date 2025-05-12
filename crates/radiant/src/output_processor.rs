@@ -12,11 +12,9 @@ pub fn start(multiverse: Entity<dmx::Multiverse>, cx: &mut App) {
     cx.spawn(async move |cx: &mut AsyncApp| {
         loop {
             cx.update(|cx| {
-                if let Err(err) = set_default_values(&multiverse, cx) {
-                    log::error!("Error occured while setting default DMX values: {err}",);
-                };
-
-                process_effect_graphs(&multiverse, cx);
+                if let Err(err) = generate_multiverse(&multiverse, cx) {
+                    log::error!("Failed to generate DMX output: {err}")
+                }
             })
             .expect("should update context");
 
@@ -24,6 +22,47 @@ pub fn start(multiverse: Entity<dmx::Multiverse>, cx: &mut App) {
         }
     })
     .detach();
+}
+
+fn generate_multiverse(multiverse: &Entity<dmx::Multiverse>, cx: &mut App) -> anyhow::Result<()> {
+    set_default_values(multiverse, cx)?;
+    process_effect_graphs(multiverse, cx);
+    Ok(())
+}
+
+fn set_default_values(multiverse: &Entity<dmx::Multiverse>, cx: &mut App) -> anyhow::Result<()> {
+    let patch = Show::global(cx).patch.read(cx);
+
+    let mut new_multiverse = dmx::Multiverse::new();
+
+    for fixture in patch.fixtures() {
+        for channel in &fixture.dmx_mode(patch).dmx_channels {
+            let Some((_, channel_function)) = channel.initial_function() else {
+                continue;
+            };
+
+            let Some(offsets) = &channel.offset else { continue };
+
+            let default_bytes = match &channel_function.default.bytes().get() {
+                1 => channel_function.default.to_u8().to_be_bytes().to_vec(),
+                2 => channel_function.default.to_u16().to_be_bytes().to_vec(),
+                _ => panic!("Unsupported default value size"),
+            };
+
+            for (i, offset) in offsets.iter().enumerate() {
+                let default = dmx::Value(default_bytes[i]);
+                let address = fixture.address().with_channel_offset(*offset as u16 - 1)?;
+                new_multiverse.set_value(&address, default);
+            }
+        }
+    }
+
+    multiverse.update(cx, |m, cx| {
+        *m = new_multiverse;
+        cx.notify();
+    });
+
+    Ok(())
 }
 
 fn process_effect_graphs(multiverse: &Entity<dmx::Multiverse>, cx: &mut App) {
@@ -53,40 +92,4 @@ fn process_effect_graphs(multiverse: &Entity<dmx::Multiverse>, cx: &mut App) {
             effect_graph.data.process(&mut pcx, cx);
         });
     }
-}
-
-fn set_default_values(multiverse: &Entity<dmx::Multiverse>, cx: &mut App) -> anyhow::Result<()> {
-    let patch = Show::global(cx).patch.read(cx);
-
-    let mut new_multiverse = dmx::Multiverse::new();
-
-    // Set default DMX values
-    for fixture in patch.fixtures() {
-        for channel in &fixture.dmx_mode(patch).dmx_channels {
-            let Some((_, channel_function)) = channel.initial_function() else {
-                continue;
-            };
-
-            let Some(offsets) = &channel.offset else { continue };
-
-            let default_bytes = match &channel_function.default.bytes().get() {
-                1 => channel_function.default.to_u8().to_be_bytes().to_vec(),
-                2 => channel_function.default.to_u16().to_be_bytes().to_vec(),
-                _ => panic!("Unsupported default value size"),
-            };
-
-            for (i, offset) in offsets.iter().enumerate() {
-                let default = dmx::Value(default_bytes[i]);
-                let address = fixture.address().with_channel_offset(*offset as u16 - 1)?;
-                new_multiverse.set_value(&address, default);
-            }
-        }
-    }
-
-    multiverse.update(cx, |m, cx| {
-        *m = new_multiverse;
-        cx.notify();
-    });
-
-    Ok(())
 }

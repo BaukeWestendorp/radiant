@@ -18,6 +18,7 @@ mod pool;
 
 pub enum MainFrame {
     EffectGraphEditor(Entity<VirtualWindow<GraphEditor<EffectGraphDef>>>),
+
     EffectGraphPool(Entity<Pool<EffectGraphPool>>),
     FixtureGroupPool(Entity<Pool<FixtureGroupPool>>),
     DimmerPresetPool(Entity<Pool<DimmerPresetPool>>),
@@ -65,6 +66,7 @@ impl Frame for MainFrame {
     ) -> impl IntoElement {
         match self {
             MainFrame::EffectGraphEditor(entity) => entity.clone().into_any_element(),
+
             MainFrame::EffectGraphPool(pool) => pool.clone().into_any_element(),
             MainFrame::FixtureGroupPool(pool) => pool.clone().into_any_element(),
             MainFrame::DimmerPresetPool(pool) => pool.clone().into_any_element(),

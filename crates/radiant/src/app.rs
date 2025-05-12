@@ -35,7 +35,6 @@ impl RadiantApp {
             self.init_menus(cx);
 
             let multiverse = cx.new(|_cx| dmx::Multiverse::new());
-
             self.init_dmx_io(multiverse.clone(), cx);
             output_processor::start(multiverse, cx);
         });
