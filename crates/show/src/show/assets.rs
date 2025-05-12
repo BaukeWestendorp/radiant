@@ -2,7 +2,7 @@ use crate::showfile::{self, effect_graph};
 use gpui::{App, AppContext as _, Entity, SharedString};
 use std::{collections::HashMap, marker::PhantomData};
 
-pub use crate::showfile::assets::{effect_graph::*, fixture_group::*, presets::*};
+pub use crate::showfile::assets::{cue::*, effect_graph::*, fixture_group::*, presets::*};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AssetId<T>(u32, PhantomData<T>);
@@ -30,6 +30,7 @@ pub struct Assets {
     pub effect_graphs: AssetPool<EffectGraph>,
     pub fixture_groups: AssetPool<FixtureGroup>,
     pub dimmer_presets: AssetPool<DimmerPreset>,
+    pub cues: AssetPool<Cue>,
 }
 
 impl Assets {
@@ -51,12 +52,17 @@ impl Assets {
             fixture_groups.insert(AssetId::new(id), cx.new(|_cx| Asset::from_showfile(asset)));
         }
 
+        let mut cues = AssetPool::new();
+        for (id, asset) in assets.cues.clone() {
+            cues.insert(AssetId::new(id), cx.new(|_cx| Asset::from_showfile(asset)));
+        }
+
         let mut dimmer_presets = AssetPool::new();
         for (id, asset) in assets.dimmer_presets.clone() {
             dimmer_presets.insert(AssetId::new(id), cx.new(|_cx| Asset::from_showfile(asset)));
         }
 
-        Assets { effect_graphs, fixture_groups, dimmer_presets }
+        Assets { effect_graphs, fixture_groups, dimmer_presets, cues }
     }
 
     pub(crate) fn to_showfile(&self, cx: &App) -> showfile::Assets {
@@ -70,12 +76,17 @@ impl Assets {
             fixture_groups.insert(id, asset.read(cx).to_showfile());
         }
 
+        let mut cues = showfile::AssetPool::new();
+        for (id, asset) in self.cues.assets.clone() {
+            cues.insert(id, asset.read(cx).to_showfile());
+        }
+
         let mut dimmer_presets = showfile::AssetPool::new();
         for (id, asset) in self.dimmer_presets.assets.clone() {
             dimmer_presets.insert(id, asset.read(cx).to_showfile());
         }
 
-        showfile::Assets { effect_graphs, fixture_groups, dimmer_presets }
+        showfile::Assets { effect_graphs, fixture_groups, dimmer_presets, cues }
     }
 }
 
