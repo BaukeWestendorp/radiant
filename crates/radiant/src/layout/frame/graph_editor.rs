@@ -1,7 +1,8 @@
 use flow::{Graph, GraphDef, gpui::editor::GraphEditorView};
-use gpui::{Entity, Focusable, Window, div, prelude::*};
+use gpui::{Entity, FocusHandle, Focusable, Window, div, prelude::*};
 use show::assets::Asset;
-use ui::ActiveTheme;
+
+use crate::layout::{VirtualWindow, VirtualWindowDelegate};
 
 pub struct GraphEditor<D: GraphDef> {
     graph_editor_view: Entity<GraphEditorView<D>>,
@@ -11,7 +12,7 @@ impl<D: GraphDef + 'static> GraphEditor<D> {
     pub fn new(
         graph: Entity<Asset<Graph<D>>>,
         window: &mut Window,
-        cx: &mut Context<Self>,
+        cx: &mut Context<VirtualWindow<Self>>,
     ) -> Self {
         let graph = crate::utils::map_entity(
             graph,
@@ -25,17 +26,24 @@ impl<D: GraphDef + 'static> GraphEditor<D> {
     }
 }
 
-impl<D: GraphDef + 'static> Render for GraphEditor<D> {
-    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let contains_focus = self.graph_editor_view.focus_handle(cx).contains_focused(w, cx);
+impl<D: GraphDef + 'static> VirtualWindowDelegate for GraphEditor<D> {
+    fn title(&self, _cx: &gpui::App) -> &str {
+        "Effect Graph Editor"
+    }
 
-        div()
-            .size_full()
-            .bg(cx.theme().colors.bg_primary)
-            .border_1()
-            .border_color(cx.theme().colors.border)
-            .when(contains_focus, |e| e.border_color(cx.theme().colors.border_focused))
-            .rounded(cx.theme().radius)
-            .child(self.graph_editor_view.clone())
+    fn on_close_window(&mut self, _w: &mut Window, _cx: &mut Context<VirtualWindow<Self>>) {}
+
+    fn render_content(
+        &mut self,
+        _w: &mut Window,
+        _cx: &mut Context<VirtualWindow<Self>>,
+    ) -> impl IntoElement {
+        div().size_full().child(self.graph_editor_view.clone())
+    }
+}
+
+impl<D: GraphDef + 'static> Focusable for GraphEditor<D> {
+    fn focus_handle(&self, cx: &gpui::App) -> FocusHandle {
+        self.graph_editor_view.focus_handle(cx)
     }
 }

@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use gpui::{Size, Window, div, prelude::*, px};
+use gpui::{FocusHandle, Size, Window, div, prelude::*, px};
 use show::assets::AssetId;
 use ui::{
     ActiveTheme, ContainerStyle, Disableable, InteractiveColor, container, interactive_container,
@@ -14,19 +14,27 @@ pub mod effect_graph;
 pub struct Pool<D: PoolDelegate> {
     delegate: D,
     size: Size<u32>,
+
+    focus_handle: FocusHandle,
 }
 
 impl<D: PoolDelegate> Pool<D> {
-    pub fn new(delegate: D, size: Size<u32>) -> Self {
-        Self { delegate, size }
+    pub fn new(delegate: D, size: Size<u32>, cx: &mut Context<Pool<D>>) -> Self {
+        Self { delegate, size, focus_handle: cx.focus_handle() }
     }
 
-    fn render_header_cell(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render_header_cell(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let title = self.title(cx).to_string();
+
+        let border_color = if self.focus_handle.contains_focused(w, cx) {
+            cx.theme().colors.border_focused
+        } else {
+            cx.theme().colors.header_border
+        };
 
         container(ContainerStyle {
             background: cx.theme().colors.header_background,
-            border: cx.theme().colors.header_border,
+            border: border_color,
             text_color: cx.theme().colors.text,
         })
         .size(FRAME_CELL_SIZE)
@@ -55,9 +63,13 @@ impl<D: PoolDelegate + 'static> Render for Pool<D> {
             .map(|id| self.render_cell(AssetId::new(id), w, cx).into_any_element())
             .collect::<Vec<_>>();
 
-        let header_cell = self.render_header_cell(w, cx);
-
-        z_stack([div().size_full().flex().flex_wrap().child(header_cell).children(items)])
+        div()
+            .track_focus(&self.focus_handle)
+            .size_full()
+            .flex()
+            .flex_wrap()
+            .child(self.render_header_cell(w, cx))
+            .children(items)
             .w(self.size.width as f32 * FRAME_CELL_SIZE)
             .h(self.size.height as f32 * FRAME_CELL_SIZE)
             .overflow_hidden()

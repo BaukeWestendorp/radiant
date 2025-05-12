@@ -52,6 +52,12 @@ impl VirtualWindowDelegate for SettingsWindow {
     }
 }
 
+impl Focusable for SettingsWindow {
+    fn focus_handle(&self, cx: &App) -> FocusHandle {
+        cx.focus_handle()
+    }
+}
+
 struct DmxIoView {
     sacn_source_table: Entity<Table<SacnSourceTable>>,
 }

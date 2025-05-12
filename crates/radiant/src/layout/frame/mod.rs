@@ -8,18 +8,20 @@ use show::{
 
 pub use graph_editor::GraphEditor;
 
+use super::VirtualWindow;
+
 mod graph_editor;
 mod pool;
 
 pub enum MainFrame {
-    EffectGraphEditor(Entity<GraphEditor<EffectGraphDef>>),
+    EffectGraphEditor(Entity<VirtualWindow<GraphEditor<EffectGraphDef>>>),
     EffectGraphPool(Entity<Pool<EffectGraphPool>>),
 }
 
 impl MainFrame {
     pub fn from_show(
         frame: &show::layout::Frame<show::layout::MainFrameKind>,
-        window: &mut Window,
+        w: &mut Window,
         cx: &mut App,
     ) -> Self {
         match &frame.kind {
@@ -32,12 +34,12 @@ impl MainFrame {
                     .clone();
 
                 MainFrame::EffectGraphEditor(
-                    cx.new(|cx| super::GraphEditor::new(graph, window, cx)),
+                    cx.new(|cx| VirtualWindow::new(GraphEditor::new(graph, w, cx))),
                 )
             }
             show::layout::MainFrameKind::Pool(kind) => match kind {
                 show::layout::PoolKind::EffectGraphs => MainFrame::EffectGraphPool(
-                    cx.new(|_| Pool::new(EffectGraphPool::new(), frame.bounds.size)),
+                    cx.new(|cx| Pool::new(EffectGraphPool::new(), frame.bounds.size, cx)),
                 ),
             },
         }
