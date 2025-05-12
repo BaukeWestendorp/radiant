@@ -2,9 +2,11 @@ use std::collections::HashMap;
 
 use effect_graph::EffectGraph;
 use fixture_group::FixtureGroup;
+use presets::DimmerPreset;
 
 pub mod effect_graph;
 pub mod fixture_group;
+pub mod presets;
 
 pub type AssetId = u32;
 
@@ -13,6 +15,7 @@ pub type AssetId = u32;
 pub struct Assets {
     pub effect_graphs: AssetPool<EffectGraph>,
     pub fixture_groups: AssetPool<FixtureGroup>,
+    pub dimmer_presets: AssetPool<DimmerPreset>,
 }
 
 pub type AssetPool<T> = HashMap<AssetId, Asset<T>>;
