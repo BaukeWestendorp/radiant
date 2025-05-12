@@ -9,6 +9,7 @@ use ui::{
 
 use crate::layout::main::FRAME_CELL_SIZE;
 
+pub mod dimmer_presets;
 pub mod effect_graph;
 pub mod fixture_group;
 

@@ -1,24 +1,24 @@
 use gpui::{ReadGlobal, div, prelude::*};
 use show::{
     Show,
-    assets::{AssetId, FixtureGroup},
+    assets::{AssetId, DimmerPreset},
 };
 
 use super::{Pool, PoolDelegate};
 
-pub struct FixtureGroupPool {}
+pub struct DimmerPresetPool {}
 
-impl FixtureGroupPool {
+impl DimmerPresetPool {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-impl PoolDelegate for FixtureGroupPool {
-    type Item = FixtureGroup;
+impl PoolDelegate for DimmerPresetPool {
+    type Item = DimmerPreset;
 
     fn title(&self, _cx: &mut Context<Pool<Self>>) -> &str {
-        "Fixture Groups"
+        "Dimmer Presets"
     }
 
     fn render_cell_content(
@@ -27,8 +27,8 @@ impl PoolDelegate for FixtureGroupPool {
         _w: &mut gpui::Window,
         cx: &mut Context<Pool<Self>>,
     ) -> Option<impl IntoElement> {
-        let Some(fixture_group) =
-            Show::global(cx).assets.fixture_groups.get(&asset_id).map(|eg| eg.read(cx))
+        let Some(dimmer_preset) =
+            Show::global(cx).assets.dimmer_presets.get(&asset_id).map(|eg| eg.read(cx))
         else {
             return None;
         };
@@ -40,7 +40,7 @@ impl PoolDelegate for FixtureGroupPool {
                 .flex_col()
                 .justify_center()
                 .text_center()
-                .child(fixture_group.label.clone()),
+                .child(dimmer_preset.label.clone()),
         )
     }
 }

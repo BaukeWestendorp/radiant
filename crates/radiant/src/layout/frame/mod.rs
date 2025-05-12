@@ -1,6 +1,9 @@
 use frames::{Frame, FrameWrapper};
 use gpui::*;
-use pool::{Pool, effect_graph::EffectGraphPool, fixture_group::FixtureGroupPool};
+use pool::{
+    Pool, dimmer_presets::DimmerPresetPool, effect_graph::EffectGraphPool,
+    fixture_group::FixtureGroupPool,
+};
 use show::{
     Show,
     assets::{AssetId, EffectGraphDef},
@@ -17,6 +20,7 @@ pub enum MainFrame {
     EffectGraphEditor(Entity<VirtualWindow<GraphEditor<EffectGraphDef>>>),
     EffectGraphPool(Entity<Pool<EffectGraphPool>>),
     FixtureGroupPool(Entity<Pool<FixtureGroupPool>>),
+    DimmerPresetPool(Entity<Pool<DimmerPresetPool>>),
 }
 
 impl MainFrame {
@@ -45,6 +49,9 @@ impl MainFrame {
                 show::layout::PoolKind::FixtureGroups => MainFrame::FixtureGroupPool(
                     cx.new(|cx| Pool::new(FixtureGroupPool::new(), frame.bounds.size, cx)),
                 ),
+                show::layout::PoolKind::DimmerPresets => MainFrame::DimmerPresetPool(
+                    cx.new(|cx| Pool::new(DimmerPresetPool::new(), frame.bounds.size, cx)),
+                ),
             },
         }
     }
@@ -60,6 +67,7 @@ impl Frame for MainFrame {
             MainFrame::EffectGraphEditor(entity) => entity.clone().into_any_element(),
             MainFrame::EffectGraphPool(pool) => pool.clone().into_any_element(),
             MainFrame::FixtureGroupPool(pool) => pool.clone().into_any_element(),
+            MainFrame::DimmerPresetPool(pool) => pool.clone().into_any_element(),
         }
     }
 }

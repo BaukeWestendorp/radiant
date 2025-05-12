@@ -1,8 +1,8 @@
-use crate::showfile::{self, effect_graph, presets::DimmerPreset};
+use crate::showfile::{self, effect_graph};
 use gpui::{App, AppContext as _, Entity, SharedString};
 use std::{collections::HashMap, marker::PhantomData};
 
-pub use crate::showfile::assets::{effect_graph::*, fixture_group::*};
+pub use crate::showfile::assets::{effect_graph::*, fixture_group::*, presets::*};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AssetId<T>(u32, PhantomData<T>);

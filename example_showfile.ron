@@ -259,7 +259,7 @@
                     ),
                     size: (
                         width: 14,
-                        height: 12,
+                        height: 11,
                     ),
                 ),
                 kind: EffectGraphEditor(1),
@@ -271,7 +271,7 @@
                     ),
                     size: (
                         width: 1,
-                        height: 12,
+                        height: 11,
                     ),
                 ),
                 kind: Pool(EffectGraphs),
@@ -283,11 +283,26 @@
                     ),
                     size: (
                         width: 5,
-                        height: 12,
+                        height: 11,
                     ),
                 ),
                 kind: Pool(FixtureGroups),
-            )],
+            ),
+            (
+                            bounds: (
+                                origin: (
+                                    x: 0,
+                                    y: 11,
+                                ),
+                                size: (
+                                    width: 8,
+                                    height: 1,
+                                ),
+                            ),
+                            kind: Pool(DimmerPresets),
+                        )
+
+            ],
         ),
     ),
     patch: (

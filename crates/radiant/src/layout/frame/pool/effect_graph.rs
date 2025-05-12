@@ -18,10 +18,7 @@ impl EffectGraphPool {
 impl PoolDelegate for EffectGraphPool {
     type Item = EffectGraph;
 
-    fn title(&self, _cx: &mut Context<Pool<Self>>) -> &str
-    where
-        Self: Sized,
-    {
+    fn title(&self, _cx: &mut Context<Pool<Self>>) -> &str {
         "Effect Graphs"
     }
 
@@ -30,10 +27,7 @@ impl PoolDelegate for EffectGraphPool {
         asset_id: AssetId<Self::Item>,
         _w: &mut gpui::Window,
         cx: &mut Context<Pool<Self>>,
-    ) -> Option<impl IntoElement>
-    where
-        Self: Sized,
-    {
+    ) -> Option<impl IntoElement> {
         let Some(effect_graph) =
             Show::global(cx).assets.effect_graphs.get(&asset_id).map(|eg| eg.read(cx))
         else {

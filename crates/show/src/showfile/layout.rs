@@ -32,6 +32,7 @@ pub enum MainFrameKind {
 pub enum PoolKind {
     EffectGraphs,
     FixtureGroups,
+    DimmerPresets,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
