@@ -1,7 +1,8 @@
-use gpui::{ReadGlobal, div, prelude::*};
+use gpui::{ReadGlobal, UpdateGlobal, div, prelude::*};
 use show::{
     Show,
     assets::{AssetId, EffectGraph},
+    layout::MainFrameKind,
 };
 
 use super::{Pool, PoolDelegate};
@@ -48,5 +49,22 @@ impl PoolDelegate for EffectGraphPool {
                 .text_center()
                 .child(effect_graph.label.clone()),
         )
+    }
+
+    fn on_select(&mut self, asset_id: AssetId<Self::Item>, cx: &mut Context<Pool<Self>>) {
+        Show::update_global(cx, |show, cx| {
+            show.layout.update(cx, |layout, cx| {
+                for frame in &mut layout.main_window.frames {
+                    match &mut frame.kind {
+                        MainFrameKind::EffectGraphEditor(effect_graph) => {
+                            *effect_graph = asset_id.as_u32()
+                        }
+                        _ => {}
+                    }
+                }
+                cx.notify();
+            });
+            cx.notify();
+        })
     }
 }

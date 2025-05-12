@@ -2,7 +2,7 @@ use crate::{app::APP_ID, layout::MainFrame};
 use anyhow::Context as _;
 use frames::FrameContainer;
 use gpui::*;
-use show::Show;
+use show::{Show, layout::Layout};
 use ui::{ActiveTheme as _, root, utils::z_stack};
 
 use super::{DEFAULT_REM_SIZE, VirtualWindow, settings::SettingsWindow};
@@ -33,7 +33,19 @@ impl MainWindow {
             w.set_rem_size(DEFAULT_REM_SIZE);
 
             cx.new(|cx| {
-                let frame_container = cx.new(|cx| frame_container_from_showfile(w, cx));
+                let frame_container = cx.new(|cx| {
+                    let layout = Show::global(cx).layout.clone();
+
+                    cx.observe_in(&layout, w, |this, layout, w, cx| {
+                        *this = frame_container_from_showfile(layout, w, cx);
+                        log::debug!("Updating main frame container");
+                        cx.notify();
+                    })
+                    .detach();
+
+                    frame_container_from_showfile(layout, w, cx)
+                });
+
                 Self { frame_container, settings_window: None, focus_handle: cx.focus_handle() }
             })
         })
@@ -91,10 +103,11 @@ impl Render for MainWindow {
 // We can't really put this in the `frames` crate,
 // so let's just add a helper function here.
 fn frame_container_from_showfile(
+    layout: Entity<Layout>,
     window: &mut Window,
     cx: &mut Context<FrameContainer<MainFrame>>,
 ) -> FrameContainer<MainFrame> {
-    let main_window = Show::global(cx).layout.read(cx).main_window.clone();
+    let main_window = layout.read(cx).main_window.clone();
 
     let mut container = FrameContainer::new(main_window.size, FRAME_CELL_SIZE);
 
