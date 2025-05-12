@@ -10,6 +10,7 @@ use ui::{
 use crate::layout::main::FRAME_CELL_SIZE;
 
 pub mod effect_graph;
+pub mod fixture_group;
 
 pub struct Pool<D: PoolDelegate> {
     delegate: D,

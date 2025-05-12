@@ -214,7 +214,7 @@
                         y: 0,
                     ),
                     size: (
-                        width: 15,
+                        width: 14,
                         height: 12,
                     ),
                 ),
@@ -222,7 +222,7 @@
             ), (
                 bounds: (
                     origin: (
-                        x: 15,
+                        x: 14,
                         y: 0,
                     ),
                     size: (
@@ -231,6 +231,18 @@
                     ),
                 ),
                 kind: Pool(EffectGraphs),
+            ), (
+                bounds: (
+                    origin: (
+                        x: 15,
+                        y: 0,
+                    ),
+                    size: (
+                        width: 5,
+                        height: 12,
+                    ),
+                ),
+                kind: Pool(FixtureGroups),
             )],
         ),
     ),

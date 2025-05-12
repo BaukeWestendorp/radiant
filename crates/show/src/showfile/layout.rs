@@ -31,6 +31,7 @@ pub enum MainFrameKind {
 #[derive(Clone, PartialEq, Eq)]
 pub enum PoolKind {
     EffectGraphs,
+    FixtureGroups,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]

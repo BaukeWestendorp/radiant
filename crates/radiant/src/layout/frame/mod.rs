@@ -1,6 +1,6 @@
 use frames::{Frame, FrameWrapper};
 use gpui::*;
-use pool::{Pool, effect_graph::EffectGraphPool};
+use pool::{Pool, effect_graph::EffectGraphPool, fixture_group::FixtureGroupPool};
 use show::{
     Show,
     assets::{AssetId, EffectGraphDef},
@@ -16,6 +16,7 @@ mod pool;
 pub enum MainFrame {
     EffectGraphEditor(Entity<VirtualWindow<GraphEditor<EffectGraphDef>>>),
     EffectGraphPool(Entity<Pool<EffectGraphPool>>),
+    FixtureGroupPool(Entity<Pool<FixtureGroupPool>>),
 }
 
 impl MainFrame {
@@ -41,6 +42,9 @@ impl MainFrame {
                 show::layout::PoolKind::EffectGraphs => MainFrame::EffectGraphPool(
                     cx.new(|cx| Pool::new(EffectGraphPool::new(), frame.bounds.size, cx)),
                 ),
+                show::layout::PoolKind::FixtureGroups => MainFrame::FixtureGroupPool(
+                    cx.new(|cx| Pool::new(FixtureGroupPool::new(), frame.bounds.size, cx)),
+                ),
             },
         }
     }
@@ -55,6 +59,7 @@ impl Frame for MainFrame {
         match self {
             MainFrame::EffectGraphEditor(entity) => entity.clone().into_any_element(),
             MainFrame::EffectGraphPool(pool) => pool.clone().into_any_element(),
+            MainFrame::FixtureGroupPool(pool) => pool.clone().into_any_element(),
         }
     }
 }
