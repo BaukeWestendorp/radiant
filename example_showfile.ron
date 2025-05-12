@@ -177,14 +177,14 @@
                 label: "Wash Side Odd",
                 id: 13,
                 data: (
-                    fixtures: [201, 203, 205, 207, 209, 211],
+                    fixtures: [201, 203, 205],
                 ),
             ),
             11: (
                 label: "Wash Side",
                 id: 11,
                 data: (
-                    fixtures: [201, 202, 203, 304, 305, 306, 307, 308, 309, 310, 311, 312],
+                    fixtures: [301, 302, 203, 304, 305, 306],
                 ),
             ),
             2: (
@@ -212,7 +212,7 @@
                 label: "Wash Side Even",
                 id: 12,
                 data: (
-                    fixtures: [202, 204, 206, 208, 210, 212],
+                    fixtures: [202, 204, 206],
                 ),
             ),
             3: (
