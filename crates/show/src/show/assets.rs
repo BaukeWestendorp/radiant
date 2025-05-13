@@ -1,4 +1,4 @@
-use crate::showfile::{self, effect_graph};
+use crate::showfile::{self, effect_graph, sequence::Sequence};
 use gpui::{App, AppContext as _, Entity, SharedString};
 use std::{collections::HashMap, marker::PhantomData};
 
@@ -29,7 +29,10 @@ impl<T> Copy for AssetId<T> {}
 pub struct Assets {
     pub effect_graphs: AssetPool<EffectGraph>,
     pub fixture_groups: AssetPool<FixtureGroup>,
+
     pub cues: AssetPool<Cue>,
+    pub sequences: AssetPool<Sequence>,
+
     pub dimmer_presets: AssetPool<DimmerPreset>,
 }
 
@@ -57,12 +60,17 @@ impl Assets {
             cues.insert(AssetId::new(id), cx.new(|_cx| Asset::from_showfile(asset)));
         }
 
+        let mut sequences = AssetPool::new();
+        for (id, asset) in assets.sequences.clone() {
+            sequences.insert(AssetId::new(id), cx.new(|_cx| Asset::from_showfile(asset)));
+        }
+
         let mut dimmer_presets = AssetPool::new();
         for (id, asset) in assets.dimmer_presets.clone() {
             dimmer_presets.insert(AssetId::new(id), cx.new(|_cx| Asset::from_showfile(asset)));
         }
 
-        Assets { effect_graphs, fixture_groups, dimmer_presets, cues }
+        Assets { effect_graphs, fixture_groups, cues, sequences, dimmer_presets }
     }
 
     pub(crate) fn to_showfile(&self, cx: &App) -> showfile::Assets {
@@ -81,12 +89,17 @@ impl Assets {
             cues.insert(id, asset.read(cx).to_showfile());
         }
 
+        let mut sequences = showfile::AssetPool::new();
+        for (id, asset) in self.sequences.assets.clone() {
+            sequences.insert(id, asset.read(cx).to_showfile());
+        }
+
         let mut dimmer_presets = showfile::AssetPool::new();
         for (id, asset) in self.dimmer_presets.assets.clone() {
             dimmer_presets.insert(id, asset.read(cx).to_showfile());
         }
 
-        showfile::Assets { effect_graphs, fixture_groups, dimmer_presets, cues }
+        showfile::Assets { effect_graphs, fixture_groups, cues, sequences, dimmer_presets }
     }
 }
 

@@ -4,11 +4,13 @@ use cue::Cue;
 use effect_graph::EffectGraph;
 use fixture_group::FixtureGroup;
 use presets::DimmerPreset;
+use sequence::Sequence;
 
 pub mod cue;
 pub mod effect_graph;
 pub mod fixture_group;
 pub mod presets;
+pub mod sequence;
 
 pub type AssetId = u32;
 
@@ -19,6 +21,7 @@ pub struct Assets {
     pub fixture_groups: AssetPool<FixtureGroup>,
 
     pub cues: AssetPool<Cue>,
+    pub sequences: AssetPool<Sequence>,
 
     pub dimmer_presets: AssetPool<DimmerPreset>,
 }

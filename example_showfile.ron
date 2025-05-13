@@ -253,6 +253,15 @@
                     fixture_group: 11
                 )
             )
+        },
+        sequences: {
+            1: (
+                label: "Example Sequence",
+                id: 1,
+                data: (
+                    cues: [1],
+                )
+            )
         }
     ),
     layout: (
