@@ -302,7 +302,7 @@
                     ),
                     size: (
                         width: 5,
-                        height: 11,
+                        height: 8,
                     ),
                 ),
                 kind: Pool(FixtureGroups),
@@ -319,7 +319,37 @@
                                 ),
                             ),
                             kind: Pool(DimmerPresets),
-                        )
+                        ),
+
+
+                        (
+                                                    bounds: (
+                                                    origin: (
+                                                        x: 15,
+                                                        y: 8,
+                                                    ),
+                                                    size: (
+                                                        width: 5,
+                                                        height: 1,
+                                                    ),
+                                                    ),
+                                                    kind: Pool(Cues),
+                                                ),
+
+
+                                                (
+                                                                            bounds: (
+                                                                            origin: (
+                                                                                x: 15,
+                                                                                y: 9,
+                                                                            ),
+                                                                            size: (
+                                                                                width: 5,
+                                                                                height: 1,
+                                                                            ),
+                                                                            ),
+                                                                            kind: Pool(Sequences),
+                                                                        )
 
             ],
         ),
