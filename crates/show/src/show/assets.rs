@@ -29,8 +29,8 @@ impl<T> Copy for AssetId<T> {}
 pub struct Assets {
     pub effect_graphs: AssetPool<EffectGraph>,
     pub fixture_groups: AssetPool<FixtureGroup>,
-    pub dimmer_presets: AssetPool<DimmerPreset>,
     pub cues: AssetPool<Cue>,
+    pub dimmer_presets: AssetPool<DimmerPreset>,
 }
 
 impl Assets {

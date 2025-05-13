@@ -17,8 +17,10 @@ pub type AssetId = u32;
 pub struct Assets {
     pub effect_graphs: AssetPool<EffectGraph>,
     pub fixture_groups: AssetPool<FixtureGroup>,
-    pub dimmer_presets: AssetPool<DimmerPreset>,
+
     pub cues: AssetPool<Cue>,
+
+    pub dimmer_presets: AssetPool<DimmerPreset>,
 }
 
 pub type AssetPool<T> = HashMap<AssetId, Asset<T>>;

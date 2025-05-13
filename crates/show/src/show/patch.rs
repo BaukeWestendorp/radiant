@@ -42,10 +42,12 @@ impl Patch {
             .join("gdtf_share_fixtures")
             .join(&gdtf_file_name);
         log::debug!("Loading cached gdtf file {}", path.display());
-        let file = std::fs::File::open(path).context("open cached gdtf file")?;
+        let file = std::fs::File::open(&path)
+            .with_context(|| format!("Could not open cached gdtf file at {:?}", path.display()))?;
+
         self.gdtf_descriptions.insert(
             gdtf_file_name.clone(),
-            GdtfFile::new(file).context("create new GdtfFile")?.description,
+            GdtfFile::new(file).context("Could not create new GdtfFile")?.description,
         );
 
         let fixture = Fixture { id, address, gdtf_file_name, dmx_mode };
