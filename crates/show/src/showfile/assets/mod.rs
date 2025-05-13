@@ -2,12 +2,14 @@ use std::collections::HashMap;
 
 use cue::Cue;
 use effect_graph::EffectGraph;
+use executor::Executor;
 use fixture_group::FixtureGroup;
 use preset::DimmerPreset;
 use sequence::Sequence;
 
 pub mod cue;
 pub mod effect_graph;
+pub mod executor;
 pub mod fixture_group;
 pub mod preset;
 pub mod sequence;
@@ -22,6 +24,7 @@ pub struct Assets {
 
     pub cues: AssetPool<Cue>,
     pub sequences: AssetPool<Sequence>,
+    pub executors: AssetPool<Executor>,
 
     pub dimmer_presets: AssetPool<DimmerPreset>,
 }

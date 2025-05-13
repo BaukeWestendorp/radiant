@@ -3,7 +3,7 @@ use gpui::{App, AppContext as _, Entity, SharedString};
 use std::{collections::HashMap, marker::PhantomData};
 
 pub use crate::showfile::assets::{
-    cue::*, effect_graph::*, fixture_group::*, preset::*, sequence::*,
+    cue::*, effect_graph::*, executor::*, fixture_group::*, preset::*, sequence::*,
 };
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -34,6 +34,7 @@ pub struct Assets {
 
     pub cues: AssetPool<Cue>,
     pub sequences: AssetPool<Sequence>,
+    pub executors: AssetPool<Executor>,
 
     pub dimmer_presets: AssetPool<DimmerPreset>,
 }
@@ -67,12 +68,17 @@ impl Assets {
             sequences.insert(AssetId::new(id), cx.new(|_cx| Asset::from_showfile(asset)));
         }
 
+        let mut executors = AssetPool::new();
+        for (id, asset) in assets.executors.clone() {
+            executors.insert(AssetId::new(id), cx.new(|_cx| Asset::from_showfile(asset)));
+        }
+
         let mut dimmer_presets = AssetPool::new();
         for (id, asset) in assets.dimmer_presets.clone() {
             dimmer_presets.insert(AssetId::new(id), cx.new(|_cx| Asset::from_showfile(asset)));
         }
 
-        Assets { effect_graphs, fixture_groups, cues, sequences, dimmer_presets }
+        Assets { effect_graphs, fixture_groups, cues, sequences, executors, dimmer_presets }
     }
 
     pub(crate) fn to_showfile(&self, cx: &App) -> showfile::Assets {
@@ -96,12 +102,24 @@ impl Assets {
             sequences.insert(id, asset.read(cx).to_showfile());
         }
 
+        let mut executors = showfile::AssetPool::new();
+        for (id, asset) in self.executors.assets.clone() {
+            executors.insert(id, asset.read(cx).to_showfile());
+        }
+
         let mut dimmer_presets = showfile::AssetPool::new();
         for (id, asset) in self.dimmer_presets.assets.clone() {
             dimmer_presets.insert(id, asset.read(cx).to_showfile());
         }
 
-        showfile::Assets { effect_graphs, fixture_groups, cues, sequences, dimmer_presets }
+        showfile::Assets {
+            effect_graphs,
+            fixture_groups,
+            cues,
+            sequences,
+            executors,
+            dimmer_presets,
+        }
     }
 }
 

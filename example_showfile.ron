@@ -219,6 +219,15 @@
                 ),
             ),
         },
+        executors: {
+            1: (
+                label: "Example Executor",
+                id: 1,
+                data: (
+                    sequence: 1,
+                ),
+            ),
+        },
         dimmer_presets: {
             1: (
                 label: "0%",
