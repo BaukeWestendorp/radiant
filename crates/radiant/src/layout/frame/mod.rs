@@ -1,7 +1,7 @@
 use frames::{Frame, FrameWrapper};
 use gpui::*;
 use pool::{
-    Pool, cue::CuePool, dimmer_presets::DimmerPresetPool, effect_graph::EffectGraphPool,
+    Pool, cue::CuePool, dimmer_preset::DimmerPresetPool, effect_graph::EffectGraphPool,
     fixture_group::FixtureGroupPool,
 };
 use show::{

@@ -14,7 +14,7 @@ pub mod fixture_group;
 
 pub mod cue;
 
-pub mod dimmer_presets;
+pub mod dimmer_preset;
 
 pub struct Pool<D: PoolDelegate> {
     delegate: D,

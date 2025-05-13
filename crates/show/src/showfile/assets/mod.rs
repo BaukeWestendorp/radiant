@@ -3,13 +3,13 @@ use std::collections::HashMap;
 use cue::Cue;
 use effect_graph::EffectGraph;
 use fixture_group::FixtureGroup;
-use presets::DimmerPreset;
+use preset::DimmerPreset;
 use sequence::Sequence;
 
 pub mod cue;
 pub mod effect_graph;
 pub mod fixture_group;
-pub mod presets;
+pub mod preset;
 pub mod sequence;
 
 pub type AssetId = u32;

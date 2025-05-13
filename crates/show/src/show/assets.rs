@@ -2,7 +2,7 @@ use crate::showfile::{self, effect_graph, sequence::Sequence};
 use gpui::{App, AppContext as _, Entity, SharedString};
 use std::{collections::HashMap, marker::PhantomData};
 
-pub use crate::showfile::assets::{cue::*, effect_graph::*, fixture_group::*, presets::*};
+pub use crate::showfile::assets::{cue::*, effect_graph::*, fixture_group::*, preset::*};
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct AssetId<T>(u32, PhantomData<T>);
