@@ -32,6 +32,9 @@ pub enum MainFrameKind {
 pub enum PoolKind {
     EffectGraphs,
     FixtureGroups,
+
+    Cues,
+
     DimmerPresets,
 }
 
