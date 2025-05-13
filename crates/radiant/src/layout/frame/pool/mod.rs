@@ -13,6 +13,7 @@ pub mod effect_graph;
 pub mod fixture_group;
 
 pub mod cue;
+pub mod sequence;
 
 pub mod dimmer_preset;
 

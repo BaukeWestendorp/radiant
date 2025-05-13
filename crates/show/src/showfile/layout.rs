@@ -34,6 +34,7 @@ pub enum PoolKind {
     FixtureGroups,
 
     Cues,
+    Sequences,
 
     DimmerPresets,
 }
