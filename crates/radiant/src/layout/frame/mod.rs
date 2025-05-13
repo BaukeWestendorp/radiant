@@ -2,7 +2,7 @@ use frames::{Frame, FrameWrapper};
 use gpui::*;
 use pool::{
     Pool, cue::CuePool, dimmer_preset::DimmerPresetPool, effect_graph::EffectGraphPool,
-    fixture_group::FixtureGroupPool, sequence::SequencePool,
+    executor::ExecutorPool, fixture_group::FixtureGroupPool, sequence::SequencePool,
 };
 use show::{
     Show,
@@ -24,6 +24,7 @@ pub enum MainFrame {
 
     CuePool(Entity<Pool<CuePool>>),
     SequencePool(Entity<Pool<SequencePool>>),
+    ExecutorPool(Entity<Pool<ExecutorPool>>),
 
     DimmerPresetPool(Entity<Pool<DimmerPresetPool>>),
 }
@@ -61,6 +62,9 @@ impl MainFrame {
                 show::layout::PoolKind::Sequences => MainFrame::SequencePool(
                     cx.new(|cx| Pool::new(SequencePool::new(), frame.bounds.size, cx)),
                 ),
+                show::layout::PoolKind::Executors => MainFrame::ExecutorPool(
+                    cx.new(|cx| Pool::new(ExecutorPool::new(), frame.bounds.size, cx)),
+                ),
 
                 show::layout::PoolKind::DimmerPresets => MainFrame::DimmerPresetPool(
                     cx.new(|cx| Pool::new(DimmerPresetPool::new(), frame.bounds.size, cx)),
@@ -84,6 +88,7 @@ impl Frame for MainFrame {
 
             MainFrame::CuePool(pool) => pool.clone().into_any_element(),
             MainFrame::SequencePool(pool) => pool.clone().into_any_element(),
+            MainFrame::ExecutorPool(pool) => pool.clone().into_any_element(),
 
             MainFrame::DimmerPresetPool(pool) => pool.clone().into_any_element(),
         }

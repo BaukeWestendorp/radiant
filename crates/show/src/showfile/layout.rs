@@ -35,6 +35,7 @@ pub enum PoolKind {
 
     Cues,
     Sequences,
+    Executors,
 
     DimmerPresets,
 }

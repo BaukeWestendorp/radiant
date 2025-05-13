@@ -351,6 +351,18 @@
                     ),
                 ),
                 kind: Pool(Sequences),
+            ), (
+                bounds: (
+                    origin: (
+                        x: 15,
+                        y: 10,
+                    ),
+                    size: (
+                        width: 5,
+                        height: 1,
+                    ),
+                ),
+                kind: Pool(Executors),
             )],
         ),
     ),
