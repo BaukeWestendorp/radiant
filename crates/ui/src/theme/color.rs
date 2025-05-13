@@ -25,8 +25,38 @@ pub struct Colors {
     pub grid: Hsla,
 }
 
-impl Default for Colors {
-    fn default() -> Self {
+impl Colors {
+    pub fn light() -> Self {
+        let accent: Hsla = gpui::rgb(0xffc416).into();
+        let selected = accent;
+
+        Self {
+            bg_primary: gpui::hsla(0.0, 0.0, 1.0, 1.0),
+            bg_secondary: gpui::hsla(0.0, 0.0, 0.9, 1.0),
+            bg_tertiary: gpui::hsla(0.0, 0.0, 0.8, 1.0),
+            bg_focused: gpui::hsla(0.0, 0.0, 0.85, 1.0),
+            bg_selected: selected.lighten(0.5).with_opacity(0.3),
+            bg_selected_bright: selected.lighten(0.2),
+            bg_alternating: gpui::hsla(0.0, 0.0, 0.95, 1.0),
+
+            text: gpui::hsla(0.0, 0.0, 0.0, 1.0),
+
+            header_background: gpui::rgb(0xe0e4ff).into(),
+            header_border: gpui::rgb(0xc0c4ff).into(),
+
+            border: gpui::hsla(0.0, 0.0, 0.7, 1.0),
+            border_focused: accent,
+            border_selected: selected,
+
+            accent,
+            highlight: accent.with_opacity(0.2),
+            cursor: accent,
+
+            grid: gpui::rgba(0xffc41680).into(),
+        }
+    }
+
+    pub fn dark() -> Self {
         let accent: Hsla = gpui::rgb(0xffc416).into();
         let selected = accent;
 
@@ -54,6 +84,12 @@ impl Default for Colors {
 
             grid: gpui::rgba(0xffc41680).into(),
         }
+    }
+}
+
+impl Default for Colors {
+    fn default() -> Self {
+        Self::light()
     }
 }
 
