@@ -206,7 +206,7 @@
                 id: 1,
                 data: (
                     effect_graph: 1,
-                    fixture_group: 11,
+                    fixture_group: 2,
                 ),
             ),
         },
@@ -225,6 +225,7 @@
                 id: 1,
                 data: (
                     sequence: 1,
+                    current_index: Some(0),
                 ),
             ),
         },

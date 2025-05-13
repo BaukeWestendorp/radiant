@@ -4,4 +4,5 @@ use super::AssetId;
 #[derive(Debug, Clone, Default)]
 pub struct Executor {
     pub sequence: AssetId,
+    pub current_index: Option<usize>,
 }

@@ -141,6 +141,10 @@ impl<T> AssetPool<T> {
         self.assets.iter().map(|(id, asset)| (AssetId::new(*id), asset))
     }
 
+    pub fn ids(&self) -> impl Iterator<Item = AssetId<T>> {
+        self.assets.keys().map(|id| AssetId::new(*id))
+    }
+
     pub fn insert(&mut self, id: AssetId<T>, asset: Entity<Asset<T>>) {
         self.assets.insert(id.as_u32(), asset);
     }

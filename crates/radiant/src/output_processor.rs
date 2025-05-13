@@ -2,7 +2,7 @@ use flow::ProcessingContext;
 use gpui::{App, AsyncApp, Entity, ReadGlobal, Timer};
 use show::{
     Show,
-    assets::{AssetId, Cue, EffectGraphDef, State},
+    assets::{AssetId, Cue, EffectGraphDef, Executor, State},
 };
 use std::time::Duration;
 
@@ -25,10 +25,12 @@ pub fn start(multiverse: Entity<dmx::Multiverse>, cx: &mut App) {
 }
 
 fn generate_multiverse(multiverse: &Entity<dmx::Multiverse>, cx: &mut App) -> anyhow::Result<()> {
-    let cue_id = AssetId::new(1);
-
     set_default_values(multiverse, cx)?;
-    process_cue(cue_id, multiverse, cx);
+
+    let executor_ids = Show::global(cx).assets.executors.ids().collect::<Vec<_>>();
+    for id in executor_ids {
+        process_executor(&id, multiverse, cx);
+    }
 
     Ok(())
 }
@@ -98,4 +100,21 @@ fn process_cue(id: AssetId<Cue>, multiverse: &Entity<dmx::Multiverse>, cx: &mut 
             effect_graph.data.process(&mut pcx, cx);
         });
     }
+}
+
+fn process_executor(id: &AssetId<Executor>, multiverse: &Entity<dmx::Multiverse>, cx: &mut App) {
+    let show = Show::global(cx);
+
+    let Some(executor) = show.assets.executors.get(id) else { return };
+    let executor = &executor.read(cx).data;
+
+    let Some(cue_ix) = executor.current_index else { return };
+
+    let Some(sequence) = show.assets.sequences.get(&AssetId::new(executor.sequence)) else {
+        return;
+    };
+
+    let Some(cue_id) = sequence.read(cx).data.cues.get(cue_ix) else { return };
+
+    process_cue(AssetId::new(*cue_id), multiverse, cx);
 }

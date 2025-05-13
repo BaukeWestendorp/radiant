@@ -89,7 +89,7 @@ impl Colors {
 
 impl Default for Colors {
     fn default() -> Self {
-        Self::light()
+        Self::dark()
     }
 }
 
