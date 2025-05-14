@@ -1,4 +1,4 @@
-use crate::FloatingDmxValue;
+use crate::show::FloatingDmxValue;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Debug, Clone, Default)]

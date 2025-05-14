@@ -6,7 +6,6 @@ members = [
     "crates/frames",
     "crates/radiant",
     "crates/sacn",
-    "crates/show",
     "crates/ui",
 ]
 resolver = "3"
@@ -26,7 +25,6 @@ flow = { path = "crates/flow" }
 flow_derive = { path = "crates/flow_derive" }
 frames = { path = "crates/frames" }
 sacn = { path = "crates/sacn" }
-show = { path = "crates/show" }
 ui = { path = "crates/ui" }
 
 anyhow = "1.0"

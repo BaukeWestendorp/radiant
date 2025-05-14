@@ -1,10 +1,10 @@
+use crate::show::Show;
 use crate::{
     dmx_io::DmxIo,
     layout::{self, main::MainWindow},
     output_processor,
 };
 use gpui::*;
-use show::Show;
 use std::path::PathBuf;
 
 pub const APP_ID: &str = "radiant";
@@ -68,9 +68,9 @@ impl RadiantApp {
 }
 
 mod actions {
+    use crate::show::Show;
     use anyhow::Context;
     use gpui::*;
-    use show::Show;
 
     use crate::layout::main::MainWindow;
 

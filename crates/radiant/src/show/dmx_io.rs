@@ -61,7 +61,7 @@ pub(crate) mod showfile {
             super::DmxIoSettings { sacn: self.sacn.to_show(cx) }
         }
 
-        pub fn from_show(from: crate::dmx_io::DmxIoSettings, cx: &gpui::App) -> Self {
+        pub fn from_show(from: super::DmxIoSettings, cx: &gpui::App) -> Self {
             Self { sacn: SacnSettings::from_show(from.sacn, cx) }
         }
     }
@@ -79,7 +79,7 @@ pub(crate) mod showfile {
             }
         }
 
-        pub fn from_show(from: crate::dmx_io::SacnSettings, cx: &gpui::App) -> Self {
+        pub fn from_show(from: super::SacnSettings, cx: &gpui::App) -> Self {
             Self {
                 sources: from.sources.into_iter().map(|source| source.read(cx).clone()).collect(),
             }

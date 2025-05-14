@@ -1,4 +1,4 @@
-use crate::{FloatingDmxValue, patch::FixtureId};
+use crate::show::{FloatingDmxValue, Show, patch::FixtureId};
 use flow::{
     Graph, Input, Output, ProcessingContext, Template, Value as _,
     gpui::{ControlEvent, ControlView},
@@ -192,7 +192,7 @@ pub fn insert_templates(graph: &mut EffectGraph) {
                     .copied()
                     .unwrap_or_else(|| panic!("No fixture selected"));
 
-                let patch = crate::Show::global(cx).patch.read(cx);
+                let patch = Show::global(cx).patch.read(cx);
                 let fixture = patch.fixture(fixture_id).expect("Fixture not found in patch");
 
                 ov.set_value("fixture_id", EffectGraphValue::FixtureId(fixture_id));
@@ -307,7 +307,7 @@ pub fn insert_templates(graph: &mut EffectGraph) {
 
                 let set_dmx_values_for_attribute =
                     |attr: &str, value: &FloatingDmxValue, cx: &mut App| {
-                        let patch = &crate::Show::global(cx).patch.read(cx);
+                        let patch = &Show::global(cx).patch.read(cx);
                         let Some(fixture) = patch.fixture(fixture_id) else { return };
 
                         let Some(dimmer_channel_offsets) =

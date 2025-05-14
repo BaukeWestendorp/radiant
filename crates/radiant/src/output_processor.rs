@@ -1,9 +1,9 @@
-use flow::ProcessingContext;
-use gpui::{App, AsyncApp, Entity, ReadGlobal, Timer};
-use show::{
+use crate::show::{
     Show,
     asset::{AssetId, Cue, EffectGraphDef, EffectGraphState, Executor},
 };
+use flow::ProcessingContext;
+use gpui::{App, AsyncApp, Entity, ReadGlobal, Timer};
 use std::time::Duration;
 
 const INTERVAL: Duration = Duration::from_millis(16);

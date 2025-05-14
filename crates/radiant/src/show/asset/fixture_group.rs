@@ -1,4 +1,4 @@
-use crate::patch::FixtureId;
+use crate::show::patch::FixtureId;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Debug, Clone, Default)]

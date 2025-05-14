@@ -1,9 +1,9 @@
+use crate::show::{self, Show, asset::EffectGraphDef};
 use frames::{Frame, FrameWrapper};
 use gpui::*;
 use pool::{
     CuePool, DimmerPresetPool, EffectGraphPool, ExecutorPool, FixtureGroupPool, Pool, SequencePool,
 };
-use show::{Show, asset::EffectGraphDef};
 
 pub use graph_editor::GraphEditor;
 

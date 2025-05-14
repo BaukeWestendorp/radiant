@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
+use crate::show::asset::AssetId;
 use gpui::{FocusHandle, Size, Window, div, prelude::*, px};
-use show::asset::AssetId;
 use ui::{
     ActiveTheme, ContainerStyle, Disableable, InteractiveColor, container, interactive_container,
     utils::z_stack,

@@ -1,9 +1,9 @@
-use gpui::{ReadGlobal, UpdateGlobal, div, prelude::*};
-use show::{
+use crate::show::{
     Show,
     asset::{AssetId, EffectGraph},
     layout::MainFrameKind,
 };
+use gpui::{ReadGlobal, UpdateGlobal, div, prelude::*};
 
 use super::{Pool, PoolDelegate};
 

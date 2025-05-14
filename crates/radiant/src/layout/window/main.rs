@@ -1,8 +1,8 @@
+use crate::show::{Show, layout::Layout};
 use crate::{app::APP_ID, layout::MainFrame};
 use anyhow::Context as _;
 use frames::FrameContainer;
 use gpui::*;
-use show::{Show, layout::Layout};
 use ui::{ActiveTheme as _, root, utils::z_stack};
 
 use super::{DEFAULT_REM_SIZE, VirtualWindow, settings::SettingsWindow};

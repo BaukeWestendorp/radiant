@@ -1,8 +1,8 @@
-use gpui::{ReadGlobal, div, prelude::*};
-use show::{
+use crate::show::{
     Show,
     asset::{AssetId, Executor},
 };
+use gpui::{ReadGlobal, div, prelude::*};
 
 use super::{Pool, PoolDelegate};
 

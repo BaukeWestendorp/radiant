@@ -1,7 +1,8 @@
+use crate::show::dmx_io::{DmxIoSettings, SacnOutputType};
 use anyhow::Context;
 use gpui::*;
 use sacn::Universe;
-use show::dmx_io::{DmxIoSettings, SacnOutputType};
+
 use std::sync::Arc;
 
 const CID: sacn::ComponentIdentifier = sacn::ComponentIdentifier::from_bytes([

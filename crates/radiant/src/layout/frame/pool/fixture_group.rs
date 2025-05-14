@@ -1,8 +1,8 @@
-use gpui::{ReadGlobal, div, prelude::*};
-use show::{
+use crate::show::{
     Show,
     asset::{AssetId, FixtureGroup},
 };
+use gpui::{ReadGlobal as _, div, prelude::*};
 
 use super::{Pool, PoolDelegate};
 

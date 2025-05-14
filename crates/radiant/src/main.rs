@@ -1,3 +1,4 @@
+use app::RadiantApp;
 use clap::Parser;
 use std::path::PathBuf;
 
@@ -5,6 +6,7 @@ mod app;
 mod dmx_io;
 mod layout;
 mod output_processor;
+mod show;
 mod utils;
 
 #[derive(Debug, clap::Parser)]
@@ -20,5 +22,5 @@ fn main() {
 
     let args = Args::parse();
 
-    app::RadiantApp::new(args.showfile).run();
+    RadiantApp::new(args.showfile).run();
 }

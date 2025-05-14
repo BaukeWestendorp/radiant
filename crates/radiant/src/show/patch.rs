@@ -124,10 +124,6 @@ pub struct Fixture {
 }
 
 impl Fixture {
-    pub fn id(&self) -> FixtureId {
-        self.id
-    }
-
     pub fn address(&self) -> &dmx::Address {
         &self.address
     }
