@@ -1,13 +1,9 @@
 use frames::{Frame, FrameWrapper};
 use gpui::*;
 use pool::{
-    Pool, cue::CuePool, dimmer_preset::DimmerPresetPool, effect_graph::EffectGraphPool,
-    executor::ExecutorPool, fixture_group::FixtureGroupPool, sequence::SequencePool,
+    CuePool, DimmerPresetPool, EffectGraphPool, ExecutorPool, FixtureGroupPool, Pool, SequencePool,
 };
-use show::{
-    Show,
-    assets::{AssetId, EffectGraphDef},
-};
+use show::{Show, asset::EffectGraphDef};
 
 pub use graph_editor::GraphEditor;
 
@@ -37,12 +33,8 @@ impl MainFrame {
     ) -> Self {
         match &frame.kind {
             show::layout::MainFrameKind::EffectGraphEditor(effect_graph_id) => {
-                let graph = Show::global(cx)
-                    .assets
-                    .effect_graphs
-                    .get(&AssetId::new(*effect_graph_id))
-                    .unwrap()
-                    .clone();
+                let graph =
+                    Show::global(cx).assets.effect_graphs.get(&effect_graph_id).unwrap().clone();
 
                 MainFrame::EffectGraphEditor(
                     cx.new(|cx| VirtualWindow::new(GraphEditor::new(graph, w, cx))),

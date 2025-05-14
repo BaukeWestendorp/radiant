@@ -1,5 +1,6 @@
-use crate::showfile::AssetId;
 use gpui::{Bounds, Size};
+
+use crate::asset::{AssetId, EffectGraph};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, Default)]
@@ -23,7 +24,7 @@ impl Default for MainWindow {
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, PartialEq, Eq)]
 pub enum MainFrameKind {
-    EffectGraphEditor(AssetId),
+    EffectGraphEditor(AssetId<EffectGraph>),
     Pool(PoolKind),
 }
 

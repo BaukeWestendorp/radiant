@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
 use gpui::{FocusHandle, Size, Window, div, prelude::*, px};
-use show::assets::AssetId;
+use show::asset::AssetId;
 use ui::{
     ActiveTheme, ContainerStyle, Disableable, InteractiveColor, container, interactive_container,
     utils::z_stack,
@@ -17,6 +17,8 @@ pub mod executor;
 pub mod sequence;
 
 pub mod dimmer_preset;
+
+pub use {cue::*, dimmer_preset::*, effect_graph::*, executor::*, fixture_group::*, sequence::*};
 
 pub struct Pool<D: PoolDelegate> {
     delegate: D,

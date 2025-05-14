@@ -1,7 +1,7 @@
 use gpui::{ReadGlobal, div, prelude::*};
 use show::{
     Show,
-    assets::{AssetId, Executor},
+    asset::{AssetId, Executor},
 };
 
 use super::{Pool, PoolDelegate};

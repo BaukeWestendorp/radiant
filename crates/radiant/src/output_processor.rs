@@ -2,7 +2,7 @@ use flow::ProcessingContext;
 use gpui::{App, AsyncApp, Entity, ReadGlobal, Timer};
 use show::{
     Show,
-    assets::{AssetId, Cue, EffectGraphDef, Executor, State},
+    asset::{AssetId, Cue, EffectGraphDef, EffectGraphState, Executor},
 };
 use std::time::Duration;
 
@@ -27,7 +27,7 @@ pub fn start(multiverse: Entity<dmx::Multiverse>, cx: &mut App) {
 fn generate_multiverse(multiverse: &Entity<dmx::Multiverse>, cx: &mut App) -> anyhow::Result<()> {
     set_default_values(multiverse, cx)?;
 
-    let executor_ids = Show::global(cx).assets.executors.ids().collect::<Vec<_>>();
+    let executor_ids = Show::global(cx).assets.executors.keys().cloned().collect::<Vec<_>>();
     for id in executor_ids {
         process_executor(&id, multiverse, cx);
     }
@@ -74,23 +74,21 @@ fn process_cue(id: AssetId<Cue>, multiverse: &Entity<dmx::Multiverse>, cx: &mut 
     let show = Show::global(cx);
     let cue = show.assets.cues.get(&id).unwrap().read(cx);
 
-    let Some(effect_graph) =
-        show.assets.effect_graphs.get(&AssetId::new(cue.data.effect_graph)).cloned()
-    else {
+    let Some(effect_graph_id) = cue.data.effect_graph else { return };
+    let Some(effect_graph) = show.assets.effect_graphs.get(&effect_graph_id).cloned() else {
         log::warn!("No effect graph to process!");
         return;
     };
 
-    let Some(fixture_group) =
-        show.assets.fixture_groups.get(&AssetId::new(cue.data.fixture_group)).cloned()
-    else {
+    let Some(fixture_group_id) = cue.data.fixture_group else { return };
+    let Some(fixture_group) = show.assets.fixture_groups.get(&fixture_group_id).cloned() else {
         log::warn!("No fixture group to process!");
         return;
     };
     let fixture_group_len = fixture_group.read(cx).data.fixtures.len();
 
     for ix in 0..fixture_group_len {
-        let mut pcx = ProcessingContext::<EffectGraphDef>::new(State {
+        let mut pcx = ProcessingContext::<EffectGraphDef>::new(EffectGraphState {
             multiverse: multiverse.clone(),
             fixture_group: fixture_group.clone(),
             fixture_id_index: Some(ix),
@@ -110,11 +108,12 @@ fn process_executor(id: &AssetId<Executor>, multiverse: &Entity<dmx::Multiverse>
 
     let Some(cue_ix) = executor.current_index else { return };
 
-    let Some(sequence) = show.assets.sequences.get(&AssetId::new(executor.sequence)) else {
+    let Some(sequence_id) = executor.sequence else { return };
+    let Some(sequence) = show.assets.sequences.get(&sequence_id) else {
         return;
     };
 
     let Some(cue_id) = sequence.read(cx).data.cues.get(cue_ix) else { return };
 
-    process_cue(AssetId::new(*cue_id), multiverse, cx);
+    process_cue(*cue_id, multiverse, cx);
 }

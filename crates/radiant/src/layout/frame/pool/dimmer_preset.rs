@@ -1,7 +1,7 @@
 use gpui::{ReadGlobal, div, prelude::*};
 use show::{
     Show,
-    assets::{AssetId, DimmerPreset},
+    asset::{AssetId, DimmerPreset},
 };
 
 use super::{Pool, PoolDelegate};

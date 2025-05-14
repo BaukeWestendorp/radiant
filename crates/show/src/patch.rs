@@ -1,13 +1,12 @@
-use std::collections::HashMap;
-
 use anyhow::Context;
 use gdtf::{GdtfFile, dmx_mode::DmxMode, fixture_type::FixtureType};
+use std::collections::HashMap;
 
-use crate::showfile;
-
-#[derive(Debug)]
+#[derive(Debug, Clone, Default)]
+#[derive(serde::Serialize)]
 pub struct Patch {
     fixtures: Vec<Fixture>,
+    #[serde(skip)]
     gdtf_descriptions: HashMap<String, gdtf::Description>,
 }
 
@@ -57,55 +56,37 @@ impl Patch {
     }
 }
 
-impl Patch {
-    pub(crate) fn try_from_showfile(patch: showfile::Patch) -> anyhow::Result<Self> {
+impl<'de> serde::Deserialize<'de> for Patch {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
         let mut this = Self { fixtures: Vec::new(), gdtf_descriptions: HashMap::new() };
 
-        for fixture in patch.fixtures {
+        #[derive(serde::Deserialize)]
+        struct Intermediate {
+            fixtures: Vec<Fixture>,
+        }
+
+        let intermediate = Intermediate::deserialize(deserializer)?;
+
+        for fixture in intermediate.fixtures {
             this.patch_fixture(
                 fixture.id.into(),
                 fixture.address,
                 fixture.gdtf_file_name,
                 fixture.dmx_mode,
-            )?;
+            )
+            .map_err(|err| serde::de::Error::custom(err))?;
         }
 
         Ok(this)
-    }
-
-    pub(crate) fn to_showfile(&self) -> showfile::Patch {
-        showfile::Patch {
-            fixtures: self
-                .fixtures
-                .iter()
-                .map(|f| showfile::Fixture {
-                    id: f.id.into(),
-                    address: f.address,
-                    gdtf_file_name: f.gdtf_file_name.clone(),
-                    dmx_mode: f.dmx_mode.clone(),
-                })
-                .collect(),
-        }
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct FixtureId(pub u32);
-
-impl std::ops::Deref for FixtureId {
-    type Target = u32;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl std::ops::DerefMut for FixtureId {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
 
 impl From<u32> for FixtureId {
     fn from(id: u32) -> Self {
@@ -134,6 +115,7 @@ impl std::fmt::Display for FixtureId {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Fixture {
     id: FixtureId,
     address: dmx::Address,

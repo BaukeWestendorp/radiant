@@ -1,7 +1,7 @@
 use gpui::{ReadGlobal, UpdateGlobal, div, prelude::*};
 use show::{
     Show,
-    assets::{AssetId, EffectGraph},
+    asset::{AssetId, EffectGraph},
     layout::MainFrameKind,
 };
 
@@ -50,9 +50,7 @@ impl PoolDelegate for EffectGraphPool {
             show.layout.update(cx, |layout, cx| {
                 for frame in &mut layout.main_window.frames {
                     match &mut frame.kind {
-                        MainFrameKind::EffectGraphEditor(effect_graph) => {
-                            *effect_graph = asset_id.as_u32()
-                        }
+                        MainFrameKind::EffectGraphEditor(effect_graph) => *effect_graph = asset_id,
                         _ => {}
                     }
                 }

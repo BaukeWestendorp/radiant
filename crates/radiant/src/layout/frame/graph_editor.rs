@@ -1,6 +1,6 @@
 use flow::{Graph, GraphDef, gpui::editor::GraphEditorView};
 use gpui::{Entity, FocusHandle, Focusable, SharedString, Window, div, prelude::*};
-use show::assets::Asset;
+use show::asset::Asset;
 
 use crate::layout::{VirtualWindow, VirtualWindowDelegate};
 

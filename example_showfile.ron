@@ -205,8 +205,8 @@
                 label: "Example Cue",
                 id: 1,
                 data: (
-                    effect_graph: 1,
-                    fixture_group: 2,
+                    effect_graph: Some(1),
+                    fixture_group: Some(2),
                 ),
             ),
         },
@@ -224,7 +224,7 @@
                 label: "Example Executor",
                 id: 1,
                 data: (
-                    sequence: 1,
+                    sequence: Some(1),
                     current_index: Some(0),
                 ),
             ),

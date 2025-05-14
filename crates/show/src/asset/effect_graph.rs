@@ -1,3 +1,4 @@
+use crate::{FloatingDmxValue, patch::FixtureId};
 use flow::{
     Graph, Input, Output, ProcessingContext, Template, Value as _,
     gpui::{ControlEvent, ControlView},
@@ -5,16 +6,12 @@ use flow::{
 use gpui::{App, ElementId, Entity, ReadGlobal, Window, prelude::*};
 use ui::{Field, FieldEvent, NumberField};
 
-use crate::{
-    FloatingDmxValue,
-    assets::{Asset, FixtureGroup},
-    patch::FixtureId,
-};
+use super::{Asset, FixtureGroup};
 
 #[derive(Debug, Clone, flow::Value)]
 #[derive(serde::Serialize, serde::Deserialize)]
-#[value(graph_def = EffectGraphDef, data_type = DataType)]
-pub enum Value {
+#[value(graph_def = EffectGraphDef, data_type = EffectGraphDataType)]
+pub enum EffectGraphValue {
     #[value(color = 0x1BD5FF)]
     DmxAddress(dmx::Address),
 
@@ -26,29 +23,29 @@ pub enum Value {
 }
 
 #[derive(Debug, Clone)]
-pub struct State {
+pub struct EffectGraphState {
     pub multiverse: Entity<dmx::Multiverse>,
     pub fixture_group: Entity<Asset<FixtureGroup>>,
     pub fixture_id_index: Option<usize>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Control {
+pub enum EffectGraphControl {
     DmxAddress,
     DmxValue,
     FixtureId,
 }
 
-impl flow::Control<EffectGraphDef> for Control {
+impl flow::Control<EffectGraphDef> for EffectGraphControl {
     fn view(
         &self,
-        value: Value,
+        value: EffectGraphValue,
         id: ElementId,
         window: &mut Window,
         cx: &mut App,
     ) -> Entity<ControlView> {
         match self {
-            Control::DmxAddress => ControlView::new(cx, |cx| {
+            EffectGraphControl::DmxAddress => ControlView::new(cx, |cx| {
                 let field = cx.new(|cx| {
                     let value: dmx::Address = value.try_into().expect(
                         "should convert initial input value to the value used by it's control",
@@ -60,7 +57,9 @@ impl flow::Control<EffectGraphDef> for Control {
 
                 cx.subscribe(&field, |_, _, event: &FieldEvent<dmx::Address>, cx| {
                     if let FieldEvent::Change(value) = event {
-                        cx.emit(ControlEvent::<EffectGraphDef>::Change(Value::DmxAddress(*value)));
+                        cx.emit(ControlEvent::<EffectGraphDef>::Change(
+                            EffectGraphValue::DmxAddress(*value),
+                        ));
                         cx.notify();
                     }
                 })
@@ -68,7 +67,7 @@ impl flow::Control<EffectGraphDef> for Control {
 
                 field.into()
             }),
-            Control::DmxValue => ControlView::new(cx, |cx| {
+            EffectGraphControl::DmxValue => ControlView::new(cx, |cx| {
                 let field = cx.new(|cx| {
                     let value: FloatingDmxValue = value.try_into().expect(
                         "should convert initial input value to the value used by it's control",
@@ -81,7 +80,9 @@ impl flow::Control<EffectGraphDef> for Control {
 
                 cx.subscribe(&field, |_, _, event: &FieldEvent<FloatingDmxValue>, cx| {
                     if let FieldEvent::Change(value) = event {
-                        cx.emit(ControlEvent::<EffectGraphDef>::Change(Value::DmxValue(*value)));
+                        cx.emit(ControlEvent::<EffectGraphDef>::Change(
+                            EffectGraphValue::DmxValue(*value),
+                        ));
                         cx.notify();
                     }
                 })
@@ -89,7 +90,7 @@ impl flow::Control<EffectGraphDef> for Control {
 
                 field.into()
             }),
-            Control::FixtureId => ControlView::new(cx, |cx| {
+            EffectGraphControl::FixtureId => ControlView::new(cx, |cx| {
                 let field = cx.new(|cx| {
                     let value: FixtureId = value.try_into().expect(
                         "should convert initial input value to the value used by it's control",
@@ -101,7 +102,9 @@ impl flow::Control<EffectGraphDef> for Control {
 
                 cx.subscribe(&field, |_, _, event: &FieldEvent<FixtureId>, cx| {
                     if let FieldEvent::Change(value) = event {
-                        cx.emit(ControlEvent::<EffectGraphDef>::Change(Value::FixtureId(*value)));
+                        cx.emit(ControlEvent::<EffectGraphDef>::Change(
+                            EffectGraphValue::FixtureId(*value),
+                        ));
                         cx.notify();
                     }
                 })
@@ -118,10 +121,10 @@ impl flow::Control<EffectGraphDef> for Control {
 pub struct EffectGraphDef;
 
 impl flow::GraphDef for EffectGraphDef {
-    type ProcessingState = State;
-    type Value = Value;
-    type DataType = DataType;
-    type Control = Control;
+    type ProcessingState = EffectGraphState;
+    type Value = EffectGraphValue;
+    type DataType = EffectGraphDataType;
+    type Control = EffectGraphControl;
 }
 
 pub type EffectGraph = Graph<EffectGraphDef>;
@@ -135,14 +138,14 @@ pub fn insert_templates(graph: &mut EffectGraph) {
                 Input::new(
                     "address",
                     "Address",
-                    Value::DmxAddress(Default::default()),
-                    Control::DmxAddress,
+                    EffectGraphValue::DmxAddress(Default::default()),
+                    EffectGraphControl::DmxAddress,
                 ),
                 Input::new(
                     "value",
                     "Value",
-                    Value::DmxValue(Default::default()),
-                    Control::DmxValue,
+                    EffectGraphValue::DmxValue(Default::default()),
+                    EffectGraphControl::DmxValue,
                 ),
             ],
             vec![],
@@ -151,14 +154,18 @@ pub fn insert_templates(graph: &mut EffectGraph) {
                 // Extract address and value from inputs
                 let address = iv
                     .value("address")
-                    .and_then(|a| a.cast_to(&DataType::DmxAddress))
-                    .and_then(|a| if let Value::DmxAddress(a) = a { Some(a) } else { None })
+                    .and_then(|a| a.cast_to(&EffectGraphDataType::DmxAddress))
+                    .and_then(
+                        |a| if let EffectGraphValue::DmxAddress(a) = a { Some(a) } else { None },
+                    )
                     .expect("Invalid DMX address");
 
                 let value = iv
                     .value("value")
-                    .and_then(|v| v.cast_to(&DataType::DmxValue))
-                    .and_then(|v| if let Value::DmxValue(v) = v { Some(v) } else { None })
+                    .and_then(|v| v.cast_to(&EffectGraphDataType::DmxValue))
+                    .and_then(
+                        |v| if let EffectGraphValue::DmxValue(v) = v { Some(v) } else { None },
+                    )
                     .expect("Invalid DMX value");
 
                 pcx.multiverse.update(cx, |multiverse, cx| {
@@ -172,8 +179,8 @@ pub fn insert_templates(graph: &mut EffectGraph) {
             "Current Fixture",
             vec![],
             vec![
-                Output::new("fixture_id", "Fixture Id", DataType::FixtureId),
-                Output::new("address", "Address", DataType::DmxAddress),
+                Output::new("fixture_id", "Fixture Id", EffectGraphDataType::FixtureId),
+                Output::new("address", "Address", EffectGraphDataType::DmxAddress),
             ],
             vec![],
             Box::new(|_iv, _cv, ov, pcx: &mut ProcessingContext<EffectGraphDef>, cx| {
@@ -188,8 +195,8 @@ pub fn insert_templates(graph: &mut EffectGraph) {
                 let patch = crate::Show::global(cx).patch.read(cx);
                 let fixture = patch.fixture(fixture_id).expect("Fixture not found in patch");
 
-                ov.set_value("fixture_id", Value::FixtureId(fixture_id));
-                ov.set_value("address", Value::DmxAddress(*fixture.address()));
+                ov.set_value("fixture_id", EffectGraphValue::FixtureId(fixture_id));
+                ov.set_value("address", EffectGraphValue::DmxAddress(*fixture.address()));
             }),
         ),
         Template::new(
@@ -199,69 +206,103 @@ pub fn insert_templates(graph: &mut EffectGraph) {
                 Input::new(
                     "fixture_id",
                     "Fixture Id",
-                    Value::FixtureId(Default::default()),
-                    Control::FixtureId,
+                    EffectGraphValue::FixtureId(Default::default()),
+                    EffectGraphControl::FixtureId,
                 ),
                 Input::new(
                     "dimmer",
                     "Dimmer",
-                    Value::DmxValue(Default::default()),
-                    Control::DmxValue,
+                    EffectGraphValue::DmxValue(Default::default()),
+                    EffectGraphControl::DmxValue,
                 ),
-                Input::new("pan", "Pan", Value::DmxValue(Default::default()), Control::DmxValue),
-                Input::new("tilt", "Tilt", Value::DmxValue(Default::default()), Control::DmxValue),
-                Input::new("red", "Red", Value::DmxValue(Default::default()), Control::DmxValue),
+                Input::new(
+                    "pan",
+                    "Pan",
+                    EffectGraphValue::DmxValue(Default::default()),
+                    EffectGraphControl::DmxValue,
+                ),
+                Input::new(
+                    "tilt",
+                    "Tilt",
+                    EffectGraphValue::DmxValue(Default::default()),
+                    EffectGraphControl::DmxValue,
+                ),
+                Input::new(
+                    "red",
+                    "Red",
+                    EffectGraphValue::DmxValue(Default::default()),
+                    EffectGraphControl::DmxValue,
+                ),
                 Input::new(
                     "green",
                     "Green",
-                    Value::DmxValue(Default::default()),
-                    Control::DmxValue,
+                    EffectGraphValue::DmxValue(Default::default()),
+                    EffectGraphControl::DmxValue,
                 ),
-                Input::new("blue", "Blue", Value::DmxValue(Default::default()), Control::DmxValue),
+                Input::new(
+                    "blue",
+                    "Blue",
+                    EffectGraphValue::DmxValue(Default::default()),
+                    EffectGraphControl::DmxValue,
+                ),
             ],
             vec![],
             vec![],
             Box::new(|iv, _cv, _ov, pcx: &mut ProcessingContext<EffectGraphDef>, cx| {
                 let fixture_id = iv
                     .value("fixture_id")
-                    .and_then(|id| id.cast_to(&DataType::FixtureId))
-                    .and_then(|id| if let Value::FixtureId(id) = id { Some(id) } else { None })
+                    .and_then(|id| id.cast_to(&EffectGraphDataType::FixtureId))
+                    .and_then(|id| {
+                        if let EffectGraphValue::FixtureId(id) = id { Some(id) } else { None }
+                    })
                     .expect("Invalid fixture ID");
 
                 let dimmer = iv
                     .value("dimmer")
-                    .and_then(|v| v.cast_to(&DataType::DmxValue))
-                    .and_then(|v| if let Value::DmxValue(v) = v { Some(v) } else { None })
+                    .and_then(|v| v.cast_to(&EffectGraphDataType::DmxValue))
+                    .and_then(
+                        |v| if let EffectGraphValue::DmxValue(v) = v { Some(v) } else { None },
+                    )
                     .expect("Invalid DMX value for dimmer");
 
                 let pan = iv
                     .value("pan")
-                    .and_then(|v| v.cast_to(&DataType::DmxValue))
-                    .and_then(|v| if let Value::DmxValue(v) = v { Some(v) } else { None })
+                    .and_then(|v| v.cast_to(&EffectGraphDataType::DmxValue))
+                    .and_then(
+                        |v| if let EffectGraphValue::DmxValue(v) = v { Some(v) } else { None },
+                    )
                     .expect("Invalid DMX value for pan");
 
                 let tilt = iv
                     .value("tilt")
-                    .and_then(|v| v.cast_to(&DataType::DmxValue))
-                    .and_then(|v| if let Value::DmxValue(v) = v { Some(v) } else { None })
+                    .and_then(|v| v.cast_to(&EffectGraphDataType::DmxValue))
+                    .and_then(
+                        |v| if let EffectGraphValue::DmxValue(v) = v { Some(v) } else { None },
+                    )
                     .expect("Invalid DMX value for tilt");
 
                 let red = iv
                     .value("red")
-                    .and_then(|v| v.cast_to(&DataType::DmxValue))
-                    .and_then(|v| if let Value::DmxValue(v) = v { Some(v) } else { None })
+                    .and_then(|v| v.cast_to(&EffectGraphDataType::DmxValue))
+                    .and_then(
+                        |v| if let EffectGraphValue::DmxValue(v) = v { Some(v) } else { None },
+                    )
                     .expect("Invalid DMX value for red");
 
                 let green = iv
                     .value("green")
-                    .and_then(|v| v.cast_to(&DataType::DmxValue))
-                    .and_then(|v| if let Value::DmxValue(v) = v { Some(v) } else { None })
+                    .and_then(|v| v.cast_to(&EffectGraphDataType::DmxValue))
+                    .and_then(
+                        |v| if let EffectGraphValue::DmxValue(v) = v { Some(v) } else { None },
+                    )
                     .expect("Invalid DMX value for green");
 
                 let blue = iv
                     .value("blue")
-                    .and_then(|v| v.cast_to(&DataType::DmxValue))
-                    .and_then(|v| if let Value::DmxValue(v) = v { Some(v) } else { None })
+                    .and_then(|v| v.cast_to(&EffectGraphDataType::DmxValue))
+                    .and_then(
+                        |v| if let EffectGraphValue::DmxValue(v) = v { Some(v) } else { None },
+                    )
                     .expect("Invalid DMX value for blue");
 
                 let set_dmx_values_for_attribute =
