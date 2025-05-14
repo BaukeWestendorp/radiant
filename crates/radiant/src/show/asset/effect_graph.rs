@@ -1,4 +1,7 @@
-use crate::show::{FloatingDmxValue, Show, patch::FixtureId};
+use crate::{
+    show::{FloatingDmxValue, Show, patch::FixtureId},
+    ui::input::{PresetSelector, PresetSelectorEvent},
+};
 use flow::{
     Graph, Input, Output, ProcessingContext, Template, Value as _,
     gpui::{ControlEvent, ControlView},
@@ -6,7 +9,7 @@ use flow::{
 use gpui::{App, ElementId, Entity, ReadGlobal, Window, prelude::*};
 use ui::{Field, FieldEvent, NumberField};
 
-use super::{Asset, FixtureGroup};
+use super::{AnyPresetId, Asset, FixtureGroup};
 
 #[derive(Debug, Clone, flow::Value)]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -14,12 +17,12 @@ use super::{Asset, FixtureGroup};
 pub enum EffectGraphValue {
     #[value(color = 0x1BD5FF)]
     DmxAddress(dmx::Address),
-
     #[value(color = 0x1361FF)]
     DmxValue(FloatingDmxValue),
-
     #[value(color = 0xffff00)]
     FixtureId(FixtureId),
+    #[value(color = 0xff0000)]
+    Preset(Option<AnyPresetId>),
 }
 
 #[derive(Debug, Clone)]
@@ -34,6 +37,7 @@ pub enum EffectGraphControl {
     DmxAddress,
     DmxValue,
     FixtureId,
+    Preset,
 }
 
 impl flow::Control<EffectGraphDef> for EffectGraphControl {
@@ -111,6 +115,27 @@ impl flow::Control<EffectGraphDef> for EffectGraphControl {
                 .detach();
 
                 field.into()
+            }),
+            EffectGraphControl::Preset => ControlView::new(cx, |cx| {
+                let preset_selector = cx.new(|cx| {
+                    let value: Option<AnyPresetId> = value.try_into().expect(
+                        "should convert initial input value to the value used by it's control",
+                    );
+                    let mut field = PresetSelector::new(id, cx.focus_handle(), window, cx);
+                    field.set_value(value, cx);
+                    field
+                });
+
+                cx.subscribe(&preset_selector, |_, _, event: &PresetSelectorEvent, cx| {
+                    let PresetSelectorEvent::Change(value) = event;
+                    cx.emit(ControlEvent::<EffectGraphDef>::Change(EffectGraphValue::Preset(
+                        *value,
+                    )));
+                    cx.notify();
+                })
+                .detach();
+
+                preset_selector.into()
             }),
         }
     }
@@ -200,138 +225,17 @@ pub fn insert_templates(graph: &mut EffectGraph) {
             }),
         ),
         Template::new(
-            "set_gdtf_attr_dimmer",
-            "Set Attributes",
-            vec![
-                Input::new(
-                    "fixture_id",
-                    "Fixture Id",
-                    EffectGraphValue::FixtureId(Default::default()),
-                    EffectGraphControl::FixtureId,
-                ),
-                Input::new(
-                    "dimmer",
-                    "Dimmer",
-                    EffectGraphValue::DmxValue(Default::default()),
-                    EffectGraphControl::DmxValue,
-                ),
-                Input::new(
-                    "pan",
-                    "Pan",
-                    EffectGraphValue::DmxValue(Default::default()),
-                    EffectGraphControl::DmxValue,
-                ),
-                Input::new(
-                    "tilt",
-                    "Tilt",
-                    EffectGraphValue::DmxValue(Default::default()),
-                    EffectGraphControl::DmxValue,
-                ),
-                Input::new(
-                    "red",
-                    "Red",
-                    EffectGraphValue::DmxValue(Default::default()),
-                    EffectGraphControl::DmxValue,
-                ),
-                Input::new(
-                    "green",
-                    "Green",
-                    EffectGraphValue::DmxValue(Default::default()),
-                    EffectGraphControl::DmxValue,
-                ),
-                Input::new(
-                    "blue",
-                    "Blue",
-                    EffectGraphValue::DmxValue(Default::default()),
-                    EffectGraphControl::DmxValue,
-                ),
-            ],
+            "apply_preset",
+            "Apply Preset",
+            vec![Input::new(
+                "preset",
+                "Preset",
+                EffectGraphValue::Preset(Default::default()),
+                EffectGraphControl::Preset,
+            )],
             vec![],
             vec![],
-            Box::new(|iv, _cv, _ov, pcx: &mut ProcessingContext<EffectGraphDef>, cx| {
-                let fixture_id = iv
-                    .value("fixture_id")
-                    .and_then(|id| id.cast_to(&EffectGraphDataType::FixtureId))
-                    .and_then(|id| {
-                        if let EffectGraphValue::FixtureId(id) = id { Some(id) } else { None }
-                    })
-                    .expect("Invalid fixture ID");
-
-                let dimmer = iv
-                    .value("dimmer")
-                    .and_then(|v| v.cast_to(&EffectGraphDataType::DmxValue))
-                    .and_then(
-                        |v| if let EffectGraphValue::DmxValue(v) = v { Some(v) } else { None },
-                    )
-                    .expect("Invalid DMX value for dimmer");
-
-                let pan = iv
-                    .value("pan")
-                    .and_then(|v| v.cast_to(&EffectGraphDataType::DmxValue))
-                    .and_then(
-                        |v| if let EffectGraphValue::DmxValue(v) = v { Some(v) } else { None },
-                    )
-                    .expect("Invalid DMX value for pan");
-
-                let tilt = iv
-                    .value("tilt")
-                    .and_then(|v| v.cast_to(&EffectGraphDataType::DmxValue))
-                    .and_then(
-                        |v| if let EffectGraphValue::DmxValue(v) = v { Some(v) } else { None },
-                    )
-                    .expect("Invalid DMX value for tilt");
-
-                let red = iv
-                    .value("red")
-                    .and_then(|v| v.cast_to(&EffectGraphDataType::DmxValue))
-                    .and_then(
-                        |v| if let EffectGraphValue::DmxValue(v) = v { Some(v) } else { None },
-                    )
-                    .expect("Invalid DMX value for red");
-
-                let green = iv
-                    .value("green")
-                    .and_then(|v| v.cast_to(&EffectGraphDataType::DmxValue))
-                    .and_then(
-                        |v| if let EffectGraphValue::DmxValue(v) = v { Some(v) } else { None },
-                    )
-                    .expect("Invalid DMX value for green");
-
-                let blue = iv
-                    .value("blue")
-                    .and_then(|v| v.cast_to(&EffectGraphDataType::DmxValue))
-                    .and_then(
-                        |v| if let EffectGraphValue::DmxValue(v) = v { Some(v) } else { None },
-                    )
-                    .expect("Invalid DMX value for blue");
-
-                let set_dmx_values_for_attribute =
-                    |attr: &str, value: &FloatingDmxValue, cx: &mut App| {
-                        let patch = &Show::global(cx).patch.read(cx);
-                        let Some(fixture) = patch.fixture(fixture_id) else { return };
-
-                        let Some(dimmer_channel_offsets) =
-                            fixture.channel_offset_for_attr(attr, patch).cloned()
-                        else {
-                            return;
-                        };
-
-                        set_dmx_value_at_offset(
-                            &fixture.address().clone(),
-                            dimmer_channel_offsets.as_slice(),
-                            value.0,
-                            pcx,
-                            cx,
-                        );
-                    };
-
-                set_dmx_values_for_attribute("Dimmer", &dimmer, cx);
-                set_dmx_values_for_attribute("Pan", &pan, cx);
-                set_dmx_values_for_attribute("Tilt", &tilt, cx);
-                set_dmx_values_for_attribute("ColorRGB_Red", &red, cx);
-                set_dmx_values_for_attribute("ColorRGB_Green", &green, cx);
-                set_dmx_values_for_attribute("ColorRGB_Blue", &blue, cx);
-            }),
+            Box::new(|_iv, _cv, _ov, _pcx: &mut ProcessingContext<EffectGraphDef>, _cx| {}),
         ),
     ]);
 }

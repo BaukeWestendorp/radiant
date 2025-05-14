@@ -1,5 +1,13 @@
 use crate::show::FloatingDmxValue;
 
+use super::AssetId;
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum AnyPresetId {
+    Dimmer(AssetId<DimmerPreset>),
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Debug, Clone, Default)]
 pub struct DimmerPreset {
