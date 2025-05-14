@@ -1,14 +1,13 @@
 use crate::{
     app::AppState,
-    layout::main::MainWindow,
-    show::asset::AnyPresetId,
+    show::{Show, asset::AnyPresetId},
     ui::vw::{VirtualWindow, VirtualWindowDelegate},
 };
 use gpui::{
-    App, ClickEvent, ElementId, Entity, EventEmitter, FocusHandle, Focusable, UpdateGlobal, Window,
-    div, prelude::*,
+    App, ClickEvent, ElementId, Entity, EventEmitter, FocusHandle, Focusable, ReadGlobal,
+    UpdateGlobal, Window, div, prelude::*, uniform_list,
 };
-use ui::{ActiveTheme, InteractiveColor, interactive_container};
+use ui::{ActiveTheme, InteractiveColor, Orientation, Tab, TabView, interactive_container};
 
 pub struct PresetSelector {
     value: Option<AnyPresetId>,
@@ -70,11 +69,24 @@ impl EventEmitter<PresetSelectorEvent> for PresetSelector {}
 
 pub struct PresetSelectorWindow {
     focus_handle: FocusHandle,
+
+    tab_view: Entity<TabView>,
 }
 
 impl PresetSelectorWindow {
-    pub fn new(_w: &mut Window, cx: &mut Context<VirtualWindow<Self>>) -> Self {
-        Self { focus_handle: cx.focus_handle() }
+    pub fn new(w: &mut Window, cx: &mut Context<VirtualWindow<Self>>) -> Self {
+        let tab_view = cx.new(|cx| {
+            let mut tab_view = TabView::new(
+                vec![Tab::new("dimmer", "Dimmer", cx.new(|_| DimmerList).into())],
+                w,
+                cx,
+            );
+            tab_view.set_orientation(Orientation::Vertical);
+            tab_view.select_tab_ix(0);
+            tab_view
+        });
+
+        Self { focus_handle: cx.focus_handle(), tab_view }
     }
 }
 
@@ -100,6 +112,32 @@ impl VirtualWindowDelegate for PresetSelectorWindow {
         _w: &mut Window,
         _cx: &mut Context<VirtualWindow<Self>>,
     ) -> impl IntoElement {
-        "SELECT PRESET"
+        div().size_full().child(self.tab_view.clone())
+    }
+}
+
+struct DimmerList;
+
+impl Render for DimmerList {
+    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let preset_labels = Show::global(cx)
+            .assets
+            .dimmer_presets
+            .values()
+            .map(|preset| preset.read(cx).label.clone())
+            .collect::<Vec<_>>();
+
+        uniform_list(
+            cx.entity(),
+            "dimmer-preset-list",
+            preset_labels.len(),
+            move |_this, visible_range, _w, _cx| {
+                preset_labels[visible_range]
+                    .into_iter()
+                    .map(|label| div().child(label.clone()))
+                    .collect()
+            },
+        )
+        .size_full()
     }
 }

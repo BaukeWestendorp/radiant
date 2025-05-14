@@ -73,12 +73,12 @@ impl Render for MainWindow {
             .child(self.frame_container.clone());
 
         let settings_window = match AppState::global(cx).settings_window() {
-            Some(window) => div().size_full().p_2().child(window.clone()),
+            Some(window) => div().size_full().p_4().child(window.clone()),
             None => div(),
         };
 
         let preset_selector_window = match AppState::global(cx).preset_selector_window() {
-            Some(window) => div().size_full().p_2().child(window.clone()),
+            Some(window) => div().size_full().p_4().child(window.clone()),
             None => div(),
         };
 
