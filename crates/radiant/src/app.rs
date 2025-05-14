@@ -1,4 +1,7 @@
+use crate::layout::settings::SettingsWindow;
 use crate::show::Show;
+use crate::ui::input::PresetSelectorWindow;
+use crate::ui::vw::VirtualWindow;
 use crate::{
     dmx_io::DmxIo,
     layout::{self, main::MainWindow},
@@ -21,6 +24,8 @@ impl RadiantApp {
     pub fn run(self) {
         Application::new().run(move |cx: &mut App| {
             cx.activate(true);
+
+            cx.set_global(AppState::default());
 
             Show::init(cx, self.showfile_path.as_ref()).expect("should initialize show");
 
@@ -64,6 +69,46 @@ impl RadiantApp {
                 ],
             },
         ]);
+    }
+}
+
+#[derive(Default)]
+pub struct AppState {
+    pub settings_window: Option<Entity<VirtualWindow<SettingsWindow>>>,
+    pub preset_selector_window: Option<Entity<VirtualWindow<PresetSelectorWindow>>>,
+}
+
+impl Global for AppState {}
+
+impl AppState {
+    pub fn open_settings_window(&mut self, w: &mut Window, cx: &mut App) {
+        if self.settings_window.is_none() {
+            let vw = cx.new(|cx| VirtualWindow::new(SettingsWindow::new(w, cx)));
+            self.settings_window = Some(vw);
+        }
+    }
+
+    pub fn close_settings_window(&mut self) {
+        self.settings_window.take();
+    }
+
+    pub fn settings_window(&self) -> Option<&Entity<VirtualWindow<SettingsWindow>>> {
+        self.settings_window.as_ref()
+    }
+
+    pub fn open_preset_selector_window(&mut self, w: &mut Window, cx: &mut App) {
+        if self.preset_selector_window.is_none() {
+            let vw = cx.new(|cx| VirtualWindow::new(PresetSelectorWindow::new(w, cx)));
+            self.preset_selector_window = Some(vw);
+        }
+    }
+
+    pub fn close_preset_selector_window(&mut self) {
+        self.preset_selector_window.take();
+    }
+
+    pub fn preset_selector_window(&self) -> Option<&Entity<VirtualWindow<PresetSelectorWindow>>> {
+        self.preset_selector_window.as_ref()
     }
 }
 

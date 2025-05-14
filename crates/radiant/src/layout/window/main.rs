@@ -1,16 +1,16 @@
+use crate::app::AppState;
 use crate::show::{Show, layout::Layout};
 use crate::ui::FRAME_CELL_SIZE;
-use crate::ui::{frame::FrameContainer, vw::VirtualWindow};
+use crate::ui::frame::FrameContainer;
 use crate::{app::APP_ID, layout::MainFrame};
 use anyhow::Context as _;
 use gpui::*;
 use ui::{ActiveTheme as _, root, utils::z_stack};
 
-use super::{DEFAULT_REM_SIZE, settings::SettingsWindow};
+use super::DEFAULT_REM_SIZE;
 
 pub struct MainWindow {
     frame_container: Entity<FrameContainer<MainFrame>>,
-    settings_window: Option<Entity<VirtualWindow<SettingsWindow>>>,
 
     focus_handle: FocusHandle,
 }
@@ -45,24 +45,10 @@ impl MainWindow {
                     frame_container_from_showfile(layout, w, cx)
                 });
 
-                Self { frame_container, settings_window: None, focus_handle: cx.focus_handle() }
+                Self { frame_container, focus_handle: cx.focus_handle() }
             })
         })
         .context("open main window")
-    }
-
-    pub fn open_settings_window(&mut self, w: &mut Window, cx: &mut Context<Self>) {
-        if self.settings_window.is_none() {
-            let this = cx.entity();
-            let vw = cx.new(|cx| VirtualWindow::new(SettingsWindow::new(this, w, cx)));
-            self.settings_window = Some(vw);
-            cx.notify();
-        }
-    }
-
-    pub fn close_settings_window(&mut self, cx: &mut Context<Self>) {
-        self.settings_window.take();
-        cx.notify();
     }
 }
 
@@ -73,7 +59,8 @@ impl MainWindow {
         w: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.open_settings_window(w, cx);
+        AppState::update_global(cx, |state, cx| state.open_settings_window(w, cx));
+        cx.notify();
     }
 }
 
@@ -85,8 +72,13 @@ impl Render for MainWindow {
             .text_color(cx.theme().colors.text)
             .child(self.frame_container.clone());
 
-        let settings_window = match &self.settings_window {
-            Some(settings_window) => div().size_full().p_2().child(settings_window.clone()),
+        let settings_window = match AppState::global(cx).settings_window() {
+            Some(window) => div().size_full().p_2().child(window.clone()),
+            None => div(),
+        };
+
+        let preset_selector_window = match AppState::global(cx).preset_selector_window() {
+            Some(window) => div().size_full().p_2().child(window.clone()),
             None => div(),
         };
 
@@ -95,7 +87,7 @@ impl Render for MainWindow {
             .key_context(actions::KEY_CONTEXT)
             .size_full()
             .on_action(cx.listener(Self::handle_open_settings))
-            .child(z_stack([main_layout, settings_window]).size_full())
+            .child(z_stack([main_layout, settings_window, preset_selector_window]).size_full())
     }
 }
 

@@ -1,4 +1,4 @@
-use super::main::MainWindow;
+use crate::app::AppState;
 use crate::show::{Show, dmx_io::SacnSourceSettings};
 use crate::ui::vw::{VirtualWindow, VirtualWindowDelegate};
 use gpui::*;
@@ -8,16 +8,11 @@ use ui::{
 };
 
 pub struct SettingsWindow {
-    main_window: Entity<MainWindow>,
     tab_view: Entity<TabView>,
 }
 
 impl SettingsWindow {
-    pub fn new(
-        main_window: Entity<MainWindow>,
-        w: &mut Window,
-        cx: &mut Context<VirtualWindow<Self>>,
-    ) -> Self {
+    pub fn new(w: &mut Window, cx: &mut Context<VirtualWindow<Self>>) -> Self {
         let tabs = vec![
             ui::Tab::new("dmx_io", "Dmx Io", cx.new(|cx| DmxIoView::new(w, cx)).into()),
             ui::Tab::new("patch", "Patch", cx.new(|_| EmptyView).into()),
@@ -29,7 +24,7 @@ impl SettingsWindow {
             tab_view
         });
 
-        Self { main_window, tab_view }
+        Self { tab_view }
     }
 }
 
@@ -39,9 +34,9 @@ impl VirtualWindowDelegate for SettingsWindow {
     }
 
     fn on_close_window(&mut self, _w: &mut Window, cx: &mut Context<VirtualWindow<Self>>) {
-        self.main_window.update(cx, |main_window, cx| {
-            main_window.close_settings_window(cx);
-        })
+        AppState::update_global(cx, |state, _cx| {
+            state.close_settings_window();
+        });
     }
 
     fn render_content(
