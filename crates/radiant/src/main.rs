@@ -7,6 +7,7 @@ mod dmx_io;
 mod layout;
 mod output_processor;
 mod show;
+pub mod ui;
 mod utils;
 
 #[derive(Debug, clap::Parser)]

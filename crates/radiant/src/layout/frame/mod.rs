@@ -1,5 +1,5 @@
 use crate::show::{self, Show, asset::EffectGraphDef};
-use frames::{Frame, FrameWrapper};
+use crate::ui::frames::{Frame, FrameWrapper};
 use gpui::*;
 use pool::{
     CuePool, DimmerPresetPool, EffectGraphPool, ExecutorPool, FixtureGroupPool, Pool, SequencePool,

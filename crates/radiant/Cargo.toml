@@ -9,7 +9,6 @@ workspace = true
 [dependencies]
 dmx = { workspace = true, features = ["serde"]}
 flow = { workspace = true, features = ["derive", "serde"]}
-frames.workspace = true
 sacn.workspace = true
 ui.workspace = true
 
