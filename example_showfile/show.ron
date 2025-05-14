@@ -250,8 +250,8 @@
                 label: "Cue 2",
                 id: 2,
                 data: (
-                    effect_graph: 4,
-                    fixture_group: 3,
+                    effect_graph: Some(4),
+                    fixture_group: Some(3),
                 ),
             ),
         },
@@ -284,7 +284,7 @@
                 label: "Executor 2",
                 id: 2,
                 data: (
-                    sequence: 2,
+                    sequence: Some(2),
                     current_index: Some(0),
                 ),
             ),
