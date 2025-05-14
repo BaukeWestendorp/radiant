@@ -2,7 +2,7 @@ use crate::show::asset::Asset;
 use flow::{Graph, GraphDef, gpui::editor::GraphEditorView};
 use gpui::{Entity, FocusHandle, Focusable, SharedString, Window, div, prelude::*};
 
-use crate::layout::{VirtualWindow, VirtualWindowDelegate};
+use crate::ui::vw::{VirtualWindow, VirtualWindowDelegate};
 
 pub struct GraphEditor<D: GraphDef> {
     asset: Entity<Asset<Graph<D>>>,

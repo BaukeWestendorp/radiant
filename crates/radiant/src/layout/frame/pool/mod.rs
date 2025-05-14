@@ -1,13 +1,11 @@
 use std::ops::{Deref, DerefMut};
 
-use crate::show::asset::AssetId;
+use crate::{show::asset::AssetId, ui::FRAME_CELL_SIZE};
 use gpui::{FocusHandle, Size, Window, div, prelude::*, px};
 use ui::{
     ActiveTheme, ContainerStyle, Disableable, InteractiveColor, container, interactive_container,
     utils::z_stack,
 };
-
-use crate::layout::main::FRAME_CELL_SIZE;
 
 pub mod effect_graph;
 pub mod fixture_group;

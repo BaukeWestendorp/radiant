@@ -1,5 +1,6 @@
-use super::{VirtualWindow, VirtualWindowDelegate, main::MainWindow};
+use super::main::MainWindow;
 use crate::show::{Show, dmx_io::SacnSourceSettings};
+use crate::ui::vw::{VirtualWindow, VirtualWindowDelegate};
 use gpui::*;
 use ui::{
     Checkbox, CheckboxEvent, ContainerStyle, Field, FieldEvent, FieldImpl, NumberField, TabView,

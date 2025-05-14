@@ -1,13 +1,12 @@
 use crate::show::{Show, layout::Layout};
-use crate::ui::frames::FrameContainer;
+use crate::ui::FRAME_CELL_SIZE;
+use crate::ui::{frame::FrameContainer, vw::VirtualWindow};
 use crate::{app::APP_ID, layout::MainFrame};
 use anyhow::Context as _;
 use gpui::*;
 use ui::{ActiveTheme as _, root, utils::z_stack};
 
-use super::{DEFAULT_REM_SIZE, VirtualWindow, settings::SettingsWindow};
-
-pub const FRAME_CELL_SIZE: Pixels = px(80.0);
+use super::{DEFAULT_REM_SIZE, settings::SettingsWindow};
 
 pub struct MainWindow {
     frame_container: Entity<FrameContainer<MainFrame>>,

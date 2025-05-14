@@ -1,5 +1,5 @@
 use crate::show::{self, Show, asset::EffectGraphDef};
-use crate::ui::frames::{Frame, FrameWrapper};
+use crate::ui::frame::{Frame, FrameWrapper};
 use gpui::*;
 use pool::{
     CuePool, DimmerPresetPool, EffectGraphPool, ExecutorPool, FixtureGroupPool, Pool, SequencePool,
@@ -7,7 +7,7 @@ use pool::{
 
 pub use graph_editor::GraphEditor;
 
-use super::VirtualWindow;
+use crate::ui::vw::VirtualWindow;
 
 mod graph_editor;
 mod pool;
