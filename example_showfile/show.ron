@@ -43,40 +43,27 @@
     ),
     assets: (
         effect_graphs: {
-            4: (
-                label: "Another",
-                id: 4,
-                data: (
-                    nodes: {},
-                    edges: [],
-                    node_positions: {},
-                    offset: (
-                        x: 0.0,
-                        y: 0.0,
-                    ),
-                ),
-            ),
             1: (
                 label: "Example Effect Graph",
                 id: 1,
                 data: (
                     nodes: {
-                        2: (
-                            template_id: "get_current_fixture",
-                            input_values: {},
-                            control_values: {},
-                        ),
                         1: (
                             template_id: "set_gdtf_attr_dimmer",
                             input_values: {
-                                "dimmer": DmxValue(1.0),
-                                "green": DmxValue(1.0),
                                 "red": DmxValue(0.1),
+                                "tilt": DmxValue(0.5),
                                 "pan": DmxValue(0.25),
                                 "blue": DmxValue(0.4),
+                                "dimmer": DmxValue(1.0),
                                 "fixture_id": FixtureId(0),
-                                "tilt": DmxValue(0.5),
+                                "green": DmxValue(1.0),
                             },
+                            control_values: {},
+                        ),
+                        2: (
+                            template_id: "get_current_fixture",
+                            input_values: {},
                             control_values: {},
                         ),
                     },
@@ -106,8 +93,100 @@
                     ),
                 ),
             ),
+            4: (
+                label: "Another",
+                id: 4,
+                data: (
+                    nodes: {
+                        3: (
+                            template_id: "get_current_fixture",
+                            input_values: {},
+                            control_values: {},
+                        ),
+                        2: (
+                            template_id: "set_gdtf_attr_dimmer",
+                            input_values: {
+                                "dimmer": DmxValue(0.2149),
+                                "fixture_id": FixtureId(0),
+                                "pan": DmxValue(0.0),
+                                "tilt": DmxValue(0.0),
+                                "red": DmxValue(0.0),
+                                "green": DmxValue(0.0),
+                                "blue": DmxValue(0.0),
+                            },
+                            control_values: {},
+                        ),
+                    },
+                    edges: [(
+                        target: (
+                            node_id: 2,
+                            id: "fixture_id",
+                        ),
+                        source: (
+                            node_id: 3,
+                            id: "fixture_id",
+                        ),
+                    )],
+                    node_positions: {
+                        2: (
+                            x: 577.1836,
+                            y: 424.16406,
+                        ),
+                        3: (
+                            x: 254.65234,
+                            y: 387.9961,
+                        ),
+                    },
+                    offset: (
+                        x: 0.0,
+                        y: 0.0,
+                    ),
+                ),
+            ),
         },
         fixture_groups: {
+            22: (
+                label: "Wash Back Even",
+                id: 22,
+                data: (
+                    fixtures: [302, 304, 306, 308],
+                ),
+            ),
+            2: (
+                label: "House Even",
+                id: 2,
+                data: (
+                    fixtures: [102, 104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126, 128, 130, 132, 134, 136, 138, 140, 142, 144, 146, 148],
+                ),
+            ),
+            31: (
+                label: "Spot Back",
+                id: 21,
+                data: (
+                    fixtures: [401, 402, 403, 404, 405, 406, 407, 408],
+                ),
+            ),
+            32: (
+                label: "Spot Back Even",
+                id: 22,
+                data: (
+                    fixtures: [402, 404, 406, 408],
+                ),
+            ),
+            11: (
+                label: "Wash Side",
+                id: 11,
+                data: (
+                    fixtures: [201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212],
+                ),
+            ),
+            12: (
+                label: "Wash Side Even",
+                id: 12,
+                data: (
+                    fixtures: [202, 204, 206, 208, 210, 212],
+                ),
+            ),
             21: (
                 label: "Wash Back",
                 id: 21,
@@ -115,11 +194,18 @@
                     fixtures: [301, 302, 303, 304, 305, 306, 307, 308],
                 ),
             ),
-            11: (
-                label: "Wash Side",
-                id: 11,
+            1: (
+                label: "House",
+                id: 1,
                 data: (
-                    fixtures: [301, 302, 203, 304, 305, 306],
+                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148],
+                ),
+            ),
+            33: (
+                label: "Spot Back Odd",
+                id: 23,
+                data: (
+                    fixtures: [401, 403, 405, 407],
                 ),
             ),
             3: (
@@ -136,83 +222,49 @@
                     fixtures: [301, 303, 305, 307],
                 ),
             ),
-            22: (
-                label: "Wash Back Even",
-                id: 22,
-                data: (
-                    fixtures: [302, 304, 306, 308],
-                ),
-            ),
-            31: (
-                label: "Spot Back",
-                id: 21,
-                data: (
-                    fixtures: [401, 402, 403, 404, 405, 406, 407, 408],
-                ),
-            ),
-            1: (
-                label: "House",
-                id: 1,
-                data: (
-                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148],
-                ),
-            ),
-            12: (
-                label: "Wash Side Even",
-                id: 12,
-                data: (
-                    fixtures: [202, 204, 206],
-                ),
-            ),
-            32: (
-                label: "Spot Back Even",
-                id: 22,
-                data: (
-                    fixtures: [402, 404, 406, 408],
-                ),
-            ),
-            33: (
-                label: "Spot Back Odd",
-                id: 23,
-                data: (
-                    fixtures: [401, 403, 405, 407],
-                ),
-            ),
-            2: (
-                label: "House Even",
-                id: 2,
-                data: (
-                    fixtures: [102, 104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126, 128, 130, 132, 134, 136, 138, 140, 142, 144, 146, 148],
-                ),
-            ),
             101: (
                 label: "All",
                 id: 101,
                 data: (
-                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 301, 302, 303, 304, 305, 306, 307, 308, 401, 402, 403, 404, 405, 406, 407, 408],
+                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 301, 302, 303, 304, 305, 306, 307, 308, 401, 402, 403, 404, 405, 406],
                 ),
             ),
             13: (
                 label: "Wash Side Odd",
                 id: 13,
                 data: (
-                    fixtures: [201, 203, 205],
+                    fixtures: [201, 203, 205, 207, 209, 211],
                 ),
             ),
         },
         cues: {
             1: (
-                label: "Example Cue",
+                label: "Cue 1",
                 id: 1,
                 data: (
                     effect_graph: Some(1),
                     fixture_group: Some(2),
                 ),
             ),
+            2: (
+                label: "Cue 2",
+                id: 2,
+                data: (
+                    effect_graph: 4,
+                    fixture_group: 3,
+                ),
+            ),
         },
         sequences: {
+            2: (
+                label: "Sequence 2",
+                id: 2,
+                data: (
+                    cues: [2],
+                ),
+            ),
             1: (
-                label: "Example Sequence",
+                label: "Sequence 1",
                 id: 1,
                 data: (
                     cues: [1],
@@ -221,20 +273,35 @@
         },
         executors: {
             1: (
-                label: "Example Executor",
+                label: "Executor 1",
                 id: 1,
                 data: (
                     sequence: Some(1),
                     current_index: Some(0),
                 ),
             ),
+            2: (
+                label: "Executor 2",
+                id: 2,
+                data: (
+                    sequence: 2,
+                    current_index: Some(0),
+                ),
+            ),
         },
         dimmer_presets: {
-            1: (
-                label: "0%",
-                id: 1,
+            3: (
+                label: "25%",
+                id: 3,
                 data: (
-                    dimmer: 0.0,
+                    dimmer: 0.25,
+                ),
+            ),
+            6: (
+                label: "100%",
+                id: 6,
+                data: (
+                    dimmer: 1.0,
                 ),
             ),
             5: (
@@ -242,13 +309,6 @@
                 id: 5,
                 data: (
                     dimmer: 0.75,
-                ),
-            ),
-            3: (
-                label: "25%",
-                id: 3,
-                data: (
-                    dimmer: 0.25,
                 ),
             ),
             2: (
@@ -265,11 +325,11 @@
                     dimmer: 0.5,
                 ),
             ),
-            6: (
-                label: "100%",
-                id: 6,
+            1: (
+                label: "0%",
+                id: 1,
                 data: (
-                    dimmer: 1.0,
+                    dimmer: 0.0,
                 ),
             ),
         },
@@ -291,7 +351,7 @@
                         height: 11,
                     ),
                 ),
-                kind: EffectGraphEditor(1),
+                kind: EffectGraphEditor(4),
             ), (
                 bounds: (
                     origin: (
@@ -919,7 +979,7 @@
                 channel: 1,
             ),
             gdtf_file_name: "Martin@Mac 250 Entour.gdtf",
-            dmx_mode: "16 bit",
+            dmx_mode: "Basic",
         ), (
             id: 402,
             address: (
@@ -927,7 +987,7 @@
                 channel: 16,
             ),
             gdtf_file_name: "Martin@Mac 250 Entour.gdtf",
-            dmx_mode: "16 bit",
+            dmx_mode: "Basic",
         ), (
             id: 403,
             address: (
@@ -935,7 +995,7 @@
                 channel: 31,
             ),
             gdtf_file_name: "Martin@Mac 250 Entour.gdtf",
-            dmx_mode: "16 bit",
+            dmx_mode: "Basic",
         ), (
             id: 404,
             address: (
@@ -943,7 +1003,7 @@
                 channel: 46,
             ),
             gdtf_file_name: "Martin@Mac 250 Entour.gdtf",
-            dmx_mode: "16 bit",
+            dmx_mode: "Basic",
         ), (
             id: 405,
             address: (
@@ -951,7 +1011,7 @@
                 channel: 61,
             ),
             gdtf_file_name: "Martin@Mac 250 Entour.gdtf",
-            dmx_mode: "16 bit",
+            dmx_mode: "Basic",
         ), (
             id: 406,
             address: (
@@ -959,7 +1019,7 @@
                 channel: 76,
             ),
             gdtf_file_name: "Martin@Mac 250 Entour.gdtf",
-            dmx_mode: "16 bit",
+            dmx_mode: "Basic",
         ), (
             id: 407,
             address: (
@@ -967,7 +1027,7 @@
                 channel: 91,
             ),
             gdtf_file_name: "Martin@Mac 250 Entour.gdtf",
-            dmx_mode: "16 bit",
+            dmx_mode: "Basic",
         ), (
             id: 408,
             address: (
@@ -975,7 +1035,7 @@
                 channel: 106,
             ),
             gdtf_file_name: "Martin@Mac 250 Entour.gdtf",
-            dmx_mode: "16 bit",
+            dmx_mode: "Basic",
         )],
     ),
 )
