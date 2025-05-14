@@ -2,7 +2,7 @@
 members = [
     "crates/dmx",
     "crates/flow",
-    "crates/flow_derive",
+    "crates/flow/flow_derive",
     "crates/radiant",
     "crates/sacn",
     "crates/ui",
@@ -21,7 +21,6 @@ too_many_arguments = "allow"
 [workspace.dependencies]
 dmx = { path = "crates/dmx" }
 flow = { path = "crates/flow" }
-flow_derive = { path = "crates/flow_derive" }
 sacn = { path = "crates/sacn" }
 ui = { path = "crates/ui" }
 

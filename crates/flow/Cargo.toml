@@ -17,7 +17,7 @@ gpui.workspace = true
 thiserror.workspace = true
 
 # feature = "derive"
-flow_derive = { workspace = true, optional = true }
+flow_derive = { path = "flow_derive", optional = true }
 
 # feature = "serde"
 serde = { workspace = true, optional = true }
