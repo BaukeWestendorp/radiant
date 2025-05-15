@@ -26,12 +26,18 @@ impl<D: VirtualWindowDelegate + 'static> Render for VirtualWindow<D> {
             .rounded_b(cx.theme().radius)
             .border_1()
             .border_t_0()
-            .occlude()
             .child(self.delegate.render_content(w, cx));
 
         let header = self.delegate.render_header(w, cx);
 
-        div().track_focus(focus_handle).flex().flex_col().child(header).child(content).size_full()
+        div()
+            .occlude()
+            .track_focus(focus_handle)
+            .flex()
+            .flex_col()
+            .child(header)
+            .child(content)
+            .size_full()
     }
 }
 
