@@ -49,7 +49,6 @@ pub enum Orientation {
 pub struct TabView {
     tabs: Vec<Tab>,
     selected_tab: Option<SharedString>,
-    // FIXME: Implement TabsView orientation.
     orientation: Orientation,
 }
 
