@@ -301,7 +301,7 @@ impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
         let grid = ui::scrollable_line_grid(
             &self.visual_graph_offset,
             snap_size,
-            cx.theme().colors.border.with_opacity(0.1),
+            cx.theme().colors.border.darken(0.75),
         )
         .size_full();
 
