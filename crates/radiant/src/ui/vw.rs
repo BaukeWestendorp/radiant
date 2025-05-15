@@ -1,5 +1,5 @@
-use gpui::{App, Focusable, FontWeight, SharedString, Window, div, prelude::*, px};
-use ui::{ActiveTheme, ContainerStyle, interactive_container};
+use gpui::{App, Focusable, SharedString, Window, div, prelude::*, px};
+use ui::{ActiveTheme, ContainerStyle, h6, interactive_container};
 
 use super::FRAME_CELL_SIZE;
 
@@ -77,7 +77,7 @@ pub trait VirtualWindowDelegate: Focusable {
             .justify_between()
             .items_center()
             .px_2()
-            .child(div().font_weight(FontWeight::BOLD).child(self.title(cx).to_string()))
+            .child(h6(self.title(cx).to_string()))
             .children(if self.show_close_button() { Some(close_button) } else { None })
     }
 

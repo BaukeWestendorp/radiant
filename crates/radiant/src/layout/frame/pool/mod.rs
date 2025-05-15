@@ -1,10 +1,10 @@
 use std::ops::{Deref, DerefMut};
 
 use crate::{show::asset::AssetId, ui::FRAME_CELL_SIZE};
-use gpui::{FocusHandle, Size, Window, div, prelude::*, px};
+use gpui::{FocusHandle, FontWeight, Size, Window, div, prelude::*, px};
 use ui::{
-    ActiveTheme, ContainerStyle, Disableable, InteractiveColor, container, interactive_container,
-    utils::z_stack,
+    ActiveTheme, ContainerStyle, Disableable, InteractiveColor, container, h6,
+    interactive_container, utils::z_stack,
 };
 
 pub mod effect_graph;
@@ -45,7 +45,7 @@ impl<D: PoolDelegate> Pool<D> {
             text_color: cx.theme().colors.text,
         })
         .size(FRAME_CELL_SIZE)
-        .child(div().h_full().flex().flex_col().justify_center().text_center().child(title))
+        .child(div().h_full().flex().flex_col().justify_center().text_center().child(h6(title)))
     }
 }
 
