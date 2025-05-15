@@ -111,13 +111,14 @@ impl TableDelegate for SacnSourceTable {
 
     type Column = SacnSourceTableColumn;
 
-    fn rows(&self, _cx: &App) -> Vec<Self::Row> {
+    fn rows(&mut self, _cx: &mut App) -> Vec<Self::Row> {
         self.rows.clone()
     }
 }
 
 #[derive(Clone)]
 struct SacnSourceTableRow {
+    id: ElementId,
     name_field: Entity<Field<String>>,
     local_universes_field: Entity<Field<UniverseIdList>>,
     destination_universe_field: Entity<Field<UniverseIdFieldImpl>>,
@@ -272,6 +273,7 @@ impl SacnSourceTableRow {
         .detach();
 
         Self {
+            id: ElementId::Integer(ix as u64),
             name_field,
             local_universes_field,
             destination_universe_field,
@@ -282,6 +284,10 @@ impl SacnSourceTableRow {
 }
 
 impl TableRow<SacnSourceTable> for SacnSourceTableRow {
+    fn id(&self, _cx: &mut Context<Table<SacnSourceTable>>) -> ElementId {
+        self.id.clone()
+    }
+
     fn render_cell(
         &self,
         column: &SacnSourceTableColumn,

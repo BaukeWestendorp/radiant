@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use gpui::{App, Div, ElementId, Pixels, Window, div, prelude::*, px, uniform_list};
+use gpui::{App, ClickEvent, Div, ElementId, Pixels, Window, div, prelude::*, px, uniform_list};
 
-use crate::ActiveTheme;
+use crate::{ActiveTheme, InteractiveColor};
 
 pub struct Table<D: TableDelegate>
 where
@@ -44,6 +44,8 @@ impl<D: TableDelegate> Table<D> {
 
 impl<D: TableDelegate> Table<D> {
     fn render_header_row(&self, w: &mut Window, cx: &mut Context<Table<D>>) -> Div {
+        let row_height = self.row_height(w, cx);
+
         let cells = D::Column::all().iter().map(|col| {
             div()
                 .w(self.width_for_column(col))
@@ -57,7 +59,7 @@ impl<D: TableDelegate> Table<D> {
 
         div()
             .w_full()
-            .when_some(self.row_height(w, cx), |e, h| e.h(h))
+            .when_some(row_height, |e, h| e.h(h))
             .flex()
             .bg(cx.theme().colors.bg_tertiary)
             .border_color(cx.theme().colors.border)
@@ -66,7 +68,10 @@ impl<D: TableDelegate> Table<D> {
     }
 }
 
-impl<D: TableDelegate + 'static> Render for Table<D> {
+impl<D: TableDelegate + 'static> Render for Table<D>
+where
+    D::Row: Clone,
+{
     fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let header_row = self.render_header_row(w, cx);
 
@@ -77,25 +82,39 @@ impl<D: TableDelegate + 'static> Render for Table<D> {
             rows.len(),
             move |this, visible_range, w, cx| {
                 rows[visible_range]
-                    .iter()
+                    .into_iter()
                     .enumerate()
                     .map(|(row_ix, row)| {
                         let alternating_color = cx.theme().colors.bg_alternating;
 
-                        let cells = D::Column::all().iter().map(|col| {
-                            div()
-                                .w(this.width_for_column(col))
-                                .when_some(this.row_height(w, cx), |e, h| e.h(h))
-                                .border_b_1()
-                                .border_r_1()
-                                .border_color(cx.theme().colors.border)
-                                .child(row.render_cell(col, w, cx))
-                        });
+                        let row_id = row.id(cx);
+                        let row_height = this.row_height(w, cx);
+
+                        let cells = D::Column::all()
+                            .iter()
+                            .map(|col| {
+                                div()
+                                    .w(this.width_for_column(col))
+                                    .when_some(row_height, |e, h| e.h(h))
+                                    .border_b_1()
+                                    .border_r_1()
+                                    .border_color(cx.theme().colors.border)
+                                    .child(row.render_cell(col, w, cx))
+                            })
+                            .collect::<Vec<_>>();
 
                         div()
+                            .id(row_id)
                             .w_full()
                             .when(row_ix % 2 == 0, |e| e.bg(alternating_color))
+                            .hover(|e| e.bg(cx.theme().colors.bg_tertiary.hovered()))
                             .flex()
+                            .on_click({
+                                let row = row.clone();
+                                cx.listener(move |this, event, w, cx| {
+                                    this.delegate.handle_on_click_row(row.clone(), event, w, cx)
+                                })
+                            })
                             .children(cells)
                     })
                     .collect()
@@ -112,17 +131,28 @@ pub trait TableDelegate: Sized {
 
     type Column: TableColumn + std::hash::Hash + Eq;
 
-    fn rows(&self, cx: &App) -> Vec<Self::Row>;
+    fn rows(&mut self, cx: &mut App) -> Vec<Self::Row>;
 
-    fn row_height(&self, _w: &Window, _cx: &Context<Table<Self>>) -> Option<Pixels>
+    fn row_height(&self, _w: &mut Window, _cx: &mut Context<Table<Self>>) -> Option<Pixels>
     where
         Self: Sized,
     {
         None
     }
+
+    fn handle_on_click_row(
+        &mut self,
+        _row: Self::Row,
+        _event: &ClickEvent,
+        _w: &mut Window,
+        _cx: &mut Context<Table<Self>>,
+    ) {
+    }
 }
 
 pub trait TableRow<D: TableDelegate> {
+    fn id(&self, cx: &mut Context<Table<D>>) -> ElementId;
+
     fn render_cell(
         &self,
         column: &D::Column,

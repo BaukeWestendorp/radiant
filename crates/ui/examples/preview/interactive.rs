@@ -1,4 +1,4 @@
-use gpui::{Entity, ScrollHandle, Window, div, point, prelude::*, px};
+use gpui::{App, ElementId, Entity, ScrollHandle, Window, div, point, prelude::*, px};
 use ui::{
     Checkbox, CheckboxEvent, ContainerStyle, Disableable, Draggable, Field, NumberField, Pannable,
     Table, TableColumn, TableDelegate, TableRow, container,
@@ -140,9 +140,9 @@ impl ExampleTable {
     pub fn new() -> Self {
         Self {
             rows: vec![
-                ExampleRow { text: "Text 1".to_string(), state: false, value: 42.25 },
-                ExampleRow { text: "Text 2".to_string(), state: true, value: 3.14 },
-                ExampleRow { text: "Text 3".to_string(), state: false, value: 1.618 },
+                ExampleRow { id: 1.into(), text: "Text 1".to_string(), state: false, value: 42.25 },
+                ExampleRow { id: 2.into(), text: "Text 2".to_string(), state: true, value: 3.14 },
+                ExampleRow { id: 3.into(), text: "Text 3".to_string(), state: false, value: 1.618 },
             ],
         }
     }
@@ -152,19 +152,24 @@ impl TableDelegate for ExampleTable {
     type Row = ExampleRow;
     type Column = ExampleColumn;
 
-    fn rows(&self) -> Vec<Self::Row> {
+    fn rows(&mut self, _cx: &mut App) -> Vec<Self::Row> {
         self.rows.clone()
     }
 }
 
 #[derive(Clone)]
 struct ExampleRow {
+    id: ElementId,
     text: String,
     state: bool,
     value: f32,
 }
 
 impl TableRow<ExampleTable> for ExampleRow {
+    fn id(&self, _cx: &mut Context<Table<ExampleTable>>) -> gpui::ElementId {
+        self.id.clone()
+    }
+
     fn render_cell(
         &self,
         column: &ExampleColumn,

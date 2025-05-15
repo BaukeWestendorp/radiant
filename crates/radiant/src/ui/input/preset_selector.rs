@@ -2,7 +2,7 @@ use crate::{
     app::AppState,
     show::{Show, asset::AnyPresetId},
     ui::{
-        asset_table::AssetTable,
+        asset_table::{AssetTable, AssetTableEvent},
         vw::{VirtualWindow, VirtualWindowDelegate},
     },
 };
@@ -42,8 +42,9 @@ impl PresetSelector {
 
 impl PresetSelector {
     fn handle_on_click(&mut self, _event: &ClickEvent, w: &mut Window, cx: &mut Context<Self>) {
+        let selector = cx.entity();
         AppState::update_global(cx, |state, cx| {
-            state.open_preset_selector_window(w, cx);
+            state.open_preset_selector_window(selector, w, cx);
         });
     }
 }
@@ -71,37 +72,47 @@ pub enum PresetSelectorEvent {
 impl EventEmitter<PresetSelectorEvent> for PresetSelector {}
 
 pub struct PresetSelectorWindow {
+    selector: Entity<PresetSelector>,
     focus_handle: FocusHandle,
-
     tab_view: Entity<TabView>,
 }
 
 impl PresetSelectorWindow {
-    pub fn new(w: &mut Window, cx: &mut Context<VirtualWindow<Self>>) -> Self {
-        let tab_view = cx.new(|cx| {
-            let mut tab_view = TabView::new(
-                vec![Tab::new(
-                    "dimmer",
-                    "Dimmer",
-                    cx.new(|cx| {
-                        Table::new(
-                            AssetTable::new(Show::global(cx).assets.dimmer_presets.clone()),
-                            "dimmer-table",
-                            w,
-                            cx,
-                        )
-                    })
-                    .into(),
-                )],
+    pub fn new(
+        selector: Entity<PresetSelector>,
+        w: &mut Window,
+        cx: &mut Context<VirtualWindow<Self>>,
+    ) -> Self {
+        let dimmer_table = cx.new(|cx| {
+            Table::new(
+                AssetTable::new(Show::global(cx).assets.dimmer_presets.clone()),
+                "dimmer-table",
                 w,
                 cx,
-            );
+            )
+        });
+
+        cx.subscribe(&dimmer_table, |this, _table, event, cx| {
+            let AssetTableEvent::Selected(asset) = event;
+            this.delegate.selector.update(cx, |selector, cx| {
+                selector.set_value(Some(AnyPresetId::Dimmer(asset.read(cx).id)), cx);
+                AppState::update_global(cx, |state, _cx| {
+                    state.close_preset_selector_window();
+                });
+                cx.notify();
+            });
+        })
+        .detach();
+
+        let tab_view = cx.new(|cx| {
+            let mut tab_view =
+                TabView::new(vec![Tab::new("dimmer", "Dimmer", dimmer_table.into())], w, cx);
             tab_view.set_orientation(Orientation::Vertical);
             tab_view.select_tab_ix(0);
             tab_view
         });
 
-        Self { focus_handle: cx.focus_handle(), tab_view }
+        Self { selector, focus_handle: cx.focus_handle(), tab_view }
     }
 }
 

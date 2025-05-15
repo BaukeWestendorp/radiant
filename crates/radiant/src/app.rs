@@ -1,6 +1,6 @@
 use crate::layout::settings::SettingsWindow;
 use crate::show::Show;
-use crate::ui::input::PresetSelectorWindow;
+use crate::ui::input::{PresetSelector, PresetSelectorWindow};
 use crate::ui::vw::VirtualWindow;
 use crate::{
     dmx_io::DmxIo,
@@ -96,9 +96,14 @@ impl AppState {
         self.settings_window.as_ref()
     }
 
-    pub fn open_preset_selector_window(&mut self, w: &mut Window, cx: &mut App) {
+    pub fn open_preset_selector_window(
+        &mut self,
+        selector: Entity<PresetSelector>,
+        w: &mut Window,
+        cx: &mut App,
+    ) {
         if self.preset_selector_window.is_none() {
-            let vw = cx.new(|cx| VirtualWindow::new(PresetSelectorWindow::new(w, cx)));
+            let vw = cx.new(|cx| VirtualWindow::new(PresetSelectorWindow::new(selector, w, cx)));
             self.preset_selector_window = Some(vw);
         }
     }
