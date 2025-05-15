@@ -6,7 +6,10 @@ use super::{
 use crate::{AnySocket, Graph, GraphDef};
 use gpui::*;
 use new_node_menu::NewNodeMenuView;
-use ui::{ActiveTheme, InteractiveColor, Pannable, PannableEvent, utils::z_stack};
+use ui::{
+    ActiveTheme, InteractiveColor, Pannable, PannableEvent,
+    utils::{bounds_updater, z_stack},
+};
 
 mod new_node_menu;
 
@@ -47,6 +50,8 @@ pub struct GraphEditorView<D: GraphDef> {
     focus_handle: FocusHandle,
 
     selection_corners: Option<(Point<Pixels>, Point<Pixels>)>,
+
+    bounds: Bounds<Pixels>,
 }
 
 impl<D: GraphDef + 'static> GraphEditorView<D> {
@@ -132,6 +137,7 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
             visual_graph_offset: graph_offset,
             focus_handle,
             selection_corners: None,
+            bounds: Bounds::default(),
         }
     }
 
@@ -147,8 +153,7 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
     ) {
         window.prevent_default();
 
-        // TODO: Account for editor bounds origin.
-        let position = window.mouse_position();
+        let position = window.mouse_position() - self.bounds.origin;
         let editor_view = cx.entity().clone();
         self.new_node_menu_view = Some(cx.new(|cx| {
             NewNodeMenuView::new(
@@ -242,7 +247,8 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
             graph.deselect_all_nodes();
         });
 
-        self.selection_corners = Some((event.position, event.position));
+        self.selection_corners =
+            Some((event.position - self.bounds.origin, event.position - self.bounds.origin));
         cx.notify();
     }
 
@@ -253,7 +259,7 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
         cx: &mut Context<Self>,
     ) {
         if let Some(rect_selection) = &mut self.selection_corners {
-            rect_selection.1 = event.position;
+            rect_selection.1 = event.position - self.bounds.origin;
         }
 
         self.graph().update(cx, |graph, _cx| {
@@ -320,6 +326,7 @@ impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
                 .clone()
                 .map(|e| e.into_any_element())
                 .unwrap_or_else(|| cx.new(|_cx| EmptyView).into_any_element()),
+            bounds_updater(cx.entity(), |this, bounds, cx| this.bounds = bounds).into_any_element(),
         ])
         .track_focus(&self.focus_handle)
         .key_context(actions::KEY_CONTEXT)
