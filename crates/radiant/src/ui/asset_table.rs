@@ -1,5 +1,5 @@
 use crate::show::asset::{Asset, AssetPool};
-use gpui::{Entity, Window, prelude::*};
+use gpui::{App, Entity, Window, div, prelude::*};
 use ui::{Table, TableColumn, TableDelegate, TableRow};
 
 pub struct AssetTable<T> {
@@ -17,8 +17,11 @@ impl<T: 'static> TableDelegate for AssetTable<T> {
 
     type Column = Column;
 
-    fn rows(&self) -> Vec<Self::Row> {
-        self.asset_pool.values().map(|asset| Row { asset: asset.clone() }).collect::<Vec<_>>()
+    fn rows(&self, cx: &App) -> Vec<Self::Row> {
+        let mut rows =
+            self.asset_pool.values().map(|asset| Row { asset: asset.clone() }).collect::<Vec<_>>();
+        rows.sort_by(|a, b| a.asset.read(cx).id.as_u32().cmp(&b.asset.read(cx).id.as_u32()));
+        rows
     }
 }
 
@@ -33,10 +36,12 @@ impl<T: 'static> TableRow<AssetTable<T>> for Row<T> {
         _w: &mut Window,
         cx: &mut Context<Table<AssetTable<T>>>,
     ) -> impl IntoElement {
-        match column {
+        let text = match column {
             Column::Id => format!("{:?}", self.asset.read(cx).id),
             Column::Label => self.asset.read(cx).label.to_string(),
-        }
+        };
+
+        div().flex().items_center().px_1().child(text)
     }
 }
 
@@ -50,7 +55,7 @@ impl TableColumn for Column {
     fn label(&self) -> &str {
         match self {
             Column::Id => "Id",
-            Column::Label => "Name",
+            Column::Label => "Label",
         }
     }
 

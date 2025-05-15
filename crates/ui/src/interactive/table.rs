@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use gpui::{Div, ElementId, Pixels, Window, div, prelude::*, px, uniform_list};
+use gpui::{App, Div, ElementId, Pixels, Window, div, prelude::*, px, uniform_list};
 
 use crate::ActiveTheme;
 
@@ -70,7 +70,7 @@ impl<D: TableDelegate + 'static> Render for Table<D> {
     fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let header_row = self.render_header_row(w, cx);
 
-        let rows = self.rows();
+        let rows = self.rows(cx);
         let data_rows = uniform_list(
             cx.entity(),
             self.id.clone(),
@@ -112,7 +112,7 @@ pub trait TableDelegate: Sized {
 
     type Column: TableColumn + std::hash::Hash + Eq;
 
-    fn rows(&self) -> Vec<Self::Row>;
+    fn rows(&self, cx: &App) -> Vec<Self::Row>;
 
     fn row_height(&self, _w: &Window, _cx: &Context<Table<Self>>) -> Option<Pixels>
     where

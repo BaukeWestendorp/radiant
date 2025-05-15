@@ -125,7 +125,7 @@ impl TabView {
 impl Render for TabView {
     fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let tabs = self.render_tabs(cx);
-        let content = self.render_content(cx);
+        let content = div().size_full().child(self.render_content(cx));
 
         div()
             .flex()

@@ -111,7 +111,7 @@ impl TableDelegate for SacnSourceTable {
 
     type Column = SacnSourceTableColumn;
 
-    fn rows(&self) -> Vec<Self::Row> {
+    fn rows(&self, _cx: &App) -> Vec<Self::Row> {
         self.rows.clone()
     }
 }
