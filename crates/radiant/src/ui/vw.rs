@@ -38,9 +38,15 @@ impl<D: VirtualWindowDelegate + 'static> Render for VirtualWindow<D> {
 pub trait VirtualWindowDelegate: Focusable {
     fn title(&self, cx: &App) -> SharedString;
 
+    fn show_close_button(&self) -> bool {
+        true
+    }
+
     fn on_close_window(&mut self, _w: &mut Window, _cx: &mut Context<VirtualWindow<Self>>)
     where
-        Self: Sized;
+        Self: Sized,
+    {
+    }
 
     fn render_header(
         &mut self,
@@ -72,7 +78,7 @@ pub trait VirtualWindowDelegate: Focusable {
             .items_center()
             .px_2()
             .child(div().font_weight(FontWeight::BOLD).child(self.title(cx).to_string()))
-            .child(close_button)
+            .children(if self.show_close_button() { Some(close_button) } else { None })
     }
 
     fn render_content(

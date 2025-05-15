@@ -33,7 +33,9 @@ impl<D: GraphDef + 'static> VirtualWindowDelegate for GraphEditor<D> {
         format!("Effect Graph Editor [{}]", graph_name).into()
     }
 
-    fn on_close_window(&mut self, _w: &mut Window, _cx: &mut Context<VirtualWindow<Self>>) {}
+    fn show_close_button(&self) -> bool {
+        false
+    }
 
     fn render_content(
         &mut self,
