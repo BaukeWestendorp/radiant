@@ -1,3 +1,4 @@
+pub mod asset_table;
 pub mod frame;
 pub mod input;
 pub mod vw;

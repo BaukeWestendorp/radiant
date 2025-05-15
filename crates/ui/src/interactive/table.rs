@@ -70,12 +70,13 @@ impl<D: TableDelegate + 'static> Render for Table<D> {
     fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let header_row = self.render_header_row(w, cx);
 
+        let rows = self.rows();
         let data_rows = uniform_list(
             cx.entity(),
             self.id.clone(),
-            self.rows().len(),
-            |this, visible_range, w, cx| {
-                this.rows()[visible_range]
+            rows.len(),
+            move |this, visible_range, w, cx| {
+                rows[visible_range]
                     .iter()
                     .enumerate()
                     .map(|(row_ix, row)| {
@@ -111,7 +112,7 @@ pub trait TableDelegate: Sized {
 
     type Column: TableColumn + std::hash::Hash + Eq;
 
-    fn rows(&self) -> &[Self::Row];
+    fn rows(&self) -> Vec<Self::Row>;
 
     fn row_height(&self, _w: &Window, _cx: &Context<Table<Self>>) -> Option<Pixels>
     where

@@ -152,11 +152,12 @@ impl TableDelegate for ExampleTable {
     type Row = ExampleRow;
     type Column = ExampleColumn;
 
-    fn rows(&self) -> &[Self::Row] {
-        &self.rows
+    fn rows(&self) -> Vec<Self::Row> {
+        self.rows.clone()
     }
 }
 
+#[derive(Clone)]
 struct ExampleRow {
     text: String,
     state: bool,

@@ -111,11 +111,12 @@ impl TableDelegate for SacnSourceTable {
 
     type Column = SacnSourceTableColumn;
 
-    fn rows(&self) -> &[Self::Row] {
-        &self.rows
+    fn rows(&self) -> Vec<Self::Row> {
+        self.rows.clone()
     }
 }
 
+#[derive(Clone)]
 struct SacnSourceTableRow {
     name_field: Entity<Field<String>>,
     local_universes_field: Entity<Field<UniverseIdList>>,
