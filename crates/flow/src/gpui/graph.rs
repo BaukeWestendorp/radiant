@@ -2,13 +2,18 @@ use super::node::{NodeMeasurements, NodeView};
 use crate::{AnySocket, DataType as _, GraphDef, InputSocket, NodeId, OutputSocket};
 use gpui::*;
 use std::collections::HashMap;
-use ui::{Draggable, DraggableEvent, utils::z_stack};
+use ui::{
+    Draggable, DraggableEvent,
+    utils::{bounds_updater, z_stack},
+};
 
 pub struct GraphView<D: GraphDef> {
     graph: Entity<crate::Graph<D>>,
 
     node_views: HashMap<NodeId, Entity<Draggable>>,
     new_edge: (Option<InputSocket>, Option<OutputSocket>),
+
+    bounds: Bounds<Pixels>,
 }
 
 impl<D: GraphDef + 'static> GraphView<D> {
@@ -17,7 +22,12 @@ impl<D: GraphDef + 'static> GraphView<D> {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
-        let mut this = Self { graph, node_views: HashMap::new(), new_edge: (None, None) };
+        let mut this = Self {
+            graph,
+            node_views: HashMap::new(),
+            new_edge: (None, None),
+            bounds: Bounds::default(),
+        };
 
         let node_ids = this.graph.read(cx).node_ids().copied().collect::<Vec<_>>();
         for node_id in node_ids {
@@ -203,7 +213,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
     }
 
     fn render_new_edge(&self, window: &Window, cx: &App) -> Div {
-        let relative_mouse_pos = window.mouse_position() - *self.graph().read(cx).offset();
+        let relative_mouse_pos = window.mouse_position() - self.bounds.origin;
         let (source_pos, target_pos, source_type, target_type) = match &self.new_edge {
             (None, None) => return div(),
             (None, Some(source)) => {
@@ -379,10 +389,16 @@ impl<D: GraphDef + 'static> Render for GraphView<D> {
         let edges = self.render_edges(window, cx);
         let new_edge = self.render_new_edge(window, cx);
 
-        z_stack([nodes, edges, new_edge])
-            .size_full()
-            .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
-            .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up))
+        z_stack([
+            nodes.into_any_element(),
+            edges.into_any_element(),
+            new_edge.into_any_element(),
+            bounds_updater(cx.entity(), |this, bounds, _cx| this.bounds = bounds)
+                .into_any_element(),
+        ])
+        .size_full()
+        .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
+        .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up))
     }
 }
 

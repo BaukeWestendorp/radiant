@@ -326,7 +326,8 @@ impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
                 .clone()
                 .map(|e| e.into_any_element())
                 .unwrap_or_else(|| cx.new(|_cx| EmptyView).into_any_element()),
-            bounds_updater(cx.entity(), |this, bounds, cx| this.bounds = bounds).into_any_element(),
+            bounds_updater(cx.entity(), |this, bounds, _cx| this.bounds = bounds)
+                .into_any_element(),
         ])
         .track_focus(&self.focus_handle)
         .key_context(actions::KEY_CONTEXT)
