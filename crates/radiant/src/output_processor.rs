@@ -1,6 +1,9 @@
 use crate::show::{
     Show,
-    asset::{AssetId, Cue, EffectGraphDef, EffectGraphState, Executor},
+    asset::{
+        AssetId, Cue, Executor,
+        effect::{EffectGraphDef, EffectGraphState},
+    },
 };
 use flow::ProcessingContext;
 use gpui::{App, AsyncApp, Entity, ReadGlobal, Timer};

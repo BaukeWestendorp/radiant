@@ -1,6 +1,6 @@
 use crate::show::{
     Show,
-    asset::{AssetId, EffectGraph},
+    asset::{AssetId, graph::effect::EffectGraph},
     layout::MainFrameKind,
 };
 use gpui::{ReadGlobal, UpdateGlobal, div, prelude::*};

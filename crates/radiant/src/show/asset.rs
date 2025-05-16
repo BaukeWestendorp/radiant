@@ -5,17 +5,17 @@ use std::{
 };
 
 pub mod cue;
-pub mod effect_graph;
 pub mod executor;
 pub mod fixture_group;
+pub mod graph;
 pub mod preset;
 pub mod sequence;
 
-pub use {cue::*, effect_graph::*, executor::*, fixture_group::*, preset::*, sequence::*};
+pub use {cue::*, executor::*, fixture_group::*, graph::*, preset::*, sequence::*};
 
 #[derive(Clone)]
 pub struct Assets {
-    pub effect_graphs: AssetPool<EffectGraph>,
+    pub effect_graphs: AssetPool<effect::EffectGraph>,
     pub fixture_groups: AssetPool<FixtureGroup>,
 
     pub cues: AssetPool<Cue>,
@@ -106,8 +106,8 @@ pub(crate) mod showfile {
     use gpui::AppContext as _;
 
     use super::{
-        Asset, AssetId, Cue, DimmerPreset, EffectGraph, Executor, FixtureGroup, Sequence,
-        effect_graph,
+        Asset, AssetId, Cue, DimmerPreset, Executor, FixtureGroup, Sequence, effect::EffectGraph,
+        graph,
     };
 
     #[derive(Default)]
@@ -128,7 +128,7 @@ pub(crate) mod showfile {
             let mut effect_graphs = self.effect_graphs.to_show(cx);
             for (_, asset) in &mut effect_graphs.0 {
                 asset.update(cx, |asset, _cx| {
-                    effect_graph::insert_templates(&mut asset.data);
+                    graph::effect::insert_templates(&mut asset.data);
                 })
             }
 

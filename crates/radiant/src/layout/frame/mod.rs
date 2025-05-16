@@ -1,4 +1,5 @@
-use crate::show::{self, Show, asset::EffectGraphDef};
+use crate::show::asset::effect::EffectGraphDef;
+use crate::show::{self, Show};
 use crate::ui::frame::{Frame, FrameWrapper};
 use gpui::*;
 use pool::{

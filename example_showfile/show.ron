@@ -60,22 +60,9 @@
                 id: 1,
                 label: "Example Effect Graph",
                 data: (
-                    nodes: {
-                        1: (
-                            template_id: "apply_preset",
-                            input_values: {
-                                "preset": Preset(None),
-                            },
-                            control_values: {},
-                        ),
-                    },
+                    nodes: {},
                     edges: [],
-                    node_positions: {
-                        1: (
-                            x: 463.67578,
-                            y: 381.58594,
-                        ),
-                    },
+                    node_positions: {},
                     offset: (
                         x: 0.0,
                         y: 0.0,

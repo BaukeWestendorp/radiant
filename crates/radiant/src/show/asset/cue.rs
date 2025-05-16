@@ -1,4 +1,4 @@
-use super::{AssetId, EffectGraph, FixtureGroup};
+use super::{AssetId, FixtureGroup, effect::EffectGraph};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Debug, Clone, Default)]
