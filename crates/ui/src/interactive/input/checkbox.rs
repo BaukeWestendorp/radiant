@@ -16,7 +16,7 @@ impl Checkbox {
 impl Checkbox {
     fn handle_on_click(&mut self, _event: &ClickEvent, _w: &mut Window, cx: &mut Context<Self>) {
         self.selected = !self.selected;
-        cx.emit(CheckboxEvent::Changed(self.selected));
+        cx.emit(CheckboxEvent::Change(self.selected));
     }
 }
 
@@ -57,7 +57,7 @@ impl Render for Checkbox {
 }
 
 pub enum CheckboxEvent {
-    Changed(bool),
+    Change(bool),
 }
 
 impl EventEmitter<CheckboxEvent> for Checkbox {}

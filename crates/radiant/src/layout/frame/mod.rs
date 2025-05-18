@@ -1,4 +1,4 @@
-use crate::show::asset::effect::EffectGraphDef;
+use crate::show::asset::effect_graph;
 use crate::show::{self, Show};
 use crate::ui::frame::{Frame, FrameWrapper};
 use gpui::*;
@@ -14,7 +14,7 @@ mod graph_editor;
 mod pool;
 
 pub enum MainFrame {
-    EffectGraphEditor(Entity<VirtualWindow<GraphEditor<EffectGraphDef>>>),
+    EffectGraphEditor(Entity<VirtualWindow<GraphEditor<effect_graph::Def>>>),
 
     EffectGraphPool(Entity<Pool<EffectGraphPool>>),
     FixtureGroupPool(Entity<Pool<FixtureGroupPool>>),

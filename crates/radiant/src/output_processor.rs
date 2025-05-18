@@ -1,9 +1,6 @@
 use crate::show::{
     Show,
-    asset::{
-        AssetId, Cue, Executor,
-        effect::{EffectGraphDef, EffectGraphState},
-    },
+    asset::{AssetId, Cue, Executor, effect_graph},
 };
 use flow::ProcessingContext;
 use gpui::{App, AsyncApp, Entity, ReadGlobal, Timer};
@@ -91,7 +88,7 @@ fn process_cue(id: AssetId<Cue>, multiverse: &Entity<dmx::Multiverse>, cx: &mut 
     let fixture_group_len = fixture_group.read(cx).data.fixtures.len();
 
     for ix in 0..fixture_group_len {
-        let mut pcx = ProcessingContext::<EffectGraphDef>::new(EffectGraphState {
+        let mut pcx = ProcessingContext::<effect_graph::Def>::new(effect_graph::State {
             multiverse: multiverse.clone(),
             fixture_group: fixture_group.clone(),
             fixture_id_index: Some(ix),

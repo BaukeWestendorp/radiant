@@ -262,7 +262,7 @@ impl SacnSourceTableRow {
         cx.subscribe(&preview_data_checkbox, {
             let source = source.clone();
             move |_, event, cx| match event {
-                CheckboxEvent::Changed(new_preview_data) => {
+                CheckboxEvent::Change(new_preview_data) => {
                     source.update(cx, |source, cx| {
                         source.preview_data = *new_preview_data;
                         cx.notify();
