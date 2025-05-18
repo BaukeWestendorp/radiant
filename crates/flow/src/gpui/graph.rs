@@ -103,7 +103,8 @@ impl<D: GraphDef + 'static> GraphView<D> {
         window: &Window,
         cx: &mut App,
     ) {
-        let end_position = window.mouse_position() - *self.graph.read(cx).offset();
+        let end_position =
+            window.mouse_position() - *self.graph.read(cx).offset() - self.bounds.origin;
         let squared_snap_distance = snap_distance * snap_distance;
 
         let square_dist = |a: Point<Pixels>, b: Point<Pixels>| {
