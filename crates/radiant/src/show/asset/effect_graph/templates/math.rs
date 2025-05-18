@@ -1,6 +1,6 @@
 use flow::{Input, Output, ProcessingContext, Template};
 
-use super::{Control, DataType, Def, EffectGraph, Value};
+use crate::show::asset::effect_graph::{Control, DataType, Def, EffectGraph, Value};
 
 pub fn insert_templates(graph: &mut EffectGraph) {
     insert_arithmetic(graph);

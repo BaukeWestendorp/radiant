@@ -128,7 +128,7 @@ pub(crate) mod showfile {
             let mut effect_graphs = self.effect_graphs.to_show(cx);
             for (_, asset) in &mut effect_graphs.0 {
                 asset.update(cx, |asset, _cx| {
-                    effect_graph::insert_templates(&mut asset.data);
+                    effect_graph::templates::insert_templates(&mut asset.data);
                 })
             }
 
