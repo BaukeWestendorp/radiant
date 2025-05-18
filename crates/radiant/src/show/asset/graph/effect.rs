@@ -157,6 +157,7 @@ impl flow::GraphDef for EffectGraphDef {
 pub type EffectGraph = Graph<EffectGraphDef>;
 
 pub fn insert_templates(graph: &mut EffectGraph) {
+    super::math::insert_templates(graph);
     // graph.add_templates([
     //     Template::new(
     //         "out_set_dmx_address",
