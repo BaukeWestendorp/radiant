@@ -52,7 +52,7 @@ pub struct Graph<D: GraphDef> {
 
     pub(crate) node_id_counter: u32,
     /// Leaf nodes are nodes that have no outgoing edges
-    /// and should be the first nodes that are processed.
+    /// and should be the first nodes to be processed.
     leaf_nodes: Vec<NodeId>,
 
     pub(crate) node_positions: HashMap<NodeId, Point<Pixels>>,
@@ -454,6 +454,13 @@ impl<D: GraphDef> Values<D> {
 
     pub fn value(&self, id: &str) -> Option<&D::Value> {
         self.0.get(id)
+    }
+
+    pub fn inner_value<T: TryFrom<D::Value>>(&self, id: &str, data_type: &D::DataType) -> T {
+        self.value(id)
+            .and_then(|v| v.cast_to(data_type))
+            .and_then(|v| v.try_into().ok())
+            .expect("Failed to get inner value from Values")
     }
 
     pub fn values(&self) -> impl Iterator<Item = (&String, &D::Value)> {
