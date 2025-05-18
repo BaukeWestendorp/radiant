@@ -14,7 +14,7 @@ use crate::show::asset::{Asset, FixtureGroup};
 pub enum Value {
     // Math
     #[value(color = 0x52B4FF)]
-    Float(f32),
+    Float(f64),
     #[value(color = 0xFF178C)]
     Bool(bool),
 }

@@ -22,13 +22,13 @@ impl flow::Control<Def> for Control {
         match self {
             Control::Float => ControlView::new(cx, |cx| {
                 let field = cx.new(|cx| {
-                    let value: f32 = value.try_into().unwrap();
-                    let mut field = NumberField::<f32>::new(id, cx.focus_handle(), window, cx);
+                    let value: f64 = value.try_into().unwrap();
+                    let mut field = NumberField::<f64>::new(id, cx.focus_handle(), window, cx);
                     field.set_value(value, cx);
                     field
                 });
 
-                cx.subscribe(&field, |_, _, event: &FieldEvent<f32>, cx| {
+                cx.subscribe(&field, |_, _, event: &FieldEvent<f64>, cx| {
                     if let FieldEvent::Change(value) = event {
                         cx.emit(ControlEvent::<Def>::Change(Value::Float(*value)));
                         cx.notify();

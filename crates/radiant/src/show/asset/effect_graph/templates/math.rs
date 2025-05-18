@@ -15,8 +15,8 @@ fn insert_arithmetic(graph: &mut EffectGraph) {
     macro_rules! generate_arithmetic {
         ($id:expr, $label:expr, $operation_fn:expr) => {
             Template::new($id, $label, |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-                let a: f32 = iv.inner_value("a", &DataType::Float);
-                let b: f32 = iv.inner_value("b", &DataType::Float);
+                let a: f64 = iv.inner_value("a", &DataType::Float);
+                let b: f64 = iv.inner_value("b", &DataType::Float);
                 ov.set_value("c", Value::Float($operation_fn(a, b)));
             })
             .add_input(Input::new("a", "A", Value::Float(Default::default()), Control::Float))
@@ -30,7 +30,7 @@ fn insert_arithmetic(graph: &mut EffectGraph) {
     let mul = generate_arithmetic!("mul", "Multiply", |a, b| a * b);
     let div = generate_arithmetic!("div", "Divide", |a, b| a / b);
     let r#mod = generate_arithmetic!("mod", "Modulo", |a, b| a % b);
-    let pow = generate_arithmetic!("pow", "Power", |a: f32, b| a.powf(b));
+    let pow = generate_arithmetic!("pow", "Power", |a: f64, b| a.powf(b));
 
     graph.add_templates([add, sub, mul, div, r#mod, pow]);
 }
@@ -39,8 +39,8 @@ fn insert_comparison(graph: &mut EffectGraph) {
     macro_rules! generate {
         ($id:expr, $label:expr, $comparison_fn:expr) => {
             Template::new($id, $label, |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-                let a: f32 = iv.inner_value("a", &DataType::Float);
-                let b: f32 = iv.inner_value("b", &DataType::Float);
+                let a: f64 = iv.inner_value("a", &DataType::Float);
+                let b: f64 = iv.inner_value("b", &DataType::Float);
                 ov.set_value("c", Value::Bool($comparison_fn(a, b)));
             })
             .add_input(Input::new("a", "A", Value::Float(Default::default()), Control::Float))
@@ -89,7 +89,7 @@ fn insert_trig(graph: &mut EffectGraph) {
     macro_rules! generate_trig {
         ($id:expr, $label:expr, $trig_fn:expr) => {
             Template::new($id, $label, |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-                let x: f32 = iv.inner_value("x", &DataType::Float);
+                let x: f64 = iv.inner_value("x", &DataType::Float);
                 ov.set_value("y", Value::Float($trig_fn(x)));
             })
             .add_input(Input::new("x", "X", Value::Float(Default::default()), Control::Float))
@@ -101,7 +101,7 @@ fn insert_trig(graph: &mut EffectGraph) {
         "rad_to_deg",
         "Radians to Degrees",
         |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-            let radians: f32 = iv.inner_value("radians", &DataType::Float);
+            let radians: f64 = iv.inner_value("radians", &DataType::Float);
             ov.set_value("degrees", Value::Float(radians.to_degrees()));
         },
     )
@@ -112,7 +112,7 @@ fn insert_trig(graph: &mut EffectGraph) {
         "deg_to_rad",
         "Degrees to Radians",
         |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-            let degrees: f32 = iv.inner_value("degrees", &DataType::Float);
+            let degrees: f64 = iv.inner_value("degrees", &DataType::Float);
             ov.set_value("radians", Value::Float(degrees.to_radians()));
         },
     )
@@ -120,12 +120,12 @@ fn insert_trig(graph: &mut EffectGraph) {
     .add_output(Output::new("radians", "Radians", DataType::Float));
 
     graph.add_templates([
-        generate_trig!("sin", "Sine", |x: f32| x.sin()),
-        generate_trig!("cos", "Cosine", |x: f32| x.cos()),
-        generate_trig!("tan", "Tangent", |x: f32| x.tan()),
-        generate_trig!("arcsin", "Arcsin", |x: f32| x.asin()),
-        generate_trig!("arccos", "Arccos", |x: f32| x.acos()),
-        generate_trig!("arctan", "Arctan", |x: f32| x.atan()),
+        generate_trig!("sin", "Sine", |x: f64| x.sin()),
+        generate_trig!("cos", "Cosine", |x: f64| x.cos()),
+        generate_trig!("tan", "Tangent", |x: f64| x.tan()),
+        generate_trig!("arcsin", "Arcsin", |x: f64| x.asin()),
+        generate_trig!("arccos", "Arccos", |x: f64| x.acos()),
+        generate_trig!("arctan", "Arctan", |x: f64| x.atan()),
         rad_to_deg,
         deg_to_rad,
     ]);
@@ -134,9 +134,9 @@ fn insert_trig(graph: &mut EffectGraph) {
 fn insert_clamp_and_range(graph: &mut EffectGraph) {
     let clamp =
         Template::new("clamp", "Clamp", |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-            let x: f32 = iv.inner_value("x", &DataType::Float);
-            let min: f32 = iv.inner_value("min", &DataType::Float);
-            let max: f32 = iv.inner_value("max", &DataType::Float);
+            let x: f64 = iv.inner_value("x", &DataType::Float);
+            let min: f64 = iv.inner_value("min", &DataType::Float);
+            let max: f64 = iv.inner_value("max", &DataType::Float);
             ov.set_value("result", Value::Float(x.clamp(min, max)));
         })
         .add_input(Input::new("x", "X", Value::Float(Default::default()), Control::Float))
@@ -148,7 +148,7 @@ fn insert_clamp_and_range(graph: &mut EffectGraph) {
         "saturate",
         "Saturate (0-1)",
         |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-            let x: f32 = iv.inner_value("x", &DataType::Float);
+            let x: f64 = iv.inner_value("x", &DataType::Float);
             ov.set_value("result", Value::Float(x.clamp(0.0, 1.0)));
         },
     )
@@ -157,11 +157,11 @@ fn insert_clamp_and_range(graph: &mut EffectGraph) {
 
     let remap =
         Template::new("remap", "Remap", |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-            let x: f32 = iv.inner_value("x", &DataType::Float);
-            let in_min: f32 = iv.inner_value("in_min", &DataType::Float);
-            let in_max: f32 = iv.inner_value("in_max", &DataType::Float);
-            let out_min: f32 = iv.inner_value("out_min", &DataType::Float);
-            let out_max: f32 = iv.inner_value("out_max", &DataType::Float);
+            let x: f64 = iv.inner_value("x", &DataType::Float);
+            let in_min: f64 = iv.inner_value("in_min", &DataType::Float);
+            let in_max: f64 = iv.inner_value("in_max", &DataType::Float);
+            let out_min: f64 = iv.inner_value("out_min", &DataType::Float);
+            let out_max: f64 = iv.inner_value("out_max", &DataType::Float);
             let t = (x - in_min) / (in_max - in_min);
             let result = out_min + t * (out_max - out_min);
             ov.set_value("result", Value::Float(result));
@@ -175,8 +175,8 @@ fn insert_clamp_and_range(graph: &mut EffectGraph) {
 
     let step =
         Template::new("step", "Step", |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-            let edge: f32 = iv.inner_value("edge", &DataType::Float);
-            let x: f32 = iv.inner_value("x", &DataType::Float);
+            let edge: f64 = iv.inner_value("edge", &DataType::Float);
+            let x: f64 = iv.inner_value("x", &DataType::Float);
             ov.set_value("result", Value::Float(if x < edge { 0.0 } else { 1.0 }));
         })
         .add_input(Input::new("x", "X", Value::Float(Default::default()), Control::Float))
@@ -187,9 +187,9 @@ fn insert_clamp_and_range(graph: &mut EffectGraph) {
         "smoothstep",
         "Smoothstep",
         |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-            let x: f32 = iv.inner_value("x", &DataType::Float);
-            let edge0: f32 = iv.inner_value("edge0", &DataType::Float);
-            let edge1: f32 = iv.inner_value("edge1", &DataType::Float);
+            let x: f64 = iv.inner_value("x", &DataType::Float);
+            let edge0: f64 = iv.inner_value("edge0", &DataType::Float);
+            let edge1: f64 = iv.inner_value("edge1", &DataType::Float);
             let t = ((x - edge0) / (edge1 - edge0)).clamp(0.0, 1.0);
             let result = t * t * (3.0 - 2.0 * t);
             ov.set_value("result", Value::Float(result));
@@ -205,8 +205,8 @@ fn insert_clamp_and_range(graph: &mut EffectGraph) {
 
 fn insert_misc(graph: &mut EffectGraph) {
     let min = Template::new("min", "Min", |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-        let a: f32 = iv.inner_value("a", &DataType::Float);
-        let b: f32 = iv.inner_value("b", &DataType::Float);
+        let a: f64 = iv.inner_value("a", &DataType::Float);
+        let b: f64 = iv.inner_value("b", &DataType::Float);
         ov.set_value("result", Value::Float(a.min(b)));
     })
     .add_input(Input::new("a", "A", Value::Float(Default::default()), Control::Float))
@@ -214,8 +214,8 @@ fn insert_misc(graph: &mut EffectGraph) {
     .add_output(Output::new("result", "Result", DataType::Float));
 
     let max = Template::new("max", "Max", |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-        let a: f32 = iv.inner_value("a", &DataType::Float);
-        let b: f32 = iv.inner_value("b", &DataType::Float);
+        let a: f64 = iv.inner_value("a", &DataType::Float);
+        let b: f64 = iv.inner_value("b", &DataType::Float);
         ov.set_value("result", Value::Float(a.max(b)));
     })
     .add_input(Input::new("a", "A", Value::Float(Default::default()), Control::Float))
@@ -226,7 +226,7 @@ fn insert_misc(graph: &mut EffectGraph) {
         "abs",
         "Absolute Value",
         |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-            let x: f32 = iv.inner_value("x", &DataType::Float);
+            let x: f64 = iv.inner_value("x", &DataType::Float);
             ov.set_value("result", Value::Float(x.abs()));
         },
     )
@@ -235,7 +235,7 @@ fn insert_misc(graph: &mut EffectGraph) {
 
     let floor =
         Template::new("floor", "Floor", |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-            let x: f32 = iv.inner_value("x", &DataType::Float);
+            let x: f64 = iv.inner_value("x", &DataType::Float);
             ov.set_value("result", Value::Float(x.floor()));
         })
         .add_input(Input::new("x", "X", Value::Float(Default::default()), Control::Float))
@@ -243,7 +243,7 @@ fn insert_misc(graph: &mut EffectGraph) {
 
     let ceil =
         Template::new("ceil", "Ceil", |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-            let x: f32 = iv.inner_value("x", &DataType::Float);
+            let x: f64 = iv.inner_value("x", &DataType::Float);
             ov.set_value("result", Value::Float(x.ceil()));
         })
         .add_input(Input::new("x", "X", Value::Float(Default::default()), Control::Float))
@@ -251,7 +251,7 @@ fn insert_misc(graph: &mut EffectGraph) {
 
     let round =
         Template::new("round", "Round", |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-            let x: f32 = iv.inner_value("x", &DataType::Float);
+            let x: f64 = iv.inner_value("x", &DataType::Float);
             ov.set_value("result", Value::Float(x.round()));
         })
         .add_input(Input::new("x", "X", Value::Float(Default::default()), Control::Float))
@@ -261,7 +261,7 @@ fn insert_misc(graph: &mut EffectGraph) {
         "fract",
         "Fractional Part",
         |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-            let x: f32 = iv.inner_value("x", &DataType::Float);
+            let x: f64 = iv.inner_value("x", &DataType::Float);
             ov.set_value("result", Value::Float(x.fract()));
         },
     )
@@ -270,7 +270,7 @@ fn insert_misc(graph: &mut EffectGraph) {
 
     let sign =
         Template::new("sign", "Sign", |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-            let x: f32 = iv.inner_value("x", &DataType::Float);
+            let x: f64 = iv.inner_value("x", &DataType::Float);
             ov.set_value("result", Value::Float(x.signum()));
         })
         .add_input(Input::new("x", "X", Value::Float(Default::default()), Control::Float))
@@ -280,9 +280,9 @@ fn insert_misc(graph: &mut EffectGraph) {
         "mix",
         "Mix (Lerp)",
         |iv, _cv, ov, _pcx: &mut ProcessingContext<Def>, _cx| {
-            let a: f32 = iv.inner_value("a", &DataType::Float);
-            let b: f32 = iv.inner_value("b", &DataType::Float);
-            let t: f32 = iv.inner_value("t", &DataType::Float);
+            let a: f64 = iv.inner_value("a", &DataType::Float);
+            let b: f64 = iv.inner_value("b", &DataType::Float);
+            let t: f64 = iv.inner_value("t", &DataType::Float);
             ov.set_value("result", Value::Float(a + t * (b - a)));
         },
     )
