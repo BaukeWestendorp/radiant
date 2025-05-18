@@ -9,6 +9,7 @@ use ui::{Draggable, DraggableEvent, utils::z_stack};
 
 pub struct GraphView<D: GraphDef> {
     editor: Entity<GraphEditorView<D>>,
+    graph: Entity<Graph<D>>,
 
     node_views: HashMap<NodeId, Entity<Draggable>>,
     new_edge: (Option<InputSocket>, Option<OutputSocket>),
@@ -21,7 +22,12 @@ impl<D: GraphDef + 'static> GraphView<D> {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
-        let mut this = Self { editor, node_views: HashMap::new(), new_edge: (None, None) };
+        let mut this = Self {
+            editor,
+            graph: graph.clone(),
+            node_views: HashMap::new(),
+            new_edge: (None, None),
+        };
 
         let node_ids = graph.read(cx).node_ids().copied().collect::<Vec<_>>();
         for node_id in node_ids {
@@ -31,25 +37,26 @@ impl<D: GraphDef + 'static> GraphView<D> {
         this
     }
 
-    pub fn graph(&self, cx: &App) -> Entity<crate::Graph<D>> {
-        self.editor.read(cx).graph()
+    pub fn graph(&self) -> Entity<crate::Graph<D>> {
+        self.graph.clone()
     }
 
     pub fn add_node(&mut self, node_id: NodeId, window: &mut Window, cx: &mut Context<Self>) {
         let NodeMeasurements { snap_size, .. } = NodeMeasurements::new(window);
-
         let graph_view = cx.entity().clone();
+        let node_view =
+            cx.new(|cx| NodeView::new(node_id, graph_view, self.graph.clone(), window, cx));
         let draggable = cx.new(|cx| {
             Draggable::new(
                 ElementId::NamedInteger("node".into(), node_id.0 as u64),
-                *self.graph(cx).read(cx).node_position(&node_id),
+                *self.graph().read(cx).node_position(&node_id),
                 Some(snap_size),
-                cx.new(|cx| NodeView::new(node_id, graph_view, self.graph(cx).clone(), window, cx)),
+                node_view,
             )
         });
 
         cx.subscribe(&draggable, move |graph_view, _, event, cx| {
-            graph_view.graph(cx).update(cx, |graph, cx| {
+            graph_view.graph().update(cx, |graph, cx| {
                 match event {
                     DraggableEvent::PositionChanged(position) => {
                         graph.update_visual_node_position(Some((node_id, *position)));
@@ -78,7 +85,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
         match from {
             AnySocket::Input(input) => {
                 // If the input already has an edge connected to it, remove it.
-                self.graph(cx).update(cx, |graph, cx| {
+                self.graph().update(cx, |graph, cx| {
                     if graph.edge_source(input).is_some() {
                         graph.remove_edge(input, cx);
                     }
@@ -99,7 +106,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
     ) {
         let end_position = window.mouse_position()
             - self.editor.read(cx).bounds().origin
-            - *self.graph(cx).read(cx).offset();
+            - *self.graph().read(cx).offset();
 
         let squared_snap_distance = snap_distance * snap_distance;
 
@@ -109,15 +116,15 @@ impl<D: GraphDef + 'static> GraphView<D> {
             dx * dx + dy * dy
         };
 
-        let node_ids = self.graph(cx).read(cx).node_ids().cloned().collect::<Vec<_>>();
+        let node_ids = self.graph().read(cx).node_ids().cloned().collect::<Vec<_>>();
         match from_socket {
             AnySocket::Input(input_socket) => {
-                let input = self.graph(cx).read(cx).input(input_socket);
+                let input = self.graph().read(cx).input(input_socket);
 
                 // Find the closest output socket.
                 for node_id in node_ids {
-                    let node = self.graph(cx).read(cx).node(&node_id);
-                    let template = self.graph(cx).read(cx).template(node.template_id());
+                    let node = self.graph().read(cx).node(&node_id);
+                    let template = self.graph().read(cx).template(node.template_id());
 
                     for output in template.outputs() {
                         let source = OutputSocket::new(node_id, output.id().to_string());
@@ -142,12 +149,12 @@ impl<D: GraphDef + 'static> GraphView<D> {
                 self.new_edge.1 = None;
             }
             AnySocket::Output(output_socket) => {
-                let output = self.graph(cx).read(cx).output(output_socket);
+                let output = self.graph().read(cx).output(output_socket);
 
                 // Find the closest input socket.
                 for node_id in node_ids {
-                    let node = self.graph(cx).read(cx).node(&node_id);
-                    let template = self.graph(cx).read(cx).template(node.template_id());
+                    let node = self.graph().read(cx).node(&node_id);
+                    let template = self.graph().read(cx).template(node.template_id());
 
                     for input in template.inputs() {
                         let target = InputSocket::new(node_id, input.id().to_string());
@@ -177,7 +184,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
     pub fn finish_new_edge(&mut self, cx: &mut Context<Self>) {
         match self.new_edge.clone() {
             (Some(target), Some(source)) => {
-                self.graph(cx).update(cx, |graph, cx| {
+                self.graph().update(cx, |graph, cx| {
                     graph.add_edge(target, source, cx);
                     cx.notify();
                 });
@@ -194,7 +201,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
     }
 
     fn render_edges(&self, window: &Window, cx: &App) -> Div {
-        let edges = self.graph(cx).read(cx).edges();
+        let edges = self.graph().read(cx).edges();
 
         z_stack(edges.map(|(target, source)| {
             let target_pos =
@@ -202,8 +209,8 @@ impl<D: GraphDef + 'static> GraphView<D> {
             let source_pos =
                 self.get_connector_position(&AnySocket::Output(source.clone()), window, cx);
 
-            let target = self.graph(cx).read(cx).input(target);
-            let source = self.graph(cx).read(cx).output(source);
+            let target = self.graph().read(cx).input(target);
+            let source = self.graph().read(cx).output(source);
 
             self.render_edge(target_pos, source_pos, &target.data_type(), source.data_type())
         }))
@@ -212,7 +219,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
     fn render_new_edge(&self, window: &Window, cx: &App) -> Div {
         let relative_mouse_pos = window.mouse_position()
             - self.editor.read(cx).bounds().origin
-            - *self.graph(cx).read(cx).offset();
+            - *self.graph().read(cx).offset();
         let (source_pos, target_pos, source_type, target_type) = match &self.new_edge {
             (None, None) => return div(),
             (None, Some(source)) => {
@@ -220,7 +227,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
                     self.get_connector_position(&AnySocket::Output(source.clone()), window, cx);
                 let target_pos = relative_mouse_pos;
 
-                let source = self.graph(cx).read(cx).output(source);
+                let source = self.graph().read(cx).output(source);
                 (source_pos, target_pos, source.data_type(), source.data_type())
             }
             (Some(target), None) => {
@@ -228,7 +235,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
                     self.get_connector_position(&AnySocket::Input(target.clone()), window, cx);
                 let source_pos = relative_mouse_pos;
 
-                let target = self.graph(cx).read(cx).input(target);
+                let target = self.graph().read(cx).input(target);
                 (source_pos, target_pos, &target.data_type(), &target.data_type())
             }
             (Some(target), Some(source)) => {
@@ -237,8 +244,8 @@ impl<D: GraphDef + 'static> GraphView<D> {
                 let target_pos =
                     self.get_connector_position(&AnySocket::Input(target.clone()), window, cx);
 
-                let source = self.graph(cx).read(cx).output(source);
-                let target = self.graph(cx).read(cx).input(target);
+                let source = self.graph().read(cx).output(source);
+                let target = self.graph().read(cx).input(target);
                 (source_pos, target_pos, &target.data_type(), source.data_type())
             }
         };
@@ -328,7 +335,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
             AnySocket::Input(socket) => socket.node_id,
             AnySocket::Output(socket) => socket.node_id,
         };
-        let node = self.graph(cx).read(cx).node(&node_id);
+        let node = self.graph().read(cx).node(&node_id);
 
         let NodeMeasurements {
             snap_size,
@@ -340,11 +347,9 @@ impl<D: GraphDef + 'static> GraphView<D> {
             ..
         } = NodeMeasurements::new(window);
 
-        let template = self.graph(cx).read(cx).template(node.template_id());
-        let node_position = ui::utils::snap_point(
-            *self.graph(cx).read(cx).visual_node_position(&node_id),
-            snap_size,
-        );
+        let template = self.graph().read(cx).template(node.template_id());
+        let node_position =
+            ui::utils::snap_point(*self.graph().read(cx).visual_node_position(&node_id), snap_size);
 
         let socket_index = match socket {
             AnySocket::Input(input) => template

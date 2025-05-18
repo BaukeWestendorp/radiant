@@ -110,7 +110,7 @@ impl<D: GraphDef + 'static> NodeView<D> {
     }
 
     fn graph(&self, cx: &App) -> Entity<crate::Graph<D>> {
-        self.graph_view.read(cx).graph(cx).clone()
+        self.graph_view.read(cx).graph().clone()
     }
 }
 
@@ -138,7 +138,7 @@ impl<D: GraphDef + 'static> NodeView<D> {
 }
 impl<D: GraphDef + 'static> Render for NodeView<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let graph = self.graph_view.read(cx).graph(cx).read(cx);
+        let graph = self.graph_view.read(cx).graph().read(cx);
         let template_id = graph.node(&self.node_id).template_id().clone();
         let template = graph.template(&template_id);
 
@@ -249,7 +249,7 @@ impl<D: GraphDef + 'static> InputView<D> {
                     let value = value.clone();
                     let socket = socket.clone();
                     input_view.graph_view.update(cx, move |graph_view, cx| {
-                        graph_view.graph(cx).update(cx, |graph, cx| {
+                        graph_view.graph().update(cx, |graph, cx| {
                             graph.set_input_value(socket, value);
                             cx.notify();
                         })
@@ -275,7 +275,7 @@ impl<D: GraphDef + 'static> Render for InputView<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let label = self.input.label().to_string();
 
-        let graph = self.graph_view.read(cx).graph(cx).read(cx);
+        let graph = self.graph_view.read(cx).graph().read(cx);
         let socket = InputSocket::new(self.node_id, self.input.id().to_string());
         let has_connection = graph.edge_source(&socket).is_some();
 
