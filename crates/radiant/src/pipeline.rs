@@ -1,233 +1,189 @@
-pub mod dmx {
-    use std::collections::HashMap;
+use crate::show::{
+    FloatingDmxValue, Show,
+    asset::Preset,
+    attr::{AnyPresetAssetId, Attr, Attribute},
+    patch::FixtureId,
+};
+use dmx::Multiverse;
+use gpui::{App, Entity, ReadGlobal};
+use std::collections::HashMap;
 
-    use crate::show::patch::{FixtureId, Patch};
-
-    use super::attrs::AttributeValues;
-
-    #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
-    #[derive(serde::Serialize, serde::Deserialize)]
-    pub struct FDmxValue(pub f32);
-
-    impl From<FDmxValue> for dmx::Value {
-        fn from(value: FDmxValue) -> Self {
-            dmx::Value((value.0 * (u8::MAX as f32)).clamp(0.0, 1.0) as u8)
-        }
-    }
-
-    impl ui::NumberFieldImpl for FDmxValue {
-        type Value = Self;
-
-        const MIN: Option<Self> = Some(FDmxValue(0.0));
-        const MAX: Option<Self> = Some(FDmxValue(1.0));
-        const STEP: Option<f32> = None;
-
-        fn from_str_or_default(s: &str) -> Self::Value {
-            Self(s.parse().unwrap_or_default())
-        }
-
-        fn to_shared_string(value: &Self::Value) -> gpui::SharedString {
-            value.0.to_string().into()
-        }
-
-        fn as_f32(value: &Self::Value) -> f32 {
-            value.0
-        }
-
-        fn from_f32(v: f32) -> Self::Value {
-            Self(v)
-        }
-    }
-
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[derive(Debug, Clone, PartialEq, Default)]
-    pub struct FixtureValues {
-        pub fixture_id: FixtureId,
-        pub values: HashMap<dmx::Address, dmx::Value>,
-    }
-
-    impl FixtureValues {
-        pub fn new(fixture_id: FixtureId) -> Self {
-            Self { fixture_id, values: HashMap::new() }
-        }
-
-        pub fn from_attr_values(
-            attr_values: &AttributeValues,
-            fixture_id: FixtureId,
-            patch: &Patch,
-        ) -> Self {
-            let mut fixture_values = Self::new(fixture_id);
-            for (attribute, value) in attr_values.values.iter() {
-                let Some(fixture) = patch.fixture(fixture_id).cloned() else {
-                    log::warn!("Could not find fixture with id {:?}", fixture_id);
-                    continue;
-                };
-
-                let Some(offset) =
-                    fixture.channel_offset_for_attr(&attribute.to_string(), patch).cloned()
-                else {
-                    continue;
-                };
-
-                fixture_values.set_dmx_value_at_offset(fixture.address(), &offset, value.0);
-            }
-            fixture_values
-        }
-
-        pub fn set_dmx_value_at_offset(
-            &mut self,
-            start_address: &dmx::Address,
-            offsets: &[i32],
-            value: f32,
-        ) {
-            let value_bytes = match offsets.len() {
-                1 => {
-                    let byte_value = (value * 0xff as f32) as u8;
-                    vec![byte_value]
-                }
-                2 => {
-                    let int_value = (value * 0xffff as f32) as u16;
-                    vec![(int_value >> 8) as u8, (int_value & 0xFF) as u8]
-                }
-                3 => {
-                    let int_value = (value * 0xffffff as f32) as u32;
-                    vec![
-                        (int_value >> 16) as u8,
-                        ((int_value >> 8) & 0xFF) as u8,
-                        (int_value & 0xFF) as u8,
-                    ]
-                }
-                4 => {
-                    let int_value = (value * 0xffffffff_u32 as f32) as u32;
-                    vec![
-                        (int_value >> 24) as u8,
-                        ((int_value >> 16) & 0xFF) as u8,
-                        ((int_value >> 8) & 0xFF) as u8,
-                        (int_value & 0xFF) as u8,
-                    ]
-                }
-                _ => vec![0],
-            };
-
-            for (byte, offset) in value_bytes.iter().zip(offsets) {
-                let address = start_address.with_channel_offset(*offset as u16 - 1).unwrap();
-                self.values.insert(address, dmx::Value(*byte));
-            }
-        }
-    }
+pub struct Pipeline {
+    multiverse: Entity<Multiverse>,
+    pending_values: HashMap<dmx::Address, dmx::Value>,
+    pending_attr_values: HashMap<FixtureId, HashMap<Attr, FloatingDmxValue>>,
 }
 
-pub mod attrs {
-    use std::collections::HashMap;
-
-    use crate::show::patch::FixtureId;
-
-    use super::dmx::FDmxValue;
-
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[derive(Debug, Clone, Default)]
-    pub struct AttributeValues {
-        pub fixture_id: FixtureId,
-        pub values: HashMap<Attribute, FDmxValue>,
+impl Pipeline {
+    pub fn new(multiverse: Entity<Multiverse>) -> Self {
+        Self { multiverse, pending_values: HashMap::new(), pending_attr_values: HashMap::new() }
     }
 
-    impl AttributeValues {
-        pub fn new(fixture_id: FixtureId) -> Self {
-            Self { fixture_id, values: HashMap::new() }
-        }
+    pub fn multiverse(&self) -> &Entity<Multiverse> {
+        &self.multiverse
     }
 
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-    pub enum Attribute {
-        Dimmer(DimmerAttr),
-        Position(PositionAttr),
+    pub fn apply_value(&mut self, address: dmx::Address, value: dmx::Value) {
+        self.pending_values.insert(address, value);
     }
 
-    impl std::fmt::Display for Attribute {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            match self {
-                Self::Dimmer(attr) => write!(f, "{}", attr.to_string()),
-                Self::Position(attr) => write!(f, "{}", attr.to_string()),
+    pub fn apply_attribute(
+        &mut self,
+        attribute: Attr,
+        value: FloatingDmxValue,
+        fixture_id: FixtureId,
+    ) {
+        self.pending_attr_values
+            .entry(fixture_id)
+            .or_insert_with(HashMap::new)
+            .insert(attribute, value);
+    }
+
+    pub fn apply_preset(&mut self, preset_id: AnyPresetAssetId, fixture_id: FixtureId, cx: &App) {
+        let show = Show::global(cx);
+        let preset = match preset_id {
+            AnyPresetAssetId::Dimmer(id) => show.assets.dimmer_presets.get(&id),
+            _ => todo!(),
+        };
+
+        let Some(preset) = preset else { return };
+
+        match &preset.read(cx).data {
+            Preset::Universal(values) => {
+                for (attr, value) in values.iter() {
+                    self.apply_attribute(attr.to_attr(), *value, fixture_id);
+                }
             }
         }
     }
 
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-    pub enum DimmerAttr {
-        /// Controls the intensity of a fixture.
-        Dimmer,
+    fn flush_default_values(&mut self, cx: &mut App) -> anyhow::Result<()> {
+        let patch = Show::global(cx).patch.read(cx);
+
+        let mut values = Vec::<(dmx::Address, dmx::Value)>::new();
+
+        for fixture in patch.fixtures() {
+            for channel in &fixture.dmx_mode(patch).dmx_channels {
+                let Some((_, channel_function)) = channel.initial_function() else {
+                    continue;
+                };
+
+                let Some(offsets) = &channel.offset else { continue };
+
+                let default_bytes = match &channel_function.default.bytes().get() {
+                    1 => channel_function.default.to_u8().to_be_bytes().to_vec(),
+                    2 => channel_function.default.to_u16().to_be_bytes().to_vec(),
+                    4 => channel_function.default.to_u32().to_be_bytes().to_vec(),
+                    _ => panic!("Unsupported default value size"),
+                };
+
+                for (i, offset) in offsets.iter().enumerate() {
+                    let address = fixture.address().with_channel_offset(*offset as u16 - 1)?;
+                    let value = dmx::Value(default_bytes[i]);
+                    values.push((address, value));
+                }
+            }
+        }
+
+        self.flush_values(values, cx);
+
+        Ok(())
     }
 
-    impl std::fmt::Display for DimmerAttr {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            match self {
-                Self::Dimmer => write!(f, "Dimmer"),
+    pub fn flush(&mut self, cx: &mut App) -> anyhow::Result<()> {
+        self.flush_default_values(cx)?;
+        self.flush_pending_attributes(cx);
+        self.flush_pending_values(cx);
+        Ok(())
+    }
+
+    fn flush_pending_attributes(&mut self, cx: &mut App) {
+        for (fixture_id, values) in self.pending_attr_values.clone().iter() {
+            for (attr, value) in values.iter() {
+                self.flush_attribute(*attr, *value, *fixture_id, cx);
             }
+        }
+
+        self.pending_attr_values.clear();
+    }
+
+    fn flush_attribute(
+        &mut self,
+        attr: Attr,
+        value: FloatingDmxValue,
+        fixture_id: FixtureId,
+        cx: &mut App,
+    ) {
+        let patch = Show::global(cx).patch.read(cx);
+
+        let Some(fixture) = patch.fixture(fixture_id).cloned() else {
+            return;
+        };
+
+        let Some(offset) = fixture.channel_offset_for_attr(&attr.to_string(), patch).cloned()
+        else {
+            return;
+        };
+
+        let value_bytes = match offset.len() {
+            1 => {
+                let byte_value = (value.0 * 0xff as f32) as u8;
+                vec![byte_value]
+            }
+            2 => {
+                let int_value = (value.0 * 0xffff as f32) as u16;
+                vec![(int_value >> 8) as u8, (int_value & 0xFF) as u8]
+            }
+            3 => {
+                let int_value = (value.0 * 0xffffff as f32) as u32;
+                vec![
+                    (int_value >> 16) as u8,
+                    ((int_value >> 8) & 0xFF) as u8,
+                    (int_value & 0xFF) as u8,
+                ]
+            }
+            4 => {
+                let int_value = (value.0 * 0xffffffff_u32 as f32) as u32;
+                vec![
+                    (int_value >> 24) as u8,
+                    ((int_value >> 16) & 0xFF) as u8,
+                    ((int_value >> 8) & 0xFF) as u8,
+                    (int_value & 0xFF) as u8,
+                ]
+            }
+            _ => vec![0],
+        };
+
+        for (byte, offset) in value_bytes.iter().zip(&offset) {
+            let address = fixture.address().with_channel_offset(*offset as u16 - 1).unwrap();
+            self.multiverse.update(cx, |multiverse, cx| {
+                multiverse.set_value(&address, dmx::Value(*byte));
+                cx.notify();
+            });
         }
     }
 
-    #[derive(serde::Serialize, serde::Deserialize)]
-    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-    pub enum PositionAttr {
-        /// Controls the fixture’s sideward movement (horizontal axis).
-        Pan,
-        /// Controls the fixture’s upward and the downward movement (vertical axis).
-        Tilt,
-        /// Controls the speed of the fixture’s continuous pan movement (horizontal axis).
-        PanRotate,
-        /// Controls the speed of the fixture’s continuous tilt movement (vertical axis).
-        TiltRotate,
-        /// Selects the predefined position effects that are built into the fixture.
-        PositionEffect,
-        /// Controls the speed of the predefined position effects that are built into the fixture.
-        PositionEffectRate,
-        /// Snaps or smooth fades with timing in running predefined position effects.
-        PositionEffectFade,
-        /// Defines a fixture’s x-coordinate within an XYZ coordinate system.
-        XyzX,
-        /// Defines a fixture’s y-coordinate within an XYZ coordinate system.
-        XyzY,
-        /// Defines a fixture‘s z-coordinate within an XYZ coordinate system.
-        XyzZ,
-        /// Defines rotation around X axis.
-        RotX,
-        /// Defines rotation around Y axis.
-        RotY,
-        /// Defines rotation around Z axis.
-        RotZ,
-        /// Scaling on X axis.
-        ScaleX,
-        /// Scaling on Y axis.
-        ScaleY,
-        /// Scaling on Y axis.
-        ScaleZ,
-        /// Unified scaling on all axis.
-        ScaleXYZ,
+    fn flush_pending_values(&mut self, cx: &mut App) {
+        for (addr, value) in self.pending_values.clone().iter() {
+            self.flush_value(addr, *value, cx);
+        }
+
+        self.pending_values.clear();
     }
 
-    impl std::fmt::Display for PositionAttr {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            match self {
-                Self::Pan => write!(f, "Pan"),
-                Self::Tilt => write!(f, "Tilt"),
-                Self::PanRotate => write!(f, "PanRotate"),
-                Self::TiltRotate => write!(f, "TiltRotate"),
-                Self::PositionEffect => write!(f, "PositionEffect"),
-                Self::PositionEffectRate => write!(f, "PositionEffectRate"),
-                Self::PositionEffectFade => write!(f, "PositionEffectFade"),
-                Self::XyzX => write!(f, "XYZ_X"),
-                Self::XyzY => write!(f, "XYZ_Y"),
-                Self::XyzZ => write!(f, "XYZ_Z"),
-                Self::RotX => write!(f, "Rot_X"),
-                Self::RotY => write!(f, "Rot_Y"),
-                Self::RotZ => write!(f, "Rot_Z"),
-                Self::ScaleX => write!(f, "Scale_X"),
-                Self::ScaleY => write!(f, "Scale_Y"),
-                Self::ScaleZ => write!(f, "Scale_Z"),
-                Self::ScaleXYZ => write!(f, "Scale_XYZ"),
+    fn flush_values(&self, values: Vec<(dmx::Address, dmx::Value)>, cx: &mut App) {
+        self.multiverse.update(cx, |multiverse, cx| {
+            for (addr, value) in values {
+                multiverse.set_value(&addr, value);
             }
-        }
+            cx.notify();
+        });
+    }
+
+    fn flush_value(&self, addr: &dmx::Address, value: dmx::Value, cx: &mut App) {
+        self.multiverse.update(cx, |multiverse, cx| {
+            multiverse.set_value(addr, value);
+            cx.notify();
+        });
     }
 }

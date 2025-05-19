@@ -1,6 +1,7 @@
 use crate::show::{
     Show,
-    asset::{AssetId, DimmerPreset},
+    asset::{AssetId, Preset},
+    attr::DimmerAttr,
 };
 use gpui::{ReadGlobal, div, prelude::*};
 
@@ -15,7 +16,7 @@ impl DimmerPresetPool {
 }
 
 impl PoolDelegate for DimmerPresetPool {
-    type Item = DimmerPreset;
+    type Item = Preset<DimmerAttr>;
 
     fn title(&self, _cx: &mut Context<Pool<Self>>) -> &str {
         "Dimmer Presets"

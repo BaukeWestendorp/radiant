@@ -1,6 +1,6 @@
 use crate::{
     app::AppState,
-    show::{Show, asset::AnyPresetId},
+    show::{Show, attr::AnyPresetAssetId},
     ui::{
         asset_table::{AssetTable, AssetTableEvent},
         vw::{VirtualWindow, VirtualWindowDelegate},
@@ -13,7 +13,7 @@ use gpui::{
 use ui::{ActiveTheme, InteractiveColor, Orientation, Tab, TabView, Table, interactive_container};
 
 pub struct PresetSelector {
-    value: Option<AnyPresetId>,
+    value: Option<AnyPresetAssetId>,
 
     id: ElementId,
     focus_handle: FocusHandle,
@@ -29,11 +29,11 @@ impl PresetSelector {
         Self { value: None, id: id.into(), focus_handle }
     }
 
-    pub fn value(&self) -> Option<&AnyPresetId> {
+    pub fn value(&self) -> Option<&AnyPresetAssetId> {
         self.value.as_ref()
     }
 
-    pub fn set_value(&mut self, value: Option<AnyPresetId>, cx: &mut Context<Self>) {
+    pub fn set_value(&mut self, value: Option<AnyPresetAssetId>, cx: &mut Context<Self>) {
         self.value = value;
         cx.notify();
         cx.emit(PresetSelectorEvent::Change(self.value));
@@ -66,7 +66,7 @@ impl Render for PresetSelector {
 }
 
 pub enum PresetSelectorEvent {
-    Change(Option<AnyPresetId>),
+    Change(Option<AnyPresetAssetId>),
 }
 
 impl EventEmitter<PresetSelectorEvent> for PresetSelector {}
@@ -95,7 +95,7 @@ impl PresetSelectorWindow {
         cx.subscribe(&dimmer_table, |this, _table, event, cx| {
             let AssetTableEvent::Selected(asset) = event;
             this.delegate.selector.update(cx, |selector, cx| {
-                selector.set_value(Some(AnyPresetId::Dimmer(asset.read(cx).id)), cx);
+                selector.set_value(Some(AnyPresetAssetId::Dimmer(asset.read(cx).id)), cx);
                 AppState::update_global(cx, |state, _cx| {
                     state.close_preset_selector_window();
                 });

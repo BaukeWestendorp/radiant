@@ -11,6 +11,8 @@ pub mod fixture_group;
 pub mod preset;
 pub mod sequence;
 
+use super::attr::DimmerAttr;
+
 pub use {cue::*, executor::*, fixture_group::*, preset::*, sequence::*};
 
 #[derive(Clone)]
@@ -22,7 +24,7 @@ pub struct Assets {
     pub sequences: AssetPool<Sequence>,
     pub executors: AssetPool<Executor>,
 
-    pub dimmer_presets: AssetPool<DimmerPreset>,
+    pub dimmer_presets: AssetPool<Preset<DimmerAttr>>,
 }
 
 #[derive(Debug, Clone)]
@@ -105,8 +107,10 @@ pub(crate) mod showfile {
 
     use gpui::AppContext as _;
 
+    use crate::show::attr::DimmerAttr;
+
     use super::{
-        Asset, AssetId, Cue, DimmerPreset, Executor, FixtureGroup, Sequence,
+        Asset, AssetId, Cue, Executor, FixtureGroup, Preset, Sequence,
         effect_graph::{self, EffectGraph},
     };
 
@@ -120,7 +124,7 @@ pub(crate) mod showfile {
         pub sequences: AssetPool<Sequence>,
         pub executors: AssetPool<Executor>,
 
-        pub dimmer_presets: AssetPool<DimmerPreset>,
+        pub dimmer_presets: AssetPool<Preset<DimmerAttr>>,
     }
 
     impl Assets {
@@ -154,9 +158,14 @@ pub(crate) mod showfile {
         }
     }
 
-    #[derive(Default)]
     #[derive(serde::Serialize, serde::Deserialize)]
     pub struct AssetPool<T>(HashMap<AssetId<T>, Asset<T>>);
+
+    impl<T> Default for AssetPool<T> {
+        fn default() -> Self {
+            Self(HashMap::default())
+        }
+    }
 
     impl<T: 'static> AssetPool<T> {
         pub fn to_show(self, cx: &mut gpui::App) -> super::AssetPool<T> {
