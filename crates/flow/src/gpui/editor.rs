@@ -58,7 +58,8 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
     pub fn new(graph: Entity<Graph<D>>, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let focus_handle = cx.focus_handle();
 
-        let graph_view = cx.new(|cx| GraphView::new(graph.clone(), window, cx));
+        let editor = cx.entity();
+        let graph_view = cx.new(|cx| GraphView::new(editor, graph.clone(), window, cx));
 
         cx.subscribe(&graph, |_editor, _graph_view, event: &GraphEvent, cx| cx.emit(event.clone()))
             .detach();
@@ -143,6 +144,10 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
 
     pub fn graph(&self) -> Entity<Graph<D>> {
         self.graph.clone()
+    }
+
+    pub fn bounds(&self) -> &Bounds<Pixels> {
+        &self.bounds
     }
 
     pub fn open_new_node_menu(

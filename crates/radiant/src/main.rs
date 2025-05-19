@@ -3,9 +3,10 @@ use clap::Parser;
 use std::path::PathBuf;
 
 mod app;
-mod dmx_io;
 mod layout;
-mod output_processor;
+mod pipeline;
+mod processor;
+mod protocol;
 mod show;
 pub mod ui;
 mod utils;

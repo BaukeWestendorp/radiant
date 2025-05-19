@@ -596,6 +596,28 @@ impl Multiverse {
         self.universes.remove(id)
     }
 
+    /// Sets all DMX values in every [Universe] within the [Multiverse] to 0.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use dmx::{Multiverse, Universe, UniverseId};
+    /// let mut multiverse = Multiverse::new();
+    /// multiverse.create_universe(UniverseId::new(1).unwrap(), Universe::new());
+    /// multiverse.create_universe(UniverseId::new(2).unwrap(), Universe::new());
+    ///
+    /// multiverse.clear();
+    ///
+    /// for (_, universe) in multiverse.universes() {
+    ///     assert!(universe.values().iter().all(|&value| value == 0));
+    /// }
+    /// ```
+    pub fn clear(&mut self) {
+        for universe in self.universes.values_mut() {
+            universe.clear();
+        }
+    }
+
     /// Returns an immutable reference to the [Universe] with the given [UniverseId].
     ///
     /// Returns `None` if no universe exists with that ID.

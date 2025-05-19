@@ -1,4 +1,4 @@
-use gpui::{App, AppContext as _, Entity};
+use gpui::{App, AppContext, Entity};
 
 /// Maps an [Entity][gpui::Entity] of type S (source) to an [Entity][gpui::Entity] of type T (target).
 pub fn map_entity<S: 'static, T: 'static>(

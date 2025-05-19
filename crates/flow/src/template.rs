@@ -36,12 +36,31 @@ impl<D: GraphDef> Template<D> {
     pub fn new(
         id: impl Into<TemplateId>,
         label: impl Into<String>,
-        inputs: Vec<Input<D>>,
-        outputs: Vec<Output<D>>,
-        controls: Vec<NodeControl<D>>,
-        processor: Box<Processor<D>>,
+        processor: Processor<D>,
     ) -> Self {
-        Self { id: id.into(), label: label.into(), inputs, outputs, controls, processor }
+        Self {
+            id: id.into(),
+            label: label.into(),
+            inputs: Vec::new(),
+            outputs: Vec::new(),
+            controls: Vec::new(),
+            processor: Box::new(processor),
+        }
+    }
+
+    pub fn add_input(mut self, input: Input<D>) -> Self {
+        self.inputs.push(input);
+        self
+    }
+
+    pub fn add_output(mut self, output: Output<D>) -> Self {
+        self.outputs.push(output);
+        self
+    }
+
+    pub fn add_control(mut self, control: NodeControl<D>) -> Self {
+        self.controls.push(control);
+        self
     }
 
     pub fn id(&self) -> &TemplateId {

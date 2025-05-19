@@ -11,18 +11,20 @@ pub mod fixture_group;
 pub mod preset;
 pub mod sequence;
 
-pub use {cue::*, effect_graph::*, executor::*, fixture_group::*, preset::*, sequence::*};
+use super::attr::DimmerAttr;
+
+pub use {cue::*, executor::*, fixture_group::*, preset::*, sequence::*};
 
 #[derive(Clone)]
 pub struct Assets {
-    pub effect_graphs: AssetPool<EffectGraph>,
+    pub effect_graphs: AssetPool<effect_graph::EffectGraph>,
     pub fixture_groups: AssetPool<FixtureGroup>,
 
     pub cues: AssetPool<Cue>,
     pub sequences: AssetPool<Sequence>,
     pub executors: AssetPool<Executor>,
 
-    pub dimmer_presets: AssetPool<DimmerPreset>,
+    pub dimmer_presets: AssetPool<Preset<DimmerAttr>>,
 }
 
 #[derive(Debug, Clone)]
@@ -105,9 +107,11 @@ pub(crate) mod showfile {
 
     use gpui::AppContext as _;
 
+    use crate::show::attr::DimmerAttr;
+
     use super::{
-        Asset, AssetId, Cue, DimmerPreset, EffectGraph, Executor, FixtureGroup, Sequence,
-        effect_graph,
+        Asset, AssetId, Cue, Executor, FixtureGroup, Preset, Sequence,
+        effect_graph::{self, EffectGraph},
     };
 
     #[derive(Default)]
@@ -120,7 +124,7 @@ pub(crate) mod showfile {
         pub sequences: AssetPool<Sequence>,
         pub executors: AssetPool<Executor>,
 
-        pub dimmer_presets: AssetPool<DimmerPreset>,
+        pub dimmer_presets: AssetPool<Preset<DimmerAttr>>,
     }
 
     impl Assets {
@@ -128,7 +132,7 @@ pub(crate) mod showfile {
             let mut effect_graphs = self.effect_graphs.to_show(cx);
             for (_, asset) in &mut effect_graphs.0 {
                 asset.update(cx, |asset, _cx| {
-                    effect_graph::insert_templates(&mut asset.data);
+                    effect_graph::templates::insert_templates(&mut asset.data);
                 })
             }
 
@@ -154,9 +158,14 @@ pub(crate) mod showfile {
         }
     }
 
-    #[derive(Default)]
     #[derive(serde::Serialize, serde::Deserialize)]
     pub struct AssetPool<T>(HashMap<AssetId<T>, Asset<T>>);
+
+    impl<T> Default for AssetPool<T> {
+        fn default() -> Self {
+            Self(HashMap::default())
+        }
+    }
 
     impl<T: 'static> AssetPool<T> {
         pub fn to_show(self, cx: &mut gpui::App) -> super::AssetPool<T> {

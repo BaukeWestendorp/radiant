@@ -1,6 +1,8 @@
 use gpui::{Bounds, Size};
 
-use crate::show::asset::{AssetId, EffectGraph};
+use crate::show::asset::AssetId;
+
+use super::asset::effect_graph::EffectGraph;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, Default)]

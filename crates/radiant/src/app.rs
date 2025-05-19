@@ -1,13 +1,14 @@
 use crate::layout::settings::SettingsWindow;
+use crate::layout::{self, main::MainWindow};
+use crate::processor;
+use crate::protocol::Protocol;
 use crate::show::Show;
 use crate::ui::input::{PresetSelector, PresetSelectorWindow};
 use crate::ui::vw::VirtualWindow;
-use crate::{
-    dmx_io::DmxIo,
-    layout::{self, main::MainWindow},
-    output_processor,
+use dmx::Multiverse;
+use gpui::{
+    App, Application, Entity, Global, Menu, MenuItem, ReadGlobal, Window, WindowHandle, prelude::*,
 };
-use gpui::*;
 use std::path::PathBuf;
 
 pub const APP_ID: &str = "radiant";
@@ -23,53 +24,69 @@ impl RadiantApp {
 
     pub fn run(self) {
         Application::new().run(move |cx: &mut App| {
+            let path = self.showfile_path.as_ref();
+
             cx.activate(true);
 
-            cx.set_global(AppState::default());
+            AppState::init(cx);
+            Show::init(cx, path).expect("Failed to initialize show");
 
-            Show::init(cx, self.showfile_path.as_ref()).expect("should initialize show");
+            let main_window = MainWindow::open(cx).expect("Failed to open main window");
+            let multiverse = cx.new(|_| Multiverse::new());
 
-            let main_window = MainWindow::open(cx).expect("should open main window");
-
-            ui::init(cx);
-            ui::actions::init(cx);
-            flow::gpui::actions::init(cx);
-            layout::main::actions::init(cx);
-            actions::init(main_window, cx);
-
-            self.init_menus(cx);
-
-            let multiverse = cx.new(|_cx| dmx::Multiverse::new());
-            self.init_dmx_io(multiverse.clone(), cx);
-            output_processor::start(multiverse, cx);
+            self.init(main_window, multiverse, cx);
         });
     }
 
-    fn init_dmx_io(&self, multiverse: Entity<dmx::Multiverse>, cx: &mut App) {
-        let dmx_io_config = Show::global(cx).dmx_io_settings.clone();
-        let dmx_io = DmxIo::new(multiverse.clone(), &dmx_io_config, cx)
-            .expect("should create dmx io manager");
-        dmx_io.start(cx);
+    fn init(
+        &self,
+        main_window: WindowHandle<MainWindow>,
+        multiverse: Entity<Multiverse>,
+        cx: &mut App,
+    ) {
+        init_actions(main_window, cx);
+        init_protocol(multiverse.clone(), cx);
+        init_processor(multiverse, cx);
+        init_menus(cx);
     }
+}
 
-    fn init_menus(&self, cx: &mut App) {
-        cx.set_menus(vec![
-            Menu {
-                name: "".into(),
-                items: vec![
-                    MenuItem::action("Quit", actions::Quit),
-                    MenuItem::action("Settings", layout::main::actions::OpenSettings),
-                ],
-            },
-            Menu {
-                name: "File".into(),
-                items: vec![
-                    MenuItem::action("Save", actions::Save),
-                    MenuItem::action("Open", actions::Open),
-                ],
-            },
-        ]);
-    }
+fn init_actions(main_window: WindowHandle<MainWindow>, cx: &mut App) {
+    ui::init(cx);
+    ui::actions::init(cx);
+    flow::gpui::actions::init(cx);
+    layout::main::actions::init(cx);
+    actions::init(main_window, cx);
+}
+
+fn init_protocol(multiverse: Entity<Multiverse>, cx: &mut App) {
+    let protocol_settings = Show::global(cx).protocol_settings.clone();
+    let protocol =
+        Protocol::new(multiverse, &protocol_settings, cx).expect("should create protocol manager");
+    protocol.start(cx);
+}
+
+fn init_processor(pipeline: Entity<Multiverse>, cx: &mut App) {
+    processor::start(pipeline, cx);
+}
+
+fn init_menus(cx: &mut App) {
+    cx.set_menus(vec![
+        Menu {
+            name: "".into(),
+            items: vec![
+                MenuItem::action("Quit", actions::Quit),
+                MenuItem::action("Settings", layout::main::actions::OpenSettings),
+            ],
+        },
+        Menu {
+            name: "File".into(),
+            items: vec![
+                MenuItem::action("Save", actions::Save),
+                MenuItem::action("Open", actions::Open),
+            ],
+        },
+    ]);
 }
 
 #[derive(Default)]
@@ -81,6 +98,10 @@ pub struct AppState {
 impl Global for AppState {}
 
 impl AppState {
+    pub fn init(cx: &mut App) {
+        cx.set_global(Self::default());
+    }
+
     pub fn open_settings_window(&mut self, w: &mut Window, cx: &mut App) {
         if self.settings_window.is_none() {
             let vw = cx.new(|cx| VirtualWindow::new(SettingsWindow::new(w, cx)));

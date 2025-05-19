@@ -1,13 +1,13 @@
 use std::net::IpAddr;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-/// DMX IO settings.
-pub struct DmxIoSettings {
-    /// sACN DMX IO settings.
+/// Protocol settings.
+pub struct ProtocolSettings {
+    /// sACN Protocol settings.
     pub sacn: SacnSettings,
 }
 
-/// sACN DMX IO settings.
+/// sACN Protocol settings.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct SacnSettings {
     pub sources: Vec<gpui::Entity<SacnSourceSettings>>,
@@ -52,16 +52,16 @@ pub(crate) mod showfile {
 
     #[derive(Default)]
     #[derive(serde::Serialize, serde::Deserialize)]
-    pub struct DmxIoSettings {
+    pub struct ProtocolSettings {
         pub sacn: SacnSettings,
     }
 
-    impl DmxIoSettings {
-        pub fn into_show(self, cx: &mut gpui::App) -> super::DmxIoSettings {
-            super::DmxIoSettings { sacn: self.sacn.to_show(cx) }
+    impl ProtocolSettings {
+        pub fn into_show(self, cx: &mut gpui::App) -> super::ProtocolSettings {
+            super::ProtocolSettings { sacn: self.sacn.to_show(cx) }
         }
 
-        pub fn from_show(from: super::DmxIoSettings, cx: &gpui::App) -> Self {
+        pub fn from_show(from: super::ProtocolSettings, cx: &gpui::App) -> Self {
             Self { sacn: SacnSettings::from_show(from.sacn, cx) }
         }
     }

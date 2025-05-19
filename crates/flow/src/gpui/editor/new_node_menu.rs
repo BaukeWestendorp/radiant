@@ -324,7 +324,7 @@ impl<D: GraphDef + 'static> Render for NewNodeMenuView<D> {
             .key_context(actions::KEY_CONTEXT)
             .absolute()
             .w_80()
-            .h_64()
+            .h_96()
             .left(self.position.x)
             .top(self.position.y)
             .bg(cx.theme().colors.bg_secondary)
@@ -335,6 +335,8 @@ impl<D: GraphDef + 'static> Render for NewNodeMenuView<D> {
             .on_mouse_down_out(cx.listener(Self::handle_mouse_down_out))
             .on_action(cx.listener(Self::handle_select_next_item))
             .on_action(cx.listener(Self::handle_select_previous_item))
+            .flex()
+            .flex_col()
             .child(header)
             .child(list)
     }

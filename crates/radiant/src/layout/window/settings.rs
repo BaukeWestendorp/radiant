@@ -1,5 +1,5 @@
 use crate::app::AppState;
-use crate::show::{Show, dmx_io::SacnSourceSettings};
+use crate::show::{Show, protocol::SacnSourceSettings};
 use crate::ui::vw::{VirtualWindow, VirtualWindowDelegate};
 use gpui::*;
 use ui::{
@@ -14,7 +14,7 @@ pub struct SettingsWindow {
 impl SettingsWindow {
     pub fn new(w: &mut Window, cx: &mut Context<VirtualWindow<Self>>) -> Self {
         let tabs = vec![
-            ui::Tab::new("dmx_io", "Dmx Io", cx.new(|cx| DmxIoView::new(w, cx)).into()),
+            ui::Tab::new("protocol", "Protocol", cx.new(|cx| DmxView::new(w, cx)).into()),
             ui::Tab::new("patch", "Patch", cx.new(|_| EmptyView).into()),
         ];
 
@@ -54,11 +54,11 @@ impl Focusable for SettingsWindow {
     }
 }
 
-struct DmxIoView {
+struct DmxView {
     sacn_source_table: Entity<Table<SacnSourceTable>>,
 }
 
-impl DmxIoView {
+impl DmxView {
     pub fn new(w: &mut Window, cx: &mut Context<Self>) -> Self {
         let sacn_source_table =
             cx.new(|cx| Table::new(SacnSourceTable::new(w, cx), "sacn-source-table", w, cx));
@@ -67,7 +67,7 @@ impl DmxIoView {
     }
 }
 
-impl Render for DmxIoView {
+impl Render for DmxView {
     fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .flex()
@@ -93,7 +93,7 @@ struct SacnSourceTable {
 impl SacnSourceTable {
     pub fn new(w: &mut Window, cx: &mut App) -> Self {
         let rows = Show::global(cx)
-            .dmx_io_settings
+            .protocol_settings
             .sacn
             .sources
             .clone()
@@ -262,7 +262,7 @@ impl SacnSourceTableRow {
         cx.subscribe(&preview_data_checkbox, {
             let source = source.clone();
             move |_, event, cx| match event {
-                CheckboxEvent::Changed(new_preview_data) => {
+                CheckboxEvent::Change(new_preview_data) => {
                     source.update(cx, |source, cx| {
                         source.preview_data = *new_preview_data;
                         cx.notify();

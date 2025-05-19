@@ -1,6 +1,6 @@
 #![enable(unwrap_newtypes)]
 (
-    dmx_io_settings: (
+    protocol_settings: (
         sacn: (
             sources: [(
                 name: "sACN Universe 1",
@@ -9,7 +9,7 @@
                 priority: 100,
                 preview_data: false,
                 type: Unicast(
-                    destination_ip: Some("192.168.2.5"),
+                    destination_ip: Some("192.168.2.34"),
                 ),
             ), (
                 name: "sACN Universe 2",
@@ -18,7 +18,7 @@
                 priority: 100,
                 preview_data: false,
                 type: Unicast(
-                    destination_ip: Some("192.168.2.5"),
+                    destination_ip: Some("192.168.2.34"),
                 ),
             ), (
                 name: "sACN Universe 3",
@@ -27,7 +27,7 @@
                 priority: 100,
                 preview_data: false,
                 type: Unicast(
-                    destination_ip: Some("192.168.2.5"),
+                    destination_ip: Some("192.168.2.34"),
                 ),
             ), (
                 name: "sACN Universe 4",
@@ -36,7 +36,7 @@
                 priority: 100,
                 preview_data: false,
                 type: Unicast(
-                    destination_ip: Some("192.168.2.5"),
+                    destination_ip: Some("192.168.2.34"),
                 ),
             )],
         ),
@@ -61,34 +61,88 @@
                 label: "Example Effect Graph",
                 data: (
                     nodes: {
-                        1: (
-                            template_id: "apply_preset",
+                        28: (
+                            template_id: "pipeline_apply_preset",
                             input_values: {
-                                "preset": Preset(None),
+                                "fixture_id": FixtureId(2),
+                                "preset": Preset(Some(Dimmer(5))),
                             },
                             control_values: {},
                         ),
+                        29: (
+                            template_id: "cx_current_fixture",
+                            input_values: {},
+                            control_values: {},
+                        ),
                     },
-                    edges: [],
+                    edges: [(
+                        target: (
+                            node_id: 28,
+                            id: "fixture_id",
+                        ),
+                        source: (
+                            node_id: 29,
+                            id: "id",
+                        ),
+                    )],
                     node_positions: {
-                        1: (
-                            x: 463.67578,
-                            y: 381.58594,
+                        28: (
+                            x: 813.3789,
+                            y: 299.388,
+                        ),
+                        29: (
+                            x: 538.4492,
+                            y: 217.47784,
                         ),
                     },
                     offset: (
-                        x: 0.0,
-                        y: 0.0,
+                        x: -433.0,
+                        y: 156.72917,
                     ),
                 ),
             ),
         },
         fixture_groups: {
+            13: (
+                id: 13,
+                label: "Wash Side Odd",
+                data: (
+                    fixtures: [201, 203, 205, 207, 209, 211],
+                ),
+            ),
+            11: (
+                id: 11,
+                label: "Wash Side",
+                data: (
+                    fixtures: [201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212],
+                ),
+            ),
             31: (
                 id: 21,
                 label: "Spot Back",
                 data: (
                     fixtures: [401, 402, 403, 404, 405, 406, 407, 408],
+                ),
+            ),
+            32: (
+                id: 22,
+                label: "Spot Back Even",
+                data: (
+                    fixtures: [402, 404, 406, 408],
+                ),
+            ),
+            1: (
+                id: 1,
+                label: "House",
+                data: (
+                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148],
+                ),
+            ),
+            33: (
+                id: 23,
+                label: "Spot Back Odd",
+                data: (
+                    fixtures: [401, 403, 405, 407],
                 ),
             ),
             12: (
@@ -98,13 +152,6 @@
                     fixtures: [202, 204, 206, 208, 210, 212],
                 ),
             ),
-            22: (
-                id: 22,
-                label: "Wash Back Even",
-                data: (
-                    fixtures: [302, 304, 306, 308],
-                ),
-            ),
             21: (
                 id: 21,
                 label: "Wash Back",
@@ -112,11 +159,11 @@
                     fixtures: [301, 302, 303, 304, 305, 306, 307, 308],
                 ),
             ),
-            1: (
-                id: 1,
-                label: "House",
+            101: (
+                id: 101,
+                label: "All",
                 data: (
-                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148],
+                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 301, 302, 303, 304, 305, 306, 307, 308, 401, 402, 403, 404, 405, 406],
                 ),
             ),
             23: (
@@ -133,39 +180,11 @@
                     fixtures: [101, 103, 105, 107, 109, 111, 113, 115, 117, 119, 121, 123, 125, 127, 129, 131, 133, 135, 137, 139, 141, 143, 145, 147],
                 ),
             ),
-            13: (
-                id: 13,
-                label: "Wash Side Odd",
-                data: (
-                    fixtures: [201, 203, 205, 207, 209, 211],
-                ),
-            ),
-            32: (
+            22: (
                 id: 22,
-                label: "Spot Back Even",
+                label: "Wash Back Even",
                 data: (
-                    fixtures: [402, 404, 406, 408],
-                ),
-            ),
-            11: (
-                id: 11,
-                label: "Wash Side",
-                data: (
-                    fixtures: [201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212],
-                ),
-            ),
-            33: (
-                id: 23,
-                label: "Spot Back Odd",
-                data: (
-                    fixtures: [401, 403, 405, 407],
-                ),
-            ),
-            101: (
-                id: 101,
-                label: "All",
-                data: (
-                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 301, 302, 303, 304, 305, 306, 307, 308, 401, 402, 403, 404, 405, 406],
+                    fixtures: [302, 304, 306, 308],
                 ),
             ),
             2: (
@@ -190,7 +209,7 @@
                 label: "Cue 1",
                 data: (
                     effect_graph: Some(1),
-                    fixture_group: Some(2),
+                    fixture_group: Some(1),
                 ),
             ),
         },
@@ -229,47 +248,47 @@
             ),
         },
         dimmer_presets: {
-            1: (
-                id: 1,
-                label: "0%",
-                data: (
-                    dimmer: 0.0,
-                ),
-            ),
             3: (
                 id: 3,
                 label: "25%",
-                data: (
-                    dimmer: 0.25,
-                ),
+                data: Universal({
+                    Dimmer: 0.25,
+                }),
             ),
             2: (
                 id: 2,
                 label: "10%",
-                data: (
-                    dimmer: 0.1,
-                ),
-            ),
-            6: (
-                id: 6,
-                label: "100%",
-                data: (
-                    dimmer: 1.0,
-                ),
+                data: Universal({
+                    Dimmer: 0.1,
+                }),
             ),
             5: (
                 id: 5,
                 label: "75%",
-                data: (
-                    dimmer: 0.75,
-                ),
+                data: Universal({
+                    Dimmer: 0.75,
+                }),
+            ),
+            6: (
+                id: 6,
+                label: "100%",
+                data: Universal({
+                    Dimmer: 1.0,
+                }),
             ),
             4: (
                 id: 4,
                 label: "50%",
-                data: (
-                    dimmer: 0.5,
-                ),
+                data: Universal({
+                    Dimmer: 0.5,
+                }),
+            ),
+            1: (
+                id: 1,
+                label: "0%",
+                data: Universal({
+                    Dimmer: 0.0,
+                }),
             ),
         },
     ),

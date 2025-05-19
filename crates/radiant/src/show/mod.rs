@@ -4,15 +4,16 @@ use anyhow::Context;
 use showfile::Showfile;
 
 pub mod asset;
-pub mod dmx_io;
+pub mod attr;
 pub mod layout;
 pub mod patch;
+pub mod protocol;
 
 #[derive(Clone)]
 pub struct Show {
     pub path: Option<PathBuf>,
 
-    pub dmx_io_settings: dmx_io::DmxIoSettings,
+    pub protocol_settings: protocol::ProtocolSettings,
     pub assets: asset::Assets,
     pub layout: gpui::Entity<layout::Layout>,
     pub patch: gpui::Entity<patch::Patch>,
@@ -53,12 +54,12 @@ impl gpui::Global for Show {}
 pub(crate) mod showfile {
     use gpui::AppContext as _;
 
-    use super::{asset, dmx_io, layout, patch};
+    use super::{asset, layout, patch, protocol};
 
     #[derive(Default)]
     #[derive(serde::Serialize, serde::Deserialize)]
     pub struct Showfile {
-        pub dmx_io_settings: dmx_io::showfile::DmxIoSettings,
+        pub protocol_settings: protocol::showfile::ProtocolSettings,
         pub assets: asset::showfile::Assets,
         pub layout: layout::Layout,
         pub patch: patch::Patch,
@@ -89,7 +90,7 @@ pub(crate) mod showfile {
             Ok(super::Show {
                 path,
 
-                dmx_io_settings: self.dmx_io_settings.into_show(cx),
+                protocol_settings: self.protocol_settings.into_show(cx),
                 assets: self.assets.into_show(cx),
                 layout: cx.new(|_| self.layout),
                 patch: cx.new(|_| self.patch),
@@ -98,8 +99,8 @@ pub(crate) mod showfile {
 
         pub fn from_show(from: super::Show, cx: &gpui::App) -> Self {
             Self {
-                dmx_io_settings: super::dmx_io::showfile::DmxIoSettings::from_show(
-                    from.dmx_io_settings,
+                protocol_settings: super::protocol::showfile::ProtocolSettings::from_show(
+                    from.protocol_settings,
                     cx,
                 ),
                 assets: super::asset::showfile::Assets::from_show(from.assets, cx),
@@ -116,30 +117,6 @@ pub struct FloatingDmxValue(pub f32);
 
 impl From<FloatingDmxValue> for dmx::Value {
     fn from(value: FloatingDmxValue) -> Self {
-        dmx::Value((value.0 * (u8::MAX as f32)).clamp(0.0, 1.0) as u8)
-    }
-}
-
-impl ui::NumberFieldImpl for FloatingDmxValue {
-    type Value = Self;
-
-    const MIN: Option<Self> = Some(FloatingDmxValue(0.0));
-    const MAX: Option<Self> = Some(FloatingDmxValue(1.0));
-    const STEP: Option<f32> = None;
-
-    fn from_str_or_default(s: &str) -> Self::Value {
-        Self(s.parse().unwrap_or_default())
-    }
-
-    fn to_shared_string(value: &Self::Value) -> gpui::SharedString {
-        value.0.to_string().into()
-    }
-
-    fn as_f32(value: &Self::Value) -> f32 {
-        value.0
-    }
-
-    fn from_f32(v: f32) -> Self::Value {
-        Self(v)
+        dmx::Value((value.0 * (u8::MAX as f32)) as u8)
     }
 }
