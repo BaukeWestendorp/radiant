@@ -41,6 +41,14 @@ pub enum PoolKind {
     Executors,
 
     DimmerPresets,
+    PositionPresets,
+    GoboPresets,
+    ColorPresets,
+    BeamPresets,
+    FocusPresets,
+    ControlPresets,
+    ShapersPresets,
+    VideoPresets,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]

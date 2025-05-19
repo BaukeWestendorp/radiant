@@ -41,20 +41,98 @@ impl Pipeline {
 
     pub fn apply_preset(&mut self, preset_id: AnyPresetAssetId, fixture_id: FixtureId, cx: &App) {
         let show = Show::global(cx);
-        let preset = match preset_id {
-            AnyPresetAssetId::Dimmer(id) => show.assets.dimmer_presets.get(&id),
-            _ => todo!(),
+        match preset_id {
+            AnyPresetAssetId::Dimmer(id) => match show.assets.dimmer_presets.get(&id) {
+                Some(preset) => match &preset.read(cx).data {
+                    Preset::Universal(values) => {
+                        for (attr, value) in values.iter() {
+                            self.apply_attribute(attr.to_attr(), *value, fixture_id);
+                        }
+                    }
+                },
+                None => {}
+            },
+            AnyPresetAssetId::Position(id) => match show.assets.position_presets.get(&id) {
+                Some(preset) => match &preset.read(cx).data {
+                    Preset::Universal(values) => {
+                        for (attr, value) in values.iter() {
+                            self.apply_attribute(attr.to_attr(), *value, fixture_id);
+                        }
+                    }
+                },
+                None => {}
+            },
+            AnyPresetAssetId::Gobo(id) => match show.assets.gobo_presets.get(&id) {
+                Some(preset) => match &preset.read(cx).data {
+                    Preset::Universal(values) => {
+                        for (attr, value) in values.iter() {
+                            self.apply_attribute(attr.to_attr(), *value, fixture_id);
+                        }
+                    }
+                },
+                None => {}
+            },
+            AnyPresetAssetId::Color(id) => match show.assets.color_presets.get(&id) {
+                Some(preset) => match &preset.read(cx).data {
+                    Preset::Universal(values) => {
+                        for (attr, value) in values.iter() {
+                            self.apply_attribute(attr.to_attr(), *value, fixture_id);
+                        }
+                    }
+                },
+                None => {}
+            },
+            AnyPresetAssetId::Beam(id) => match show.assets.beam_presets.get(&id) {
+                Some(preset) => match &preset.read(cx).data {
+                    Preset::Universal(values) => {
+                        for (attr, value) in values.iter() {
+                            self.apply_attribute(attr.to_attr(), *value, fixture_id);
+                        }
+                    }
+                },
+                None => {}
+            },
+            AnyPresetAssetId::Focus(id) => match show.assets.focus_presets.get(&id) {
+                Some(preset) => match &preset.read(cx).data {
+                    Preset::Universal(values) => {
+                        for (attr, value) in values.iter() {
+                            self.apply_attribute(attr.to_attr(), *value, fixture_id);
+                        }
+                    }
+                },
+                None => {}
+            },
+            AnyPresetAssetId::Control(id) => match show.assets.control_presets.get(&id) {
+                Some(preset) => match &preset.read(cx).data {
+                    Preset::Universal(values) => {
+                        for (attr, value) in values.iter() {
+                            self.apply_attribute(attr.to_attr(), *value, fixture_id);
+                        }
+                    }
+                },
+                None => {}
+            },
+            AnyPresetAssetId::Shapers(id) => match show.assets.shapers_presets.get(&id) {
+                Some(preset) => match &preset.read(cx).data {
+                    Preset::Universal(values) => {
+                        for (attr, value) in values.iter() {
+                            self.apply_attribute(attr.to_attr(), *value, fixture_id);
+                        }
+                    }
+                },
+                None => {}
+            },
+            AnyPresetAssetId::Video(id) => match show.assets.video_presets.get(&id) {
+                Some(preset) => match &preset.read(cx).data {
+                    Preset::Universal(values) => {
+                        for (attr, value) in values.iter() {
+                            self.apply_attribute(attr.to_attr(), *value, fixture_id);
+                        }
+                    }
+                },
+                None => {}
+            },
         };
-
-        let Some(preset) = preset else { return };
-
-        match &preset.read(cx).data {
-            Preset::Universal(values) => {
-                for (attr, value) in values.iter() {
-                    self.apply_attribute(attr.to_attr(), *value, fixture_id);
-                }
-            }
-        }
     }
 
     fn flush_default_values(&mut self, cx: &mut App) -> anyhow::Result<()> {

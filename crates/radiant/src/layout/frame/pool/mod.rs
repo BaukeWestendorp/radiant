@@ -14,9 +14,21 @@ pub mod cue;
 pub mod executor;
 pub mod sequence;
 
+pub mod beam_preset;
+pub mod color_preset;
+pub mod control_preset;
 pub mod dimmer_preset;
+pub mod focus_preset;
+pub mod gobo_preset;
+pub mod position_preset;
+pub mod shapers_preset;
+pub mod video_preset;
 
-pub use {cue::*, dimmer_preset::*, effect_graph::*, executor::*, fixture_group::*, sequence::*};
+pub use {
+    beam_preset::*, color_preset::*, control_preset::*, cue::*, dimmer_preset::*, effect_graph::*,
+    executor::*, fixture_group::*, focus_preset::*, gobo_preset::*, position_preset::*,
+    sequence::*, shapers_preset::*, video_preset::*,
+};
 
 pub struct Pool<D: PoolDelegate> {
     delegate: D,

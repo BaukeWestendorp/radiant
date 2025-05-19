@@ -3,7 +3,9 @@ use crate::show::{self, Show};
 use crate::ui::frame::{Frame, FrameWrapper};
 use gpui::*;
 use pool::{
-    CuePool, DimmerPresetPool, EffectGraphPool, ExecutorPool, FixtureGroupPool, Pool, SequencePool,
+    BeamPresetPool, ColorPresetPool, ControlPresetPool, CuePool, DimmerPresetPool, EffectGraphPool,
+    ExecutorPool, FixtureGroupPool, FocusPresetPool, GoboPresetPool, Pool, PositionPresetPool,
+    SequencePool, ShapersPresetPool, VideoPresetPool,
 };
 
 pub use graph_editor::GraphEditor;
@@ -24,6 +26,14 @@ pub enum MainFrame {
     ExecutorPool(Entity<Pool<ExecutorPool>>),
 
     DimmerPresetPool(Entity<Pool<DimmerPresetPool>>),
+    PositionPresetPool(Entity<Pool<PositionPresetPool>>),
+    GoboPresetPool(Entity<Pool<GoboPresetPool>>),
+    ColorPresetPool(Entity<Pool<ColorPresetPool>>),
+    BeamPresetPool(Entity<Pool<BeamPresetPool>>),
+    FocusPresetPool(Entity<Pool<FocusPresetPool>>),
+    ControlPresetPool(Entity<Pool<ControlPresetPool>>),
+    ShapersPresetPool(Entity<Pool<ShapersPresetPool>>),
+    VideoPresetPool(Entity<Pool<VideoPresetPool>>),
 }
 
 impl MainFrame {
@@ -62,6 +72,30 @@ impl MainFrame {
                 show::layout::PoolKind::DimmerPresets => MainFrame::DimmerPresetPool(
                     cx.new(|cx| Pool::new(DimmerPresetPool::new(), frame.bounds.size, cx)),
                 ),
+                show::layout::PoolKind::PositionPresets => MainFrame::PositionPresetPool(
+                    cx.new(|cx| Pool::new(PositionPresetPool::new(), frame.bounds.size, cx)),
+                ),
+                show::layout::PoolKind::GoboPresets => MainFrame::GoboPresetPool(
+                    cx.new(|cx| Pool::new(GoboPresetPool::new(), frame.bounds.size, cx)),
+                ),
+                show::layout::PoolKind::ColorPresets => MainFrame::ColorPresetPool(
+                    cx.new(|cx| Pool::new(ColorPresetPool::new(), frame.bounds.size, cx)),
+                ),
+                show::layout::PoolKind::BeamPresets => MainFrame::BeamPresetPool(
+                    cx.new(|cx| Pool::new(BeamPresetPool::new(), frame.bounds.size, cx)),
+                ),
+                show::layout::PoolKind::FocusPresets => MainFrame::FocusPresetPool(
+                    cx.new(|cx| Pool::new(FocusPresetPool::new(), frame.bounds.size, cx)),
+                ),
+                show::layout::PoolKind::ControlPresets => MainFrame::ControlPresetPool(
+                    cx.new(|cx| Pool::new(ControlPresetPool::new(), frame.bounds.size, cx)),
+                ),
+                show::layout::PoolKind::ShapersPresets => MainFrame::ShapersPresetPool(
+                    cx.new(|cx| Pool::new(ShapersPresetPool::new(), frame.bounds.size, cx)),
+                ),
+                show::layout::PoolKind::VideoPresets => MainFrame::VideoPresetPool(
+                    cx.new(|cx| Pool::new(VideoPresetPool::new(), frame.bounds.size, cx)),
+                ),
             },
         }
     }
@@ -84,6 +118,14 @@ impl Frame for MainFrame {
             MainFrame::ExecutorPool(pool) => pool.clone().into_any_element(),
 
             MainFrame::DimmerPresetPool(pool) => pool.clone().into_any_element(),
+            MainFrame::PositionPresetPool(pool) => pool.clone().into_any_element(),
+            MainFrame::GoboPresetPool(pool) => pool.clone().into_any_element(),
+            MainFrame::ColorPresetPool(pool) => pool.clone().into_any_element(),
+            MainFrame::BeamPresetPool(pool) => pool.clone().into_any_element(),
+            MainFrame::FocusPresetPool(pool) => pool.clone().into_any_element(),
+            MainFrame::ControlPresetPool(pool) => pool.clone().into_any_element(),
+            MainFrame::ShapersPresetPool(pool) => pool.clone().into_any_element(),
+            MainFrame::VideoPresetPool(pool) => pool.clone().into_any_element(),
         }
     }
 }

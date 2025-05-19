@@ -26,7 +26,7 @@ impl NodeMeasurements {
         let line_height = window.line_height();
 
         Self {
-            width: rem * 16.0,
+            width: rem * 12.0,
             header_height: line_height,
             sockets_padding_y: rem / 2.0,
             socket_height: line_height,

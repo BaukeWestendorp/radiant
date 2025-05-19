@@ -209,7 +209,7 @@
                 label: "Cue 1",
                 data: (
                     effect_graph: Some(1),
-                    fixture_group: Some(1),
+                    fixture_group: Some(11),
                 ),
             ),
         },
@@ -291,6 +291,93 @@
                 }),
             ),
         },
+                beam_presets: {
+                    1: (
+                        id: 1,
+                        label: "Open",
+                        data: Universal({
+                            Shutter(1): 1.0,
+                        }),
+                    ),
+                    2: (
+                        id: 2,
+                        label: "Strobe",
+                        data: Universal({
+                            Shutter(1): 0.0105,
+                        }),
+                    ),
+
+                },
+                position_presets: {
+                    1: (
+                        id: 1,
+                        label: "Center",
+                        data: Universal({
+                            Pan: 0.5,
+                            Tilt: 0.0,
+                        }),
+                    ),
+                    2: (
+                        id: 2,
+                        label: "Stage Left",
+                        data: Universal({
+                            Pan: -1.0,
+                            Tilt: 0.0,
+                        }),
+                    ),
+                    3: (
+                        id: 3,
+                        label: "Stage Right",
+                        data: Universal({
+                            Pan: 1.0,
+                            Tilt: 0.0,
+                        }),
+                    ),
+                },
+                color_presets: {
+                    1: (
+                        id: 1,
+                        label: "Green",
+                        data: Universal({
+                            ColorRgbRed: 0.0,
+                            ColorRgbGreen: 1.0,
+                            ColorRgbBlue: 0.2,
+                        }),
+                    ),
+                    2: (
+                        id: 2,
+                        label: "Red",
+                        data: Universal({
+                            ColorRgbRed: 1.0,
+                            ColorRgbGreen: 0.0,
+                            ColorRgbBlue: 0.0,
+                        }),
+                    ),
+                    3: (
+                        id: 3,
+                        label: "Blue",
+                        data: Universal({
+                            ColorRgbRed: 0.0,
+                            ColorRgbGreen: 0.0,
+                            ColorRgbBlue: 1.0,
+                        }),
+                    ),
+                },
+                gobo_presets: {
+
+                },
+                focus_presets: {
+
+                },
+                control_presets: {
+
+                },
+                video_presets: {
+
+                },
+                shapers_presets: {
+
+                },
     ),
     layout: (
         main_window: (
@@ -346,6 +433,18 @@
                     ),
                 ),
                 kind: Pool(DimmerPresets),
+            ), (
+                bounds: (
+                    origin: (
+                        x: 8,
+                        y: 11,
+                    ),
+                    size: (
+                        width: 4,
+                        height: 1,
+                    ),
+                ),
+                kind: Pool(BeamPresets),
             ), (
                 bounds: (
                     origin: (

@@ -11,7 +11,10 @@ pub mod fixture_group;
 pub mod preset;
 pub mod sequence;
 
-use super::attr::DimmerAttr;
+use super::attr::{
+    BeamAttr, ColorAttr, ControlAttr, DimmerAttr, FocusAttr, GoboAttr, PositionAttr, ShapersAttr,
+    VideoAttr,
+};
 
 pub use {cue::*, executor::*, fixture_group::*, preset::*, sequence::*};
 
@@ -25,6 +28,14 @@ pub struct Assets {
     pub executors: AssetPool<Executor>,
 
     pub dimmer_presets: AssetPool<Preset<DimmerAttr>>,
+    pub position_presets: AssetPool<Preset<PositionAttr>>,
+    pub gobo_presets: AssetPool<Preset<GoboAttr>>,
+    pub color_presets: AssetPool<Preset<ColorAttr>>,
+    pub beam_presets: AssetPool<Preset<BeamAttr>>,
+    pub focus_presets: AssetPool<Preset<FocusAttr>>,
+    pub control_presets: AssetPool<Preset<ControlAttr>>,
+    pub shapers_presets: AssetPool<Preset<ShapersAttr>>,
+    pub video_presets: AssetPool<Preset<VideoAttr>>,
 }
 
 #[derive(Debug, Clone)]
@@ -107,7 +118,10 @@ pub(crate) mod showfile {
 
     use gpui::AppContext as _;
 
-    use crate::show::attr::DimmerAttr;
+    use crate::show::attr::{
+        BeamAttr, ColorAttr, ControlAttr, DimmerAttr, FocusAttr, GoboAttr, PositionAttr,
+        ShapersAttr, VideoAttr,
+    };
 
     use super::{
         Asset, AssetId, Cue, Executor, FixtureGroup, Preset, Sequence,
@@ -125,6 +139,14 @@ pub(crate) mod showfile {
         pub executors: AssetPool<Executor>,
 
         pub dimmer_presets: AssetPool<Preset<DimmerAttr>>,
+        pub position_presets: AssetPool<Preset<PositionAttr>>,
+        pub gobo_presets: AssetPool<Preset<GoboAttr>>,
+        pub color_presets: AssetPool<Preset<ColorAttr>>,
+        pub beam_presets: AssetPool<Preset<BeamAttr>>,
+        pub focus_presets: AssetPool<Preset<FocusAttr>>,
+        pub control_presets: AssetPool<Preset<ControlAttr>>,
+        pub shapers_presets: AssetPool<Preset<ShapersAttr>>,
+        pub video_presets: AssetPool<Preset<VideoAttr>>,
     }
 
     impl Assets {
@@ -139,10 +161,20 @@ pub(crate) mod showfile {
             super::Assets {
                 effect_graphs,
                 fixture_groups: self.fixture_groups.to_show(cx),
+
                 cues: self.cues.to_show(cx),
                 sequences: self.sequences.to_show(cx),
                 executors: self.executors.to_show(cx),
+
                 dimmer_presets: self.dimmer_presets.to_show(cx),
+                position_presets: self.position_presets.to_show(cx),
+                gobo_presets: self.gobo_presets.to_show(cx),
+                color_presets: self.color_presets.to_show(cx),
+                beam_presets: self.beam_presets.to_show(cx),
+                focus_presets: self.focus_presets.to_show(cx),
+                control_presets: self.control_presets.to_show(cx),
+                shapers_presets: self.shapers_presets.to_show(cx),
+                video_presets: self.video_presets.to_show(cx),
             }
         }
 
@@ -150,10 +182,20 @@ pub(crate) mod showfile {
             Self {
                 effect_graphs: AssetPool::from_show(from.effect_graphs, cx),
                 fixture_groups: AssetPool::from_show(from.fixture_groups, cx),
+
                 cues: AssetPool::from_show(from.cues, cx),
                 sequences: AssetPool::from_show(from.sequences, cx),
                 executors: AssetPool::from_show(from.executors, cx),
+
                 dimmer_presets: AssetPool::from_show(from.dimmer_presets, cx),
+                position_presets: AssetPool::from_show(from.position_presets, cx),
+                gobo_presets: AssetPool::from_show(from.gobo_presets, cx),
+                color_presets: AssetPool::from_show(from.color_presets, cx),
+                beam_presets: AssetPool::from_show(from.beam_presets, cx),
+                focus_presets: AssetPool::from_show(from.focus_presets, cx),
+                control_presets: AssetPool::from_show(from.control_presets, cx),
+                shapers_presets: AssetPool::from_show(from.shapers_presets, cx),
+                video_presets: AssetPool::from_show(from.video_presets, cx),
             }
         }
     }
