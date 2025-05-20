@@ -40,7 +40,7 @@ impl<F: Frame + 'static> Render for FrameContainer<F> {
                 .into_any_element()
         });
         let frames = z_stack(self.frames.clone()).size_full().into_any_element();
-        z_stack([grid, Some(frames)].into_iter().flatten())
+        div().size_full().child(z_stack([grid, Some(frames)].into_iter().flatten()))
     }
 }
 

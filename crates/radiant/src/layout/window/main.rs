@@ -6,6 +6,7 @@ use crate::{app::APP_ID, layout::MainFrame};
 use anyhow::Context as _;
 use gpui::*;
 use ui::{ActiveTheme as _, root, utils::z_stack};
+use ui::{Disableable, interactive_container};
 
 use super::DEFAULT_REM_SIZE;
 
@@ -20,7 +21,7 @@ impl MainWindow {
         let window_options = WindowOptions {
             window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
                 None,
-                size(px(1600.0), px(960.0)),
+                size(px(1720.0), px(960.0)),
                 cx,
             ))),
             app_id: Some(APP_ID.to_string()),
@@ -66,11 +67,37 @@ impl MainWindow {
 
 impl Render for MainWindow {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let layout = &Show::global(cx).layout.read(cx);
+        let pages = &layout.main_window.pages;
+        let pages_list =
+            div().w(FRAME_CELL_SIZE * 1.5).h_full().flex().flex_col().flex_shrink_0().children(
+                (0..layout.main_window.size.height).map(|ix| {
+                    let id = ElementId::named_usize("page", ix as usize);
+                    match pages.get(ix as usize) {
+                        Some(page) => interactive_container(id, None)
+                            .w_full()
+                            .h(FRAME_CELL_SIZE)
+                            .child(page.label.clone())
+                            .flex()
+                            .justify_center()
+                            .items_center()
+                            .cursor_pointer()
+                            .on_click(move |_, _, cx| handle_click_page(ix as usize, cx)),
+                        None => interactive_container(id, None)
+                            .w_full()
+                            .h(FRAME_CELL_SIZE)
+                            .disabled(true),
+                    }
+                }),
+            );
+
         let main_layout = div()
+            .flex()
             .size_full()
             .bg(cx.theme().colors.bg_primary)
             .text_color(cx.theme().colors.text)
-            .child(self.frame_container.clone());
+            .child(self.frame_container.clone())
+            .child(pages_list);
 
         let settings_window = match AppState::global(cx).settings_window() {
             Some(window) => div().size_full().p_4().child(window.clone()),
@@ -105,6 +132,19 @@ fn frame_container_from_showfile(
     }
 
     container
+}
+
+fn handle_click_page(ix: usize, cx: &mut App) {
+    Show::global(cx).layout.clone().update(cx, |layout, cx| {
+        let page = layout
+            .main_window
+            .pages
+            .get(ix)
+            .expect("Should have valid index as it was clicked")
+            .clone();
+        layout.main_window.loaded_page = page;
+        cx.notify();
+    });
 }
 
 pub mod actions {

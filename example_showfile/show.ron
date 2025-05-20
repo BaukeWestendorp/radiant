@@ -43,38 +43,14 @@
     ),
     assets: (
         effect_graphs: {
-            4: (
-                id: 4,
-                label: "Another",
-                data: (
-                    nodes: {},
-                    edges: [],
-                    node_positions: {},
-                    offset: (
-                        x: 0.0,
-                        y: 0.0,
-                    ),
-                ),
-            ),
             1: (
                 id: 1,
                 label: "Example Effect Graph",
                 data: (
                     nodes: {
-                        33: (
-                            template_id: "pipeline_apply_preset",
-                            input_values: {
-                                "fixture_id": FixtureId(0),
-                                "preset": Preset(Some(Color(4))),
-                            },
-                            control_values: {},
-                        ),
-                        32: (
-                            template_id: "pipeline_apply_preset",
-                            input_values: {
-                                "preset": Preset(Some(Beam(1))),
-                                "fixture_id": FixtureId(0),
-                            },
+                        29: (
+                            template_id: "cx_current_fixture",
+                            input_values: {},
                             control_values: {},
                         ),
                         30: (
@@ -93,15 +69,26 @@
                             },
                             control_values: {},
                         ),
-                        29: (
-                            template_id: "cx_current_fixture",
-                            input_values: {},
+                        33: (
+                            template_id: "pipeline_apply_preset",
+                            input_values: {
+                                "fixture_id": FixtureId(0),
+                                "preset": Preset(Some(Color(3))),
+                            },
+                            control_values: {},
+                        ),
+                        32: (
+                            template_id: "pipeline_apply_preset",
+                            input_values: {
+                                "fixture_id": FixtureId(0),
+                                "preset": Preset(Some(Beam(1))),
+                            },
                             control_values: {},
                         ),
                     },
                     edges: [(
                         target: (
-                            node_id: 30,
+                            node_id: 33,
                             id: "fixture_id",
                         ),
                         source: (
@@ -119,7 +106,7 @@
                         ),
                     ), (
                         target: (
-                            node_id: 32,
+                            node_id: 30,
                             id: "fixture_id",
                         ),
                         source: (
@@ -128,7 +115,7 @@
                         ),
                     ), (
                         target: (
-                            node_id: 33,
+                            node_id: 32,
                             id: "fixture_id",
                         ),
                         source: (
@@ -137,17 +124,13 @@
                         ),
                     )],
                     node_positions: {
-                        31: (
-                            x: 871.1836,
-                            y: 283.4544,
-                        ),
                         30: (
                             x: 881.3125,
                             y: 380.3333,
                         ),
-                        32: (
-                            x: 868.97266,
-                            y: 184.58333,
+                        31: (
+                            x: 871.1836,
+                            y: 283.4544,
                         ),
                         29: (
                             x: 687.22656,
@@ -157,6 +140,10 @@
                             x: 874.1289,
                             y: 84.23958,
                         ),
+                        32: (
+                            x: 868.97266,
+                            y: 184.58333,
+                        ),
                     },
                     offset: (
                         x: -640.0,
@@ -164,27 +151,33 @@
                     ),
                 ),
             ),
+            4: (
+                id: 4,
+                label: "Another",
+                data: (
+                    nodes: {},
+                    edges: [],
+                    node_positions: {},
+                    offset: (
+                        x: 0.0,
+                        y: 0.0,
+                    ),
+                ),
+            ),
         },
         fixture_groups: {
-            3: (
-                id: 3,
-                label: "House Odd",
+            1: (
+                id: 1,
+                label: "House",
                 data: (
-                    fixtures: [101, 103, 105, 107, 109, 111, 113, 115, 117, 119, 121, 123, 125, 127, 129, 131, 133, 135, 137, 139, 141, 143, 145, 147],
+                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148],
                 ),
             ),
-            32: (
-                id: 22,
-                label: "Spot Back Even",
+            2: (
+                id: 2,
+                label: "House Even",
                 data: (
-                    fixtures: [402, 404, 406, 408],
-                ),
-            ),
-            23: (
-                id: 23,
-                label: "Wash Back Odd",
-                data: (
-                    fixtures: [301, 303, 305, 307],
+                    fixtures: [102, 104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126, 128, 130, 132, 134, 136, 138, 140, 142, 144, 146, 148],
                 ),
             ),
             33: (
@@ -194,25 +187,46 @@
                     fixtures: [401, 403, 405, 407],
                 ),
             ),
-            21: (
-                id: 21,
-                label: "Wash Back",
-                data: (
-                    fixtures: [301, 302, 303, 304, 305, 306, 307, 308],
-                ),
-            ),
-            1: (
-                id: 1,
-                label: "House",
-                data: (
-                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148],
-                ),
-            ),
             22: (
                 id: 22,
                 label: "Wash Back Even",
                 data: (
                     fixtures: [302, 304, 306, 308],
+                ),
+            ),
+            11: (
+                id: 11,
+                label: "Wash Side",
+                data: (
+                    fixtures: [201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212],
+                ),
+            ),
+            32: (
+                id: 22,
+                label: "Spot Back Even",
+                data: (
+                    fixtures: [402, 404, 406, 408],
+                ),
+            ),
+            3: (
+                id: 3,
+                label: "House Odd",
+                data: (
+                    fixtures: [101, 103, 105, 107, 109, 111, 113, 115, 117, 119, 121, 123, 125, 127, 129, 131, 133, 135, 137, 139, 141, 143, 145, 147],
+                ),
+            ),
+            12: (
+                id: 12,
+                label: "Wash Side Even",
+                data: (
+                    fixtures: [202, 204, 206, 208, 210, 212],
+                ),
+            ),
+            101: (
+                id: 101,
+                label: "All",
+                data: (
+                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 301, 302, 303, 304, 305, 306, 307, 308, 401, 402, 403, 404, 405, 406],
                 ),
             ),
             13: (
@@ -229,32 +243,18 @@
                     fixtures: [401, 402, 403, 404, 405, 406, 407, 408],
                 ),
             ),
-            12: (
-                id: 12,
-                label: "Wash Side Even",
+            21: (
+                id: 21,
+                label: "Wash Back",
                 data: (
-                    fixtures: [202, 204, 206, 208, 210, 212],
+                    fixtures: [301, 302, 303, 304, 305, 306, 307, 308],
                 ),
             ),
-            2: (
-                id: 2,
-                label: "House Even",
+            23: (
+                id: 23,
+                label: "Wash Back Odd",
                 data: (
-                    fixtures: [102, 104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126, 128, 130, 132, 134, 136, 138, 140, 142, 144, 146, 148],
-                ),
-            ),
-            11: (
-                id: 11,
-                label: "Wash Side",
-                data: (
-                    fixtures: [201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212],
-                ),
-            ),
-            101: (
-                id: 101,
-                label: "All",
-                data: (
-                    fixtures: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 301, 302, 303, 304, 305, 306, 307, 308, 401, 402, 403, 404, 405, 406],
+                    fixtures: [301, 303, 305, 307],
                 ),
             ),
         },
@@ -293,19 +293,19 @@
             ),
         },
         executors: {
-            1: (
-                id: 1,
-                label: "Executor 1",
-                data: (
-                    sequence: Some(1),
-                    current_index: Some(0),
-                ),
-            ),
             2: (
                 id: 2,
                 label: "Executor 2",
                 data: (
                     sequence: Some(2),
+                    current_index: Some(0),
+                ),
+            ),
+            1: (
+                id: 1,
+                label: "Executor 1",
+                data: (
+                    sequence: Some(1),
                     current_index: Some(0),
                 ),
             ),
@@ -318,18 +318,11 @@
                     Dimmer: 0.25,
                 }),
             ),
-            5: (
-                id: 5,
-                label: "75%",
+            1: (
+                id: 1,
+                label: "0%",
                 data: Universal({
-                    Dimmer: 0.75,
-                }),
-            ),
-            6: (
-                id: 6,
-                label: "100%",
-                data: Universal({
-                    Dimmer: 1.0,
+                    Dimmer: 0.0,
                 }),
             ),
             2: (
@@ -339,11 +332,18 @@
                     Dimmer: 0.1,
                 }),
             ),
-            1: (
-                id: 1,
-                label: "0%",
+            6: (
+                id: 6,
+                label: "100%",
                 data: Universal({
-                    Dimmer: 0.0,
+                    Dimmer: 1.0,
+                }),
+            ),
+            5: (
+                id: 5,
+                label: "75%",
+                data: Universal({
+                    Dimmer: 0.75,
                 }),
             ),
             4: (
@@ -355,22 +355,6 @@
             ),
         },
         position_presets: {
-            1: (
-                id: 1,
-                label: "Wash Side Fill",
-                data: Universal({
-                    Tilt: 0.58,
-                    Pan: 0.35,
-                }),
-            ),
-            2: (
-                id: 2,
-                label: "Stage Left",
-                data: Universal({
-                    Pan: -1.0,
-                    Tilt: 0.0,
-                }),
-            ),
             3: (
                 id: 3,
                 label: "Stage Right",
@@ -379,26 +363,41 @@
                     Tilt: 0.0,
                 }),
             ),
+            2: (
+                id: 2,
+                label: "Stage Left",
+                data: Universal({
+                    Tilt: 0.0,
+                    Pan: -1.0,
+                }),
+            ),
+            1: (
+                id: 1,
+                label: "Wash Side Fill",
+                data: Universal({
+                    Tilt: 0.58,
+                    Pan: 0.35,
+                }),
+            ),
         },
         gobo_presets: {},
         color_presets: {
-            4: (
-                id: 4,
-                label: "White",
-                data: Universal({
-                    ColorAddW: 1.0,
-                    ColorRgbGreen: 1.0,
-                    ColorRgbBlue: 1.0,
-                    ColorRgbRed: 1.0,
-                }),
-            ),
             1: (
                 id: 1,
                 label: "Green",
                 data: Universal({
                     ColorRgbRed: 0.0,
-                    ColorRgbGreen: 1.0,
                     ColorRgbBlue: 0.2,
+                    ColorRgbGreen: 1.0,
+                }),
+            ),
+            3: (
+                id: 3,
+                label: "Blue",
+                data: Universal({
+                    ColorRgbRed: 0.0,
+                    ColorRgbGreen: 0.0,
+                    ColorRgbBlue: 1.0,
                 }),
             ),
             2: (
@@ -406,17 +405,18 @@
                 label: "Red",
                 data: Universal({
                     ColorRgbBlue: 0.0,
-                    ColorRgbRed: 1.0,
                     ColorRgbGreen: 0.0,
+                    ColorRgbRed: 1.0,
                 }),
             ),
-            3: (
-                id: 3,
-                label: "Blue",
+            4: (
+                id: 4,
+                label: "White",
                 data: Universal({
-                    ColorRgbGreen: 0.0,
+                    ColorAddW: 1.0,
+                    ColorRgbRed: 1.0,
+                    ColorRgbGreen: 1.0,
                     ColorRgbBlue: 1.0,
-                    ColorRgbRed: 0.0,
                 }),
             ),
         },
@@ -447,7 +447,44 @@
                 width: 19,
                 height: 12,
             ),
-            pages: [],
+            pages: [
+            (
+                label: "Effect Graphs",
+                frames: [(
+                    bounds: (
+                        origin: (
+                            x: 0,
+                            y: 0,
+                        ),
+                        size: (
+                            width: 19,
+                            height: 12,
+                        ),
+                    ),
+                    kind: EffectGraphEditor(1),
+                ), (
+                    bounds: (
+                        origin: (
+                            x: 19,
+                            y: 0,
+                        ),
+                        size: (
+                            width: 1,
+                            height: 12,
+                        ),
+                    ),
+                    kind: Pool(EffectGraphs),
+                )],
+            ),
+            (
+                label: "Presets",
+                frames: [],
+            ),
+            (
+                label: "Execution",
+                frames: [],
+            )
+            ],
             loaded_page: (
                 label: "Effect Graphs",
                 frames: [(
