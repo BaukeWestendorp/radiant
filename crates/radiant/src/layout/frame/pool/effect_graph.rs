@@ -48,7 +48,7 @@ impl PoolDelegate for EffectGraphPool {
     fn on_select(&mut self, asset_id: AssetId<Self::Item>, cx: &mut Context<Pool<Self>>) {
         Show::update_global(cx, |show, cx| {
             show.layout.update(cx, |layout, cx| {
-                for frame in &mut layout.main_window.frames {
+                for frame in &mut layout.main_window.loaded_page.frames {
                     match &mut frame.kind {
                         MainFrameKind::EffectGraphEditor(effect_graph) => *effect_graph = asset_id,
                         _ => {}

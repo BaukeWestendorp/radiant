@@ -91,8 +91,6 @@ impl Render for MainWindow {
     }
 }
 
-// We can't really put this in the `frames` crate,
-// so let's just add a helper function here.
 fn frame_container_from_showfile(
     layout: Entity<Layout>,
     window: &mut Window,
@@ -102,7 +100,7 @@ fn frame_container_from_showfile(
 
     let mut container = FrameContainer::new(main_window.size, FRAME_CELL_SIZE);
 
-    for frame in &main_window.frames {
+    for frame in &main_window.loaded_page.frames {
         container.add_frame(MainFrame::from_show(frame, window, cx), frame.bounds, cx);
     }
 

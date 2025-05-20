@@ -14,13 +14,25 @@ pub struct Layout {
 #[derive(Clone)]
 pub struct MainWindow {
     pub size: Size<u32>,
-    pub frames: Vec<Frame<MainFrameKind>>,
+    pub pages: Vec<Page>,
+    pub loaded_page: Page,
 }
 
 impl Default for MainWindow {
     fn default() -> Self {
-        Self { size: Size { width: 20, height: 12 }, frames: Vec::default() }
+        Self {
+            size: Size { width: 20, height: 12 },
+            pages: Vec::default(),
+            loaded_page: Page::default(),
+        }
     }
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Default)]
+pub struct Page {
+    pub label: String,
+    pub frames: Vec<Frame<MainFrameKind>>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
