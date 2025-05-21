@@ -1,13 +1,18 @@
-use std::path::PathBuf;
-
 use anyhow::Context;
 use showfile::Showfile;
+use std::path::PathBuf;
 
 pub mod asset;
 pub mod attr;
 pub mod layout;
 pub mod patch;
 pub mod protocol;
+
+pub use asset::*;
+pub use attr::*;
+pub use layout::*;
+pub use patch::*;
+pub use protocol::*;
 
 #[derive(Clone)]
 pub struct Show {
@@ -52,7 +57,7 @@ impl Show {
 impl gpui::Global for Show {}
 
 pub(crate) mod showfile {
-    use gpui::AppContext as _;
+    use gpui::AppContext;
 
     use super::{asset, layout, patch, protocol};
 

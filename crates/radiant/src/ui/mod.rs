@@ -1,11 +1,13 @@
-use std::str::FromStr as _;
-
 use crate::show::{FloatingDmxValue, patch::FixtureId};
+use std::str::FromStr;
 
 pub mod asset_table;
-pub mod frame;
 pub mod input;
 pub mod vw;
+
+pub use asset_table::*;
+pub use input::*;
+pub use vw::*;
 
 pub const FRAME_CELL_SIZE: gpui::Pixels = gpui::px(80.0);
 

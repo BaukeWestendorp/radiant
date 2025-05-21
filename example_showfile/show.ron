@@ -461,7 +461,7 @@
                             height: 12,
                         ),
                     ),
-                    kind: EffectGraphEditor(1),
+                    kind: Window(EffectGraphEditor(1)),
                 ), (
                     bounds: (
                         origin: (
@@ -498,7 +498,7 @@
                             height: 12,
                         ),
                     ),
-                    kind: EffectGraphEditor(1),
+                    kind: Window(EffectGraphEditor(1)),
                 ), (
                     bounds: (
                         origin: (

@@ -1,7 +1,6 @@
+use crate::ui::FRAME_CELL_SIZE;
 use gpui::{App, Focusable, SharedString, Window, div, prelude::*, px};
 use ui::{ActiveTheme, ContainerStyle, h6, interactive_container};
-
-use super::FRAME_CELL_SIZE;
 
 pub struct VirtualWindow<D: VirtualWindowDelegate> {
     pub delegate: D,

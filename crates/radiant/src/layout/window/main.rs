@@ -1,17 +1,18 @@
-use crate::app::AppState;
-use crate::show::{Show, layout::Layout};
+use crate::app::{APP_ID, AppState};
+use crate::layout::Page;
+use crate::show::Show;
 use crate::ui::FRAME_CELL_SIZE;
-use crate::ui::frame::FrameContainer;
-use crate::{app::APP_ID, layout::MainFrame};
 use anyhow::Context as _;
-use gpui::*;
-use ui::{ActiveTheme as _, root, utils::z_stack};
-use ui::{Disableable, interactive_container};
+use gpui::{
+    App, Bounds, ElementId, Entity, FocusHandle, ReadGlobal, TitlebarOptions, UpdateGlobal, Window,
+    WindowBounds, WindowHandle, WindowOptions, div, prelude::*, px, size,
+};
+use ui::{ActiveTheme, Disableable, interactive_container, root, utils::z_stack};
 
 use super::DEFAULT_REM_SIZE;
 
 pub struct MainWindow {
-    frame_container: Entity<FrameContainer<MainFrame>>,
+    frame_container: Entity<Page>,
 
     focus_handle: FocusHandle,
 }
@@ -37,13 +38,13 @@ impl MainWindow {
                     let layout = Show::global(cx).layout.clone();
 
                     cx.observe_in(&layout, w, |this, layout, w, cx| {
-                        *this = frame_container_from_showfile(layout, w, cx);
+                        *this = Page::from_show(&layout, w, cx);
                         log::debug!("Updating FrameContainer<MainFrame>");
                         cx.notify();
                     })
                     .detach();
 
-                    frame_container_from_showfile(layout, w, cx)
+                    Page::from_show(&layout, w, cx)
                 });
 
                 Self { frame_container, focus_handle: cx.focus_handle() }
@@ -91,6 +92,19 @@ impl Render for MainWindow {
                 }),
             );
 
+        fn handle_click_page(ix: usize, cx: &mut App) {
+            Show::global(cx).layout.clone().update(cx, |layout, cx| {
+                let page = layout
+                    .main_window
+                    .pages
+                    .get(ix)
+                    .expect("Should have valid index as it was clicked")
+                    .clone();
+                layout.main_window.loaded_page = page;
+                cx.notify();
+            });
+        }
+
         let main_layout = div()
             .flex()
             .size_full()
@@ -116,35 +130,6 @@ impl Render for MainWindow {
             .on_action(cx.listener(Self::handle_open_settings))
             .child(z_stack([main_layout, settings_window, preset_selector_window]).size_full())
     }
-}
-
-fn frame_container_from_showfile(
-    layout: Entity<Layout>,
-    window: &mut Window,
-    cx: &mut Context<FrameContainer<MainFrame>>,
-) -> FrameContainer<MainFrame> {
-    let main_window = layout.read(cx).main_window.clone();
-
-    let mut container = FrameContainer::new(main_window.size, FRAME_CELL_SIZE);
-
-    for frame in &main_window.loaded_page.frames {
-        container.add_frame(MainFrame::from_show(frame, window, cx), frame.bounds, cx);
-    }
-
-    container
-}
-
-fn handle_click_page(ix: usize, cx: &mut App) {
-    Show::global(cx).layout.clone().update(cx, |layout, cx| {
-        let page = layout
-            .main_window
-            .pages
-            .get(ix)
-            .expect("Should have valid index as it was clicked")
-            .clone();
-        layout.main_window.loaded_page = page;
-        cx.notify();
-    });
 }
 
 pub mod actions {
