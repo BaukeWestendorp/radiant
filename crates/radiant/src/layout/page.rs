@@ -3,7 +3,7 @@ use crate::{show, ui::FRAME_CELL_SIZE};
 use gpui::{App, Entity, Size, Window, div, prelude::*};
 use ui::{ActiveTheme, utils::z_stack};
 
-const GRID_SIZE: Size<u32> = Size { width: 20, height: 12 };
+pub const GRID_SIZE: Size<u32> = Size { width: 20, height: 12 };
 
 pub struct Page {
     pub label: String,
