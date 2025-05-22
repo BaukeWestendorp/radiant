@@ -490,8 +490,8 @@
                             y: 0,
                         ),
                         size: (
-                            width: 19,
-                            height: 12,
+                            width: 8,
+                            height: 6,
                         ),
                     ),
                     kind: Window(EffectGraphEditor(1)),

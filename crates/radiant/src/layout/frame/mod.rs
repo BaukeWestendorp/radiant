@@ -2,9 +2,15 @@ use crate::{
     show::{self, Show},
     ui::FRAME_CELL_SIZE,
 };
-use gpui::{App, Bounds, Entity, FocusHandle, Focusable, ReadGlobal, Window, div, prelude::*};
+use gpui::{
+    App, Bounds, DragMoveEvent, Entity, FocusHandle, Focusable, MouseUpEvent, Pixels, Point,
+    ReadGlobal, Window, bounds, deferred, div, point, prelude::*, size,
+};
 use pool::{PoolFrame, PoolFrameKind, PresetPoolFrameKind};
+use ui::{ActiveTheme, utils::z_stack};
 use window::{WindowFrame, WindowFrameKind, graph_editor::GraphEditorFrame};
+
+use super::GRID_SIZE;
 
 mod pool;
 mod window;
@@ -18,20 +24,78 @@ pub struct Frame {
     pub bounds: Bounds<u32>,
     pub kind: FrameKind,
     focus_handle: FocusHandle,
+
+    pub resized_moved_bounds: Option<Bounds<u32>>,
+}
+
+impl Frame {
+    pub(crate) fn handle_header_on_drag_move(
+        &mut self,
+        event: &DragMoveEvent<Point<Pixels>>,
+        _w: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let mouse_start = *event.drag(cx);
+        let mouse_pos = event.event.position;
+        let mouse_diff = mouse_pos - mouse_start;
+
+        let grid_origin_diff = mouse_diff.map(|d| (d / FRAME_CELL_SIZE) as i32);
+
+        let origin = (self.bounds.origin.map(|d| d as i32) + grid_origin_diff)
+            .min(&point(GRID_SIZE.width as i32 - 1, GRID_SIZE.height as i32 - 1))
+            .max(&point(0, 0))
+            .map(|d| d as u32);
+
+        let size = self
+            .bounds
+            .size
+            .min(&size(GRID_SIZE.width - origin.x, GRID_SIZE.height - origin.y))
+            .max(&size(1, 1));
+
+        self.resized_moved_bounds = Some(bounds(origin, size));
+        cx.notify();
+    }
+
+    pub(crate) fn handle_header_on_mouse_up(
+        &mut self,
+        _event: &MouseUpEvent,
+        _w: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if let Some(new_bounds) = self.resized_moved_bounds {
+            self.bounds = new_bounds;
+            self.resized_moved_bounds = None;
+            cx.notify();
+        };
+    }
 }
 
 impl Render for Frame {
-    fn render(&mut self, _w: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div()
+    fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let frame = div()
+            .child(match &self.kind {
+                FrameKind::Window(window_frame) => window_frame.clone().into_any_element(),
+                FrameKind::Pool(pool_frame) => pool_frame.clone().into_any_element(),
+            })
             .absolute()
             .w(FRAME_CELL_SIZE * self.bounds.size.width as f32)
             .h(FRAME_CELL_SIZE * self.bounds.size.height as f32)
             .left(FRAME_CELL_SIZE * self.bounds.origin.x as f32)
             .top(FRAME_CELL_SIZE * self.bounds.origin.y as f32)
-            .child(match &self.kind {
-                FrameKind::Window(window_frame) => window_frame.clone().into_any_element(),
-                FrameKind::Pool(pool_frame) => pool_frame.clone().into_any_element(),
-            })
+            .into_any_element();
+
+        let resize_move_highlight = match self.resized_moved_bounds {
+            Some(bounds) => div()
+                .w(FRAME_CELL_SIZE * bounds.size.width as f32)
+                .h(FRAME_CELL_SIZE * bounds.size.height as f32)
+                .left(FRAME_CELL_SIZE * bounds.origin.x as f32)
+                .top(FRAME_CELL_SIZE * bounds.origin.y as f32)
+                .border_2()
+                .border_color(cx.theme().colors.border_focused),
+            None => div(),
+        };
+
+        z_stack([frame, deferred(resize_move_highlight).into_any_element()])
     }
 }
 
@@ -128,7 +192,12 @@ impl Frame {
             }
         };
 
-        Self { kind, bounds: from.bounds, focus_handle: cx.focus_handle() }
+        Self {
+            kind,
+            bounds: from.bounds,
+            focus_handle: cx.focus_handle(),
+            resized_moved_bounds: None,
+        }
     }
 }
 
