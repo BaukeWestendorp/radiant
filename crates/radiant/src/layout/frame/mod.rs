@@ -9,7 +9,7 @@ use gpui::{
 };
 use pool::{PoolFrame, PoolFrameKind, PresetPoolFrameKind};
 use ui::{
-    ActiveTheme, InteractiveColor,
+    ActiveTheme,
     utils::{snap_point, z_stack},
 };
 use window::{WindowFrame, WindowFrameKind, graph_editor::GraphEditorFrame};
@@ -52,18 +52,16 @@ impl Frame {
 
         let grid_diff = mouse_diff.map(|d| (d / FRAME_CELL_SIZE) as i32);
 
+        let size = self.bounds.size.map(|d| d as i32);
         let origin = (self.bounds.origin.map(|d| d as i32) + grid_diff)
             .min(&point(GRID_SIZE.width as i32 - 1, GRID_SIZE.height as i32 - 1))
-            .max(&point(0, 0))
-            .map(|d| d as u32);
+            .max(&point(-size.width, -size.height));
 
-        let size = self
-            .bounds
-            .size
-            .min(&size(GRID_SIZE.width - origin.x, GRID_SIZE.height - origin.y))
-            .max(&size(1, 1));
+        let mut bounds =
+            bounds(point(0, 0), GRID_SIZE.map(|d| d as i32)).intersect(&bounds(origin, size));
+        bounds.size = bounds.size.max(&gpui::size(1, 1));
 
-        self.resized_moved_bounds = Some(bounds(origin, size));
+        self.resized_moved_bounds = Some(bounds.map(|d| d as u32));
         cx.notify();
     }
 
@@ -164,7 +162,7 @@ impl Frame {
     ) -> impl IntoElement {
         match self.resized_moved_bounds {
             Some(bounds) => div()
-                .w(FRAME_CELL_SIZE * bounds.size.width as f32)
+                .w(FRAME_CELL_SIZE * dbg!(bounds).size.width as f32)
                 .h(FRAME_CELL_SIZE * bounds.size.height as f32)
                 .left(FRAME_CELL_SIZE * bounds.origin.x as f32)
                 .top(FRAME_CELL_SIZE * bounds.origin.y as f32)
