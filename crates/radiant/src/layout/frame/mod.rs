@@ -144,7 +144,7 @@ impl Frame {
     ) -> impl IntoElement {
         match self.resized_moved_bounds {
             Some(bounds) => div()
-                .w(FRAME_CELL_SIZE * dbg!(bounds).size.width as f32)
+                .w(FRAME_CELL_SIZE * bounds.size.width as f32)
                 .h(FRAME_CELL_SIZE * bounds.size.height as f32)
                 .left(FRAME_CELL_SIZE * bounds.origin.x as f32)
                 .top(FRAME_CELL_SIZE * bounds.origin.y as f32)
