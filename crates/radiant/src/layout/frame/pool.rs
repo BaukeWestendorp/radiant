@@ -102,20 +102,18 @@ impl PoolFrame {
             .size(FRAME_CELL_SIZE)
             .on_drag((self.frame.entity_id(), mouse_position), |_, _, _, cx| cx.new(|_| Empty))
             .on_drag_move(cx.listener(|this, event, w, cx| {
-                this.frame.update(cx, |frame, cx| frame.handle_header_on_drag_move(event, w, cx));
+                this.frame.update(cx, |frame, cx| frame.handle_header_drag(event, w, cx));
             }))
             .on_mouse_up(
                 MouseButton::Left,
                 cx.listener(|this, event, w, cx| {
-                    this.frame
-                        .update(cx, |frame, cx| frame.handle_header_on_mouse_up(event, w, cx));
+                    this.frame.update(cx, |frame, cx| frame.release_resize_move(event, w, cx));
                 }),
             )
             .on_mouse_up_out(
                 MouseButton::Left,
                 cx.listener(|this, event, w, cx| {
-                    this.frame
-                        .update(cx, |frame, cx| frame.handle_header_on_mouse_up(event, w, cx));
+                    this.frame.update(cx, |frame, cx| frame.release_resize_move(event, w, cx));
                 }),
             )
     }

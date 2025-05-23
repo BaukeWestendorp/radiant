@@ -3,8 +3,9 @@ use crate::{
     ui::FRAME_CELL_SIZE,
 };
 use gpui::{
-    App, Bounds, DragMoveEvent, Entity, EntityId, FocusHandle, Focusable, MouseUpEvent, Pixels,
-    Point, ReadGlobal, Window, bounds, deferred, div, point, prelude::*, size,
+    App, Bounds, DragMoveEvent, Empty, Entity, EntityId, FocusHandle, Focusable, MouseButton,
+    MouseUpEvent, Pixels, Point, ReadGlobal, Window, bounds, deferred, div, point, prelude::*,
+    size,
 };
 use pool::{PoolFrame, PoolFrameKind, PresetPoolFrameKind};
 use ui::{ActiveTheme, utils::z_stack};
@@ -29,7 +30,7 @@ pub struct Frame {
 }
 
 impl Frame {
-    pub(crate) fn handle_header_on_drag_move(
+    pub(crate) fn handle_header_drag(
         &mut self,
         event: &DragMoveEvent<(EntityId, Point<Pixels>)>,
         _w: &mut Window,
@@ -44,9 +45,9 @@ impl Frame {
         let mouse_pos = event.event.position;
         let mouse_diff = mouse_pos - mouse_start;
 
-        let grid_origin_diff = mouse_diff.map(|d| (d / FRAME_CELL_SIZE) as i32);
+        let grid_diff = mouse_diff.map(|d| (d / FRAME_CELL_SIZE) as i32);
 
-        let origin = (self.bounds.origin.map(|d| d as i32) + grid_origin_diff)
+        let origin = (self.bounds.origin.map(|d| d as i32) + grid_diff)
             .min(&point(GRID_SIZE.width as i32 - 1, GRID_SIZE.height as i32 - 1))
             .max(&point(0, 0))
             .map(|d| d as u32);
@@ -61,7 +62,36 @@ impl Frame {
         cx.notify();
     }
 
-    pub(crate) fn handle_header_on_mouse_up(
+    pub(crate) fn handle_resize_drag(
+        &mut self,
+        event: &DragMoveEvent<(EntityId, Point<Pixels>)>,
+        _w: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let (frame_entity_id, mouse_start) = *event.drag(cx);
+
+        if frame_entity_id != cx.entity_id() {
+            return;
+        };
+
+        let mouse_pos = event.event.position;
+        let mouse_diff = mouse_pos - mouse_start;
+
+        let grid_diff = mouse_diff.map(|d| (d / FRAME_CELL_SIZE) as i32);
+
+        let size = size(
+            self.bounds.size.width as i32 + grid_diff.x,
+            self.bounds.size.height as i32 + grid_diff.y,
+        )
+        .max(&size(1, 1))
+        .map(|d| d as u32)
+        .min(&GRID_SIZE);
+
+        self.resized_moved_bounds = Some(bounds(self.bounds.origin, size));
+        cx.notify();
+    }
+
+    pub(crate) fn release_resize_move(
         &mut self,
         _event: &MouseUpEvent,
         _w: &mut Window,
@@ -76,8 +106,20 @@ impl Frame {
 }
 
 impl Render for Frame {
-    fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let resize_handle = div().absolute().right_0().bottom_0().size_4().bg(gpui::red());
+    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let mouse_position = w.mouse_position();
+        let resize_handle = div()
+            .id("resize-handle")
+            .absolute()
+            .right_0()
+            .bottom_0()
+            .size_4()
+            .bg(gpui::red())
+            .occlude()
+            .on_drag((cx.entity_id(), mouse_position), |_, _, _, cx| cx.new(|_| Empty))
+            .on_drag_move(cx.listener(Self::handle_resize_drag))
+            .on_mouse_up(MouseButton::Left, cx.listener(Self::release_resize_move))
+            .on_mouse_up_out(MouseButton::Left, cx.listener(Self::release_resize_move));
 
         let frame_content = match &self.kind {
             FrameKind::Window(window_frame) => window_frame.clone().into_any_element(),
