@@ -4,8 +4,8 @@ use crate::{
 };
 use gpui::{
     App, Bounds, DragMoveEvent, Empty, Entity, EntityId, FocusHandle, Focusable, MouseButton,
-    MouseUpEvent, Path, Pixels, Point, ReadGlobal, Window, bounds, canvas, deferred, div, point,
-    prelude::*, px, size,
+    MouseUpEvent, Path, Pixels, Point, ReadGlobal, Size, Window, bounds, canvas, deferred, div,
+    point, prelude::*, px, size,
 };
 use pool::{PoolFrame, PoolFrameKind, PresetPoolFrameKind};
 use ui::{
@@ -40,28 +40,17 @@ impl Frame {
         cx: &mut Context<Self>,
     ) {
         let HeaderDrag { frame_entity_id, start_mouse_position } = *event.drag(cx);
-
         if frame_entity_id != cx.entity_id() {
             return;
         };
 
-        let mouse_pos = event.event.position;
-        let start_mouse_grid = snap_point(start_mouse_position, FRAME_CELL_SIZE);
-        let mouse_cell_fract = mouse_pos.map(|d| d % FRAME_CELL_SIZE);
-        let mouse_diff = mouse_pos - start_mouse_grid - mouse_cell_fract;
-
-        let grid_diff = mouse_diff.map(|d| (d / FRAME_CELL_SIZE) as i32);
+        let grid_diff = mouse_grid_diff(event.event.position, start_mouse_position);
 
         let size = self.bounds.size.map(|d| d as i32);
-        let origin = (self.bounds.origin.map(|d| d as i32) + grid_diff)
-            .min(&point(GRID_SIZE.width as i32 - 1, GRID_SIZE.height as i32 - 1))
-            .max(&point(-size.width, -size.height));
+        let origin = self.bounds.origin.map(|d| d as i32) + grid_diff;
 
-        let mut bounds =
-            bounds(point(0, 0), GRID_SIZE.map(|d| d as i32)).intersect(&bounds(origin, size));
-        bounds.size = bounds.size.max(&gpui::size(1, 1));
-
-        self.resized_moved_bounds = Some(bounds.map(|d| d as u32));
+        let bounds = limit_new_bounds(&bounds(origin, size));
+        self.resized_moved_bounds = Some(bounds);
         cx.notify();
     }
 
@@ -72,27 +61,20 @@ impl Frame {
         cx: &mut Context<Self>,
     ) {
         let ResizeHandleDrag { frame_entity_id, start_mouse_position } = *event.drag(cx);
-
         if frame_entity_id != cx.entity_id() {
             return;
         };
 
-        let mouse_pos = event.event.position;
-        let start_mouse_grid = snap_point(start_mouse_position, FRAME_CELL_SIZE);
-        let mouse_cell_fract = mouse_pos.map(|d| d % FRAME_CELL_SIZE);
-        let mouse_diff = mouse_pos - start_mouse_grid - mouse_cell_fract;
-
-        let grid_diff = mouse_diff.map(|d| (d / FRAME_CELL_SIZE) as i32);
+        let grid_diff = mouse_grid_diff(event.event.position, start_mouse_position);
 
         let size = size(
             self.bounds.size.width as i32 + grid_diff.x,
             self.bounds.size.height as i32 + grid_diff.y,
-        )
-        .max(&size(1, 1))
-        .map(|d| d as u32)
-        .min(&GRID_SIZE);
+        );
+        let origin = self.bounds.origin.map(|d| d as i32);
 
-        self.resized_moved_bounds = Some(bounds(self.bounds.origin, size));
+        let bounds = limit_new_bounds(&bounds(origin, size));
+        self.resized_moved_bounds = Some(bounds);
         cx.notify();
     }
 
@@ -171,6 +153,37 @@ impl Frame {
             None => div(),
         }
     }
+}
+
+fn allowed_bounds() -> Bounds<i32> {
+    const GRID_BOUNDS: Bounds<i32> = Bounds {
+        origin: Point { x: 0, y: 0 },
+        size: Size { width: GRID_SIZE.width as i32, height: GRID_SIZE.height as i32 },
+    };
+
+    GRID_BOUNDS
+}
+
+fn limit_new_bounds(bounds: &Bounds<i32>) -> Bounds<u32> {
+    let allowed_bounds = allowed_bounds();
+    let mut bounds = allowed_bounds.intersect(&bounds);
+    bounds.size = bounds.size.max(&size(1, 1));
+    bounds.origin = bounds
+        .origin
+        .min(&point(GRID_SIZE.width as i32 - 1, GRID_SIZE.height as i32 - 1))
+        .max(&point(-bounds.size.width, -bounds.size.height));
+
+    bounds.map(|d| d as u32)
+}
+
+fn mouse_grid_diff(
+    mouse_position: Point<Pixels>,
+    start_mouse_position: Point<Pixels>,
+) -> Point<i32> {
+    let start_mouse_grid = snap_point(start_mouse_position, FRAME_CELL_SIZE);
+    let mouse_cell_fract = mouse_position.map(|d| d % FRAME_CELL_SIZE);
+    let mouse_diff = mouse_position - start_mouse_grid - mouse_cell_fract;
+    mouse_diff.map(|d| (d / FRAME_CELL_SIZE) as i32)
 }
 
 impl Render for Frame {
