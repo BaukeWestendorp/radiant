@@ -8,7 +8,10 @@ use gpui::{
     size,
 };
 use pool::{PoolFrame, PoolFrameKind, PresetPoolFrameKind};
-use ui::{ActiveTheme, utils::z_stack};
+use ui::{
+    ActiveTheme,
+    utils::{snap_point, z_stack},
+};
 use window::{WindowFrame, WindowFrameKind, graph_editor::GraphEditorFrame};
 
 use super::GRID_SIZE;
@@ -43,7 +46,9 @@ impl Frame {
         };
 
         let mouse_pos = event.event.position;
-        let mouse_diff = mouse_pos - start_mouse_position;
+        let start_mouse_grid = snap_point(start_mouse_position, FRAME_CELL_SIZE);
+        let mouse_cell_fract = mouse_pos.map(|d| d % FRAME_CELL_SIZE);
+        let mouse_diff = mouse_pos - start_mouse_grid - mouse_cell_fract;
 
         let grid_diff = mouse_diff.map(|d| (d / FRAME_CELL_SIZE) as i32);
 
@@ -75,7 +80,9 @@ impl Frame {
         };
 
         let mouse_pos = event.event.position;
-        let mouse_diff = mouse_pos - start_mouse_position;
+        let start_mouse_grid = snap_point(start_mouse_position, FRAME_CELL_SIZE);
+        let mouse_cell_fract = mouse_pos.map(|d| d % FRAME_CELL_SIZE);
+        let mouse_diff = mouse_pos - start_mouse_grid - mouse_cell_fract;
 
         let grid_diff = mouse_diff.map(|d| (d / FRAME_CELL_SIZE) as i32);
 
