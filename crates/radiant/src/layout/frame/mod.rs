@@ -4,12 +4,12 @@ use crate::{
 };
 use gpui::{
     App, Bounds, DragMoveEvent, Empty, Entity, EntityId, FocusHandle, Focusable, MouseButton,
-    MouseUpEvent, Pixels, Point, ReadGlobal, Window, bounds, deferred, div, point, prelude::*,
-    size,
+    MouseUpEvent, Path, Pixels, Point, ReadGlobal, Window, bounds, canvas, deferred, div, point,
+    prelude::*, px, size,
 };
 use pool::{PoolFrame, PoolFrameKind, PresetPoolFrameKind};
 use ui::{
-    ActiveTheme,
+    ActiveTheme, InteractiveColor,
     utils::{snap_point, z_stack},
 };
 use window::{WindowFrame, WindowFrameKind, graph_editor::GraphEditorFrame};
@@ -119,7 +119,20 @@ impl Frame {
             .right_0()
             .bottom_0()
             .size_4()
-            .bg(gpui::red())
+            .child(
+                canvas(
+                    |_, _, _| {},
+                    |b, _, w, cx| {
+                        let b = b + point(px(-1.0), px(-1.0));
+                        let mut path = Path::new(b.bottom_left());
+                        path.line_to(b.top_right());
+                        path.line_to(b.bottom_right());
+                        path.line_to(b.bottom_left());
+                        w.paint_path(path, cx.theme().colors.border);
+                    },
+                )
+                .size_full(),
+            )
             .occlude()
             .on_drag(
                 ResizeHandleDrag {
