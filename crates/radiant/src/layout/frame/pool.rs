@@ -1,6 +1,9 @@
 use crate::show::{self, AssetId, Show};
 use crate::ui::FRAME_CELL_SIZE;
-use gpui::{App, Entity, Focusable, ReadGlobal, UpdateGlobal, Window, div, prelude::*, px};
+use gpui::{
+    App, Empty, Entity, Focusable, MouseButton, ReadGlobal, UpdateGlobal, Window, div, prelude::*,
+    px,
+};
 use ui::{
     ActiveTheme, ContainerStyle, Disableable, InteractiveColor, container, h6,
     interactive_container, utils::z_stack,
@@ -75,13 +78,46 @@ impl PoolFrame {
             cx.theme().colors.header_border
         };
 
-        container(ContainerStyle {
-            background: cx.theme().colors.header_background,
-            border: border_color,
-            text_color: cx.theme().colors.text,
-        })
-        .size(FRAME_CELL_SIZE)
-        .child(div().h_full().flex().flex_col().justify_center().text_center().child(h6(title)))
+        let mouse_position = w.mouse_position();
+
+        div()
+            .child(
+                container(ContainerStyle {
+                    background: cx.theme().colors.header_background,
+                    border: border_color,
+                    text_color: cx.theme().colors.text,
+                })
+                .size_full()
+                .child(
+                    div()
+                        .h_full()
+                        .flex()
+                        .flex_col()
+                        .justify_center()
+                        .text_center()
+                        .child(h6(title)),
+                ),
+            )
+            .id("pool-header")
+            .size(FRAME_CELL_SIZE)
+            .on_drag((self.frame.entity_id(), mouse_position), |_, _, _, cx| cx.new(|_| Empty))
+            .on_drag_move(cx.listener(|this, event, w, cx| {
+                this.frame.update(cx, |frame, cx| frame.handle_header_on_drag_move(event, w, cx));
+            }))
+            .on_mouse_up(
+                MouseButton::Left,
+                cx.listener(|this, event, w, cx| {
+                    this.frame
+                        .update(cx, |frame, cx| frame.handle_header_on_mouse_up(event, w, cx));
+                }),
+            )
+            .on_mouse_up_out(
+                MouseButton::Left,
+                cx.listener(|this, event, w, cx| {
+                    this.frame
+                        .update(cx, |frame, cx| frame.handle_header_on_mouse_up(event, w, cx));
+                }),
+            )
     }
 
     fn render_cell(&mut self, id: u32, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {

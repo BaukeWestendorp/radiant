@@ -3,8 +3,8 @@ use crate::{
     ui::FRAME_CELL_SIZE,
 };
 use gpui::{
-    App, Bounds, DragMoveEvent, Entity, FocusHandle, Focusable, MouseUpEvent, Pixels, Point,
-    ReadGlobal, Window, bounds, deferred, div, point, prelude::*, size,
+    App, Bounds, DragMoveEvent, Entity, EntityId, FocusHandle, Focusable, MouseUpEvent, Pixels,
+    Point, ReadGlobal, Window, bounds, deferred, div, point, prelude::*, size,
 };
 use pool::{PoolFrame, PoolFrameKind, PresetPoolFrameKind};
 use ui::{ActiveTheme, utils::z_stack};
@@ -31,11 +31,16 @@ pub struct Frame {
 impl Frame {
     pub(crate) fn handle_header_on_drag_move(
         &mut self,
-        event: &DragMoveEvent<Point<Pixels>>,
+        event: &DragMoveEvent<(EntityId, Point<Pixels>)>,
         _w: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let mouse_start = *event.drag(cx);
+        let (frame_entity_id, mouse_start) = *event.drag(cx);
+
+        if frame_entity_id != cx.entity().entity_id() {
+            return;
+        };
+
         let mouse_pos = event.event.position;
         let mouse_diff = mouse_pos - mouse_start;
 

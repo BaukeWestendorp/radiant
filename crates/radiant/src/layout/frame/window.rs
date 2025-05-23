@@ -41,7 +41,7 @@ impl WindowFrame {
             .id("window_header")
             .w_full()
             .h(FRAME_CELL_SIZE / 2.0)
-            .on_drag(mouse_position, |_, _, _, cx| cx.new(|_| Empty))
+            .on_drag((self.frame.entity_id(), mouse_position), |_, _, _, cx| cx.new(|_| Empty))
             .on_drag_move(cx.listener(|this, event, w, cx| {
                 this.frame.update(cx, |frame, cx| frame.handle_header_on_drag_move(event, w, cx));
             }))
