@@ -443,10 +443,6 @@
     ),
     layout: (
         main_window: (
-            size: (
-                width: 19,
-                height: 12,
-            ),
             pages: [(
                 label: "Effect Graphs",
                 frames: [(

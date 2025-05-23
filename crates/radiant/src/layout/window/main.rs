@@ -1,5 +1,5 @@
 use crate::app::{APP_ID, AppState};
-use crate::layout::Page;
+use crate::layout::{GRID_SIZE, Page};
 use crate::show::Show;
 use crate::ui::FRAME_CELL_SIZE;
 use anyhow::Context as _;
@@ -72,7 +72,7 @@ impl Render for MainWindow {
         let pages = &layout.main_window.pages;
         let pages_list =
             div().w(FRAME_CELL_SIZE * 1.5).h_full().flex().flex_col().flex_shrink_0().children(
-                (0..layout.main_window.size.height).map(|ix| {
+                (0..GRID_SIZE.height).map(|ix| {
                     let id = ElementId::named_usize("page", ix as usize);
                     match pages.get(ix as usize) {
                         Some(page) => interactive_container(id, None)
