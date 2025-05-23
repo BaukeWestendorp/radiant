@@ -78,8 +78,6 @@ impl PoolFrame {
             cx.theme().colors.header_border
         };
 
-        let mouse_position = w.mouse_position();
-
         div()
             .child(
                 container(ContainerStyle {
@@ -100,7 +98,13 @@ impl PoolFrame {
             )
             .id("pool-header")
             .size(FRAME_CELL_SIZE)
-            .on_drag((self.frame.entity_id(), mouse_position), |_, _, _, cx| cx.new(|_| Empty))
+            .on_drag(
+                super::HeaderDrag {
+                    frame_entity_id: self.frame.entity_id(),
+                    start_mouse_position: w.mouse_position(),
+                },
+                |_, _, _, cx| cx.new(|_| Empty),
+            )
             .on_drag_move(cx.listener(|this, event, w, cx| {
                 this.frame.update(cx, |frame, cx| frame.handle_header_drag(event, w, cx));
             }))

@@ -30,20 +30,20 @@ pub struct Frame {
 }
 
 impl Frame {
-    pub(crate) fn handle_header_drag(
+    pub fn handle_header_drag(
         &mut self,
-        event: &DragMoveEvent<(EntityId, Point<Pixels>)>,
+        event: &DragMoveEvent<HeaderDrag>,
         _w: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let (frame_entity_id, mouse_start) = *event.drag(cx);
+        let HeaderDrag { frame_entity_id, start_mouse_position } = *event.drag(cx);
 
-        if frame_entity_id != cx.entity().entity_id() {
+        if frame_entity_id != cx.entity_id() {
             return;
         };
 
         let mouse_pos = event.event.position;
-        let mouse_diff = mouse_pos - mouse_start;
+        let mouse_diff = mouse_pos - start_mouse_position;
 
         let grid_diff = mouse_diff.map(|d| (d / FRAME_CELL_SIZE) as i32);
 
@@ -62,20 +62,20 @@ impl Frame {
         cx.notify();
     }
 
-    pub(crate) fn handle_resize_drag(
+    pub fn handle_resize_drag(
         &mut self,
-        event: &DragMoveEvent<(EntityId, Point<Pixels>)>,
+        event: &DragMoveEvent<ResizeHandleDrag>,
         _w: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let (frame_entity_id, mouse_start) = *event.drag(cx);
+        let ResizeHandleDrag { frame_entity_id, start_mouse_position } = *event.drag(cx);
 
         if frame_entity_id != cx.entity_id() {
             return;
         };
 
         let mouse_pos = event.event.position;
-        let mouse_diff = mouse_pos - mouse_start;
+        let mouse_diff = mouse_pos - start_mouse_position;
 
         let grid_diff = mouse_diff.map(|d| (d / FRAME_CELL_SIZE) as i32);
 
@@ -91,7 +91,7 @@ impl Frame {
         cx.notify();
     }
 
-    pub(crate) fn release_resize_move(
+    pub fn release_resize_move(
         &mut self,
         _event: &MouseUpEvent,
         _w: &mut Window,
@@ -103,42 +103,46 @@ impl Frame {
             cx.notify();
         };
     }
-}
 
-impl Render for Frame {
-    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let mouse_position = w.mouse_position();
-        let resize_handle = div()
-            .id("resize-handle")
+    fn render_resize_handle(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let id = "resize-handle";
+        div()
+            .id(id)
             .absolute()
             .right_0()
             .bottom_0()
             .size_4()
             .bg(gpui::red())
             .occlude()
-            .on_drag((cx.entity_id(), mouse_position), |_, _, _, cx| cx.new(|_| Empty))
+            .on_drag(
+                ResizeHandleDrag {
+                    frame_entity_id: cx.entity_id(),
+                    start_mouse_position: w.mouse_position(),
+                },
+                |_, _, _, cx| cx.new(|_| Empty),
+            )
             .on_drag_move(cx.listener(Self::handle_resize_drag))
             .on_mouse_up(MouseButton::Left, cx.listener(Self::release_resize_move))
-            .on_mouse_up_out(MouseButton::Left, cx.listener(Self::release_resize_move));
+            .on_mouse_up_out(MouseButton::Left, cx.listener(Self::release_resize_move))
+    }
 
-        let frame_content = match &self.kind {
+    fn render_frame_content(
+        &mut self,
+        _w: &mut Window,
+        _cx: &mut Context<Self>,
+    ) -> impl IntoElement {
+        match &self.kind {
             FrameKind::Window(window_frame) => window_frame.clone().into_any_element(),
             FrameKind::Pool(pool_frame) => pool_frame.clone().into_any_element(),
-        };
+        }
+    }
 
-        let frame = div()
-            .child(
-                z_stack([frame_content.into_any_element(), resize_handle.into_any_element()])
-                    .size_full(),
-            )
-            .absolute()
-            .w(FRAME_CELL_SIZE * self.bounds.size.width as f32)
-            .h(FRAME_CELL_SIZE * self.bounds.size.height as f32)
-            .left(FRAME_CELL_SIZE * self.bounds.origin.x as f32)
-            .top(FRAME_CELL_SIZE * self.bounds.origin.y as f32)
-            .into_any_element();
-
-        let resize_move_highlight = match self.resized_moved_bounds {
+    fn render_resize_move_highlight(
+        &mut self,
+        _w: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement {
+        match self.resized_moved_bounds {
             Some(bounds) => div()
                 .w(FRAME_CELL_SIZE * bounds.size.width as f32)
                 .h(FRAME_CELL_SIZE * bounds.size.height as f32)
@@ -147,9 +151,27 @@ impl Render for Frame {
                 .border_2()
                 .border_color(cx.theme().colors.border_focused),
             None => div(),
-        };
+        }
+    }
+}
 
-        z_stack([frame, deferred(resize_move_highlight).into_any_element()])
+impl Render for Frame {
+    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let resize_handle = self.render_resize_handle(w, cx).into_any_element();
+        let frame_content = self.render_frame_content(w, cx).into_any_element();
+
+        let frame = div()
+            .child(z_stack([frame_content.into_any_element(), resize_handle]).size_full())
+            .absolute()
+            .w(FRAME_CELL_SIZE * self.bounds.size.width as f32)
+            .h(FRAME_CELL_SIZE * self.bounds.size.height as f32)
+            .left(FRAME_CELL_SIZE * self.bounds.origin.x as f32)
+            .top(FRAME_CELL_SIZE * self.bounds.origin.y as f32)
+            .into_any_element();
+
+        let resize_move_highlight = deferred(self.render_resize_move_highlight(w, cx));
+
+        z_stack([frame, resize_move_highlight.into_any_element()])
     }
 }
 
@@ -259,4 +281,14 @@ impl Focusable for Frame {
     fn focus_handle(&self, _cx: &App) -> gpui::FocusHandle {
         self.focus_handle.clone()
     }
+}
+
+pub struct ResizeHandleDrag {
+    frame_entity_id: EntityId,
+    start_mouse_position: Point<Pixels>,
+}
+
+pub struct HeaderDrag {
+    frame_entity_id: EntityId,
+    start_mouse_position: Point<Pixels>,
 }
