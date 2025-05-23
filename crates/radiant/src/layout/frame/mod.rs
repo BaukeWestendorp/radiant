@@ -77,11 +77,18 @@ impl Frame {
 
 impl Render for Frame {
     fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let resize_handle = div().absolute().right_0().bottom_0().size_4().bg(gpui::red());
+
+        let frame_content = match &self.kind {
+            FrameKind::Window(window_frame) => window_frame.clone().into_any_element(),
+            FrameKind::Pool(pool_frame) => pool_frame.clone().into_any_element(),
+        };
+
         let frame = div()
-            .child(match &self.kind {
-                FrameKind::Window(window_frame) => window_frame.clone().into_any_element(),
-                FrameKind::Pool(pool_frame) => pool_frame.clone().into_any_element(),
-            })
+            .child(
+                z_stack([frame_content.into_any_element(), resize_handle.into_any_element()])
+                    .size_full(),
+            )
             .absolute()
             .w(FRAME_CELL_SIZE * self.bounds.size.width as f32)
             .h(FRAME_CELL_SIZE * self.bounds.size.height as f32)
