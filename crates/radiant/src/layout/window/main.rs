@@ -22,7 +22,7 @@ impl MainWindow {
         let window_options = WindowOptions {
             window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
                 None,
-                size(px(1720.0), px(960.0)),
+                size(px(1560.0), px(960.0)),
                 cx,
             ))),
             app_id: Some(APP_ID.to_string()),
