@@ -98,6 +98,14 @@ impl PoolFrame {
             )
             .id("pool-header")
             .size(FRAME_CELL_SIZE)
+            .on_mouse_down(
+                MouseButton::Right,
+                cx.listener(|this, event, w, cx| {
+                    this.frame.update(cx, |frame, cx| {
+                        frame.handle_right_mouse_click_header(event, w, cx)
+                    });
+                }),
+            )
             .on_drag(
                 super::HeaderDrag {
                     frame_entity_id: self.frame.entity_id(),

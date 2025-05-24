@@ -1,6 +1,6 @@
 use super::Frame;
 use crate::{show, ui::FRAME_CELL_SIZE};
-use gpui::{App, Entity, Size, Window, div, prelude::*};
+use gpui::{App, Entity, EntityId, Size, Window, div, prelude::*};
 use ui::{ActiveTheme, utils::z_stack};
 
 pub const GRID_SIZE: Size<u32> = Size { width: 18, height: 12 };
@@ -14,6 +14,16 @@ pub struct Page {
 impl Page {
     pub fn new(label: String) -> Self {
         Self { label, frames: Vec::new() }
+    }
+
+    pub fn add_frame(&mut self, frame: Entity<Frame>, cx: &mut Context<Self>) {
+        self.frames.push(frame);
+        cx.notify();
+    }
+
+    pub fn remove_frame(&mut self, frame_id: EntityId, cx: &mut Context<Self>) {
+        self.frames.retain(|frame| frame.entity_id() != frame_id);
+        cx.notify();
     }
 }
 
@@ -47,14 +57,15 @@ impl Page {
         let mut page = Self::new(loaded_page.label.clone());
 
         for frame in &loaded_page.frames.clone() {
-            let frame = cx.new(|cx| Frame::from_show(frame, w, cx));
+            let page_view = cx.entity();
+            let frame = cx.new(|cx| Frame::from_show(frame, cx.entity(), page_view, w, cx));
 
             cx.observe(&frame, |_, _, cx| {
                 cx.notify();
             })
             .detach();
 
-            page.frames.push(frame);
+            page.add_frame(frame, cx);
         }
 
         page
