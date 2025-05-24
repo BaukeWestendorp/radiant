@@ -5,6 +5,7 @@ use ui::{ActiveTheme, utils::z_stack};
 
 pub const GRID_SIZE: Size<u32> = Size { width: 18, height: 12 };
 
+#[derive(Debug, Clone)]
 pub struct Page {
     pub label: String,
     frames: Vec<Entity<Frame>>,
@@ -46,7 +47,14 @@ impl Page {
         let mut page = Self::new(loaded_page.label.clone());
 
         for frame in &loaded_page.frames.clone() {
-            page.frames.push(cx.new(|cx| Frame::from_show(frame, w, cx)))
+            let frame = cx.new(|cx| Frame::from_show(frame, w, cx));
+
+            cx.observe(&frame, |_, _, cx| {
+                cx.notify();
+            })
+            .detach();
+
+            page.frames.push(frame);
         }
 
         page

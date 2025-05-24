@@ -12,7 +12,7 @@ use ui::{ActiveTheme, Disableable, interactive_container, root, utils::z_stack};
 use super::DEFAULT_REM_SIZE;
 
 pub struct MainWindow {
-    frame_container: Entity<Page>,
+    page: Entity<Page>,
 
     focus_handle: FocusHandle,
 }
@@ -34,9 +34,9 @@ impl MainWindow {
             w.set_rem_size(DEFAULT_REM_SIZE);
 
             cx.new(|cx| {
-                let frame_container = cx.new(|cx| {
-                    let layout = Show::global(cx).layout.clone();
+                let layout = Show::global(cx).layout.clone();
 
+                let page = cx.new(|cx| {
                     cx.observe_in(&layout, w, |this, layout, w, cx| {
                         *this = Page::from_show(&layout, w, cx);
                         log::debug!("Updating FrameContainer<MainFrame>");
@@ -47,7 +47,14 @@ impl MainWindow {
                     Page::from_show(&layout, w, cx)
                 });
 
-                Self { frame_container, focus_handle: cx.focus_handle() }
+                cx.observe(&page, move |_, page, cx| {
+                    layout.update(cx, |layout, cx| {
+                        layout.main_window.loaded_page = page.read(cx).clone().into_show(cx);
+                    });
+                })
+                .detach();
+
+                Self { page, focus_handle: cx.focus_handle() }
             })
         })
         .context("open main window")
@@ -110,7 +117,7 @@ impl Render for MainWindow {
             .size_full()
             .bg(cx.theme().colors.bg_primary)
             .text_color(cx.theme().colors.text)
-            .child(self.frame_container.clone())
+            .child(self.page.clone())
             .child(pages_list);
 
         let settings_window = match AppState::global(cx).settings_window() {
