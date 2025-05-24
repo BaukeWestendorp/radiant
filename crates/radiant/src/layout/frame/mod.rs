@@ -29,7 +29,12 @@ pub struct Frame {
     pub kind: FrameKind,
     focus_handle: FocusHandle,
 
-    pub resized_moved_bounds: Option<Bounds<u32>>,
+    resized_moved_bounds: Option<ResizedMovedBounds>,
+}
+
+struct ResizedMovedBounds {
+    pub bounds: Bounds<u32>,
+    pub is_allowed: bool,
 }
 
 impl Frame {
@@ -49,7 +54,7 @@ impl Frame {
         let size = self.bounds.size.map(|d| d as i32);
         let origin = self.bounds.origin.map(|d| d as i32) + grid_diff;
 
-        let bounds = limit_new_bounds(&bounds(origin, size));
+        let bounds = limit_new_bounds(&bounds(origin, size), self.bounds.map(|d| d as i32), cx);
         self.resized_moved_bounds = Some(bounds);
         cx.notify();
     }
@@ -73,7 +78,7 @@ impl Frame {
         );
         let origin = self.bounds.origin.map(|d| d as i32);
 
-        let bounds = limit_new_bounds(&bounds(origin, size));
+        let bounds = limit_new_bounds(&bounds(origin, size), self.bounds.map(|d| d as i32), cx);
         self.resized_moved_bounds = Some(bounds);
         cx.notify();
     }
@@ -84,8 +89,10 @@ impl Frame {
         _w: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if let Some(new_bounds) = self.resized_moved_bounds {
-            self.bounds = new_bounds;
+        if let Some(new_bounds) = &self.resized_moved_bounds {
+            if new_bounds.is_allowed {
+                self.bounds = new_bounds.bounds;
+            }
             self.resized_moved_bounds = None;
             cx.notify();
         };
@@ -143,37 +150,53 @@ impl Frame {
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
         match self.resized_moved_bounds {
-            Some(bounds) => div()
-                .w(FRAME_CELL_SIZE * bounds.size.width as f32)
-                .h(FRAME_CELL_SIZE * bounds.size.height as f32)
-                .left(FRAME_CELL_SIZE * bounds.origin.x as f32)
-                .top(FRAME_CELL_SIZE * bounds.origin.y as f32)
-                .border_2()
-                .border_color(cx.theme().colors.border_focused),
+            Some(ResizedMovedBounds { bounds, is_allowed }) => {
+                let border_color = if is_allowed {
+                    cx.theme().colors.border_focused
+                } else {
+                    cx.theme().colors.border
+                };
+
+                div()
+                    .w(FRAME_CELL_SIZE * bounds.size.width as f32)
+                    .h(FRAME_CELL_SIZE * bounds.size.height as f32)
+                    .left(FRAME_CELL_SIZE * bounds.origin.x as f32)
+                    .top(FRAME_CELL_SIZE * bounds.origin.y as f32)
+                    .border_2()
+                    .border_color(border_color)
+            }
             None => div(),
         }
     }
 }
 
-fn allowed_bounds() -> Bounds<i32> {
+fn limit_new_bounds(
+    bounds: &Bounds<i32>,
+    initial_bounds: Bounds<i32>,
+    cx: &App,
+) -> ResizedMovedBounds {
     const GRID_BOUNDS: Bounds<i32> = Bounds {
         origin: Point { x: 0, y: 0 },
         size: Size { width: GRID_SIZE.width as i32, height: GRID_SIZE.height as i32 },
     };
 
-    GRID_BOUNDS
-}
+    let frames = &Show::global(cx).layout.read(cx).main_window.loaded_page.frames;
+    let collides = |bounds: Bounds<i32>| {
+        frames
+            .iter()
+            .filter(|frame| frame.bounds.map(|d| d as i32) != initial_bounds)
+            .any(|frame| frame.bounds.map(|d| d as i32).intersects(&bounds))
+    };
 
-fn limit_new_bounds(bounds: &Bounds<i32>) -> Bounds<u32> {
-    let allowed_bounds = allowed_bounds();
-    let mut bounds = allowed_bounds.intersect(&bounds);
+    let mut bounds = GRID_BOUNDS.intersect(&bounds);
+
     bounds.size = bounds.size.max(&size(1, 1));
     bounds.origin = bounds
         .origin
-        .min(&point(GRID_SIZE.width as i32 - 1, GRID_SIZE.height as i32 - 1))
+        .min(&point(GRID_BOUNDS.size.width - 1, GRID_BOUNDS.size.height - 1))
         .max(&point(-bounds.size.width, -bounds.size.height));
 
-    bounds.map(|d| d as u32)
+    ResizedMovedBounds { bounds: bounds.map(|d| d as u32), is_allowed: !collides(bounds) }
 }
 
 fn mouse_grid_diff(
