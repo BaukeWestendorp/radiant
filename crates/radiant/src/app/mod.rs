@@ -1,27 +1,31 @@
-use crate::layout::{self, main::MainWindow, settings::SettingsWindow};
+use crate::layout::{self, main::MainWindow};
 use crate::processor;
 use crate::protocols::ProtocolManager;
 use crate::show::Show;
-use crate::ui::{PresetSelector, PresetSelectorWindow, VirtualWindow};
-use dmx::Multiverse;
-use gpui::{
-    App, Application, Entity, Global, Menu, MenuItem, ReadGlobal, Window, WindowHandle, prelude::*,
-};
+use gpui::{App, Application, Entity, Menu, MenuItem, ReadGlobal, WindowHandle, prelude::*};
 use std::path::PathBuf;
+
+mod state;
+
+pub use state::*;
 
 pub const APP_ID: &str = "radiant";
 
 pub struct RadiantApp {
+    /// Path to the loaded showfile on disk. `None` for a new, unsaved file.
     showfile_path: Option<PathBuf>,
 
+    /// DMX protocol manager. `None` before initialization.
     protocol_manager: Option<Entity<ProtocolManager>>,
 }
 
 impl RadiantApp {
+    /// Creates a new [RadiantApp].
     pub fn new(showfile_path: Option<PathBuf>) -> Self {
         Self { showfile_path, protocol_manager: None }
     }
 
+    /// Starts the app.
     pub fn run(mut self) {
         Application::new().run(move |cx: &mut App| {
             let path = self.showfile_path.as_ref();
@@ -32,7 +36,7 @@ impl RadiantApp {
             Show::init(cx, path).expect("Failed to initialize show");
 
             let main_window = MainWindow::open(cx).expect("Failed to open main window");
-            let output_multiverse = cx.new(|_| Multiverse::new());
+            let output_multiverse = cx.new(|_| dmx::Multiverse::new());
 
             self.init(main_window, output_multiverse, cx);
         });
@@ -41,16 +45,16 @@ impl RadiantApp {
     fn init(
         &mut self,
         main_window: WindowHandle<MainWindow>,
-        output_multiverse: Entity<Multiverse>,
+        output_multiverse: Entity<dmx::Multiverse>,
         cx: &mut App,
     ) {
-        init_actions(main_window, cx);
         self.init_protocol_manager(output_multiverse.clone(), cx);
+        init_actions(main_window, cx);
         init_processor(output_multiverse, cx);
         init_menus(cx);
     }
 
-    fn init_protocol_manager(&mut self, multiverse: Entity<Multiverse>, cx: &mut App) {
+    fn init_protocol_manager(&mut self, multiverse: Entity<dmx::Multiverse>, cx: &mut App) {
         let protocol_settings = Show::global(cx).protocol_settings.clone();
         let protocol_manager = cx.new(|cx| {
             let pm = ProtocolManager::new(multiverse, &protocol_settings, cx)
@@ -71,7 +75,7 @@ fn init_actions(main_window: WindowHandle<MainWindow>, cx: &mut App) {
     actions::init(main_window, cx);
 }
 
-fn init_processor(output_multiverse: Entity<Multiverse>, cx: &mut App) {
+fn init_processor(output_multiverse: Entity<dmx::Multiverse>, cx: &mut App) {
     processor::start(output_multiverse, cx);
 }
 
@@ -92,55 +96,6 @@ fn init_menus(cx: &mut App) {
             ],
         },
     ]);
-}
-
-#[derive(Default)]
-pub struct AppState {
-    pub settings_window: Option<Entity<VirtualWindow<SettingsWindow>>>,
-    pub preset_selector_window: Option<Entity<VirtualWindow<PresetSelectorWindow>>>,
-}
-
-impl Global for AppState {}
-
-impl AppState {
-    pub fn init(cx: &mut App) {
-        cx.set_global(Self::default());
-    }
-
-    pub fn open_settings_window(&mut self, w: &mut Window, cx: &mut App) {
-        if self.settings_window.is_none() {
-            let vw = cx.new(|cx| VirtualWindow::new(SettingsWindow::new(w, cx)));
-            self.settings_window = Some(vw);
-        }
-    }
-
-    pub fn close_settings_window(&mut self) {
-        self.settings_window.take();
-    }
-
-    pub fn settings_window(&self) -> Option<&Entity<VirtualWindow<SettingsWindow>>> {
-        self.settings_window.as_ref()
-    }
-
-    pub fn open_preset_selector_window(
-        &mut self,
-        selector: Entity<PresetSelector>,
-        w: &mut Window,
-        cx: &mut App,
-    ) {
-        if self.preset_selector_window.is_none() {
-            let vw = cx.new(|cx| VirtualWindow::new(PresetSelectorWindow::new(selector, w, cx)));
-            self.preset_selector_window = Some(vw);
-        }
-    }
-
-    pub fn close_preset_selector_window(&mut self) {
-        self.preset_selector_window.take();
-    }
-
-    pub fn preset_selector_window(&self) -> Option<&Entity<VirtualWindow<PresetSelectorWindow>>> {
-        self.preset_selector_window.as_ref()
-    }
 }
 
 mod actions {
