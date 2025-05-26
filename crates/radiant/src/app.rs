@@ -1,7 +1,7 @@
 use crate::layout::settings::SettingsWindow;
 use crate::layout::{self, main::MainWindow};
 use crate::processor;
-use crate::protocol::Protocol;
+use crate::protocols::ProtocolManager;
 use crate::show::Show;
 use crate::ui::input::{PresetSelector, PresetSelectorWindow};
 use crate::ui::vw::VirtualWindow;
@@ -15,14 +15,16 @@ pub const APP_ID: &str = "radiant";
 
 pub struct RadiantApp {
     showfile_path: Option<PathBuf>,
+
+    protocol_manager: Option<Entity<ProtocolManager>>,
 }
 
 impl RadiantApp {
     pub fn new(showfile_path: Option<PathBuf>) -> Self {
-        Self { showfile_path }
+        Self { showfile_path, protocol_manager: None }
     }
 
-    pub fn run(self) {
+    pub fn run(mut self) {
         Application::new().run(move |cx: &mut App| {
             let path = self.showfile_path.as_ref();
 
@@ -32,22 +34,34 @@ impl RadiantApp {
             Show::init(cx, path).expect("Failed to initialize show");
 
             let main_window = MainWindow::open(cx).expect("Failed to open main window");
-            let multiverse = cx.new(|_| Multiverse::new());
+            let output_multiverse = cx.new(|_| Multiverse::new());
 
-            self.init(main_window, multiverse, cx);
+            self.init(main_window, output_multiverse, cx);
         });
     }
 
     fn init(
-        &self,
+        &mut self,
         main_window: WindowHandle<MainWindow>,
-        multiverse: Entity<Multiverse>,
+        output_multiverse: Entity<Multiverse>,
         cx: &mut App,
     ) {
         init_actions(main_window, cx);
-        init_protocol(multiverse.clone(), cx);
-        init_processor(multiverse, cx);
+        self.init_protocol_manager(output_multiverse.clone(), cx);
+        init_processor(output_multiverse, cx);
         init_menus(cx);
+    }
+
+    fn init_protocol_manager(&mut self, multiverse: Entity<Multiverse>, cx: &mut App) {
+        let protocol_settings = Show::global(cx).protocol_settings.clone();
+        let protocol_manager = cx.new(|cx| {
+            let pm = ProtocolManager::new(multiverse, &protocol_settings, cx)
+                .expect("should create protocol manager");
+            pm.start(cx);
+            pm
+        });
+
+        self.protocol_manager = Some(protocol_manager);
     }
 }
 
@@ -59,15 +73,8 @@ fn init_actions(main_window: WindowHandle<MainWindow>, cx: &mut App) {
     actions::init(main_window, cx);
 }
 
-fn init_protocol(multiverse: Entity<Multiverse>, cx: &mut App) {
-    let protocol_settings = Show::global(cx).protocol_settings.clone();
-    let protocol =
-        Protocol::new(multiverse, &protocol_settings, cx).expect("should create protocol manager");
-    protocol.start(cx);
-}
-
-fn init_processor(pipeline: Entity<Multiverse>, cx: &mut App) {
-    processor::start(pipeline, cx);
+fn init_processor(output_multiverse: Entity<Multiverse>, cx: &mut App) {
+    processor::start(output_multiverse, cx);
 }
 
 fn init_menus(cx: &mut App) {

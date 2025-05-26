@@ -6,7 +6,7 @@ mod app;
 mod layout;
 mod pipeline;
 mod processor;
-mod protocol;
+mod protocols;
 pub mod show;
 pub mod ui;
 mod utils;

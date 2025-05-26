@@ -1,14 +1,12 @@
 use crate::pipeline::Pipeline;
-use crate::show::Show;
-use crate::show::asset::{AssetId, Cue, Executor, effect_graph};
-use dmx::Multiverse;
+use crate::show::{AssetId, Cue, Executor, Show, effect_graph};
 use flow::ProcessingContext;
-use gpui::{App, AppContext, AsyncApp, Entity, ReadGlobal};
+use gpui::{App, AsyncApp, Entity, ReadGlobal, prelude::*};
 use std::time::Duration;
 
 const INTERVAL: Duration = Duration::from_millis(16);
 
-pub fn start(multiverse: Entity<Multiverse>, cx: &App) {
+pub fn start(multiverse: Entity<dmx::Multiverse>, cx: &App) {
     cx.spawn(async move |cx: &mut AsyncApp| {
         let pipeline = cx.new(|_| Pipeline::new(multiverse.clone())).unwrap();
 
@@ -20,12 +18,12 @@ pub fn start(multiverse: Entity<Multiverse>, cx: &App) {
                 });
 
                 if let Err(err) = process(&pipeline, cx) {
-                    log::error!("Failed to process output: {err}")
+                    log::error!("Failed to process output: {err}");
                 }
 
                 pipeline.update(cx, |pipeline, cx| {
                     if let Err(err) = pipeline.flush(cx) {
-                        log::error!("Failed to flush pipeline: {err}")
+                        log::error!("Failed to flush pipeline: {err}");
                     }
                 });
             })

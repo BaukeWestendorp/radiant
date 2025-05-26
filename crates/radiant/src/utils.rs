@@ -1,4 +1,6 @@
-use gpui::{App, AppContext, Entity};
+//! This module contains some helper functions.
+
+use gpui::{App, Entity, prelude::*};
 
 /// Maps an [Entity][gpui::Entity] of type S (source) to an [Entity][gpui::Entity] of type T (target).
 pub fn map_entity<S: 'static, T: 'static>(

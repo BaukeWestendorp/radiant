@@ -261,6 +261,7 @@ impl Pipeline {
     fn flush_value(&self, addr: &dmx::Address, value: dmx::Value, cx: &mut App) {
         self.multiverse.update(cx, |multiverse, cx| {
             multiverse.set_value(addr, value);
+
             cx.notify();
         });
     }
