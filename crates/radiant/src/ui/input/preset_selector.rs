@@ -2,8 +2,8 @@ use crate::{
     app::AppState,
     show::{Show, attr::AnyPresetAssetId},
     ui::{
-        asset_table::{AssetTable, AssetTableEvent},
         vw::{VirtualWindow, VirtualWindowDelegate},
+        {AssetTable, AssetTableEvent},
     },
 };
 use gpui::{

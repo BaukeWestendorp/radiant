@@ -1,15 +1,6 @@
-use app::RadiantApp;
 use clap::Parser;
+use radiant::app::RadiantApp;
 use std::path::PathBuf;
-
-mod app;
-mod layout;
-mod pipeline;
-mod processor;
-mod protocols;
-pub mod show;
-pub mod ui;
-mod utils;
 
 #[derive(Debug, clap::Parser)]
 #[command(version, about, long_about = None)]
@@ -21,8 +12,6 @@ struct Args {
 
 fn main() {
     env_logger::init();
-
     let args = Args::parse();
-
     RadiantApp::new(args.showfile).run();
 }

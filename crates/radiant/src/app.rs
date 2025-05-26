@@ -1,10 +1,8 @@
-use crate::layout::settings::SettingsWindow;
-use crate::layout::{self, main::MainWindow};
+use crate::layout::{self, main::MainWindow, settings::SettingsWindow};
 use crate::processor;
 use crate::protocols::ProtocolManager;
 use crate::show::Show;
-use crate::ui::input::{PresetSelector, PresetSelectorWindow};
-use crate::ui::vw::VirtualWindow;
+use crate::ui::{PresetSelector, PresetSelectorWindow, VirtualWindow};
 use dmx::Multiverse;
 use gpui::{
     App, Application, Entity, Global, Menu, MenuItem, ReadGlobal, Window, WindowHandle, prelude::*,

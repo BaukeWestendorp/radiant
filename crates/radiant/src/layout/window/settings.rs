@@ -1,6 +1,6 @@
 use crate::app::AppState;
-use crate::show::{Show, protocol::SacnSourceSettings};
-use crate::ui::vw::{VirtualWindow, VirtualWindowDelegate};
+use crate::show::{SacnSourceSettings, Show};
+use crate::ui::{VirtualWindow, VirtualWindowDelegate};
 use gpui::*;
 use ui::{
     Checkbox, CheckboxEvent, ContainerStyle, Field, FieldEvent, FieldImpl, NumberField, TabView,
