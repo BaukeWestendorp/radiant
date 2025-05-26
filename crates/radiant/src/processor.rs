@@ -1,18 +1,25 @@
+//! In Radiant, the processor computes the current state of
+//! the programmer and the executors into the representative
+//! output. It it uses the [pipeline][crate::pipeline] to convert
+//! the abstract output state into DMX values to send to the [protocols][crate::protocols].
+
 use crate::pipeline::Pipeline;
 use crate::show::{AssetId, Cue, Executor, Show, effect_graph};
 use flow::ProcessingContext;
 use gpui::{App, AsyncApp, Entity, ReadGlobal, prelude::*};
 use std::time::Duration;
 
+/// The interval at which we should process the output state.
 const INTERVAL: Duration = Duration::from_millis(16);
 
-pub fn start(multiverse: Entity<dmx::Multiverse>, cx: &App) {
+/// Start the processor.
+pub fn start(output_multiverse: Entity<dmx::Multiverse>, cx: &App) {
     cx.spawn(async move |cx: &mut AsyncApp| {
-        let pipeline = cx.new(|_| Pipeline::new(multiverse.clone())).unwrap();
+        let pipeline = cx.new(|_| Pipeline::new(output_multiverse.clone())).unwrap();
 
         loop {
             cx.update(|cx| {
-                multiverse.update(cx, |multiverse, cx| {
+                output_multiverse.update(cx, |multiverse, cx| {
                     multiverse.clear();
                     cx.notify();
                 });
@@ -35,6 +42,7 @@ pub fn start(multiverse: Entity<dmx::Multiverse>, cx: &App) {
     .detach();
 }
 
+/// Processes the current state of the programmer and the executors.
 pub fn process(pipeline: &Entity<Pipeline>, cx: &mut App) -> anyhow::Result<()> {
     let executor_ids = Show::global(cx).assets.executors.keys().cloned().collect::<Vec<_>>();
     for id in executor_ids {
