@@ -1,32 +1,51 @@
-use crate::show::{
-    FloatingDmxValue, Show,
-    asset::Preset,
-    attr::{AnyPresetAssetId, Attr, Attribute},
-    patch::FixtureId,
-};
-use dmx::Multiverse;
+//! In Radiant, the processing pipeline creates a few layers of abstraction
+//! over the DMX output:
+//!
+//! - Layer 4: Presets
+//! - Layer 3: Attribute values
+//! - Layer 2: Floating DMX
+//! - Layer 1: DMX512
+//!
+//! After setting all values you want to output using the different layers, you can
+//! flush the pipeline into the output [Multiverse][dmx::Multiverse].
+//! Then, the [ProtocolManager][crate::protocols::ProtocolManager] will pick up
+//! the output multiverse and send it to every output protocol.
+
+use crate::show::{AnyPresetAssetId, Attr, Attribute, FixtureId, FloatingDmxValue, Preset, Show};
 use gpui::{App, Entity, ReadGlobal};
 use std::collections::HashMap;
 
+/// The main processing pipeline.
 pub struct Pipeline {
-    multiverse: Entity<Multiverse>,
+    /// The multiverse the pipeline should use to flush DMX values to.
+    output_multiverse: Entity<dmx::Multiverse>,
+    /// Pending DMX values to flush.
     pending_values: HashMap<dmx::Address, dmx::Value>,
+    /// Pending attribute values to flush.
     pending_attr_values: HashMap<FixtureId, HashMap<Attr, FloatingDmxValue>>,
 }
 
 impl Pipeline {
-    pub fn new(multiverse: Entity<Multiverse>) -> Self {
-        Self { multiverse, pending_values: HashMap::new(), pending_attr_values: HashMap::new() }
+    /// Creates a new [Pipeline].
+    pub fn new(output_multiverse: Entity<dmx::Multiverse>) -> Self {
+        Self {
+            output_multiverse,
+            pending_values: HashMap::new(),
+            pending_attr_values: HashMap::new(),
+        }
     }
 
-    pub fn multiverse(&self) -> &Entity<Multiverse> {
-        &self.multiverse
+    /// The [Multiverse][dmx::Multiverse] the pipeline will flush DMX values to.
+    pub fn output_multiverse(&self) -> &Entity<dmx::Multiverse> {
+        &self.output_multiverse
     }
 
+    /// Directly apply a DMX value. (Layer 1).
     pub fn apply_value(&mut self, address: dmx::Address, value: dmx::Value) {
         self.pending_values.insert(address, value);
     }
 
+    /// Apply an attribute for a specific fixture. (Layer 3).
     pub fn apply_attribute(
         &mut self,
         attribute: Attr,
@@ -39,6 +58,7 @@ impl Pipeline {
             .insert(attribute, value);
     }
 
+    /// Apply a preset for a specific fixture. (Layer 4).
     pub fn apply_preset(&mut self, preset_id: AnyPresetAssetId, fixture_id: FixtureId, cx: &App) {
         let show = Show::global(cx);
         match preset_id {
@@ -168,6 +188,7 @@ impl Pipeline {
         Ok(())
     }
 
+    /// Flush all pending values to the output [Multiverse][dmx::Multiverse].
     pub fn flush(&mut self, cx: &mut App) -> anyhow::Result<()> {
         self.flush_default_values(cx)?;
         self.flush_pending_attributes(cx);
@@ -234,7 +255,7 @@ impl Pipeline {
 
         for (byte, offset) in value_bytes.iter().zip(&offset) {
             let address = fixture.address().with_channel_offset(*offset as u16 - 1).unwrap();
-            self.multiverse.update(cx, |multiverse, cx| {
+            self.output_multiverse.update(cx, |multiverse, cx| {
                 multiverse.set_value(&address, dmx::Value(*byte));
                 cx.notify();
             });
@@ -250,7 +271,7 @@ impl Pipeline {
     }
 
     fn flush_values(&self, values: Vec<(dmx::Address, dmx::Value)>, cx: &mut App) {
-        self.multiverse.update(cx, |multiverse, cx| {
+        self.output_multiverse.update(cx, |multiverse, cx| {
             for (addr, value) in values {
                 multiverse.set_value(&addr, value);
             }
@@ -259,7 +280,7 @@ impl Pipeline {
     }
 
     fn flush_value(&self, addr: &dmx::Address, value: dmx::Value, cx: &mut App) {
-        self.multiverse.update(cx, |multiverse, cx| {
+        self.output_multiverse.update(cx, |multiverse, cx| {
             multiverse.set_value(addr, value);
 
             cx.notify();
