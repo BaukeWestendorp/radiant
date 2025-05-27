@@ -1,4 +1,4 @@
-use crate::show::asset::{Asset, AssetPool};
+use crate::show::{Asset, AssetPool};
 use gpui::{App, ElementId, Entity, EventEmitter, Window, div, prelude::*};
 use ui::{Table, TableColumn, TableDelegate, TableRow};
 

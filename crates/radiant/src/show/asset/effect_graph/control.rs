@@ -4,7 +4,7 @@ use ui::{Checkbox, CheckboxEvent, Field, FieldEvent, NumberField, Selectable};
 
 use crate::{
     show::{FloatingDmxValue, attr::AnyPresetAssetId, patch::FixtureId},
-    ui::input::{PresetSelector, PresetSelectorEvent},
+    ui::{PresetSelector, PresetSelectorEvent},
 };
 
 use super::{Def, Value};

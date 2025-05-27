@@ -609,7 +609,7 @@ impl Multiverse {
     /// multiverse.clear();
     ///
     /// for (_, universe) in multiverse.universes() {
-    ///     assert!(universe.values().iter().all(|&value| value == 0));
+    ///     assert!(universe.values().iter().all(|&value| value == dmx::Value(0)));
     /// }
     /// ```
     pub fn clear(&mut self) {

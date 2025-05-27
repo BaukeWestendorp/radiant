@@ -1,11 +1,6 @@
-use crate::{
-    app::AppState,
-    show::{Show, attr::AnyPresetAssetId},
-    ui::{
-        vw::{VirtualWindow, VirtualWindowDelegate},
-        {AssetTable, AssetTableEvent},
-    },
-};
+use crate::app::AppState;
+use crate::show::{AnyPresetAssetId, Show};
+use crate::ui::{AssetTable, AssetTableEvent, VirtualWindow, VirtualWindowDelegate};
 use gpui::{
     App, ClickEvent, ElementId, Entity, EventEmitter, FocusHandle, Focusable, ReadGlobal,
     UpdateGlobal, Window, div, prelude::*,
