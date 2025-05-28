@@ -3,13 +3,13 @@ use crate::{
     ui::FRAME_CELL_SIZE,
 };
 use gpui::{
-    App, Bounds, DragMoveEvent, Empty, Entity, EntityId, FocusHandle, Focusable, MouseButton,
-    MouseDownEvent, MouseUpEvent, Path, Pixels, Point, ReadGlobal, Size, Window, bounds, canvas,
-    deferred, div, point, prelude::*, px, size,
+    App, Bounds, DismissEvent, DragMoveEvent, Empty, Entity, EntityId, FocusHandle, Focusable,
+    MouseButton, MouseDownEvent, MouseUpEvent, Path, Pixels, Point, ReadGlobal, Size, Subscription,
+    Window, anchored, bounds, canvas, deferred, div, point, prelude::*, px, size,
 };
 use pool::{PoolFrame, PoolFrameKind, PresetPoolFrameKind};
 use ui::{
-    ActiveTheme,
+    ActiveTheme, ContextMenu,
     utils::{snap_point, z_stack},
 };
 use window::{WindowFrame, WindowFrameKind, graph_editor::GraphEditorFrame};
@@ -128,6 +128,8 @@ pub struct Frame {
     pub kind: FrameKind,
     focus_handle: FocusHandle,
 
+    header_context_menu: Option<(Entity<ContextMenu>, Point<Pixels>, Subscription)>,
+
     resized_moved_bounds: Option<ResizedMovedBounds>,
 }
 
@@ -138,7 +140,14 @@ struct ResizedMovedBounds {
 
 impl Frame {
     pub fn new(kind: FrameKind, bounds: Bounds<u32>, page: Entity<Page>, cx: &mut App) -> Self {
-        Self { page, kind, bounds, focus_handle: cx.focus_handle(), resized_moved_bounds: None }
+        Self {
+            page,
+            kind,
+            bounds,
+            focus_handle: cx.focus_handle(),
+            header_context_menu: None,
+            resized_moved_bounds: None,
+        }
     }
 
     fn render_resize_handle(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -214,6 +223,14 @@ impl Frame {
 }
 
 impl Frame {
+    pub fn handle_remove(&mut self, _: &actions::Remove, _w: &mut Window, cx: &mut Context<Self>) {
+        let frame_id = cx.entity_id();
+        self.page.update(cx, |page, cx| {
+            page.remove_frame(frame_id, cx);
+            cx.notify();
+        })
+    }
+
     pub fn handle_header_drag(
         &mut self,
         event: &DragMoveEvent<HeaderDrag>,
@@ -261,14 +278,20 @@ impl Frame {
 
     pub fn handle_right_mouse_click_header(
         &mut self,
-        _event: &MouseDownEvent,
-        _w: &mut Window,
+        event: &MouseDownEvent,
+        w: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let frame_id = cx.entity_id();
-        self.page.update(cx, |page, cx| {
-            page.remove_frame(frame_id, cx);
+        let context_menu = cx.new(|cx| {
+            ContextMenu::new(w, cx).destructive_action("Remove Frame", Box::new(actions::Remove))
         });
+
+        let subscription = cx.subscribe(&context_menu, |this, _, _: &DismissEvent, cx| {
+            this.header_context_menu.take();
+            cx.notify();
+        });
+
+        self.header_context_menu = Some((context_menu, event.position, subscription));
     }
 
     pub fn release_resize_move(
@@ -343,6 +366,16 @@ impl Render for Frame {
         let resize_move_highlight = deferred(self.render_resize_move_highlight(w, cx));
 
         z_stack([frame, resize_move_highlight.into_any_element()])
+            .children(self.header_context_menu.as_ref().map(|(menu, position, _)| {
+                deferred(
+                    anchored()
+                        .position(*position)
+                        .anchor(gpui::Corner::BottomLeft)
+                        .child(menu.clone()),
+                )
+                .with_priority(1)
+            }))
+            .on_action(cx.listener(Self::handle_remove))
     }
 }
 
@@ -376,4 +409,10 @@ pub struct ResizeHandleDrag {
 pub struct HeaderDrag {
     frame_entity_id: EntityId,
     start_mouse_position: Point<Pixels>,
+}
+
+pub mod actions {
+    use gpui::actions;
+
+    actions!(new_node_menu, [Remove]);
 }
