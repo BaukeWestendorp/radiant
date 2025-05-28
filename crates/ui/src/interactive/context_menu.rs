@@ -104,7 +104,7 @@ impl ContextMenu {
 
 impl Render for ContextMenu {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        container(ContainerStyle::normal(window, cx)).w_56().h_64().occlude().shadow_md().child(
+        container(ContainerStyle::normal(window, cx)).occlude().shadow_md().child(
             div()
                 .track_focus(&self.focus_handle)
                 .key_context(actions::KEY_CONTEXT)
