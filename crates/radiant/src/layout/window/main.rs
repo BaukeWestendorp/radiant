@@ -77,27 +77,30 @@ impl Render for MainWindow {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let layout = &Show::global(cx).layout.read(cx);
         let pages = &layout.main_window.pages;
-        let pages_list =
-            div().w(FRAME_CELL_SIZE * 1.5).h_full().flex().flex_col().flex_shrink_0().children(
-                (0..GRID_SIZE.height).map(|ix| {
-                    let id = ElementId::named_usize("page", ix as usize);
-                    match pages.get(ix as usize) {
-                        Some(page) => interactive_container(id, None)
-                            .w_full()
-                            .h(FRAME_CELL_SIZE)
-                            .child(page.label.clone())
-                            .flex()
-                            .justify_center()
-                            .items_center()
-                            .cursor_pointer()
-                            .on_click(move |_, _, cx| handle_click_page(ix as usize, cx)),
-                        None => interactive_container(id, None)
-                            .w_full()
-                            .h(FRAME_CELL_SIZE)
-                            .disabled(true),
+        let pages_list = div()
+            .w(FRAME_CELL_SIZE * 1.5)
+            .h(FRAME_CELL_SIZE * GRID_SIZE.height as f32)
+            .flex()
+            .flex_col()
+            .flex_shrink_0()
+            .occlude()
+            .children((0..GRID_SIZE.height).map(|ix| {
+                let id = ElementId::named_usize("page", ix as usize);
+                match pages.get(ix as usize) {
+                    Some(page) => interactive_container(id, None)
+                        .w_full()
+                        .h(FRAME_CELL_SIZE)
+                        .child(page.label.clone())
+                        .flex()
+                        .justify_center()
+                        .items_center()
+                        .cursor_pointer()
+                        .on_click(move |_, _, cx| handle_click_page(ix as usize, cx)),
+                    None => {
+                        interactive_container(id, None).w_full().h(FRAME_CELL_SIZE).disabled(true)
                     }
-                }),
-            );
+                }
+            }));
 
         fn handle_click_page(ix: usize, cx: &mut App) {
             Show::global(cx).layout.clone().update(cx, |layout, cx| {
