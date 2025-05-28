@@ -8,12 +8,18 @@ pub struct Colors {
     pub bg_selected_bright: Hsla,
     pub bg_focused: Hsla,
     pub bg_alternating: Hsla,
+    pub bg_destructive: Hsla,
+    pub bg_destructive_focused: Hsla,
+    pub bg_destructive_selected: Hsla,
 
     pub text: Hsla,
 
     pub border: Hsla,
     pub border_focused: Hsla,
     pub border_selected: Hsla,
+    pub border_destructive: Hsla,
+    pub border_destructive_focused: Hsla,
+    pub border_destructive_selected: Hsla,
 
     pub header_background: Hsla,
     pub header_border: Hsla,
@@ -29,6 +35,7 @@ impl Colors {
     pub fn light() -> Self {
         let accent: Hsla = gpui::rgb(0xffc416).into();
         let selected = accent;
+        let destructive: Hsla = gpui::rgb(0xff4d4d).into();
 
         Self {
             bg_primary: gpui::hsla(0.0, 0.0, 1.0, 1.0),
@@ -38,6 +45,9 @@ impl Colors {
             bg_selected: selected.lighten(0.5).with_opacity(0.3),
             bg_selected_bright: selected.lighten(0.2),
             bg_alternating: gpui::hsla(0.0, 0.0, 0.95, 1.0),
+            bg_destructive: destructive.lighten(0.2).with_opacity(0.3),
+            bg_destructive_focused: destructive.lighten(0.2).with_opacity(0.4),
+            bg_destructive_selected: destructive.lighten(0.1).with_opacity(0.5),
 
             text: gpui::hsla(0.0, 0.0, 0.0, 1.0),
 
@@ -47,6 +57,9 @@ impl Colors {
             border: gpui::hsla(0.0, 0.0, 0.7, 1.0),
             border_focused: accent,
             border_selected: selected,
+            border_destructive: destructive.lighten(0.2),
+            border_destructive_focused: destructive,
+            border_destructive_selected: destructive.darken(0.1),
 
             accent,
             highlight: accent.with_opacity(0.2),
@@ -59,6 +72,7 @@ impl Colors {
     pub fn dark() -> Self {
         let accent: Hsla = gpui::rgb(0xffc416).into();
         let selected = accent;
+        let destructive: Hsla = gpui::rgb(0xff4d4d).into();
 
         Self {
             bg_primary: gpui::hsla(0.0, 0.0, 0.0, 1.0),
@@ -68,6 +82,9 @@ impl Colors {
             bg_selected: selected.darken(0.5).with_opacity(0.3),
             bg_selected_bright: selected.darken(0.2),
             bg_alternating: gpui::hsla(0.0, 0.0, 0.1, 1.0),
+            bg_destructive: destructive.darken(0.2).with_opacity(0.3),
+            bg_destructive_focused: destructive.darken(0.2).with_opacity(0.4),
+            bg_destructive_selected: destructive.darken(0.1).with_opacity(0.5),
 
             text: gpui::hsla(0.0, 0.0, 1.0, 1.0),
 
@@ -77,6 +94,9 @@ impl Colors {
             border: gpui::hsla(0.0, 0.0, 0.5, 1.0),
             border_focused: accent,
             border_selected: selected,
+            border_destructive: destructive.darken(0.2),
+            border_destructive_focused: destructive,
+            border_destructive_selected: destructive.lighten(0.1),
 
             accent,
             highlight: accent.with_opacity(0.2),

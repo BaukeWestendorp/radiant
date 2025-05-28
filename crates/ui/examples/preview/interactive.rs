@@ -1,8 +1,13 @@
-use gpui::{App, ElementId, Entity, ScrollHandle, Window, div, point, prelude::*, px};
-use ui::{
-    Checkbox, CheckboxEvent, ContainerStyle, Disableable, Draggable, Field, NumberField, Pannable,
-    Table, TableColumn, TableDelegate, TableRow, container,
+use gpui::{
+    App, DismissEvent, ElementId, Entity, MouseButton, MouseDownEvent, Pixels, Point, ScrollHandle,
+    Subscription, Window, anchored, deferred, div, point, prelude::*, px,
 };
+use ui::{
+    Checkbox, CheckboxEvent, ContainerStyle, ContextMenu, Disableable, Draggable, Field,
+    NumberField, Pannable, Table, TableColumn, TableDelegate, TableRow, container,
+};
+
+gpui::actions!(interactive_tab, [Action1, Action2]);
 
 pub struct InteractiveTab {
     scroll_handle: ScrollHandle,
@@ -19,6 +24,8 @@ pub struct InteractiveTab {
 
     draggable: Entity<Draggable>,
     pannable: Entity<Pannable>,
+
+    context_menu: Option<(Entity<ContextMenu>, Point<Pixels>, Subscription)>,
 }
 
 impl InteractiveTab {
@@ -65,7 +72,30 @@ impl InteractiveTab {
             pannable: cx.new(|cx| {
                 Pannable::new("pannable", point(px(40.0), px(40.0)), cx.new(|_| ExampleBox))
             }),
+
+            context_menu: None,
         }
+    }
+
+    fn deploy_context_menu(
+        &mut self,
+        position: Point<Pixels>,
+        w: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let context_menu = cx.new(|cx| {
+            ContextMenu::new(w, cx)
+                .action("Action 1", Box::new(Action1))
+                .divider()
+                .destructive_action("Action 2", Box::new(Action2))
+        });
+
+        let subscription = cx.subscribe(&context_menu, |this, _, _: &DismissEvent, cx| {
+            this.context_menu.take();
+            cx.notify();
+        });
+
+        self.context_menu = Some((context_menu, position, subscription));
     }
 }
 
@@ -99,6 +129,30 @@ impl Render for InteractiveTab {
             .child(row("Checkbox", self.checkbox.clone().into_any_element()))
             .child(row("Disabled", self.checkbox_disabled.clone().into_any_element()));
 
+        let context_menu = container(ContainerStyle::normal(w, cx))
+            .on_mouse_down(
+                MouseButton::Right,
+                cx.listener(|this, event: &MouseDownEvent, w, cx| {
+                    this.deploy_context_menu(event.position, w, cx);
+                }),
+            )
+            .on_action(|_: &Action1, _window: &mut Window, _cx: &mut App| {
+                println!("Action 1 dispatched!");
+            })
+            .on_action(|_: &Action2, _window: &mut Window, _cx: &mut App| {
+                println!("Action 2 dispatched!");
+            })
+            .child("Click me for a context menu")
+            .children(self.context_menu.as_ref().map(|(menu, position, _)| {
+                deferred(
+                    anchored()
+                        .position(*position)
+                        .anchor(gpui::Corner::BottomLeft)
+                        .child(menu.clone()),
+                )
+                .with_priority(1)
+            }));
+
         let table = div().h_64().child(self.table.clone());
 
         let draggable =
@@ -118,6 +172,7 @@ impl Render for InteractiveTab {
             .gap_2()
             .child(ui::section("Inputs").mb_4().child(inputs))
             .child(ui::section("Checkboxes").mb_4().child(checkboxes))
+            .child(ui::section("Context Menu").mb_4().child(context_menu))
             .child(ui::section("Table").mb_4().child(table))
             .child(ui::section("Draggable").mb_4().child(draggable))
             .child(ui::section("Pannable").mb_4().child(pannable))

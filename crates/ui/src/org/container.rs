@@ -43,6 +43,12 @@ impl Styled for Container {
     }
 }
 
+impl InteractiveElement for Container {
+    fn interactivity(&mut self) -> &mut Interactivity {
+        self.base.interactivity()
+    }
+}
+
 impl RenderOnce for Container {
     fn render(self, _w: &mut Window, cx: &mut App) -> impl IntoElement {
         let style = match self.disabled {
@@ -92,6 +98,30 @@ impl ContainerStyle {
         }
     }
 
+    pub fn destructive(w: &Window, cx: &App) -> Self {
+        Self {
+            background: cx.theme().colors.bg_destructive,
+            border: cx.theme().colors.border_destructive,
+            text_color: w.text_style().color,
+        }
+    }
+
+    pub fn destructive_focused(w: &Window, cx: &App) -> Self {
+        Self {
+            background: cx.theme().colors.bg_destructive_focused,
+            border: cx.theme().colors.border_destructive_focused,
+            text_color: w.text_style().color,
+        }
+    }
+
+    pub fn destructive_selected(w: &Window, cx: &App) -> Self {
+        Self {
+            background: cx.theme().colors.bg_destructive_selected,
+            border: cx.theme().colors.border_destructive_selected,
+            text_color: w.text_style().color,
+        }
+    }
+
     pub fn disabled(&self) -> Self {
         Self {
             background: self.background.muted(),
@@ -128,6 +158,7 @@ pub fn interactive_container(
 pub struct InteractiveContainer {
     disabled: bool,
     selected: bool,
+    destructive: bool,
 
     base: Stateful<Div>,
     children: SmallVec<[AnyElement; 2]>,
@@ -141,12 +172,18 @@ impl InteractiveContainer {
         Self {
             disabled: false,
             selected: false,
+            destructive: false,
             base: div().id(id.into()),
             children: SmallVec::new(),
             focus_handle,
 
             disabled_interactivity: Interactivity::default(),
         }
+    }
+
+    pub fn destructive(mut self, destructive: bool) -> Self {
+        self.destructive = destructive;
+        self
     }
 }
 
@@ -194,12 +231,22 @@ impl RenderOnce for InteractiveContainer {
     fn render(self, w: &mut Window, cx: &mut App) -> impl IntoElement {
         let focused = self.focus_handle.as_ref().is_some_and(|fh| fh.is_focused(w));
 
-        let mut style = if focused {
-            ContainerStyle::focused(w, cx)
-        } else if self.selected {
-            ContainerStyle::selected(w, cx)
+        let mut style = if self.destructive {
+            if focused {
+                ContainerStyle::destructive_focused(w, cx)
+            } else if self.selected {
+                ContainerStyle::destructive_selected(w, cx)
+            } else {
+                ContainerStyle::destructive(w, cx)
+            }
         } else {
-            ContainerStyle::normal(w, cx)
+            if focused {
+                ContainerStyle::focused(w, cx)
+            } else if self.selected {
+                ContainerStyle::selected(w, cx)
+            } else {
+                ContainerStyle::normal(w, cx)
+            }
         };
 
         if self.disabled {
