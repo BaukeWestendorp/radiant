@@ -42,7 +42,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
     }
 
     pub fn add_node(&mut self, node_id: NodeId, window: &mut Window, cx: &mut Context<Self>) {
-        let NodeMeasurements { snap_size, .. } = NodeMeasurements::new(window);
+        let NodeMeasurements { snap_threshold, .. } = NodeMeasurements::new(window);
         let graph_view = cx.entity().clone();
         let node_view =
             cx.new(|cx| NodeView::new(node_id, graph_view, self.graph.clone(), window, cx));
@@ -50,7 +50,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
             Draggable::new(
                 ElementId::NamedInteger("node".into(), node_id.0 as u64),
                 *self.graph().read(cx).node_position(&node_id),
-                Some(snap_size),
+                Some(snap_threshold),
                 node_view,
             )
         });
@@ -338,7 +338,7 @@ impl<D: GraphDef + 'static> GraphView<D> {
         let node = self.graph().read(cx).node(&node_id);
 
         let NodeMeasurements {
-            snap_size,
+            snap_threshold,
             sockets_padding_y,
             width,
             header_height,
@@ -348,8 +348,10 @@ impl<D: GraphDef + 'static> GraphView<D> {
         } = NodeMeasurements::new(window);
 
         let template = self.graph().read(cx).template(node.template_id());
-        let node_position =
-            ui::utils::snap_point(*self.graph().read(cx).visual_node_position(&node_id), snap_size);
+        let node_position = ui::utils::snap_point(
+            *self.graph().read(cx).visual_node_position(&node_id),
+            snap_threshold,
+        );
 
         let socket_index = match socket {
             AnySocket::Input(input) => template

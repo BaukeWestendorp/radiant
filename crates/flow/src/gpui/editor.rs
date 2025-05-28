@@ -260,7 +260,7 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
     fn handle_mouse_move(
         &mut self,
         event: &MouseMoveEvent,
-        _window: &mut Window,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) {
         if let Some(rect_selection) = &mut self.selection_corners {
@@ -274,7 +274,8 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
                 let selected_nodes = graph
                     .node_ids()
                     .filter(|id| {
-                        bounds.intersects(&(graph.node_bounds(id) + self.visual_graph_offset))
+                        bounds
+                            .intersects(&(graph.node_bounds(id, window) + self.visual_graph_offset))
                     })
                     .copied()
                     .collect::<Vec<_>>();
@@ -301,11 +302,11 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
 
 impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let NodeMeasurements { snap_size, .. } = NodeMeasurements::new(window);
+        let NodeMeasurements { snap_threshold, .. } = NodeMeasurements::new(window);
 
         let grid = ui::scrollable_line_grid(
             &self.visual_graph_offset,
-            snap_size,
+            snap_threshold,
             cx.theme().colors.border.darken(0.75),
         )
         .size_full();

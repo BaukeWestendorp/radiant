@@ -1,9 +1,10 @@
 use crate::{
     Input, InputSocket, Node, NodeId, Output, OutputSocket, Template, TemplateId,
-    gpui::{ControlView, GraphEvent},
+    gpui::{ControlView, GraphEvent, node::NodeMeasurements},
 };
-use gpui::{Bounds, Pixels, Point, Size};
+use gpui::{Bounds, Pixels, Point, Size, Window};
 use std::collections::HashMap;
+use ui::utils::snap_point;
 
 pub trait GraphDef: Clone {
     #[cfg(feature = "serde")]
@@ -337,10 +338,11 @@ impl<D: GraphDef + 'static> Graph<D> {
         }
     }
 
-    pub fn node_bounds(&self, node_id: &NodeId) -> Bounds<Pixels> {
-        let position = self.visual_node_position(node_id);
+    pub fn node_bounds(&self, node_id: &NodeId, window: &Window) -> Bounds<Pixels> {
+        let snap_threshold = NodeMeasurements::new(window).snap_threshold;
+        let position = snap_point(*self.visual_node_position(node_id), snap_threshold);
         let size = self.node_size(node_id);
-        Bounds::new(*position, *size)
+        Bounds::new(position, *size)
     }
 
     pub fn node_size(&self, node_id: &NodeId) -> &Size<Pixels> {

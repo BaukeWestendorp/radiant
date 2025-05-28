@@ -4,12 +4,14 @@ use crate::show::Show;
 use crate::ui::FRAME_CELL_SIZE;
 use anyhow::Context as _;
 use gpui::{
-    App, Bounds, ElementId, Entity, FocusHandle, ReadGlobal, TitlebarOptions, UpdateGlobal, Window,
-    WindowBounds, WindowHandle, WindowOptions, div, prelude::*, px, size,
+    App, Bounds, ElementId, Entity, FocusHandle, Pixels, ReadGlobal, TitlebarOptions, UpdateGlobal,
+    Window, WindowBounds, WindowHandle, WindowOptions, div, prelude::*, px, size,
 };
 use ui::{ActiveTheme, Disableable, interactive_container, root, utils::z_stack};
 
 use super::DEFAULT_REM_SIZE;
+
+const PAGE_LIST_WIDTH: Pixels = px(FRAME_CELL_SIZE.0 * 1.5);
 
 pub struct MainWindow {
     page: Entity<Page>,
@@ -19,12 +21,14 @@ pub struct MainWindow {
 
 impl MainWindow {
     pub fn open(cx: &mut App) -> anyhow::Result<WindowHandle<Self>> {
+        let min_size = size(
+            FRAME_CELL_SIZE * GRID_SIZE.width as f32 + PAGE_LIST_WIDTH,
+            FRAME_CELL_SIZE * GRID_SIZE.height as f32,
+        );
+
         let window_options = WindowOptions {
-            window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
-                None,
-                size(px(1560.0), px(960.0)),
-                cx,
-            ))),
+            window_bounds: Some(WindowBounds::Windowed(Bounds::centered(None, min_size, cx))),
+            window_min_size: Some(min_size),
             app_id: Some(APP_ID.to_string()),
             titlebar: Some(TitlebarOptions { title: Some("Radiant".into()), ..Default::default() }),
             ..Default::default()
@@ -78,7 +82,7 @@ impl Render for MainWindow {
         let layout = &Show::global(cx).layout.read(cx);
         let pages = &layout.main_window.pages;
         let pages_list = div()
-            .w(FRAME_CELL_SIZE * 1.5)
+            .w(PAGE_LIST_WIDTH)
             .h(FRAME_CELL_SIZE * GRID_SIZE.height as f32)
             .flex()
             .flex_col()

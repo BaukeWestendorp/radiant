@@ -15,7 +15,7 @@ pub struct NodeMeasurements {
     pub sockets_padding_y: Pixels,
     pub socket_height: Pixels,
     pub socket_gap_y: Pixels,
-    pub snap_size: Pixels,
+    pub snap_threshold: Pixels,
     pub connector_width: Pixels,
     pub connector_height: Pixels,
 }
@@ -31,7 +31,7 @@ impl NodeMeasurements {
             sockets_padding_y: rem / 2.0,
             socket_height: line_height,
             socket_gap_y: rem / 2.0,
-            snap_size: rem,
+            snap_threshold: rem,
             connector_width: px(4.0),
             connector_height: rem,
         }
