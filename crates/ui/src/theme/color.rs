@@ -45,9 +45,9 @@ impl Colors {
             bg_selected: selected.lighten(0.5).with_opacity(0.3),
             bg_selected_bright: selected.lighten(0.2),
             bg_alternating: gpui::hsla(0.0, 0.0, 0.95, 1.0),
-            bg_destructive: destructive.lighten(0.2).with_opacity(0.3),
-            bg_destructive_focused: destructive.lighten(0.2).with_opacity(0.4),
-            bg_destructive_selected: destructive.lighten(0.1).with_opacity(0.5),
+            bg_destructive: destructive.lighten(0.2),
+            bg_destructive_focused: destructive.lighten(0.2),
+            bg_destructive_selected: destructive.lighten(0.1),
 
             text: gpui::hsla(0.0, 0.0, 0.0, 1.0),
 
@@ -82,9 +82,9 @@ impl Colors {
             bg_selected: selected.darken(0.5).with_opacity(0.3),
             bg_selected_bright: selected.darken(0.2),
             bg_alternating: gpui::hsla(0.0, 0.0, 0.1, 1.0),
-            bg_destructive: destructive.darken(0.2).with_opacity(0.3),
-            bg_destructive_focused: destructive.darken(0.2).with_opacity(0.4),
-            bg_destructive_selected: destructive.darken(0.1).with_opacity(0.5),
+            bg_destructive: destructive.darken(0.8),
+            bg_destructive_focused: destructive.darken(0.4),
+            bg_destructive_selected: destructive.darken(0.2),
 
             text: gpui::hsla(0.0, 0.0, 1.0, 1.0),
 

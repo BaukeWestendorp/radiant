@@ -64,6 +64,7 @@ pub trait VirtualWindowDelegate: Focusable {
         let focused = self.focus_handle(cx).contains_focused(w, cx);
 
         let close_button = interactive_container("close-button", None)
+            .destructive(true)
             .on_click(cx.listener(|vw, _, w, cx| vw.delegate.on_close_window(w, cx)))
             .cursor_pointer()
             .px_2()
