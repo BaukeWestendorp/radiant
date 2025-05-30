@@ -115,3 +115,29 @@ impl Render for WindowFrame {
 pub enum WindowFrameKind {
     EffectGraphEditor(Entity<GraphEditorFrame<effect_graph::Def>>),
 }
+
+impl WindowFrameKind {
+    pub fn into_show(&self, cx: &App) -> show::WindowFrameKind {
+        match self {
+            Self::EffectGraphEditor(graph_editor_frame) => {
+                let asset = &graph_editor_frame.read(cx).asset;
+                show::WindowFrameKind::EffectGraphEditor(asset.as_ref().map(|a| a.read(cx).id))
+            }
+        }
+    }
+
+    pub fn from_show(from: &show::WindowFrameKind, window: &mut Window, cx: &mut App) -> Self {
+        match from {
+            show::WindowFrameKind::EffectGraphEditor(asset_id) => {
+                let editor_frame = cx.new(|cx| {
+                    let asset = asset_id.as_ref().map(|asset_id| {
+                        Show::global(cx).assets.effect_graphs.get(asset_id).unwrap()
+                    });
+                    GraphEditorFrame::new(asset.cloned(), window, cx)
+                });
+
+                WindowFrameKind::EffectGraphEditor(editor_frame)
+            }
+        }
+    }
+}

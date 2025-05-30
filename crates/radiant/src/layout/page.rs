@@ -41,10 +41,15 @@ impl Render for Page {
 }
 
 impl Page {
-    pub fn into_show(self, cx: &App) -> show::Page {
+    pub fn into_show(&self, cx: &App) -> show::Page {
         show::Page {
-            label: self.label,
-            frames: self.frames.into_iter().map(|frame| frame.read(cx).into_show(cx)).collect(),
+            label: self.label.clone(),
+            frames: self
+                .frames
+                .clone()
+                .into_iter()
+                .map(|frame| frame.read(cx).into_show(cx))
+                .collect(),
         }
     }
 

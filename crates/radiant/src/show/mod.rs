@@ -48,7 +48,7 @@ impl Show {
     }
 
     pub fn save_to_file(&mut self, path: &PathBuf, cx: &gpui::App) -> Result<(), std::io::Error> {
-        let showfile = Showfile::from_show(self.clone(), cx);
+        let showfile = Showfile::from_show(self, cx);
         self.path = Some(path.clone());
         showfile.save_to_file(path)
     }
@@ -102,13 +102,13 @@ pub(crate) mod showfile {
             })
         }
 
-        pub fn from_show(from: super::Show, cx: &gpui::App) -> Self {
+        pub fn from_show(from: &super::Show, cx: &gpui::App) -> Self {
             Self {
                 protocol_settings: super::protocol::showfile::ProtocolSettings::from_show(
-                    from.protocol_settings,
+                    &from.protocol_settings,
                     cx,
                 ),
-                assets: super::asset::showfile::Assets::from_show(from.assets, cx),
+                assets: super::asset::showfile::Assets::from_show(&from.assets, cx),
                 layout: from.layout.read(cx).clone(),
                 patch: from.patch.read(cx).clone(),
             }

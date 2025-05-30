@@ -150,7 +150,7 @@ pub(crate) mod showfile {
     }
 
     impl Assets {
-        pub fn into_show(self, cx: &mut gpui::App) -> super::Assets {
+        pub fn into_show(&self, cx: &mut gpui::App) -> super::Assets {
             let mut effect_graphs = self.effect_graphs.to_show(cx);
             for (_, asset) in &mut effect_graphs.0 {
                 asset.update(cx, |asset, _cx| {
@@ -178,24 +178,24 @@ pub(crate) mod showfile {
             }
         }
 
-        pub fn from_show(from: super::Assets, cx: &gpui::App) -> Self {
+        pub fn from_show(from: &super::Assets, cx: &gpui::App) -> Self {
             Self {
-                effect_graphs: AssetPool::from_show(from.effect_graphs, cx),
-                fixture_groups: AssetPool::from_show(from.fixture_groups, cx),
+                effect_graphs: AssetPool::from_show(&from.effect_graphs, cx),
+                fixture_groups: AssetPool::from_show(&from.fixture_groups, cx),
 
-                cues: AssetPool::from_show(from.cues, cx),
-                sequences: AssetPool::from_show(from.sequences, cx),
-                executors: AssetPool::from_show(from.executors, cx),
+                cues: AssetPool::from_show(&from.cues, cx),
+                sequences: AssetPool::from_show(&from.sequences, cx),
+                executors: AssetPool::from_show(&from.executors, cx),
 
-                dimmer_presets: AssetPool::from_show(from.dimmer_presets, cx),
-                position_presets: AssetPool::from_show(from.position_presets, cx),
-                gobo_presets: AssetPool::from_show(from.gobo_presets, cx),
-                color_presets: AssetPool::from_show(from.color_presets, cx),
-                beam_presets: AssetPool::from_show(from.beam_presets, cx),
-                focus_presets: AssetPool::from_show(from.focus_presets, cx),
-                control_presets: AssetPool::from_show(from.control_presets, cx),
-                shapers_presets: AssetPool::from_show(from.shapers_presets, cx),
-                video_presets: AssetPool::from_show(from.video_presets, cx),
+                dimmer_presets: AssetPool::from_show(&from.dimmer_presets, cx),
+                position_presets: AssetPool::from_show(&from.position_presets, cx),
+                gobo_presets: AssetPool::from_show(&from.gobo_presets, cx),
+                color_presets: AssetPool::from_show(&from.color_presets, cx),
+                beam_presets: AssetPool::from_show(&from.beam_presets, cx),
+                focus_presets: AssetPool::from_show(&from.focus_presets, cx),
+                control_presets: AssetPool::from_show(&from.control_presets, cx),
+                shapers_presets: AssetPool::from_show(&from.shapers_presets, cx),
+                video_presets: AssetPool::from_show(&from.video_presets, cx),
             }
         }
     }
@@ -209,22 +209,22 @@ pub(crate) mod showfile {
         }
     }
 
-    impl<T: 'static> AssetPool<T> {
-        pub fn to_show(self, cx: &mut gpui::App) -> super::AssetPool<T> {
+    impl<T: Clone + 'static> AssetPool<T> {
+        pub fn to_show(&self, cx: &mut gpui::App) -> super::AssetPool<T> {
             let mut pool = super::AssetPool::new();
-            for (id, asset) in self.0 {
-                pool.insert(id, cx.new(|_| asset));
+            for (id, asset) in &self.0 {
+                pool.insert(*id, cx.new(|_| asset.clone()));
             }
             pool
         }
 
-        pub fn from_show(from: super::AssetPool<T>, cx: &gpui::App) -> Self
+        pub fn from_show(from: &super::AssetPool<T>, cx: &gpui::App) -> Self
         where
             T: Clone,
         {
             let mut hashmap = HashMap::new();
-            for (id, asset) in from.0 {
-                hashmap.insert(id, asset.read(cx).clone());
+            for (id, asset) in &from.0 {
+                hashmap.insert(*id, asset.read(cx).clone());
             }
             Self(hashmap)
         }

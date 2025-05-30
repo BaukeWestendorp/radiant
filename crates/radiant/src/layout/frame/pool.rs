@@ -1,8 +1,8 @@
 use crate::show::{self, AssetId, Show};
 use crate::ui::FRAME_CELL_SIZE;
 use gpui::{
-    App, Empty, Entity, Focusable, MouseButton, ReadGlobal, UpdateGlobal, Window, div, prelude::*,
-    px,
+    App, Empty, Entity, Focusable, MouseButton, ReadGlobal, SharedString, UpdateGlobal, Window,
+    div, prelude::*, px,
 };
 use ui::{
     ActiveTheme, ContainerStyle, Disableable, InteractiveColor, container, h6,
@@ -33,6 +33,56 @@ pub enum PoolFrameKind {
     Preset(PresetPoolFrameKind),
 }
 
+impl PoolFrameKind {
+    pub fn into_show(&self) -> show::PoolFrameKind {
+        match self {
+            Self::EffectGraphs => show::PoolFrameKind::EffectGraphs,
+            Self::FixtureGroups => show::PoolFrameKind::FixtureGroups,
+            Self::Cues => show::PoolFrameKind::Cues,
+            Self::Sequences => show::PoolFrameKind::Sequences,
+            Self::Executors => show::PoolFrameKind::Executors,
+            Self::Preset(kind) => match kind {
+                PresetPoolFrameKind::Dimmer => show::PoolFrameKind::DimmerPresets,
+                PresetPoolFrameKind::Position => show::PoolFrameKind::PositionPresets,
+                PresetPoolFrameKind::Gobo => show::PoolFrameKind::GoboPresets,
+                PresetPoolFrameKind::Color => show::PoolFrameKind::ColorPresets,
+                PresetPoolFrameKind::Beam => show::PoolFrameKind::BeamPresets,
+                PresetPoolFrameKind::Focus => show::PoolFrameKind::FocusPresets,
+                PresetPoolFrameKind::Control => show::PoolFrameKind::ControlPresets,
+                PresetPoolFrameKind::Shapers => show::PoolFrameKind::ShapersPresets,
+                PresetPoolFrameKind::Video => show::PoolFrameKind::VideoPresets,
+            },
+        }
+    }
+
+    pub fn from_show(from: &show::PoolFrameKind) -> Self {
+        match from {
+            show::PoolFrameKind::EffectGraphs => PoolFrameKind::EffectGraphs,
+            show::PoolFrameKind::FixtureGroups => PoolFrameKind::FixtureGroups,
+            show::PoolFrameKind::Cues => PoolFrameKind::Cues,
+            show::PoolFrameKind::Sequences => PoolFrameKind::Sequences,
+            show::PoolFrameKind::Executors => PoolFrameKind::Executors,
+            show::PoolFrameKind::DimmerPresets => {
+                PoolFrameKind::Preset(PresetPoolFrameKind::Dimmer)
+            }
+            show::PoolFrameKind::PositionPresets => {
+                PoolFrameKind::Preset(PresetPoolFrameKind::Position)
+            }
+            show::PoolFrameKind::GoboPresets => PoolFrameKind::Preset(PresetPoolFrameKind::Gobo),
+            show::PoolFrameKind::ColorPresets => PoolFrameKind::Preset(PresetPoolFrameKind::Color),
+            show::PoolFrameKind::BeamPresets => PoolFrameKind::Preset(PresetPoolFrameKind::Beam),
+            show::PoolFrameKind::FocusPresets => PoolFrameKind::Preset(PresetPoolFrameKind::Focus),
+            show::PoolFrameKind::ControlPresets => {
+                PoolFrameKind::Preset(PresetPoolFrameKind::Control)
+            }
+            show::PoolFrameKind::ShapersPresets => {
+                PoolFrameKind::Preset(PresetPoolFrameKind::Shapers)
+            }
+            show::PoolFrameKind::VideoPresets => PoolFrameKind::Preset(PresetPoolFrameKind::Video),
+        }
+    }
+}
+
 pub enum PresetPoolFrameKind {
     Dimmer,
     Position,
@@ -46,27 +96,8 @@ pub enum PresetPoolFrameKind {
 }
 
 impl PoolFrame {
-    fn title(&self) -> &str {
-        match &self.kind {
-            PoolFrameKind::EffectGraphs => "Effect Graphs",
-            PoolFrameKind::FixtureGroups => "Fixture Groups",
-
-            PoolFrameKind::Cues => "Cues",
-            PoolFrameKind::Sequences => "Sequences",
-            PoolFrameKind::Executors => "Executors",
-
-            PoolFrameKind::Preset(kind) => match kind {
-                PresetPoolFrameKind::Dimmer => "Dimmer",
-                PresetPoolFrameKind::Position => "Position",
-                PresetPoolFrameKind::Gobo => "Gobo",
-                PresetPoolFrameKind::Color => "Color",
-                PresetPoolFrameKind::Beam => "Beam",
-                PresetPoolFrameKind::Focus => "Focus",
-                PresetPoolFrameKind::Control => "Control",
-                PresetPoolFrameKind::Shapers => "Shapers",
-                PresetPoolFrameKind::Video => "Video",
-            },
-        }
+    fn title(&self) -> SharedString {
+        self.kind.into_show().to_string().into()
     }
 
     fn render_header_cell(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {

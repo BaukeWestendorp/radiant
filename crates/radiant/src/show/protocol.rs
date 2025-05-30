@@ -57,12 +57,12 @@ pub(crate) mod showfile {
     }
 
     impl ProtocolSettings {
-        pub fn into_show(self, cx: &mut gpui::App) -> super::ProtocolSettings {
+        pub fn into_show(&self, cx: &mut gpui::App) -> super::ProtocolSettings {
             super::ProtocolSettings { sacn: self.sacn.to_show(cx) }
         }
 
-        pub fn from_show(from: super::ProtocolSettings, cx: &gpui::App) -> Self {
-            Self { sacn: SacnSettings::from_show(from.sacn, cx) }
+        pub fn from_show(from: &super::ProtocolSettings, cx: &gpui::App) -> Self {
+            Self { sacn: SacnSettings::from_show(&from.sacn, cx) }
         }
     }
 
@@ -73,16 +73,14 @@ pub(crate) mod showfile {
     }
 
     impl SacnSettings {
-        pub fn to_show(self, cx: &mut gpui::App) -> super::SacnSettings {
+        pub fn to_show(&self, cx: &mut gpui::App) -> super::SacnSettings {
             super::SacnSettings {
-                sources: self.sources.into_iter().map(|source| cx.new(|_| source)).collect(),
+                sources: self.sources.iter().map(|source| cx.new(|_| source.clone())).collect(),
             }
         }
 
-        pub fn from_show(from: super::SacnSettings, cx: &gpui::App) -> Self {
-            Self {
-                sources: from.sources.into_iter().map(|source| source.read(cx).clone()).collect(),
-            }
+        pub fn from_show(from: &super::SacnSettings, cx: &gpui::App) -> Self {
+            Self { sources: from.sources.iter().map(|source| source.read(cx).clone()).collect() }
         }
     }
 }
