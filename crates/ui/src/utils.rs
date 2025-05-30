@@ -10,7 +10,7 @@ pub fn z_stack(children: impl IntoIterator<Item = impl IntoElement>) -> Div {
 pub fn bounds_updater<V: 'static>(
     entity: Entity<V>,
     f: impl FnOnce(&mut V, Bounds<Pixels>, &mut Context<V>) + 'static,
-) -> impl IntoElement {
+) -> Canvas<()> {
     let entity = entity.clone();
     canvas(
         move |bounds, _window, cx| entity.update(cx, |view, cx| f(view, bounds, cx)),

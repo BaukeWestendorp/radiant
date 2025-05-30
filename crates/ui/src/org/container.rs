@@ -67,6 +67,7 @@ impl RenderOnce for Container {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ContainerStyle {
     pub background: Hsla,
     pub border: Hsla,

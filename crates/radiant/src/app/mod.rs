@@ -68,6 +68,7 @@ impl RadiantApp {
 }
 
 fn init_actions(main_window: WindowHandle<MainWindow>, cx: &mut App) {
+    crate::ui::init(cx);
     ui::init(cx);
     ui::actions::init(cx);
     flow::gpui::actions::init(cx);

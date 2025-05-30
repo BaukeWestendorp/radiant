@@ -1,9 +1,15 @@
 use crate::show::{FloatingDmxValue, patch::FixtureId};
 use std::str::FromStr;
 
+mod frame_selector;
 mod preset_selector;
 
+pub use frame_selector::*;
 pub use preset_selector::*;
+
+pub fn init(cx: &mut gpui::App) {
+    frame_selector::actions::init(cx);
+}
 
 impl ui::NumberFieldImpl for FixtureId {
     type Value = FixtureId;

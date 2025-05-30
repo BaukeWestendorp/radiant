@@ -19,7 +19,6 @@ impl WindowFrame {
     pub fn new(kind: WindowFrameKind, frame: Entity<Frame>) -> Self {
         Self { kind, frame }
     }
-}
 
     fn title(&self, cx: &App) -> SharedString {
         self.kind.into_show(cx).to_string().into()
