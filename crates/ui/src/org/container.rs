@@ -159,6 +159,7 @@ pub struct InteractiveContainer {
     disabled: bool,
     selected: bool,
     destructive: bool,
+    normal_container_style: Option<ContainerStyle>,
 
     base: Stateful<Div>,
     children: SmallVec<[AnyElement; 2]>,
@@ -173,12 +174,19 @@ impl InteractiveContainer {
             disabled: false,
             selected: false,
             destructive: false,
+            normal_container_style: None,
+
             base: div().id(id.into()),
             children: SmallVec::new(),
             focus_handle,
 
             disabled_interactivity: Interactivity::default(),
         }
+    }
+
+    pub fn normal_container_style(mut self, style: ContainerStyle) -> Self {
+        self.normal_container_style = Some(style);
+        self
     }
 
     pub fn destructive(mut self, destructive: bool) -> Self {
@@ -245,7 +253,7 @@ impl RenderOnce for InteractiveContainer {
             } else if self.selected {
                 ContainerStyle::selected(w, cx)
             } else {
-                ContainerStyle::normal(w, cx)
+                self.normal_container_style.unwrap_or_else(|| ContainerStyle::normal(w, cx))
             }
         };
 
@@ -271,8 +279,17 @@ impl RenderOnce for InteractiveContainer {
         .text_color(style.text_color)
         .when(self.disabled, |e| e.cursor_not_allowed())
         .when(!self.disabled, |e| {
-            e.hover(|e| e.bg(style.hovered().background).border_color(style.hovered().border))
-                .active(|e| e.bg(style.active().background).border_color(style.active().border))
+            let hover_active_style =
+                if !focused && !self.selected { ContainerStyle::normal(w, cx) } else { style };
+
+            e.hover(|e| {
+                e.bg(hover_active_style.hovered().background)
+                    .border_color(hover_active_style.hovered().border)
+            })
+            .active(|e| {
+                e.bg(hover_active_style.active().background)
+                    .border_color(hover_active_style.active().border)
+            })
         })
         .overflow_hidden()
         .children(self.children)

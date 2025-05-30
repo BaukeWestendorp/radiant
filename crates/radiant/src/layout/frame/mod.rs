@@ -1,3 +1,4 @@
+use super::{GRID_SIZE, Page};
 use crate::{
     show::{self, Show},
     ui::FRAME_CELL_SIZE,
@@ -7,14 +8,12 @@ use gpui::{
     MouseButton, MouseDownEvent, MouseUpEvent, Path, Pixels, Point, ReadGlobal, Size, Subscription,
     Window, anchored, bounds, canvas, deferred, div, point, prelude::*, px, size,
 };
-use pool::{PoolFrame, PoolFrameKind, PresetPoolFrameKind};
+use pool::{PoolFrame, PoolFrameKind};
 use ui::{
     ActiveTheme, ContextMenu,
     utils::{snap_point, z_stack},
 };
-use window::{WindowFrame, WindowFrameKind, graph_editor::GraphEditorFrame};
-
-use super::{GRID_SIZE, Page};
+use window::{WindowFrame, WindowFrameKind};
 
 mod pool;
 mod window;
@@ -28,32 +27,11 @@ impl FrameKind {
     pub fn into_show(&self, cx: &App) -> show::FrameKind {
         match self {
             FrameKind::Window(window_frame) => {
-                let window_frame = window_frame.read(cx);
-                show::FrameKind::Window(match &window_frame.kind {
-                    WindowFrameKind::EffectGraphEditor(graph_editor_frame) => {
-                        let asset = &graph_editor_frame.read(cx).asset;
-                        show::WindowFrameKind::EffectGraphEditor(asset.read(cx).id)
-                    }
-                })
+                show::FrameKind::Window(window_frame.read(cx).kind.into_show(cx))
             }
-            FrameKind::Pool(pool_frame) => show::FrameKind::Pool(match &pool_frame.read(cx).kind {
-                PoolFrameKind::EffectGraphs => show::PoolFrameKind::EffectGraphs,
-                PoolFrameKind::FixtureGroups => show::PoolFrameKind::FixtureGroups,
-                PoolFrameKind::Cues => show::PoolFrameKind::Cues,
-                PoolFrameKind::Sequences => show::PoolFrameKind::Sequences,
-                PoolFrameKind::Executors => show::PoolFrameKind::Executors,
-                PoolFrameKind::Preset(kind) => match kind {
-                    PresetPoolFrameKind::Dimmer => show::PoolFrameKind::DimmerPresets,
-                    PresetPoolFrameKind::Position => show::PoolFrameKind::PositionPresets,
-                    PresetPoolFrameKind::Gobo => show::PoolFrameKind::GoboPresets,
-                    PresetPoolFrameKind::Color => show::PoolFrameKind::ColorPresets,
-                    PresetPoolFrameKind::Beam => show::PoolFrameKind::BeamPresets,
-                    PresetPoolFrameKind::Focus => show::PoolFrameKind::FocusPresets,
-                    PresetPoolFrameKind::Control => show::PoolFrameKind::ControlPresets,
-                    PresetPoolFrameKind::Shapers => show::PoolFrameKind::ShapersPresets,
-                    PresetPoolFrameKind::Video => show::PoolFrameKind::VideoPresets,
-                },
-            }),
+            FrameKind::Pool(pool_frame) => {
+                show::FrameKind::Pool(pool_frame.read(cx).kind.into_show())
+            }
         }
     }
 
@@ -64,56 +42,13 @@ impl FrameKind {
         cx: &mut App,
     ) -> Self {
         match from {
-            show::FrameKind::Window(kind) => match kind {
-                show::WindowFrameKind::EffectGraphEditor(asset_id) => {
-                    let editor_frame = cx.new(|cx| {
-                        let asset = Show::global(cx).assets.effect_graphs.get(asset_id).unwrap();
-                        GraphEditorFrame::new(asset.clone(), w, cx)
-                    });
-
-                    let window_frame = cx.new(|_| {
-                        WindowFrame::new(WindowFrameKind::EffectGraphEditor(editor_frame), frame)
-                    });
-
-                    FrameKind::Window(window_frame)
-                }
-            },
+            show::FrameKind::Window(kind) => {
+                let kind = WindowFrameKind::from_show(kind, w, cx);
+                let window_frame = cx.new(|_| WindowFrame::new(kind, frame));
+                Self::Window(window_frame)
+            }
             show::FrameKind::Pool(kind) => {
-                let pool_frame_kind = match kind {
-                    show::PoolFrameKind::EffectGraphs => PoolFrameKind::EffectGraphs,
-                    show::PoolFrameKind::FixtureGroups => PoolFrameKind::FixtureGroups,
-                    show::PoolFrameKind::Cues => PoolFrameKind::Cues,
-                    show::PoolFrameKind::Sequences => PoolFrameKind::Sequences,
-                    show::PoolFrameKind::Executors => PoolFrameKind::Executors,
-                    show::PoolFrameKind::DimmerPresets => {
-                        PoolFrameKind::Preset(PresetPoolFrameKind::Dimmer)
-                    }
-                    show::PoolFrameKind::PositionPresets => {
-                        PoolFrameKind::Preset(PresetPoolFrameKind::Position)
-                    }
-                    show::PoolFrameKind::GoboPresets => {
-                        PoolFrameKind::Preset(PresetPoolFrameKind::Gobo)
-                    }
-                    show::PoolFrameKind::ColorPresets => {
-                        PoolFrameKind::Preset(PresetPoolFrameKind::Color)
-                    }
-                    show::PoolFrameKind::BeamPresets => {
-                        PoolFrameKind::Preset(PresetPoolFrameKind::Beam)
-                    }
-                    show::PoolFrameKind::FocusPresets => {
-                        PoolFrameKind::Preset(PresetPoolFrameKind::Focus)
-                    }
-                    show::PoolFrameKind::ControlPresets => {
-                        PoolFrameKind::Preset(PresetPoolFrameKind::Control)
-                    }
-                    show::PoolFrameKind::ShapersPresets => {
-                        PoolFrameKind::Preset(PresetPoolFrameKind::Shapers)
-                    }
-                    show::PoolFrameKind::VideoPresets => {
-                        PoolFrameKind::Preset(PresetPoolFrameKind::Video)
-                    }
-                };
-
+                let pool_frame_kind = PoolFrameKind::from_show(kind);
                 let pool_frame = cx.new(|_| PoolFrame::new(pool_frame_kind, frame));
                 FrameKind::Pool(pool_frame)
             }
@@ -355,27 +290,22 @@ impl Render for Frame {
         let frame_content = self.render_frame_content(w, cx).into_any_element();
 
         let frame = div()
-            .child(z_stack([frame_content.into_any_element(), resize_handle]).size_full())
             .absolute()
             .w(FRAME_CELL_SIZE * self.bounds.size.width as f32)
             .h(FRAME_CELL_SIZE * self.bounds.size.height as f32)
             .left(FRAME_CELL_SIZE * self.bounds.origin.x as f32)
             .top(FRAME_CELL_SIZE * self.bounds.origin.y as f32)
+            .occlude()
+            .child(z_stack([frame_content.into_any_element(), resize_handle]).size_full())
             .into_any_element();
 
         let resize_move_highlight = deferred(self.render_resize_move_highlight(w, cx));
 
         z_stack([frame, resize_move_highlight.into_any_element()])
-            .children(self.header_context_menu.as_ref().map(|(menu, position, _)| {
-                deferred(
-                    anchored()
-                        .position(*position)
-                        .anchor(gpui::Corner::BottomLeft)
-                        .child(menu.clone()),
-                )
-                .with_priority(1)
-            }))
             .on_action(cx.listener(Self::handle_remove))
+            .children(self.header_context_menu.as_ref().map(|(menu, position, _)| {
+                deferred(anchored().position(*position).child(menu.clone())).with_priority(1)
+            }))
     }
 }
 
