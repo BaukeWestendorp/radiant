@@ -1,6 +1,8 @@
-use crate::show::effect_graph;
+use crate::show::{self, Show, effect_graph};
 use crate::ui::FRAME_CELL_SIZE;
-use gpui::{App, Empty, Entity, Focusable, MouseButton, Window, div, prelude::*};
+use gpui::{
+    App, Empty, Entity, Focusable, MouseButton, ReadGlobal, SharedString, Window, div, prelude::*,
+};
 use graph_editor::GraphEditorFrame;
 use ui::{ActiveTheme, ContainerStyle, container, h6};
 
@@ -19,15 +21,12 @@ impl WindowFrame {
     }
 }
 
-impl WindowFrame {
-    fn title(&self) -> &str {
-        match &self.kind {
-            WindowFrameKind::EffectGraphEditor(_) => "Effect Graphs Editor",
-        }
+    fn title(&self, cx: &App) -> SharedString {
+        self.kind.into_show(cx).to_string().into()
     }
 
     fn render_header(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let title = self.title().to_string();
+        let title = self.title(cx);
 
         let border_color = if self.frame.focus_handle(cx).contains_focused(w, cx) {
             cx.theme().colors.border_focused
