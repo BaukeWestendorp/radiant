@@ -274,7 +274,7 @@ impl PoolFrame {
                     match &mut frame.kind {
                         show::FrameKind::Window(show::WindowFrameKind::EffectGraphEditor(
                             effect_graph,
-                        )) => *effect_graph = AssetId::new(id),
+                        )) => *effect_graph = Some(AssetId::new(id)),
                         _ => {}
                     }
                 }
