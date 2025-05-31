@@ -1,16 +1,13 @@
-use super::Frame;
-use crate::{
-    show,
-    ui::{FRAME_CELL_SIZE, FrameSelector},
-};
 use gpui::{
-    App, Bounds, DismissEvent, Entity, EntityId, MouseButton, MouseDownEvent, Pixels, Point, Size,
-    Window, anchored, bounds, deferred, div, prelude::*, size,
+    App, Bounds, Deferred, DismissEvent, Div, Entity, EntityId, MouseButton, MouseDownEvent,
+    Pixels, Point, Size, Window, anchored, bounds, deferred, div, prelude::*, size,
 };
-use ui::{
-    ActiveTheme,
-    utils::{bounds_updater, z_stack},
-};
+use ui::ActiveTheme;
+use ui::utils::{bounds_updater, z_stack};
+
+use super::Frame;
+use crate::show;
+use crate::ui::{FRAME_CELL_SIZE, FrameSelector};
 
 pub const GRID_SIZE: Size<u32> = Size { width: 18, height: 12 };
 
@@ -28,13 +25,8 @@ impl Page {
     }
 
     pub fn add_frame(&mut self, frame: Entity<Frame>, cx: &mut Context<Self>) {
-        cx.observe(&frame, |_, _, cx| {
-            cx.notify();
-        })
-        .detach();
-
+        cx.observe(&frame, |_, _, cx| cx.notify()).detach();
         self.frames.push(frame);
-
         cx.notify();
     }
 
@@ -64,13 +56,13 @@ impl Page {
     }
 }
 
-impl Render for Page {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+impl Page {
+    fn render_background(&mut self, cx: &mut Context<Self>) -> Div {
         let grid = ui::dot_grid(FRAME_CELL_SIZE, cx.theme().colors.grid)
             .w(GRID_SIZE.width as f32 * FRAME_CELL_SIZE)
             .h(GRID_SIZE.height as f32 * FRAME_CELL_SIZE);
 
-        let background = z_stack([
+        z_stack([
             grid.into_any_element(),
             div()
                 .size_full()
@@ -87,37 +79,42 @@ impl Render for Page {
                 )
                 .into_any_element(),
         ])
-        .size_full();
+        .size_full()
+    }
 
-        let frames = z_stack(self.frames.clone()).size_full();
+    fn render_frame_selector(&mut self, cx: &mut Context<Self>) -> Option<Deferred> {
+        self.frame_seletor.as_ref().map(|(frame_selector, position)| {
+            let selector = div()
+                .w_128()
+                .h_72()
+                .on_mouse_down_out(cx.listener(|this, _, _window, cx| {
+                    this.frame_seletor = None;
+                    cx.stop_propagation();
+                    cx.notify();
+                }))
+                .child(frame_selector.clone());
 
-        div()
-            .size_full()
-            .child(
-                z_stack([
-                    background.into_any_element(),
-                    frames.into_any_element(),
-                    bounds_updater(cx.entity(), |this, bounds, _cx| this.bounds = bounds)
-                        .into_any_element(),
-                ])
-                .size_full(),
+            deferred(anchored().position(*position).child(selector)).with_priority(1)
+        })
+    }
+}
+
+impl Render for Page {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let background = self.render_background(cx).into_any_element();
+        let frames = z_stack(self.frames.clone()).size_full().into_any_element();
+        let frame_selector = self.render_frame_selector(cx).map(|f| f.into_any_element());
+        let bounds_updater = bounds_updater(cx.entity(), |this, bounds, _cx| this.bounds = bounds)
+            .into_any_element();
+
+        div().size_full().child(
+            z_stack(
+                [Some(background), Some(frames), frame_selector, Some(bounds_updater)]
+                    .into_iter()
+                    .flatten(),
             )
-            .children(self.frame_seletor.as_ref().map(|(frame_selector, position)| {
-                deferred(
-                    anchored().position(*position).child(
-                        div()
-                            .w_128()
-                            .h_72()
-                            .on_mouse_down_out(cx.listener(|this, _, _window, cx| {
-                                this.frame_seletor = None;
-                                cx.stop_propagation();
-                                cx.notify();
-                            }))
-                            .child(frame_selector.clone()),
-                    ),
-                )
-                .with_priority(1)
-            }))
+            .size_full(),
+        )
     }
 }
 
@@ -145,12 +142,7 @@ impl Page {
         for frame in &loaded_page.frames.clone() {
             let page_view = cx.entity();
             let frame = cx.new(|cx| Frame::from_show(frame, cx.entity(), page_view, window, cx));
-
-            cx.observe(&frame, |_, _, cx| {
-                cx.notify();
-            })
-            .detach();
-
+            cx.observe(&frame, |_, _, cx| cx.notify()).detach();
             page.add_frame(frame, cx);
         }
 
