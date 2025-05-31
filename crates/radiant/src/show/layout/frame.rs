@@ -2,7 +2,7 @@ use crate::show::{AssetId, effect_graph::EffectGraph};
 use gpui::Bounds;
 
 #[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FrameKind {
     Window(WindowFrameKind),
     Pool(PoolFrameKind),
@@ -43,7 +43,7 @@ impl std::fmt::Display for FrameKind {
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WindowFrameKind {
     EffectGraphEditor(Option<AssetId<EffectGraph>>),
 }
@@ -57,7 +57,7 @@ impl std::fmt::Display for WindowFrameKind {
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PoolFrameKind {
     EffectGraphs,
     FixtureGroups,
@@ -101,7 +101,7 @@ impl std::fmt::Display for PoolFrameKind {
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Frame {
     pub bounds: Bounds<u32>,
     pub kind: FrameKind,

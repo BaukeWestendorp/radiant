@@ -28,7 +28,13 @@ impl Page {
     }
 
     pub fn add_frame(&mut self, frame: Entity<Frame>, cx: &mut Context<Self>) {
+        cx.observe(&frame, |_, _, cx| {
+            cx.notify();
+        })
+        .detach();
+
         self.frames.push(frame);
+
         cx.notify();
     }
 
