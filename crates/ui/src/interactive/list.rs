@@ -7,35 +7,36 @@ use crate::{ContainerStyle, Selectable, interactive_container};
 
 use super::SubmitEvent;
 
-pub struct ListItem {
-    label: SharedString,
-}
-
-impl ListItem {
-    pub fn new(label: impl Into<SharedString>) -> Self {
-        Self { label: label.into() }
-    }
-}
-
-pub struct List {
-    items: SmallVec<[ListItem; 2]>,
+pub struct List<T> {
+    items: SmallVec<[T; 2]>,
     selected_index: Option<usize>,
     id: ElementId,
     focus_handle: FocusHandle,
+    get_item_label: Box<dyn Fn(&T) -> SharedString>,
 }
 
-impl List {
-    pub fn new(
+impl<T: 'static> List<T> {
+    pub fn new<F: Fn(&T) -> SharedString + 'static>(
         id: impl Into<ElementId>,
         focus_handle: FocusHandle,
-        items: impl IntoIterator<Item = ListItem>,
+        items: impl IntoIterator<Item = T>,
+        get_item_label: F,
     ) -> Self {
         Self {
             items: SmallVec::from_iter(items),
             selected_index: None,
             id: id.into(),
             focus_handle,
+            get_item_label: Box::new(get_item_label),
         }
+    }
+
+    pub fn items(&self) -> &[T] {
+        &self.items
+    }
+
+    pub fn selected_item(&self) -> Option<&T> {
+        self.items.get(self.selected_index?)
     }
 
     pub fn selected_index(&self) -> Option<usize> {
@@ -54,11 +55,13 @@ impl List {
 
     fn render_item(
         &self,
-        item: &ListItem,
+        item: &T,
         index: usize,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Div {
+        let label = (self.get_item_label)(item);
+
         div().px_1().child(
             interactive_container(
                 ElementId::NamedInteger(self.id.to_string().into(), index as u64),
@@ -76,12 +79,12 @@ impl List {
                 this.select_index(index, cx);
                 this.handle_submit(&actions::Submit, window, cx);
             }))
-            .child(div().mx_1().child(item.label.clone())),
+            .child(div().mx_1().child(label)),
         )
     }
 }
 
-impl List {
+impl<T: 'static> List<T> {
     fn handle_select_next_item(
         &mut self,
         _event: &actions::SelectNextItem,
@@ -126,7 +129,7 @@ impl List {
     }
 }
 
-impl Render for List {
+impl<T: 'static> Render for List<T> {
     fn render(&mut self, _window: &mut gpui::Window, cx: &mut Context<Self>) -> impl IntoElement {
         uniform_list(
             cx.entity(),
@@ -151,7 +154,7 @@ impl Render for List {
     }
 }
 
-impl EventEmitter<SubmitEvent> for List {}
+impl<T: 'static> EventEmitter<SubmitEvent> for List<T> {}
 
 pub mod actions {
     use gpui::{App, KeyBinding, actions};
