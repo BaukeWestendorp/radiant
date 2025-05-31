@@ -12,12 +12,12 @@ impl MiscTab {
 }
 
 impl Render for MiscTab {
-    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let line_grid = container(ContainerStyle::normal(w, cx))
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let line_grid = container(ContainerStyle::normal(window, cx))
             .w_full()
             .h_64()
             .child(line_grid(px(10.0), cx.theme().colors.grid).size_full());
-        let dot_grid = container(ContainerStyle::normal(w, cx))
+        let dot_grid = container(ContainerStyle::normal(window, cx))
             .w_full()
             .h_64()
             .child(dot_grid(px(10.0), cx.theme().colors.grid).size_full());

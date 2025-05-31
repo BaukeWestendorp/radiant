@@ -53,7 +53,7 @@ pub struct TabView {
 }
 
 impl TabView {
-    pub fn new(tabs: Vec<Tab>, _w: &mut Window, _cx: &mut Context<Self>) -> Self {
+    pub fn new(tabs: Vec<Tab>, _window: &mut Window, _cx: &mut Context<Self>) -> Self {
         Self { tabs, selected_tab: None, orientation: Orientation::default() }
     }
 
@@ -123,7 +123,7 @@ impl TabView {
 }
 
 impl Render for TabView {
-    fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let tabs = self.render_tabs(cx);
         let content = div().size_full().child(self.render_content(cx));
 

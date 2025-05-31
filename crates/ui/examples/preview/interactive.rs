@@ -29,7 +29,7 @@ pub struct InteractiveTab {
 }
 
 impl InteractiveTab {
-    pub fn new(w: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let disable_fields_checkbox = cx.new(|_| Checkbox::new("disable-fields-checkbox"));
 
         cx.subscribe(&disable_fields_checkbox, |this: &mut Self, _, event: &CheckboxEvent, cx| {
@@ -49,22 +49,22 @@ impl InteractiveTab {
 
             disable_fields_checkbox,
             text_field: cx.new(|cx| {
-                let field = Field::new("text", cx.focus_handle(), w, cx);
+                let field = Field::new("text", cx.focus_handle(), window, cx);
                 field.set_placeholder("Text Field Placeholder", cx);
                 field
             }),
             masked_text_field: cx.new(|cx| {
-                let field = Field::new("masked-text", cx.focus_handle(), w, cx);
+                let field = Field::new("masked-text", cx.focus_handle(), window, cx);
                 field.set_placeholder("Masked Text Field Placeholder", cx);
                 field.set_masked(true, cx);
                 field
             }),
-            f32_field: cx.new(|cx| NumberField::new("f32-num", cx.focus_handle(), w, cx)),
-            i8_field: cx.new(|cx| NumberField::new("i8", cx.focus_handle(), w, cx)),
+            f32_field: cx.new(|cx| NumberField::new("f32-num", cx.focus_handle(), window, cx)),
+            i8_field: cx.new(|cx| NumberField::new("i8", cx.focus_handle(), window, cx)),
             checkbox: cx.new(|_| Checkbox::new("checkbox")),
             checkbox_disabled: cx.new(|_| Checkbox::new("checkbox-disabled").disabled(true)),
 
-            table: cx.new(|cx| Table::new(ExampleTable::new(), "table", w, cx)),
+            table: cx.new(|cx| Table::new(ExampleTable::new(), "table", window, cx)),
 
             draggable: cx.new(|cx| {
                 Draggable::new("draggable", point(px(40.0), px(40.0)), None, cx.new(|_| ExampleBox))
@@ -80,11 +80,11 @@ impl InteractiveTab {
     fn deploy_context_menu(
         &mut self,
         position: Point<Pixels>,
-        w: &mut Window,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) {
         let context_menu = cx.new(|cx| {
-            ContextMenu::new(w, cx)
+            ContextMenu::new(window, cx)
                 .action("Action 1", Box::new(Action1))
                 .divider()
                 .destructive_action("Action 2", Box::new(Action2))
@@ -100,7 +100,7 @@ impl InteractiveTab {
 }
 
 impl Render for InteractiveTab {
-    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let row = |label, input| {
             div()
                 .w_full()
@@ -129,7 +129,7 @@ impl Render for InteractiveTab {
             .child(row("Checkbox", self.checkbox.clone().into_any_element()))
             .child(row("Disabled", self.checkbox_disabled.clone().into_any_element()));
 
-        let context_menu = container(ContainerStyle::normal(w, cx))
+        let context_menu = container(ContainerStyle::normal(window, cx))
             .on_mouse_down(
                 MouseButton::Right,
                 cx.listener(|this, event: &MouseDownEvent, w, cx| {
@@ -155,11 +155,15 @@ impl Render for InteractiveTab {
 
         let table = div().h_64().child(self.table.clone());
 
-        let draggable =
-            container(ContainerStyle::normal(w, cx)).w_full().h_64().child(self.draggable.clone());
+        let draggable = container(ContainerStyle::normal(window, cx))
+            .w_full()
+            .h_64()
+            .child(self.draggable.clone());
 
-        let pannable =
-            container(ContainerStyle::normal(w, cx)).w_full().h_64().child(self.pannable.clone());
+        let pannable = container(ContainerStyle::normal(window, cx))
+            .w_full()
+            .h_64()
+            .child(self.pannable.clone());
 
         div()
             .id("typography-tab")
@@ -182,8 +186,8 @@ impl Render for InteractiveTab {
 struct ExampleBox;
 
 impl Render for ExampleBox {
-    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        container(ContainerStyle::normal(w, cx)).size_20().child("Draggable Box")
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        container(ContainerStyle::normal(window, cx)).size_20().child("Draggable Box")
     }
 }
 
@@ -228,7 +232,7 @@ impl TableRow<ExampleTable> for ExampleRow {
     fn render_cell(
         &self,
         column: &ExampleColumn,
-        _w: &mut Window,
+        _window: &mut Window,
         _cx: &mut Context<Table<ExampleTable>>,
     ) -> impl IntoElement {
         match column {

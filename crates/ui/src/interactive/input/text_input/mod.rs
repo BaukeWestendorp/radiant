@@ -641,8 +641,8 @@ impl TextInput {
         self.replace_text_in_range(Some(utf16_range), "", window, cx);
     }
 
-    fn handle_submit(&mut self, _: &actions::Submit, w: &mut Window, cx: &mut Context<Self>) {
-        w.blur();
+    fn handle_submit(&mut self, _: &actions::Submit, window: &mut Window, cx: &mut Context<Self>) {
+        window.blur();
         cx.emit(TextInputEvent::Submit(self.text.clone()));
     }
 

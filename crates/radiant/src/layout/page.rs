@@ -136,7 +136,7 @@ impl Page {
 
     pub fn from_show(
         layout: &Entity<show::Layout>,
-        w: &mut Window,
+        window: &mut Window,
         cx: &mut Context<Page>,
     ) -> Self {
         let loaded_page = &layout.read(cx).main_window.loaded_page;
@@ -144,7 +144,7 @@ impl Page {
 
         for frame in &loaded_page.frames.clone() {
             let page_view = cx.entity();
-            let frame = cx.new(|cx| Frame::from_show(frame, cx.entity(), page_view, w, cx));
+            let frame = cx.new(|cx| Frame::from_show(frame, cx.entity(), page_view, window, cx));
 
             cx.observe(&frame, |_, _, cx| {
                 cx.notify();

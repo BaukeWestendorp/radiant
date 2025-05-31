@@ -11,7 +11,7 @@ impl TypographyTab {
 }
 
 impl Render for TypographyTab {
-    fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let headers = div()
             .child(ui::h1("Header Level 1"))
             .child(ui::h2("Header Level 2"))

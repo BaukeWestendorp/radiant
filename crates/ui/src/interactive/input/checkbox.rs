@@ -14,7 +14,12 @@ impl Checkbox {
 }
 
 impl Checkbox {
-    fn handle_on_click(&mut self, _event: &ClickEvent, _w: &mut Window, cx: &mut Context<Self>) {
+    fn handle_on_click(
+        &mut self,
+        _event: &ClickEvent,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         self.selected = !self.selected;
         cx.emit(CheckboxEvent::Change(self.selected));
     }
@@ -35,7 +40,7 @@ impl Selectable for Checkbox {
 }
 
 impl Render for Checkbox {
-    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let mark = if self.selected {
             Some(div().size_full().rounded_xs().bg(cx.theme().colors.bg_selected_bright))
         } else {
@@ -43,7 +48,7 @@ impl Render for Checkbox {
         };
 
         interactive_container(self.id.clone(), None)
-            .size(w.line_height())
+            .size(window.line_height())
             .flex()
             .items_center()
             .justify_center()

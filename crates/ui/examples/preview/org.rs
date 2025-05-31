@@ -22,29 +22,29 @@ impl OrganizationTab {
 }
 
 impl Render for OrganizationTab {
-    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let section = ui::section("Section Header")
             .child(div().child("This is a section's content").mb_4())
             .w_64();
 
         let divider = ui::divider(cx).w_64();
 
-        let c_normal = container(ContainerStyle::normal(w, cx))
+        let c_normal = container(ContainerStyle::normal(window, cx))
             .w_64()
             .child(div().m_2().child("This is a normal container's content"));
-        let c_focused = container(ContainerStyle::focused(w, cx))
+        let c_focused = container(ContainerStyle::focused(window, cx))
             .w_64()
             .child(div().m_2().child("This is a focused container's content"));
-        let c_selected = container(ContainerStyle::selected(w, cx))
+        let c_selected = container(ContainerStyle::selected(window, cx))
             .w_64()
             .child(div().m_2().child("This is a selected container's content"));
-        let c_normal_disabled = container(ContainerStyle::normal(w, cx).disabled())
+        let c_normal_disabled = container(ContainerStyle::normal(window, cx).disabled())
             .w_64()
             .child(div().m_2().child("This is a normal container's content"));
-        let c_focused_disabled = container(ContainerStyle::focused(w, cx).disabled())
+        let c_focused_disabled = container(ContainerStyle::focused(window, cx).disabled())
             .w_64()
             .child(div().m_2().child("This is a focused container's content"));
-        let c_selected_disabled = container(ContainerStyle::selected(w, cx).disabled())
+        let c_selected_disabled = container(ContainerStyle::selected(window, cx).disabled())
             .w_64()
             .child(div().m_2().child("This is a selected container's content"));
 

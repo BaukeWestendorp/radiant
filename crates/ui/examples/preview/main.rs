@@ -43,7 +43,7 @@ struct ContentView {
 }
 
 impl ContentView {
-    pub fn new(w: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let tabs = vec![
             ui::Tab::new("org", "Organization", cx.new(OrganizationTab::new).into()),
             ui::Tab::new("typo", "Typography", cx.new(TypographyTab::new).into()),
@@ -51,15 +51,15 @@ impl ContentView {
             ui::Tab::new(
                 "interactive",
                 "Interactive",
-                cx.new(|cx| InteractiveTab::new(w, cx)).into(),
+                cx.new(|cx| InteractiveTab::new(window, cx)).into(),
             ),
-            ui::Tab::new("nav", "Navigation", cx.new(|cx| NavigationTab::new(w, cx)).into()),
+            ui::Tab::new("nav", "Navigation", cx.new(|cx| NavigationTab::new(window, cx)).into()),
             ui::Tab::new("misc", "Misc", cx.new(MiscTab::new).into()),
         ];
 
         Self {
             tab_view: cx.new(|cx| {
-                let mut tab_view = ui::TabView::new(tabs, w, cx);
+                let mut tab_view = ui::TabView::new(tabs, window, cx);
                 tab_view.select_tab_ix(0);
                 tab_view
             }),
@@ -68,7 +68,7 @@ impl ContentView {
 }
 
 impl Render for ContentView {
-    fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         root(cx).size_full().child(self.tab_view.clone())
     }
 }

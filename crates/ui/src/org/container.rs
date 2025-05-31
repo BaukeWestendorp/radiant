@@ -50,7 +50,7 @@ impl InteractiveElement for Container {
 }
 
 impl RenderOnce for Container {
-    fn render(self, _w: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
         let style = match self.disabled {
             true => self.style.disabled(),
             false => self.style,
@@ -75,51 +75,51 @@ pub struct ContainerStyle {
 }
 
 impl ContainerStyle {
-    pub fn normal(w: &Window, cx: &App) -> Self {
+    pub fn normal(window: &Window, cx: &App) -> Self {
         Self {
             background: cx.theme().colors.bg_secondary,
             border: cx.theme().colors.border,
-            text_color: w.text_style().color,
+            text_color: window.text_style().color,
         }
     }
 
-    pub fn focused(w: &Window, cx: &App) -> Self {
+    pub fn focused(window: &Window, cx: &App) -> Self {
         Self {
             background: cx.theme().colors.bg_focused,
             border: cx.theme().colors.border_focused,
-            text_color: w.text_style().color,
+            text_color: window.text_style().color,
         }
     }
 
-    pub fn selected(w: &Window, cx: &App) -> Self {
+    pub fn selected(window: &Window, cx: &App) -> Self {
         Self {
             background: cx.theme().colors.bg_selected,
             border: cx.theme().colors.border_selected,
-            text_color: w.text_style().color,
+            text_color: window.text_style().color,
         }
     }
 
-    pub fn destructive(w: &Window, cx: &App) -> Self {
+    pub fn destructive(window: &Window, cx: &App) -> Self {
         Self {
             background: cx.theme().colors.bg_destructive,
             border: cx.theme().colors.border_destructive,
-            text_color: w.text_style().color,
+            text_color: window.text_style().color,
         }
     }
 
-    pub fn destructive_focused(w: &Window, cx: &App) -> Self {
+    pub fn destructive_focused(window: &Window, cx: &App) -> Self {
         Self {
             background: cx.theme().colors.bg_destructive_focused,
             border: cx.theme().colors.border_destructive_focused,
-            text_color: w.text_style().color,
+            text_color: window.text_style().color,
         }
     }
 
-    pub fn destructive_selected(w: &Window, cx: &App) -> Self {
+    pub fn destructive_selected(window: &Window, cx: &App) -> Self {
         Self {
             background: cx.theme().colors.bg_destructive_selected,
             border: cx.theme().colors.border_destructive_selected,
-            text_color: w.text_style().color,
+            text_color: window.text_style().color,
         }
     }
 
@@ -237,23 +237,23 @@ impl From<InteractiveContainer> for AnyElement {
 }
 
 impl RenderOnce for InteractiveContainer {
-    fn render(self, w: &mut Window, cx: &mut App) -> impl IntoElement {
-        let focused = self.focus_handle.as_ref().is_some_and(|fh| fh.is_focused(w));
+    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let focused = self.focus_handle.as_ref().is_some_and(|fh| fh.is_focused(window));
 
         let mut style = if self.destructive {
             if focused {
-                ContainerStyle::destructive_focused(w, cx)
+                ContainerStyle::destructive_focused(window, cx)
             } else if self.selected {
-                ContainerStyle::destructive_selected(w, cx)
+                ContainerStyle::destructive_selected(window, cx)
             } else {
-                ContainerStyle::destructive(w, cx)
+                ContainerStyle::destructive(window, cx)
             }
         } else if focused {
-            ContainerStyle::focused(w, cx)
+            ContainerStyle::focused(window, cx)
         } else if self.selected {
-            ContainerStyle::selected(w, cx)
+            ContainerStyle::selected(window, cx)
         } else {
-            self.normal_container_style.unwrap_or_else(|| ContainerStyle::normal(w, cx))
+            self.normal_container_style.unwrap_or_else(|| ContainerStyle::normal(window, cx))
         };
 
         if self.disabled {
@@ -279,7 +279,7 @@ impl RenderOnce for InteractiveContainer {
         .when(self.disabled, |e| e.cursor_not_allowed())
         .when(!self.disabled, |e| {
             let hover_active_style =
-                if !focused && !self.selected { ContainerStyle::normal(w, cx) } else { style };
+                if !focused && !self.selected { ContainerStyle::normal(window, cx) } else { style };
 
             e.hover(|e| {
                 e.bg(hover_active_style.hovered().background)

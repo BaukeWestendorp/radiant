@@ -24,10 +24,10 @@ impl WindowFrame {
         self.kind.into_show(cx).to_string().into()
     }
 
-    fn render_header(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render_header(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let title = self.title(cx);
 
-        let border_color = if self.frame.focus_handle(cx).contains_focused(w, cx) {
+        let border_color = if self.frame.focus_handle(cx).contains_focused(window, cx) {
             cx.theme().colors.border_focused
         } else {
             cx.theme().colors.header_border
@@ -48,7 +48,7 @@ impl WindowFrame {
             .on_drag(
                 super::HeaderDrag {
                     frame_entity_id: self.frame.entity_id(),
-                    start_mouse_position: w.mouse_position(),
+                    start_mouse_position: window.mouse_position(),
                 },
                 |_, _, _, cx| cx.new(|_| Empty),
             )
@@ -81,22 +81,22 @@ impl WindowFrame {
             )
     }
 
-    fn render_content(&mut self, w: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render_content(&mut self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let content = match &self.kind {
             WindowFrameKind::EffectGraphEditor(frame) => frame.clone(),
         };
 
-        container(ContainerStyle::normal(w, cx)).size_full().child(content)
+        container(ContainerStyle::normal(window, cx)).size_full().child(content)
     }
 }
 
 impl Render for WindowFrame {
-    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .size_full()
             .flex()
             .flex_col()
-            .child(self.render_header(w, cx))
+            .child(self.render_header(window, cx))
             .child(
                 div()
                     .flex()
@@ -104,7 +104,7 @@ impl Render for WindowFrame {
                     .items_center()
                     .size_full()
                     .p_px()
-                    .child(self.render_content(w, cx)),
+                    .child(self.render_content(window, cx)),
             )
             .overflow_hidden()
     }

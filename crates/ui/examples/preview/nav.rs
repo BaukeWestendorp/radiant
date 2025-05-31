@@ -9,7 +9,7 @@ pub struct NavigationTab {
 }
 
 impl NavigationTab {
-    pub fn new(w: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let tabs = vec![
             ui::Tab::new(
                 "tab-1",
@@ -31,13 +31,13 @@ impl NavigationTab {
         Self {
             scroll_handle: ScrollHandle::new(),
             h_tab_view: cx.new(|cx| {
-                let mut tab_view = TabView::new(tabs.clone(), w, cx);
+                let mut tab_view = TabView::new(tabs.clone(), window, cx);
                 tab_view.select_tab_ix(0);
                 tab_view.set_orientation(Orientation::Horizontal);
                 tab_view
             }),
             v_tab_view: cx.new(|cx| {
-                let mut tab_view = TabView::new(tabs.clone(), w, cx);
+                let mut tab_view = TabView::new(tabs.clone(), window, cx);
                 tab_view.select_tab_ix(0);
                 tab_view.set_orientation(Orientation::Vertical);
                 tab_view
@@ -47,12 +47,16 @@ impl NavigationTab {
 }
 
 impl Render for NavigationTab {
-    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let h_tab_view =
-            container(ContainerStyle::normal(w, cx)).w_full().h_64().child(self.h_tab_view.clone());
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let h_tab_view = container(ContainerStyle::normal(window, cx))
+            .w_full()
+            .h_64()
+            .child(self.h_tab_view.clone());
 
-        let v_tab_view =
-            container(ContainerStyle::normal(w, cx)).w_full().h_64().child(self.v_tab_view.clone());
+        let v_tab_view = container(ContainerStyle::normal(window, cx))
+            .w_full()
+            .h_64()
+            .child(self.v_tab_view.clone());
 
         div()
             .id("nav-tab")
@@ -72,7 +76,7 @@ struct TabContent {
 }
 
 impl Render for TabContent {
-    fn render(&mut self, _w: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         div().size_full().p_2().child(self.content.clone())
     }
 }

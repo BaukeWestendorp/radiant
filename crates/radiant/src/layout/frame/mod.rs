@@ -38,12 +38,12 @@ impl FrameKind {
     pub fn from_show(
         from: &show::FrameKind,
         frame: Entity<Frame>,
-        w: &mut Window,
+        window: &mut Window,
         cx: &mut App,
     ) -> Self {
         match from {
             show::FrameKind::Window(kind) => {
-                let kind = WindowFrameKind::from_show(kind, w, cx);
+                let kind = WindowFrameKind::from_show(kind, window, cx);
                 let window_frame = cx.new(|_| WindowFrame::new(kind, frame));
                 Self::Window(window_frame)
             }
@@ -85,7 +85,11 @@ impl Frame {
         }
     }
 
-    fn render_resize_handle(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render_resize_handle(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement {
         let id = "resize-handle";
         div()
             .id(id)
@@ -111,7 +115,7 @@ impl Frame {
             .on_drag(
                 ResizeHandleDrag {
                     frame_entity_id: cx.entity_id(),
-                    start_mouse_position: w.mouse_position(),
+                    start_mouse_position: window.mouse_position(),
                 },
                 |_, _, _, cx| cx.new(|_| Empty),
             )
@@ -122,7 +126,7 @@ impl Frame {
 
     fn render_frame_content(
         &mut self,
-        _w: &mut Window,
+        _window: &mut Window,
         _cx: &mut Context<Self>,
     ) -> impl IntoElement {
         match &self.kind {
@@ -133,7 +137,7 @@ impl Frame {
 
     fn render_resize_move_highlight(
         &mut self,
-        _w: &mut Window,
+        _window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
         match self.resized_moved_bounds {
@@ -158,7 +162,12 @@ impl Frame {
 }
 
 impl Frame {
-    pub fn handle_remove(&mut self, _: &actions::Remove, _w: &mut Window, cx: &mut Context<Self>) {
+    pub fn handle_remove(
+        &mut self,
+        _: &actions::Remove,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let frame_id = cx.entity_id();
         self.page.update(cx, |page, cx| {
             page.remove_frame(frame_id, cx);
@@ -169,7 +178,7 @@ impl Frame {
     pub fn handle_header_drag(
         &mut self,
         event: &DragMoveEvent<HeaderDrag>,
-        _w: &mut Window,
+        _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
         let HeaderDrag { frame_entity_id, start_mouse_position } = *event.drag(cx);
@@ -190,7 +199,7 @@ impl Frame {
     pub fn handle_resize_drag(
         &mut self,
         event: &DragMoveEvent<ResizeHandleDrag>,
-        _w: &mut Window,
+        _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
         let ResizeHandleDrag { frame_entity_id, start_mouse_position } = *event.drag(cx);
@@ -214,11 +223,12 @@ impl Frame {
     pub fn handle_right_mouse_click_header(
         &mut self,
         event: &MouseDownEvent,
-        w: &mut Window,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) {
         let context_menu = cx.new(|cx| {
-            ContextMenu::new(w, cx).destructive_action("Remove Frame", Box::new(actions::Remove))
+            ContextMenu::new(window, cx)
+                .destructive_action("Remove Frame", Box::new(actions::Remove))
         });
 
         let subscription = cx.subscribe(&context_menu, |this, _, _: &DismissEvent, cx| {
@@ -232,7 +242,7 @@ impl Frame {
     pub fn release_resize_move(
         &mut self,
         _event: &MouseUpEvent,
-        _w: &mut Window,
+        _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
         if let Some(new_bounds) = &self.resized_moved_bounds {
@@ -285,9 +295,9 @@ fn mouse_grid_diff(
 }
 
 impl Render for Frame {
-    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let resize_handle = self.render_resize_handle(w, cx).into_any_element();
-        let frame_content = self.render_frame_content(w, cx).into_any_element();
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let resize_handle = self.render_resize_handle(window, cx).into_any_element();
+        let frame_content = self.render_frame_content(window, cx).into_any_element();
 
         let frame = div()
             .absolute()
@@ -299,7 +309,7 @@ impl Render for Frame {
             .child(z_stack([frame_content.into_any_element(), resize_handle]).size_full())
             .into_any_element();
 
-        let resize_move_highlight = deferred(self.render_resize_move_highlight(w, cx));
+        let resize_move_highlight = deferred(self.render_resize_move_highlight(window, cx));
 
         z_stack([frame, resize_move_highlight.into_any_element()])
             .on_action(cx.listener(Self::handle_remove))
@@ -318,10 +328,10 @@ impl Frame {
         from: &show::Frame,
         frame: Entity<Frame>,
         page: Entity<Page>,
-        w: &mut Window,
+        window: &mut Window,
         cx: &mut App,
     ) -> Self {
-        Self::new(FrameKind::from_show(&from.kind, frame, w, cx), from.bounds, page, cx)
+        Self::new(FrameKind::from_show(&from.kind, frame, window, cx), from.bounds, page, cx)
     }
 }
 

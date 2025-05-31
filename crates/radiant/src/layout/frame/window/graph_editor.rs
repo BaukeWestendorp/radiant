@@ -29,7 +29,7 @@ impl<D: GraphDef + 'static> GraphEditorFrame<D> {
 }
 
 impl<D: GraphDef + 'static> Render for GraphEditorFrame<D> {
-    fn render(&mut self, _w: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         div().size_full().child(match &self.graph_editor_view {
             Some(editor) => editor.clone().into_any_element(),
             None => div()

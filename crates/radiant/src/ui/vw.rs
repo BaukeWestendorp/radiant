@@ -13,8 +13,8 @@ impl<D: VirtualWindowDelegate> VirtualWindow<D> {
 }
 
 impl<D: VirtualWindowDelegate + 'static> Render for VirtualWindow<D> {
-    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let style = ContainerStyle::normal(w, cx);
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let style = ContainerStyle::normal(window, cx);
 
         let focus_handle = &self.delegate.focus_handle(cx);
 
@@ -25,9 +25,9 @@ impl<D: VirtualWindowDelegate + 'static> Render for VirtualWindow<D> {
             .rounded_b(cx.theme().radius)
             .border_1()
             .border_t_0()
-            .child(self.delegate.render_content(w, cx));
+            .child(self.delegate.render_content(window, cx));
 
-        let header = self.delegate.render_header(w, cx);
+        let header = self.delegate.render_header(window, cx);
 
         div()
             .occlude()
@@ -47,7 +47,7 @@ pub trait VirtualWindowDelegate: Focusable {
         true
     }
 
-    fn on_close_window(&mut self, _w: &mut Window, _cx: &mut Context<VirtualWindow<Self>>)
+    fn on_close_window(&mut self, _window: &mut Window, _cx: &mut Context<VirtualWindow<Self>>)
     where
         Self: Sized,
     {
@@ -55,13 +55,13 @@ pub trait VirtualWindowDelegate: Focusable {
 
     fn render_header(
         &mut self,
-        w: &mut Window,
+        window: &mut Window,
         cx: &mut Context<VirtualWindow<Self>>,
     ) -> impl IntoElement
     where
         Self: Sized + 'static,
     {
-        let focused = self.focus_handle(cx).contains_focused(w, cx);
+        let focused = self.focus_handle(cx).contains_focused(window, cx);
 
         let close_button = interactive_container("close-button", None)
             .destructive(true)
@@ -89,7 +89,7 @@ pub trait VirtualWindowDelegate: Focusable {
 
     fn render_content(
         &mut self,
-        w: &mut Window,
+        window: &mut Window,
         cx: &mut Context<VirtualWindow<Self>>,
     ) -> impl IntoElement
     where

@@ -100,10 +100,14 @@ impl PoolFrame {
         self.kind.into_show().to_string().into()
     }
 
-    fn render_header_cell(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render_header_cell(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement {
         let title = self.title().to_string();
 
-        let border_color = if self.frame.focus_handle(cx).contains_focused(w, cx) {
+        let border_color = if self.frame.focus_handle(cx).contains_focused(window, cx) {
             cx.theme().colors.border_focused
         } else {
             cx.theme().colors.header_border
@@ -140,7 +144,7 @@ impl PoolFrame {
             .on_drag(
                 super::HeaderDrag {
                     frame_entity_id: self.frame.entity_id(),
-                    start_mouse_position: w.mouse_position(),
+                    start_mouse_position: window.mouse_position(),
                 },
                 |_, _, _, cx| cx.new(|_| Empty),
             )
@@ -161,8 +165,13 @@ impl PoolFrame {
             )
     }
 
-    fn render_cell(&mut self, id: u32, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let cell_content = self.render_content(id, w, cx).map(|e| e.into_any_element());
+    fn render_cell(
+        &mut self,
+        id: u32,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement {
+        let cell_content = self.render_content(id, window, cx).map(|e| e.into_any_element());
         let has_content = cell_content.is_some();
         let cell_content = cell_content.unwrap_or_else(|| div().into_any_element());
 
@@ -190,7 +199,7 @@ impl PoolFrame {
     fn render_content(
         &mut self,
         id: u32,
-        _w: &mut Window,
+        _window: &mut Window,
         cx: &mut App,
     ) -> Option<impl IntoElement> {
         let render_basic_label = |label: String| {
@@ -286,17 +295,18 @@ impl PoolFrame {
 }
 
 impl Render for PoolFrame {
-    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let bounds = self.frame.read(cx).bounds;
         let area = bounds.size.width * bounds.size.height;
-        let items =
-            (0..area).map(|id| self.render_cell(id, w, cx).into_any_element()).collect::<Vec<_>>();
+        let items = (0..area)
+            .map(|id| self.render_cell(id, window, cx).into_any_element())
+            .collect::<Vec<_>>();
 
         div()
             .size_full()
             .flex()
             .flex_wrap()
-            .child(self.render_header_cell(w, cx))
+            .child(self.render_header_cell(window, cx))
             .children(items)
             .overflow_hidden()
     }

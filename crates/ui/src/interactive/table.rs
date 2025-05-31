@@ -31,7 +31,7 @@ impl<D: TableDelegate> Table<D> {
     pub fn new(
         delegate: D,
         id: impl Into<ElementId>,
-        _w: &mut Window,
+        _window: &mut Window,
         _cx: &mut Context<Self>,
     ) -> Self {
         Self { delegate, id: id.into(), column_widths: HashMap::new() }
@@ -43,8 +43,8 @@ impl<D: TableDelegate> Table<D> {
 }
 
 impl<D: TableDelegate> Table<D> {
-    fn render_header_row(&self, w: &mut Window, cx: &mut Context<Table<D>>) -> Div {
-        let row_height = self.row_height(w, cx);
+    fn render_header_row(&self, window: &mut Window, cx: &mut Context<Table<D>>) -> Div {
+        let row_height = self.row_height(window, cx);
 
         let cells = D::Column::all().iter().map(|col| {
             div()
@@ -72,8 +72,8 @@ impl<D: TableDelegate + 'static> Render for Table<D>
 where
     D::Row: Clone,
 {
-    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let header_row = self.render_header_row(w, cx);
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let header_row = self.render_header_row(window, cx);
 
         let rows = self.rows(cx);
         let data_rows = uniform_list(
@@ -133,7 +133,7 @@ pub trait TableDelegate: Sized {
 
     fn rows(&mut self, cx: &mut App) -> Vec<Self::Row>;
 
-    fn row_height(&self, _w: &mut Window, _cx: &mut Context<Table<Self>>) -> Option<Pixels>
+    fn row_height(&self, _window: &mut Window, _cx: &mut Context<Table<Self>>) -> Option<Pixels>
     where
         Self: Sized,
     {
@@ -144,7 +144,7 @@ pub trait TableDelegate: Sized {
         &mut self,
         _row: Self::Row,
         _event: &ClickEvent,
-        _w: &mut Window,
+        _window: &mut Window,
         _cx: &mut Context<Table<Self>>,
     ) {
     }
@@ -156,7 +156,7 @@ pub trait TableRow<D: TableDelegate> {
     fn render_cell(
         &self,
         column: &D::Column,
-        w: &mut Window,
+        window: &mut Window,
         cx: &mut Context<Table<D>>,
     ) -> impl IntoElement
     where

@@ -69,10 +69,10 @@ impl MainWindow {
     fn handle_open_settings(
         &mut self,
         _: &actions::OpenSettings,
-        w: &mut Window,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        AppState::update_global(cx, |state, cx| state.open_settings_window(w, cx));
+        AppState::update_global(cx, |state, cx| state.open_settings_window(window, cx));
         cx.notify();
     }
 }

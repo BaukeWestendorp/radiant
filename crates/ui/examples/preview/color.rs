@@ -12,7 +12,7 @@ impl ColorTab {
 }
 
 impl Render for ColorTab {
-    fn render(&mut self, _w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let color_swatch = |label, color| {
             div().child(
                 div()

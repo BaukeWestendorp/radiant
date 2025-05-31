@@ -32,7 +32,7 @@ impl Styled for Section {
 }
 
 impl RenderOnce for Section {
-    fn render(self, _w: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
         let header = div()
             .flex()
             .items_center()

@@ -12,14 +12,14 @@ pub struct SettingsWindow {
 }
 
 impl SettingsWindow {
-    pub fn new(w: &mut Window, cx: &mut Context<VirtualWindow<Self>>) -> Self {
+    pub fn new(window: &mut Window, cx: &mut Context<VirtualWindow<Self>>) -> Self {
         let tabs = vec![
-            ui::Tab::new("protocol", "Protocol", cx.new(|cx| DmxView::new(w, cx)).into()),
+            ui::Tab::new("protocol", "Protocol", cx.new(|cx| DmxView::new(window, cx)).into()),
             ui::Tab::new("patch", "Patch", cx.new(|_| EmptyView).into()),
         ];
 
         let tab_view = cx.new(|cx| {
-            let mut tab_view = TabView::new(tabs, w, cx);
+            let mut tab_view = TabView::new(tabs, window, cx);
             tab_view.select_tab_ix(0);
             tab_view
         });
@@ -33,7 +33,7 @@ impl VirtualWindowDelegate for SettingsWindow {
         "Settings".into()
     }
 
-    fn on_close_window(&mut self, _w: &mut Window, cx: &mut Context<VirtualWindow<Self>>) {
+    fn on_close_window(&mut self, _window: &mut Window, cx: &mut Context<VirtualWindow<Self>>) {
         AppState::update_global(cx, |state, _cx| {
             state.close_settings_window();
         });
@@ -41,7 +41,7 @@ impl VirtualWindowDelegate for SettingsWindow {
 
     fn render_content(
         &mut self,
-        _w: &mut Window,
+        _window: &mut Window,
         _cx: &mut Context<VirtualWindow<Self>>,
     ) -> impl IntoElement {
         div().size_full().child(self.tab_view.clone())
@@ -59,16 +59,17 @@ struct DmxView {
 }
 
 impl DmxView {
-    pub fn new(w: &mut Window, cx: &mut Context<Self>) -> Self {
-        let sacn_source_table =
-            cx.new(|cx| Table::new(SacnSourceTable::new(w, cx), "sacn-source-table", w, cx));
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let sacn_source_table = cx.new(|cx| {
+            Table::new(SacnSourceTable::new(window, cx), "sacn-source-table", window, cx)
+        });
 
         Self { sacn_source_table }
     }
 }
 
 impl Render for DmxView {
-    fn render(&mut self, w: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .flex()
             .flex_col()
@@ -76,7 +77,7 @@ impl Render for DmxView {
             .child(
                 section("sACN Inputs & Outputs")
                     .child(
-                        container(ContainerStyle::normal(w, cx))
+                        container(ContainerStyle::normal(window, cx))
                             .size_full()
                             .child(self.sacn_source_table.clone()),
                     )
@@ -91,7 +92,7 @@ struct SacnSourceTable {
 }
 
 impl SacnSourceTable {
-    pub fn new(w: &mut Window, cx: &mut App) -> Self {
+    pub fn new(window: &mut Window, cx: &mut App) -> Self {
         let rows = Show::global(cx)
             .protocol_settings
             .sacn
@@ -99,7 +100,7 @@ impl SacnSourceTable {
             .clone()
             .into_iter()
             .enumerate()
-            .map(|(ix, s)| SacnSourceTableRow::new(s, ix, w, cx))
+            .map(|(ix, s)| SacnSourceTableRow::new(s, ix, window, cx))
             .collect();
 
         Self { rows }
@@ -130,14 +131,14 @@ impl SacnSourceTableRow {
     pub fn new(
         source: Entity<SacnSourceSettings>,
         ix: usize,
-        w: &mut Window,
+        window: &mut Window,
         cx: &mut App,
     ) -> Self {
         let name_field = cx.new(|cx| {
             let field = Field::new(
                 ElementId::NamedInteger("name".into(), ix as u64),
                 cx.focus_handle(),
-                w,
+                window,
                 cx,
             );
             field.set_placeholder("Name", cx);
@@ -163,7 +164,7 @@ impl SacnSourceTableRow {
             let field = Field::<UniverseIdList>::new(
                 ElementId::NamedInteger("local_universes".into(), ix as u64),
                 cx.focus_handle(),
-                w,
+                window,
                 cx,
             );
             field.set_placeholder("Local Universes (e.g. '1 2 3')", cx);
@@ -204,7 +205,7 @@ impl SacnSourceTableRow {
             let field = Field::<UniverseIdFieldImpl>::new(
                 ElementId::NamedInteger("destination_universe".into(), ix as u64),
                 cx.focus_handle(),
-                w,
+                window,
                 cx,
             );
             field.set_placeholder("Destination Universe Id", cx);
@@ -232,7 +233,7 @@ impl SacnSourceTableRow {
             let mut field = NumberField::new(
                 ElementId::NamedInteger("priority".into(), ix as u64),
                 cx.focus_handle(),
-                w,
+                window,
                 cx,
             );
             field.set_min(Some(0u8), cx);
@@ -291,7 +292,7 @@ impl TableRow<SacnSourceTable> for SacnSourceTableRow {
     fn render_cell(
         &self,
         column: &SacnSourceTableColumn,
-        _w: &mut Window,
+        _window: &mut Window,
         _cx: &mut Context<Table<SacnSourceTable>>,
     ) -> impl IntoElement
     where

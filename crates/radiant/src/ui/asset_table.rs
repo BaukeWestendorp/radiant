@@ -28,7 +28,7 @@ impl<T: 'static> TableDelegate for AssetTable<T> {
         &mut self,
         row: Self::Row,
         _event: &gpui::ClickEvent,
-        _w: &mut Window,
+        _window: &mut Window,
         cx: &mut Context<Table<Self>>,
     ) {
         cx.emit(AssetTableEvent::Selected(row.asset));
@@ -48,7 +48,7 @@ impl<T: 'static> TableRow<AssetTable<T>> for Row<T> {
     fn render_cell(
         &self,
         column: &Column,
-        _w: &mut Window,
+        _window: &mut Window,
         cx: &mut Context<Table<AssetTable<T>>>,
     ) -> impl IntoElement {
         let text = match column {
