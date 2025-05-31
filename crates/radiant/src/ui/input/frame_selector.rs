@@ -3,8 +3,7 @@ use gpui::{
     prelude::*,
 };
 use ui::{
-    ActiveTheme, ContainerStyle, Field, FieldEvent, InteractiveColor, List, ListItem, SubmitEvent,
-    container,
+    ActiveTheme, ContainerStyle, Field, FieldEvent, InteractiveColor, List, SubmitEvent, container,
 };
 
 use crate::{
@@ -16,7 +15,7 @@ pub struct FrameSelector {
     page: Entity<Page>,
 
     search_field: Entity<Field<String>>,
-    list: Entity<List>,
+    list: Entity<List<show::FrameKind>>,
     focus_handle: FocusHandle,
 }
 
@@ -41,17 +40,15 @@ impl FrameSelector {
             move |this: &mut Self, _, event: &FieldEvent<String>, cx| match event {
                 ui::FieldEvent::Change(value) => this.list.update(cx, {
                     let focus_handle = focus_handle.clone();
+
                     move |list, cx| {
-                        *list = List::new(
-                            "items",
-                            focus_handle,
-                            show::FrameKind::all()
-                                .iter()
-                                .filter(|item| {
-                                    item.to_string().to_lowercase().contains(&value.to_lowercase())
-                                })
-                                .map(|k| ListItem::new(k.to_string())),
-                        );
+                        let filtered_items = show::FrameKind::all().into_iter().filter(|item| {
+                            item.to_string().to_lowercase().contains(&value.to_lowercase())
+                        });
+
+                        *list = List::new("items", focus_handle, filtered_items, |kind| {
+                            kind.to_string().into()
+                        });
                         list.select_index(0, cx);
                         cx.notify();
                     }
@@ -62,11 +59,10 @@ impl FrameSelector {
         .detach();
 
         let list = cx.new(|cx| {
-            let mut list = List::new(
-                "items",
-                focus_handle.clone(),
-                show::FrameKind::all().iter().map(|k| ListItem::new(k.to_string())),
-            );
+            let mut list =
+                List::new("items", focus_handle.clone(), show::FrameKind::all(), |kind| {
+                    kind.to_string().into()
+                });
             list.select_index(0, cx);
             list
         });
@@ -75,17 +71,15 @@ impl FrameSelector {
             &list,
             window,
             move |this: &mut Self, list, _event: &SubmitEvent, window, cx| {
-                let Some(index) = list.read(cx).selected_index() else {
+                let Some(selected_frame_kind) = list.read(cx).selected_item().copied() else {
                     return;
                 };
-
-                let frame_kind = show::FrameKind::all().get(index).unwrap().clone();
 
                 let page_entity = this.page.clone();
                 this.page.update(cx, |page, cx| {
                     let frame = cx.new(|cx| {
                         Frame::new(
-                            FrameKind::from_show(&frame_kind, cx.entity(), window, cx),
+                            FrameKind::from_show(&selected_frame_kind, cx.entity(), window, cx),
                             frame_bounds,
                             page_entity,
                             cx,
