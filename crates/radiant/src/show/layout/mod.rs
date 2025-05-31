@@ -10,16 +10,12 @@ pub struct Layout {
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone)]
+#[derive(Default)]
 pub struct MainWindow {
     pub pages: Vec<Page>,
     pub loaded_page: Page,
 }
 
-impl Default for MainWindow {
-    fn default() -> Self {
-        Self { pages: Vec::default(), loaded_page: Page::default() }
-    }
-}
 
 #[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Clone, Default)]

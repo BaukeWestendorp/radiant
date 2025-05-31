@@ -82,7 +82,7 @@ pub(crate) mod showfile {
             let config =
                 ron::ser::PrettyConfig::default().compact_arrays(true).extensions(extensions);
             let serialized = ron::ser::to_string_pretty(self, config)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+                .map_err(std::io::Error::other)?;
 
             std::fs::write(path, serialized)
         }

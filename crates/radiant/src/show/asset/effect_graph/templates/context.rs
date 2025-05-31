@@ -56,7 +56,7 @@ fn insert_fixture_info(graph: &mut EffectGraph) {
         "cx_current_fixture",
         "Current Fixture",
         |_iv, _cv, ov, pcx: &mut ProcessingContext<Def>, cx| {
-            let address = pcx.fixture(cx).address().clone();
+            let address = *pcx.fixture(cx).address();
             ov.set_value("address", Value::DmxAddress(address));
 
             let id = pcx.fixture_id();

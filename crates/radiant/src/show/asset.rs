@@ -41,6 +41,12 @@ pub struct Assets {
 #[derive(Debug, Clone)]
 pub struct AssetPool<T>(HashMap<AssetId<T>, gpui::Entity<Asset<T>>>);
 
+impl<T> Default for AssetPool<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T> AssetPool<T> {
     pub fn new() -> Self {
         Self(HashMap::new())
@@ -152,7 +158,7 @@ pub(crate) mod showfile {
     impl Assets {
         pub fn into_show(&self, cx: &mut gpui::App) -> super::Assets {
             let mut effect_graphs = self.effect_graphs.to_show(cx);
-            for (_, asset) in &mut effect_graphs.0 {
+            for asset in effect_graphs.0.values_mut() {
                 asset.update(cx, |asset, _cx| {
                     effect_graph::templates::insert_templates(&mut asset.data);
                 })

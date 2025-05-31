@@ -32,7 +32,6 @@ impl<I: FieldImpl + 'static> Field<I> {
         })
         .detach();
 
-        
         Self { input, _marker: std::marker::PhantomData }
     }
 

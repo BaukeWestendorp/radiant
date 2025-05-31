@@ -248,14 +248,12 @@ impl RenderOnce for InteractiveContainer {
             } else {
                 ContainerStyle::destructive(w, cx)
             }
+        } else if focused {
+            ContainerStyle::focused(w, cx)
+        } else if self.selected {
+            ContainerStyle::selected(w, cx)
         } else {
-            if focused {
-                ContainerStyle::focused(w, cx)
-            } else if self.selected {
-                ContainerStyle::selected(w, cx)
-            } else {
-                self.normal_container_style.unwrap_or_else(|| ContainerStyle::normal(w, cx))
-            }
+            self.normal_container_style.unwrap_or_else(|| ContainerStyle::normal(w, cx))
         };
 
         if self.disabled {

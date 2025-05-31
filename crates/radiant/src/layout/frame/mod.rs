@@ -263,7 +263,7 @@ fn limit_new_bounds(
             .any(|frame| frame.bounds.map(|d| d as i32).intersects(&bounds))
     };
 
-    let mut bounds = GRID_BOUNDS.intersect(&bounds);
+    let mut bounds = GRID_BOUNDS.intersect(bounds);
 
     bounds.size = bounds.size.max(&size(1, 1));
     bounds.origin = bounds

@@ -72,12 +72,12 @@ impl<'de> serde::Deserialize<'de> for Patch {
 
         for fixture in intermediate.fixtures {
             this.patch_fixture(
-                fixture.id.into(),
+                fixture.id,
                 fixture.address,
                 fixture.gdtf_file_name,
                 fixture.dmx_mode,
             )
-            .map_err(|err| serde::de::Error::custom(err))?;
+            .map_err(serde::de::Error::custom)?;
         }
 
         Ok(this)

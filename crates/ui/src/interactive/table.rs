@@ -82,7 +82,7 @@ where
             rows.len(),
             move |this, visible_range, w, cx| {
                 rows[visible_range]
-                    .into_iter()
+                    .iter()
                     .enumerate()
                     .map(|(row_ix, row)| {
                         let alternating_color = cx.theme().colors.bg_alternating;

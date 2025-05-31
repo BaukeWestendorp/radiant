@@ -35,15 +35,15 @@ pub enum Attr {
 impl std::fmt::Display for Attr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Dimmer(attr) => write!(f, "{}", attr.to_string()),
-            Self::Position(attr) => write!(f, "{}", attr.to_string()),
-            Self::Gobo(attr) => write!(f, "{}", attr.to_string()),
-            Self::Color(attr) => write!(f, "{}", attr.to_string()),
-            Self::Beam(attr) => write!(f, "{}", attr.to_string()),
-            Self::Focus(attr) => write!(f, "{}", attr.to_string()),
-            Self::Control(attr) => write!(f, "{}", attr.to_string()),
-            Self::Shapers(attr) => write!(f, "{}", attr.to_string()),
-            Self::Video(attr) => write!(f, "{}", attr.to_string()),
+            Self::Dimmer(attr) => write!(f, "{}", attr),
+            Self::Position(attr) => write!(f, "{}", attr),
+            Self::Gobo(attr) => write!(f, "{}", attr),
+            Self::Color(attr) => write!(f, "{}", attr),
+            Self::Beam(attr) => write!(f, "{}", attr),
+            Self::Focus(attr) => write!(f, "{}", attr),
+            Self::Control(attr) => write!(f, "{}", attr),
+            Self::Shapers(attr) => write!(f, "{}", attr),
+            Self::Video(attr) => write!(f, "{}", attr),
         }
     }
 }

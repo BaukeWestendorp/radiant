@@ -54,7 +54,7 @@ impl Pipeline {
     ) {
         self.pending_attr_values
             .entry(fixture_id)
-            .or_insert_with(HashMap::new)
+            .or_default()
             .insert(attribute, value);
     }
 

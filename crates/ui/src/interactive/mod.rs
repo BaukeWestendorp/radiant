@@ -1,18 +1,18 @@
 mod context_menu;
 mod draggable;
+mod event;
 mod input;
 mod list;
 mod pannable;
 mod table;
-mod event;
 
 pub use context_menu::*;
 pub use draggable::*;
+pub use event::*;
 pub use input::*;
 pub use list::*;
 pub use pannable::*;
 pub use table::*;
-pub use event::*;
 
 pub mod actions {
     use gpui::App;
