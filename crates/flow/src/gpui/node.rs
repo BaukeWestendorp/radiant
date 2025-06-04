@@ -5,7 +5,7 @@ use crate::{
 use gpui::*;
 use prelude::FluentBuilder;
 use ui::{
-    ActiveTheme,
+    ActiveTheme, Selectable, container, interactive_container,
     utils::{bounds_updater, z_stack},
 };
 
@@ -166,8 +166,8 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
                 .border_b_1()
                 .border_color(cx.theme().colors.border)
                 .when(selected, |e| {
-                    e.bg(cx.theme().colors.bg_focused)
-                        .border_color(cx.theme().colors.border_focused)
+                    e.bg(cx.theme().colors.bg_selected)
+                        .border_color(cx.theme().colors.border_selected)
                 })
                 .child(label)
         };
@@ -191,23 +191,19 @@ impl<D: GraphDef + 'static> Render for NodeView<D> {
                         .border_t_1()
                         .border_color(cx.theme().colors.border)
                         .when(selected, |e| {
-                            e.bg(cx.theme().colors.bg_focused)
-                                .border_color(cx.theme().colors.border_focused)
+                            e.bg(cx.theme().colors.bg_selected)
+                                .border_color(cx.theme().colors.border_selected)
                         })
                         .children(self.controls.iter().map(|c| c.read(cx).view.clone())),
                 )
             });
 
-        div()
+        interactive_container("node", None)
+            .selected(selected)
             .w(width)
-            .bg(cx.theme().colors.bg_primary)
-            .border_1()
-            .border_color(cx.theme().colors.border)
-            .when(selected, |e| e.border_color(cx.theme().colors.border_focused))
-            .rounded(cx.theme().radius)
             .cursor_grab()
-            .children([header, content])
             .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_mouse_down))
+            .children([header, content])
             .child(
                 z_stack([bounds_updater(cx.entity(), |this, bounds, cx| {
                     this.graph(cx)
