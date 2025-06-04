@@ -27,7 +27,7 @@ impl Render for TypographyTab {
             div().child(ui::link("example-link", "https://example.com", "Example Link", cx));
 
         div()
-            .id("typography-tab")
+            .id("typography_tab")
             .track_scroll(&self.scroll_handle)
             .overflow_y_scroll()
             .size_full()

@@ -23,7 +23,7 @@ impl Render for MiscTab {
             .child(dot_grid(px(10.0), cx.theme().colors.grid).size_full());
 
         div()
-            .id("misc-tab")
+            .id("misc_tab")
             .track_scroll(&self.scroll_handle)
             .overflow_y_scroll()
             .size_full()

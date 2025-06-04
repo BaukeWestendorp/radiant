@@ -84,7 +84,7 @@ impl<D: GraphDef + 'static> NodeView<D> {
             .map(|control| {
                 let value = graph.read(cx).node_control_value(&node_id, control.id());
                 let id =
-                    ElementId::Name(format!("node-control-{:?}-{}", node_id, control.id()).into());
+                    ElementId::Name(format!("node_control_{:?}_{}", node_id, control.id()).into());
 
                 let control_view = control.control().view(value.clone(), id, window, cx);
 
@@ -239,7 +239,7 @@ impl<D: GraphDef + 'static> InputView<D> {
     ) -> Self {
         let socket = InputSocket::new(node_id, input.id().to_string());
         let data_type = input.data_type().clone();
-        let id = ElementId::Name(format!("input-{}-{}", node_id.0, input.id()).into());
+        let id = ElementId::Name(format!("input_{}-{}", node_id.0, input.id()).into());
         let control = input.control().view(value, id.clone(), window, cx);
 
         cx.subscribe(&control, {
@@ -311,7 +311,7 @@ impl<D: GraphDef + 'static> OutputView<D> {
     ) -> Self {
         let socket = OutputSocket::new(node_id, output.id().to_string());
         let data_type = output.data_type().clone();
-        let id = ElementId::Name(format!("output-{}-{}", node_id.0, output.id()).into());
+        let id = ElementId::Name(format!("output_{}-{}", node_id.0, output.id()).into());
         Self {
             output,
             id,

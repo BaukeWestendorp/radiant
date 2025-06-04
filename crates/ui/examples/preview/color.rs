@@ -79,7 +79,7 @@ impl Render for ColorTab {
             div().flex().flex_col().gap_1().child(color_swatches("grid", cx.theme().colors.grid));
 
         div()
-            .id("colors-tab")
+            .id("colors_tab")
             .track_scroll(&self.scroll_handle)
             .overflow_y_scroll()
             .size_full()

@@ -166,7 +166,7 @@ impl Render for InteractiveTab {
             .child(self.pannable.clone());
 
         div()
-            .id("typography-tab")
+            .id("typography_tab")
             .track_scroll(&self.scroll_handle)
             .overflow_y_scroll()
             .size_full()

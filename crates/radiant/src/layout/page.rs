@@ -86,7 +86,7 @@ impl Page {
         z_stack([
             grid.into_any_element(),
             div()
-                .id("page-background")
+                .id("page_background")
                 .size_full()
                 .on_mouse_down(
                     MouseButton::Left,

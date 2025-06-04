@@ -108,7 +108,7 @@ impl Render for ContextMenu {
             div()
                 .track_focus(&self.focus_handle)
                 .key_context(actions::KEY_CONTEXT)
-                .id("context-menu")
+                .id("context_menu")
                 .size_full()
                 .my_1()
                 .flex()

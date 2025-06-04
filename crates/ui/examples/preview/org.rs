@@ -84,7 +84,7 @@ impl Render for OrganizationTab {
             .child(ui::section("Interactive Container Disabled").mb_4().child(ic_disabled));
 
         div()
-            .id("organization-tab")
+            .id("organization_tab")
             .track_scroll(&self.scroll_handle)
             .overflow_y_scroll()
             .size_full()

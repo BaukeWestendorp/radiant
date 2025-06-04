@@ -59,7 +59,7 @@ impl Render for NavigationTab {
             .child(self.v_tab_view.clone());
 
         div()
-            .id("nav-tab")
+            .id("nav_tab")
             .track_scroll(&self.scroll_handle)
             .overflow_y_scroll()
             .size_full()
