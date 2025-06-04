@@ -542,8 +542,9 @@ impl Render for FrameBoundsHighlight {
                     .h(FRAME_CELL_SIZE * bounds.size.height as f32)
                     .left(FRAME_CELL_SIZE * bounds.origin.x as f32)
                     .top(FRAME_CELL_SIZE * bounds.origin.y as f32)
-                    .border_2()
+                    .border_1()
                     .border_color(border_color)
+                    .bg(cx.theme().colors.highlight)
             }
             _ => div(),
         }
