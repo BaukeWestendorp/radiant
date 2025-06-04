@@ -5,7 +5,7 @@ use crate::{
 use gpui::*;
 use prelude::FluentBuilder;
 use ui::{
-    ActiveTheme, Selectable, container, interactive_container,
+    ActiveTheme, Selectable, interactive_container,
     utils::{bounds_updater, z_stack},
 };
 

@@ -312,7 +312,7 @@ impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
                 .h(bounds.size.height)
                 .border_1()
                 .border_color(cx.theme().colors.border_selected)
-                .bg(cx.theme().colors.bg_selected),
+                .bg(cx.theme().colors.border_selected.opacity(0.2)),
             None => div(),
         };
 
