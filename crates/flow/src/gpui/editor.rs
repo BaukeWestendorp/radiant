@@ -18,10 +18,7 @@ pub mod actions {
 
     pub const KEY_CONTEXT: &str = "GraphEditor";
 
-    actions!(
-        graph_editor,
-        [OpenNewNodeMenu, CloseNewNodeMenu, DeleteSelectedNodes, SelectAllNodes]
-    );
+    actions!(graph_editor, [CloseNewNodeMenu, DeleteSelectedNodes, SelectAllNodes]);
 
     pub fn init(cx: &mut App) {
         super::new_node_menu::actions::init(cx);
@@ -31,7 +28,6 @@ pub mod actions {
 
     fn bind_keys(cx: &mut App) {
         cx.bind_keys([
-            KeyBinding::new("space", OpenNewNodeMenu, Some(KEY_CONTEXT)),
             KeyBinding::new("escape", CloseNewNodeMenu, Some(KEY_CONTEXT)),
             KeyBinding::new("backspace", DeleteSelectedNodes, Some(KEY_CONTEXT)),
             KeyBinding::new("delete", DeleteSelectedNodes, Some(KEY_CONTEXT)),
@@ -188,15 +184,6 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
 }
 
 impl<D: GraphDef + 'static> GraphEditorView<D> {
-    fn handle_open_new_node_menu(
-        &mut self,
-        _: &actions::OpenNewNodeMenu,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        self.open_new_node_menu(None, window, cx);
-    }
-
     fn handle_close_new_node_menu(
         &mut self,
         _: &actions::CloseNewNodeMenu,
@@ -345,7 +332,6 @@ impl<D: GraphDef + 'static> Render for GraphEditorView<D> {
         .on_mouse_move(cx.listener(Self::handle_mouse_move))
         .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up_left))
         .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up_left))
-        .on_action(cx.listener(Self::handle_open_new_node_menu))
         .on_action(cx.listener(Self::handle_close_new_node_menu))
         .on_action(cx.listener(Self::handle_delete_selected_nodes))
         .on_action(cx.listener(Self::handle_select_all_nodes))
