@@ -159,6 +159,7 @@ impl Render for Frame {
         let frame_content = self.render_frame_content(window, cx).into_any_element();
 
         div()
+            .track_focus(&self.focus_handle)
             .absolute()
             .w(FRAME_CELL_SIZE * self.bounds.size.width as f32)
             .h(FRAME_CELL_SIZE * self.bounds.size.height as f32)
