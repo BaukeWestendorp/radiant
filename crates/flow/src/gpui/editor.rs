@@ -154,6 +154,11 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
     ) {
         window.prevent_default();
 
+        self.graph().update(cx, |graph, cx| {
+            graph.deselect_all_nodes();
+            cx.notify();
+        });
+
         let position = window.mouse_position() - self.bounds.origin;
         let editor_view = cx.entity().clone();
         self.new_node_menu_view = Some(cx.new(|cx| {
