@@ -1,13 +1,7 @@
 use crate::show::{self, AssetId, Show};
 use crate::ui::FRAME_CELL_SIZE;
-use gpui::{
-    App, Empty, Entity, Focusable, MouseButton, ReadGlobal, SharedString, UpdateGlobal, Window,
-    div, prelude::*, px,
-};
-use ui::{
-    ActiveTheme, ContainerStyle, Disableable, InteractiveColor, container, h6,
-    interactive_container, utils::z_stack,
-};
+use gpui::{App, Entity, ReadGlobal, SharedString, UpdateGlobal, Window, div, prelude::*, px};
+use ui::{ActiveTheme, Disableable, InteractiveColor, h6, interactive_container, utils::z_stack};
 
 use super::Frame;
 
@@ -105,64 +99,16 @@ impl PoolFrame {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
-        let title = self.title().to_string();
+        let content = div()
+            .h_full()
+            .flex()
+            .flex_col()
+            .justify_center()
+            .text_center()
+            .child(h6(self.title()))
+            .into_any_element();
 
-        let border_color = if self.frame.focus_handle(cx).contains_focused(window, cx) {
-            cx.theme().colors.border_focused
-        } else {
-            cx.theme().colors.header_border
-        };
-
-        div()
-            .child(
-                container(ContainerStyle {
-                    background: cx.theme().colors.header_background,
-                    border: border_color,
-                    text_color: cx.theme().colors.text,
-                })
-                .size_full()
-                .child(
-                    div()
-                        .h_full()
-                        .flex()
-                        .flex_col()
-                        .justify_center()
-                        .text_center()
-                        .child(h6(title)),
-                ),
-            )
-            .id("pool-header")
-            .size(FRAME_CELL_SIZE)
-            .on_mouse_down(
-                MouseButton::Right,
-                cx.listener(|this, event, w, cx| {
-                    this.frame.update(cx, |frame, cx| {
-                        frame.handle_right_mouse_click_header(event, w, cx)
-                    });
-                }),
-            )
-            .on_drag(
-                super::HeaderDrag {
-                    frame_entity_id: self.frame.entity_id(),
-                    start_mouse_position: window.mouse_position(),
-                },
-                |_, _, _, cx| cx.new(|_| Empty),
-            )
-            .on_drag_move(cx.listener(|this, event, w, cx| {
-                this.frame.update(cx, |frame, cx| frame.handle_header_drag(event, w, cx));
-            }))
-            .on_mouse_up(
-                MouseButton::Left,
-                cx.listener(|this, event, w, cx| {
-                    this.frame.update(cx, |frame, cx| frame.release_resize_move(event, w, cx));
-                }),
-            )
-            .on_mouse_up_out(
-                MouseButton::Left,
-                cx.listener(|this, event, w, cx| {
-                    this.frame.update(cx, |frame, cx| frame.release_resize_move(event, w, cx));
-                }),
-            )
+        super::header_container(self.frame.clone(), content, window, cx).size(FRAME_CELL_SIZE)
     }
 
     fn render_cell(
