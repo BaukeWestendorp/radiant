@@ -239,7 +239,7 @@ impl<D: GraphDef + 'static> InputView<D> {
     ) -> Self {
         let socket = InputSocket::new(node_id, input.id().to_string());
         let data_type = input.data_type().clone();
-        let id = ElementId::Name(format!("input_{}-{}", node_id.0, input.id()).into());
+        let id = ElementId::Name(format!("input_{}_{}", node_id.0, input.id()).into());
         let control = input.control().view(value, id.clone(), window, cx);
 
         cx.subscribe(&control, {
@@ -311,7 +311,7 @@ impl<D: GraphDef + 'static> OutputView<D> {
     ) -> Self {
         let socket = OutputSocket::new(node_id, output.id().to_string());
         let data_type = output.data_type().clone();
-        let id = ElementId::Name(format!("output_{}-{}", node_id.0, output.id()).into());
+        let id = ElementId::Name(format!("output_{}_{}", node_id.0, output.id()).into());
         Self {
             output,
             id,
@@ -400,7 +400,7 @@ impl<D: GraphDef + 'static> Render for ConnectorView<D> {
             AnySocket::Output(socket) => (socket.node_id, socket.id),
         };
 
-        let id = ElementId::Name(format!("connector-{}-{}", node_id.0, socket_name).into());
+        let id = ElementId::Name(format!("connector_{}_{}", node_id.0, socket_name).into());
 
         let hitbox = div()
             .id(id)
