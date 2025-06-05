@@ -531,10 +531,10 @@ impl Render for FrameBoundsHighlight {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         match self.active_bounds {
             Some(bounds) if self.is_visible() => {
-                let border_color = if self.is_allowed(cx) {
-                    cx.theme().colors.border_focused
+                let (bg_color, border_color) = if self.is_allowed(cx) {
+                    (cx.theme().colors.highlight, cx.theme().colors.border_selected)
                 } else {
-                    cx.theme().colors.border
+                    (cx.theme().colors.border.opacity(0.2), cx.theme().colors.border)
                 };
 
                 div()
@@ -544,7 +544,7 @@ impl Render for FrameBoundsHighlight {
                     .top(FRAME_CELL_SIZE * bounds.origin.y as f32)
                     .border_1()
                     .border_color(border_color)
-                    .bg(cx.theme().colors.highlight)
+                    .bg(bg_color)
             }
             _ => div(),
         }
