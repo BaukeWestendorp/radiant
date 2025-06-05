@@ -24,6 +24,7 @@ impl<D: GraphDef + 'static> GraphEditorFrame<D> {
 
         let graph_editor_view =
             graph.map(|graph| cx.new(|cx| GraphEditorView::new(graph, window, cx)));
+
         Self { asset, graph_editor_view }
     }
 }

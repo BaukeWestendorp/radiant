@@ -223,20 +223,23 @@ impl PoolFrame {
     }
 
     fn handle_on_click(&mut self, id: u32, cx: &mut Context<Self>) {
-        Show::update_global(cx, |show, cx| {
-            show.layout.update(cx, |layout, cx| {
-                for frame in &mut layout.main_window.loaded_page.frames {
-                    match &mut frame.kind {
-                        show::FrameKind::Window(show::WindowFrameKind::EffectGraphEditor(
-                            effect_graph,
-                        )) => *effect_graph = Some(AssetId::new(id)),
-                        _ => {}
+        match self.kind {
+            PoolFrameKind::EffectGraphs => Show::update_global(cx, |show, cx| {
+                show.layout.update(cx, |layout, cx| {
+                    for frame in &mut layout.main_window.loaded_page.frames {
+                        match &mut frame.kind {
+                            show::FrameKind::Window(show::WindowFrameKind::EffectGraphEditor(
+                                effect_graph,
+                            )) => *effect_graph = Some(AssetId::new(id)),
+                            _ => {}
+                        }
                     }
-                }
+                    cx.notify();
+                });
                 cx.notify();
-            });
-            cx.notify();
-        })
+            }),
+            _ => {}
+        }
     }
 }
 
