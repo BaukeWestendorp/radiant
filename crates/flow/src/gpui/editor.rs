@@ -57,6 +57,14 @@ impl<D: GraphDef + 'static> GraphEditorView<D> {
         let editor = cx.entity();
         let graph_view = cx.new(|cx| GraphView::new(editor, graph.clone(), window, cx));
 
+        cx.on_blur(&focus_handle, window, |this, _, cx| {
+            this.graph().update(cx, |graph, cx| {
+                graph.deselect_all_nodes();
+                cx.notify();
+            });
+        })
+        .detach();
+
         cx.subscribe(&graph, |_editor, _graph_view, event: &GraphEvent, cx| cx.emit(event.clone()))
             .detach();
 
