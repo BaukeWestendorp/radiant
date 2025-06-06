@@ -1,10 +1,12 @@
 use super::Frame;
+use crate::layout::frame::window::attr_editor::AttributeEditorFrame;
 use crate::show::{self, Show, effect_graph};
 use crate::ui::FRAME_CELL_SIZE;
 use gpui::{App, Entity, ReadGlobal, SharedString, Window, div, prelude::*};
 use graph_editor::GraphEditorFrame;
 use ui::{ContainerStyle, container, h6};
 
+pub mod attr_editor;
 pub mod graph_editor;
 
 pub struct WindowFrame {
@@ -37,7 +39,8 @@ impl WindowFrame {
 
     fn render_content(&mut self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let content = match &self.kind {
-            WindowFrameKind::EffectGraphEditor(frame) => frame.clone(),
+            WindowFrameKind::EffectGraphEditor(frame) => frame.clone().into_any_element(),
+            WindowFrameKind::AttributeEditor(frame) => frame.clone().into_any_element(),
         };
 
         container(ContainerStyle::normal(window, cx)).size_full().child(content)
@@ -66,29 +69,35 @@ impl Render for WindowFrame {
 
 pub enum WindowFrameKind {
     EffectGraphEditor(Entity<GraphEditorFrame<effect_graph::Def>>),
+    AttributeEditor(Entity<AttributeEditorFrame>),
 }
 
 impl WindowFrameKind {
     pub fn into_show(&self, cx: &App) -> show::WindowFrameKind {
         match self {
-            Self::EffectGraphEditor(graph_editor_frame) => {
-                let asset = &graph_editor_frame.read(cx).asset;
+            Self::EffectGraphEditor(frame) => {
+                let asset = &frame.read(cx).asset;
                 show::WindowFrameKind::EffectGraphEditor(asset.as_ref().map(|a| a.read(cx).id))
             }
+            Self::AttributeEditor(_) => show::WindowFrameKind::AttributeEditor,
         }
     }
 
     pub fn from_show(from: &show::WindowFrameKind, window: &mut Window, cx: &mut App) -> Self {
         match from {
             show::WindowFrameKind::EffectGraphEditor(asset_id) => {
-                let editor_frame = cx.new(|cx| {
+                let frame = cx.new(|cx| {
                     let asset = asset_id.as_ref().map(|asset_id| {
                         Show::global(cx).assets.effect_graphs.get(asset_id).unwrap()
                     });
                     GraphEditorFrame::new(asset.cloned(), window, cx)
                 });
 
-                WindowFrameKind::EffectGraphEditor(editor_frame)
+                WindowFrameKind::EffectGraphEditor(frame)
+            }
+            show::WindowFrameKind::AttributeEditor => {
+                let frame = cx.new(|cx| AttributeEditorFrame::new(window, cx));
+                WindowFrameKind::AttributeEditor(frame)
             }
         }
     }

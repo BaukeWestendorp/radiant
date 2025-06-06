@@ -9,7 +9,7 @@ pub enum FrameKind {
 }
 
 impl FrameKind {
-    pub fn all() -> [Self; 15] {
+    pub fn all() -> [Self; 16] {
         [
             // Presets
             Self::Pool(PoolFrameKind::DimmerPresets),
@@ -29,6 +29,7 @@ impl FrameKind {
             Self::Pool(PoolFrameKind::Executors),
             // Editors
             Self::Window(WindowFrameKind::EffectGraphEditor(None)),
+            Self::Window(WindowFrameKind::AttributeEditor),
         ]
     }
 }
@@ -46,12 +47,14 @@ impl std::fmt::Display for FrameKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WindowFrameKind {
     EffectGraphEditor(Option<AssetId<EffectGraph>>),
+    AttributeEditor,
 }
 
 impl std::fmt::Display for WindowFrameKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::EffectGraphEditor(_) => write!(f, "Effect Graph Editor"),
+            Self::AttributeEditor => write!(f, "Attribute Editor"),
         }
     }
 }
