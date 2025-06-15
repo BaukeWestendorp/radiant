@@ -1,6 +1,7 @@
 use std::ops::Deref;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Attribute {
     /// Controls the intensity of a fixture.
     Dimmer,
@@ -1535,6 +1536,7 @@ mod tests {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AttributeValue(f32);
 
 impl AttributeValue {

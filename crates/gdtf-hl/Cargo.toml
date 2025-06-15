@@ -3,8 +3,13 @@ name = "gdtf-hl"
 version.workspace = true
 edition.workspace = true
 
+[features]
+default = []
+serde = ["dep:serde"]
+
 [dependencies]
 thiserror.workspace = true
+serde = { workspace = true, optional = true }
 
 gdtf = "0.2.0"
 

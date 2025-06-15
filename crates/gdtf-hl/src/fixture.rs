@@ -6,6 +6,7 @@ use std::{
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FixtureId(pub u32);
 
 impl Deref for FixtureId {
@@ -35,6 +36,7 @@ impl From<FixtureId> for u32 {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DmxMode(pub String);
 
 impl DmxMode {
@@ -54,6 +56,7 @@ impl Display for DmxMode {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Fixture {
     id: FixtureId,
     dmx_mode: DmxMode,
@@ -130,6 +133,7 @@ impl Fixture {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AttributeInfo {
     value: AttributeValue,
     default_value: AttributeValue,

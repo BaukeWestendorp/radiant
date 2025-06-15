@@ -1956,6 +1956,7 @@ name = "gdtf-hl"
 version = "0.1.0"
 dependencies = [
  "gdtf",
+ "serde",
  "thiserror 2.0.12",
 ]
 
