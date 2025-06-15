@@ -2,7 +2,8 @@
 members = [
     "crates/dmx",
     "crates/flow",
-    "crates/flow/flow_derive", "crates/gdtf-hl",
+    "crates/flow/flow_derive",
+    "crates/gdtf-hl",
     "crates/radiant",
     "crates/sacn",
     "crates/ui",

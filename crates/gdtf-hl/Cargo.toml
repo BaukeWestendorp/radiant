@@ -4,6 +4,9 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+thiserror.workspace = true
+
+gdtf = "0.2.0"
 
 [lints]
 workspace = true

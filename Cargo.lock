@@ -1954,6 +1954,10 @@ dependencies = [
 [[package]]
 name = "gdtf-hl"
 version = "0.1.0"
+dependencies = [
+ "gdtf",
+ "thiserror 2.0.12",
+]
 
 [[package]]
 name = "generic-array"
@@ -3820,7 +3824,6 @@ dependencies = [
  "dmx",
  "env_logger",
  "flow",
- "gdtf",
  "gpui",
  "log",
  "ron",
