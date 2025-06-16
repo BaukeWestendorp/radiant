@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::dmx;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -868,18 +870,16 @@ impl std::fmt::Display for Attribute {
     }
 }
 
-impl Attribute {
-    /// Gets the corresponding [Attribute] for a given string. If there is no
-    /// standard attribute name for a given string, it will be put in a [Attribute::Custom]
+impl FromStr for Attribute {
+    type Err = ();
+
     #[rustfmt::skip]
-    pub fn from_str(s: &str) -> Self {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         // Helper function to extract `n` from an attribute name.
         fn extract_attr_n(s: &str, prefix: &str, suffix: Option<&str>) -> Option<u8> {
-            if s.starts_with(prefix) {
-                let rest = &s[prefix.len()..];
+            if let Some(rest) = s.strip_prefix(prefix) {
                 if let Some(suffix) = suffix {
-                    if rest.ends_with(suffix) {
-                        let number_part = &rest[..rest.len() - suffix.len()];
+                    if let Some(number_part) = rest.strip_suffix(suffix) {
                         number_part.parse::<u8>().ok()
                     } else {
                         None
@@ -912,11 +912,7 @@ impl Attribute {
 
                 // Handle optional suffix
                 let m_part = if let Some(suffix) = suffix {
-                    if after_middle.ends_with(suffix) {
-                        &after_middle[..after_middle.len() - suffix.len()]
-                    } else {
-                        return None;
-                    }
+                    after_middle.strip_suffix(suffix)?
                 } else {
                     after_middle
                 };
@@ -930,7 +926,7 @@ impl Attribute {
             }
         }
 
-        match s {
+        let attribute = match s {
             "Dimmer" => Self::Dimmer,
 
             "Pan" => Self::Pan,
@@ -1124,131 +1120,134 @@ impl Attribute {
             "FieldOfView" => Self::FieldOfView,
 
             s => {
-                if let Some(n) = extract_attr_n(s, "Gobo", None) { Self::Gobo(n) } else
-                if let Some(n) = extract_attr_n(s, "Gobo", Some("SelectSpin")) { Self::GoboSelectSpin(n) } else
-                if let Some(n) = extract_attr_n(s, "Gobo", Some("SelectShake")) { Self::GoboSelectShake(n) } else
-                if let Some(n) = extract_attr_n(s, "Gobo", Some("SelectEffects")) { Self::GoboSelectEffects(n) } else
-                if let Some(n) = extract_attr_n(s, "Gobo", Some("WheelIndex")) { Self::GoboWheelIndex(n) } else
-                if let Some(n) = extract_attr_n(s, "Gobo", Some("WheelSpin")) { Self::GoboWheelSpin(n) } else
-                if let Some(n) = extract_attr_n(s, "Gobo", Some("WheelShake")) { Self::GoboWheelShake(n) } else
-                if let Some(n) = extract_attr_n(s, "Gobo", Some("WheelRandom")) { Self::GoboWheelRandom(n) } else
-                if let Some(n) = extract_attr_n(s, "Gobo", Some("WheelAudio")) { Self::GoboWheelAudio(n) } else
-                if let Some(n) = extract_attr_n(s, "Gobo", Some("Pos")) { Self::GoboPos(n) } else
-                if let Some(n) = extract_attr_n(s, "Gobo", Some("PosRotate")) { Self::GoboPosRotate(n) } else
-                if let Some(n) = extract_attr_n(s, "Gobo", Some("PosShake")) { Self::GoboPosShake(n) } else
+                     if let Some(n) = extract_attr_n(s, "Gobo", None) { Self::Gobo(n) }
+                else if let Some(n) = extract_attr_n(s, "Gobo", Some("SelectSpin")) { Self::GoboSelectSpin(n) }
+                else if let Some(n) = extract_attr_n(s, "Gobo", Some("SelectShake")) { Self::GoboSelectShake(n) }
+                else if let Some(n) = extract_attr_n(s, "Gobo", Some("SelectEffects")) { Self::GoboSelectEffects(n) }
+                else if let Some(n) = extract_attr_n(s, "Gobo", Some("WheelIndex")) { Self::GoboWheelIndex(n) }
+                else if let Some(n) = extract_attr_n(s, "Gobo", Some("WheelSpin")) { Self::GoboWheelSpin(n) }
+                else if let Some(n) = extract_attr_n(s, "Gobo", Some("WheelShake")) { Self::GoboWheelShake(n) }
+                else if let Some(n) = extract_attr_n(s, "Gobo", Some("WheelRandom")) { Self::GoboWheelRandom(n) }
+                else if let Some(n) = extract_attr_n(s, "Gobo", Some("WheelAudio")) { Self::GoboWheelAudio(n) }
+                else if let Some(n) = extract_attr_n(s, "Gobo", Some("Pos")) { Self::GoboPos(n) }
+                else if let Some(n) = extract_attr_n(s, "Gobo", Some("PosRotate")) { Self::GoboPosRotate(n) }
+                else if let Some(n) = extract_attr_n(s, "Gobo", Some("PosShake")) { Self::GoboPosShake(n) }
 
-                if let Some(n) = extract_attr_n(s, "AnimationWheel", None) { Self::AnimationWheel(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("Audio")) { Self::AnimationWheelAudio(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("Macro")) { Self::AnimationWheelMacro(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("Random")) { Self::AnimationWheelRandom(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("SelectEffects")) { Self::AnimationWheelSelectEffects(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("SelectShake")) { Self::AnimationWheelSelectShake(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("SelectSpin")) { Self::AnimationWheelSelectSpin(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("Pos")) { Self::AnimationWheelPos(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("PosRotate")) { Self::AnimationWheelPosRotate(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("PosShake")) { Self::AnimationWheelPosShake(n) } else
+                else if let Some(n) = extract_attr_n(s, "AnimationWheel", None) { Self::AnimationWheel(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("Audio")) { Self::AnimationWheelAudio(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("Macro")) { Self::AnimationWheelMacro(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("Random")) { Self::AnimationWheelRandom(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("SelectEffects")) { Self::AnimationWheelSelectEffects(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("SelectShake")) { Self::AnimationWheelSelectShake(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("SelectSpin")) { Self::AnimationWheelSelectSpin(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("Pos")) { Self::AnimationWheelPos(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("PosRotate")) { Self::AnimationWheelPosRotate(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("PosShake")) { Self::AnimationWheelPosShake(n) }
 
-                if let Some(n) = extract_attr_n(s, "AnimationSystem", None) { Self::AnimationSystem(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("Ramp")) { Self::AnimationSystemRamp(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("Shake")) { Self::AnimationSystemShake(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("Audio")) { Self::AnimationSystemAudio(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("Random")) { Self::AnimationSystemRandom(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("Pos")) { Self::AnimationSystemPos(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("PosRotate")) { Self::AnimationSystemPosRotate(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("PosShake")) { Self::AnimationSystemPosShake(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("PosRandom")) { Self::AnimationSystemPosRandom(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("PosAudio")) { Self::AnimationSystemPosAudio(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("Macro")) { Self::AnimationSystemMacro(n) } else
+                else if let Some(n) = extract_attr_n(s, "AnimationSystem", None) { Self::AnimationSystem(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("Ramp")) { Self::AnimationSystemRamp(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("Shake")) { Self::AnimationSystemShake(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("Audio")) { Self::AnimationSystemAudio(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("Random")) { Self::AnimationSystemRandom(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("Pos")) { Self::AnimationSystemPos(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("PosRotate")) { Self::AnimationSystemPosRotate(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("PosShake")) { Self::AnimationSystemPosShake(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("PosRandom")) { Self::AnimationSystemPosRandom(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("PosAudio")) { Self::AnimationSystemPosAudio(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationSystem", Some("Macro")) { Self::AnimationSystemMacro(n) }
 
-                if let Some(n) = extract_attr_n(s, "MediaFolder",  None) { Self::MediaFolder(n) } else
-                if let Some(n) = extract_attr_n(s, "MediaContent", None) { Self::MediaContent(n) } else
-                if let Some(n) = extract_attr_n(s, "ModelFolder",  None) { Self::ModelFolder(n) } else
-                if let Some(n) = extract_attr_n(s, "ModelContent", None) { Self::ModelContent(n) } else
+                else if let Some(n) = extract_attr_n(s, "MediaFolder",  None) { Self::MediaFolder(n) }
+                else if let Some(n) = extract_attr_n(s, "MediaContent", None) { Self::MediaContent(n) }
+                else if let Some(n) = extract_attr_n(s, "ModelFolder",  None) { Self::ModelFolder(n) }
+                else if let Some(n) = extract_attr_n(s, "ModelContent", None) { Self::ModelContent(n) }
 
-                if let Some(n) = extract_attr_n(s, "ColorEffects", None) { Self::ColorEffects(n) } else
-                if let Some(n) = extract_attr_n(s, "Color", None) { Self::Color(n) } else
-                if let Some(n) = extract_attr_n(s, "Color", Some("WheelIndex")) { Self::ColorWheelIndex(n) } else
-                if let Some(n) = extract_attr_n(s, "Color", Some("WheelSpin")) { Self::ColorWheelSpin(n) } else
-                if let Some(n) = extract_attr_n(s, "Color", Some("WheelRandom")) { Self::ColorWheelRandom(n) } else
-                if let Some(n) = extract_attr_n(s, "Color", Some("WheelAudio")) { Self::ColorWheelAudio(n) } else
+                else if let Some(n) = extract_attr_n(s, "ColorEffects", None) { Self::ColorEffects(n) }
+                else if let Some(n) = extract_attr_n(s, "Color", None) { Self::Color(n) }
+                else if let Some(n) = extract_attr_n(s, "Color", Some("WheelIndex")) { Self::ColorWheelIndex(n) }
+                else if let Some(n) = extract_attr_n(s, "Color", Some("WheelSpin")) { Self::ColorWheelSpin(n) }
+                else if let Some(n) = extract_attr_n(s, "Color", Some("WheelRandom")) { Self::ColorWheelRandom(n) }
+                else if let Some(n) = extract_attr_n(s, "Color", Some("WheelAudio")) { Self::ColorWheelAudio(n) }
 
-                if let Some(n) = extract_attr_n(s, "ColorMacro", None) { Self::ColorMacro(n) } else
-                if let Some(n) = extract_attr_n(s, "ColorMacro", Some("Rate")) { Self::ColorMacroRate(n) } else
+                else if let Some(n) = extract_attr_n(s, "ColorMacro", None) { Self::ColorMacro(n) }
+                else if let Some(n) = extract_attr_n(s, "ColorMacro", Some("Rate")) { Self::ColorMacroRate(n) }
 
-                if let Some(n) = extract_attr_n(s, "Shutter", None) { Self::Shutter(n) } else
-                if let Some(n) = extract_attr_n(s, "Shutter", Some("Strobe")) { Self::ShutterStrobe(n) } else
-                if let Some(n) = extract_attr_n(s, "Shutter", Some("StrobePulse")) { Self::ShutterStrobePulse(n) } else
-                if let Some(n) = extract_attr_n(s, "Shutter", Some("StrobePulseClose")) { Self::ShutterStrobePulseClose(n) } else
-                if let Some(n) = extract_attr_n(s, "Shutter", Some("StrobePulseOpen")) { Self::ShutterStrobePulseOpen(n) } else
-                if let Some(n) = extract_attr_n(s, "Shutter", Some("StrobeRandom")) { Self::ShutterStrobeRandom(n) } else
-                if let Some(n) = extract_attr_n(s, "Shutter", Some("StrobeRandomPulse")) { Self::ShutterStrobeRandomPulse(n) } else
-                if let Some(n) = extract_attr_n(s, "Shutter", Some("StrobeRandomPulseClose")) { Self::ShutterStrobeRandomPulseClose(n) } else
-                if let Some(n) = extract_attr_n(s, "Shutter", Some("StrobeRandomPulseOpen")) { Self::ShutterStrobeRandomPulseOpen(n) } else
-                if let Some(n) = extract_attr_n(s, "Shutter", Some("StrobeEffect")) { Self::ShutterStrobeEffect(n) } else
+                else if let Some(n) = extract_attr_n(s, "Shutter", None) { Self::Shutter(n) }
+                else if let Some(n) = extract_attr_n(s, "Shutter", Some("Strobe")) { Self::ShutterStrobe(n) }
+                else if let Some(n) = extract_attr_n(s, "Shutter", Some("StrobePulse")) { Self::ShutterStrobePulse(n) }
+                else if let Some(n) = extract_attr_n(s, "Shutter", Some("StrobePulseClose")) { Self::ShutterStrobePulseClose(n) }
+                else if let Some(n) = extract_attr_n(s, "Shutter", Some("StrobePulseOpen")) { Self::ShutterStrobePulseOpen(n) }
+                else if let Some(n) = extract_attr_n(s, "Shutter", Some("StrobeRandom")) { Self::ShutterStrobeRandom(n) }
+                else if let Some(n) = extract_attr_n(s, "Shutter", Some("StrobeRandomPulse")) { Self::ShutterStrobeRandomPulse(n) }
+                else if let Some(n) = extract_attr_n(s, "Shutter", Some("StrobeRandomPulseClose")) { Self::ShutterStrobeRandomPulseClose(n) }
+                else if let Some(n) = extract_attr_n(s, "Shutter", Some("StrobeRandomPulseOpen")) { Self::ShutterStrobeRandomPulseOpen(n) }
+                else if let Some(n) = extract_attr_n(s, "Shutter", Some("StrobeEffect")) { Self::ShutterStrobeEffect(n) }
 
-                if let Some(n) = extract_attr_n(s, "Frost", None) { Self::Frost(n) } else
-                if let Some(n) = extract_attr_n(s, "Frost", Some("PulseOpen")) { Self::FrostPulseOpen(n) } else
-                if let Some(n) = extract_attr_n(s, "Frost", Some("PulseClose")) { Self::FrostPulseClose(n) } else
-                if let Some(n) = extract_attr_n(s, "Frost", Some("Ramp")) { Self::FrostRamp(n) } else
+                else if let Some(n) = extract_attr_n(s, "Frost", None) { Self::Frost(n) }
+                else if let Some(n) = extract_attr_n(s, "Frost", Some("PulseOpen")) { Self::FrostPulseOpen(n) }
+                else if let Some(n) = extract_attr_n(s, "Frost", Some("PulseClose")) { Self::FrostPulseClose(n) }
+                else if let Some(n) = extract_attr_n(s, "Frost", Some("Ramp")) { Self::FrostRamp(n) }
 
-                if let Some(n) = extract_attr_n(s, "Prism", None) { Self::Prism(n) } else
-                if let Some(n) = extract_attr_n(s, "Prism", Some("SelectSpin")) { Self::PrismSelectSpin(n) } else
-                if let Some(n) = extract_attr_n(s, "Prism", Some("Macro")) { Self::PrismMacro(n) } else
-                if let Some(n) = extract_attr_n(s, "Prism", Some("Pos")) { Self::PrismPos(n) } else
-                if let Some(n) = extract_attr_n(s, "Prism", Some("PosRotate")) { Self::PrismPosRotate(n) } else
+                else if let Some(n) = extract_attr_n(s, "Prism", None) { Self::Prism(n) }
+                else if let Some(n) = extract_attr_n(s, "Prism", Some("SelectSpin")) { Self::PrismSelectSpin(n) }
+                else if let Some(n) = extract_attr_n(s, "Prism", Some("Macro")) { Self::PrismMacro(n) }
+                else if let Some(n) = extract_attr_n(s, "Prism", Some("Pos")) { Self::PrismPos(n) }
+                else if let Some(n) = extract_attr_n(s, "Prism", Some("PosRotate")) { Self::PrismPosRotate(n) }
 
-                if let Some((n, m)) = extract_attr_n_m(s, "Effects", "Adjust", None) { Self::EffectsAdjust(n, m) } else
-                if let Some(n) = extract_attr_n(s, "Effects", None) { Self::Effects(n) } else
-                if let Some(n) = extract_attr_n(s, "Effects", Some("Rate")) { Self::EffectsRate(n) } else
-                if let Some(n) = extract_attr_n(s, "Effects", Some("Fade")) { Self::EffectsFade(n) } else
-                if let Some(n) = extract_attr_n(s, "Effects", Some("Pos")) { Self::EffectsPos(n) } else
-                if let Some(n) = extract_attr_n(s, "Effects", Some("PosRotate")) { Self::EffectsPosRotate(n) } else
-                if let Some(n) = extract_attr_n(s, "Focus", None) { Self::Focus(n) } else
-                if let Some(n) = extract_attr_n(s, "Focus", Some("Adjust")) { Self::FocusAdjust(n) } else
-                if let Some(n) = extract_attr_n(s, "Focus", Some("Distance")) { Self::FocusDistance(n) } else
-                if let Some(n) = extract_attr_n(s, "Control", None) { Self::Control(n) } else
-                if let Some(n) = extract_attr_n(s, "Gobo", Some("WheelMode")) { Self::GoboWheelMode(n) } else
-                if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("Mode")) { Self::AnimationWheelMode(n) } else
-                if let Some(n) = extract_attr_n(s, "Color", Some("Mode")) { Self::ColorMode(n) } else
+                else if let Some((n, m)) = extract_attr_n_m(s, "Effects", "Adjust", None) { Self::EffectsAdjust(n, m) }
+                else if let Some(n) = extract_attr_n(s, "Effects", None) { Self::Effects(n) }
+                else if let Some(n) = extract_attr_n(s, "Effects", Some("Rate")) { Self::EffectsRate(n) }
+                else if let Some(n) = extract_attr_n(s, "Effects", Some("Fade")) { Self::EffectsFade(n) }
+                else if let Some(n) = extract_attr_n(s, "Effects", Some("Pos")) { Self::EffectsPos(n) }
+                else if let Some(n) = extract_attr_n(s, "Effects", Some("PosRotate")) { Self::EffectsPosRotate(n) }
+                else if let Some(n) = extract_attr_n(s, "Focus", None) { Self::Focus(n) }
+                else if let Some(n) = extract_attr_n(s, "Focus", Some("Adjust")) { Self::FocusAdjust(n) }
+                else if let Some(n) = extract_attr_n(s, "Focus", Some("Distance")) { Self::FocusDistance(n) }
+                else if let Some(n) = extract_attr_n(s, "Control", None) { Self::Control(n) }
+                else if let Some(n) = extract_attr_n(s, "Gobo", Some("WheelMode")) { Self::GoboWheelMode(n) }
+                else if let Some(n) = extract_attr_n(s, "AnimationWheel", Some("Mode")) { Self::AnimationWheelMode(n) }
+                else if let Some(n) = extract_attr_n(s, "Color", Some("Mode")) { Self::ColorMode(n) }
 
-                if let Some(n) = extract_attr_n(s, "Fan", Some("Mode")) { Self::FanMode(n) } else
-                if let Some(n) = extract_attr_n(s, "GoboWheel", Some("MSpeed")) { Self::GoboWheelMSpeed(n) } else
-                if let Some(n) = extract_attr_n(s, "Prism", Some("MSpeed")) { Self::PrismMSpeed(n) } else
-                if let Some(n) = extract_attr_n(s, "Frost", Some("MSpeed")) { Self::FrostMSpeed(n) } else
-                if let Some(n) = extract_attr_n(s, "Blower", None) { Self::Blower(n) } else
-                if let Some(n) = extract_attr_n(s, "Fan", None) { Self::Fan(n) } else
-                if let Some(n) = extract_attr_n(s, "Fog", None) { Self::Fog(n) } else
-                if let Some(n) = extract_attr_n(s, "Haze", None) { Self::Haze(n) } else
+                else if let Some(n) = extract_attr_n(s, "Fan", Some("Mode")) { Self::FanMode(n) }
+                else if let Some(n) = extract_attr_n(s, "GoboWheel", Some("MSpeed")) { Self::GoboWheelMSpeed(n) }
+                else if let Some(n) = extract_attr_n(s, "Prism", Some("MSpeed")) { Self::PrismMSpeed(n) }
+                else if let Some(n) = extract_attr_n(s, "Frost", Some("MSpeed")) { Self::FrostMSpeed(n) }
+                else if let Some(n) = extract_attr_n(s, "Blower", None) { Self::Blower(n) }
+                else if let Some(n) = extract_attr_n(s, "Fan", None) { Self::Fan(n) }
+                else if let Some(n) = extract_attr_n(s, "Fog", None) { Self::Fog(n) }
+                else if let Some(n) = extract_attr_n(s, "Haze", None) { Self::Haze(n) }
 
-                if let Some(n) = extract_attr_n(s, "Blade", Some("A")) { Self::BladeA(n) } else
-                if let Some(n) = extract_attr_n(s, "Blade", Some("B")) { Self::BladeB(n) } else
-                if let Some(n) = extract_attr_n(s, "Blade", Some("Rot")) { Self::BladeRot(n) } else
-                if let Some(n) = extract_attr_n(s, "BladeSoft", Some("A")) { Self::BladeSoftA(n) } else
-                if let Some(n) = extract_attr_n(s, "BladeSoft", Some("B")) { Self::BladeSoftB(n) } else
-                if let Some(n) = extract_attr_n(s, "KeyStone", Some("A")) { Self::KeyStoneA(n) } else
-                if let Some(n) = extract_attr_n(s, "KeyStone", Some("B")) { Self::KeyStoneB(n) } else
+                else if let Some(n) = extract_attr_n(s, "Blade", Some("A")) { Self::BladeA(n) }
+                else if let Some(n) = extract_attr_n(s, "Blade", Some("B")) { Self::BladeB(n) }
+                else if let Some(n) = extract_attr_n(s, "Blade", Some("Rot")) { Self::BladeRot(n) }
+                else if let Some(n) = extract_attr_n(s, "BladeSoft", Some("A")) { Self::BladeSoftA(n) }
+                else if let Some(n) = extract_attr_n(s, "BladeSoft", Some("B")) { Self::BladeSoftB(n) }
+                else if let Some(n) = extract_attr_n(s, "KeyStone", Some("A")) { Self::KeyStoneA(n) }
+                else if let Some(n) = extract_attr_n(s, "KeyStone", Some("B")) { Self::KeyStoneB(n) }
 
-                if let Some(n) = extract_attr_n(s, "VideoEffect", Some("Type")) { Self::VideoEffectType(n) } else
-                if let Some((n, m)) = extract_attr_n_m(s, "VideoEffect", "Parameter", None) { Self::VideoEffectParameter(n, m) } else
-                if let Some(n) = extract_attr_n(s, "VideoCamera", None) { Self::VideoCamera(n) } else
-                if let Some(n) = extract_attr_n(s, "VideoSoundVolume", None) { Self::VideoSoundVolume(n) }
+                else if let Some(n) = extract_attr_n(s, "VideoEffect", Some("Type")) { Self::VideoEffectType(n) }
+                else if let Some((n, m)) = extract_attr_n_m(s, "VideoEffect", "Parameter", None) { Self::VideoEffectParameter(n, m) }
+                else if let Some(n) = extract_attr_n(s, "VideoCamera", None) { Self::VideoCamera(n) }
+                else if let Some(n) = extract_attr_n(s, "VideoSoundVolume", None) { Self::VideoSoundVolume(n) }
 
                 else { Self::Custom(s.to_string()) }
             }
-        }
+        };
+
+        Ok(attribute)
     }
 }
 
 #[cfg(test)]
 #[rustfmt::skip]
 mod tests {
+    use std::str::FromStr;
     use super::Attribute;
 
     macro_rules! test_attr {
         ($test_name:ident, $attr_name:literal, $attr_kind:expr) => {
             #[test]
             fn $test_name() {
-                assert_eq!(super::Attribute::from_str($attr_name), $attr_kind);
+                assert_eq!(super::Attribute::from_str($attr_name).unwrap(), $attr_kind);
             }
         };
     }

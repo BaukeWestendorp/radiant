@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
 use eyre::ContextCompat;
 
@@ -75,10 +75,10 @@ impl Fixture {
             let default_value = channel_function.default.into();
             let highlight_value = channel.highlight.map(From::from);
 
-            if let Some(attribute) = channel_function.attribute(&fixture_type) {
+            if let Some(attribute) = channel_function.attribute(fixture_type) {
                 let Some(attribute_name) = &attribute.name else { continue };
 
-                let attribute = Attribute::from_str(attribute_name);
+                let attribute = Attribute::from_str(attribute_name).unwrap();
 
                 let info = AttributeInfo { default_value, highlight_value, offset: offset.clone() };
 
