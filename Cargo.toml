@@ -4,11 +4,21 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+derive_more = { version = "2.0.1", features = [
+    "deref",
+    "deref_mut",
+    "display",
+    "from",
+    "from_str",
+    "into",
+] }
 eyre = "0.6.12"
 facet = "0.27.13"
 facet-args = "0.19.15"
 facet-pretty = "0.23.20"
 facet-yaml = "0.25.12"
+gdtf = "0.2.0"
+# gpui = { git = "https://github.com/zed-industries/zed", rev = "29cdef1" }
 log = "0.4.27"
 simple_logger = "5.0.0"
 thiserror = "2.0.12"
