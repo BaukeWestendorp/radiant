@@ -44,9 +44,6 @@ impl Showfile {
     pub fn load_folder(path: &PathBuf) -> Result<Self> {
         let patch = Patch::read_from_file(path.join(RELATIVE_PATCH_FILE_PATH))?;
 
-        Ok(Self {
-            path: Some(path.clone()),
-            patch,
-        })
+        Ok(Self { path: Some(path.clone()), patch })
     }
 }
