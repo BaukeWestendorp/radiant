@@ -12,18 +12,19 @@ pub use error::Error;
 /// # Examples
 ///
 /// ```
-/// # use dmx::Channel;
+/// # use neo_radiant::dmx;
 /// // Create a valid channel
-/// let valid_channel = Channel::new(100);
+/// let valid_channel = dmx::Channel::new(100);
 /// assert!(valid_channel.is_ok());
 ///
 /// // Create invalid channels
-/// let invalid_channel = Channel::new(0);
+/// let invalid_channel = dmx::Channel::new(0);
 /// assert!(invalid_channel.is_err());
-/// let invalid_channel = Channel::new(513);
+/// let invalid_channel = dmx::Channel::new(513);
 /// assert!(invalid_channel.is_err());
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, facet::Facet)]
+#[derive(derive_more::Deref, derive_more::DerefMut, derive_more::Display)]
 pub struct Channel(u16);
 
 impl Channel {
@@ -40,10 +41,10 @@ impl Channel {
     /// # Examples
     ///
     /// ```
-    /// # use dmx::Channel;
-    /// let valid = Channel::new(100);
+    /// # use neo_radiant::dmx;
+    /// let valid = dmx::Channel::new(100);
     /// assert!(valid.is_ok());
-    /// let invalid = Channel::new(513);
+    /// let invalid = dmx::Channel::new(513);
     /// assert!(invalid.is_err());
     /// ```
     pub fn new(channel: u16) -> Result<Self, Error> {
@@ -78,30 +79,8 @@ impl std::str::FromStr for Channel {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let channel = s
-            .parse::<u16>()
-            .map_err(|_| Error::ParseChannelFailed(s.to_string()))?;
+        let channel = s.parse::<u16>().map_err(|_| Error::ParseChannelFailed(s.to_string()))?;
         Self::new(channel)
-    }
-}
-
-impl std::ops::Deref for Channel {
-    type Target = u16;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl std::ops::DerefMut for Channel {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl std::fmt::Display for Channel {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.0)
     }
 }
 
@@ -110,11 +89,20 @@ impl std::fmt::Display for Channel {
 /// # Examples
 ///
 /// ```
+/// # use neo_radiant::dmx;
+///
 /// let val = dmx::Value(128); // Create a DMX value of 128
 /// let min = dmx::Value(0);   // Minimum DMX value
 /// let max = dmx::Value(255); // Maximum DMX value
 /// ```
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, facet::Facet)]
+#[derive(
+    derive_more::Deref,
+    derive_more::DerefMut,
+    derive_more::Display,
+    derive_more::From,
+    derive_more::Into
+)]
 pub struct Value(pub u8);
 
 impl Value {
@@ -123,38 +111,6 @@ impl Value {
 
     /// The maximum valid DMX value.
     pub const MAX: Self = Value(255);
-}
-
-impl From<Value> for u8 {
-    fn from(value: Value) -> Self {
-        value.0
-    }
-}
-
-impl From<u8> for Value {
-    fn from(value: u8) -> Self {
-        Value(value)
-    }
-}
-
-impl std::ops::Deref for Value {
-    type Target = u8;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl std::ops::DerefMut for Value {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl std::fmt::Display for Value {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
 }
 
 /// A unique DMX address composed of a [UniverseId] and a [Channel].
@@ -169,14 +125,14 @@ impl std::fmt::Display for Value {
 /// # Examples
 ///
 /// ```
-/// # use dmx::{Address, Channel, UniverseId};
+/// # use neo_radiant::dmx;
 /// // Create an address in universe 1, channel 100
-/// let addr = Address::new(UniverseId::new(1).unwrap(), Channel::new(100).unwrap());
+/// let addr = dmx::Address::new(dmx::UniverseId::new(1).unwrap(), dmx::Channel::new(100).unwrap());
 ///
 /// // Create from an absolute address
-/// let addr = Address::from_absolute(1000).unwrap();
-/// assert_eq!(addr.universe, UniverseId::new(2).unwrap());
-/// assert_eq!(addr.channel, Channel::new(488).unwrap());
+/// let addr = dmx::Address::from_absolute(1000).unwrap();
+/// assert_eq!(addr.universe, dmx::UniverseId::new(2).unwrap());
+/// assert_eq!(addr.channel, dmx::Channel::new(488).unwrap());
 /// ```
 #[derive(Debug, Clone, Default, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, facet::Facet)]
 pub struct Address {
@@ -197,10 +153,10 @@ impl Address {
     /// # Examples
     ///
     /// ```rust
-    /// # use dmx::{Address, Channel, UniverseId};
-    /// let address = Address::from_absolute(1000).unwrap();
-    /// assert_eq!(address.universe, UniverseId::new(2).unwrap());
-    /// assert_eq!(address.channel, Channel::new(488).unwrap());
+    /// # use neo_radiant::dmx;
+    /// let address = dmx::Address::from_absolute(1000).unwrap();
+    /// assert_eq!(address.universe, dmx::UniverseId::new(2).unwrap());
+    /// assert_eq!(address.channel, dmx::Channel::new(488).unwrap());
     /// ```
     pub fn from_absolute(absolute_address: u32) -> Result<Self, Error> {
         // Handle case where absolute_address is 0
@@ -222,8 +178,8 @@ impl Address {
     /// # Examples
     ///
     /// ```rust
-    /// # use dmx::{Address, Channel, UniverseId};
-    /// let address = Address::new(UniverseId::new(2).unwrap(), Channel::new(488).unwrap());
+    /// # use neo_radiant::dmx;
+    /// let address = dmx::Address::new(dmx::UniverseId::new(2).unwrap(), dmx::Channel::new(488).unwrap());
     /// assert_eq!(address.to_absolute(), 1000);
     /// ```
     pub fn to_absolute(&self) -> u32 {
@@ -238,10 +194,10 @@ impl Address {
     /// # Examples
     ///
     /// ```rust
-    /// # use dmx::{Address, Channel, UniverseId};
-    /// let address = Address::new(UniverseId::new(1).unwrap(), Channel::new(500).unwrap());
+    /// # use neo_radiant::dmx;
+    /// let address = dmx::Address::new(dmx::UniverseId::new(1).unwrap(), dmx::Channel::new(500).unwrap());
     /// let new_address = address.with_channel_offset(10).unwrap();
-    /// assert_eq!(new_address.channel, Channel::new(510).unwrap());
+    /// assert_eq!(new_address.channel, dmx::Channel::new(510).unwrap());
     /// ```
     ///
     /// # Errors
@@ -249,8 +205,8 @@ impl Address {
     /// Returns an error if the resulting channel would be outside the valid range (1..=512).
     ///
     /// ```rust
-    /// # use dmx::{Address, Channel, UniverseId};
-    /// let address = Address::new(UniverseId::new(1).unwrap(), Channel::new(500).unwrap());
+    /// # use neo_radiant::dmx;
+    /// let address = dmx::Address::new(dmx::UniverseId::new(1).unwrap(), dmx::Channel::new(500).unwrap());
     /// let result = address.with_channel_offset(20); // Would be channel 520
     /// assert!(result.is_err());
     /// ```
@@ -289,16 +245,17 @@ impl std::fmt::Display for Address {
 /// # Examples
 ///
 /// ```
-/// # use dmx::UniverseId;
+/// # use neo_radiant::dmx;
 /// // Valid universe ID
-/// let valid_universe = UniverseId::new(1);
+/// let valid_universe = dmx::UniverseId::new(1);
 /// assert!(valid_universe.is_ok());
 ///
 /// // Invalid universe ID
-/// let invalid = UniverseId::new(0);
+/// let invalid = dmx::UniverseId::new(0);
 /// assert!(invalid.is_err());
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, facet::Facet)]
+#[derive(derive_more::Deref, derive_more::DerefMut, derive_more::Display)]
 pub struct UniverseId(u16);
 
 impl UniverseId {
@@ -315,11 +272,11 @@ impl UniverseId {
     /// # Examples
     ///
     /// ```
-    /// # use dmx::UniverseId;
-    /// let valid_universe = UniverseId::new(1);
+    /// # use neo_radiant::dmx;
+    /// let valid_universe = dmx::UniverseId::new(1);
     /// assert!(valid_universe.is_ok());
     ///
-    /// let invalid = UniverseId::new(0);
+    /// let invalid = dmx::UniverseId::new(0);
     /// assert!(invalid.is_err());
     /// ```
     pub const fn new(id: u16) -> Result<Self, Error> {
@@ -360,26 +317,6 @@ impl std::str::FromStr for UniverseId {
     }
 }
 
-impl std::ops::Deref for UniverseId {
-    type Target = u16;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl std::ops::DerefMut for UniverseId {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl std::fmt::Display for UniverseId {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
 /// A DMX universe that contains 512 [Value]s.
 ///
 /// The universe has:
@@ -389,8 +326,8 @@ impl std::fmt::Display for UniverseId {
 /// # Examples
 ///
 /// ```
-/// # use dmx::{Universe, UniverseId, Value};
-/// let universe = Universe::new();
+/// # use neo_radiant::dmx;
+/// let universe = dmx::Universe::new();
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, facet::Facet)]
 pub struct Universe {
@@ -411,13 +348,11 @@ impl Universe {
     /// # Examples
     ///
     /// ```
-    /// # use dmx::Universe;
-    /// let universe = Universe::new();
+    /// # use neo_radiant::dmx;
+    /// let universe = dmx::Universe::new();
     /// ```
     pub fn new() -> Self {
-        Self {
-            values: [Value::default(); 512],
-        }
+        Self { values: [Value::default(); 512] }
     }
 
     /// Get the value for the given channel.
@@ -425,10 +360,10 @@ impl Universe {
     /// # Examples
     ///
     /// ```
-    /// # use dmx::{Universe, Channel, Value};
-    /// let universe = Universe::new();
-    /// let channel = Channel::new(1).unwrap();
-    /// assert_eq!(universe.get_value(&channel), Value(0));
+    /// # use neo_radiant::dmx;
+    /// let universe = dmx::Universe::new();
+    /// let channel = dmx::Channel::new(1).unwrap();
+    /// assert_eq!(universe.get_value(&channel), dmx::Value(0));
     /// ```
     pub fn get_value(&self, channel: &Channel) -> Value {
         self.values[channel.0 as usize - 1]
@@ -439,12 +374,12 @@ impl Universe {
     /// # Examples
     ///
     /// ```
-    /// # use dmx::{Universe, Channel, Value};
-    /// let mut universe = Universe::new();
+    /// # use neo_radiant::dmx;
+    /// let mut universe = dmx::Universe::new();
     ///
-    /// let channel = Channel::new(1).unwrap();
-    /// universe.set_value(&channel, Value(128));
-    /// assert_eq!(universe.get_value(&channel), Value(128));
+    /// let channel = dmx::Channel::new(1).unwrap();
+    /// universe.set_value(&channel, dmx::Value(128));
+    /// assert_eq!(universe.get_value(&channel), dmx::Value(128));
     /// ```
     pub fn set_value(&mut self, channel: &Channel, value: Value) {
         self.values[channel.0 as usize - 1] = value;
@@ -472,8 +407,8 @@ impl Universe {
     /// # Examples
     ///
     /// ```
-    /// # use dmx::Universe;
-    /// let mut universe = Universe::new();
+    /// # use neo_radiant::dmx;
+    /// let mut universe = dmx::Universe::new();
     /// universe.clear();
     /// ```
     pub fn clear(&mut self) {
@@ -492,12 +427,12 @@ impl From<Universe> for Vec<u8> {
 /// # Examples
 ///
 /// ```
-/// # use dmx::{Multiverse, Universe, UniverseId};
-/// let mut multiverse = Multiverse::new();
+/// # use neo_radiant::dmx;
+/// let mut multiverse = dmx::Multiverse::new();
 ///
 /// // Add a universe
-/// let id = UniverseId::new(1).unwrap();
-/// let universe = Universe::new();
+/// let id = dmx::UniverseId::new(1).unwrap();
+/// let universe = dmx::Universe::new();
 /// multiverse.create_universe(id, universe);
 ///
 /// // Remove a universe
@@ -511,9 +446,7 @@ pub struct Multiverse {
 impl Multiverse {
     /// Creates a new [Multiverse] with no [Universe]s in it.
     pub fn new() -> Self {
-        Self {
-            universes: HashMap::new(),
-        }
+        Self { universes: HashMap::new() }
     }
 
     /// Checks if a [Universe] with the given [UniverseId] exists in the [Multiverse].
@@ -521,10 +454,10 @@ impl Multiverse {
     /// # Examples
     ///
     /// ```
-    /// # use dmx::{Multiverse, Universe, UniverseId};
-    /// let mut multiverse = Multiverse::new();
-    /// let id = UniverseId::new(1).unwrap();
-    /// let universe = Universe::new();
+    /// # use neo_radiant::dmx;
+    /// let mut multiverse = dmx::Multiverse::new();
+    /// let id = dmx::UniverseId::new(1).unwrap();
+    /// let universe = dmx::Universe::new();
     /// multiverse.create_universe(id, universe);
     ///
     /// assert!(multiverse.has_universe(&id));
@@ -538,9 +471,9 @@ impl Multiverse {
     /// # Examples
     ///
     /// ```
-    /// # use dmx::{Multiverse, Universe, UniverseId};
-    /// let mut multiverse = Multiverse::new();
-    /// multiverse.create_universe(UniverseId::new(1).unwrap(), Universe::new());
+    /// # use neo_radiant::dmx;
+    /// let mut multiverse = dmx::Multiverse::new();
+    /// multiverse.create_universe(dmx::UniverseId::new(1).unwrap(), dmx::Universe::new());
     /// ```
     pub fn create_universe(&mut self, id: UniverseId, universe: Universe) {
         self.universes.insert(id, universe);
@@ -553,10 +486,10 @@ impl Multiverse {
     /// # Examples
     ///
     /// ```
-    /// # use dmx::{Multiverse, Universe, UniverseId};
-    /// let mut multiverse = Multiverse::new();
-    /// let id = UniverseId::new(1).unwrap();
-    /// multiverse.create_universe(id, Universe::new());
+    /// # use neo_radiant::dmx;
+    /// let mut multiverse = dmx::Multiverse::new();
+    /// let id = dmx::UniverseId::new(1).unwrap();
+    /// multiverse.create_universe(id, dmx::Universe::new());
     ///
     /// let universe = multiverse.remove_universe(&id);
     /// assert!(universe.is_some());
@@ -570,10 +503,10 @@ impl Multiverse {
     /// # Examples
     ///
     /// ```
-    /// # use dmx::{Multiverse, Universe, UniverseId};
-    /// let mut multiverse = Multiverse::new();
-    /// multiverse.create_universe(UniverseId::new(1).unwrap(), Universe::new());
-    /// multiverse.create_universe(UniverseId::new(2).unwrap(), Universe::new());
+    /// # use neo_radiant::dmx;
+    /// let mut multiverse = dmx::Multiverse::new();
+    /// multiverse.create_universe(dmx::UniverseId::new(1).unwrap(), dmx::Universe::new());
+    /// multiverse.create_universe(dmx::UniverseId::new(2).unwrap(), dmx::Universe::new());
     ///
     /// multiverse.clear();
     ///
@@ -613,13 +546,13 @@ impl Multiverse {
     /// # Examples
     ///
     /// ```
-    /// # use dmx::{Multiverse, Universe, UniverseId, Address, Channel, Value};
-    /// let mut multiverse = Multiverse::new();
-    /// let id = UniverseId::new(1).unwrap();
-    /// multiverse.create_universe(id, Universe::new());
+    /// # use neo_radiant::dmx;
+    /// let mut multiverse = dmx::Multiverse::new();
+    /// let id = dmx::UniverseId::new(1).unwrap();
+    /// multiverse.create_universe(id, dmx::Universe::new());
     ///
-    /// let address = Address::new(id, Channel::new(1).unwrap());
-    /// multiverse.set_value(&address, Value(128));
+    /// let address = dmx::Address::new(id, dmx::Channel::new(1).unwrap());
+    /// multiverse.set_value(&address, dmx::Value(128));
     /// ```
     pub fn set_value(&mut self, address: &Address, value: Value) {
         let universe = match self.universe_mut(&address.universe) {
