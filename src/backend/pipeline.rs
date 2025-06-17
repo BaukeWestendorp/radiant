@@ -4,7 +4,7 @@ use crate::backend::patch::Patch;
 use crate::backend::patch::attr::Attribute;
 use crate::backend::patch::attr::AttributeValue;
 use crate::backend::patch::fixture::FixtureId;
-use crate::backend::preset::Preset;
+use crate::backend::preset::PresetContent;
 use crate::dmx::{self, Multiverse};
 
 /// # Pipeline
@@ -23,7 +23,7 @@ use crate::dmx::{self, Multiverse};
 pub struct Pipeline {
     /// Unresolved presets that have been set.
     /// These will be piped down into the attribute values.
-    presets: Vec<Preset>,
+    presets: Vec<PresetContent>,
     /// Unresolved attribute values that have been set.
     /// These will be piped down into the unresolved [Multiverse].
     attribute_values: HashMap<(FixtureId, Attribute), AttributeValue>,
@@ -47,7 +47,7 @@ impl Pipeline {
     }
 
     /// Inserts a [Preset] to be resolved in the future.
-    pub fn set_preset(&mut self, preset: Preset) {
+    pub fn set_preset(&mut self, preset: PresetContent) {
         self.presets.push(preset);
     }
 
@@ -81,7 +81,7 @@ impl Pipeline {
     fn resolve_presets(&mut self) {
         for preset in self.presets.clone() {
             match preset {
-                Preset::Selective(selective_preset) => {
+                PresetContent::Selective(selective_preset) => {
                     for ((fixture_id, attribute), value) in selective_preset.get_attribute_values()
                     {
                         self.set_attribute_value(*fixture_id, attribute.clone(), *value);

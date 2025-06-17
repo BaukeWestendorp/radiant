@@ -6,7 +6,7 @@ use crate::backend::patch::fixture::FixtureId;
 
 /// A collection of attribute values, either connected to specific fixtures, fixture types, or generic attributes.
 #[derive(Debug, Clone, PartialEq)]
-pub enum Preset {
+pub enum PresetContent {
     Selective(SelectivePreset),
 }
 

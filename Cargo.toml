@@ -4,14 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-derive_more = { version = "2.0.1", features = [
-    "deref",
-    "deref_mut",
-    "display",
-    "from",
-    "from_str",
-    "into",
-] }
+derive_more = { version = "2.0.1", features = ["add", "add_assign", "deref", "deref_mut", "display", "from", "from_str", "into", "mul_assign", "sum"] }
 eyre = "0.6.12"
 facet = "0.27.13"
 facet-args = "0.19.15"

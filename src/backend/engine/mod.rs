@@ -7,6 +7,7 @@ use std::time::Duration;
 use eyre::{Context, ContextCompat};
 
 use crate::backend::engine::cmd::Command;
+use crate::backend::object::{AnyPreset, Object};
 use crate::backend::patch::fixture::{DmxMode, Fixture, FixtureId};
 use crate::backend::pipeline::Pipeline;
 use crate::backend::show::Show;
@@ -85,6 +86,7 @@ impl Engine {
                     let multiverse = output_pipeline.output_multiverse();
 
                     eprintln!("{multiverse:?}");
+                    eprintln!("{:?}", show.executors);
                 }
 
                 thread::sleep(DMX_OUTPUT_INTERVAL);
@@ -139,6 +141,25 @@ impl Engine {
             Command::SetPreset { preset } => {
                 let programmer = &mut self.show.lock().unwrap().programmer;
                 programmer.set_preset(preset);
+            }
+            Command::New(object) => {
+                let show = &mut self.show.lock().unwrap();
+                match object {
+                    Object::Executor(executor) => {
+                        show.executors.insert(executor.id, executor);
+                    }
+                    Object::Sequence(sequence) => {
+                        show.sequences.insert(sequence.id, sequence);
+                    }
+                    Object::FixtureGroup(fixture_group) => {
+                        show.fixture_groups.insert(fixture_group.id, fixture_group);
+                    }
+                    Object::Preset(any_preset) => match any_preset {
+                        AnyPreset::Dimmer(preset) => {
+                            show.dimmer_presets.insert(preset.id, preset);
+                        }
+                    },
+                };
             }
         }
 

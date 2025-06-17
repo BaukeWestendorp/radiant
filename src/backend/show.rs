@@ -1,6 +1,13 @@
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
-use crate::backend::{patch::Patch, pipeline::Pipeline};
+use crate::backend::{
+    object::{
+        DimmerPreset, DimmerPresetId, Executor, ExecutorId, FixtureGroup, FixtureGroupId, Sequence,
+        SequenceId,
+    },
+    patch::Patch,
+    pipeline::Pipeline,
+};
 
 #[derive(Default)]
 pub struct Show {
@@ -12,11 +19,16 @@ pub struct Show {
 
     /// The programmer contains WIP output data that can be saved to a preset.
     pub programmer: Pipeline,
+
+    pub executors: HashMap<ExecutorId, Executor>,
+    pub sequences: HashMap<SequenceId, Sequence>,
+    pub fixture_groups: HashMap<FixtureGroupId, FixtureGroup>,
+    pub dimmer_presets: HashMap<DimmerPresetId, DimmerPreset>,
 }
 
 impl Show {
     pub fn new(path: Option<PathBuf>) -> Self {
-        Self { path, patch: Patch::default(), programmer: Pipeline::default() }
+        Self { path, ..Default::default() }
     }
 
     pub fn path(&self) -> Option<&PathBuf> {
