@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::backend::patch::Patch;
+use crate::backend::{patch::Patch, pipeline::Pipeline};
 
 #[derive(Default)]
 pub struct Show {
@@ -9,11 +9,14 @@ pub struct Show {
     path: Option<PathBuf>,
 
     pub patch: Patch,
+
+    /// The programmer contains WIP output data that can be saved to a preset.
+    pub programmer: Pipeline,
 }
 
 impl Show {
     pub fn new(path: Option<PathBuf>) -> Self {
-        Self { path, patch: Patch::default() }
+        Self { path, patch: Patch::default(), programmer: Pipeline::default() }
     }
 
     pub fn path(&self) -> Option<&PathBuf> {

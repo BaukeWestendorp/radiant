@@ -1,16 +1,11 @@
 use std::collections::HashMap;
 
-use crate::{
-    backend::{
-        patch::{
-            Patch,
-            attr::{Attribute, AttributeValue},
-            fixture::FixtureId,
-        },
-        preset::Preset,
-    },
-    dmx::{self, Multiverse},
-};
+use crate::backend::patch::Patch;
+use crate::backend::patch::attr::Attribute;
+use crate::backend::patch::attr::AttributeValue;
+use crate::backend::patch::fixture::FixtureId;
+use crate::backend::preset::Preset;
+use crate::dmx::{self, Multiverse};
 
 /// # Pipeline
 ///
@@ -24,7 +19,7 @@ use crate::{
 /// - (2) Resolve Direct DMX Values  (e.g. Attribute Values >>)
 /// - (1) Output DMX                 (e.g. Via sACN)
 /// ```
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Pipeline {
     /// Unresolved presets that have been set.
     /// These will be piped down into the attribute values.
@@ -129,5 +124,20 @@ impl Pipeline {
     /// Gets the resolved [Multiverse]. This will not be cleared by [Pipeline::clear].
     pub fn output_multiverse(&self) -> &Multiverse {
         &self.resolved_multiverse
+    }
+
+    /// Merges all relevant, unresolved data from this [Pipeline] into another.
+    pub fn merge_into(&self, other: &mut Pipeline) {
+        for preset in &self.presets {
+            other.presets.push(preset.clone());
+        }
+
+        for ((fixture_id, attribute), value) in &self.attribute_values {
+            other.attribute_values.insert((*fixture_id, attribute.clone()), value.clone());
+        }
+
+        for (address, value) in &self.dmx_values {
+            other.dmx_values.insert(*address, *value);
+        }
     }
 }

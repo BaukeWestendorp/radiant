@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 
-use crate::backend::patch::{
-    attr::{Attribute, AttributeValue},
-    fixture::FixtureId,
-};
+use crate::backend::patch::attr::Attribute;
+use crate::backend::patch::attr::AttributeValue;
+use crate::backend::patch::fixture::FixtureId;
 
 /// A collection of attribute values, either connected to specific fixtures, fixture types, or generic attributes.
 #[derive(Debug, Clone, PartialEq)]

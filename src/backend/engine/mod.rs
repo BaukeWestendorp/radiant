@@ -24,7 +24,7 @@ const DMX_OUTPUT_INTERVAL: Duration = Duration::from_millis(40);
 /// the show.
 pub struct Engine {
     show: Arc<Mutex<Show>>,
-    pipeline: Arc<Mutex<Pipeline>>,
+    output_pipeline: Arc<Mutex<Pipeline>>,
     dmx_output_thread: Option<JoinHandle<()>>,
 }
 
@@ -34,7 +34,7 @@ impl Engine {
 
         let mut this = Self {
             show: Arc::new(Mutex::new(show)),
-            pipeline: Arc::new(Mutex::new(Pipeline::new())),
+            output_pipeline: Arc::new(Mutex::new(Pipeline::new())),
             dmx_output_thread: None,
         };
 
@@ -54,7 +54,7 @@ impl Engine {
             this.execute_command(Command::PatchFixture { id, address, dmx_mode, gdtf_file_name })?;
         }
 
-        this.pipeline.lock().unwrap().clear();
+        this.output_pipeline.lock().unwrap().clear();
 
         Ok(this)
     }
@@ -67,20 +67,26 @@ impl Engine {
 
     fn start_dmx_output_thread(&mut self) {
         let handle = thread::spawn({
-            let pipeline = self.pipeline.clone();
-            let showfile = self.show.clone();
+            let output_pipeline = self.output_pipeline.clone();
+            let show = self.show.clone();
             move || loop {
                 {
-                    let mut pipeline = pipeline.lock().unwrap();
+                    let show = &mut show.lock().unwrap();
 
-                    pipeline.resolve(&showfile.lock().unwrap().patch);
+                    // Resolve and merge programmer pipeline with output pipeline.
+                    // FIXME: It would be nice if we would not have to clone the entire patch.
+                    let patch = show.patch.clone();
+                    show.programmer.resolve(&patch);
+                    show.programmer.merge_into(&mut output_pipeline.lock().unwrap());
 
-                    let multiverse = pipeline.output_multiverse();
+                    // Resolve output pipeline and get its multiverse.
+                    let mut output_pipeline = output_pipeline.lock().unwrap();
+                    output_pipeline.resolve(&show.patch);
+                    let multiverse = output_pipeline.output_multiverse();
 
                     eprintln!("{multiverse:?}");
                 }
 
-                thread::yield_now();
                 thread::sleep(DMX_OUTPUT_INTERVAL);
             }
         });
@@ -117,7 +123,22 @@ impl Engine {
 
                 let fixture = Fixture::new(id, address, dmx_mode, gdtf_file_name, fixture_type)?;
 
-                self.show.lock().unwrap().patch.fixtures.push(fixture);
+                {
+                    let patch = &mut self.show.lock().unwrap().patch;
+                    patch.fixtures.push(fixture);
+                }
+            }
+            Command::SetDmxValue { address, value } => {
+                let programmer = &mut self.show.lock().unwrap().programmer;
+                programmer.set_dmx_value(address, value);
+            }
+            Command::SetAttributeValue { fixture_id, attribute, value } => {
+                let programmer = &mut self.show.lock().unwrap().programmer;
+                programmer.set_attribute_value(fixture_id, attribute, value);
+            }
+            Command::SetPreset { preset } => {
+                let programmer = &mut self.show.lock().unwrap().programmer;
+                programmer.set_preset(preset);
             }
         }
 

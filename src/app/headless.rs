@@ -8,5 +8,6 @@ use crate::showfile::Showfile;
 pub fn run(showfile: Showfile) -> Result<()> {
     let mut engine = Engine::new(showfile).context("Failed to create engine")?;
     engine.start().context("Failed to start engine")?;
+
     Ok(())
 }

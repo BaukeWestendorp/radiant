@@ -2,11 +2,10 @@ use std::{collections::HashMap, str::FromStr};
 
 use eyre::ContextCompat;
 
-use crate::{
-    backend::patch::attr::{Attribute, AttributeValue},
-    dmx,
-    error::Result,
-};
+use crate::backend::patch::attr::Attribute;
+use crate::backend::patch::attr::AttributeValue;
+use crate::dmx;
+use crate::error::Result;
 
 /// A unique id for a [Fixture].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
