@@ -1,6 +1,20 @@
-use std::path::{Path, PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
-use crate::{error::Result, showfile::patch::Patch};
+use eyre::{Context, ContextCompat};
+
+use crate::{
+    backend::{
+        self,
+        patch::fixture::{DmxMode, FixtureId},
+        show::Show,
+    },
+    dmx,
+    error::Result,
+    showfile::patch::Patch,
+};
 
 pub mod patch;
 
@@ -17,7 +31,7 @@ pub struct Showfile {
     /// Will be `None` if it has not been saved yet.
     path: Option<PathBuf>,
 
-    patch: Patch,
+    pub patch: Patch,
 }
 
 impl Showfile {
@@ -45,5 +59,45 @@ impl Showfile {
         let patch = Patch::read_from_file(path.join(RELATIVE_PATCH_FILE_PATH))?;
 
         Ok(Self { path: Some(path.to_path_buf()), patch })
+    }
+}
+
+impl Showfile {
+    pub fn into_show(self) -> Result<backend::show::Show> {
+        let mut patch = backend::patch::Patch::default();
+
+        for fixture in &self.patch.fixtures {
+            let fixture_id = FixtureId(fixture.id);
+
+            let address = dmx::Address::new(
+                dmx::UniverseId::new(fixture.universe)?,
+                dmx::Channel::new(fixture.channel)?,
+            );
+
+            let dmx_mode = DmxMode::new(fixture.dmx_mode.clone());
+
+            let gdtf_file_name = self.patch.gdtf_files.get(fixture.gdtf_file_index).context("Failed to generate patch: Tried to reference GDTF file index that is out of bounds")?.to_string();
+
+            let showfile_path = match &self.path {
+                Some(path) => path,
+                None => {
+                    todo!("Support creating new showfiles and defining their temporary location")
+                }
+            };
+            let gdtf_file_path = Path::new(&showfile_path)
+                .join(RELATIVE_GDTF_FILE_FOLDER_PATH)
+                .join(&gdtf_file_name);
+            let gdtf_file = fs::File::open(gdtf_file_path).context("Failed to open GDTF file")?;
+            let fixture_type = &gdtf::GdtfFile::new(gdtf_file)
+                .context("Failed to read GDTF file")?
+                .description
+                .fixture_types[0];
+
+            patch
+                .patch_fixture(fixture_id, address, dmx_mode, gdtf_file_name, fixture_type)
+                .context("Failed to patch fixture into Show")?;
+        }
+
+        Ok(Show { patch })
     }
 }

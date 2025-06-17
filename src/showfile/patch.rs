@@ -26,7 +26,7 @@ impl Patch {
 pub struct Fixture {
     pub id: u32,
     pub gdtf_file_index: usize,
-    pub universe: u32,
+    pub universe: u16,
     pub channel: u16,
     pub dmx_mode: String,
 }

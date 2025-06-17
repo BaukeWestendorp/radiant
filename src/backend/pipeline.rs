@@ -33,7 +33,7 @@ pub struct Pipeline {
     /// These will be piped down into the unresolved [Multiverse].
     attribute_values: HashMap<(FixtureId, Attribute), AttributeValue>,
     /// Unresolved direct DMX values that have been set.
-    unresolved_multiverse: Multiverse,
+    dmx_values: HashMap<dmx::Address, dmx::Value>,
     /// Once [Pipeline::resolve] has been called,
     /// all unresolved representations will be flushed into this [Multiverse].
     resolved_multiverse: Multiverse,
@@ -46,7 +46,7 @@ impl Pipeline {
 
     /// Clears all unresolved representations.
     pub fn clear(&mut self) {
-        self.unresolved_multiverse.clear();
+        self.dmx_values.clear();
         self.attribute_values.clear();
         self.presets.clear();
     }
@@ -70,15 +70,15 @@ impl Pipeline {
 
     /// Inserts a specific [dmx::Value] at the given [dmx::Address]
     /// to be resolved in the future.
-    pub fn set_dmx_value(&mut self, address: &dmx::Address, value: dmx::Value) {
-        self.unresolved_multiverse.set_value(address, value);
+    pub fn set_dmx_value(&mut self, address: dmx::Address, value: dmx::Value) {
+        self.dmx_values.insert(address, value);
     }
 
     fn resolve_default_values(&mut self, patch: &Patch) {
         for fixture in patch.fixtures() {
             for (channel, value) in fixture.get_default_channel_values() {
                 let address = dmx::Address::new(fixture.address.universe, channel);
-                self.set_dmx_value(&address, value);
+                self.resolved_multiverse.set_value(&address, value);
             }
         }
     }
@@ -105,13 +105,15 @@ impl Pipeline {
 
             for (channel, value) in values {
                 let address = dmx::Address::new(fixture.address.universe, channel);
-                self.set_dmx_value(&address, value);
+                self.resolved_multiverse.set_value(&address, value);
             }
         }
     }
 
     fn resolve_direct_dmx_values(&mut self) {
-        std::mem::swap(&mut self.unresolved_multiverse, &mut self.resolved_multiverse);
+        for (address, value) in &self.dmx_values {
+            self.resolved_multiverse.set_value(address, *value);
+        }
     }
 
     /// Resolves all unresolved representations into the resolved [Multiverse].

@@ -1,16 +1,15 @@
-use neo_radiant::{error::Result, showfile::Showfile};
+use crate::{backend::show::Show, error::Result};
 
-mod engine;
 mod gui;
 mod headless;
 
 /// Runs the app, specifying it's behaviour based on
 /// the mode it is being run in (Headless or GUI).
-pub fn run(showfile: Showfile, headless: bool) -> Result<()> {
+pub fn run(show: Show, headless: bool) -> Result<()> {
     if headless {
-        headless::run(showfile)?;
+        headless::run(show)?;
     } else {
-        gui::run(showfile);
+        gui::run(show);
     }
 
     Ok(())

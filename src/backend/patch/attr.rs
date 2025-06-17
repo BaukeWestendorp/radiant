@@ -1582,7 +1582,6 @@ impl From<gdtf::values::DmxValue> for AttributeValue {
         let raw = value.to(len);
         let max_value = 2_u64.saturating_pow(len as u32 * 8) - 1;
         let floating_value = raw as f32 / max_value as f32;
-        dbg!(len, raw, max_value, floating_value);
         AttributeValue::new(floating_value)
     }
 }

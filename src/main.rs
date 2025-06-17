@@ -2,9 +2,7 @@ use std::path::PathBuf;
 
 use eyre::Context;
 use facet::Facet;
-use neo_radiant::{error::Error, showfile::Showfile};
-
-mod app;
+use neo_radiant::{app, error::Error, showfile::Showfile};
 
 #[derive(Facet)]
 struct Args {
@@ -26,7 +24,9 @@ fn main() -> Result<(), Error> {
         None => Showfile::default(),
     };
 
-    app::run(showfile, args.headless)?;
+    let show = showfile.into_show().context("Failed to convert showfile into show")?;
+
+    app::run(show, args.headless)?;
 
     Ok(())
 }
