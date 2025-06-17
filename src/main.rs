@@ -24,9 +24,7 @@ fn main() -> Result<(), Error> {
         None => Showfile::default(),
     };
 
-    let show = showfile.into_show().context("Failed to convert showfile into show")?;
-
-    app::run(show, args.headless)?;
+    app::run(showfile, args.headless)?;
 
     Ok(())
 }

@@ -1,19 +1,12 @@
-use std::time::Duration;
+use eyre::Context;
 
-use crate::backend::show::Show;
-use crate::dmx;
-use crate::engine::cmd::Command;
+use crate::backend::engine::Engine;
 use crate::error::Result;
-
-use crate::engine::Engine;
+use crate::showfile::Showfile;
 
 /// Starts the app in headless mode.
-pub fn run(show: Show) -> Result<()> {
-    let mut engine = Engine::new(show);
-    engine.run()?;
-
-    std::thread::sleep(Duration::from_secs_f32(1.0));
-    engine.execute_command(Command::SetDmxValue(dmx::Address::default(), dmx::Value(42)));
-
+pub fn run(showfile: Showfile) -> Result<()> {
+    let mut engine = Engine::new(showfile).context("Failed to create engine")?;
+    engine.start().context("Failed to start engine")?;
     Ok(())
 }

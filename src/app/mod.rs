@@ -1,15 +1,15 @@
-use crate::{backend::show::Show, error::Result};
+use crate::{error::Result, showfile::Showfile};
 
 mod gui;
 mod headless;
 
 /// Runs the app, specifying it's behaviour based on
 /// the mode it is being run in (Headless or GUI).
-pub fn run(show: Show, headless: bool) -> Result<()> {
+pub fn run(showfile: Showfile, headless: bool) -> Result<()> {
     if headless {
-        headless::run(show)?;
+        headless::run(showfile)?;
     } else {
-        gui::run(show);
+        gui::run(showfile);
     }
 
     Ok(())

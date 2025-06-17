@@ -1,6 +1,6 @@
-use crate::backend::show::Show;
+use crate::showfile::Showfile;
 
 /// Starts the app in GUI mode.
-pub fn run(_show: Show) {
+pub fn run(_showfile: Showfile) {
     todo!("Running Radiant with a GUI is not yet supported");
 }
