@@ -1,12 +1,3 @@
-//! # Pipeline
-//!
-//! ``` markdown
-//! - Resolve Presets            (e.g. Executors)
-//! - Resolve Attribute Values   (e.g. Programmer, Presets >>)
-//! - Resolve Direct DMX Values  (e.g. Attribute Values >>)
-//! - Output DMX                 (e.g. Via sACN)
-//! ```
-
 use std::collections::HashMap;
 
 use crate::{
@@ -21,11 +12,30 @@ use crate::{
     dmx::{self, Multiverse},
 };
 
+/// # Pipeline
+///
+/// The pipeline is used to converge all different kinds
+/// of representation for DMX output into a single [Multiverse].
+///
+/// ``` markdown
+/// Layers:
+/// - (4) Resolve Presets            (e.g. Executors)
+/// - (3) Resolve Attribute Values   (e.g. Programmer, Presets >>)
+/// - (2) Resolve Direct DMX Values  (e.g. Attribute Values >>)
+/// - (1) Output DMX                 (e.g. Via sACN)
+/// ```
 #[derive(Default)]
 pub struct Pipeline {
+    /// Unresolved presets that have been set.
+    /// These will be piped down into the attribute values.
     presets: Vec<Preset>,
+    /// Unresolved attribute values that have been set.
+    /// These will be piped down into the unresolved [Multiverse].
     attribute_values: HashMap<(FixtureId, Attribute), AttributeValue>,
+    /// Unresolved direct DMX values that have been set.
     unresolved_multiverse: Multiverse,
+    /// Once [Pipeline::resolve] has been called,
+    /// all unresolved representations will be flushed into this [Multiverse].
     resolved_multiverse: Multiverse,
 }
 
@@ -34,16 +44,21 @@ impl Pipeline {
         Self::default()
     }
 
+    /// Clears all unresolved representations.
     pub fn clear(&mut self) {
         self.unresolved_multiverse.clear();
         self.attribute_values.clear();
         self.presets.clear();
     }
 
+    /// Inserts a [Preset] to be resolved in the future.
     pub fn set_preset(&mut self, preset: Preset) {
         self.presets.push(preset);
     }
 
+    /// Inserts an [AttributeValue] for a specific [Attribute]
+    /// on a fixture with the given [FixtureId]
+    /// to be resolved in the future.
     pub fn set_attribute_value(
         &mut self,
         fixture_id: FixtureId,
@@ -53,6 +68,8 @@ impl Pipeline {
         self.attribute_values.insert((fixture_id, attribute), value);
     }
 
+    /// Inserts a specific [dmx::Value] at the given [dmx::Address]
+    /// to be resolved in the future.
     pub fn set_dmx_value(&mut self, address: &dmx::Address, value: dmx::Value) {
         self.unresolved_multiverse.set_value(address, value);
     }
@@ -97,6 +114,9 @@ impl Pipeline {
         std::mem::swap(&mut self.unresolved_multiverse, &mut self.resolved_multiverse);
     }
 
+    /// Resolves all unresolved representations into the resolved [Multiverse].
+    ///
+    /// You can get the resolved [Multiverse] with [Pipeline::output_multiverse].
     pub fn resolve(&mut self, patch: &Patch) {
         self.resolve_default_values(patch);
         self.resolve_presets();
@@ -104,6 +124,7 @@ impl Pipeline {
         self.resolve_direct_dmx_values();
     }
 
+    /// Gets the resolved [Multiverse]. This will not be cleared by [Pipeline::clear].
     pub fn output_multiverse(&self) -> &Multiverse {
         &self.resolved_multiverse
     }

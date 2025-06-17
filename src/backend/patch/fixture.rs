@@ -8,6 +8,7 @@ use crate::{
     error::Result,
 };
 
+/// A unique id for a [Fixture].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[derive(
     derive_more::FromStr,
@@ -19,6 +20,7 @@ use crate::{
 )]
 pub struct FixtureId(pub u32);
 
+/// A specific mode for a [Fixture]. Often defined in the GDTF description.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(derive_more::Display)]
 pub struct DmxMode(String);
@@ -33,6 +35,7 @@ impl DmxMode {
     }
 }
 
+/// Represents a single patched fixture and has information about its attributes.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Fixture {
     pub id: FixtureId,
@@ -97,14 +100,20 @@ impl Fixture {
         &self.gdtf_file_name
     }
 
+    /// Gives an iterator over all attributes this
+    /// fixture has defined in its GDTF definition.
     pub fn supported_attributes(&self) -> impl Iterator<Item = &Attribute> {
         self.attributes.keys()
     }
 
+    /// Gets information about a specific [Attribute],
+    /// if this fixture supports that [Attribute].
     pub fn attribute_info(&self, attribute: &Attribute) -> Option<&AttributeInfo> {
         self.attributes.get(attribute)
     }
 
+    /// Gets the [dmx::Value]s of the used [dmx::Channel]s
+    /// for a given [Attribute] and [AttributeValue].
     pub fn get_channel_values(
         &self,
         attribute: &Attribute,
@@ -129,6 +138,11 @@ impl Fixture {
         Ok(values)
     }
 
+    /// Gets a [Vec] of the [dmx::Value]s for each [dmx::Channel]
+    /// that contains the default [dmx::Value]s for this fixture.
+    ///
+    /// For example, the Pan and Tilt attributes often default to the middle,
+    /// having a value of 0.5 instead of 0.
     pub fn get_default_channel_values(&self) -> Vec<(dmx::Channel, dmx::Value)> {
         let mut values = Vec::new();
         for info in self.attributes.values() {
@@ -145,6 +159,11 @@ impl Fixture {
         values
     }
 
+    /// Gets a [Vec] of the [dmx::Value]s for each [dmx::Channel]
+    /// that contains the highlight [dmx::Value]s for this fixture.
+    ///
+    /// For example, the Dimmer and Shutter attributes often should
+    /// change to give some basic visible output when checking its position.
     pub fn get_highlight_channel_values(&self) -> Vec<(dmx::Channel, dmx::Value)> {
         let mut values = Vec::new();
         for info in self.attributes.values() {
@@ -164,6 +183,7 @@ impl Fixture {
     }
 }
 
+/// Some baked information about a specific attribute.
 #[derive(Debug, Clone, PartialEq)]
 pub struct AttributeInfo {
     default_value: AttributeValue,
@@ -172,10 +192,18 @@ pub struct AttributeInfo {
 }
 
 impl AttributeInfo {
+    /// The default value for an attribute.
+    ///
+    /// For example, the Pan and Tilt attributes often default to the middle,
+    /// having a value of 0.5 instead of 0.
     pub fn default_value(&self) -> AttributeValue {
         self.default_value
     }
 
+    /// The highlight value for an attribute.
+    ///
+    /// For example, the Dimmer and Shutter attributes often should
+    /// change to give some basic visible output when checking its position.
     pub fn highlight_value(&self) -> Option<AttributeValue> {
         self.highlight_value
     }

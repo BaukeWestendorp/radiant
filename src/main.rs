@@ -26,7 +26,6 @@ fn main() -> Result<(), Error> {
         None => Showfile::default(),
     };
 
-    dbg!(args.headless);
     app::run(showfile, args.headless)?;
 
     Ok(())
