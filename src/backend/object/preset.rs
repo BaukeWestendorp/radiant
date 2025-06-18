@@ -1,9 +1,7 @@
 use std::collections::HashMap;
 
-use crate::backend::patch::{
-    attr::{Attribute, AttributeValue},
-    fixture::FixtureId,
-};
+use crate::backend::patch::attr::{Attribute, AttributeValue};
+use crate::backend::patch::fixture::FixtureId;
 
 macro_rules! define_preset {
     ($($name:ident, $id:ident, $new_name:literal, $any_name:ident),+ $(,)?) => {
@@ -13,7 +11,7 @@ macro_rules! define_preset {
             #[doc = concat!("A ", stringify!($name), " preset")]
             #[derive(Debug, Clone, PartialEq)]
                         pub struct $name {
-                pub id: $id,
+                id: $id,
                 pub name: String,
                 pub content: PresetContent,
             }
@@ -21,6 +19,10 @@ macro_rules! define_preset {
             impl $name {
                 pub fn new(id: impl Into<$id>, content: PresetContent) -> Self {
                     Self { id: id.into(), name: $new_name.to_string(), content }
+                }
+
+                pub fn id(&self) -> $id {
+                    self.id
                 }
             }
         )+
@@ -47,6 +49,7 @@ macro_rules! define_preset {
                 type Error = ();
 
                 fn try_from(any_id: AnyPresetId) -> Result<Self, Self::Error> {
+                    #[allow(unreachable_patterns)]
                     match any_id {
                         AnyPresetId::$any_name(id) => Ok(id),
                         _ => Err(()),
@@ -58,9 +61,9 @@ macro_rules! define_preset {
         $(
             impl<'a> From<&'a $name> for &'a AnyPreset {
                 fn from(preset: &'a $name) -> Self {
-                    // This is safe because AnyPreset contains the same variants
-                    // as AnyPresetId, and we're just getting a reference to the
-                    // variant that was created with From<$name> for AnyPreset
+                    // SAFETY: This is safe because AnyPreset contains the same variants
+                    //         as AnyPresetId, and we're just getting a reference to the
+                    //         variant that was created with From<$name> for AnyPreset
                     unsafe {
                         let any_preset = (preset as *const $name).cast::<AnyPreset>();
                         &*any_preset
@@ -74,6 +77,7 @@ macro_rules! define_preset {
                 type Error = ();
 
                 fn try_from(any_preset: &'a AnyPreset) -> Result<Self, Self::Error> {
+                    #[allow(unreachable_patterns)]
                     match any_preset {
                         AnyPreset::$any_name(preset) => Ok(preset),
                         _ => Err(()),

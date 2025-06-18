@@ -34,7 +34,7 @@ impl DmxMode {
     }
 }
 
-/// Represents a single patched fixture and has information about its attributes.
+/// A single patched fixture and has information about its attributes.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Fixture {
     pub id: FixtureId,

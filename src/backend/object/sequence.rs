@@ -5,7 +5,7 @@ crate::define_object_id!(SequenceId);
 /// A sequence of [Cue]s that can be activated using an [Executor].
 #[derive(Debug, Clone, PartialEq)]
 pub struct Sequence {
-    pub id: SequenceId,
+    id: SequenceId,
     pub name: String,
     pub cues: Vec<Cue>,
 }
@@ -15,14 +15,8 @@ impl Sequence {
         Self { id: id.into(), name: "New Sequence".to_string(), cues: Vec::new() }
     }
 
-    pub fn with_name(mut self, name: impl Into<String>) -> Self {
-        self.name = name.into();
-        self
-    }
-
-    pub fn with_cue(mut self, cue: Cue) -> Self {
-        self.cues.push(cue);
-        self
+    pub fn id(&self) -> SequenceId {
+        self.id
     }
 
     pub fn len(&self) -> usize {
@@ -71,15 +65,6 @@ pub struct Recipe {
 impl Recipe {
     pub fn new() -> Self {
         Self { combinations: Vec::new() }
-    }
-
-    pub fn with_combination(
-        mut self,
-        fixture_group_id: FixtureGroupId,
-        preset_id: impl Into<AnyPresetId>,
-    ) -> Self {
-        self.combinations.push(RecipeCombination { fixture_group_id, preset_id: preset_id.into() });
-        self
     }
 }
 

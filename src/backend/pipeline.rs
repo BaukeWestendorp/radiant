@@ -7,8 +7,6 @@ use crate::backend::patch::attr::AttributeValue;
 use crate::backend::patch::fixture::FixtureId;
 use crate::dmx::{self, Multiverse};
 
-/// # Pipeline
-///
 /// The pipeline is used to converge all different kinds
 /// of representation for DMX output into a single [Multiverse].
 ///

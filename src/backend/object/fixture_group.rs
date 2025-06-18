@@ -5,7 +5,7 @@ crate::define_object_id!(FixtureGroupId);
 /// A list of [FixtureId]s that create a sequential group of fixtures.
 #[derive(Debug, Clone, PartialEq)]
 pub struct FixtureGroup {
-    pub id: FixtureGroupId,
+    id: FixtureGroupId,
     pub name: String,
     pub fixtures: Vec<FixtureId>,
 }
@@ -15,14 +15,8 @@ impl FixtureGroup {
         Self { id: id.into(), name: "New Fixture Group".to_string(), fixtures: Vec::new() }
     }
 
-    pub fn with_name(mut self, name: impl Into<String>) -> Self {
-        self.name = name.into();
-        self
-    }
-
-    pub fn with_fixture(mut self, fixture_id: FixtureId) -> Self {
-        self.fixtures.push(fixture_id);
-        self
+    pub fn id(&self) -> FixtureGroupId {
+        self.id
     }
 
     pub fn len(&self) -> usize {

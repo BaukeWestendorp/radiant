@@ -13,14 +13,14 @@ pub const RELATIVE_PATCH_FILE_PATH: &str = "patch.yaml";
 /// Represents the showfile that is saved on disk.
 #[derive(Default)]
 pub struct Showfile {
-    /// The path at which the [Showfile] is saved.
-    /// Will be `None` if it has not been saved yet.
     path: Option<PathBuf>,
 
     pub patch: Patch,
 }
 
 impl Showfile {
+    /// The path at which the [Showfile] is saved.
+    /// Will be `None` if it has not been saved yet.
     pub fn path(&self) -> Option<&PathBuf> {
         self.path.as_ref()
     }

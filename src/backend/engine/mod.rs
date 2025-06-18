@@ -66,6 +66,8 @@ impl Engine {
         &self.show
     }
 
+    /// Do a single iteration of DMX resolving. This should be called in a
+    /// loop externally, with a delay of [DMX_OUTPUT_UPDATE_INTERVAL].
     pub fn resolve_dmx(&mut self) {
         dmx_resolver::resolve(&mut self.output_pipeline, &mut self.show);
     }
@@ -113,17 +115,17 @@ impl Engine {
                 let show = &mut self.show;
                 match object {
                     Object::Executor(executor) => {
-                        show.executors.insert(executor.id, executor);
+                        show.executors.insert(executor.id(), executor);
                     }
                     Object::Sequence(sequence) => {
-                        show.sequences.insert(sequence.id, sequence);
+                        show.sequences.insert(sequence.id(), sequence);
                     }
                     Object::FixtureGroup(fixture_group) => {
-                        show.fixture_groups.insert(fixture_group.id, fixture_group);
+                        show.fixture_groups.insert(fixture_group.id(), fixture_group);
                     }
                     Object::Preset(any_preset) => match any_preset {
                         AnyPreset::Dimmer(preset) => {
-                            show.dimmer_presets.insert(preset.id, preset);
+                            show.dimmer_presets.insert(preset.id(), preset);
                         }
                     },
                 };
