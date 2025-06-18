@@ -2,8 +2,8 @@ use std::{collections::HashMap, path::PathBuf};
 
 use crate::backend::{
     object::{
-        DimmerPreset, DimmerPresetId, Executor, ExecutorId, FixtureGroup, FixtureGroupId, Sequence,
-        SequenceId,
+        AnyPreset, AnyPresetId, DimmerPreset, DimmerPresetId, Executor, ExecutorId, FixtureGroup,
+        FixtureGroupId, Sequence, SequenceId,
     },
     patch::Patch,
     pipeline::Pipeline,
@@ -33,5 +33,11 @@ impl Show {
 
     pub fn path(&self) -> Option<&PathBuf> {
         self.path.as_ref()
+    }
+
+    pub fn get_preset(&self, preset_id: &AnyPresetId) -> Option<&AnyPreset> {
+        match preset_id {
+            AnyPresetId::Dimmer(id) => Some(self.dimmer_presets.get(id)?.into()),
+        }
     }
 }

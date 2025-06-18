@@ -14,6 +14,7 @@ macro_rules! define_object_id {
         #[doc = concat!("A unique identifier for a ", stringify!($name), " object")]
         #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
         #[derive(
+            derive_more::Display,
             derive_more::From,
             derive_more::Into,
             derive_more::Add,
@@ -29,9 +30,14 @@ macro_rules! define_object_id {
 
 /// Any object.
 #[derive(Debug, Clone, PartialEq)]
+#[derive(derive_more::From)]
 pub enum Object {
+    #[from]
     Executor(Executor),
+    #[from]
     Sequence(Sequence),
+    #[from]
     FixtureGroup(FixtureGroup),
+    #[from(forward)]
     Preset(AnyPreset),
 }

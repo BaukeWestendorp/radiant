@@ -24,4 +24,16 @@ impl FixtureGroup {
         self.fixtures.push(fixture_id);
         self
     }
+
+    pub fn len(&self) -> usize {
+        self.fixtures.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    pub fn contains(&self, fixture_id: &FixtureId) -> bool {
+        self.fixtures.contains(fixture_id)
+    }
 }

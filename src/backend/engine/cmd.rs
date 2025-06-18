@@ -1,9 +1,9 @@
 use crate::backend::object::Object;
+use crate::backend::object::PresetContent;
 use crate::backend::patch::attr::Attribute;
 use crate::backend::patch::attr::AttributeValue;
 use crate::backend::patch::fixture::DmxMode;
 use crate::backend::patch::fixture::FixtureId;
-use crate::backend::preset::PresetContent;
 use crate::dmx;
 
 /// A [Cmd] is the interface between the engine and the backend.

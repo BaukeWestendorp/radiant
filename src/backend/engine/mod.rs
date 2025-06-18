@@ -2,7 +2,6 @@ use std::fs;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
 
 use eyre::{Context, ContextCompat};
 
@@ -16,9 +15,7 @@ use crate::error::Result;
 use crate::showfile::{RELATIVE_GDTF_FILE_FOLDER_PATH, Showfile};
 
 pub mod cmd;
-
-/// The amount of milliseconds between updating DMX output.
-const DMX_UPDATE_INTERVAL: Duration = Duration::from_millis(40);
+mod dmx_resolver;
 
 /// The [Engine] controls the flow of output data,
 /// and is the interface between the user interface
@@ -79,26 +76,7 @@ impl Engine {
         let handle = thread::spawn({
             let output_pipeline = self.output_pipeline.clone();
             let show = self.show.clone();
-            move || loop {
-                {
-                    let show = &mut show.lock().unwrap();
-
-                    // Resolve and merge programmer pipeline with output pipeline.
-                    // FIXME: It would be nice if we would not have to clone the entire patch.
-                    let patch = show.patch.clone();
-                    show.programmer.resolve(&patch);
-                    show.programmer.merge_into(&mut output_pipeline.lock().unwrap());
-
-                    // Resolve output pipeline and get its multiverse.
-                    let mut output_pipeline = output_pipeline.lock().unwrap();
-                    output_pipeline.resolve(&show.patch);
-                    let multiverse = output_pipeline.output_multiverse();
-
-                    eprintln!("{multiverse:?}");
-                }
-
-                thread::sleep(DMX_UPDATE_INTERVAL);
-            }
+            move || dmx_resolver::start(output_pipeline, show)
         });
         self.dmx_resolver_thread = Some(handle);
         log::info!("Started DMX resolver thread");

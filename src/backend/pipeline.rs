@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
+use crate::backend::object::PresetContent;
 use crate::backend::patch::Patch;
 use crate::backend::patch::attr::Attribute;
 use crate::backend::patch::attr::AttributeValue;
 use crate::backend::patch::fixture::FixtureId;
-use crate::backend::preset::PresetContent;
 use crate::dmx::{self, Multiverse};
 
 /// # Pipeline

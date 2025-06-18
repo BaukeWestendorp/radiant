@@ -24,6 +24,18 @@ impl Sequence {
         self.cues.push(cue);
         self
     }
+
+    pub fn len(&self) -> usize {
+        self.cues.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    pub fn cue(&self, index: usize) -> Option<&Cue> {
+        self.cues.get(index)
+    }
 }
 
 /// A state of the stage output.
@@ -73,6 +85,6 @@ impl Recipe {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct RecipeCombination {
-    fixture_group_id: FixtureGroupId,
-    preset_id: AnyPresetId,
+    pub fixture_group_id: FixtureGroupId,
+    pub preset_id: AnyPresetId,
 }
