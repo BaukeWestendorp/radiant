@@ -108,9 +108,6 @@ impl Engine {
             Cmd::SetAttributeValue { fixture_id, attribute, value } => {
                 self.show.programmer.set_attribute_value(fixture_id, attribute, value);
             }
-            Cmd::SetPreset { preset } => {
-                self.show.programmer.set_preset(preset);
-            }
             Cmd::New(object) => {
                 let show = &mut self.show;
                 match object {

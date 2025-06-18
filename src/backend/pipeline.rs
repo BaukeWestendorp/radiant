@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use crate::backend::object::PresetContent;
 use crate::backend::patch::Patch;
 use crate::backend::patch::attr::Attribute;
 use crate::backend::patch::attr::AttributeValue;
@@ -19,9 +18,6 @@ use crate::dmx::{self, Multiverse};
 /// ```
 #[derive(Debug, Default, Clone)]
 pub struct Pipeline {
-    /// Unresolved presets that have been set.
-    /// These will be piped down into the attribute values.
-    presets: Vec<PresetContent>,
     /// Unresolved attribute values that have been set.
     /// These will be piped down into the unresolved [Multiverse].
     attribute_values: HashMap<(FixtureId, Attribute), AttributeValue>,
@@ -41,12 +37,6 @@ impl Pipeline {
     pub fn clear(&mut self) {
         self.dmx_values.clear();
         self.attribute_values.clear();
-        self.presets.clear();
-    }
-
-    /// Inserts a [Preset] to be resolved in the future.
-    pub fn set_preset(&mut self, preset: PresetContent) {
-        self.presets.push(preset);
     }
 
     /// Inserts an [AttributeValue] for a specific [Attribute]
@@ -76,19 +66,6 @@ impl Pipeline {
         }
     }
 
-    fn resolve_presets(&mut self) {
-        for preset in self.presets.clone() {
-            match preset {
-                PresetContent::Selective(selective_preset) => {
-                    for ((fixture_id, attribute), value) in selective_preset.get_attribute_values()
-                    {
-                        self.set_attribute_value(*fixture_id, attribute.clone(), *value);
-                    }
-                }
-            }
-        }
-    }
-
     fn resolve_attribute_values(&mut self, patch: &Patch) {
         for ((fixture_id, attribute), value) in self.attribute_values.clone() {
             let Some(fixture) = patch.fixture(&fixture_id) else { continue };
@@ -114,7 +91,6 @@ impl Pipeline {
     /// You can get the resolved [Multiverse] with [Pipeline::output_multiverse].
     pub fn resolve(&mut self, patch: &Patch) {
         self.resolve_default_values(patch);
-        self.resolve_presets();
         self.resolve_attribute_values(patch);
         self.resolve_direct_dmx_values();
     }
@@ -126,10 +102,6 @@ impl Pipeline {
 
     /// Merges all relevant, unresolved data from this [Pipeline] into another.
     pub fn merge_into(&self, other: &mut Pipeline) {
-        for preset in &self.presets {
-            other.presets.push(preset.clone());
-        }
-
         for ((fixture_id, attribute), value) in &self.attribute_values {
             other.attribute_values.insert((*fixture_id, attribute.clone()), *value);
         }

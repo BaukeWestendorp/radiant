@@ -1,5 +1,4 @@
 use crate::backend::object::Object;
-use crate::backend::object::PresetContent;
 use crate::backend::patch::attr::Attribute;
 use crate::backend::patch::attr::AttributeValue;
 use crate::backend::patch::fixture::DmxMode;
@@ -15,8 +14,6 @@ pub enum Cmd {
     SetDmxValue { address: dmx::Address, value: dmx::Value },
     /// Set an attribute value in the programmer.
     SetAttributeValue { fixture_id: FixtureId, attribute: Attribute, value: AttributeValue },
-    /// Set a preset in the programmer.
-    SetPreset { preset: PresetContent },
     /// Creates a new [Object].
     New(Object),
 }
