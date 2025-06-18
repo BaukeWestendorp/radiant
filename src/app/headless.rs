@@ -14,6 +14,8 @@ use crate::backend::patch::fixture::FixtureId;
 use crate::error::Result;
 use crate::showfile::Showfile;
 
+const DMX_OUTPUT_UPDATE_INTERVAL: Duration = Duration::from_millis(40);
+
 /// Starts the app in headless mode.
 pub fn run(showfile: Showfile) -> Result<()> {
     let engine = Engine::new(showfile).context("Failed to create engine")?;
@@ -23,7 +25,7 @@ pub fn run(showfile: Showfile) -> Result<()> {
         let engine = engine.clone();
         move || loop {
             engine.lock().unwrap().resolve_dmx();
-            std::thread::sleep(Duration::from_millis(40));
+            spin_sleep::sleep(DMX_OUTPUT_UPDATE_INTERVAL);
         }
     });
 
