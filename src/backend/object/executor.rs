@@ -2,6 +2,7 @@ use crate::backend::object::SequenceId;
 
 crate::define_object_id!(ExecutorId);
 
+/// An executor controls how a sequence will be activated and terminated.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Executor {
     pub id: ExecutorId,
@@ -43,12 +44,14 @@ impl Executor {
     }
 }
 
+/// Determines how an [Executor] is activated.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum ActivationMode {
     #[default]
     Instant,
 }
 
+/// Determines how an [Executor] is terminated.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum TerminationMode {
     #[default]

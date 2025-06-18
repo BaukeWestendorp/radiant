@@ -11,6 +11,7 @@ pub use sequence::*;
 #[macro_export]
 macro_rules! define_object_id {
     ($name:ident) => {
+        #[doc = concat!("A unique identifier for a ", stringify!($name), " object")]
         #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
         #[derive(
             derive_more::From,
@@ -26,6 +27,7 @@ macro_rules! define_object_id {
     };
 }
 
+/// Any object.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Object {
     Executor(Executor),

@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use eyre::{Context, ContextCompat};
 
-use crate::backend::engine::cmd::Command;
+use crate::backend::engine::cmd::Cmd;
 use crate::backend::object::{AnyPreset, Object};
 use crate::backend::patch::fixture::{DmxMode, Fixture, FixtureId};
 use crate::backend::pipeline::Pipeline;
@@ -17,7 +17,8 @@ use crate::showfile::{RELATIVE_GDTF_FILE_FOLDER_PATH, Showfile};
 
 pub mod cmd;
 
-const DMX_OUTPUT_INTERVAL: Duration = Duration::from_millis(40);
+/// The amount of milliseconds between updating DMX output.
+const DMX_UPDATE_INTERVAL: Duration = Duration::from_millis(40);
 
 /// The [Engine] controls the flow of output data,
 /// and is the interface between the user interface
@@ -25,18 +26,21 @@ const DMX_OUTPUT_INTERVAL: Duration = Duration::from_millis(40);
 /// the show.
 pub struct Engine {
     show: Arc<Mutex<Show>>,
+    /// The final output that will be sent to the DMX sources.
     output_pipeline: Arc<Mutex<Pipeline>>,
-    dmx_output_thread: Option<JoinHandle<()>>,
+
+    dmx_resolver_thread: Option<JoinHandle<()>>,
 }
 
 impl Engine {
+    /// Creates a new [Engine] and internally converts the provided [Showfile] into a [Show].
     pub fn new(showfile: Showfile) -> Result<Self> {
         let show = Show::new(showfile.path().cloned());
 
         let mut this = Self {
             show: Arc::new(Mutex::new(show)),
             output_pipeline: Arc::new(Mutex::new(Pipeline::new())),
-            dmx_output_thread: None,
+            dmx_resolver_thread: None,
         };
 
         // Initialize show.
@@ -50,9 +54,14 @@ impl Engine {
 
             let dmx_mode = DmxMode::new(fixture.dmx_mode.clone());
 
-            let gdtf_file_name = showfile.patch.gdtf_files.get(fixture.gdtf_file_index).context("Failed to generate patch: Tried to reference GDTF file index that is out of bounds")?.to_string();
+            let gdtf_file_name = showfile
+                .patch
+                .gdtf_files
+                .get(fixture.gdtf_file_index)
+                .context("Failed to generate patch: Tried to reference GDTF file index that is out of bounds")?
+                .to_string();
 
-            this.execute_command(Command::PatchFixture { id, address, dmx_mode, gdtf_file_name })?;
+            this.exec_cmd(Cmd::PatchFixture { id, address, dmx_mode, gdtf_file_name })?;
         }
 
         this.output_pipeline.lock().unwrap().clear();
@@ -62,11 +71,11 @@ impl Engine {
 
     /// Starts all threads.
     pub fn start(&mut self) -> Result<()> {
-        self.start_dmx_output_thread();
+        self.start_dmx_resolver_thread();
         Ok(())
     }
 
-    fn start_dmx_output_thread(&mut self) {
+    fn start_dmx_resolver_thread(&mut self) {
         let handle = thread::spawn({
             let output_pipeline = self.output_pipeline.clone();
             let show = self.show.clone();
@@ -86,20 +95,19 @@ impl Engine {
                     let multiverse = output_pipeline.output_multiverse();
 
                     eprintln!("{multiverse:?}");
-                    eprintln!("{:?}", show.executors);
                 }
 
-                thread::sleep(DMX_OUTPUT_INTERVAL);
+                thread::sleep(DMX_UPDATE_INTERVAL);
             }
         });
-        self.dmx_output_thread = Some(handle);
-        log::info!("Started DMX Output thread");
+        self.dmx_resolver_thread = Some(handle);
+        log::info!("Started DMX resolver thread");
     }
 
-    /// Execute a [Command] to interface with the backend.
-    pub fn execute_command(&mut self, command: Command) -> Result<()> {
-        match command {
-            Command::PatchFixture { id, address, dmx_mode, gdtf_file_name } => {
+    /// Execute a [Cmd] to interface with the backend.
+    pub fn exec_cmd(&mut self, cmd: Cmd) -> Result<()> {
+        match cmd {
+            Cmd::PatchFixture { id, address, dmx_mode, gdtf_file_name } => {
                 let gdtf_file_path = {
                     let show = self.show.lock().unwrap();
                     let showfile_path = match show.path() {
@@ -130,19 +138,19 @@ impl Engine {
                     patch.fixtures.push(fixture);
                 }
             }
-            Command::SetDmxValue { address, value } => {
+            Cmd::SetDmxValue { address, value } => {
                 let programmer = &mut self.show.lock().unwrap().programmer;
                 programmer.set_dmx_value(address, value);
             }
-            Command::SetAttributeValue { fixture_id, attribute, value } => {
+            Cmd::SetAttributeValue { fixture_id, attribute, value } => {
                 let programmer = &mut self.show.lock().unwrap().programmer;
                 programmer.set_attribute_value(fixture_id, attribute, value);
             }
-            Command::SetPreset { preset } => {
+            Cmd::SetPreset { preset } => {
                 let programmer = &mut self.show.lock().unwrap().programmer;
                 programmer.set_preset(preset);
             }
-            Command::New(object) => {
+            Cmd::New(object) => {
                 let show = &mut self.show.lock().unwrap();
                 match object {
                     Object::Executor(executor) => {
@@ -169,7 +177,7 @@ impl Engine {
 
 impl Drop for Engine {
     fn drop(&mut self) {
-        if let Some(handle) = self.dmx_output_thread.take() {
+        if let Some(handle) = self.dmx_resolver_thread.take() {
             handle.join().unwrap();
         }
     }

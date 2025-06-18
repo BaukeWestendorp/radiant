@@ -2,6 +2,7 @@ use crate::backend::object::{AnyPresetId, FixtureGroupId};
 
 crate::define_object_id!(SequenceId);
 
+/// A sequence of [Cue]s that can be activated using an [Executor].
 #[derive(Debug, Clone, PartialEq)]
 pub struct Sequence {
     pub id: SequenceId,
@@ -25,6 +26,7 @@ impl Sequence {
     }
 }
 
+/// A state of the stage output.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cue {
     pub name: String,
@@ -42,11 +44,13 @@ impl Cue {
     }
 }
 
+/// Contents of a [Cue].
 #[derive(Debug, Clone, PartialEq)]
 pub enum CueContent {
     Recipe(Recipe),
 }
 
+/// A list of [FixtureGroup]-[Preset] combinations.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Recipe {
     pub combinations: Vec<RecipeCombination>,
