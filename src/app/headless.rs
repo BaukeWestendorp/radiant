@@ -3,8 +3,8 @@ use std::time::Duration;
 
 use eyre::Context;
 
-use crate::backend::engine::Engine;
 use crate::backend::engine::cmd::Cmd;
+use crate::backend::engine::{DMX_OUTPUT_UPDATE_INTERVAL, Engine};
 use crate::backend::object::{
     AnyPresetId, Cue, CueContent, DimmerPreset, Executor, FixtureGroup, PresetContent, Recipe,
     SelectivePreset, Sequence,
@@ -13,8 +13,6 @@ use crate::backend::patch::attr::{Attribute, AttributeValue};
 use crate::backend::patch::fixture::FixtureId;
 use crate::error::Result;
 use crate::showfile::Showfile;
-
-const DMX_OUTPUT_UPDATE_INTERVAL: Duration = Duration::from_millis(40);
 
 /// Starts the app in headless mode.
 pub fn run(showfile: Showfile) -> Result<()> {

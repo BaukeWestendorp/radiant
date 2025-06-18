@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::Path;
+use std::time::Duration;
 
 use eyre::{Context, ContextCompat};
 
@@ -14,6 +15,8 @@ use crate::showfile::{RELATIVE_GDTF_FILE_FOLDER_PATH, Showfile};
 
 pub mod cmd;
 mod dmx_resolver;
+
+pub const DMX_OUTPUT_UPDATE_INTERVAL: Duration = Duration::from_millis(40);
 
 /// The [Engine] controls the flow of output data,
 /// and is the interface between the user interface
