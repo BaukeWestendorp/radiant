@@ -62,6 +62,12 @@ pub struct Recipe {
     pub combinations: Vec<RecipeCombination>,
 }
 
+impl Default for Recipe {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Recipe {
     pub fn new() -> Self {
         Self { combinations: Vec::new() }

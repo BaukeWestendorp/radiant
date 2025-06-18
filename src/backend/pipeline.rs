@@ -131,7 +131,7 @@ impl Pipeline {
         }
 
         for ((fixture_id, attribute), value) in &self.attribute_values {
-            other.attribute_values.insert((*fixture_id, attribute.clone()), value.clone());
+            other.attribute_values.insert((*fixture_id, attribute.clone()), *value);
         }
 
         for (address, value) in &self.dmx_values {

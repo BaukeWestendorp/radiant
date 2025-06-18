@@ -38,7 +38,7 @@ fn resolve_recipe(recipe: &Recipe, output_pipeline: &mut Pipeline, show: &Show) 
             continue;
         };
 
-        let Some(fixture_group) = show.fixture_group(&fixture_group_id) else {
+        let Some(fixture_group) = show.fixture_group(fixture_group_id) else {
             log::warn!("FixtureGroup with id {fixture_group_id} in RecipeCombination not found");
             continue;
         };
