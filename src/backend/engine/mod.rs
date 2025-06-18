@@ -4,8 +4,10 @@ use std::time::Duration;
 
 use eyre::{Context, ContextCompat};
 
-use crate::backend::engine::cmd::Cmd;
-use crate::backend::object::{AnyPreset, Object};
+use crate::backend::engine::cmd::{Command, PatchCommand, ProgrammerCommand, ProgrammerSetCommand};
+use crate::backend::object::{
+    AnyObjectId, AnyPresetId, DimmerPreset, Executor, FixtureGroup, PresetContent, Sequence,
+};
 use crate::backend::patch::fixture::{DmxMode, Fixture, FixtureId};
 use crate::backend::pipeline::Pipeline;
 use crate::backend::show::Show;
@@ -38,14 +40,14 @@ impl Engine {
 
         // Initialize show.
         for fixture in &showfile.patch.fixtures {
-            let id = FixtureId(fixture.id);
+            let fixture_id = FixtureId(fixture.id);
 
             let address = dmx::Address::new(
                 dmx::UniverseId::new(fixture.universe)?,
                 dmx::Channel::new(fixture.channel)?,
             );
 
-            let dmx_mode = DmxMode::new(fixture.dmx_mode.clone());
+            let mode = DmxMode::new(fixture.dmx_mode.clone());
 
             let gdtf_file_name = showfile
                 .patch
@@ -54,7 +56,12 @@ impl Engine {
                 .context("Failed to generate patch: Tried to reference GDTF file index that is out of bounds")?
                 .to_string();
 
-            this.exec_cmd(Cmd::PatchFixture { id, address, dmx_mode, gdtf_file_name })?;
+            this.exec_cmd(Command::Patch(PatchCommand::Add {
+                fixture_id,
+                address,
+                mode,
+                gdtf_file_name,
+            }))?;
         }
 
         this.output_pipeline.clear();
@@ -72,10 +79,10 @@ impl Engine {
         dmx_resolver::resolve(&mut self.output_pipeline, &mut self.show);
     }
 
-    /// Execute a [Cmd] to interface with the backend.
-    pub fn exec_cmd(&mut self, cmd: Cmd) -> Result<()> {
+    /// Execute a [Command] to interface with the backend.
+    pub fn exec_cmd(&mut self, cmd: Command) -> Result<()> {
         match cmd {
-            Cmd::PatchFixture { id, address, dmx_mode, gdtf_file_name } => {
+            Command::Patch(PatchCommand::Add { fixture_id, address, mode, gdtf_file_name }) => {
                 let gdtf_file_path = {
                     let showfile_path = match self.show.path() {
                         Some(path) => path,
@@ -98,31 +105,59 @@ impl Engine {
                     .description
                     .fixture_types[0];
 
-                let fixture = Fixture::new(id, address, dmx_mode, gdtf_file_name, fixture_type)?;
+                let fixture =
+                    Fixture::new(fixture_id, address, mode, gdtf_file_name, fixture_type)?;
 
                 self.show.patch.fixtures.push(fixture);
             }
-            Cmd::SetDmxValue { address, value } => {
+            Command::Programmer(ProgrammerCommand::Set(ProgrammerSetCommand::Direct {
+                address,
+                value,
+            })) => {
                 self.show.programmer.set_dmx_value(address, value);
             }
-            Cmd::SetAttributeValue { fixture_id, attribute, value } => {
+            Command::Programmer(ProgrammerCommand::Set(ProgrammerSetCommand::Attribute {
+                fixture_id,
+                attribute,
+                value,
+            })) => {
                 self.show.programmer.set_attribute_value(fixture_id, attribute, value);
             }
-            Cmd::New(object) => {
+            Command::Create { id, name } => {
                 let show = &mut self.show;
-                match object {
-                    Object::Executor(executor) => {
+                match id {
+                    AnyObjectId::Executor(id) => {
+                        let mut executor = Executor::new(id);
+                        if let Some(name) = name {
+                            executor.name = name;
+                        }
+
                         show.executors.insert(executor.id(), executor);
                     }
-                    Object::Sequence(sequence) => {
+                    AnyObjectId::Sequence(id) => {
+                        let mut sequence = Sequence::new(id);
+                        if let Some(name) = name {
+                            sequence.name = name;
+                        }
+
                         show.sequences.insert(sequence.id(), sequence);
                     }
-                    Object::FixtureGroup(fixture_group) => {
+                    AnyObjectId::FixtureGroup(id) => {
+                        let mut fixture_group = FixtureGroup::new(id);
+                        if let Some(name) = name {
+                            fixture_group.name = name;
+                        }
+
                         show.fixture_groups.insert(fixture_group.id(), fixture_group);
                     }
-                    Object::Preset(any_preset) => match any_preset {
-                        AnyPreset::Dimmer(preset) => {
-                            show.dimmer_presets.insert(preset.id(), preset);
+                    AnyObjectId::Preset(id) => match id {
+                        AnyPresetId::Dimmer(id) => {
+                            let mut dimmer_preset = DimmerPreset::new(id, PresetContent::default());
+                            if let Some(name) = name {
+                                dimmer_preset.name = name;
+                            }
+
+                            show.dimmer_presets.insert(dimmer_preset.id(), dimmer_preset);
                         }
                     },
                 };

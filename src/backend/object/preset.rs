@@ -94,6 +94,15 @@ macro_rules! define_preset {
                 $any_name($name),
             )+
         }
+
+        /// Any preset.
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        #[derive(derive_more::From)]
+        pub enum PresetKind {
+            $(
+                $any_name,
+            )+
+        }
     };
 }
 
@@ -101,6 +110,12 @@ macro_rules! define_preset {
 #[derive(Debug, Clone, PartialEq)]
 pub enum PresetContent {
     Selective(SelectivePreset),
+}
+
+impl Default for PresetContent {
+    fn default() -> Self {
+        Self::Selective(Default::default())
+    }
 }
 
 /// A preset that has attribute values for specific fixures.

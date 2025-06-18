@@ -31,7 +31,7 @@ macro_rules! define_object_id {
 /// Any object.
 #[derive(Debug, Clone, PartialEq)]
 #[derive(derive_more::From)]
-pub enum Object {
+pub enum AnyObject {
     #[from]
     Executor(Executor),
     #[from]
@@ -40,4 +40,18 @@ pub enum Object {
     FixtureGroup(FixtureGroup),
     #[from(forward)]
     Preset(AnyPreset),
+}
+
+/// Any object id.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(derive_more::From)]
+pub enum AnyObjectId {
+    #[from]
+    Executor(ExecutorId),
+    #[from]
+    Sequence(SequenceId),
+    #[from]
+    FixtureGroup(FixtureGroupId),
+    #[from(forward)]
+    Preset(AnyPresetId),
 }
