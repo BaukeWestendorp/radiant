@@ -1,7 +1,5 @@
 use std::fs;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
-use std::thread::{self, JoinHandle};
 
 use eyre::{Context, ContextCompat};
 
@@ -22,11 +20,10 @@ mod dmx_resolver;
 /// (including a headless app, even if it's a CLI) and
 /// the show.
 pub struct Engine {
-    show: Arc<Mutex<Show>>,
-    /// The final output that will be sent to the DMX sources.
-    output_pipeline: Arc<Mutex<Pipeline>>,
+    show: Show,
 
-    dmx_resolver_thread: Option<JoinHandle<()>>,
+    /// The final output that will be sent to the DMX sources.
+    output_pipeline: Pipeline,
 }
 
 impl Engine {
@@ -34,11 +31,7 @@ impl Engine {
     pub fn new(showfile: Showfile) -> Result<Self> {
         let show = Show::new(showfile.path().cloned());
 
-        let mut this = Self {
-            show: Arc::new(Mutex::new(show)),
-            output_pipeline: Arc::new(Mutex::new(Pipeline::new())),
-            dmx_resolver_thread: None,
-        };
+        let mut this = Self { show, output_pipeline: Pipeline::new() };
 
         // Initialize show.
         for fixture in &showfile.patch.fixtures {
@@ -61,25 +54,17 @@ impl Engine {
             this.exec_cmd(Cmd::PatchFixture { id, address, dmx_mode, gdtf_file_name })?;
         }
 
-        this.output_pipeline.lock().unwrap().clear();
+        this.output_pipeline.clear();
 
         Ok(this)
     }
 
-    /// Starts all threads.
-    pub fn start(&mut self) -> Result<()> {
-        self.start_dmx_resolver_thread();
-        Ok(())
+    pub fn show(&self) -> &Show {
+        &self.show
     }
 
-    fn start_dmx_resolver_thread(&mut self) {
-        let handle = thread::spawn({
-            let output_pipeline = self.output_pipeline.clone();
-            let show = self.show.clone();
-            move || dmx_resolver::start(output_pipeline, show)
-        });
-        self.dmx_resolver_thread = Some(handle);
-        log::info!("Started DMX resolver thread");
+    pub fn resolve_dmx(&mut self) {
+        dmx_resolver::resolve(&mut self.output_pipeline, &mut self.show);
     }
 
     /// Execute a [Cmd] to interface with the backend.
@@ -87,8 +72,7 @@ impl Engine {
         match cmd {
             Cmd::PatchFixture { id, address, dmx_mode, gdtf_file_name } => {
                 let gdtf_file_path = {
-                    let show = self.show.lock().unwrap();
-                    let showfile_path = match show.path() {
+                    let showfile_path = match self.show.path() {
                         Some(path) => path,
                         None => {
                             todo!(
@@ -111,25 +95,19 @@ impl Engine {
 
                 let fixture = Fixture::new(id, address, dmx_mode, gdtf_file_name, fixture_type)?;
 
-                {
-                    let patch = &mut self.show.lock().unwrap().patch;
-                    patch.fixtures.push(fixture);
-                }
+                self.show.patch.fixtures.push(fixture);
             }
             Cmd::SetDmxValue { address, value } => {
-                let programmer = &mut self.show.lock().unwrap().programmer;
-                programmer.set_dmx_value(address, value);
+                self.show.programmer.set_dmx_value(address, value);
             }
             Cmd::SetAttributeValue { fixture_id, attribute, value } => {
-                let programmer = &mut self.show.lock().unwrap().programmer;
-                programmer.set_attribute_value(fixture_id, attribute, value);
+                self.show.programmer.set_attribute_value(fixture_id, attribute, value);
             }
             Cmd::SetPreset { preset } => {
-                let programmer = &mut self.show.lock().unwrap().programmer;
-                programmer.set_preset(preset);
+                self.show.programmer.set_preset(preset);
             }
             Cmd::New(object) => {
-                let show = &mut self.show.lock().unwrap();
+                let show = &mut self.show;
                 match object {
                     Object::Executor(executor) => {
                         show.executors.insert(executor.id, executor);
@@ -150,13 +128,5 @@ impl Engine {
         }
 
         Ok(())
-    }
-}
-
-impl Drop for Engine {
-    fn drop(&mut self) {
-        if let Some(handle) = self.dmx_resolver_thread.take() {
-            handle.join().unwrap();
-        }
     }
 }

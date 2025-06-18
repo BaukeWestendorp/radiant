@@ -23,7 +23,7 @@ pub use error::Error;
 /// let invalid_channel = dmx::Channel::new(513);
 /// assert!(invalid_channel.is_err());
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, facet::Facet)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(derive_more::Deref, derive_more::DerefMut, derive_more::Display)]
 pub struct Channel(u16);
 
@@ -95,7 +95,7 @@ impl std::str::FromStr for Channel {
 /// let min = dmx::Value(0);   // Minimum DMX value
 /// let max = dmx::Value(255); // Maximum DMX value
 /// ```
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, facet::Facet)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(
     derive_more::Deref,
     derive_more::DerefMut,
@@ -134,7 +134,7 @@ impl Value {
 /// assert_eq!(addr.universe, dmx::UniverseId::new(2).unwrap());
 /// assert_eq!(addr.channel, dmx::Channel::new(488).unwrap());
 /// ```
-#[derive(Debug, Clone, Default, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, facet::Facet)]
+#[derive(Debug, Clone, Default, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Address {
     /// The universe id for this address.
     pub universe: UniverseId,
@@ -254,7 +254,7 @@ impl std::fmt::Display for Address {
 /// let invalid = dmx::UniverseId::new(0);
 /// assert!(invalid.is_err());
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, facet::Facet)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(derive_more::Deref, derive_more::DerefMut, derive_more::Display)]
 pub struct UniverseId(u16);
 
@@ -329,7 +329,7 @@ impl std::str::FromStr for UniverseId {
 /// # use neo_radiant::dmx;
 /// let universe = dmx::Universe::new();
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, facet::Facet)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Universe {
     values: [Value; 512],
 }
@@ -438,7 +438,7 @@ impl From<Universe> for Vec<u8> {
 /// // Remove a universe
 /// let _removed_universe = multiverse.remove_universe(&id);
 /// ```
-#[derive(Debug, Default, Clone, PartialEq, Eq, facet::Facet)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Multiverse {
     universes: HashMap<UniverseId, Universe>,
 }

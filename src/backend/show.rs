@@ -9,7 +9,7 @@ use crate::backend::{
     pipeline::Pipeline,
 };
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Show {
     /// The path at which the [Showfile] is saved.
     /// Will be `None` if it has not been saved yet.

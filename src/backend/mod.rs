@@ -3,4 +3,4 @@ pub mod object;
 pub mod patch;
 pub mod show;
 
-pub(in crate::backend) mod pipeline;
+mod pipeline;

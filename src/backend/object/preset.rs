@@ -12,7 +12,7 @@ macro_rules! define_preset {
 
             #[doc = concat!("A ", stringify!($name), " preset")]
             #[derive(Debug, Clone, PartialEq)]
-            pub struct $name {
+                        pub struct $name {
                 pub id: $id,
                 pub name: String,
                 pub content: PresetContent,

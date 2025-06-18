@@ -8,7 +8,7 @@ crate::define_object_id!(ExecutorId);
 /// An executor controls how a sequence will be activated and terminated.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Executor {
-    pub(in crate::backend) id: ExecutorId,
+    pub id: ExecutorId,
     pub name: String,
     pub activation_mode: ActivationMode,
     pub termination_mode: TerminationMode,

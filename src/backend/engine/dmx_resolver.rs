@@ -1,37 +1,22 @@
-use std::sync::{Arc, Mutex};
-use std::thread;
-use std::time::Duration;
-
 use crate::backend::object::{AnyPreset, CueContent, PresetContent, RecipeCombination};
 use crate::backend::{pipeline::Pipeline, show::Show};
+use crate::dmx::UniverseId;
 
-/// The amount of milliseconds between updating DMX output.
-const DMX_UPDATE_INTERVAL: Duration = Duration::from_millis(40);
+pub fn resolve(output_pipeline: &mut Pipeline, show: &mut Show) {
+    // Resolve and merge executor outputs.
+    resolve_executors(output_pipeline, show);
 
-pub fn start(output_pipeline: Arc<Mutex<Pipeline>>, show: Arc<Mutex<Show>>) {
-    loop {
-        {
-            let show = &mut show.lock().unwrap();
+    // Resolve and merge programmer pipeline with output pipeline.
+    resolve_programmer(output_pipeline, show);
 
-            // Resolve and merge executor outputs.
-            resolve_executors(&output_pipeline, show);
+    // Resolve output pipeline.
+    resolve_output_pipeline(output_pipeline, show);
 
-            // Resolve and merge programmer pipeline with output pipeline.
-            resolve_programmer(&output_pipeline, show);
-
-            // Resolve output pipeline.
-            resolve_output_pipeline(&output_pipeline, show);
-
-            let output_pipeline = output_pipeline.lock().unwrap();
-            let multiverse = output_pipeline.output_multiverse();
-            eprintln!("{multiverse:?}");
-        }
-
-        thread::sleep(DMX_UPDATE_INTERVAL);
-    }
+    let multiverse = output_pipeline.output_multiverse();
+    eprintln!("{:?}", &multiverse.universe(&UniverseId::new(1).unwrap()).unwrap().values()[0..8]);
 }
 
-fn resolve_executors(output_pipeline: &Arc<Mutex<Pipeline>>, show: &mut Show) {
+fn resolve_executors(output_pipeline: &mut Pipeline, show: &mut Show) {
     for executor in show.executors.values() {
         let Some(active_cue) = executor.get_active_cue(show) else { continue };
         match &active_cue.content {
@@ -62,7 +47,7 @@ fn resolve_executors(output_pipeline: &Arc<Mutex<Pipeline>>, show: &mut Show) {
                                 //       fixtures that are both in the Fixture Group
                                 //       and in the Preset.
                                 if fixture_group.contains(fixture_id) {
-                                    output_pipeline.lock().unwrap().set_attribute_value(
+                                    output_pipeline.set_attribute_value(
                                         *fixture_id,
                                         attribute.clone(),
                                         *value,
@@ -77,14 +62,13 @@ fn resolve_executors(output_pipeline: &Arc<Mutex<Pipeline>>, show: &mut Show) {
     }
 }
 
-fn resolve_programmer(output_pipeline: &Arc<Mutex<Pipeline>>, show: &mut Show) {
+fn resolve_programmer(output_pipeline: &mut Pipeline, show: &mut Show) {
     // FIXME: It would be nice if we would not have to clone the entire patch.
     let patch = show.patch.clone();
     show.programmer.resolve(&patch);
-    show.programmer.merge_into(&mut output_pipeline.lock().unwrap());
+    show.programmer.merge_into(output_pipeline);
 }
 
-fn resolve_output_pipeline(output_pipeline: &Arc<Mutex<Pipeline>>, show: &mut Show) {
-    let mut output_pipeline = output_pipeline.lock().unwrap();
+fn resolve_output_pipeline(output_pipeline: &mut Pipeline, show: &mut Show) {
     output_pipeline.resolve(&show.patch);
 }

@@ -1,10 +1,9 @@
 use std::path::PathBuf;
 
 use eyre::Context;
-use facet::Facet;
 use neo_radiant::{app, error::Error, showfile::Showfile};
 
-#[derive(Facet)]
+#[derive(facet::Facet)]
 struct Args {
     #[facet(positional, optional)]
     showfile_path: Option<PathBuf>,

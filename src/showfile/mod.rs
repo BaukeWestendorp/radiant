@@ -11,7 +11,7 @@ pub const RELATIVE_GDTF_FILE_FOLDER_PATH: &str = "gdtf_files";
 pub const RELATIVE_PATCH_FILE_PATH: &str = "patch.yaml";
 
 /// Represents the showfile that is saved on disk.
-#[derive(Default, facet::Facet)]
+#[derive(Default)]
 pub struct Showfile {
     /// The path at which the [Showfile] is saved.
     /// Will be `None` if it has not been saved yet.

@@ -4,9 +4,9 @@ pub mod attr;
 pub mod fixture;
 
 /// Contains all information regarding the mapping of fixtures to the DMX universes.
-#[derive(Default, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Patch {
-    pub(in crate::backend) fixtures: Vec<Fixture>,
+    pub(super) fixtures: Vec<Fixture>,
 }
 
 impl Patch {

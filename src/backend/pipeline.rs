@@ -19,7 +19,7 @@ use crate::dmx::{self, Multiverse};
 /// - (2) Resolve Direct DMX Values  (e.g. Attribute Values >>)
 /// - (1) Output DMX                 (e.g. Via sACN)
 /// ```
-#[derive(Default, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Pipeline {
     /// Unresolved presets that have been set.
     /// These will be piped down into the attribute values.

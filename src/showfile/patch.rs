@@ -5,7 +5,8 @@ use eyre::Context;
 use crate::error::Result;
 
 /// Contains all information regarding the mapping of fixtures to the DMX universes.
-#[derive(Default, facet::Facet)]
+#[derive(Default)]
+#[derive(facet::Facet)]
 pub struct Patch {
     pub gdtf_files: Vec<String>,
     pub fixtures: Vec<Fixture>,
