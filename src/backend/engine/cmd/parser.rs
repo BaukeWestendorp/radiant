@@ -1,6 +1,6 @@
 use std::iter::Peekable;
 
-use crate::backend::object::{AnyObjectId, CueId, ExecutorId};
+use crate::backend::object::{AnyObjectId, CueId, ExecutorId, SequenceId};
 
 use super::lexer::{Lexer, Token};
 use super::{Command, error::Error};
@@ -8,6 +8,7 @@ use super::{Command, error::Error};
 const CREATE: &str = "create";
 
 const EXECUTOR: &str = "executor";
+const SEQUENCE: &str = "sequence";
 const CUE: &str = "cue";
 
 pub struct Parser<'src> {
@@ -69,6 +70,7 @@ impl<'src> Parser<'src> {
 
         match ident.as_str() {
             EXECUTOR => Ok(ExecutorId(n as u32).into()),
+            SEQUENCE => Ok(SequenceId(n as u32).into()),
             CUE => Ok(CueId(n as u32).into()),
             _ => Err(Error::ExpectedObjectId),
         }
@@ -89,7 +91,7 @@ mod tests {
     use crate::backend::{engine::cmd::Command, object::AnyObjectId};
 
     #[test]
-    fn test_simple_command() {
+    fn test_create_executor_with_name() {
         let command = Parser::new("create executor 0 \"Example Executor\"").parse().unwrap();
 
         assert_eq!(
@@ -101,10 +103,33 @@ mod tests {
         );
     }
 
-    // create cue 0 "Basic Cue"
-    // insert cue 0 recipe [ (fixture_group 0, preset::dimmer 0) ]
+    #[test]
+    fn test_create_cue_with_name() {
+        let command = Parser::new("create cue 0 \"Example Cue\"").parse().unwrap();
 
-    // create sequence 0 "Example Sequence"
+        assert_eq!(
+            command,
+            Command::Create {
+                id: AnyObjectId::Cue(0.into()),
+                name: Some("Example Cue".to_string()),
+            },
+        );
+    }
+
+    #[test]
+    fn test_create_sequence_with_name() {
+        let command = Parser::new("create sequence 0 \"Example Sequence\"").parse().unwrap();
+
+        assert_eq!(
+            command,
+            Command::Create {
+                id: AnyObjectId::Sequence(0.into()),
+                name: Some("Example Sequence".to_string()),
+            },
+        );
+    }
+
+    // insert cue 0 recipe [ (fixture_group 0, preset::dimmer 0) ]
     // insert sequence 0 cue 0
     // update sequence 0 active_cue 0
 }
