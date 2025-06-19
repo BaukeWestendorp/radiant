@@ -25,6 +25,7 @@ pub use error::Error;
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(derive_more::Deref, derive_more::DerefMut, derive_more::Display)]
+#[derive(facet::Facet)]
 pub struct Channel(u16);
 
 impl Channel {
@@ -103,6 +104,7 @@ impl std::str::FromStr for Channel {
     derive_more::From,
     derive_more::Into
 )]
+#[derive(facet::Facet)]
 pub struct Value(pub u8);
 
 impl Value {
@@ -135,6 +137,7 @@ impl Value {
 /// assert_eq!(addr.channel, dmx::Channel::new(488).unwrap());
 /// ```
 #[derive(Debug, Clone, Default, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(facet::Facet)]
 pub struct Address {
     /// The universe id for this address.
     pub universe: UniverseId,
@@ -256,6 +259,7 @@ impl std::fmt::Display for Address {
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(derive_more::Deref, derive_more::DerefMut, derive_more::Display)]
+#[derive(facet::Facet)]
 pub struct UniverseId(u16);
 
 impl UniverseId {
@@ -330,6 +334,7 @@ impl std::str::FromStr for UniverseId {
 /// let universe = dmx::Universe::new();
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(facet::Facet)]
 pub struct Universe {
     values: [Value; 512],
 }
@@ -439,6 +444,7 @@ impl From<Universe> for Vec<u8> {
 /// let _removed_universe = multiverse.remove_universe(&id);
 /// ```
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
+#[derive(facet::Facet)]
 pub struct Multiverse {
     universes: HashMap<UniverseId, Universe>,
 }

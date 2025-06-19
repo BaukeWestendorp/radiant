@@ -4,6 +4,8 @@ use crate::dmx;
 
 /// A GDTF attribute.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(facet::Facet)]
+#[repr(u16)]
 pub enum Attribute {
     /// Controls the intensity of a fixture.
     Dimmer,
@@ -1536,6 +1538,7 @@ mod tests {
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
 #[derive(derive_more::Deref, derive_more::DerefMut)]
+#[derive(facet::Facet)]
 pub struct AttributeValue(f32);
 
 impl AttributeValue {

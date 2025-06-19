@@ -34,7 +34,7 @@ fn resolve_cue(cue: &Cue, output_pipeline: &mut Pipeline, show: &Show) {
 }
 
 fn resolve_recipe(recipe: &Recipe, output_pipeline: &mut Pipeline, show: &Show) {
-    for RecipeCombination { fixture_group_id, preset_id } in &recipe.combinations {
+    for RecipeCombination { fixture_group_id, preset_id } in recipe.combinations() {
         let Some(preset) = show.preset(preset_id) else {
             log::warn!("Preset with id {preset_id} in RecipeCombination not found");
             continue;

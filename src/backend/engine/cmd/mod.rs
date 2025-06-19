@@ -5,8 +5,14 @@ use crate::backend::patch::fixture::DmxMode;
 use crate::backend::patch::fixture::FixtureId;
 use crate::dmx;
 
+pub mod error;
+mod lexer;
+mod parser;
+
 /// A [Command] is the interface between the engine and the backend.
 #[derive(Debug, Clone, PartialEq)]
+#[derive(facet::Facet)]
+#[repr(u8)]
 pub enum Command {
     Patch(PatchCommand),
     Programmer(ProgrammerCommand),
@@ -19,6 +25,8 @@ pub enum Command {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[derive(facet::Facet)]
+#[repr(u8)]
 pub enum PatchCommand {
     Add { fixture_id: FixtureId, address: dmx::Address, gdtf_file_name: String, mode: DmxMode },
     // TODO: patch update <fixture_id> [address|mode|gdtf_file_name] <new_value>
@@ -26,11 +34,15 @@ pub enum PatchCommand {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[derive(facet::Facet)]
+#[repr(u8)]
 pub enum ProgrammerCommand {
     Set(ProgrammerSetCommand),
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[derive(facet::Facet)]
+#[repr(u8)]
 pub enum ProgrammerSetCommand {
     Direct { address: dmx::Address, value: dmx::Value },
     Attribute { fixture_id: FixtureId, attribute: Attribute, value: AttributeValue },
