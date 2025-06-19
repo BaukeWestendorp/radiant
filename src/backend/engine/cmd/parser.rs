@@ -87,15 +87,15 @@ impl<'src> Parser<'src> {
 
 #[cfg(test)]
 mod tests {
-    use super::Parser;
-    use crate::backend::{engine::cmd::Command, object::AnyObjectId};
+    use crate::{
+        backend::{engine::cmd::Command, object::AnyObjectId},
+        cmd,
+    };
 
     #[test]
     fn test_create_executor_with_name() {
-        let command = Parser::new("create executor 0 \"Example Executor\"").parse().unwrap();
-
         assert_eq!(
-            command,
+            cmd!("create executor 0 \"Example Executor\""),
             Command::Create {
                 id: AnyObjectId::Executor(0.into()),
                 name: Some("Example Executor".to_string()),
@@ -105,10 +105,8 @@ mod tests {
 
     #[test]
     fn test_create_cue_with_name() {
-        let command = Parser::new("create cue 0 \"Example Cue\"").parse().unwrap();
-
         assert_eq!(
-            command,
+            cmd!("create cue 0 \"Example Cue\""),
             Command::Create {
                 id: AnyObjectId::Cue(0.into()),
                 name: Some("Example Cue".to_string()),
@@ -118,10 +116,8 @@ mod tests {
 
     #[test]
     fn test_create_sequence_with_name() {
-        let command = Parser::new("create sequence 0 \"Example Sequence\"").parse().unwrap();
-
         assert_eq!(
-            command,
+            cmd!("create sequence 0 \"Example Sequence\""),
             Command::Create {
                 id: AnyObjectId::Sequence(0.into()),
                 name: Some("Example Sequence".to_string()),
