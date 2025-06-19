@@ -1,8 +1,8 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use crate::backend::object::{
-    AnyPreset, AnyPresetId, DimmerPreset, DimmerPresetId, Executor, ExecutorId, FixtureGroup,
-    FixtureGroupId, Sequence, SequenceId,
+    AnyPreset, AnyPresetId, Cue, CueId, DimmerPreset, DimmerPresetId, Executor, ExecutorId,
+    FixtureGroup, FixtureGroupId, Sequence, SequenceId,
 };
 use crate::backend::patch::Patch;
 use crate::backend::pipeline::Pipeline;
@@ -19,6 +19,7 @@ pub struct Show {
     pub(in crate::backend) fixture_groups: HashMap<FixtureGroupId, FixtureGroup>,
     pub(in crate::backend) executors: HashMap<ExecutorId, Executor>,
     pub(in crate::backend) sequences: HashMap<SequenceId, Sequence>,
+    pub(in crate::backend) cues: HashMap<CueId, Cue>,
     pub(in crate::backend) dimmer_presets: HashMap<DimmerPresetId, DimmerPreset>,
 }
 
@@ -61,6 +62,16 @@ impl Show {
     /// Gets an iterator all [Sequence]s.
     pub fn sequences(&self) -> impl IntoIterator<Item = &Sequence> {
         self.sequences.values()
+    }
+
+    /// Gets a [Cue].
+    pub fn cue(&self, id: &CueId) -> Option<&Cue> {
+        self.cues.get(id)
+    }
+
+    /// Gets an iterator all [Cue]s.
+    pub fn cues(&self) -> impl IntoIterator<Item = &Cue> {
+        self.cues.values()
     }
 
     /// Gets any kind of preset from it's corresponding id.

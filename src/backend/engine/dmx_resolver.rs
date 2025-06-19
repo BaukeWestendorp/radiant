@@ -26,7 +26,9 @@ fn resolve_executors(output_pipeline: &mut Pipeline, show: &Show) {
 }
 
 fn resolve_cue(cue: &Cue, output_pipeline: &mut Pipeline, show: &Show) {
-    match &cue.content {
+    let Some(content) = &cue.content else { return };
+
+    match content {
         CueContent::Recipe(recipe) => resolve_recipe(recipe, output_pipeline, show),
     }
 }

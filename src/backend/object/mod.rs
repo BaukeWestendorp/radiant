@@ -1,8 +1,10 @@
+mod cue;
 mod executor;
 mod fixture_group;
 mod preset;
 mod sequence;
 
+pub use cue::*;
 pub use executor::*;
 pub use fixture_group::*;
 pub use preset::*;
@@ -37,6 +39,8 @@ pub enum AnyObject {
     #[from]
     Sequence(Sequence),
     #[from]
+    Cue(Cue),
+    #[from]
     FixtureGroup(FixtureGroup),
     #[from(forward)]
     Preset(AnyPreset),
@@ -50,6 +54,8 @@ pub enum AnyObjectId {
     Executor(ExecutorId),
     #[from]
     Sequence(SequenceId),
+    #[from]
+    Cue(CueId),
     #[from]
     FixtureGroup(FixtureGroupId),
     #[from(forward)]

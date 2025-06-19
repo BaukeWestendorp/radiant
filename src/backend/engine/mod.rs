@@ -6,7 +6,7 @@ use eyre::{Context, ContextCompat};
 
 use crate::backend::engine::cmd::{Command, PatchCommand, ProgrammerCommand, ProgrammerSetCommand};
 use crate::backend::object::{
-    AnyObjectId, AnyPresetId, DimmerPreset, Executor, FixtureGroup, PresetContent, Sequence,
+    AnyObjectId, AnyPresetId, Cue, DimmerPreset, Executor, FixtureGroup, PresetContent, Sequence,
 };
 use crate::backend::patch::fixture::{DmxMode, Fixture, FixtureId};
 use crate::backend::pipeline::Pipeline;
@@ -149,6 +149,14 @@ impl Engine {
                         }
 
                         show.fixture_groups.insert(fixture_group.id(), fixture_group);
+                    }
+                    AnyObjectId::Cue(id) => {
+                        let mut cue = Cue::new(id);
+                        if let Some(name) = name {
+                            cue.name = name;
+                        }
+
+                        show.cues.insert(cue.id(), cue);
                     }
                     AnyObjectId::Preset(id) => match id {
                         AnyPresetId::Dimmer(id) => {

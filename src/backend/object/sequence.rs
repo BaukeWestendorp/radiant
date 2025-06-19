@@ -1,4 +1,4 @@
-use crate::backend::object::{AnyPresetId, FixtureGroupId};
+use crate::backend::object::Cue;
 
 crate::define_object_id!(SequenceId);
 
@@ -30,52 +30,4 @@ impl Sequence {
     pub fn cue(&self, index: usize) -> Option<&Cue> {
         self.cues.get(index)
     }
-}
-
-/// A state of the stage output.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Cue {
-    pub name: String,
-    pub content: CueContent,
-}
-
-impl Cue {
-    pub fn new(content: CueContent) -> Self {
-        Self { name: "New Cue".to_string(), content }
-    }
-
-    pub fn with_name(mut self, name: impl Into<String>) -> Self {
-        self.name = name.into();
-        self
-    }
-}
-
-/// Contents of a [Cue].
-#[derive(Debug, Clone, PartialEq)]
-pub enum CueContent {
-    Recipe(Recipe),
-}
-
-/// A list of [FixtureGroup]-[Preset] combinations.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Recipe {
-    pub combinations: Vec<RecipeCombination>,
-}
-
-impl Default for Recipe {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Recipe {
-    pub fn new() -> Self {
-        Self { combinations: Vec::new() }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct RecipeCombination {
-    pub fixture_group_id: FixtureGroupId,
-    pub preset_id: AnyPresetId,
 }
