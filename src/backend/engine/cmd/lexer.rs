@@ -86,7 +86,7 @@ impl<'src> Iterator for Lexer<'src> {
                 }
                 Some(Token::String(content))
             }
-            '0'..='9' => {
+            '0'..='9' | '-' => {
                 self.position -= 1;
 
                 // Parse number
@@ -96,6 +96,7 @@ impl<'src> Iterator for Lexer<'src> {
                 while self.position < self.source.len() {
                     let char = self.source.chars().nth(self.position).unwrap();
                     match char {
+                        '-' if self.position == start => self.position += 1,
                         '0'..='9' => self.position += 1,
                         '.' if !has_decimal => {
                             has_decimal = true;
@@ -175,13 +176,14 @@ mod tests {
 
     #[test]
     fn test_lexer_numbers() {
-        let lexer = Lexer::new("0 123 3.14");
+        let lexer = Lexer::new("0 123 3.14 -2.876");
         let tokens: Vec<Token> = lexer.collect();
 
-        assert_eq!(tokens.len(), 3);
+        assert_eq!(tokens.len(), 4);
         assert_eq!(tokens[0], Token::Integer(0));
         assert_eq!(tokens[1], Token::Integer(123));
         assert_eq!(tokens[2], Token::Float(3.14));
+        assert_eq!(tokens[3], Token::Float(-2.876));
     }
 
     #[test]
@@ -213,11 +215,11 @@ mod tests {
         let tokens: Vec<Token> = lexer.collect();
 
         assert_eq!(tokens.len(), 5);
-        assert!(matches!(tokens[0], Token::Invalid('@')));
-        assert!(matches!(tokens[1], Token::Invalid('#')));
-        assert!(matches!(tokens[2], Token::Invalid('$')));
-        assert!(matches!(tokens[3], Token::Invalid('%')));
-        assert!(matches!(tokens[4], Token::Invalid('^')));
+        assert_eq!(tokens[0], Token::Invalid('@'));
+        assert_eq!(tokens[1], Token::Invalid('#'));
+        assert_eq!(tokens[2], Token::Invalid('$'));
+        assert_eq!(tokens[3], Token::Invalid('%'));
+        assert_eq!(tokens[4], Token::Invalid('^'));
 
         let lexer = Lexer::new("valid_token @ 123");
         let tokens: Vec<Token> = lexer.collect();

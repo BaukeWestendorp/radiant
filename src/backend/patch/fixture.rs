@@ -17,13 +17,11 @@ use crate::error::Result;
     derive_more::From,
     derive_more::Into
 )]
-#[derive(facet::Facet)]
 pub struct FixtureId(pub u32);
 
 /// A specific mode for a [Fixture]. Often defined in the GDTF description.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(derive_more::Display)]
-#[derive(facet::Facet)]
 pub struct DmxMode(String);
 
 impl DmxMode {

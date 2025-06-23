@@ -1,6 +1,4 @@
-use crate::backend::object::{
-    AnyPreset, Cue, CueContent, PresetContent, Recipe, RecipeCombination,
-};
+use crate::backend::object::{AnyPreset, Cue, PresetContent, Recipe, RecipeContent};
 use crate::backend::{pipeline::Pipeline, show::Show};
 use crate::dmx::UniverseId;
 
@@ -26,37 +24,45 @@ fn resolve_executors(output_pipeline: &mut Pipeline, show: &Show) {
 }
 
 fn resolve_cue(cue: &Cue, output_pipeline: &mut Pipeline, show: &Show) {
-    let Some(content) = &cue.content else { return };
-
-    match content {
-        CueContent::Recipe(recipe) => resolve_recipe(recipe, output_pipeline, show),
+    for recipe in &cue.recipes {
+        resolve_recipe(recipe, output_pipeline, show);
     }
 }
 
 fn resolve_recipe(recipe: &Recipe, output_pipeline: &mut Pipeline, show: &Show) {
-    for RecipeCombination { fixture_group_id, preset_id } in recipe.combinations() {
-        let Some(preset) = show.preset(preset_id) else {
-            log::warn!("Preset with id {preset_id} in RecipeCombination not found");
-            continue;
-        };
+    match &recipe.content {
+        RecipeContent::Preset(preset_id) => {
+            let Some(preset) = show.preset(preset_id) else {
+                log::warn!("Preset with id {preset_id} in RecipeCombination not found");
+                return;
+            };
 
-        let Some(fixture_group) = show.fixture_group(fixture_group_id) else {
-            log::warn!("FixtureGroup with id {fixture_group_id} in RecipeCombination not found");
-            continue;
-        };
+            let Some(fixture_group) = show.fixture_group(&recipe.fixture_group_id) else {
+                log::warn!(
+                    "FixtureGroup with id {} in RecipeCombination not found",
+                    recipe.fixture_group_id
+                );
+                return;
+            };
 
-        let content = match preset {
-            AnyPreset::Dimmer(preset) => &preset.content,
-        };
+            let content = match preset {
+                AnyPreset::Dimmer(preset) => &preset.content,
+            };
 
-        match &content {
-            PresetContent::Selective(selective_preset) => {
-                for ((fixture_id, attribute), value) in selective_preset.get_attribute_values() {
-                    // NOTE: We should only resolve attributes for
-                    //       fixtures that are both in the Fixture Group
-                    //       and in the Preset.
-                    if fixture_group.contains(fixture_id) {
-                        output_pipeline.set_attribute_value(*fixture_id, attribute.clone(), *value);
+            match &content {
+                PresetContent::Selective(selective_preset) => {
+                    for ((fixture_id, attribute), value) in selective_preset.get_attribute_values()
+                    {
+                        // NOTE: We only resolve attributes for
+                        //       fixtures that are both in the Fixture Group
+                        //       and in the Preset.
+                        if fixture_group.contains(fixture_id) {
+                            output_pipeline.set_attribute_value(
+                                *fixture_id,
+                                attribute.clone(),
+                                *value,
+                            );
+                        }
                     }
                 }
             }

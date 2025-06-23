@@ -10,7 +10,7 @@ macro_rules! define_preset {
 
             #[doc = concat!("A ", stringify!($name), " preset")]
             #[derive(Debug, Clone, PartialEq)]
-                        pub struct $name {
+            pub struct $name {
                 id: $id,
                 pub name: String,
                 pub content: PresetContent,
@@ -30,8 +30,6 @@ macro_rules! define_preset {
         /// Any preset id.
         #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
         #[derive(derive_more::Display, derive_more::From)]
-        #[derive(facet::Facet)]
-        #[repr(u8)]
         pub enum AnyPresetId {
             $(
                 $any_name($id),

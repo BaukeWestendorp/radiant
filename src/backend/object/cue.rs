@@ -7,12 +7,12 @@ crate::define_object_id!(CueId);
 pub struct Cue {
     id: CueId,
     pub name: String,
-    pub content: Option<CueContent>,
+    pub recipes: Vec<Recipe>,
 }
 
 impl Cue {
     pub fn new(id: impl Into<CueId>) -> Self {
-        Self { id: id.into(), name: "New Cue".to_string(), content: None }
+        Self { id: id.into(), name: "New Cue".to_string(), recipes: Vec::new() }
     }
 
     pub fn id(&self) -> CueId {
@@ -20,35 +20,14 @@ impl Cue {
     }
 }
 
-/// Contents of a [Cue].
+/// A list of [FixtureGroup]-[Recipe] combinations.
 #[derive(Debug, Clone, PartialEq)]
-pub enum CueContent {
-    Recipe(Recipe),
-}
-
-/// A list of [FixtureGroup]-[Preset] combinations.
-#[derive(Debug, Clone, PartialEq)]
-#[repr(transparent)]
-pub struct Recipe(Vec<RecipeCombination>);
-
-impl Default for Recipe {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Recipe {
-    pub fn new() -> Self {
-        Self(Vec::new())
-    }
-
-    pub fn combinations(&self) -> &[RecipeCombination] {
-        &self.0
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct RecipeCombination {
+pub struct Recipe {
     pub fixture_group_id: FixtureGroupId,
-    pub preset_id: AnyPresetId,
+    pub content: RecipeContent,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum RecipeContent {
+    Preset(AnyPresetId),
 }

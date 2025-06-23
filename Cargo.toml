@@ -7,6 +7,7 @@ edition = "2024"
 derive_more = { version = "2.0.1", features = [
     "add",
     "add_assign",
+    "as_ref",
     "deref",
     "deref_mut",
     "display",
@@ -15,6 +16,7 @@ derive_more = { version = "2.0.1", features = [
     "into",
     "mul_assign",
     "sum",
+    "try_into",
 ] }
 eyre = "0.6.12"
 facet = "0.27.13"

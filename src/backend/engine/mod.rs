@@ -40,7 +40,7 @@ impl Engine {
 
         // Initialize show.
         for fixture in &showfile.patch.fixtures {
-            let fixture_id = FixtureId(fixture.id);
+            let id = FixtureId(fixture.id);
 
             let address = dmx::Address::new(
                 dmx::UniverseId::new(fixture.universe)?,
@@ -53,15 +53,10 @@ impl Engine {
                 .patch
                 .gdtf_files
                 .get(fixture.gdtf_file_index)
-                .context("Failed to generate patch: Tried to reference GDTF file index that is out of bounds")?
+                .wrap_err("Failed to generate patch: Tried to reference GDTF file index that is out of bounds")?
                 .to_string();
 
-            this.exec_cmd(Command::Patch(PatchCommand::Add {
-                fixture_id,
-                address,
-                mode,
-                gdtf_file_name,
-            }))?;
+            this.exec_cmd(Command::Patch(PatchCommand::Add { id, address, mode, gdtf_file_name }))?;
         }
 
         this.output_pipeline.clear();
@@ -82,7 +77,7 @@ impl Engine {
     /// Execute a [Command] to interface with the backend.
     pub fn exec_cmd(&mut self, cmd: Command) -> Result<()> {
         match cmd {
-            Command::Patch(PatchCommand::Add { fixture_id, address, mode, gdtf_file_name }) => {
+            Command::Patch(PatchCommand::Add { id, address, mode, gdtf_file_name }) => {
                 let gdtf_file_path = {
                     let showfile_path = match self.show.path() {
                         Some(path) => path,
@@ -99,17 +94,20 @@ impl Engine {
                 };
 
                 let gdtf_file =
-                    fs::File::open(gdtf_file_path).context("Failed to open GDTF file")?;
+                    fs::File::open(gdtf_file_path).wrap_err("Failed to open GDTF file")?;
                 let fixture_type = &gdtf::GdtfFile::new(gdtf_file)
-                    .context("Failed to read GDTF file")?
+                    .wrap_err("Failed to read GDTF file")?
                     .description
                     .fixture_types[0];
 
-                let fixture =
-                    Fixture::new(fixture_id, address, mode, gdtf_file_name, fixture_type)?;
+                let fixture = Fixture::new(id, address, mode, gdtf_file_name, fixture_type)?;
 
                 self.show.patch.fixtures.push(fixture);
             }
+            Command::Patch(PatchCommand::SetAddress { id, address }) => todo!(),
+            Command::Patch(PatchCommand::SetMode { id, mode }) => todo!(),
+            Command::Patch(PatchCommand::SetGdtfFileName { id, name }) => todo!(),
+            Command::Patch(PatchCommand::Remove { id }) => todo!(),
             Command::Programmer(ProgrammerCommand::Set(ProgrammerSetCommand::Direct {
                 address,
                 value,
@@ -117,11 +115,14 @@ impl Engine {
                 self.show.programmer.set_dmx_value(address, value);
             }
             Command::Programmer(ProgrammerCommand::Set(ProgrammerSetCommand::Attribute {
-                fixture_id,
+                id,
                 attribute,
                 value,
             })) => {
-                self.show.programmer.set_attribute_value(fixture_id, attribute, value);
+                self.show.programmer.set_attribute_value(id, attribute, value);
+            }
+            Command::Programmer(ProgrammerCommand::Clear) => {
+                self.show.programmer.clear();
             }
             Command::Create { id, name } => {
                 let show = &mut self.show;
@@ -170,6 +171,13 @@ impl Engine {
                     },
                 };
             }
+            Command::Remove { id } => todo!(),
+            Command::Rename { id, name } => todo!(),
+            Command::FixtureGroup(id, fixture_group_command) => todo!(),
+            Command::Executor(id, executor_command) => todo!(),
+            Command::Sequence(id, sequence_command) => todo!(),
+            Command::Cue(id, cue_command) => todo!(),
+            Command::Preset(id, preset_command) => todo!(),
         }
 
         Ok(())

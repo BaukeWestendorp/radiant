@@ -26,7 +26,6 @@ macro_rules! define_object_id {
             derive_more::MulAssign,
             derive_more::DivAssign
         )]
-        #[derive(facet::Facet)]
         pub struct $name(pub u32);
     };
 }
@@ -49,9 +48,7 @@ pub enum AnyObject {
 
 /// Any object id.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(derive_more::From)]
-#[derive(facet::Facet)]
-#[repr(u8)]
+#[derive(derive_more::Display, derive_more::From, derive_more::TryInto)]
 pub enum AnyObjectId {
     #[from]
     Executor(ExecutorId),

@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::backend::object::{Cue, Sequence, SequenceId};
 use crate::backend::show::Show;
 
@@ -72,9 +74,31 @@ pub enum ActivationMode {
     Instant,
 }
 
+impl FromStr for ActivationMode {
+    type Err = eyre::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "instant" => Ok(Self::Instant),
+            other => eyre::bail!("invalid activation mode: '{other}'"),
+        }
+    }
+}
+
 /// Determines how an [Executor] is terminated.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum TerminationMode {
     #[default]
     Never,
+}
+
+impl FromStr for TerminationMode {
+    type Err = eyre::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "never" => Ok(Self::Never),
+            other => eyre::bail!("invalid termination mode: '{other}'"),
+        }
+    }
 }
