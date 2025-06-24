@@ -37,11 +37,13 @@ impl DmxMode {
 /// A single patched fixture and has information about its attributes.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Fixture {
-    pub id: FixtureId,
-    pub address: dmx::Address,
-    dmx_mode: DmxMode,
-    gdtf_file_name: String,
+    id: FixtureId,
+    pub(in crate::backend) address: dmx::Address,
+    pub(in crate::backend) dmx_mode: DmxMode,
+    pub(in crate::backend) gdtf_file_name: String,
     attributes: HashMap<Attribute, AttributeInfo>,
+
+    dmx_modes: Vec<DmxMode>,
 }
 
 impl Fixture {
@@ -56,7 +58,7 @@ impl Fixture {
 
         let gdtf_dmx_mode = fixture_type.dmx_mode(dmx_mode.as_str()).with_context(|| {
             format!(
-                "Tried to get DMX mode '{}' for fixture type '{}",
+                "fried to get dmx mode '{}' for fixture type '{}'",
                 dmx_mode, fixture_type.long_name
             )
         })?;
@@ -88,7 +90,21 @@ impl Fixture {
             }
         }
 
-        Ok(Self { id, dmx_mode, gdtf_file_name, address, attributes })
+        let dmx_modes = fixture_type
+            .dmx_modes
+            .iter()
+            .flat_map(|dmx_mode| dmx_mode.name.as_ref().map(|name| DmxMode::new(name.as_ref())))
+            .collect();
+
+        Ok(Self { id, dmx_mode, gdtf_file_name, address, attributes, dmx_modes })
+    }
+
+    pub fn id(&self) -> FixtureId {
+        self.id
+    }
+
+    pub fn address(&self) -> &dmx::Address {
+        &self.address
     }
 
     pub fn dmx_mode(&self) -> &DmxMode {
@@ -103,6 +119,10 @@ impl Fixture {
     /// fixture has defined in its GDTF definition.
     pub fn supported_attributes(&self) -> impl Iterator<Item = &Attribute> {
         self.attributes.keys()
+    }
+
+    pub fn supported_dmx_modes(&self) -> &[DmxMode] {
+        &self.dmx_modes
     }
 
     /// Gets information about a specific [Attribute],
@@ -121,7 +141,10 @@ impl Fixture {
         let mut values = Vec::new();
 
         let info = self.attribute_info(attribute).with_context(|| {
-            format!("AttributeInfo for '{}' not found for fixture '{}'", attribute, self.id)
+            format!(
+                "attribute info for attribute '{}' not found for fixture '{}'",
+                attribute, self.id
+            )
         })?;
 
         let int_value = (value.as_f32() * u32::MAX as f32) as u32;
@@ -130,7 +153,7 @@ impl Fixture {
         for (i, offset) in info.offset.iter().enumerate() {
             let value = dmx::Value(bytes[i]);
             let channel = dmx::Channel::new(u16::from(self.address.channel) + *offset)
-                .expect("Channel should always be in range of universe");
+                .expect("channel should always be in range of universe");
             values.push((channel, value));
         }
 
@@ -151,7 +174,7 @@ impl Fixture {
             for (i, offset) in info.offset.iter().enumerate() {
                 let value = dmx::Value(bytes[i]);
                 let channel = dmx::Channel::new(u16::from(self.address.channel) + *offset)
-                    .expect("Channel should always be in range of universe");
+                    .expect("channel should always be in range of universe");
                 values.push((channel, value));
             }
         }
@@ -174,7 +197,7 @@ impl Fixture {
             for (i, offset) in info.offset.iter().enumerate() {
                 let value = dmx::Value(bytes[i]);
                 let channel = dmx::Channel::new(u16::from(self.address.channel) + *offset)
-                    .expect("Channel should always be in range of universe");
+                    .expect("channel should always be in range of universe");
                 values.push((channel, value));
             }
         }

@@ -108,10 +108,10 @@ impl<'src> Iterator for Lexer<'src> {
 
                 let num_str = &self.source[start..self.position];
                 if has_decimal {
-                    let num = num_str.parse::<f64>().expect("Should be able to parse f64");
+                    let num = num_str.parse::<f64>().expect("should be able to parse f64");
                     Some(Token::Float(num))
                 } else {
-                    let num = num_str.parse::<i64>().expect("Should be able to parse i64");
+                    let num = num_str.parse::<i64>().expect("should be able to parse i64");
                     Some(Token::Integer(num))
                 }
             }

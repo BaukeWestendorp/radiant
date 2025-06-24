@@ -21,7 +21,7 @@ mod parser;
 macro_rules! cmd {
     ($cmd_str:expr) => {{
         use std::str::FromStr;
-        $crate::backend::engine::cmd::Command::from_str($cmd_str).expect("Failed to parse command")
+        $crate::backend::engine::cmd::Command::from_str($cmd_str).expect("failed to parse command")
     }};
 }
 

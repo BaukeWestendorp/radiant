@@ -34,7 +34,7 @@ impl Pipeline {
     }
 
     /// Clears all unresolved representations.
-    pub fn clear(&mut self) {
+    pub fn clear_unresolved(&mut self) {
         self.dmx_values.clear();
         self.attribute_values.clear();
     }
@@ -60,7 +60,7 @@ impl Pipeline {
     fn resolve_default_values(&mut self, patch: &Patch) {
         for fixture in patch.fixtures() {
             for (channel, value) in fixture.get_default_channel_values() {
-                let address = dmx::Address::new(fixture.address.universe, channel);
+                let address = dmx::Address::new(fixture.address().universe, channel);
                 self.resolved_multiverse.set_value(&address, value);
             }
         }
@@ -68,13 +68,13 @@ impl Pipeline {
 
     fn resolve_attribute_values(&mut self, patch: &Patch) {
         for ((fixture_id, attribute), value) in self.attribute_values.clone() {
-            let Some(fixture) = patch.fixture(&fixture_id) else { continue };
+            let Some(fixture) = patch.fixture(fixture_id) else { continue };
             let Ok(values) = fixture.get_channel_values(&attribute, &value) else {
                 continue;
             };
 
             for (channel, value) in values {
-                let address = dmx::Address::new(fixture.address.universe, channel);
+                let address = dmx::Address::new(fixture.address().universe, channel);
                 self.resolved_multiverse.set_value(&address, value);
             }
         }

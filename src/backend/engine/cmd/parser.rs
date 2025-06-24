@@ -45,30 +45,35 @@ impl<'src> Parser<'src> {
 
     pub fn parse(mut self) -> eyre::Result<Command> {
         let command = match self.parse_one_of_idents(&[PATCH, PROGRAMMER, CREATE, REMOVE, RENAME]) {
-            Ok(PATCH) => Command::Patch(match self.parse_one_of_idents(&["add", "set"])? {
-                "add" => PatchCommand::Add {
-                    id: self.parse_fixture_id()?,
-                    address: self.parse_dmx_address()?,
-                    gdtf_file_name: self.parse_string()?.to_string(),
-                    mode: DmxMode::new(self.parse_string()?.to_string()),
-                },
-                "set" => match self.parse_one_of_idents(&["address", "mode", "gdtf_file_name"])? {
-                    "address" => PatchCommand::SetAddress {
+            Ok(PATCH) => {
+                Command::Patch(match self.parse_one_of_idents(&["add", "set", "remove"])? {
+                    "add" => PatchCommand::Add {
                         id: self.parse_fixture_id()?,
                         address: self.parse_dmx_address()?,
+                        gdtf_file_name: self.parse_string()?.to_string(),
+                        mode: DmxMode::new(self.parse_string()?.to_string()),
                     },
-                    "mode" => PatchCommand::SetMode {
-                        id: self.parse_fixture_id()?,
-                        mode: DmxMode::new(self.parse_string()?),
-                    },
-                    "gdtf_file_name" => PatchCommand::SetGdtfFileName {
-                        id: self.parse_fixture_id()?,
-                        name: self.parse_string()?.to_string(),
-                    },
+                    "set" => {
+                        match self.parse_one_of_idents(&["address", "mode", "gdtf_file_name"])? {
+                            "address" => PatchCommand::SetAddress {
+                                id: self.parse_fixture_id()?,
+                                address: self.parse_dmx_address()?,
+                            },
+                            "mode" => PatchCommand::SetMode {
+                                id: self.parse_fixture_id()?,
+                                mode: DmxMode::new(self.parse_string()?),
+                            },
+                            "gdtf_file_name" => PatchCommand::SetGdtfFileName {
+                                id: self.parse_fixture_id()?,
+                                name: self.parse_string()?.to_string(),
+                            },
+                            _ => unreachable!(),
+                        }
+                    }
+                    "remove" => PatchCommand::Remove { id: self.parse_fixture_id()? },
                     _ => unreachable!(),
-                },
-                _ => unreachable!(),
-            }),
+                })
+            }
             Ok(PROGRAMMER) => {
                 Command::Programmer(match self.parse_one_of_idents(&["set", "clear"])? {
                     "set" => ProgrammerCommand::Set(
@@ -199,7 +204,11 @@ impl<'src> Parser<'src> {
             },
         };
 
-        eyre::ensure!(self.lexer.next().is_none(), "expected End Of Line");
+        eyre::ensure!(
+            self.lexer.peek().is_none(),
+            "expected End Of Line, found: '{}'",
+            self.lexer.peek().unwrap()
+        );
 
         Ok(command)
     }
@@ -316,11 +325,11 @@ impl<'src> Parser<'src> {
         }
     }
 
-    fn expect_peek(&mut self) -> eyre::Result<&Token> {
+    fn expect_peek(&mut self) -> eyre::Result<&Token<'_>> {
         self.lexer.peek().wrap_err(ERRMSG_UNEXPECTED_EOL)
     }
 
-    fn next_token(&mut self) -> eyre::Result<Token> {
+    fn next_token(&mut self) -> eyre::Result<Token<'_>> {
         self.lexer.next().wrap_err(ERRMSG_UNEXPECTED_EOL)
     }
 }
@@ -401,7 +410,12 @@ mod tests {
     }
 
     #[test]
-    fn parse_patch_remove() {}
+    fn parse_patch_remove() {
+        assert_eq!(
+            cmd!(r#"patch remove 1"#),
+            Command::Patch(PatchCommand::Remove { id: FixtureId(1) })
+        );
+    }
 
     #[test]
     fn parse_programmer_set_direct() {

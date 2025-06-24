@@ -31,7 +31,7 @@ impl Showfile {
             Some(ext) if ext == FILE_EXTENSION => Self::load_zipped(path),
             Some(_) => {
                 log::warn!(
-                    "Loading showfile with non-standard file extension: expected '.{FILE_EXTENSION}'"
+                    "loading showfile with non-standard file extension: expected '.{FILE_EXTENSION}'"
                 );
                 Self::load_zipped(path)
             }
@@ -41,7 +41,7 @@ impl Showfile {
 
     /// Loads a [Showfile] from a zipped folder.
     pub fn load_zipped(_path: &Path) -> Result<Self> {
-        todo!("Opening zipped files is not yet implemented");
+        todo!("opening zipped files is not yet implemented");
     }
 
     /// Loads a [Showfile] from an unzipped folder.

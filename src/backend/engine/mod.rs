@@ -6,12 +6,13 @@ use eyre::{Context, ContextCompat};
 
 use crate::backend::engine::cmd::{Command, PatchCommand, ProgrammerCommand, ProgrammerSetCommand};
 use crate::backend::object::{
-    AnyObjectId, AnyPresetId, Cue, DimmerPreset, Executor, FixtureGroup, PresetContent, Sequence,
+    AnyObjectId, AnyPreset, AnyPresetId, Cue, DimmerPreset, Executor, FixtureGroup, PresetContent,
+    Sequence,
 };
 use crate::backend::patch::fixture::{DmxMode, Fixture, FixtureId};
 use crate::backend::pipeline::Pipeline;
 use crate::backend::show::Show;
-use crate::dmx;
+use crate::dmx::{self, Multiverse};
 use crate::error::Result;
 use crate::showfile::{RELATIVE_GDTF_FILE_FOLDER_PATH, Showfile};
 
@@ -38,6 +39,8 @@ impl Engine {
 
         let mut this = Self { show, output_pipeline: Pipeline::new() };
 
+        this.show.patch.gdtf_file_names = showfile.patch.gdtf_files.clone();
+
         // Initialize show.
         for fixture in &showfile.patch.fixtures {
             let id = FixtureId(fixture.id);
@@ -53,13 +56,13 @@ impl Engine {
                 .patch
                 .gdtf_files
                 .get(fixture.gdtf_file_index)
-                .wrap_err("Failed to generate patch: Tried to reference GDTF file index that is out of bounds")?
+                .wrap_err("failed to generate patch: Tried to reference GDTF file index that is out of bounds")?
                 .to_string();
 
             this.exec_cmd(Command::Patch(PatchCommand::Add { id, address, mode, gdtf_file_name }))?;
         }
 
-        this.output_pipeline.clear();
+        this.output_pipeline.clear_unresolved();
 
         Ok(this)
     }
@@ -71,7 +74,12 @@ impl Engine {
     /// Do a single iteration of DMX resolving. This should be called in a
     /// loop externally, with a delay of [DMX_OUTPUT_UPDATE_INTERVAL].
     pub fn resolve_dmx(&mut self) {
+        self.output_pipeline = Pipeline::default();
         dmx_resolver::resolve(&mut self.output_pipeline, &mut self.show);
+    }
+
+    pub fn output_multiverse(&self) -> &Multiverse {
+        self.output_pipeline.output_multiverse()
     }
 
     /// Execute a [Command] to interface with the backend.
@@ -83,7 +91,7 @@ impl Engine {
                         Some(path) => path,
                         None => {
                             todo!(
-                                "Support creating new showfiles and defining their temporary location"
+                                "support creating new showfiles and defining their temporary location"
                             )
                         }
                     };
@@ -93,10 +101,13 @@ impl Engine {
                         .join(&gdtf_file_name)
                 };
 
-                let gdtf_file =
-                    fs::File::open(gdtf_file_path).wrap_err("Failed to open GDTF file")?;
+                let gdtf_file = fs::File::open(&gdtf_file_path).wrap_err_with(|| {
+                    format!("failed to open GDTF file at '{}'", gdtf_file_path.display())
+                })?;
                 let fixture_type = &gdtf::GdtfFile::new(gdtf_file)
-                    .wrap_err("Failed to read GDTF file")?
+                    .wrap_err_with(|| {
+                        format!("failed to read GDTF file at '{}'", gdtf_file_path.display())
+                    })?
                     .description
                     .fixture_types[0];
 
@@ -104,10 +115,34 @@ impl Engine {
 
                 self.show.patch.fixtures.push(fixture);
             }
-            Command::Patch(PatchCommand::SetAddress { id, address }) => todo!(),
-            Command::Patch(PatchCommand::SetMode { id, mode }) => todo!(),
-            Command::Patch(PatchCommand::SetGdtfFileName { id, name }) => todo!(),
-            Command::Patch(PatchCommand::Remove { id }) => todo!(),
+            Command::Patch(PatchCommand::SetAddress { id, address }) => {
+                if let Some(fixture) = self.show.patch.fixture_mut(id) {
+                    fixture.address = address;
+                }
+            }
+            Command::Patch(PatchCommand::SetMode { id, mode }) => {
+                if let Some(fixture) = self.show.patch.fixture_mut(id) {
+                    eyre::ensure!(
+                        fixture.supported_dmx_modes().contains(&mode),
+                        "fixture with id '{id}' does not support dmx mode '{mode}'"
+                    );
+
+                    fixture.dmx_mode = mode;
+                }
+            }
+            Command::Patch(PatchCommand::SetGdtfFileName { id, name }) => {
+                eyre::ensure!(
+                    self.show.patch.gdtf_file_names().contains(&name),
+                    "the patch does not contain GDTF file with the name '{name}'"
+                );
+
+                if let Some(fixture) = self.show.patch.fixture_mut(id) {
+                    fixture.gdtf_file_name = name;
+                }
+            }
+            Command::Patch(PatchCommand::Remove { id }) => {
+                self.show.patch.remove_fixture(id);
+            }
             Command::Programmer(ProgrammerCommand::Set(ProgrammerSetCommand::Direct {
                 address,
                 value,
@@ -122,7 +157,9 @@ impl Engine {
                 self.show.programmer.set_attribute_value(id, attribute, value);
             }
             Command::Programmer(ProgrammerCommand::Clear) => {
-                self.show.programmer.clear();
+                // NOTE: We have to completely renew the pipeline,
+                //       as clearing it only clears unresolved values.
+                self.show.programmer = Pipeline::new();
             }
             Command::Create { id, name } => {
                 let show = &mut self.show;
@@ -171,13 +208,68 @@ impl Engine {
                     },
                 };
             }
-            Command::Remove { id } => todo!(),
-            Command::Rename { id, name } => todo!(),
-            Command::FixtureGroup(id, fixture_group_command) => todo!(),
-            Command::Executor(id, executor_command) => todo!(),
-            Command::Sequence(id, sequence_command) => todo!(),
-            Command::Cue(id, cue_command) => todo!(),
-            Command::Preset(id, preset_command) => todo!(),
+            Command::Remove { id } => {
+                match id {
+                    AnyObjectId::Executor(id) => {
+                        self.show.executors.remove(&id);
+                    }
+                    AnyObjectId::Sequence(id) => {
+                        self.show.sequences.remove(&id);
+                    }
+                    AnyObjectId::FixtureGroup(id) => {
+                        self.show.fixture_groups.remove(&id);
+                    }
+                    AnyObjectId::Cue(id) => {
+                        self.show.cues.remove(&id);
+                    }
+                    AnyObjectId::Preset(id) => match id {
+                        AnyPresetId::Dimmer(id) => {
+                            self.show.dimmer_presets.remove(&id);
+                        }
+                    },
+                };
+            }
+            Command::Rename { id, name } => {
+                match id {
+                    AnyObjectId::Executor(id) => {
+                        self.show
+                            .executor_mut(id)
+                            .wrap_err("executor with id '{id}' not found")?
+                            .name = name;
+                    }
+                    AnyObjectId::Sequence(id) => {
+                        self.show
+                            .sequence_mut(id)
+                            .wrap_err("sequence with id '{id}' not found")?
+                            .name = name;
+                    }
+                    AnyObjectId::FixtureGroup(id) => {
+                        self.show
+                            .fixture_group_mut(id)
+                            .wrap_err("fixture_group with id '{id}' not found")?
+                            .name = name;
+                    }
+                    AnyObjectId::Cue(id) => {
+                        self.show.cue_mut(id).wrap_err("cue with id '{id}' not found")?.name = name;
+                    }
+                    AnyObjectId::Preset(any_preset_id) => match any_preset_id {
+                        AnyPresetId::Dimmer(_) => {
+                            match self
+                                .show
+                                .preset_mut(any_preset_id)
+                                .wrap_err("preset with id '{id}' not found")?
+                            {
+                                AnyPreset::Dimmer(preset) => preset.name = name,
+                            }
+                        }
+                    },
+                };
+            }
+            Command::FixtureGroup(_id, _fixture_group_command) => todo!(),
+            Command::Executor(_id, _executor_command) => todo!(),
+            Command::Sequence(_id, _sequence_command) => todo!(),
+            Command::Cue(_id, _cue_command) => todo!(),
+            Command::Preset(_id, _preset_command) => todo!(),
         }
 
         Ok(())

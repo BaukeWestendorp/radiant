@@ -571,6 +571,30 @@ impl Multiverse {
 
         universe.set_value(&address.channel, value);
     }
+
+    /// Gets a value at a given [Address].
+    ///
+    /// Returns `None` if the universe doesn't exist.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use neo_radiant::dmx;
+    /// let mut multiverse = dmx::Multiverse::new();
+    /// let id = dmx::UniverseId::new(1).unwrap();
+    /// multiverse.create_universe(id, dmx::Universe::new());
+    ///
+    /// let address = dmx::Address::new(id, dmx::Channel::new(1).unwrap());
+    /// multiverse.set_value(&address, dmx::Value(128));
+    ///
+    /// assert_eq!(multiverse.get_value(&address), Some(&dmx::Value(128)));
+    /// ```
+    pub fn get_value(&self, address: &Address) -> Value {
+        let Some(universe) = self.universe(&address.universe) else {
+            return Value::default();
+        };
+        universe.get_value(&address.channel)
+    }
 }
 
 #[cfg(test)]

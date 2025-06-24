@@ -13,7 +13,11 @@ pub fn resolve(output_pipeline: &mut Pipeline, show: &mut Show) {
     resolve_output_pipeline(output_pipeline, show);
 
     let multiverse = output_pipeline.output_multiverse();
-    eprintln!("{:?}", &multiverse.universe(&UniverseId::new(1).unwrap()).unwrap().values()[0..8]);
+    eprintln!(
+        "{:?}",
+        &multiverse.universe(&UniverseId::new(1).unwrap()).cloned().unwrap_or_default().values()
+            [0..8]
+    );
 }
 
 fn resolve_executors(output_pipeline: &mut Pipeline, show: &Show) {
@@ -32,16 +36,13 @@ fn resolve_cue(cue: &Cue, output_pipeline: &mut Pipeline, show: &Show) {
 fn resolve_recipe(recipe: &Recipe, output_pipeline: &mut Pipeline, show: &Show) {
     match &recipe.content {
         RecipeContent::Preset(preset_id) => {
-            let Some(preset) = show.preset(preset_id) else {
-                log::warn!("Preset with id {preset_id} in RecipeCombination not found");
+            let Some(preset) = show.preset(*preset_id) else {
+                log::warn!("{preset_id} not found in recipe");
                 return;
             };
 
-            let Some(fixture_group) = show.fixture_group(&recipe.fixture_group_id) else {
-                log::warn!(
-                    "FixtureGroup with id {} in RecipeCombination not found",
-                    recipe.fixture_group_id
-                );
+            let Some(fixture_group) = show.fixture_group(recipe.fixture_group_id) else {
+                log::warn!("fixture group '{}' not found in recipe", recipe.fixture_group_id);
                 return;
             };
 

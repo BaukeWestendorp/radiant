@@ -35,7 +35,7 @@ impl Executor {
     /// Gets a reference to the [Sequence] this executor is linked to.
     pub fn sequence<'a>(&self, show: &'a Show) -> Option<&'a Sequence> {
         let sequence_id = self.sequence_id?;
-        show.sequence(&sequence_id).or_else(move || {
+        show.sequence(sequence_id).or_else(move || {
             log::warn!("Sequence with id {} not found", sequence_id);
             None
         })

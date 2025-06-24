@@ -45,6 +45,42 @@ macro_rules! define_preset {
         )+
 
         $(
+            impl<'a> From<&'a mut $name> for &'a mut AnyPreset {
+                fn from(preset: &'a mut $name) -> Self {
+                    // SAFETY: This is safe because AnyPreset contains the same variants
+                    //         as AnyPresetId, and we're just getting a mutable reference to the
+                    //         variant that was created with From<$name> for AnyPreset
+                    unsafe {
+                        let any_preset = (preset as *mut $name).cast::<AnyPreset>();
+                        &mut *any_preset
+                    }
+                }
+            }
+        )+
+
+        $(
+            impl<'a> TryFrom<&'a mut AnyPreset> for &'a mut $name {
+                type Error = ();
+
+                fn try_from(any_preset: &'a mut AnyPreset) -> Result<Self, Self::Error> {
+                    #[allow(unreachable_patterns)]
+                    match any_preset {
+                        AnyPreset::$any_name(preset) => Ok(preset),
+                        _ => Err(()),
+                    }
+                }
+            }
+        )+
+
+        $(
+            impl From<$name> for AnyPresetId {
+                fn from(preset: $name) -> Self {
+                    AnyPresetId::$any_name(preset.id)
+                }
+            }
+        )+
+
+        $(
             impl TryFrom<AnyPresetId> for $id {
                 type Error = ();
 

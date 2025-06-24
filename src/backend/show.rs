@@ -34,9 +34,20 @@ impl Show {
         self.path.as_ref()
     }
 
+    pub fn patch(&self) -> &Patch {
+        &self.patch
+    }
     /// Gets a [FixtureGroup].
-    pub fn fixture_group(&self, id: &FixtureGroupId) -> Option<&FixtureGroup> {
-        self.fixture_groups.get(id)
+    pub fn fixture_group(&self, id: impl Into<FixtureGroupId>) -> Option<&FixtureGroup> {
+        self.fixture_groups.get(&id.into())
+    }
+
+    /// Gets a mutable [FixtureGroup].
+    pub fn fixture_group_mut(
+        &mut self,
+        id: impl Into<FixtureGroupId>,
+    ) -> Option<&mut FixtureGroup> {
+        self.fixture_groups.get_mut(&id.into())
     }
 
     /// Gets an iterator all [FixtureGroup]s.
@@ -45,8 +56,13 @@ impl Show {
     }
 
     /// Gets an [Executor].
-    pub fn executor(&self, id: &ExecutorId) -> Option<&Executor> {
-        self.executors.get(id)
+    pub fn executor(&self, id: impl Into<ExecutorId>) -> Option<&Executor> {
+        self.executors.get(&id.into())
+    }
+
+    /// Gets a mutable [Executor].
+    pub fn executor_mut(&mut self, id: impl Into<ExecutorId>) -> Option<&mut Executor> {
+        self.executors.get_mut(&id.into())
     }
 
     /// Gets an iterator all [Executor]s.
@@ -55,8 +71,13 @@ impl Show {
     }
 
     /// Gets a [Sequence].
-    pub fn sequence(&self, id: &SequenceId) -> Option<&Sequence> {
-        self.sequences.get(id)
+    pub fn sequence(&self, id: impl Into<SequenceId>) -> Option<&Sequence> {
+        self.sequences.get(&id.into())
+    }
+
+    /// Gets a mutable [Sequence].
+    pub fn sequence_mut(&mut self, id: impl Into<SequenceId>) -> Option<&mut Sequence> {
+        self.sequences.get_mut(&id.into())
     }
 
     /// Gets an iterator all [Sequence]s.
@@ -65,8 +86,13 @@ impl Show {
     }
 
     /// Gets a [Cue].
-    pub fn cue(&self, id: &CueId) -> Option<&Cue> {
-        self.cues.get(id)
+    pub fn cue(&self, id: impl Into<CueId>) -> Option<&Cue> {
+        self.cues.get(&id.into())
+    }
+
+    /// Gets a mutable [Cue].
+    pub fn cue_mut(&mut self, id: impl Into<CueId>) -> Option<&mut Cue> {
+        self.cues.get_mut(&id.into())
     }
 
     /// Gets an iterator all [Cue]s.
@@ -75,9 +101,16 @@ impl Show {
     }
 
     /// Gets any kind of preset from it's corresponding id.
-    pub fn preset(&self, preset_id: &AnyPresetId) -> Option<&AnyPreset> {
-        match preset_id {
-            AnyPresetId::Dimmer(id) => Some(self.dimmer_presets.get(id)?.into()),
+    pub fn preset(&self, preset_id: impl Into<AnyPresetId>) -> Option<&AnyPreset> {
+        match preset_id.into() {
+            AnyPresetId::Dimmer(id) => Some(self.dimmer_presets.get(&id)?.into()),
+        }
+    }
+
+    /// Gets any kind of preset from it's corresponding id as mutable.
+    pub fn preset_mut(&mut self, preset_id: impl Into<AnyPresetId>) -> Option<&mut AnyPreset> {
+        match preset_id.into() {
+            AnyPresetId::Dimmer(id) => Some(self.dimmer_presets.get_mut(&id)?.into()),
         }
     }
 }
