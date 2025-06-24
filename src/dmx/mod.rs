@@ -587,7 +587,7 @@ impl Multiverse {
     /// let address = dmx::Address::new(id, dmx::Channel::new(1).unwrap());
     /// multiverse.set_value(&address, dmx::Value(128));
     ///
-    /// assert_eq!(multiverse.get_value(&address), Some(&dmx::Value(128)));
+    /// assert_eq!(multiverse.get_value(&address), dmx::Value(128));
     /// ```
     pub fn get_value(&self, address: &Address) -> Value {
         let Some(universe) = self.universe(&address.universe) else {

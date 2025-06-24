@@ -3,7 +3,6 @@ use std::sync::{Arc, Mutex};
 use eyre::Context;
 
 use crate::backend::engine::{DMX_OUTPUT_UPDATE_INTERVAL, Engine};
-use crate::cmd;
 use crate::error::Result;
 use crate::showfile::Showfile;
 
@@ -26,9 +25,6 @@ pub fn run(showfile: Showfile) -> Result<()> {
     Ok(())
 }
 
-fn handle_user_interaction(engine: Arc<Mutex<Engine>>) {
-    engine.lock().unwrap().exec_cmd(cmd!("create cue 0")).unwrap();
-    engine.lock().unwrap().exec_cmd(cmd!("create sequence 0")).unwrap();
-    engine.lock().unwrap().exec_cmd(cmd!("insert sequence 0 cues cue 0")).unwrap();
+fn handle_user_interaction(_engine: Arc<Mutex<Engine>>) {
     todo!("handle user interaction");
 }
