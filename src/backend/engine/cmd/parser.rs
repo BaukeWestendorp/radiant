@@ -130,7 +130,7 @@ impl<'src> Parser<'src> {
                         "set" => match self.parse_one_of_idents(&[
                             "activation_mode",
                             "termination_mode",
-                            "sequence_id",
+                            "sequence",
                         ])? {
                             "activation_mode" => ExecutorCommand::SetActivationMode {
                                 mode: ActivationMode::from_str(self.parse_string()?)?,
@@ -138,8 +138,11 @@ impl<'src> Parser<'src> {
                             "termination_mode" => ExecutorCommand::SetTerminationMode {
                                 mode: TerminationMode::from_str(self.parse_string()?)?,
                             },
-                            "sequence_id" => ExecutorCommand::SetSequenceId {
-                                sequence_id: SequenceId::from(self.parse_positive_int()?),
+                            "sequence" => ExecutorCommand::SetSequence {
+                                sequence_id: self
+                                    .parse_object_id()?
+                                    .try_into()
+                                    .wrap_err("failed to parse sequence id")?,
                             },
                             _ => unreachable!(),
                         },
@@ -582,8 +585,8 @@ mod tests {
     #[test]
     fn parse_executor_set_sequence_id() {
         assert_eq!(
-            cmd!(r#"executor 1 set sequence_id 2"#),
-            Command::Executor(1.into(), ExecutorCommand::SetSequenceId { sequence_id: 2.into() })
+            cmd!(r#"executor 1 set sequence sequence 2"#),
+            Command::Executor(1.into(), ExecutorCommand::SetSequence { sequence_id: 2.into() })
         );
     }
 

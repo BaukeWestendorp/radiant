@@ -3,7 +3,7 @@ use std::{path::Path, str::FromStr};
 use neo_radiant::{
     backend::{
         engine::Engine,
-        object::{AnyPreset, CueId, DimmerPresetId},
+        object::{ActivationMode, AnyPreset, CueId, DimmerPresetId, SequenceId, TerminationMode},
         patch::fixture::{DmxMode, FixtureId},
     },
     cmd, dmx,
@@ -407,6 +407,44 @@ fn fixture_group_clear() {
     engine.exec_cmd(cmd!(r#"fixture_group 1 clear"#)).unwrap();
     assert!(!engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(2)));
     assert!(!engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(3)));
+}
+
+#[test]
+fn executor_set_activation_mode_instant() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create executor 1"#)).unwrap();
+    assert_eq!(engine.show().executor(1).unwrap().activation_mode(), ActivationMode::default());
+    engine.exec_cmd(cmd!(r#"executor 1 set activation_mode "instant""#)).unwrap();
+    assert_eq!(engine.show().executor(1).unwrap().activation_mode(), ActivationMode::Instant);
+}
+
+#[test]
+fn executor_set_termination_mode_never() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create executor 1"#)).unwrap();
+    assert_eq!(engine.show().executor(1).unwrap().termination_mode(), TerminationMode::default());
+    engine.exec_cmd(cmd!(r#"executor 1 set termination_mode "never""#)).unwrap();
+    assert_eq!(engine.show().executor(1).unwrap().termination_mode(), TerminationMode::Never);
+}
+
+#[test]
+fn executor_set_sequence() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create executor 1"#)).unwrap();
+    assert_eq!(engine.show().executor(1).unwrap().sequence_id(), None);
+    engine.exec_cmd(cmd!(r#"executor 1 set sequence sequence 1"#)).unwrap();
+    assert_eq!(engine.show().executor(1).unwrap().sequence_id(), Some(&SequenceId(1)));
+}
+
+#[test]
+fn executor_clear() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create executor 1"#)).unwrap();
+    assert_eq!(engine.show().executor(1).unwrap().sequence_id(), None);
+    engine.exec_cmd(cmd!(r#"executor 1 set sequence sequence 1"#)).unwrap();
+    assert_eq!(engine.show().executor(1).unwrap().sequence_id(), Some(&SequenceId(1)));
+    engine.exec_cmd(cmd!(r#"executor 1 clear"#)).unwrap();
+    assert_eq!(engine.show().executor(1).unwrap().sequence_id(), None);
 }
 
 #[test]

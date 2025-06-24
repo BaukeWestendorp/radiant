@@ -5,8 +5,8 @@ use std::time::Duration;
 use eyre::{Context, ContextCompat};
 
 use crate::backend::engine::cmd::{
-    Command, FixtureGroupCommand, PatchCommand, ProgrammerCommand, ProgrammerSetCommand,
-    SequenceCommand,
+    Command, ExecutorCommand, FixtureGroupCommand, PatchCommand, ProgrammerCommand,
+    ProgrammerSetCommand, SequenceCommand,
 };
 use crate::backend::object::{
     AnyObjectId, AnyPreset, AnyPresetId, Cue, DimmerPreset, Executor, FixtureGroup, PresetContent,
@@ -304,7 +304,30 @@ impl Engine {
                 };
                 fixture_group.fixtures.clear();
             }
-            Command::Executor(_id, _executor_command) => todo!(),
+            Command::Executor(id, ExecutorCommand::SetActivationMode { mode }) => {
+                let Some(executor) = self.show.executors.get_mut(&id) else {
+                    eyre::bail!("executor with id '{id}' not found");
+                };
+                executor.activation_mode = mode;
+            }
+            Command::Executor(id, ExecutorCommand::SetTerminationMode { mode }) => {
+                let Some(executor) = self.show.executors.get_mut(&id) else {
+                    eyre::bail!("executor with id '{id}' not found");
+                };
+                executor.termination_mode = mode;
+            }
+            Command::Executor(id, ExecutorCommand::SetSequence { sequence_id }) => {
+                let Some(executor) = self.show.executors.get_mut(&id) else {
+                    eyre::bail!("executor with id '{id}' not found");
+                };
+                executor.sequence_id = Some(sequence_id);
+            }
+            Command::Executor(id, ExecutorCommand::Clear) => {
+                let Some(executor) = self.show.executors.get_mut(&id) else {
+                    eyre::bail!("executor with id '{id}' not found");
+                };
+                executor.sequence_id = None;
+            }
             Command::Sequence(id, SequenceCommand::Add { cue_id }) => {
                 let Some(sequence) = self.show.sequences.get_mut(&id) else {
                     eyre::bail!("sequence with id '{id}' not found");

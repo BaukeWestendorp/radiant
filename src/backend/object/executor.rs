@@ -10,9 +10,9 @@ crate::define_object_id!(ExecutorId);
 pub struct Executor {
     id: ExecutorId,
     pub name: String,
-    pub activation_mode: ActivationMode,
-    pub termination_mode: TerminationMode,
-    pub sequence_id: Option<SequenceId>,
+    pub(in crate::backend) activation_mode: ActivationMode,
+    pub(in crate::backend) termination_mode: TerminationMode,
+    pub(in crate::backend) sequence_id: Option<SequenceId>,
     active_cue_index: Option<usize>,
 }
 
@@ -30,6 +30,18 @@ impl Executor {
 
     pub fn id(&self) -> ExecutorId {
         self.id
+    }
+
+    pub fn activation_mode(&self) -> ActivationMode {
+        self.activation_mode
+    }
+
+    pub fn termination_mode(&self) -> TerminationMode {
+        self.termination_mode
+    }
+
+    pub fn sequence_id(&self) -> Option<&SequenceId> {
+        self.sequence_id.as_ref()
     }
 
     /// Gets a reference to the [Sequence] this executor is linked to.

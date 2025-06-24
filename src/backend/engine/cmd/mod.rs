@@ -85,7 +85,7 @@ pub enum FixtureGroupCommand {
 pub enum ExecutorCommand {
     SetActivationMode { mode: ActivationMode },
     SetTerminationMode { mode: TerminationMode },
-    SetSequenceId { sequence_id: SequenceId },
+    SetSequence { sequence_id: SequenceId },
     Clear,
 }
 
