@@ -3,7 +3,7 @@ use std::{path::Path, str::FromStr};
 use neo_radiant::{
     backend::{
         engine::Engine,
-        object::{AnyPreset, DimmerPresetId},
+        object::{AnyPreset, CueId, DimmerPresetId},
         patch::fixture::{DmxMode, FixtureId},
     },
     cmd, dmx,
@@ -407,4 +407,67 @@ fn fixture_group_clear() {
     engine.exec_cmd(cmd!(r#"fixture_group 1 clear"#)).unwrap();
     assert!(!engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(2)));
     assert!(!engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(3)));
+}
+
+#[test]
+fn sequence_add() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create sequence 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"sequence 1 add cue 2"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"sequence 1 add cue 3"#)).unwrap();
+    assert!(!engine.show().sequence(1).unwrap().cues().contains(&CueId(1)));
+    assert!(engine.show().sequence(1).unwrap().cues().contains(&CueId(2)));
+    assert!(engine.show().sequence(1).unwrap().cues().contains(&CueId(3)));
+    assert!(!engine.show().sequence(1).unwrap().cues().contains(&CueId(4)));
+}
+
+#[test]
+fn sequence_replace_at() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create sequence 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"sequence 1 add cue 2"#)).unwrap();
+    assert!(engine.show().sequence(1).unwrap().cues().contains(&CueId(2)));
+    assert!(!engine.show().sequence(1).unwrap().cues().contains(&CueId(4)));
+    engine.exec_cmd(cmd!(r#"sequence 1 replace_at 0 cue 4"#)).unwrap();
+    assert!(!engine.show().sequence(1).unwrap().cues().contains(&CueId(2)));
+    assert!(engine.show().sequence(1).unwrap().cues().contains(&CueId(4)));
+}
+
+#[test]
+fn sequence_remove() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create sequence 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"sequence 1 add cue 2"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"sequence 1 add cue 3"#)).unwrap();
+    assert!(engine.show().sequence(1).unwrap().cues().contains(&CueId(2)));
+    assert!(engine.show().sequence(1).unwrap().cues().contains(&CueId(3)));
+    engine.exec_cmd(cmd!(r#"sequence 1 remove cue 2"#)).unwrap();
+    assert!(!engine.show().sequence(1).unwrap().cues().contains(&CueId(2)));
+    assert!(engine.show().sequence(1).unwrap().cues().contains(&CueId(3)));
+}
+
+#[test]
+fn sequence_remove_at() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create sequence 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"sequence 1 add cue 2"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"sequence 1 add cue 3"#)).unwrap();
+    assert!(engine.show().sequence(1).unwrap().cues().contains(&CueId(2)));
+    assert!(engine.show().sequence(1).unwrap().cues().contains(&CueId(3)));
+    engine.exec_cmd(cmd!(r#"sequence 1 remove_at 1"#)).unwrap();
+    assert!(engine.show().sequence(1).unwrap().cues().contains(&CueId(2)));
+    assert!(!engine.show().sequence(1).unwrap().cues().contains(&CueId(3)));
+}
+
+#[test]
+fn sequence_clear() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create sequence 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"sequence 1 add cue 2"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"sequence 1 add cue 3"#)).unwrap();
+    assert!(engine.show().sequence(1).unwrap().cues().contains(&CueId(2)));
+    assert!(engine.show().sequence(1).unwrap().cues().contains(&CueId(3)));
+    engine.exec_cmd(cmd!(r#"sequence 1 clear"#)).unwrap();
+    assert!(!engine.show().sequence(1).unwrap().cues().contains(&CueId(2)));
+    assert!(!engine.show().sequence(1).unwrap().cues().contains(&CueId(3)));
 }

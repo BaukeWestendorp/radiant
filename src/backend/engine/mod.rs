@@ -6,6 +6,7 @@ use eyre::{Context, ContextCompat};
 
 use crate::backend::engine::cmd::{
     Command, FixtureGroupCommand, PatchCommand, ProgrammerCommand, ProgrammerSetCommand,
+    SequenceCommand,
 };
 use crate::backend::object::{
     AnyObjectId, AnyPreset, AnyPresetId, Cue, DimmerPreset, Executor, FixtureGroup, PresetContent,
@@ -304,7 +305,42 @@ impl Engine {
                 fixture_group.fixtures.clear();
             }
             Command::Executor(_id, _executor_command) => todo!(),
-            Command::Sequence(_id, _sequence_command) => todo!(),
+            Command::Sequence(id, SequenceCommand::Add { cue_id }) => {
+                let Some(sequence) = self.show.sequences.get_mut(&id) else {
+                    eyre::bail!("sequence with id '{id}' not found");
+                };
+                sequence.cues.push(cue_id);
+            }
+            Command::Sequence(id, SequenceCommand::ReplaceAt { index, cue_id }) => {
+                let Some(sequence) = self.show.sequences.get_mut(&id) else {
+                    eyre::bail!("sequence with id '{id}' not found");
+                };
+                let Some(cue_at_index) = sequence.cues.get_mut(index) else {
+                    eyre::bail!(
+                        "index '{index}' is out of bounds for fixture_group '{id}' with length {}",
+                        sequence.len()
+                    );
+                };
+                *cue_at_index = cue_id;
+            }
+            Command::Sequence(id, SequenceCommand::Remove { cue_id }) => {
+                let Some(sequence) = self.show.sequences.get_mut(&id) else {
+                    eyre::bail!("sequence with id '{id}' not found");
+                };
+                sequence.cues.retain(|cid| *cid != cue_id);
+            }
+            Command::Sequence(id, SequenceCommand::RemoveAt { index }) => {
+                let Some(sequence) = self.show.sequences.get_mut(&id) else {
+                    eyre::bail!("sequence with id '{id}' not found");
+                };
+                sequence.cues.remove(index);
+            }
+            Command::Sequence(id, SequenceCommand::Clear) => {
+                let Some(sequence) = self.show.sequences.get_mut(&id) else {
+                    eyre::bail!("sequence with id '{id}' not found");
+                };
+                sequence.cues.clear();
+            }
             Command::Cue(_id, _cue_command) => todo!(),
             Command::Preset(_id, _preset_command) => todo!(),
         }

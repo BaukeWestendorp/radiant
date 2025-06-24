@@ -63,7 +63,8 @@ impl Executor {
     /// Gets a reference to the [Cue] that is currently activated by the executor.
     pub fn get_active_cue<'a>(&self, show: &'a Show) -> Option<&'a Cue> {
         let index = self.active_cue_index?;
-        self.sequence(show)?.cue(index)
+        let cue_id = self.sequence(show)?.cues().get(index)?;
+        show.cue(*cue_id)
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::backend::object::Cue;
+use crate::backend::object::CueId;
 
 crate::define_object_id!(SequenceId);
 
@@ -7,7 +7,7 @@ crate::define_object_id!(SequenceId);
 pub struct Sequence {
     id: SequenceId,
     pub name: String,
-    pub cues: Vec<Cue>,
+    pub(in crate::backend) cues: Vec<CueId>,
 }
 
 impl Sequence {
@@ -27,7 +27,7 @@ impl Sequence {
         self.len() == 0
     }
 
-    pub fn cue(&self, index: usize) -> Option<&Cue> {
-        self.cues.get(index)
+    pub fn cues(&self) -> &[CueId] {
+        &self.cues
     }
 }
