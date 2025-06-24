@@ -345,3 +345,66 @@ fn rename_preset() {
     let AnyPreset::Dimmer(dimmer) = preset;
     assert_eq!(dimmer.name, "Other Name".to_string());
 }
+
+#[test]
+fn fixture_group_add() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create fixture_group 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"fixture_group 1 add 2"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"fixture_group 1 add 3"#)).unwrap();
+    assert!(!engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(1)));
+    assert!(engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(2)));
+    assert!(engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(3)));
+    assert!(!engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(4)));
+}
+
+#[test]
+fn fixture_group_replace_at() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create fixture_group 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"fixture_group 1 add 2"#)).unwrap();
+    assert!(engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(2)));
+    assert!(!engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(4)));
+    engine.exec_cmd(cmd!(r#"fixture_group 1 replace_at 0 4"#)).unwrap();
+    assert!(!engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(2)));
+    assert!(engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(4)));
+}
+
+#[test]
+fn fixture_group_remove() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create fixture_group 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"fixture_group 1 add 2"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"fixture_group 1 add 3"#)).unwrap();
+    assert!(engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(2)));
+    assert!(engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(3)));
+    engine.exec_cmd(cmd!(r#"fixture_group 1 remove 2"#)).unwrap();
+    assert!(!engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(2)));
+    assert!(engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(3)));
+}
+
+#[test]
+fn fixture_group_remove_at() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create fixture_group 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"fixture_group 1 add 2"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"fixture_group 1 add 3"#)).unwrap();
+    assert!(engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(2)));
+    assert!(engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(3)));
+    engine.exec_cmd(cmd!(r#"fixture_group 1 remove_at 1"#)).unwrap();
+    assert!(engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(2)));
+    assert!(!engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(3)));
+}
+
+#[test]
+fn fixture_group_clear() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create fixture_group 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"fixture_group 1 add 2"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"fixture_group 1 add 3"#)).unwrap();
+    assert!(engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(2)));
+    assert!(engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(3)));
+    engine.exec_cmd(cmd!(r#"fixture_group 1 clear"#)).unwrap();
+    assert!(!engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(2)));
+    assert!(!engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(3)));
+}

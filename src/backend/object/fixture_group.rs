@@ -7,7 +7,7 @@ crate::define_object_id!(FixtureGroupId);
 pub struct FixtureGroup {
     id: FixtureGroupId,
     pub name: String,
-    pub fixtures: Vec<FixtureId>,
+    pub(in crate::backend) fixtures: Vec<FixtureId>,
 }
 
 impl FixtureGroup {
@@ -17,6 +17,10 @@ impl FixtureGroup {
 
     pub fn id(&self) -> FixtureGroupId {
         self.id
+    }
+
+    pub fn fixtures(&self) -> &[FixtureId] {
+        &self.fixtures
     }
 
     pub fn len(&self) -> usize {

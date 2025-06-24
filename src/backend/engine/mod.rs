@@ -4,7 +4,9 @@ use std::time::Duration;
 
 use eyre::{Context, ContextCompat};
 
-use crate::backend::engine::cmd::{Command, PatchCommand, ProgrammerCommand, ProgrammerSetCommand};
+use crate::backend::engine::cmd::{
+    Command, FixtureGroupCommand, PatchCommand, ProgrammerCommand, ProgrammerSetCommand,
+};
 use crate::backend::object::{
     AnyObjectId, AnyPreset, AnyPresetId, Cue, DimmerPreset, Executor, FixtureGroup, PresetContent,
     Sequence,
@@ -265,7 +267,42 @@ impl Engine {
                     },
                 };
             }
-            Command::FixtureGroup(_id, _fixture_group_command) => todo!(),
+            Command::FixtureGroup(id, FixtureGroupCommand::Add { id: fixture_id }) => {
+                let Some(fixture_group) = self.show.fixture_groups.get_mut(&id) else {
+                    eyre::bail!("fixture_group with id '{id}' not found");
+                };
+                fixture_group.fixtures.push(fixture_id);
+            }
+            Command::FixtureGroup(id, FixtureGroupCommand::ReplaceAt { index, id: fixture_id }) => {
+                let Some(fixture_group) = self.show.fixture_groups.get_mut(&id) else {
+                    eyre::bail!("fixture_group with id '{id}' not found");
+                };
+                let Some(fixture_at_index) = fixture_group.fixtures.get_mut(index) else {
+                    eyre::bail!(
+                        "index '{index}' is out of bounds for fixture_group '{id}' with length {}",
+                        fixture_group.len()
+                    );
+                };
+                *fixture_at_index = fixture_id;
+            }
+            Command::FixtureGroup(id, FixtureGroupCommand::Remove { id: fixture_id }) => {
+                let Some(fixture_group) = self.show.fixture_groups.get_mut(&id) else {
+                    eyre::bail!("fixture_group with id '{id}' not found");
+                };
+                fixture_group.fixtures.retain(|fid| *fid != fixture_id);
+            }
+            Command::FixtureGroup(id, FixtureGroupCommand::RemoveAt { index }) => {
+                let Some(fixture_group) = self.show.fixture_groups.get_mut(&id) else {
+                    eyre::bail!("fixture_group with id '{id}' not found");
+                };
+                fixture_group.fixtures.remove(index);
+            }
+            Command::FixtureGroup(id, FixtureGroupCommand::Clear) => {
+                let Some(fixture_group) = self.show.fixture_groups.get_mut(&id) else {
+                    eyre::bail!("fixture_group with id '{id}' not found");
+                };
+                fixture_group.fixtures.clear();
+            }
             Command::Executor(_id, _executor_command) => todo!(),
             Command::Sequence(_id, _sequence_command) => todo!(),
             Command::Cue(_id, _cue_command) => todo!(),
