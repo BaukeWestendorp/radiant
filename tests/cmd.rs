@@ -3,7 +3,10 @@ use std::{path::Path, str::FromStr};
 use neo_radiant::{
     backend::{
         engine::Engine,
-        object::{ActivationMode, AnyPreset, CueId, DimmerPresetId, SequenceId, TerminationMode},
+        object::{
+            ActivationMode, AnyPreset, AnyPresetId, CueId, DimmerPresetId, Recipe, RecipeContent,
+            SequenceId, TerminationMode,
+        },
         patch::fixture::{DmxMode, FixtureId},
     },
     cmd, dmx,
@@ -405,8 +408,7 @@ fn fixture_group_clear() {
     assert!(engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(2)));
     assert!(engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(3)));
     engine.exec_cmd(cmd!(r#"fixture_group 1 clear"#)).unwrap();
-    assert!(!engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(2)));
-    assert!(!engine.show().fixture_group(1).unwrap().fixtures().contains(&FixtureId(3)));
+    assert!(engine.show().fixture_group(1).unwrap().fixtures().is_empty());
 }
 
 #[test]
@@ -506,6 +508,80 @@ fn sequence_clear() {
     assert!(engine.show().sequence(1).unwrap().cues().contains(&CueId(2)));
     assert!(engine.show().sequence(1).unwrap().cues().contains(&CueId(3)));
     engine.exec_cmd(cmd!(r#"sequence 1 clear"#)).unwrap();
-    assert!(!engine.show().sequence(1).unwrap().cues().contains(&CueId(2)));
-    assert!(!engine.show().sequence(1).unwrap().cues().contains(&CueId(3)));
+    assert!(engine.show().sequence(1).unwrap().cues().is_empty());
+}
+
+#[test]
+fn cue_add() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create cue 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"cue 1 add fixture_group 1 preset::dimmer 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"cue 1 add fixture_group 2 preset::dimmer 2"#)).unwrap();
+    assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
+        fixture_group_id: 1.into(),
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(1.into()))
+    }));
+    assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
+        fixture_group_id: 2.into(),
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(2.into()))
+    }));
+}
+
+#[test]
+fn cue_replace_at() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create cue 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"cue 1 add fixture_group 1 preset::dimmer 1"#)).unwrap();
+    assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
+        fixture_group_id: 1.into(),
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(1.into()))
+    }));
+    engine.exec_cmd(cmd!(r#"cue 1 replace_at 0 fixture_group 2 preset::dimmer 2"#)).unwrap();
+    assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
+        fixture_group_id: 2.into(),
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(2.into()))
+    }));
+}
+
+#[test]
+fn cue_remove_at() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create cue 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"cue 1 add fixture_group 1 preset::dimmer 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"cue 1 add fixture_group 2 preset::dimmer 2"#)).unwrap();
+    assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
+        fixture_group_id: 1.into(),
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(1.into()))
+    }));
+    assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
+        fixture_group_id: 2.into(),
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(2.into()))
+    }));
+    engine.exec_cmd(cmd!(r#"cue 1 remove_at 1"#)).unwrap();
+    assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
+        fixture_group_id: 1.into(),
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(1.into()))
+    }));
+    assert!(!engine.show().cue(1).unwrap().recipes().contains(&Recipe {
+        fixture_group_id: 2.into(),
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(2.into()))
+    }));
+}
+
+#[test]
+fn cue_clear() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create cue 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"cue 1 add fixture_group 1 preset::dimmer 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"cue 1 add fixture_group 2 preset::dimmer 2"#)).unwrap();
+    assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
+        fixture_group_id: 1.into(),
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(1.into()))
+    }));
+    assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
+        fixture_group_id: 2.into(),
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(2.into()))
+    }));
+    engine.exec_cmd(cmd!(r#"cue 1 clear"#)).unwrap();
+    assert!(engine.show().cue(1).unwrap().recipes().is_empty());
 }

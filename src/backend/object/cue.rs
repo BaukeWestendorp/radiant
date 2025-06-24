@@ -7,7 +7,7 @@ crate::define_object_id!(CueId);
 pub struct Cue {
     id: CueId,
     pub name: String,
-    pub recipes: Vec<Recipe>,
+    pub(in crate::backend) recipes: Vec<Recipe>,
 }
 
 impl Cue {
@@ -17,6 +17,10 @@ impl Cue {
 
     pub fn id(&self) -> CueId {
         self.id
+    }
+
+    pub fn recipes(&self) -> &[Recipe] {
+        &self.recipes
     }
 }
 

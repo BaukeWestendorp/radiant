@@ -5,7 +5,7 @@ use std::time::Duration;
 use eyre::{Context, ContextCompat};
 
 use crate::backend::engine::cmd::{
-    Command, ExecutorCommand, FixtureGroupCommand, PatchCommand, ProgrammerCommand,
+    Command, CueCommand, ExecutorCommand, FixtureGroupCommand, PatchCommand, ProgrammerCommand,
     ProgrammerSetCommand, SequenceCommand,
 };
 use crate::backend::object::{
@@ -302,7 +302,9 @@ impl Engine {
                 let Some(fixture_group) = self.show.fixture_groups.get_mut(&id) else {
                     eyre::bail!("fixture_group with id '{id}' not found");
                 };
+                dbg!(fixture_group.fixtures.len());
                 fixture_group.fixtures.clear();
+                dbg!(fixture_group.fixtures.len());
             }
             Command::Executor(id, ExecutorCommand::SetActivationMode { mode }) => {
                 let Some(executor) = self.show.executors.get_mut(&id) else {
@@ -340,7 +342,7 @@ impl Engine {
                 };
                 let Some(cue_at_index) = sequence.cues.get_mut(index) else {
                     eyre::bail!(
-                        "index '{index}' is out of bounds for fixture_group '{id}' with length {}",
+                        "index '{index}' is out of bounds for sequence '{id}' with length {}",
                         sequence.len()
                     );
                 };
@@ -364,8 +366,39 @@ impl Engine {
                 };
                 sequence.cues.clear();
             }
-            Command::Cue(_id, _cue_command) => todo!(),
-            Command::Preset(_id, _preset_command) => todo!(),
+            Command::Cue(id, CueCommand::Add { recipe }) => {
+                let Some(cue) = self.show.cues.get_mut(&id) else {
+                    eyre::bail!("cue with id '{id}' not found");
+                };
+                cue.recipes.push(recipe);
+            }
+            Command::Cue(id, CueCommand::ReplaceAt { index, recipe }) => {
+                let Some(cue) = self.show.cues.get_mut(&id) else {
+                    eyre::bail!("cue with id '{id}' not found");
+                };
+                let Some(recipe_at_index) = cue.recipes.get_mut(index) else {
+                    eyre::bail!(
+                        "index '{index}' is out of bounds for sequence '{id}' with length {}",
+                        cue.recipes.len()
+                    );
+                };
+                *recipe_at_index = recipe;
+            }
+            Command::Cue(id, CueCommand::RemoveAt { index }) => {
+                let Some(cue) = self.show.cues.get_mut(&id) else {
+                    eyre::bail!("cue with id '{id}' not found");
+                };
+                cue.recipes.remove(index);
+            }
+            Command::Cue(id, CueCommand::Clear) => {
+                let Some(cue) = self.show.cues.get_mut(&id) else {
+                    eyre::bail!("cue with id '{id}' not found");
+                };
+                cue.recipes.clear();
+            }
+            Command::Preset(_id, _preset_command) => {
+                todo!()
+            }
         }
 
         Ok(())
