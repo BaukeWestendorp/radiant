@@ -1,4 +1,5 @@
-use crate::{error::Result, showfile::Showfile};
+use crate::error::Result;
+use crate::showfile::Showfile;
 
 mod gui;
 mod headless;

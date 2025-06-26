@@ -1,9 +1,6 @@
 use std::collections::HashMap;
 
-use crate::backend::patch::Patch;
-use crate::backend::patch::attr::Attribute;
-use crate::backend::patch::attr::AttributeValue;
-use crate::backend::patch::fixture::FixtureId;
+use crate::backend::{Attribute, AttributeValue, FixtureId, Patch};
 use crate::dmx::{self, Multiverse};
 
 /// The pipeline is used to converge all different kinds

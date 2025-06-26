@@ -1,4 +1,4 @@
-use crate::backend::object::CueId;
+use crate::backend::CueId;
 
 crate::define_object_id!(SequenceId);
 

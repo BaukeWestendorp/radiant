@@ -1,11 +1,11 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::collections::HashMap;
+use std::path::PathBuf;
 
-use crate::backend::object::{
+use super::pipeline::Pipeline;
+use crate::backend::{
     AnyPreset, AnyPresetId, Cue, CueId, DimmerPreset, DimmerPresetId, Executor, ExecutorId,
-    FixtureGroup, FixtureGroupId, Sequence, SequenceId,
+    FixtureGroup, FixtureGroupId, Patch, Sequence, SequenceId,
 };
-use crate::backend::patch::Patch;
-use crate::backend::pipeline::Pipeline;
 
 #[derive(Debug, Default)]
 pub struct Show {

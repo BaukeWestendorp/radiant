@@ -1,9 +1,9 @@
-use std::{collections::HashMap, str::FromStr};
+use std::collections::HashMap;
+use std::str::FromStr;
 
 use eyre::ContextCompat;
 
-use crate::backend::patch::attr::Attribute;
-use crate::backend::patch::attr::AttributeValue;
+use crate::backend::{Attribute, AttributeValue};
 use crate::dmx;
 use crate::error::Result;
 

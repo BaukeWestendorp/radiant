@@ -4,20 +4,16 @@ use std::time::Duration;
 
 use eyre::{Context, ContextCompat};
 
-use crate::backend::engine::cmd::{
-    Command, CueCommand, ExecutorCommand, FixtureGroupCommand, PatchCommand, PresetCommand,
-    ProgrammerCommand, ProgrammerSetCommand, SequenceCommand,
+use super::pipeline::Pipeline;
+use crate::backend::{
+    AnyObjectId, AnyPreset, AnyPresetId, Cue, DimmerPreset, DmxMode, Executor, Fixture,
+    FixtureGroup, FixtureId, PresetContent, Sequence, Show,
 };
-use crate::backend::object::{
-    AnyObjectId, AnyPreset, AnyPresetId, Cue, DimmerPreset, Executor, FixtureGroup, PresetContent,
-    Sequence,
-};
-use crate::backend::patch::fixture::{DmxMode, Fixture, FixtureId};
-use crate::backend::pipeline::Pipeline;
-use crate::backend::show::Show;
 use crate::dmx::{self, Multiverse};
 use crate::error::Result;
 use crate::showfile::{RELATIVE_GDTF_FILE_FOLDER_PATH, Showfile};
+
+pub use cmd::*;
 
 pub mod cmd;
 mod dmx_resolver;

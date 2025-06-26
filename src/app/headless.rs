@@ -1,8 +1,9 @@
 use std::sync::{Arc, Mutex};
+use std::thread;
 
 use eyre::Context;
 
-use crate::backend::engine::{DMX_OUTPUT_UPDATE_INTERVAL, Engine};
+use crate::backend::{DMX_OUTPUT_UPDATE_INTERVAL, Engine};
 use crate::error::Result;
 use crate::showfile::Showfile;
 
@@ -10,7 +11,7 @@ use crate::showfile::Showfile;
 pub fn run(showfile: Showfile) -> Result<()> {
     let engine = Arc::new(Mutex::new(Engine::new(showfile).wrap_err("failed to create engine")?));
 
-    let dmx_resolver_handle = std::thread::spawn({
+    let dmx_resolver_handle = thread::spawn({
         let engine = engine.clone();
         move || loop {
             engine.lock().unwrap().resolve_dmx();

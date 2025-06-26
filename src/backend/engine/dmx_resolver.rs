@@ -1,6 +1,6 @@
-use crate::backend::object::{AnyPreset, Cue, PresetContent, Recipe, RecipeContent};
-use crate::backend::{pipeline::Pipeline, show::Show};
-use crate::dmx::UniverseId;
+use crate::backend::pipeline::Pipeline;
+use crate::backend::{AnyPreset, Cue, PresetContent, Recipe, RecipeContent, Show};
+use crate::dmx;
 
 pub fn resolve(output_pipeline: &mut Pipeline, show: &mut Show) {
     // Resolve and merge executor outputs.
@@ -15,8 +15,11 @@ pub fn resolve(output_pipeline: &mut Pipeline, show: &mut Show) {
     let multiverse = output_pipeline.resolved_multiverse();
     eprintln!(
         "{:?}",
-        &multiverse.universe(&UniverseId::new(1).unwrap()).cloned().unwrap_or_default().values()
-            [0..8]
+        &multiverse
+            .universe(&dmx::UniverseId::new(1).unwrap())
+            .cloned()
+            .unwrap_or_default()
+            .values()[0..8]
     );
 }
 

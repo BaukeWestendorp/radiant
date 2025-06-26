@@ -1,18 +1,10 @@
 use std::str::FromStr;
 
-use crate::{
-    backend::{
-        object::{
-            ActivationMode, AnyObjectId, AnyPresetId, CueId, ExecutorId, FixtureGroupId, Recipe,
-            SequenceId, TerminationMode,
-        },
-        patch::{
-            attr::{Attribute, AttributeValue},
-            fixture::{DmxMode, FixtureId},
-        },
-    },
-    dmx,
+use crate::backend::{
+    ActivationMode, AnyObjectId, AnyPresetId, Attribute, AttributeValue, CueId, DmxMode,
+    ExecutorId, FixtureGroupId, FixtureId, Recipe, SequenceId, TerminationMode,
 };
+use crate::dmx;
 
 mod lexer;
 mod parser;

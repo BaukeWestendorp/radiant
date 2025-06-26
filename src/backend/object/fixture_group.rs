@@ -1,4 +1,4 @@
-use crate::backend::patch::fixture::FixtureId;
+use crate::backend::FixtureId;
 
 crate::define_object_id!(FixtureGroupId);
 

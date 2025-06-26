@@ -1,4 +1,4 @@
-use crate::backend::object::{AnyPresetId, FixtureGroupId};
+use crate::backend::{AnyPresetId, FixtureGroupId};
 
 crate::define_object_id!(CueId);
 
