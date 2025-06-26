@@ -275,7 +275,7 @@ impl<'src> Parser<'src> {
     }
 
     fn parse_fixture_id(&mut self) -> eyre::Result<FixtureId> {
-        Ok(FixtureId(self.parse_positive_int()? as u32))
+        Ok(FixtureId(self.parse_positive_int()?))
     }
 
     fn parse_attribute(&mut self) -> eyre::Result<Attribute> {
@@ -314,7 +314,7 @@ impl<'src> Parser<'src> {
         let next = self.expect_peek()?;
         eyre::ensure!(next == token, "unexpected token: '{next}'");
         self.next_token()?;
-        return Ok(());
+        Ok(())
     }
 
     fn parse_one_of_idents<'a>(&mut self, items: &[&'a str]) -> eyre::Result<&'a str> {
@@ -322,7 +322,7 @@ impl<'src> Parser<'src> {
         match items.iter().find(|item| next == &Token::Ident(item)) {
             Some(item) => {
                 self.next_token()?;
-                return Ok(item);
+                Ok(item)
             }
             None => eyre::bail!("expected one of {items:?}, found: '{next}'"),
         }
