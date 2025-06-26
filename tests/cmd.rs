@@ -4,10 +4,13 @@ use neo_radiant::{
     backend::{
         engine::Engine,
         object::{
-            ActivationMode, AnyPreset, AnyPresetId, CueId, DimmerPresetId, Recipe, RecipeContent,
-            SequenceId, TerminationMode,
+            ActivationMode, AnyPreset, AnyPresetId, CueId, DimmerPresetId, PresetContent, Recipe,
+            RecipeContent, SelectivePreset, SequenceId, TerminationMode,
         },
-        patch::fixture::{DmxMode, FixtureId},
+        patch::{
+            attr::{Attribute, AttributeValue},
+            fixture::{DmxMode, FixtureId},
+        },
     },
     cmd, dmx,
     showfile::Showfile,
@@ -584,4 +587,53 @@ fn cue_clear() {
     }));
     engine.exec_cmd(cmd!(r#"cue 1 clear"#)).unwrap();
     assert!(engine.show().cue(1).unwrap().recipes().is_empty());
+}
+
+#[test]
+fn preset_store() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create preset::dimmer 1 "Test Preset""#)).unwrap();
+
+    engine.exec_cmd(cmd!(r#"programmer set attribute 1 "Dimmer" 0.25"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer set attribute 2 "Dimmer" 0.50"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"preset::dimmer 1 store"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer clear"#)).unwrap();
+
+    assert_eq!(
+        engine.show().preset_dimmer(1).unwrap().content,
+        PresetContent::Selective({
+            let mut p = SelectivePreset::new();
+            p.set_attribute_value(1.into(), Attribute::Dimmer, AttributeValue::new(0.25));
+            p.set_attribute_value(2.into(), Attribute::Dimmer, AttributeValue::new(0.50));
+            p
+        })
+    );
+}
+
+#[test]
+fn preset_clear() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create preset::dimmer 1 "Test Preset""#)).unwrap();
+
+    engine.exec_cmd(cmd!(r#"programmer set attribute 1 "Dimmer" 0.25"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer set attribute 2 "Dimmer" 0.50"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"preset::dimmer 1 store"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer clear"#)).unwrap();
+
+    assert_eq!(
+        engine.show().preset_dimmer(1).unwrap().content,
+        PresetContent::Selective({
+            let mut p = SelectivePreset::new();
+            p.set_attribute_value(1.into(), Attribute::Dimmer, AttributeValue::new(0.25));
+            p.set_attribute_value(2.into(), Attribute::Dimmer, AttributeValue::new(0.50));
+            p
+        })
+    );
+
+    engine.exec_cmd(cmd!(r#"preset::dimmer 1 clear"#)).unwrap();
+
+    assert_eq!(
+        engine.show().preset_dimmer(1).unwrap().content,
+        PresetContent::Selective(SelectivePreset::new())
+    );
 }

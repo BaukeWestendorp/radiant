@@ -26,6 +26,8 @@ pub struct Pipeline {
     /// Once [Pipeline::resolve] has been called,
     /// all unresolved representations will be flushed into this [Multiverse].
     resolved_multiverse: Multiverse,
+    resolved_attribute_values: HashMap<(FixtureId, Attribute), AttributeValue>,
+    resolved_dmx_values: HashMap<dmx::Address, dmx::Value>,
 }
 
 impl Pipeline {
@@ -78,12 +80,14 @@ impl Pipeline {
                 self.resolved_multiverse.set_value(&address, value);
             }
         }
+        self.resolved_attribute_values = self.attribute_values.clone();
     }
 
     fn resolve_direct_dmx_values(&mut self) {
         for (address, value) in &self.dmx_values {
             self.resolved_multiverse.set_value(address, *value);
         }
+        self.resolved_dmx_values = self.dmx_values.clone();
     }
 
     /// Resolves all unresolved representations into the resolved [Multiverse].
@@ -95,9 +99,16 @@ impl Pipeline {
         self.resolve_direct_dmx_values();
     }
 
-    /// Gets the resolved [Multiverse]. This will not be cleared by [Pipeline::clear].
-    pub fn output_multiverse(&self) -> &Multiverse {
+    /// Gets the resolved [Multiverse]. This will not be cleared by [Pipeline::clear_unresolved].
+    pub fn resolved_multiverse(&self) -> &Multiverse {
         &self.resolved_multiverse
+    }
+
+    /// Gets the resolved [AttributeValue]s. This will not be cleared by [Pipeline::clear_unresolved].
+    ///
+    /// This function does not return defaults, just changed values.
+    pub fn resolved_attribute_values(&self) -> &HashMap<(FixtureId, Attribute), AttributeValue> {
+        &self.resolved_attribute_values
     }
 
     /// Merges all relevant, unresolved data from this [Pipeline] into another.

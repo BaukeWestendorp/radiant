@@ -5,8 +5,8 @@ use std::time::Duration;
 use eyre::{Context, ContextCompat};
 
 use crate::backend::engine::cmd::{
-    Command, CueCommand, ExecutorCommand, FixtureGroupCommand, PatchCommand, ProgrammerCommand,
-    ProgrammerSetCommand, SequenceCommand,
+    Command, CueCommand, ExecutorCommand, FixtureGroupCommand, PatchCommand, PresetCommand,
+    ProgrammerCommand, ProgrammerSetCommand, SequenceCommand,
 };
 use crate::backend::object::{
     AnyObjectId, AnyPreset, AnyPresetId, Cue, DimmerPreset, Executor, FixtureGroup, PresetContent,
@@ -82,7 +82,7 @@ impl Engine {
     }
 
     pub fn output_multiverse(&self) -> &Multiverse {
-        self.output_pipeline.output_multiverse()
+        self.output_pipeline.resolved_multiverse()
     }
 
     /// Execute a [Command] to interface with the backend.
@@ -396,8 +396,34 @@ impl Engine {
                 };
                 cue.recipes.clear();
             }
-            Command::Preset(_id, _preset_command) => {
-                todo!()
+            Command::Preset(id, PresetCommand::Store) => {
+                self.show.programmer.resolve(&self.show.patch);
+                let resolved_attribute_values =
+                    self.show().programmer.resolved_attribute_values().clone();
+                let Some(preset) = self.show.preset_mut(id) else {
+                    eyre::bail!("preset with id '{id}' not found");
+                };
+                for ((fid, attr), value) in resolved_attribute_values {
+                    match preset {
+                        AnyPreset::Dimmer(preset) => match &mut preset.content {
+                            PresetContent::Selective(selective_preset) => {
+                                selective_preset.set_attribute_value(fid, attr, value);
+                            }
+                        },
+                    }
+                }
+            }
+            Command::Preset(id, PresetCommand::Clear) => {
+                let Some(preset) = self.show.preset_mut(id) else {
+                    eyre::bail!("preset with id '{id}' not found");
+                };
+                match preset {
+                    AnyPreset::Dimmer(preset) => match &mut preset.content {
+                        PresetContent::Selective(selective_preset) => {
+                            selective_preset.clear();
+                        }
+                    },
+                }
             }
         }
 

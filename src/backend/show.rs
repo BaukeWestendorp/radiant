@@ -108,9 +108,16 @@ impl Show {
     }
 
     /// Gets any kind of preset from it's corresponding id as mutable.
-    pub fn preset_mut(&mut self, preset_id: impl Into<AnyPresetId>) -> Option<&mut AnyPreset> {
+    pub(in crate::backend) fn preset_mut(
+        &mut self,
+        preset_id: impl Into<AnyPresetId>,
+    ) -> Option<&mut AnyPreset> {
         match preset_id.into() {
             AnyPresetId::Dimmer(id) => Some(self.dimmer_presets.get_mut(&id)?.into()),
         }
+    }
+
+    pub fn preset_dimmer(&self, id: impl Into<DimmerPresetId>) -> Option<&DimmerPreset> {
+        self.dimmer_presets.get(&id.into())
     }
 }

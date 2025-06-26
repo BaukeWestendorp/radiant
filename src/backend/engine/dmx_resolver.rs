@@ -12,7 +12,7 @@ pub fn resolve(output_pipeline: &mut Pipeline, show: &mut Show) {
     // Resolve output pipeline.
     resolve_output_pipeline(output_pipeline, show);
 
-    let multiverse = output_pipeline.output_multiverse();
+    let multiverse = output_pipeline.resolved_multiverse();
     eprintln!(
         "{:?}",
         &multiverse.universe(&UniverseId::new(1).unwrap()).cloned().unwrap_or_default().values()

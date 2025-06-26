@@ -161,6 +161,10 @@ pub struct SelectivePreset {
 }
 
 impl SelectivePreset {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn get_attribute_values(
         &self,
     ) -> impl IntoIterator<Item = (&(FixtureId, Attribute), &AttributeValue)> {
@@ -174,6 +178,10 @@ impl SelectivePreset {
         value: AttributeValue,
     ) {
         self.attribute_values.insert((fixture_id, attribute), value);
+    }
+
+    pub fn clear(&mut self) {
+        self.attribute_values.clear();
     }
 }
 
