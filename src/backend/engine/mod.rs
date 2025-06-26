@@ -6,8 +6,8 @@ use eyre::{Context, ContextCompat};
 
 use super::pipeline::Pipeline;
 use crate::backend::{
-    AnyObjectId, AnyPreset, AnyPresetId, Cue, DimmerPreset, DmxMode, Executor, Fixture,
-    FixtureGroup, FixtureId, PresetContent, Sequence, Show,
+    AnyObjectId, AnyPreset, AnyPresetId, Cue, CueId, DimmerPreset, DmxMode, Executor, ExecutorId,
+    Fixture, FixtureGroup, FixtureGroupId, FixtureId, PresetContent, Sequence, SequenceId, Show,
 };
 use crate::dmx::{self, Multiverse};
 use crate::error::Result;
@@ -77,6 +77,7 @@ impl Engine {
         dmx_resolver::resolve(&mut self.output_pipeline, &mut self.show);
     }
 
+    /// Gets the resolved output [Multiverse].
     pub fn output_multiverse(&self) -> &Multiverse {
         self.output_pipeline.resolved_multiverse()
     }
@@ -84,7 +85,22 @@ impl Engine {
     /// Execute a [Command] to interface with the backend.
     pub fn exec_cmd(&mut self, cmd: Command) -> Result<()> {
         match cmd {
-            Command::Patch(PatchCommand::Add { id, address, mode, gdtf_file_name }) => {
+            Command::Patch(cmd) => self.exec_patch_command(cmd),
+            Command::Programmer(cmd) => self.exec_programmer_command(cmd),
+            Command::Create { id, name } => self.exec_create_command(id, name),
+            Command::Remove { id } => self.exec_remove_command(id),
+            Command::Rename { id, name } => self.exec_rename_command(id, name),
+            Command::FixtureGroup(id, cmd) => self.exec_fixture_group_command(id, cmd),
+            Command::Executor(id, cmd) => self.exec_executor_command(id, cmd),
+            Command::Sequence(id, cmd) => self.exec_sequence_command(id, cmd),
+            Command::Cue(id, cmd) => self.exec_cue_command(id, cmd),
+            Command::Preset(id, cmd) => self.exec_preset_command(id, cmd),
+        }
+    }
+
+    fn exec_patch_command(&mut self, cmd: PatchCommand) -> Result<()> {
+        match cmd {
+            PatchCommand::Add { id, address, gdtf_file_name, mode } => {
                 let gdtf_file_path = {
                     let showfile_path = match self.show.path() {
                         Some(path) => path,
@@ -114,12 +130,12 @@ impl Engine {
 
                 self.show.patch.fixtures.push(fixture);
             }
-            Command::Patch(PatchCommand::SetAddress { id, address }) => {
+            PatchCommand::SetAddress { id, address } => {
                 if let Some(fixture) = self.show.patch.fixture_mut(id) {
                     fixture.address = address;
                 }
             }
-            Command::Patch(PatchCommand::SetMode { id, mode }) => {
+            PatchCommand::SetMode { id, mode } => {
                 if let Some(fixture) = self.show.patch.fixture_mut(id) {
                     eyre::ensure!(
                         fixture.supported_dmx_modes().contains(&mode),
@@ -129,7 +145,7 @@ impl Engine {
                     fixture.dmx_mode = mode;
                 }
             }
-            Command::Patch(PatchCommand::SetGdtfFileName { id, name }) => {
+            PatchCommand::SetGdtfFileName { id, name } => {
                 eyre::ensure!(
                     self.show.patch.gdtf_file_names().contains(&name),
                     "the patch does not contain GDTF file with the name '{name}'"
@@ -139,141 +155,151 @@ impl Engine {
                     fixture.gdtf_file_name = name;
                 }
             }
-            Command::Patch(PatchCommand::Remove { id }) => {
+            PatchCommand::Remove { id } => {
                 self.show.patch.remove_fixture(id);
             }
-            Command::Programmer(ProgrammerCommand::Set(ProgrammerSetCommand::Direct {
-                address,
-                value,
-            })) => {
+        }
+
+        Ok(())
+    }
+
+    fn exec_programmer_command(&mut self, cmd: ProgrammerCommand) -> Result<()> {
+        match cmd {
+            ProgrammerCommand::Set(ProgrammerSetCommand::Direct { address, value }) => {
                 self.show.programmer.set_dmx_value(address, value);
             }
-            Command::Programmer(ProgrammerCommand::Set(ProgrammerSetCommand::Attribute {
-                id,
-                attribute,
-                value,
-            })) => {
+            ProgrammerCommand::Set(ProgrammerSetCommand::Attribute { id, attribute, value }) => {
                 self.show.programmer.set_attribute_value(id, attribute, value);
             }
-            Command::Programmer(ProgrammerCommand::Clear) => {
+            ProgrammerCommand::Clear => {
                 // NOTE: We have to completely renew the pipeline,
                 //       as clearing it only clears unresolved values.
                 self.show.programmer = Pipeline::new();
             }
-            Command::Create { id, name } => {
-                let show = &mut self.show;
-                match id {
-                    AnyObjectId::Executor(id) => {
-                        let mut executor = Executor::new(id);
-                        if let Some(name) = name {
-                            executor.name = name;
-                        }
+        }
 
-                        show.executors.insert(executor.id(), executor);
-                    }
-                    AnyObjectId::Sequence(id) => {
-                        let mut sequence = Sequence::new(id);
-                        if let Some(name) = name {
-                            sequence.name = name;
-                        }
+        Ok(())
+    }
 
-                        show.sequences.insert(sequence.id(), sequence);
-                    }
-                    AnyObjectId::FixtureGroup(id) => {
-                        let mut fixture_group = FixtureGroup::new(id);
-                        if let Some(name) = name {
-                            fixture_group.name = name;
-                        }
-
-                        show.fixture_groups.insert(fixture_group.id(), fixture_group);
-                    }
-                    AnyObjectId::Cue(id) => {
-                        let mut cue = Cue::new(id);
-                        if let Some(name) = name {
-                            cue.name = name;
-                        }
-
-                        show.cues.insert(cue.id(), cue);
-                    }
-                    AnyObjectId::Preset(id) => match id {
-                        AnyPresetId::Dimmer(id) => {
-                            let mut dimmer_preset = DimmerPreset::new(id, PresetContent::default());
-                            if let Some(name) = name {
-                                dimmer_preset.name = name;
-                            }
-
-                            show.dimmer_presets.insert(dimmer_preset.id(), dimmer_preset);
-                        }
-                    },
-                };
+    fn exec_create_command(&mut self, id: AnyObjectId, name: Option<String>) -> Result<()> {
+        let show = &mut self.show;
+        match id {
+            AnyObjectId::Executor(id) => {
+                let mut executor = Executor::new(id);
+                if let Some(name) = name {
+                    executor.name = name;
+                }
+                show.executors.insert(executor.id(), executor);
             }
-            Command::Remove { id } => {
-                match id {
-                    AnyObjectId::Executor(id) => {
-                        self.show.executors.remove(&id);
-                    }
-                    AnyObjectId::Sequence(id) => {
-                        self.show.sequences.remove(&id);
-                    }
-                    AnyObjectId::FixtureGroup(id) => {
-                        self.show.fixture_groups.remove(&id);
-                    }
-                    AnyObjectId::Cue(id) => {
-                        self.show.cues.remove(&id);
-                    }
-                    AnyObjectId::Preset(id) => match id {
-                        AnyPresetId::Dimmer(id) => {
-                            self.show.dimmer_presets.remove(&id);
-                        }
-                    },
-                };
+            AnyObjectId::Sequence(id) => {
+                let mut sequence = Sequence::new(id);
+                if let Some(name) = name {
+                    sequence.name = name;
+                }
+                show.sequences.insert(sequence.id(), sequence);
             }
-            Command::Rename { id, name } => {
-                match id {
-                    AnyObjectId::Executor(id) => {
-                        self.show
-                            .executor_mut(id)
-                            .wrap_err("executor with id '{id}' not found")?
-                            .name = name;
-                    }
-                    AnyObjectId::Sequence(id) => {
-                        self.show
-                            .sequence_mut(id)
-                            .wrap_err("sequence with id '{id}' not found")?
-                            .name = name;
-                    }
-                    AnyObjectId::FixtureGroup(id) => {
-                        self.show
-                            .fixture_group_mut(id)
-                            .wrap_err("fixture_group with id '{id}' not found")?
-                            .name = name;
-                    }
-                    AnyObjectId::Cue(id) => {
-                        self.show.cue_mut(id).wrap_err("cue with id '{id}' not found")?.name = name;
-                    }
-                    AnyObjectId::Preset(any_preset_id) => match any_preset_id {
-                        AnyPresetId::Dimmer(_) => {
-                            match self
-                                .show
-                                .preset_mut(any_preset_id)
-                                .wrap_err("preset with id '{id}' not found")?
-                            {
-                                AnyPreset::Dimmer(preset) => preset.name = name,
-                            }
-                        }
-                    },
-                };
+            AnyObjectId::FixtureGroup(id) => {
+                let mut fixture_group = FixtureGroup::new(id);
+                if let Some(name) = name {
+                    fixture_group.name = name;
+                }
+                show.fixture_groups.insert(fixture_group.id(), fixture_group);
             }
-            Command::FixtureGroup(id, FixtureGroupCommand::Add { id: fixture_id }) => {
-                let Some(fixture_group) = self.show.fixture_groups.get_mut(&id) else {
-                    eyre::bail!("fixture_group with id '{id}' not found");
-                };
+            AnyObjectId::Cue(id) => {
+                let mut cue = Cue::new(id);
+                if let Some(name) = name {
+                    cue.name = name;
+                }
+                show.cues.insert(cue.id(), cue);
+            }
+            AnyObjectId::Preset(id) => match id {
+                AnyPresetId::Dimmer(id) => {
+                    let mut dimmer_preset = DimmerPreset::new(id, PresetContent::default());
+                    if let Some(name) = name {
+                        dimmer_preset.name = name;
+                    }
+                    show.dimmer_presets.insert(dimmer_preset.id(), dimmer_preset);
+                }
+            },
+        }
+
+        Ok(())
+    }
+
+    fn exec_remove_command(&mut self, id: AnyObjectId) -> Result<()> {
+        match id {
+            AnyObjectId::Executor(id) => {
+                self.show.executors.remove(&id);
+            }
+            AnyObjectId::Sequence(id) => {
+                self.show.sequences.remove(&id);
+            }
+            AnyObjectId::FixtureGroup(id) => {
+                self.show.fixture_groups.remove(&id);
+            }
+            AnyObjectId::Cue(id) => {
+                self.show.cues.remove(&id);
+            }
+            AnyObjectId::Preset(id) => match id {
+                AnyPresetId::Dimmer(id) => {
+                    self.show.dimmer_presets.remove(&id);
+                }
+            },
+        }
+
+        Ok(())
+    }
+
+    fn exec_rename_command(&mut self, id: AnyObjectId, name: String) -> Result<()> {
+        match id {
+            AnyObjectId::Executor(id) => {
+                self.show.executor_mut(id).wrap_err("executor with id '{id}' not found")?.name =
+                    name;
+            }
+            AnyObjectId::Sequence(id) => {
+                self.show.sequence_mut(id).wrap_err("sequence with id '{id}' not found")?.name =
+                    name;
+            }
+            AnyObjectId::FixtureGroup(id) => {
+                self.show
+                    .fixture_group_mut(id)
+                    .wrap_err("fixture_group with id '{id}' not found")?
+                    .name = name;
+            }
+            AnyObjectId::Cue(id) => {
+                self.show.cue_mut(id).wrap_err("cue with id '{id}' not found")?.name = name;
+            }
+            AnyObjectId::Preset(any_preset_id) => match any_preset_id {
+                AnyPresetId::Dimmer(_) => {
+                    match self
+                        .show
+                        .preset_mut(any_preset_id)
+                        .wrap_err("preset with id '{id}' not found")?
+                    {
+                        AnyPreset::Dimmer(preset) => {
+                            preset.name = name;
+                        }
+                    }
+                }
+            },
+        }
+        Ok(())
+    }
+
+    fn exec_fixture_group_command(
+        &mut self,
+        id: FixtureGroupId,
+        cmd: FixtureGroupCommand,
+    ) -> Result<()> {
+        let Some(fixture_group) = self.show.fixture_groups.get_mut(&id) else {
+            eyre::bail!("fixture_group with id '{id}' not found");
+        };
+
+        match cmd {
+            FixtureGroupCommand::Add { id: fixture_id } => {
                 fixture_group.fixtures.push(fixture_id);
             }
-            Command::FixtureGroup(id, FixtureGroupCommand::ReplaceAt { index, id: fixture_id }) => {
-                let Some(fixture_group) = self.show.fixture_groups.get_mut(&id) else {
-                    eyre::bail!("fixture_group with id '{id}' not found");
-                };
+            FixtureGroupCommand::ReplaceAt { index, id: fixture_id } => {
                 let Some(fixture_at_index) = fixture_group.fixtures.get_mut(index) else {
                     eyre::bail!(
                         "index '{index}' is out of bounds for fixture_group '{id}' with length {}",
@@ -282,60 +308,53 @@ impl Engine {
                 };
                 *fixture_at_index = fixture_id;
             }
-            Command::FixtureGroup(id, FixtureGroupCommand::Remove { id: fixture_id }) => {
-                let Some(fixture_group) = self.show.fixture_groups.get_mut(&id) else {
-                    eyre::bail!("fixture_group with id '{id}' not found");
-                };
+            FixtureGroupCommand::Remove { id: fixture_id } => {
                 fixture_group.fixtures.retain(|fid| *fid != fixture_id);
             }
-            Command::FixtureGroup(id, FixtureGroupCommand::RemoveAt { index }) => {
-                let Some(fixture_group) = self.show.fixture_groups.get_mut(&id) else {
-                    eyre::bail!("fixture_group with id '{id}' not found");
-                };
+            FixtureGroupCommand::RemoveAt { index } => {
                 fixture_group.fixtures.remove(index);
             }
-            Command::FixtureGroup(id, FixtureGroupCommand::Clear) => {
-                let Some(fixture_group) = self.show.fixture_groups.get_mut(&id) else {
-                    eyre::bail!("fixture_group with id '{id}' not found");
-                };
-                dbg!(fixture_group.fixtures.len());
+            FixtureGroupCommand::Clear => {
                 fixture_group.fixtures.clear();
-                dbg!(fixture_group.fixtures.len());
             }
-            Command::Executor(id, ExecutorCommand::SetActivationMode { mode }) => {
-                let Some(executor) = self.show.executors.get_mut(&id) else {
-                    eyre::bail!("executor with id '{id}' not found");
-                };
+        }
+
+        Ok(())
+    }
+
+    fn exec_executor_command(&mut self, id: ExecutorId, cmd: ExecutorCommand) -> Result<()> {
+        let Some(executor) = self.show.executors.get_mut(&id) else {
+            eyre::bail!("executor with id '{id}' not found");
+        };
+
+        match cmd {
+            ExecutorCommand::SetActivationMode { mode } => {
                 executor.activation_mode = mode;
             }
-            Command::Executor(id, ExecutorCommand::SetTerminationMode { mode }) => {
-                let Some(executor) = self.show.executors.get_mut(&id) else {
-                    eyre::bail!("executor with id '{id}' not found");
-                };
+            ExecutorCommand::SetTerminationMode { mode } => {
                 executor.termination_mode = mode;
             }
-            Command::Executor(id, ExecutorCommand::SetSequence { sequence_id }) => {
-                let Some(executor) = self.show.executors.get_mut(&id) else {
-                    eyre::bail!("executor with id '{id}' not found");
-                };
+            ExecutorCommand::SetSequence { sequence_id } => {
                 executor.sequence_id = Some(sequence_id);
             }
-            Command::Executor(id, ExecutorCommand::Clear) => {
-                let Some(executor) = self.show.executors.get_mut(&id) else {
-                    eyre::bail!("executor with id '{id}' not found");
-                };
+            ExecutorCommand::Clear => {
                 executor.sequence_id = None;
             }
-            Command::Sequence(id, SequenceCommand::Add { cue_id }) => {
-                let Some(sequence) = self.show.sequences.get_mut(&id) else {
-                    eyre::bail!("sequence with id '{id}' not found");
-                };
+        }
+
+        Ok(())
+    }
+
+    fn exec_sequence_command(&mut self, id: SequenceId, cmd: SequenceCommand) -> Result<()> {
+        let Some(sequence) = self.show.sequences.get_mut(&id) else {
+            eyre::bail!("sequence with id '{id}' not found");
+        };
+
+        match cmd {
+            SequenceCommand::Add { cue_id } => {
                 sequence.cues.push(cue_id);
             }
-            Command::Sequence(id, SequenceCommand::ReplaceAt { index, cue_id }) => {
-                let Some(sequence) = self.show.sequences.get_mut(&id) else {
-                    eyre::bail!("sequence with id '{id}' not found");
-                };
+            SequenceCommand::ReplaceAt { index, cue_id } => {
                 let Some(cue_at_index) = sequence.cues.get_mut(index) else {
                     eyre::bail!(
                         "index '{index}' is out of bounds for sequence '{id}' with length {}",
@@ -344,34 +363,30 @@ impl Engine {
                 };
                 *cue_at_index = cue_id;
             }
-            Command::Sequence(id, SequenceCommand::Remove { cue_id }) => {
-                let Some(sequence) = self.show.sequences.get_mut(&id) else {
-                    eyre::bail!("sequence with id '{id}' not found");
-                };
+            SequenceCommand::Remove { cue_id } => {
                 sequence.cues.retain(|cid| *cid != cue_id);
             }
-            Command::Sequence(id, SequenceCommand::RemoveAt { index }) => {
-                let Some(sequence) = self.show.sequences.get_mut(&id) else {
-                    eyre::bail!("sequence with id '{id}' not found");
-                };
+            SequenceCommand::RemoveAt { index } => {
                 sequence.cues.remove(index);
             }
-            Command::Sequence(id, SequenceCommand::Clear) => {
-                let Some(sequence) = self.show.sequences.get_mut(&id) else {
-                    eyre::bail!("sequence with id '{id}' not found");
-                };
+            SequenceCommand::Clear => {
                 sequence.cues.clear();
             }
-            Command::Cue(id, CueCommand::Add { recipe }) => {
-                let Some(cue) = self.show.cues.get_mut(&id) else {
-                    eyre::bail!("cue with id '{id}' not found");
-                };
+        }
+
+        Ok(())
+    }
+
+    fn exec_cue_command(&mut self, id: CueId, cmd: CueCommand) -> Result<()> {
+        let Some(cue) = self.show.cues.get_mut(&id) else {
+            eyre::bail!("cue with id '{id}' not found");
+        };
+
+        match cmd {
+            CueCommand::Add { recipe } => {
                 cue.recipes.push(recipe);
             }
-            Command::Cue(id, CueCommand::ReplaceAt { index, recipe }) => {
-                let Some(cue) = self.show.cues.get_mut(&id) else {
-                    eyre::bail!("cue with id '{id}' not found");
-                };
+            CueCommand::ReplaceAt { index, recipe } => {
                 let Some(recipe_at_index) = cue.recipes.get_mut(index) else {
                     eyre::bail!(
                         "index '{index}' is out of bounds for sequence '{id}' with length {}",
@@ -380,19 +395,20 @@ impl Engine {
                 };
                 *recipe_at_index = recipe;
             }
-            Command::Cue(id, CueCommand::RemoveAt { index }) => {
-                let Some(cue) = self.show.cues.get_mut(&id) else {
-                    eyre::bail!("cue with id '{id}' not found");
-                };
+            CueCommand::RemoveAt { index } => {
                 cue.recipes.remove(index);
             }
-            Command::Cue(id, CueCommand::Clear) => {
-                let Some(cue) = self.show.cues.get_mut(&id) else {
-                    eyre::bail!("cue with id '{id}' not found");
-                };
+            CueCommand::Clear => {
                 cue.recipes.clear();
             }
-            Command::Preset(id, PresetCommand::Store) => {
+        }
+
+        Ok(())
+    }
+
+    fn exec_preset_command(&mut self, id: AnyPresetId, cmd: PresetCommand) -> Result<()> {
+        match cmd {
+            PresetCommand::Store => {
                 self.show.programmer.resolve(&self.show.patch);
                 let resolved_attribute_values =
                     self.show().programmer.resolved_attribute_values().clone();
@@ -409,7 +425,7 @@ impl Engine {
                     }
                 }
             }
-            Command::Preset(id, PresetCommand::Clear) => {
+            PresetCommand::Clear => {
                 let Some(preset) = self.show.preset_mut(id) else {
                     eyre::bail!("preset with id '{id}' not found");
                 };
