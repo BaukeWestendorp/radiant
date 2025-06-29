@@ -7,7 +7,7 @@ use crate::backend::{
     FixtureGroup, FixtureGroupId, Patch, Sequence, SequenceId,
 };
 
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct Show {
     path: Option<PathBuf>,
 

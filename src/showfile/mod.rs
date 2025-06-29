@@ -1,6 +1,9 @@
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
-use crate::{error::Result, showfile::patch::Patch};
+use crate::{backend::Command, error::Result, showfile::patch::Patch};
 
 pub mod patch;
 
@@ -9,6 +12,7 @@ pub const FILE_EXTENSION: &str = "rsf";
 
 pub const RELATIVE_GDTF_FILE_FOLDER_PATH: &str = "gdtf_files";
 pub const RELATIVE_PATCH_FILE_PATH: &str = "patch.yaml";
+pub const RELATIVE_INIT_COMMANDS_FILE_PATH: &str = "init_commands.rcs";
 
 /// Represents the showfile that is saved on disk.
 #[derive(Default)]
@@ -16,6 +20,7 @@ pub struct Showfile {
     path: Option<PathBuf>,
 
     pub patch: Patch,
+    pub init_commands: Vec<Command>,
 }
 
 impl Showfile {
@@ -46,8 +51,23 @@ impl Showfile {
 
     /// Loads a [Showfile] from an unzipped folder.
     pub fn load_folder(path: &Path) -> Result<Self> {
-        let patch = Patch::read_from_file(path.join(RELATIVE_PATCH_FILE_PATH))?;
-
-        Ok(Self { path: Some(path.to_path_buf()), patch })
+        let patch = Patch::read_from_file(&path.join(RELATIVE_PATCH_FILE_PATH))?;
+        let init_commands = load_init_commands(&path.join(RELATIVE_INIT_COMMANDS_FILE_PATH))?;
+        Ok(Self { path: Some(path.to_path_buf()), patch, init_commands })
     }
+}
+
+fn load_init_commands(path: &Path) -> Result<Vec<Command>> {
+    if !path.exists() {
+        return Ok(Vec::new());
+    }
+
+    let content = std::fs::read_to_string(path)?;
+    let commands = content
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| Command::from_str(line))
+        .collect::<Result<Vec<_>>>()?;
+
+    Ok(commands)
 }

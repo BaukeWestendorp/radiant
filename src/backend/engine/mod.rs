@@ -40,7 +40,7 @@ impl Engine {
 
         this.show.patch.gdtf_file_names = showfile.patch.gdtf_files.clone();
 
-        // Initialize show.
+        // Initialize patch.
         for fixture in &showfile.patch.fixtures {
             let id = FixtureId(fixture.id);
 
@@ -55,10 +55,15 @@ impl Engine {
                 .patch
                 .gdtf_files
                 .get(fixture.gdtf_file_index)
-                .wrap_err("failed to generate patch: Tried to reference GDTF file index that is out of bounds")?
+                .wrap_err("failed to generate patch: tried to reference GDTF file index that is out of bounds")?
                 .to_string();
 
             this.exec_cmd(Command::Patch(PatchCommand::Add { id, address, mode, gdtf_file_name }))?;
+        }
+
+        // Run init commands
+        for cmd in showfile.init_commands {
+            this.exec_cmd(cmd).context("failed to run init command")?;
         }
 
         this.output_pipeline.clear_unresolved();
@@ -70,9 +75,15 @@ impl Engine {
         &self.show
     }
 
-    /// Do a single iteration of DMX resolving. This should be called in a
-    /// loop externally, with a delay of [DMX_OUTPUT_UPDATE_INTERVAL].
+    /// Do a single iteration of DMX resolving and executor state management.
+    /// This should be called in a loop externally, with a delay of [DMX_OUTPUT_UPDATE_INTERVAL].
     pub fn resolve_dmx(&mut self) {
+        // FIXME: Cloning the whole show is extremely cursed.
+        let show = &self.show.clone();
+        for executor in self.show.executors.values_mut() {
+            executor.manage_state(&show);
+        }
+
         self.output_pipeline = Pipeline::default();
         dmx_resolver::resolve(&mut self.output_pipeline, &mut self.show);
     }

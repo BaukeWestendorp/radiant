@@ -21,3 +21,23 @@ fixtures:
     universe: 1
     channel: 4
     dmx_mode: Default
+  - id: 4
+    gdtf_file_index: 0
+    universe: 1
+    channel: 5
+    dmx_mode: Default
+  - id: 5
+    gdtf_file_index: 0
+    universe: 1
+    channel: 6
+    dmx_mode: Default
+  - id: 6
+    gdtf_file_index: 0
+    universe: 1
+    channel: 7
+    dmx_mode: Default
+  - id: 7
+    gdtf_file_index: 0
+    universe: 1
+    channel: 8
+    dmx_mode: Default

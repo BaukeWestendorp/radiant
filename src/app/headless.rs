@@ -27,5 +27,5 @@ pub fn run(showfile: Showfile) -> Result<()> {
 }
 
 fn handle_user_interaction(_engine: Arc<Mutex<Engine>>) {
-    todo!("handle user interaction");
+    // FIXME: Implement
 }

@@ -64,8 +64,8 @@ impl Executor {
 
         let Some(sequence) = self.sequence(show) else { return };
 
-        if index > sequence.len() {
-            self.active_cue_index = None;
+        if index > sequence.len() - 1 {
+            self.active_cue_index = Some(sequence.len() - 1);
         } else {
             self.active_cue_index = Some(index);
         }
@@ -76,6 +76,21 @@ impl Executor {
         let index = self.active_cue_index?;
         let cue_id = self.sequence(show)?.cues().get(index)?;
         show.cue(*cue_id)
+    }
+
+    pub fn manage_state(&mut self, show: &Show) {
+        match self.activation_mode {
+            ActivationMode::Instant => self.go(show),
+        }
+
+        match self.termination_mode {
+            TerminationMode::Never => {}
+        }
+    }
+
+    pub fn go(&mut self, show: &Show) {
+        let current_index = self.active_cue_index.unwrap_or_default();
+        self.set_active_cue_index(Some(current_index + 1), show);
     }
 }
 
