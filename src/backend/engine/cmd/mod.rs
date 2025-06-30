@@ -66,7 +66,7 @@ pub enum ProgrammerSetCommand {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum FixtureGroupCommand {
-    Add { id: FixtureId },
+    Add { ids: Vec<FixtureId> },
     ReplaceAt { index: usize, id: FixtureId },
     Remove { id: FixtureId },
     RemoveAt { index: usize },
@@ -83,7 +83,7 @@ pub enum ExecutorCommand {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum SequenceCommand {
-    Add { cue_id: CueId },
+    Add { cue_ids: Vec<CueId> },
     ReplaceAt { index: usize, cue_id: CueId },
     Remove { cue_id: CueId },
     RemoveAt { index: usize },
@@ -92,7 +92,7 @@ pub enum SequenceCommand {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum CueCommand {
-    Add { recipe: Recipe },
+    Add { recipes: Vec<Recipe> },
     ReplaceAt { index: usize, recipe: Recipe },
     RemoveAt { index: usize },
     Clear,

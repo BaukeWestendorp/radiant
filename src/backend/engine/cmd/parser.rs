@@ -11,6 +11,7 @@ use crate::backend::{
     SequenceCommand, SequenceId, TerminationMode,
 };
 use crate::dmx;
+use crate::error::Result;
 
 const ERRMSG_UNEXPECTED_EOL: &str = "unexpected End Of Line";
 
@@ -38,7 +39,7 @@ impl<'src> Parser<'src> {
         Self { lexer: Lexer::new(source).peekable() }
     }
 
-    pub fn parse(mut self) -> eyre::Result<Command> {
+    pub fn parse(mut self) -> Result<Command> {
         let command = match self.parse_one_of_idents(&[PATCH, PROGRAMMER, CREATE, REMOVE, RENAME]) {
             Ok(PATCH) => {
                 Command::Patch(match self.parse_one_of_idents(&["add", "set", "remove"])? {
@@ -108,7 +109,9 @@ impl<'src> Parser<'src> {
                         "remove_at",
                         "clear",
                     ])? {
-                        "add" => FixtureGroupCommand::Add { id: self.parse_fixture_id()? },
+                        "add" => FixtureGroupCommand::Add {
+                            ids: self.parse_list(|this| this.parse_fixture_id())?,
+                        },
                         "replace_at" => FixtureGroupCommand::ReplaceAt {
                             index: self.parse_index()?,
                             id: self.parse_fixture_id()?,
@@ -155,10 +158,11 @@ impl<'src> Parser<'src> {
                         "clear",
                     ])? {
                         "add" => SequenceCommand::Add {
-                            cue_id: self
-                                .parse_object_id()?
-                                .try_into()
-                                .wrap_err("failed to parse cue id")?,
+                            cue_ids: self.parse_list(|this| {
+                                this.parse_object_id()?
+                                    .try_into()
+                                    .wrap_err("failed to parse cue id")
+                            })?,
                         },
                         "replace_at" => SequenceCommand::ReplaceAt {
                             index: self.parse_index()?,
@@ -181,7 +185,9 @@ impl<'src> Parser<'src> {
                 AnyObjectId::Cue(id) => Command::Cue(
                     id,
                     match self.parse_one_of_idents(&["add", "replace_at", "remove_at", "clear"])? {
-                        "add" => CueCommand::Add { recipe: self.parse_recipe()? },
+                        "add" => CueCommand::Add {
+                            recipes: self.parse_list(|this| this.parse_recipe())?,
+                        },
                         "replace_at" => CueCommand::ReplaceAt {
                             index: self.parse_index()?,
                             recipe: self.parse_recipe()?,
@@ -211,28 +217,41 @@ impl<'src> Parser<'src> {
         Ok(command)
     }
 
-    fn parse_string(&mut self) -> eyre::Result<&str> {
+    fn parse_string(&mut self) -> Result<&str> {
         match self.next_token()? {
             Token::String(string) => Ok(string),
             other => eyre::bail!("expected a string, found: '{other}'"),
         }
     }
 
-    fn parse_int(&mut self) -> eyre::Result<i64> {
+    fn parse_int(&mut self) -> Result<i64> {
         match self.next_token()? {
             Token::Integer(int) => Ok(int),
             other => eyre::bail!("expected an integer, found: '{other}'"),
         }
     }
 
-    fn parse_float(&mut self) -> eyre::Result<f64> {
+    fn parse_float(&mut self) -> Result<f64> {
         match self.next_token()? {
             Token::Float(float) => Ok(float),
             other => eyre::bail!("expected a float, found: '{other}'"),
         }
     }
 
-    fn parse_object_id(&mut self) -> eyre::Result<AnyObjectId> {
+    fn parse_list<R, F: FnMut(&mut Self) -> Result<R>>(&mut self, mut f: F) -> Result<Vec<R>> {
+        let mut items = Vec::new();
+
+        loop {
+            let item = f(self)?;
+            items.push(item);
+
+            if self.parse_token(&Token::Comma).is_err() {
+                return Ok(items);
+            }
+        }
+    }
+
+    fn parse_object_id(&mut self) -> Result<AnyObjectId> {
         match self.parse_one_of_idents(&[FIXTURE_GROUP, EXECUTOR, SEQUENCE, CUE, PRESET])? {
             FIXTURE_GROUP => Ok(FixtureGroupId(self.parse_positive_int()?).into()),
             EXECUTOR => Ok(ExecutorId(self.parse_positive_int()?).into()),
@@ -254,7 +273,7 @@ impl<'src> Parser<'src> {
         }
     }
 
-    fn parse_recipe(&mut self) -> eyre::Result<Recipe> {
+    fn parse_recipe(&mut self) -> Result<Recipe> {
         Ok(Recipe {
             fixture_group_id: self
                 .parse_object_id()?
@@ -269,50 +288,50 @@ impl<'src> Parser<'src> {
         })
     }
 
-    fn parse_fixture_id(&mut self) -> eyre::Result<FixtureId> {
+    fn parse_fixture_id(&mut self) -> Result<FixtureId> {
         Ok(FixtureId(self.parse_positive_int()?))
     }
 
-    fn parse_attribute(&mut self) -> eyre::Result<Attribute> {
+    fn parse_attribute(&mut self) -> Result<Attribute> {
         let attribute = Attribute::from_str(self.parse_string()?).unwrap();
         Ok(attribute)
     }
 
-    fn parse_attribute_value(&mut self) -> eyre::Result<AttributeValue> {
+    fn parse_attribute_value(&mut self) -> Result<AttributeValue> {
         let attribute = AttributeValue::new(self.parse_float().wrap_err("")? as f32);
         Ok(attribute)
     }
 
-    fn parse_dmx_address(&mut self) -> eyre::Result<dmx::Address> {
+    fn parse_dmx_address(&mut self) -> Result<dmx::Address> {
         let str = self.parse_string()?;
         dmx::Address::from_str(str).wrap_err("failed to parse DMX address")
     }
 
-    fn parse_dmx_value(&mut self) -> eyre::Result<dmx::Value> {
+    fn parse_dmx_value(&mut self) -> Result<dmx::Value> {
         let n = self.parse_positive_int()?;
         let byte: u8 =
             n.try_into().wrap_err("dmx value should be in the range of 0..=255, found: '{n}'")?;
         Ok(dmx::Value(byte))
     }
 
-    fn parse_index(&mut self) -> eyre::Result<usize> {
+    fn parse_index(&mut self) -> Result<usize> {
         Ok(self.parse_positive_int()? as usize)
     }
 
-    fn parse_positive_int(&mut self) -> eyre::Result<u32> {
+    fn parse_positive_int(&mut self) -> Result<u32> {
         let n = self.parse_int()?;
         eyre::ensure!(n >= 0, "expected a positive integer, found: '{n}'");
         Ok(n as u32)
     }
 
-    fn parse_token(&mut self, token: &Token) -> eyre::Result<()> {
+    fn parse_token(&mut self, token: &Token) -> Result<()> {
         let next = self.expect_peek()?;
         eyre::ensure!(next == token, "unexpected token: '{next}'");
         self.next_token()?;
         Ok(())
     }
 
-    fn parse_one_of_idents<'a>(&mut self, items: &[&'a str]) -> eyre::Result<&'a str> {
+    fn parse_one_of_idents<'a>(&mut self, items: &[&'a str]) -> Result<&'a str> {
         let next = self.expect_peek()?;
         match items.iter().find(|item| next == &Token::Ident(item)) {
             Some(item) => {
@@ -323,11 +342,11 @@ impl<'src> Parser<'src> {
         }
     }
 
-    fn expect_peek(&mut self) -> eyre::Result<&Token<'_>> {
+    fn expect_peek(&mut self) -> Result<&Token<'_>> {
         self.lexer.peek().wrap_err(ERRMSG_UNEXPECTED_EOL)
     }
 
-    fn next_token(&mut self) -> eyre::Result<Token<'_>> {
+    fn next_token(&mut self) -> Result<Token<'_>> {
         self.lexer.next().wrap_err(ERRMSG_UNEXPECTED_EOL)
     }
 }
@@ -513,10 +532,21 @@ mod tests {
     }
 
     #[test]
-    fn parse_fixture_group_add() {
+    fn parse_fixture_group_add_single() {
         assert_eq!(
             cmd!(r#"fixture_group 1 add 2"#),
-            Command::FixtureGroup(1.into(), FixtureGroupCommand::Add { id: FixtureId(2) })
+            Command::FixtureGroup(1.into(), FixtureGroupCommand::Add { ids: vec![FixtureId(2)] })
+        );
+    }
+
+    #[test]
+    fn parse_fixture_group_add_multiple() {
+        assert_eq!(
+            cmd!(r#"fixture_group 1 add 2, 3, 4"#),
+            Command::FixtureGroup(
+                1.into(),
+                FixtureGroupCommand::Add { ids: vec![FixtureId(2), FixtureId(3), FixtureId(4)] }
+            )
         );
     }
 
@@ -594,10 +624,21 @@ mod tests {
     }
 
     #[test]
-    fn parse_sequence_add() {
+    fn parse_sequence_add_single() {
         assert_eq!(
             cmd!(r#"sequence 1 add cue 2"#),
-            Command::Sequence(1.into(), SequenceCommand::Add { cue_id: 2.into() })
+            Command::Sequence(1.into(), SequenceCommand::Add { cue_ids: vec![2.into()] })
+        );
+    }
+
+    #[test]
+    fn parse_sequence_add_multiple() {
+        assert_eq!(
+            cmd!(r#"sequence 1 add cue 2, cue 3, cue 4"#),
+            Command::Sequence(
+                1.into(),
+                SequenceCommand::Add { cue_ids: vec![2.into(), 3.into(), 4.into()] }
+            )
         );
     }
 
@@ -634,16 +675,38 @@ mod tests {
     }
 
     #[test]
-    fn parse_cue_add() {
+    fn parse_cue_add_single() {
         assert_eq!(
             cmd!(r#"cue 1 add fixture_group 2 preset::dimmer 3"#),
             Command::Cue(
                 1.into(),
                 CueCommand::Add {
-                    recipe: Recipe {
+                    recipes: vec![Recipe {
                         fixture_group_id: 2.into(),
                         content: RecipeContent::Preset(AnyPresetId::Dimmer(3.into()))
-                    }
+                    }]
+                }
+            )
+        );
+    }
+
+    #[test]
+    fn parse_cue_add_multiple() {
+        assert_eq!(
+            cmd!(r#"cue 1 add fixture_group 2 preset::dimmer 3, fixture_group 4 preset::dimmer 5"#),
+            Command::Cue(
+                1.into(),
+                CueCommand::Add {
+                    recipes: vec![
+                        Recipe {
+                            fixture_group_id: 2.into(),
+                            content: RecipeContent::Preset(AnyPresetId::Dimmer(3.into()))
+                        },
+                        Recipe {
+                            fixture_group_id: 4.into(),
+                            content: RecipeContent::Preset(AnyPresetId::Dimmer(5.into()))
+                        }
+                    ]
                 }
             )
         );

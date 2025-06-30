@@ -17,14 +17,7 @@ create preset::dimmer 2 "Uneven @ 100%"
 preset::dimmer 2 store
 
 create fixture_group 1
-fixture_group 1 add 1
-fixture_group 1 add 2
-fixture_group 1 add 3
-fixture_group 1 add 4
-fixture_group 1 add 5
-fixture_group 1 add 6
-fixture_group 1 add 7
-fixture_group 1 add 8
+fixture_group 1 add 1, 2, 3, 4, 5, 6, 7, 8
 
 programmer clear
 
@@ -33,8 +26,7 @@ cue 1 add fixture_group 1 preset::dimmer 1
 create cue 2
 cue 2 add fixture_group 1 preset::dimmer 2
 create sequence 1
-sequence 1 add cue 1
-sequence 1 add cue 2
+sequence 1 add cue 1, cue 2
 
 create executor 1
 executor 1 set sequence sequence 1

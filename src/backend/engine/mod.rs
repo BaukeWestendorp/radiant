@@ -307,8 +307,8 @@ impl Engine {
         };
 
         match cmd {
-            FixtureGroupCommand::Add { id: fixture_id } => {
-                fixture_group.fixtures.push(fixture_id);
+            FixtureGroupCommand::Add { ids } => {
+                fixture_group.fixtures.extend(ids);
             }
             FixtureGroupCommand::ReplaceAt { index, id: fixture_id } => {
                 let Some(fixture_at_index) = fixture_group.fixtures.get_mut(index) else {
@@ -362,8 +362,8 @@ impl Engine {
         };
 
         match cmd {
-            SequenceCommand::Add { cue_id } => {
-                sequence.cues.push(cue_id);
+            SequenceCommand::Add { cue_ids } => {
+                sequence.cues.extend(cue_ids);
             }
             SequenceCommand::ReplaceAt { index, cue_id } => {
                 let Some(cue_at_index) = sequence.cues.get_mut(index) else {
@@ -394,8 +394,8 @@ impl Engine {
         };
 
         match cmd {
-            CueCommand::Add { recipe } => {
-                cue.recipes.push(recipe);
+            CueCommand::Add { recipes } => {
+                cue.recipes.extend(recipes);
             }
             CueCommand::ReplaceAt { index, recipe } => {
                 let Some(recipe_at_index) = cue.recipes.get_mut(index) else {
