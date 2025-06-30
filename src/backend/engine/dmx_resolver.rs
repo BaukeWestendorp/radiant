@@ -1,5 +1,5 @@
 use crate::backend::pipeline::Pipeline;
-use crate::backend::{AnyPreset, Cue, PresetContent, Recipe, RecipeContent, Show};
+use crate::backend::{AnyPreset, AttributeValue, Cue, PresetContent, Recipe, RecipeContent, Show};
 use crate::dmx;
 
 pub fn resolve(output_pipeline: &mut Pipeline, show: &mut Show) {
@@ -26,17 +26,17 @@ pub fn resolve(output_pipeline: &mut Pipeline, show: &mut Show) {
 fn resolve_executors(output_pipeline: &mut Pipeline, show: &Show) {
     for executor in show.executors() {
         let Some(active_cue) = executor.active_cue(show) else { continue };
-        resolve_cue(active_cue, output_pipeline, show);
+        resolve_cue(active_cue, executor.master_level(), output_pipeline, show);
     }
 }
 
-fn resolve_cue(cue: &Cue, output_pipeline: &mut Pipeline, show: &Show) {
+fn resolve_cue(cue: &Cue, level: f32, output_pipeline: &mut Pipeline, show: &Show) {
     for recipe in &cue.recipes {
-        resolve_recipe(recipe, output_pipeline, show);
+        resolve_recipe(recipe, level, output_pipeline, show);
     }
 }
 
-fn resolve_recipe(recipe: &Recipe, output_pipeline: &mut Pipeline, show: &Show) {
+fn resolve_recipe(recipe: &Recipe, level: f32, output_pipeline: &mut Pipeline, show: &Show) {
     match &recipe.content {
         RecipeContent::Preset(preset_id) => {
             let Some(preset) = show.preset(*preset_id) else {
@@ -61,10 +61,17 @@ fn resolve_recipe(recipe: &Recipe, output_pipeline: &mut Pipeline, show: &Show) 
                         //       fixtures that are both in the Fixture Group
                         //       and in the Preset.
                         if fixture_group.contains(fixture_id) {
+                            // FIXME: We should implement different merging strategies like HTP
+                            //        But for now let's just lerp with the existing value.
+                            let old_value = output_pipeline
+                                .get_attribute_value(*fixture_id, attribute)
+                                .unwrap_or_default();
+                            let lerped_value = AttributeValue::lerp(&old_value, value, level);
+
                             output_pipeline.set_attribute_value(
                                 *fixture_id,
                                 attribute.clone(),
-                                *value,
+                                lerped_value,
                             );
                         }
                     }

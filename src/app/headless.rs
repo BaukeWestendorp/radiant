@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::Duration;
 
 use eyre::Context;
 
@@ -28,4 +29,17 @@ pub fn run(showfile: Showfile) -> Result<()> {
 
 fn handle_user_interaction(_engine: Arc<Mutex<Engine>>) {
     // FIXME: Implement
+
+    _engine.lock().unwrap().exec_cmd(crate::cmd!("executor 1 button press")).unwrap();
+    _engine.lock().unwrap().exec_cmd(crate::cmd!("executor 1 button release")).unwrap();
+    thread::sleep(Duration::from_millis(200));
+    _engine.lock().unwrap().exec_cmd(crate::cmd!("executor 1 button press")).unwrap();
+    _engine.lock().unwrap().exec_cmd(crate::cmd!("executor 1 button release")).unwrap();
+
+    thread::sleep(Duration::from_millis(500));
+    _engine.lock().unwrap().exec_cmd(crate::cmd!("executor 1 fader level 0.25")).unwrap();
+    thread::sleep(Duration::from_millis(500));
+    _engine.lock().unwrap().exec_cmd(crate::cmd!("executor 1 fader level 0.50")).unwrap();
+    thread::sleep(Duration::from_millis(500));
+    _engine.lock().unwrap().exec_cmd(crate::cmd!("executor 1 fader level 0.75")).unwrap();
 }

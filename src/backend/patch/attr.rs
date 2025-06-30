@@ -1556,6 +1556,12 @@ impl AttributeValue {
     pub fn as_f32(self) -> f32 {
         self.0
     }
+
+    #[inline]
+    pub fn lerp(&self, other: &Self, t: f32) -> Self {
+        let t = t.clamp(Self::MIN, Self::MAX);
+        Self::new(self.0 * (1.0 - t) + other.0 * t)
+    }
 }
 
 impl From<f32> for AttributeValue {

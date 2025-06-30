@@ -50,6 +50,16 @@ impl Pipeline {
         self.attribute_values.insert((fixture_id, attribute), value);
     }
 
+    /// Gets an unresolved [AttributeValue] for a specific [Attribute]
+    /// on a fixture with the given [FixtureId].
+    pub fn get_attribute_value(
+        &self,
+        fixture_id: FixtureId,
+        attribute: &Attribute,
+    ) -> Option<AttributeValue> {
+        self.attribute_values.get(&(fixture_id, attribute.clone())).copied()
+    }
+
     /// Inserts a specific [dmx::Value] at the given [dmx::Address]
     /// to be resolved in the future.
     pub fn set_dmx_value(&mut self, address: dmx::Address, value: dmx::Value) {
