@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::backend::{Cue, Sequence, SequenceId, Show};
+use crate::{Cue, Sequence, SequenceId, Show};
 
 crate::define_object_id!(ExecutorId);
 
@@ -9,10 +9,10 @@ crate::define_object_id!(ExecutorId);
 pub struct Executor {
     id: ExecutorId,
     pub name: String,
-    pub(in crate::backend) button: ExecutorButton,
-    pub(in crate::backend) fader: ExecutorFader,
-    pub(in crate::backend) sequence_id: Option<SequenceId>,
-    pub(in crate::backend) master_level: f32,
+    pub(crate) button: ExecutorButton,
+    pub(crate) fader: ExecutorFader,
+    pub(crate) sequence_id: Option<SequenceId>,
+    pub(crate) master_level: f32,
     active_cue_index: Option<usize>,
 }
 

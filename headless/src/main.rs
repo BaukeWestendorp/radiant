@@ -1,18 +1,17 @@
 use std::path::PathBuf;
 
 use eyre::Context;
-use neo_radiant::{app, error::Error, showfile::Showfile};
+use radiant::showfile::Showfile;
+
+mod app;
 
 #[derive(facet::Facet)]
 struct Args {
     #[facet(positional, optional)]
     showfile_path: Option<PathBuf>,
-
-    #[facet(named, short = "h")]
-    headless: bool,
 }
 
-fn main() -> Result<(), Error> {
+fn main() -> Result<(), eyre::Error> {
     let log_level = if cfg!(debug_assertions) { log::Level::Debug } else { log::Level::Warn };
     simple_logger::init_with_level(log_level)?;
 
@@ -23,7 +22,7 @@ fn main() -> Result<(), Error> {
         None => Showfile::default(),
     };
 
-    app::run(showfile, args.headless)?;
+    app::run(showfile)?;
 
     Ok(())
 }

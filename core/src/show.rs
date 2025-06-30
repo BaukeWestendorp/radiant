@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use super::pipeline::Pipeline;
-use crate::backend::{
+use crate::pipeline::Pipeline;
+use crate::{
     AnyPreset, AnyPresetId, Cue, CueId, DimmerPreset, DimmerPresetId, Executor, ExecutorId,
     FixtureGroup, FixtureGroupId, Patch, Sequence, SequenceId,
 };
@@ -11,16 +11,16 @@ use crate::backend::{
 pub struct Show {
     path: Option<PathBuf>,
 
-    pub(in crate::backend) patch: Patch,
+    pub(crate) patch: Patch,
 
     /// The programmer contains WIP output data that can be saved to a preset.
-    pub(in crate::backend) programmer: Pipeline,
+    pub(crate) programmer: Pipeline,
 
-    pub(in crate::backend) fixture_groups: HashMap<FixtureGroupId, FixtureGroup>,
-    pub(in crate::backend) executors: HashMap<ExecutorId, Executor>,
-    pub(in crate::backend) sequences: HashMap<SequenceId, Sequence>,
-    pub(in crate::backend) cues: HashMap<CueId, Cue>,
-    pub(in crate::backend) dimmer_presets: HashMap<DimmerPresetId, DimmerPreset>,
+    pub(crate) fixture_groups: HashMap<FixtureGroupId, FixtureGroup>,
+    pub(crate) executors: HashMap<ExecutorId, Executor>,
+    pub(crate) sequences: HashMap<SequenceId, Sequence>,
+    pub(crate) cues: HashMap<CueId, Cue>,
+    pub(crate) dimmer_presets: HashMap<DimmerPresetId, DimmerPreset>,
 }
 
 impl Show {
@@ -108,7 +108,7 @@ impl Show {
     }
 
     /// Gets any kind of preset from it's corresponding id as mutable.
-    pub(in crate::backend) fn preset_mut(
+    pub(crate) fn preset_mut(
         &mut self,
         preset_id: impl Into<AnyPresetId>,
     ) -> Option<&mut AnyPreset> {

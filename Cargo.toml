@@ -1,9 +1,13 @@
-[package]
-name = "neo-radiant"
+[workspace]
+members = ["core", "headless"]
+resolver = "3"
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
 
-[dependencies]
+[workspace.dependencies]
+radiant = { path = "./core" }
 derive_more = { version = "2.0.1", features = [
     "add",
     "add_assign",
@@ -20,12 +24,7 @@ derive_more = { version = "2.0.1", features = [
 ] }
 eyre = "0.6.12"
 facet = "0.27.13"
-facet-args = "0.19.15"
 facet-pretty = "0.23.20"
-facet-yaml = "0.25.12"
-gdtf = "0.2.0"
-# gpui = { git = "https://github.com/zed-industries/zed", rev = "29cdef1" }
 log = "0.4.27"
 simple_logger = "5.0.0"
-spin_sleep = "1.3.2"
 thiserror = "2.0.12"

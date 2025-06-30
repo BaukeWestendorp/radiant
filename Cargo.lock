@@ -61,9 +61,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.18.1"
+version = "3.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "793db76d6187cd04dff33004d8e6c9cc4e05cd330500379d2394209271b4aeee"
+checksum = "46c5e41b57b8bba42a04676d81cb89e9ee8e859a1a66f80a5a72e1cb76b34d43"
 
 [[package]]
 name = "byteorder"
@@ -278,9 +278,9 @@ dependencies = [
 
 [[package]]
 name = "facet"
-version = "0.27.14"
+version = "0.27.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfa337c2c038af4187e9de8114cb0e5cfb91acb3f80a11cd7f1cd8e41df1e79f"
+checksum = "a219b97d2f75648ed5470f9efaed7fac98b0f5218d701e305444578cfbb33d3b"
 dependencies = [
  "facet-core",
  "facet-macros",
@@ -289,9 +289,9 @@ dependencies = [
 
 [[package]]
 name = "facet-args"
-version = "0.19.15"
+version = "0.19.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15804855d13ad2ad704bf619b9a9cb3d2f6e314fd1a018db0b1e44c0442ecd0d"
+checksum = "8fd93aece2a21e8882fd415faf8c0a0a5d233b3b2f33a9b0414ce68a252e0208"
 dependencies = [
  "facet-core",
  "facet-deserialize",
@@ -301,9 +301,9 @@ dependencies = [
 
 [[package]]
 name = "facet-core"
-version = "0.27.14"
+version = "0.27.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5546e2ef2b0b8bb08e37ed75e1ba7f1f011866deb644b468dc57ab6087b286f1"
+checksum = "ea8f4f44d3904eb16187e3c0d93c1f6eed2d5f5e5532fb3cbf60a0849fdae726"
 dependencies = [
  "bitflags",
  "impls",
@@ -311,9 +311,9 @@ dependencies = [
 
 [[package]]
 name = "facet-deserialize"
-version = "0.24.20"
+version = "0.24.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16a3b9482b57a62b28e7be748c367436f91b45bd9543f9fdfbc75429f124099e"
+checksum = "ed3de58ce0952ebf031d7334e6b5d7f7dc2b1f9605b42ae39075c7654e261d01"
 dependencies = [
  "ariadne",
  "facet-core",
@@ -324,9 +324,9 @@ dependencies = [
 
 [[package]]
 name = "facet-macros"
-version = "0.27.14"
+version = "0.27.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ce3261034d213cc6341f60646f93f08037a615e62f6f89bbde3e1a07a9e3619"
+checksum = "41934d083cf0dab2dc480d9c69240448478f06455c69a738833dbe8ef244efbe"
 dependencies = [
  "facet-core",
  "facet-macros-emit",
@@ -334,9 +334,9 @@ dependencies = [
 
 [[package]]
 name = "facet-macros-emit"
-version = "0.27.14"
+version = "0.27.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e2f94862f6354bd7ac3082fce4fe33c7ac5303c9539351b913a7b9bcb7683f3"
+checksum = "e390d85bbdd57eb8ef7f7b10254feaf9727f77cf4312722cd8f030a8c182491e"
 dependencies = [
  "facet-macros-parse",
  "quote",
@@ -344,9 +344,9 @@ dependencies = [
 
 [[package]]
 name = "facet-macros-parse"
-version = "0.27.14"
+version = "0.27.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "698d3cf9a0046f7e5ab01545bce3dfefcf24dd8012316503a35be7f8e1b73e24"
+checksum = "76290ce9f9701d81b4c2d4b819a64caea9334056d2fb5c5f8c88b24afd9b6dc1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -355,9 +355,9 @@ dependencies = [
 
 [[package]]
 name = "facet-pretty"
-version = "0.23.20"
+version = "0.23.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4e2e804759254e046db80581db49c8dce8e066b266c140a34a6b12efdbcfb33"
+checksum = "1331de78c5e7aca83d3d4f0cf1936f1c509a561a305c6b6c274fa88c08908a9e"
 dependencies = [
  "facet-core",
  "facet-reflect",
@@ -365,9 +365,9 @@ dependencies = [
 
 [[package]]
 name = "facet-reflect"
-version = "0.27.14"
+version = "0.27.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e334332090a072b4b85319ac8097db4274581b5562bd38945715be383f26c732"
+checksum = "5633f35296f3413116b3381929732b98798536dd28d5576f99f2a78ff3368cd7"
 dependencies = [
  "bitflags",
  "facet-core",
@@ -376,9 +376,9 @@ dependencies = [
 
 [[package]]
 name = "facet-serialize"
-version = "0.24.14"
+version = "0.24.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d36bd5276d73144c9caf12360873faf52f391401a8c1edcb4ca7c2d2ae46dbbd"
+checksum = "2fd02715d705c4f34793da2a3acea30cb97637046ce29f4a1bb17daac9518070"
 dependencies = [
  "facet-core",
  "facet-reflect",
@@ -387,9 +387,9 @@ dependencies = [
 
 [[package]]
 name = "facet-yaml"
-version = "0.25.12"
+version = "0.25.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c9a75f81eaa1b9671b2f43a1a781ec3bd3f9a9db344131816c36861f5d6db14"
+checksum = "ff4439394887fffa0a38a850f79ff19cf5bc429c7377b253eae76018df2d9145"
 dependencies = [
  "facet-core",
  "facet-reflect",
@@ -479,6 +479,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "headless"
+version = "0.1.0"
+dependencies = [
+ "eyre",
+ "facet",
+ "facet-args",
+ "facet-pretty",
+ "log",
+ "radiant",
+ "simple_logger",
+ "spin_sleep",
+]
+
+[[package]]
 name = "hmac"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -501,9 +515,9 @@ checksum = "ce23b50ad8242c51a442f3ff322d56b02f08852c77e4c0b4d3fd684abc89c683"
 
 [[package]]
 name = "indexmap"
-version = "2.9.0"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cea70ddb795996207ad57735b50c5982d8844f38ba9ee5f1aedcfb708a2aa11e"
+checksum = "fe4cd85333e22411419a0bcae1297d25e58c9443848b11dc6a86fefe8c78a661"
 dependencies = [
  "equivalent",
  "hashbrown",
@@ -552,9 +566,9 @@ checksum = "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
 
 [[package]]
 name = "libc"
-version = "0.2.173"
+version = "0.2.174"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8cfeafaffdbc32176b64fb251369d52ea9f0a8fbc6f8759edffef7b525d64bb"
+checksum = "1171693293099992e19cddea4e8b849964e9846f4acee11b3948bcc337be8776"
 
 [[package]]
 name = "log"
@@ -605,23 +619,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bc0287524726960e07b119cebd01678f852f147742ae0d925e6a520dca956126"
 
 [[package]]
-name = "neo-radiant"
-version = "0.1.0"
-dependencies = [
- "derive_more",
- "eyre",
- "facet",
- "facet-args",
- "facet-pretty",
- "facet-yaml",
- "gdtf",
- "log",
- "simple_logger",
- "spin_sleep",
- "thiserror 2.0.12",
-]
-
-[[package]]
 name = "num-conv"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -644,9 +641,9 @@ checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
 
 [[package]]
 name = "owo-colors"
-version = "4.2.1"
+version = "4.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26995317201fa17f3656c36716aed4a7c81743a9634ac4c99c0eeda495db0cec"
+checksum = "48dd4f4a2c8405440fd0462561f0e5806bd0f77e86f51c761481bdd4018b545e"
 
 [[package]]
 name = "pbkdf2"
@@ -700,9 +697,23 @@ dependencies = [
 
 [[package]]
 name = "r-efi"
-version = "5.2.0"
+version = "5.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74765f6d916ee2faa39bc8e68e4f3ed8949b48cccdac59983d287a7cb71ce9c5"
+checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
+
+[[package]]
+name = "radiant"
+version = "0.1.0"
+dependencies = [
+ "derive_more",
+ "eyre",
+ "facet",
+ "facet-pretty",
+ "facet-yaml",
+ "gdtf",
+ "log",
+ "thiserror 2.0.12",
+]
 
 [[package]]
 name = "rustversion"
@@ -804,9 +815,9 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "syn"
-version = "2.0.103"
+version = "2.0.104"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4307e30089d6fd6aff212f2da3a1f9e32f3223b1f010fb09b7c95f90f3ca1e8"
+checksum = "17b6f705963418cdb9927482fa304bc562ece2fdd4f616084c50b7023b435a40"
 dependencies = [
  "proc-macro2",
  "quote",

@@ -1,4 +1,4 @@
-use crate::backend::{AnyPresetId, FixtureGroupId};
+use crate::{AnyPresetId, FixtureGroupId};
 
 crate::define_object_id!(CueId);
 
@@ -7,7 +7,7 @@ crate::define_object_id!(CueId);
 pub struct Cue {
     id: CueId,
     pub name: String,
-    pub(in crate::backend) recipes: Vec<Recipe>,
+    pub(crate) recipes: Vec<Recipe>,
 }
 
 impl Cue {

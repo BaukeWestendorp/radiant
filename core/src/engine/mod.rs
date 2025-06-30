@@ -5,13 +5,12 @@ use std::time::Duration;
 use eyre::{Context, ContextCompat};
 
 use super::pipeline::Pipeline;
-use crate::backend::{
-    AnyObjectId, AnyPreset, AnyPresetId, Cue, CueId, DimmerPreset, DmxMode, Executor, ExecutorId,
-    Fixture, FixtureGroup, FixtureGroupId, FixtureId, PresetContent, Sequence, SequenceId, Show,
-};
-use crate::dmx::{self, Multiverse};
-use crate::error::Result;
 use crate::showfile::{RELATIVE_GDTF_FILE_FOLDER_PATH, Showfile};
+use crate::{
+    AnyObjectId, AnyPreset, AnyPresetId, Cue, CueId, DimmerPreset, DmxMode, Executor, ExecutorId,
+    Fixture, FixtureGroup, FixtureGroupId, FixtureId, PresetContent, Result, Sequence, SequenceId,
+    Show, dmx,
+};
 
 pub use cmd::*;
 
@@ -22,7 +21,7 @@ pub const DMX_OUTPUT_UPDATE_INTERVAL: Duration = Duration::from_millis(40);
 
 /// The [Engine] controls the flow of output data,
 /// and is the interface between the user interface
-/// (including a headless app, even if it's a CLI) and
+/// (including a headless app) and
 /// the show.
 pub struct Engine {
     show: Show,
@@ -38,23 +37,23 @@ impl Engine {
 
         let mut this = Self { show, output_pipeline: Pipeline::new() };
 
-        this.show.patch.gdtf_file_names = showfile.patch.gdtf_files.clone();
+        this.show.patch.gdtf_file_names = showfile.patch().gdtf_files().to_vec();
 
         // Initialize patch.
-        for fixture in &showfile.patch.fixtures {
-            let id = FixtureId(fixture.id);
+        for fixture in showfile.patch().fixtures() {
+            let id = FixtureId(fixture.id());
 
             let address = dmx::Address::new(
-                dmx::UniverseId::new(fixture.universe)?,
-                dmx::Channel::new(fixture.channel)?,
+                dmx::UniverseId::new(fixture.universe())?,
+                dmx::Channel::new(fixture.channel())?,
             );
 
-            let mode = DmxMode::new(fixture.dmx_mode.clone());
+            let mode = DmxMode::new(fixture.dmx_mode());
 
             let gdtf_file_name = showfile
-                .patch
-                .gdtf_files
-                .get(fixture.gdtf_file_index)
+                .patch()
+                .gdtf_files()
+                .get(fixture.gdtf_file_index())
                 .wrap_err("failed to generate patch: tried to reference GDTF file index that is out of bounds")?
                 .to_string();
 
@@ -62,8 +61,8 @@ impl Engine {
         }
 
         // Run init commands
-        for cmd in showfile.init_commands {
-            this.exec_cmd(cmd).context("failed to run init command")?;
+        for cmd in showfile.init_commands() {
+            this.exec_cmd(cmd.clone()).context("failed to run init command")?;
         }
 
         this.output_pipeline.clear_unresolved();
@@ -89,7 +88,7 @@ impl Engine {
     }
 
     /// Gets the resolved output [Multiverse].
-    pub fn output_multiverse(&self) -> &Multiverse {
+    pub fn output_multiverse(&self) -> &dmx::Multiverse {
         self.output_pipeline.resolved_multiverse()
     }
 

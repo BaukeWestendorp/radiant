@@ -1,19 +1,11 @@
-use std::{path::Path, str::FromStr};
+use std::path::Path;
+use std::str::FromStr;
 
-use neo_radiant::{
-    backend::{
-        engine::Engine,
-        object::{
-            AnyPreset, AnyPresetId, CueId, DimmerPresetId, ExecutorButtonMode, ExecutorFaderMode,
-            PresetContent, Recipe, RecipeContent, SelectivePreset, SequenceId,
-        },
-        patch::{
-            attr::{Attribute, AttributeValue},
-            fixture::{DmxMode, FixtureId},
-        },
-    },
-    cmd, dmx,
-    showfile::Showfile,
+use radiant::showfile::Showfile;
+use radiant::{
+    AnyPreset, AnyPresetId, Attribute, AttributeValue, CueId, DimmerPresetId, DmxMode, Engine,
+    ExecutorButtonMode, ExecutorFaderMode, FixtureId, PresetContent, Recipe, RecipeContent,
+    SelectivePreset, SequenceId, cmd, dmx,
 };
 
 fn init_engine() -> Engine {

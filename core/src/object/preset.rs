@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::backend::{Attribute, AttributeValue, FixtureId};
+use crate::{Attribute, AttributeValue, FixtureId};
 
 macro_rules! define_preset {
     ($($name:ident, $id:ident, $new_name:literal, $any_name:ident),+ $(,)?) => {

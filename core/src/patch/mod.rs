@@ -1,14 +1,14 @@
-pub use attr::*;
-pub use fixture::*;
-
 pub mod attr;
 pub mod fixture;
+
+pub use attr::*;
+pub use fixture::*;
 
 /// Contains all information regarding the mapping of fixtures to the DMX universes.
 #[derive(Debug, Default, Clone)]
 pub struct Patch {
-    pub(in crate::backend) gdtf_file_names: Vec<String>,
-    pub(in crate::backend) fixtures: Vec<Fixture>,
+    pub(crate) gdtf_file_names: Vec<String>,
+    pub(crate) fixtures: Vec<Fixture>,
 }
 
 impl Patch {
@@ -28,15 +28,12 @@ impl Patch {
     }
 
     /// Get a mutable reference to a specific [Fixture] for the given [FixtureId], if it exists.
-    pub(in crate::backend) fn fixture_mut(
-        &mut self,
-        fixture_id: impl Into<FixtureId>,
-    ) -> Option<&mut Fixture> {
+    pub(crate) fn fixture_mut(&mut self, fixture_id: impl Into<FixtureId>) -> Option<&mut Fixture> {
         let fid = fixture_id.into();
         self.fixtures.iter_mut().find(|f| f.id() == fid)
     }
 
-    pub(in crate::backend) fn remove_fixture(&mut self, id: FixtureId) {
+    pub(crate) fn remove_fixture(&mut self, id: FixtureId) {
         self.fixtures.retain(|f| f.id() != id);
     }
 }

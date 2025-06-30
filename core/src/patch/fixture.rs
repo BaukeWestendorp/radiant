@@ -3,9 +3,7 @@ use std::str::FromStr;
 
 use eyre::ContextCompat;
 
-use crate::backend::{Attribute, AttributeValue};
-use crate::dmx;
-use crate::error::Result;
+use crate::{Attribute, AttributeValue, Result, dmx};
 
 /// A unique id for a [Fixture].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -38,9 +36,9 @@ impl DmxMode {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Fixture {
     id: FixtureId,
-    pub(in crate::backend) address: dmx::Address,
-    pub(in crate::backend) dmx_mode: DmxMode,
-    pub(in crate::backend) gdtf_file_name: String,
+    pub(crate) address: dmx::Address,
+    pub(crate) dmx_mode: DmxMode,
+    pub(crate) gdtf_file_name: String,
     attributes: HashMap<Attribute, AttributeInfo>,
 
     dmx_modes: Vec<DmxMode>,

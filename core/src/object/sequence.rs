@@ -1,4 +1,4 @@
-use crate::backend::CueId;
+use crate::CueId;
 
 crate::define_object_id!(SequenceId);
 
@@ -7,7 +7,7 @@ crate::define_object_id!(SequenceId);
 pub struct Sequence {
     id: SequenceId,
     pub name: String,
-    pub(in crate::backend) cues: Vec<CueId>,
+    pub(crate) cues: Vec<CueId>,
 }
 
 impl Sequence {

@@ -3,9 +3,11 @@ use std::{
     str::FromStr,
 };
 
-use crate::{backend::Command, error::Result, showfile::patch::Patch};
+use crate::{Command, Result};
 
 pub mod patch;
+
+pub use patch::*;
 
 /// The showfile's file extension; 'rsf' (Radiant ShowFile).
 pub const FILE_EXTENSION: &str = "rsf";
@@ -19,8 +21,8 @@ pub const RELATIVE_INIT_COMMANDS_FILE_PATH: &str = "init_commands.rcs";
 pub struct Showfile {
     path: Option<PathBuf>,
 
-    pub patch: Patch,
-    pub init_commands: Vec<Command>,
+    patch: Patch,
+    init_commands: Vec<Command>,
 }
 
 impl Showfile {
@@ -28,6 +30,14 @@ impl Showfile {
     /// Will be `None` if it has not been saved yet.
     pub fn path(&self) -> Option<&PathBuf> {
         self.path.as_ref()
+    }
+
+    pub fn patch(&self) -> &Patch {
+        &self.patch
+    }
+
+    pub fn init_commands(&self) -> &[Command] {
+        &self.init_commands
     }
 
     /// Loads a [Showfile] from a path. It can be either a zipped folder, or an unzipped folder.

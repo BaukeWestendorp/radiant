@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
-use crate::backend::{Attribute, AttributeValue, FixtureId, Patch};
-use crate::dmx::{self, Multiverse};
+use crate::{Attribute, AttributeValue, FixtureId, Patch, dmx};
 
 /// The pipeline is used to converge all different kinds
 /// of representation for DMX output into a single [Multiverse].
@@ -22,7 +21,7 @@ pub struct Pipeline {
     dmx_values: HashMap<dmx::Address, dmx::Value>,
     /// Once [Pipeline::resolve] has been called,
     /// all unresolved representations will be flushed into this [Multiverse].
-    resolved_multiverse: Multiverse,
+    resolved_multiverse: dmx::Multiverse,
     resolved_attribute_values: HashMap<(FixtureId, Attribute), AttributeValue>,
     resolved_dmx_values: HashMap<dmx::Address, dmx::Value>,
 }
@@ -107,7 +106,7 @@ impl Pipeline {
     }
 
     /// Gets the resolved [Multiverse]. This will not be cleared by [Pipeline::clear_unresolved].
-    pub fn resolved_multiverse(&self) -> &Multiverse {
+    pub fn resolved_multiverse(&self) -> &dmx::Multiverse {
         &self.resolved_multiverse
     }
 

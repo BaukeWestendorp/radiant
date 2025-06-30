@@ -1,10 +1,9 @@
 use std::str::FromStr;
 
-use crate::backend::{
+use crate::{
     AnyObjectId, AnyPresetId, Attribute, AttributeValue, CueId, DmxMode, ExecutorButtonMode,
-    ExecutorFaderMode, ExecutorId, FixtureGroupId, FixtureId, Recipe, SequenceId,
+    ExecutorFaderMode, ExecutorId, FixtureGroupId, FixtureId, Recipe, SequenceId, dmx,
 };
-use crate::dmx;
 
 mod lexer;
 mod parser;
@@ -13,7 +12,7 @@ mod parser;
 macro_rules! cmd {
     ($cmd_str:expr) => {{
         use std::str::FromStr;
-        $crate::backend::engine::cmd::Command::from_str($cmd_str).expect("failed to parse command")
+        $crate::engine::cmd::Command::from_str($cmd_str).expect("failed to parse command")
     }};
 }
 
