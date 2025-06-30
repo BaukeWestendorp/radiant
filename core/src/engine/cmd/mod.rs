@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use crate::{
     AnyObjectId, AnyPresetId, Attribute, AttributeValue, CueId, DmxMode, ExecutorButtonMode,
-    ExecutorFaderMode, ExecutorId, FixtureGroupId, FixtureId, Recipe, SequenceId, dmx,
+    ExecutorFaderMode, ExecutorId, FixtureGroupId, FixtureId, Recipe, SequenceId,
 };
 
 mod lexer;

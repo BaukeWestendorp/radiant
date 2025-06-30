@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use eyre::ContextCompat;
 
-use crate::{Attribute, AttributeValue, Result, dmx};
+use crate::{Attribute, AttributeValue, Result};
 
 /// A unique id for a [Fixture].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]

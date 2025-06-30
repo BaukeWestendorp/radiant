@@ -9,7 +9,7 @@ use crate::{
     ExecutorButtonCommand, ExecutorButtonMode, ExecutorCommand, ExecutorFaderCommand,
     ExecutorFaderMode, ExecutorId, FixtureGroupCommand, FixtureGroupId, FixtureId, PatchCommand,
     PresetCommand, ProgrammerCommand, ProgrammerSetCommand, Recipe, RecipeContent, Result,
-    SequenceCommand, SequenceId, dmx,
+    SequenceCommand, SequenceId,
 };
 
 const ERRMSG_UNEXPECTED_EOL: &str = "unexpected End Of Line";
@@ -371,6 +371,7 @@ impl<'src> Parser<'src> {
 
 #[cfg(test)]
 mod tests {
+    use crate::cmd;
     use crate::engine::cmd::{Command, parser::Parser};
     use crate::engine::cmd::{
         CueCommand, ExecutorCommand, FixtureGroupCommand, PatchCommand, PresetCommand,
@@ -383,7 +384,6 @@ mod tests {
     };
     use crate::patch::attr::{Attribute, AttributeValue};
     use crate::patch::fixture::{DmxMode, FixtureId};
-    use crate::{cmd, dmx};
 
     #[test]
     fn whitespace() {

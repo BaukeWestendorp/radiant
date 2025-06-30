@@ -9,7 +9,7 @@ use crate::showfile::{RELATIVE_GDTF_FILE_FOLDER_PATH, Showfile};
 use crate::{
     AnyObjectId, AnyPreset, AnyPresetId, Cue, CueId, DimmerPreset, DmxMode, Executor, ExecutorId,
     Fixture, FixtureGroup, FixtureGroupId, FixtureId, PresetContent, Result, Sequence, SequenceId,
-    Show, dmx,
+    Show,
 };
 
 pub use cmd::*;

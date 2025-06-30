@@ -1,5 +1,5 @@
 use crate::pipeline::Pipeline;
-use crate::{AnyPreset, AttributeValue, Cue, PresetContent, Recipe, RecipeContent, Show, dmx};
+use crate::{AnyPreset, AttributeValue, Cue, PresetContent, Recipe, RecipeContent, Show};
 
 pub fn resolve(output_pipeline: &mut Pipeline, show: &mut Show) {
     // Resolve and merge executor outputs.

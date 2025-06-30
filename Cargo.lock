@@ -252,6 +252,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "dmx"
+version = "0.1.0"
+dependencies = [
+ "derive_more",
+ "facet",
+ "thiserror 2.0.12",
+]
+
+[[package]]
 name = "encoding_rs"
 version = "0.8.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -706,6 +715,7 @@ name = "radiant"
 version = "0.1.0"
 dependencies = [
  "derive_more",
+ "dmx",
  "eyre",
  "facet",
  "facet-pretty",

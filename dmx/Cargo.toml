@@ -1,15 +1,9 @@
 [package]
-name = "radiant"
+name = "dmx"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
 derive_more.workspace = true
-dmx.workspace = true
-eyre.workspace = true
 facet.workspace = true
-facet-pretty.workspace = true
-facet-yaml = "0.25.12"
-gdtf = "0.2.0"
-log.workspace = true
 thiserror.workspace = true

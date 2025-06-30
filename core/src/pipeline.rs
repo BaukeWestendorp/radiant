@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{Attribute, AttributeValue, FixtureId, Patch, dmx};
+use crate::{Attribute, AttributeValue, FixtureId, Patch};
 
 /// The pipeline is used to converge all different kinds
 /// of representation for DMX output into a single [Multiverse].

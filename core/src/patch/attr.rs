@@ -1,7 +1,5 @@
 use std::str::FromStr;
 
-use crate::dmx;
-
 /// A GDTF attribute.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Attribute {

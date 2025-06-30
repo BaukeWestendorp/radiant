@@ -5,7 +5,7 @@ use radiant::showfile::Showfile;
 use radiant::{
     AnyPreset, AnyPresetId, Attribute, AttributeValue, CueId, DimmerPresetId, DmxMode, Engine,
     ExecutorButtonMode, ExecutorFaderMode, FixtureId, PresetContent, Recipe, RecipeContent,
-    SelectivePreset, SequenceId, cmd, dmx,
+    SelectivePreset, SequenceId, cmd,
 };
 
 fn init_engine() -> Engine {
