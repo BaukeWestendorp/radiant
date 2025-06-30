@@ -339,12 +339,15 @@ impl Engine {
         };
 
         match cmd {
-            ExecutorCommand::SetButtonMode { mode } => {
-                executor.button_mode = mode;
-            }
-            ExecutorCommand::SetFaderMode { mode } => {
-                executor.fader_mode = mode;
-            }
+            ExecutorCommand::Button(cmd) => match cmd {
+                ExecutorButtonCommand::SetMode { mode } => executor.button.set_mode(mode),
+                ExecutorButtonCommand::Press => executor.button.press(),
+                ExecutorButtonCommand::Release => executor.button.release(),
+            },
+            ExecutorCommand::Fader(cmd) => match cmd {
+                ExecutorFaderCommand::SetMode { mode } => executor.fader.set_mode(mode),
+                ExecutorFaderCommand::SetLevel { level } => executor.fader.set_level(level),
+            },
             ExecutorCommand::SetSequence { sequence_id } => {
                 executor.sequence_id = Some(sequence_id);
             }

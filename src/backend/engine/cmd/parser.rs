@@ -5,10 +5,11 @@ use eyre::{Context, ContextCompat};
 
 use super::lexer::{Lexer, Token};
 use crate::backend::{
-    AnyObjectId, AnyPresetId, Attribute, AttributeValue, ButtonMode, Command, CueCommand, CueId,
-    DmxMode, ExecutorCommand, ExecutorId, FaderMode, FixtureGroupCommand, FixtureGroupId,
-    FixtureId, PatchCommand, PresetCommand, ProgrammerCommand, ProgrammerSetCommand, Recipe,
-    RecipeContent, SequenceCommand, SequenceId,
+    AnyObjectId, AnyPresetId, Attribute, AttributeValue, Command, CueCommand, CueId, DmxMode,
+    ExecutorButtonCommand, ExecutorButtonMode, ExecutorCommand, ExecutorFaderCommand,
+    ExecutorFaderMode, ExecutorId, FixtureGroupCommand, FixtureGroupId, FixtureId, PatchCommand,
+    PresetCommand, ProgrammerCommand, ProgrammerSetCommand, Recipe, RecipeContent, SequenceCommand,
+    SequenceId,
 };
 use crate::dmx;
 use crate::error::Result;
@@ -124,25 +125,37 @@ impl<'src> Parser<'src> {
                 ),
                 AnyObjectId::Executor(id) => Command::Executor(
                     id,
-                    match self.parse_one_of_idents(&["set", "clear"])? {
-                        "set" => match self.parse_one_of_idents(&[
-                            "button_mode",
-                            "fader_mode",
-                            "sequence",
-                        ])? {
-                            "button_mode" => ExecutorCommand::SetButtonMode {
-                                mode: ButtonMode::from_str(self.parse_string()?)?,
+                    match self.parse_one_of_idents(&["button", "fader", "set_sequence", "clear"])? {
+                        "button" => ExecutorCommand::Button(
+                            match self
+                                .parse_one_of_idents(&["press", "press", "release", "mode"])?
+                            {
+                                "press" => ExecutorButtonCommand::Press,
+                                "release" => ExecutorButtonCommand::Release,
+                                "mode" => ExecutorButtonCommand::SetMode {
+                                    mode: ExecutorButtonMode::from_str(self.parse_ident()?)
+                                        .context("invalid executor button mode")?,
+                                },
+                                _ => unreachable!(),
                             },
-                            "fader_mode" => ExecutorCommand::SetFaderMode {
-                                mode: FaderMode::from_str(self.parse_string()?)?,
+                        ),
+                        "fader" => ExecutorCommand::Fader(
+                            match self.parse_one_of_idents(&["mode", "level"])? {
+                                "level" => ExecutorFaderCommand::SetLevel {
+                                    level: self.parse_float()? as f32,
+                                },
+                                "mode" => ExecutorFaderCommand::SetMode {
+                                    mode: ExecutorFaderMode::from_str(self.parse_ident()?)
+                                        .context("invalid executor button mode")?,
+                                },
+                                _ => unreachable!(),
                             },
-                            "sequence" => ExecutorCommand::SetSequence {
-                                sequence_id: self
-                                    .parse_object_id()?
-                                    .try_into()
-                                    .wrap_err("failed to parse sequence id")?,
-                            },
-                            _ => unreachable!(),
+                        ),
+                        "set_sequence" => ExecutorCommand::SetSequence {
+                            sequence_id: self
+                                .parse_object_id()?
+                                .try_into()
+                                .wrap_err("failed to parse sequence id")?,
                         },
                         "clear" => ExecutorCommand::Clear,
                         _ => unreachable!(),
@@ -235,6 +248,13 @@ impl<'src> Parser<'src> {
         match self.next_token()? {
             Token::Float(float) => Ok(float),
             other => eyre::bail!("expected a float, found: '{other}'"),
+        }
+    }
+
+    fn parse_ident(&mut self) -> Result<&str> {
+        match self.next_token()? {
+            Token::Ident(ident) => Ok(ident),
+            other => eyre::bail!("expected an identifier, found: '{other}'"),
         }
     }
 
@@ -359,11 +379,12 @@ mod tests {
         ProgrammerCommand, ProgrammerSetCommand, SequenceCommand,
     };
     use crate::backend::object::{
-        AnyObjectId, AnyPresetId, ButtonMode, DimmerPresetId, ExecutorId, FaderMode, Recipe,
-        RecipeContent,
+        AnyObjectId, AnyPresetId, DimmerPresetId, ExecutorButtonMode, ExecutorFaderMode,
+        ExecutorId, Recipe, RecipeContent,
     };
     use crate::backend::patch::attr::{Attribute, AttributeValue};
     use crate::backend::patch::fixture::{DmxMode, FixtureId};
+    use crate::backend::{ExecutorButtonCommand, ExecutorFaderCommand};
     use crate::{cmd, dmx};
 
     #[test]
@@ -586,25 +607,62 @@ mod tests {
     }
 
     #[test]
-    fn parse_executor_set_button_mode() {
+    fn parse_executor_button_mode() {
         assert_eq!(
-            cmd!(r#"executor 1 set button_mode "go""#),
-            Command::Executor(1.into(), ExecutorCommand::SetButtonMode { mode: ButtonMode::Go })
+            cmd!(r#"executor 1 button mode go"#),
+            Command::Executor(
+                1.into(),
+                ExecutorCommand::Button(ExecutorButtonCommand::SetMode {
+                    mode: ExecutorButtonMode::Go
+                })
+            )
+        );
+    }
+
+    #[test]
+    fn parse_executor_button_press() {
+        assert_eq!(
+            cmd!(r#"executor 1 button press"#),
+            Command::Executor(1.into(), ExecutorCommand::Button(ExecutorButtonCommand::Press))
+        );
+    }
+
+    #[test]
+    fn parse_executor_button_release() {
+        assert_eq!(
+            cmd!(r#"executor 1 button release"#),
+            Command::Executor(1.into(), ExecutorCommand::Button(ExecutorButtonCommand::Release))
         );
     }
 
     #[test]
     fn parse_executor_set_fader_mode() {
         assert_eq!(
-            cmd!(r#"executor 1 set fader_mode "never""#),
-            Command::Executor(1.into(), ExecutorCommand::SetFaderMode { mode: FaderMode::Master })
+            cmd!(r#"executor 1 fader mode master"#),
+            Command::Executor(
+                1.into(),
+                ExecutorCommand::Fader(ExecutorFaderCommand::SetMode {
+                    mode: ExecutorFaderMode::Master
+                })
+            )
+        );
+    }
+
+    #[test]
+    fn parse_executor_set_fader_level() {
+        assert_eq!(
+            cmd!(r#"executor 1 fader level 0.5"#),
+            Command::Executor(
+                1.into(),
+                ExecutorCommand::Fader(ExecutorFaderCommand::SetLevel { level: 0.5 })
+            )
         );
     }
 
     #[test]
     fn parse_executor_set_sequence_id() {
         assert_eq!(
-            cmd!(r#"executor 1 set sequence sequence 2"#),
+            cmd!(r#"executor 1 set_sequence sequence 2"#),
             Command::Executor(1.into(), ExecutorCommand::SetSequence { sequence_id: 2.into() })
         );
     }

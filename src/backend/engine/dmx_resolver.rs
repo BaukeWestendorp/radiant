@@ -25,7 +25,7 @@ pub fn resolve(output_pipeline: &mut Pipeline, show: &mut Show) {
 
 fn resolve_executors(output_pipeline: &mut Pipeline, show: &Show) {
     for executor in show.executors() {
-        let Some(active_cue) = executor.get_active_cue(show) else { continue };
+        let Some(active_cue) = executor.active_cue(show) else { continue };
         resolve_cue(active_cue, output_pipeline, show);
     }
 }

@@ -9,9 +9,10 @@ crate::define_object_id!(ExecutorId);
 pub struct Executor {
     id: ExecutorId,
     pub name: String,
-    pub(in crate::backend) button_mode: ButtonMode,
-    pub(in crate::backend) fader_mode: FaderMode,
+    pub(in crate::backend) button: ExecutorButton,
+    pub(in crate::backend) fader: ExecutorFader,
     pub(in crate::backend) sequence_id: Option<SequenceId>,
+    pub(in crate::backend) master_level: f32,
     active_cue_index: Option<usize>,
 }
 
@@ -20,9 +21,10 @@ impl Executor {
         Self {
             id: id.into(),
             name: "New Executor".to_string(),
-            button_mode: ButtonMode::default(),
-            fader_mode: FaderMode::default(),
+            button: ExecutorButton::default(),
+            fader: ExecutorFader::default(),
             sequence_id: None,
+            master_level: 1.0,
             active_cue_index: None,
         }
     }
@@ -31,12 +33,12 @@ impl Executor {
         self.id
     }
 
-    pub fn button_mode(&self) -> ButtonMode {
-        self.button_mode
+    pub fn button(&self) -> &ExecutorButton {
+        &self.button
     }
 
-    pub fn fader_mode(&self) -> FaderMode {
-        self.fader_mode
+    pub fn fader(&self) -> &ExecutorFader {
+        &self.fader
     }
 
     pub fn sequence_id(&self) -> Option<&SequenceId> {
@@ -71,37 +73,44 @@ impl Executor {
         }
     }
 
+    pub fn active_cue_index(&self) -> Option<usize> {
+        self.active_cue_index
+    }
+
     /// Gets a reference to the [Cue] that is currently activated by the executor.
-    pub fn get_active_cue<'a>(&self, show: &'a Show) -> Option<&'a Cue> {
+    pub fn active_cue<'a>(&self, show: &'a Show) -> Option<&'a Cue> {
         let index = self.active_cue_index?;
         let cue_id = self.sequence(show)?.cues().get(index)?;
         show.cue(*cue_id)
     }
 
+    pub fn master_level(&self) -> f32 {
+        self.master_level
+    }
+
     pub fn manage_state(&mut self, show: &Show) {
-        match self.button_mode {
-            ButtonMode::Go => self.go(show),
+        match self.button.mode {
+            ExecutorButtonMode::Go => {
+                if self.button.was_pressed() {
+                    self.go(show)
+                }
+            }
         }
 
-        match self.fader_mode {
-            FaderMode::Master => {}
+        match self.fader.mode {
+            ExecutorFaderMode::Master => self.master_level = self.fader.level(),
         }
+
+        self.button.reset_state();
     }
 
     pub fn go(&mut self, show: &Show) {
-        let current_index = self.active_cue_index.unwrap_or_default();
-        self.set_active_cue_index(Some(current_index + 1), show);
+        let new_index = self.active_cue_index.map(|ix| ix + 1).unwrap_or_default();
+        self.set_active_cue_index(Some(new_index), show);
     }
 }
 
-/// Determines how an [Executor] is activated.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub enum ButtonMode {
-    #[default]
-    Go,
-}
-
-impl FromStr for ButtonMode {
+impl FromStr for ExecutorButtonMode {
     type Err = eyre::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -112,20 +121,89 @@ impl FromStr for ButtonMode {
     }
 }
 
-/// Determines how an [Executor] is terminated.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub enum FaderMode {
-    #[default]
-    Master,
-}
-
-impl FromStr for FaderMode {
+impl FromStr for ExecutorFaderMode {
     type Err = eyre::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "never" => Ok(Self::Master),
+            "master" => Ok(Self::Master),
             other => eyre::bail!("invalid fader mode: '{other}'"),
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct ExecutorButton {
+    mode: ExecutorButtonMode,
+    was_pressed: bool,
+    currently_pressed: bool,
+}
+
+impl ExecutorButton {
+    pub fn mode(&self) -> ExecutorButtonMode {
+        self.mode
+    }
+
+    pub fn set_mode(&mut self, mode: ExecutorButtonMode) {
+        self.mode = mode;
+    }
+
+    pub fn press(&mut self) {
+        self.was_pressed = true;
+        self.currently_pressed = true;
+    }
+
+    pub fn release(&mut self) {
+        self.currently_pressed = false;
+    }
+
+    pub fn currently_pressed(&self) -> bool {
+        self.currently_pressed
+    }
+
+    pub fn was_pressed(&self) -> bool {
+        self.was_pressed
+    }
+
+    fn reset_state(&mut self) {
+        self.was_pressed = false;
+    }
+}
+
+/// Determines the function of an [Executor]s button.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum ExecutorButtonMode {
+    #[default]
+    Go,
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct ExecutorFader {
+    mode: ExecutorFaderMode,
+    level: f32,
+}
+
+impl ExecutorFader {
+    pub fn mode(&self) -> ExecutorFaderMode {
+        self.mode
+    }
+
+    pub fn set_mode(&mut self, mode: ExecutorFaderMode) {
+        self.mode = mode;
+    }
+
+    pub fn set_level(&mut self, level: f32) {
+        self.level = level.clamp(0.0, 1.0);
+    }
+
+    pub fn level(&self) -> f32 {
+        self.level
+    }
+}
+
+/// Determines the function of an [Executor]s fader.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum ExecutorFaderMode {
+    #[default]
+    Master,
 }

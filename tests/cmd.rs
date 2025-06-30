@@ -4,8 +4,8 @@ use neo_radiant::{
     backend::{
         engine::Engine,
         object::{
-            AnyPreset, AnyPresetId, ButtonMode, CueId, DimmerPresetId, FaderMode, PresetContent,
-            Recipe, RecipeContent, SelectivePreset, SequenceId,
+            AnyPreset, AnyPresetId, CueId, DimmerPresetId, ExecutorButtonMode, ExecutorFaderMode,
+            PresetContent, Recipe, RecipeContent, SelectivePreset, SequenceId,
         },
         patch::{
             attr::{Attribute, AttributeValue},
@@ -418,18 +418,49 @@ fn fixture_group_clear() {
 fn executor_set_button_mode_go() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create executor 1"#)).unwrap();
-    assert_eq!(engine.show().executor(1).unwrap().button_mode(), ButtonMode::default());
-    engine.exec_cmd(cmd!(r#"executor 1 set button_mode "go""#)).unwrap();
-    assert_eq!(engine.show().executor(1).unwrap().button_mode(), ButtonMode::Go);
+    assert_eq!(engine.show().executor(1).unwrap().button().mode(), ExecutorButtonMode::default());
+    engine.exec_cmd(cmd!(r#"executor 1 button mode go"#)).unwrap();
+    assert_eq!(engine.show().executor(1).unwrap().button().mode(), ExecutorButtonMode::Go);
 }
 
 #[test]
-fn executor_set_fader_mode_never() {
+fn executor_set_button_press() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create executor 1"#)).unwrap();
-    assert_eq!(engine.show().executor(1).unwrap().fader_mode(), FaderMode::default());
-    engine.exec_cmd(cmd!(r#"executor 1 set fader_mode "never""#)).unwrap();
-    assert_eq!(engine.show().executor(1).unwrap().fader_mode(), FaderMode::Master);
+    assert_eq!(engine.show().executor(1).unwrap().button().mode(), ExecutorButtonMode::default());
+    assert!(!engine.show().executor(1).unwrap().button().currently_pressed());
+    engine.exec_cmd(cmd!(r#"executor 1 button press"#)).unwrap();
+    assert!(engine.show().executor(1).unwrap().button().currently_pressed());
+}
+
+#[test]
+fn executor_set_button_release() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create executor 1"#)).unwrap();
+    assert_eq!(engine.show().executor(1).unwrap().button().mode(), ExecutorButtonMode::default());
+    assert!(!engine.show().executor(1).unwrap().button().currently_pressed());
+    engine.exec_cmd(cmd!(r#"executor 1 button press"#)).unwrap();
+    assert!(engine.show().executor(1).unwrap().button().currently_pressed());
+    engine.exec_cmd(cmd!(r#"executor 1 button release"#)).unwrap();
+    assert!(!engine.show().executor(1).unwrap().button().currently_pressed());
+}
+
+#[test]
+fn executor_set_fader_mode_master() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create executor 1"#)).unwrap();
+    assert_eq!(engine.show().executor(1).unwrap().fader().mode(), ExecutorFaderMode::default());
+    engine.exec_cmd(cmd!(r#"executor 1 fader mode master"#)).unwrap();
+    assert_eq!(engine.show().executor(1).unwrap().fader().mode(), ExecutorFaderMode::Master);
+}
+
+#[test]
+fn executor_set_fader_level() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create executor 1"#)).unwrap();
+    assert_eq!(engine.show().executor(1).unwrap().fader().mode(), ExecutorFaderMode::default());
+    engine.exec_cmd(cmd!(r#"executor 1 fader level 0.25"#)).unwrap();
+    assert_eq!(engine.show().executor(1).unwrap().fader().level(), 0.25);
 }
 
 #[test]
@@ -437,7 +468,7 @@ fn executor_set_sequence() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create executor 1"#)).unwrap();
     assert_eq!(engine.show().executor(1).unwrap().sequence_id(), None);
-    engine.exec_cmd(cmd!(r#"executor 1 set sequence sequence 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"executor 1 set_sequence sequence 1"#)).unwrap();
     assert_eq!(engine.show().executor(1).unwrap().sequence_id(), Some(&SequenceId(1)));
 }
 
@@ -446,7 +477,7 @@ fn executor_clear() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create executor 1"#)).unwrap();
     assert_eq!(engine.show().executor(1).unwrap().sequence_id(), None);
-    engine.exec_cmd(cmd!(r#"executor 1 set sequence sequence 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"executor 1 set_sequence sequence 1"#)).unwrap();
     assert_eq!(engine.show().executor(1).unwrap().sequence_id(), Some(&SequenceId(1)));
     engine.exec_cmd(cmd!(r#"executor 1 clear"#)).unwrap();
     assert_eq!(engine.show().executor(1).unwrap().sequence_id(), None);

@@ -29,4 +29,4 @@ create sequence 1
 sequence 1 add cue 1, cue 2
 
 create executor 1
-executor 1 set sequence sequence 1
+executor 1 set_sequence sequence 1
