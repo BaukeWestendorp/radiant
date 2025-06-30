@@ -339,11 +339,11 @@ impl Engine {
         };
 
         match cmd {
-            ExecutorCommand::SetActivationMode { mode } => {
-                executor.activation_mode = mode;
+            ExecutorCommand::SetButtonMode { mode } => {
+                executor.button_mode = mode;
             }
-            ExecutorCommand::SetTerminationMode { mode } => {
-                executor.termination_mode = mode;
+            ExecutorCommand::SetFaderMode { mode } => {
+                executor.fader_mode = mode;
             }
             ExecutorCommand::SetSequence { sequence_id } => {
                 executor.sequence_id = Some(sequence_id);

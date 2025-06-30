@@ -4,8 +4,8 @@ use neo_radiant::{
     backend::{
         engine::Engine,
         object::{
-            ActivationMode, AnyPreset, AnyPresetId, CueId, DimmerPresetId, PresetContent, Recipe,
-            RecipeContent, SelectivePreset, SequenceId, TerminationMode,
+            AnyPreset, AnyPresetId, ButtonMode, CueId, DimmerPresetId, FaderMode, PresetContent,
+            Recipe, RecipeContent, SelectivePreset, SequenceId,
         },
         patch::{
             attr::{Attribute, AttributeValue},
@@ -415,21 +415,21 @@ fn fixture_group_clear() {
 }
 
 #[test]
-fn executor_set_activation_mode_instant() {
+fn executor_set_button_mode_go() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create executor 1"#)).unwrap();
-    assert_eq!(engine.show().executor(1).unwrap().activation_mode(), ActivationMode::default());
-    engine.exec_cmd(cmd!(r#"executor 1 set activation_mode "instant""#)).unwrap();
-    assert_eq!(engine.show().executor(1).unwrap().activation_mode(), ActivationMode::Instant);
+    assert_eq!(engine.show().executor(1).unwrap().button_mode(), ButtonMode::default());
+    engine.exec_cmd(cmd!(r#"executor 1 set button_mode "go""#)).unwrap();
+    assert_eq!(engine.show().executor(1).unwrap().button_mode(), ButtonMode::Go);
 }
 
 #[test]
-fn executor_set_termination_mode_never() {
+fn executor_set_fader_mode_never() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create executor 1"#)).unwrap();
-    assert_eq!(engine.show().executor(1).unwrap().termination_mode(), TerminationMode::default());
-    engine.exec_cmd(cmd!(r#"executor 1 set termination_mode "never""#)).unwrap();
-    assert_eq!(engine.show().executor(1).unwrap().termination_mode(), TerminationMode::Never);
+    assert_eq!(engine.show().executor(1).unwrap().fader_mode(), FaderMode::default());
+    engine.exec_cmd(cmd!(r#"executor 1 set fader_mode "never""#)).unwrap();
+    assert_eq!(engine.show().executor(1).unwrap().fader_mode(), FaderMode::Master);
 }
 
 #[test]

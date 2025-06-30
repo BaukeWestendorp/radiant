@@ -1,8 +1,8 @@
 use std::str::FromStr;
 
 use crate::backend::{
-    ActivationMode, AnyObjectId, AnyPresetId, Attribute, AttributeValue, CueId, DmxMode,
-    ExecutorId, FixtureGroupId, FixtureId, Recipe, SequenceId, TerminationMode,
+    AnyObjectId, AnyPresetId, Attribute, AttributeValue, ButtonMode, CueId, DmxMode, ExecutorId,
+    FaderMode, FixtureGroupId, FixtureId, Recipe, SequenceId,
 };
 use crate::dmx;
 
@@ -75,8 +75,8 @@ pub enum FixtureGroupCommand {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExecutorCommand {
-    SetActivationMode { mode: ActivationMode },
-    SetTerminationMode { mode: TerminationMode },
+    SetButtonMode { mode: ButtonMode },
+    SetFaderMode { mode: FaderMode },
     SetSequence { sequence_id: SequenceId },
     Clear,
 }

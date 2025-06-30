@@ -5,10 +5,10 @@ use eyre::{Context, ContextCompat};
 
 use super::lexer::{Lexer, Token};
 use crate::backend::{
-    ActivationMode, AnyObjectId, AnyPresetId, Attribute, AttributeValue, Command, CueCommand,
-    CueId, DmxMode, ExecutorCommand, ExecutorId, FixtureGroupCommand, FixtureGroupId, FixtureId,
-    PatchCommand, PresetCommand, ProgrammerCommand, ProgrammerSetCommand, Recipe, RecipeContent,
-    SequenceCommand, SequenceId, TerminationMode,
+    AnyObjectId, AnyPresetId, Attribute, AttributeValue, ButtonMode, Command, CueCommand, CueId,
+    DmxMode, ExecutorCommand, ExecutorId, FaderMode, FixtureGroupCommand, FixtureGroupId,
+    FixtureId, PatchCommand, PresetCommand, ProgrammerCommand, ProgrammerSetCommand, Recipe,
+    RecipeContent, SequenceCommand, SequenceId,
 };
 use crate::dmx;
 use crate::error::Result;
@@ -126,15 +126,15 @@ impl<'src> Parser<'src> {
                     id,
                     match self.parse_one_of_idents(&["set", "clear"])? {
                         "set" => match self.parse_one_of_idents(&[
-                            "activation_mode",
-                            "termination_mode",
+                            "button_mode",
+                            "fader_mode",
                             "sequence",
                         ])? {
-                            "activation_mode" => ExecutorCommand::SetActivationMode {
-                                mode: ActivationMode::from_str(self.parse_string()?)?,
+                            "button_mode" => ExecutorCommand::SetButtonMode {
+                                mode: ButtonMode::from_str(self.parse_string()?)?,
                             },
-                            "termination_mode" => ExecutorCommand::SetTerminationMode {
-                                mode: TerminationMode::from_str(self.parse_string()?)?,
+                            "fader_mode" => ExecutorCommand::SetFaderMode {
+                                mode: FaderMode::from_str(self.parse_string()?)?,
                             },
                             "sequence" => ExecutorCommand::SetSequence {
                                 sequence_id: self
@@ -359,8 +359,8 @@ mod tests {
         ProgrammerCommand, ProgrammerSetCommand, SequenceCommand,
     };
     use crate::backend::object::{
-        ActivationMode, AnyObjectId, AnyPresetId, DimmerPresetId, ExecutorId, Recipe,
-        RecipeContent, TerminationMode,
+        AnyObjectId, AnyPresetId, ButtonMode, DimmerPresetId, ExecutorId, FaderMode, Recipe,
+        RecipeContent,
     };
     use crate::backend::patch::attr::{Attribute, AttributeValue};
     use crate::backend::patch::fixture::{DmxMode, FixtureId};
@@ -586,24 +586,18 @@ mod tests {
     }
 
     #[test]
-    fn parse_executor_set_activation_mode() {
+    fn parse_executor_set_button_mode() {
         assert_eq!(
-            cmd!(r#"executor 1 set activation_mode "instant""#),
-            Command::Executor(
-                1.into(),
-                ExecutorCommand::SetActivationMode { mode: ActivationMode::Instant }
-            )
+            cmd!(r#"executor 1 set button_mode "go""#),
+            Command::Executor(1.into(), ExecutorCommand::SetButtonMode { mode: ButtonMode::Go })
         );
     }
 
     #[test]
-    fn parse_executor_set_termination_mode() {
+    fn parse_executor_set_fader_mode() {
         assert_eq!(
-            cmd!(r#"executor 1 set termination_mode "never""#),
-            Command::Executor(
-                1.into(),
-                ExecutorCommand::SetTerminationMode { mode: TerminationMode::Never }
-            )
+            cmd!(r#"executor 1 set fader_mode "never""#),
+            Command::Executor(1.into(), ExecutorCommand::SetFaderMode { mode: FaderMode::Master })
         );
     }
 

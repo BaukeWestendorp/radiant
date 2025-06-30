@@ -9,8 +9,8 @@ crate::define_object_id!(ExecutorId);
 pub struct Executor {
     id: ExecutorId,
     pub name: String,
-    pub(in crate::backend) activation_mode: ActivationMode,
-    pub(in crate::backend) termination_mode: TerminationMode,
+    pub(in crate::backend) button_mode: ButtonMode,
+    pub(in crate::backend) fader_mode: FaderMode,
     pub(in crate::backend) sequence_id: Option<SequenceId>,
     active_cue_index: Option<usize>,
 }
@@ -20,8 +20,8 @@ impl Executor {
         Self {
             id: id.into(),
             name: "New Executor".to_string(),
-            activation_mode: ActivationMode::default(),
-            termination_mode: TerminationMode::default(),
+            button_mode: ButtonMode::default(),
+            fader_mode: FaderMode::default(),
             sequence_id: None,
             active_cue_index: None,
         }
@@ -31,12 +31,12 @@ impl Executor {
         self.id
     }
 
-    pub fn activation_mode(&self) -> ActivationMode {
-        self.activation_mode
+    pub fn button_mode(&self) -> ButtonMode {
+        self.button_mode
     }
 
-    pub fn termination_mode(&self) -> TerminationMode {
-        self.termination_mode
+    pub fn fader_mode(&self) -> FaderMode {
+        self.fader_mode
     }
 
     pub fn sequence_id(&self) -> Option<&SequenceId> {
@@ -79,12 +79,12 @@ impl Executor {
     }
 
     pub fn manage_state(&mut self, show: &Show) {
-        match self.activation_mode {
-            ActivationMode::Instant => self.go(show),
+        match self.button_mode {
+            ButtonMode::Go => self.go(show),
         }
 
-        match self.termination_mode {
-            TerminationMode::Never => {}
+        match self.fader_mode {
+            FaderMode::Master => {}
         }
     }
 
@@ -96,36 +96,36 @@ impl Executor {
 
 /// Determines how an [Executor] is activated.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub enum ActivationMode {
+pub enum ButtonMode {
     #[default]
-    Instant,
+    Go,
 }
 
-impl FromStr for ActivationMode {
+impl FromStr for ButtonMode {
     type Err = eyre::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "instant" => Ok(Self::Instant),
-            other => eyre::bail!("invalid activation mode: '{other}'"),
+            "go" => Ok(Self::Go),
+            other => eyre::bail!("invalid button mode: '{other}'"),
         }
     }
 }
 
 /// Determines how an [Executor] is terminated.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub enum TerminationMode {
+pub enum FaderMode {
     #[default]
-    Never,
+    Master,
 }
 
-impl FromStr for TerminationMode {
+impl FromStr for FaderMode {
     type Err = eyre::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "never" => Ok(Self::Never),
-            other => eyre::bail!("invalid termination mode: '{other}'"),
+            "never" => Ok(Self::Master),
+            other => eyre::bail!("invalid fader mode: '{other}'"),
         }
     }
 }
