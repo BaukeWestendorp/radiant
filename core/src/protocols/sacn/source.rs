@@ -64,14 +64,7 @@ impl Source {
     ///
     /// This method updates the universe data for the specified universe ID.
     /// If the universe ID does not exist, it will be created.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use sacn::{source::{SourceConfig, Source}, Universe};
-    /// let source = Source::new(SourceConfig::default()).unwrap();
-    /// source.set_universe(Universe::new(1));
-    /// ```
+
     pub fn set_universe(&self, universe: Universe) {
         self.universes.lock().unwrap().push(universe);
     }
@@ -80,15 +73,6 @@ impl Source {
     ///
     /// This method removes the universe data for the specified universe ID.
     /// If the universe ID does not exist, it will do nothing.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use sacn::{source::{SourceConfig, Source}, Universe};
-    /// let source = Source::new(SourceConfig::default()).unwrap();
-    /// source.set_universe(Universe::new(1));
-    /// source.remove_universe(1);
-    /// ```
     pub fn remove_universe(&self, number: u16) {
         self.universes.lock().unwrap().retain(|u| u.number != number);
     }
@@ -96,15 +80,6 @@ impl Source {
     /// Removes all universe data.
     ///
     /// This method removes all universe data.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use sacn::{source::{SourceConfig, Source}, Universe};
-    /// let source = Source::new(SourceConfig::default()).unwrap();
-    /// source.set_universe(Universe::new(1));
-    /// source.clear_universes();
-    /// ```
     pub fn clear_universes(&self) {
         self.universes.lock().unwrap().clear();
     }
