@@ -5,8 +5,10 @@ use std::{
 
 use crate::{Command, Result};
 
+pub mod adapters;
 pub mod patch;
 
+pub use adapters::*;
 pub use patch::*;
 
 /// The showfile's file extension; 'rsf' (Radiant ShowFile).
@@ -14,6 +16,7 @@ pub const FILE_EXTENSION: &str = "rsf";
 
 pub const RELATIVE_GDTF_FILE_FOLDER_PATH: &str = "gdtf_files";
 pub const RELATIVE_PATCH_FILE_PATH: &str = "patch.yaml";
+pub const RELATIVE_ADAPTERS_FILE_PATH: &str = "adapters.yaml";
 pub const RELATIVE_INIT_COMMANDS_FILE_PATH: &str = "init_commands.rcs";
 
 /// Represents the showfile that is saved on disk.
@@ -22,6 +25,7 @@ pub struct Showfile {
     path: Option<PathBuf>,
 
     patch: Patch,
+    adapters: Adapters,
     init_commands: Vec<Command>,
 }
 
@@ -34,6 +38,10 @@ impl Showfile {
 
     pub fn patch(&self) -> &Patch {
         &self.patch
+    }
+
+    pub fn adapters(&self) -> &Adapters {
+        &self.adapters
     }
 
     pub fn init_commands(&self) -> &[Command] {
@@ -62,8 +70,9 @@ impl Showfile {
     /// Loads a [Showfile] from an unzipped folder.
     pub fn load_folder(path: &Path) -> Result<Self> {
         let patch = Patch::read_from_file(&path.join(RELATIVE_PATCH_FILE_PATH))?;
+        let adapters = Adapters::read_from_file(&path.join(RELATIVE_ADAPTERS_FILE_PATH))?;
         let init_commands = load_init_commands(&path.join(RELATIVE_INIT_COMMANDS_FILE_PATH))?;
-        Ok(Self { path: Some(path.to_path_buf()), patch, init_commands })
+        Ok(Self { path: Some(path.to_path_buf()), patch, adapters, init_commands })
     }
 }
 

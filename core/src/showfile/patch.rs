@@ -22,7 +22,7 @@ impl Patch {
     }
 
     /// Reads a patch from a file at the given path.
-    pub fn read_from_file(path: &PathBuf) -> Result<Patch> {
+    pub fn read_from_file(path: &PathBuf) -> Result<Self> {
         let yaml_str = std::fs::read_to_string(&path)
             .with_context(|| format!("failed to open patch file at '{}'", path.display()))?;
         facet_yaml::from_str(&yaml_str)

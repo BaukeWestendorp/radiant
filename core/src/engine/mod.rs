@@ -1,11 +1,12 @@
 use std::fs;
 use std::path::Path;
+use std::sync::mpsc;
 use std::time::Duration;
 
 use eyre::{Context, ContextCompat};
 
 use super::pipeline::Pipeline;
-use crate::io::midi::MidiManager;
+use crate::adapters::midi::MidiAdapter;
 use crate::showfile::{RELATIVE_GDTF_FILE_FOLDER_PATH, Showfile};
 use crate::{
     AnyObjectId, AnyPreset, AnyPresetId, Cue, CueId, DimmerPreset, DmxMode, Executor, ExecutorId,
@@ -30,8 +31,10 @@ pub struct Engine {
     /// The final output that will be sent to the DMX sources.
     output_pipeline: Pipeline,
 
-    /// Needs to be kept alive.
-    _midi_manager: MidiManager,
+    // Needs to be kept alive.
+    _midi_adapter: MidiAdapter,
+    /// Receives MIDI commands from the MIDI adapter.
+    midi_rx: mpsc::Receiver<()>,
 }
 
 impl Engine {
@@ -39,10 +42,14 @@ impl Engine {
     pub fn new(showfile: Showfile) -> Result<Self> {
         let show = Show::new(showfile.path().cloned());
 
+        let (midi_tx, midi_rx) = mpsc::channel();
+
         let mut this = Self {
             show,
             output_pipeline: Pipeline::new(),
-            _midi_manager: MidiManager::new("ASD").context("failed to create midi controller")?,
+            _midi_adapter: MidiAdapter::new(showfile.adapters().midi().active_devices(), midi_tx)
+                .context("failed to create midi controller")?,
+            midi_rx,
         };
 
         this.show.patch.gdtf_file_names = showfile.patch().gdtf_files().to_vec();
@@ -461,5 +468,11 @@ impl Engine {
         }
 
         Ok(())
+    }
+
+    pub fn handle_control_input(&mut self) {
+        for midi_message in self.midi_rx.try_iter() {
+            dbg!(midi_message);
+        }
     }
 }
