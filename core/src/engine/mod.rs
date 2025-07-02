@@ -1,13 +1,12 @@
-use std::sync::mpsc;
 use std::time::Duration;
 
 use eyre::{Context, ContextCompat};
 
 use super::pipeline::Pipeline;
-use crate::adapters::midi::{MidiAdapter, MidiCommand};
 use crate::showfile::Showfile;
 use crate::{Command, DmxMode, FixtureId, PatchCommand, Result, Show};
 
+mod adapters;
 mod cmd;
 mod dmx_resolver;
 mod protocols;
@@ -27,10 +26,7 @@ pub struct Engine {
     /// Handles all DMX protocol interaction.
     protocols: protocols::Protocols,
 
-    // Needs to be kept alive.
-    _midi_adapter: MidiAdapter,
-    /// Receives MIDI commands from the MIDI adapter.
-    midi_rx: mpsc::Receiver<MidiCommand>,
+    adapters: adapters::Adapters,
 }
 
 impl Engine {
@@ -38,19 +34,17 @@ impl Engine {
     pub fn new(showfile: Showfile) -> Result<Self> {
         let show = Show::new(showfile.path().cloned());
 
-        let (midi_tx, midi_rx) = mpsc::channel();
-
         let output_pipeline = Pipeline::new();
-
-        let _midi_adapter = MidiAdapter::new(showfile.adapters().midi(), midi_tx)
-            .context("failed to create midi controller")?;
 
         let mut protocols = protocols::Protocols::new();
         for config in showfile.protocols().sacn().sources() {
             protocols.add_sacn_source(config).wrap_err("failed to add sACN source to engine")?;
         }
 
-        let mut this = Self { show, output_pipeline, _midi_adapter, midi_rx, protocols };
+        let adapters = adapters::Adapters::new(&showfile.adapters().midi())
+            .wrap_err("failed to create adapter handler")?;
+
+        let mut this = Self { show, output_pipeline, protocols, adapters };
 
         this.show.patch.gdtf_file_names = showfile.patch().gdtf_files().to_vec();
 
@@ -110,22 +104,11 @@ impl Engine {
         self.output_pipeline.resolved_multiverse()
     }
 
-    /// Handles all control input like MIDI controllers controlling executors.
-    pub fn handle_control_input(&mut self) -> Result<()> {
-        for midi_message in self.midi_rx.try_iter().collect::<Vec<_>>() {
-            match midi_message {
-                MidiCommand::ExecutorButtonPress { executor_id } => {
-                    self.exec_cmd(crate::cmd!(&format!("executor {executor_id} button press")))?;
-                }
-                MidiCommand::ExecutorButtonRelease { executor_id } => {
-                    self.exec_cmd(crate::cmd!(&format!("executor {executor_id} button release")))?;
-                }
-                MidiCommand::ExecutorFaderSetValue { executor_id, value } => {
-                    self.exec_cmd(crate::cmd!(&format!(
-                        "executor {executor_id} fader level {value:?}"
-                    )))?;
-                }
-            }
+    /// Handles all adapter inputs like MIDI controllers controlling executors.
+    pub fn handle_adapter_input(&mut self) -> Result<()> {
+        let commands = self.adapters.handle_input()?;
+        for cmd in commands {
+            self.exec_cmd(cmd)?;
         }
         Ok(())
     }

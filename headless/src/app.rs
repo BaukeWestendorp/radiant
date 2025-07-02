@@ -19,7 +19,7 @@ pub fn run(showfile: Showfile) -> eyre::Result<()> {
     });
 
     loop {
-        match engine.lock().unwrap().handle_control_input() {
+        match engine.lock().unwrap().handle_adapter_input() {
             Ok(()) => {}
             Err(_err) => {
                 dmx_resolver_handle.join().unwrap();

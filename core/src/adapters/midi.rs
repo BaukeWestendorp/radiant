@@ -1,6 +1,6 @@
 use crate::{
     ExecutorId, Result,
-    showfile::{MidiAction, MidiConfig},
+    showfile::{MidiAction, MidiConfiguration},
 };
 use midir::{MidiInput, MidiInputConnection};
 use std::sync::mpsc;
@@ -11,7 +11,7 @@ pub struct MidiAdapter {
 }
 
 impl MidiAdapter {
-    pub fn new<'id>(config: &MidiConfig, midi_tx: mpsc::Sender<MidiCommand>) -> Result<Self> {
+    pub fn new<'id>(config: &MidiConfiguration, tx: mpsc::Sender<MidiCommand>) -> Result<Self> {
         let midi_input = MidiInput::new("Radiant MIDI Input").unwrap();
 
         let in_ports = midi_input.ports();
@@ -30,15 +30,14 @@ impl MidiAdapter {
             log::info!("using MIDI port '{port_name}'");
 
             let config = config.clone();
-            let midi_tx = midi_tx.clone();
+            let tx = tx.clone();
             let connection = midi_input.connect(
                 port,
                 &format!("Radiant MIDI Input ({})", port_name),
                 move |_stamp, message, _| {
                     let midi_cmds = get_midi_commands(message, &config);
                     for midi_cmd in midi_cmds {
-                        midi_tx
-                            .send(midi_cmd)
+                        tx.send(midi_cmd)
                             .map_err(|err| {
                                 log::error!("failed to send MIDI command from MIDI adapter: {err}");
                             })
@@ -55,7 +54,7 @@ impl MidiAdapter {
     }
 }
 
-fn get_midi_commands(message: &[u8], config: &MidiConfig) -> Vec<MidiCommand> {
+fn get_midi_commands(message: &[u8], config: &MidiConfiguration) -> Vec<MidiCommand> {
     const NOTE_ON: u8 = 0x90;
     const NOTE_OFF: u8 = 0x80;
     const CC: u8 = 0xB0;

@@ -7,11 +7,11 @@ use crate::{ExecutorId, Result};
 #[derive(Default)]
 #[derive(serde::Deserialize)]
 pub struct Adapters {
-    midi: MidiConfig,
+    midi: MidiConfiguration,
 }
 
 impl Adapters {
-    pub fn midi(&self) -> &MidiConfig {
+    pub fn midi(&self) -> &MidiConfiguration {
         &self.midi
     }
 
@@ -27,12 +27,12 @@ impl Adapters {
 
 #[derive(Clone, Default)]
 #[derive(serde::Deserialize)]
-pub struct MidiConfig {
+pub struct MidiConfiguration {
     active_devices: Vec<String>,
     actions: MidiActions,
 }
 
-impl MidiConfig {
+impl MidiConfiguration {
     pub fn active_devices(&self) -> &[String] {
         &self.active_devices
     }
