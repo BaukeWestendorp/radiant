@@ -9,3 +9,10 @@ midi:
         fader:
           channel: 0
           msg: !cc 0
+      2:
+        button:
+          channel: 0
+          msg: !cc 65
+        fader:
+          channel: 0
+          msg: !cc 1
