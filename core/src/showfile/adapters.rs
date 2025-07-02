@@ -25,7 +25,7 @@ impl Adapters {
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 #[derive(serde::Deserialize)]
 pub struct MidiConfig {
     active_devices: Vec<String>,
@@ -42,7 +42,7 @@ impl MidiConfig {
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 #[derive(serde::Deserialize)]
 pub struct MidiActions {
     executors: HashMap<ExecutorId, MidiExecutorAction>,
@@ -54,50 +54,45 @@ impl MidiActions {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 #[derive(serde::Deserialize)]
 pub struct MidiExecutorAction {
-    button: MidiExecutorButtonAction,
-    fader: MidiExecutorFaderAction,
+    button: Option<MidiExecutorControl>,
+    fader: Option<MidiExecutorControl>,
 }
 
 impl MidiExecutorAction {
-    pub fn button(&self) -> &MidiExecutorButtonAction {
-        &self.button
+    pub fn button(&self) -> Option<&MidiExecutorControl> {
+        self.button.as_ref()
     }
 
-    pub fn fader(&self) -> &MidiExecutorFaderAction {
-        &self.fader
+    pub fn fader(&self) -> Option<&MidiExecutorControl> {
+        self.fader.as_ref()
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 #[derive(serde::Deserialize)]
-pub struct MidiExecutorButtonAction {
+pub struct MidiExecutorControl {
     channel: u8,
-    note: u8,
+    msg: MidiAction,
 }
 
-impl MidiExecutorButtonAction {
+impl MidiExecutorControl {
     pub fn channel(&self) -> u8 {
         self.channel
     }
 
-    pub fn note(&self) -> u8 {
-        self.note
+    pub fn msg(&self) -> MidiAction {
+        self.msg
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[derive(serde::Deserialize)]
-pub struct MidiExecutorFaderAction {
-    channel: u8,
-    cc: u8,
-}
-
-impl MidiExecutorFaderAction {
-    pub fn channel(&self) -> u8 {
-        self.channel
-    }
-
-    pub fn cc(&self) -> u8 {
-        self.cc
-    }
+pub enum MidiAction {
+    #[serde(rename = "note")]
+    Note(u8),
+    #[serde(rename = "cc")]
+    ControlChange(u8),
 }

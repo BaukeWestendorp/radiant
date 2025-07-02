@@ -7,6 +7,7 @@ use eyre::{Context, ContextCompat};
 
 use super::pipeline::Pipeline;
 use crate::adapters::midi::MidiAdapter;
+use crate::midi::MidiCommand;
 use crate::showfile::{RELATIVE_GDTF_FILE_FOLDER_PATH, Showfile};
 use crate::{
     AnyObjectId, AnyPreset, AnyPresetId, Cue, CueId, DimmerPreset, DmxMode, Executor, ExecutorId,
@@ -34,7 +35,7 @@ pub struct Engine {
     // Needs to be kept alive.
     _midi_adapter: MidiAdapter,
     /// Receives MIDI commands from the MIDI adapter.
-    midi_rx: mpsc::Receiver<()>,
+    midi_rx: mpsc::Receiver<MidiCommand>,
 }
 
 impl Engine {
@@ -470,9 +471,22 @@ impl Engine {
         Ok(())
     }
 
-    pub fn handle_control_input(&mut self) {
-        for midi_message in self.midi_rx.try_iter() {
-            dbg!(midi_message);
+    pub fn handle_control_input(&mut self) -> Result<()> {
+        for midi_message in self.midi_rx.try_iter().collect::<Vec<_>>() {
+            match midi_message {
+                MidiCommand::ExecutorButtonPress { executor_id } => {
+                    self.exec_cmd(crate::cmd!(&format!("executor {executor_id} button press")))?;
+                }
+                MidiCommand::ExecutorButtonRelease { executor_id } => {
+                    self.exec_cmd(crate::cmd!(&format!("executor {executor_id} button release")))?;
+                }
+                MidiCommand::ExecutorFaderSetValue { executor_id, value } => {
+                    self.exec_cmd(crate::cmd!(&format!(
+                        "executor {executor_id} fader level {value:?}"
+                    )))?;
+                }
+            }
         }
+        Ok(())
     }
 }

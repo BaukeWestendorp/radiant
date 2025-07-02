@@ -10,7 +10,7 @@ use radiant::{DMX_OUTPUT_UPDATE_INTERVAL, Engine};
 pub fn run(showfile: Showfile) -> eyre::Result<()> {
     let engine = Arc::new(Mutex::new(Engine::new(showfile).wrap_err("failed to create engine")?));
 
-    let _dmx_resolver_handle = thread::spawn({
+    let dmx_resolver_handle = thread::spawn({
         let engine = engine.clone();
         move || loop {
             engine.lock().unwrap().resolve_dmx();
@@ -19,9 +19,12 @@ pub fn run(showfile: Showfile) -> eyre::Result<()> {
     });
 
     loop {
-        engine.lock().unwrap().handle_control_input();
+        match engine.lock().unwrap().handle_control_input() {
+            Ok(()) => {}
+            Err(err) => {
+                dmx_resolver_handle.join().unwrap();
+                return Err(err);
+            }
+        }
     }
-
-    // _dmx_resolver_handle.join().unwrap();
-    // Ok(())
 }

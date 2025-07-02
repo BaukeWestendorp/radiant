@@ -4,8 +4,8 @@ midi:
     executors:
       1:
         button:
-          channel: 1
-          note: 64
+          channel: 0
+          msg: !cc 64
         fader:
-          channel: 1
-          cc: 0
+          channel: 0
+          msg: !cc 0
