@@ -11,7 +11,6 @@ use std::{
     collections::HashMap,
     net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr},
     sync::Mutex,
-    thread,
     time::{Duration, Instant},
 };
 
@@ -159,7 +158,7 @@ impl Source {
         self.send_discovery_packet()?;
 
         loop {
-            thread::sleep(DMX_SEND_INTERVAL);
+            spin_sleep::sleep(DMX_SEND_INTERVAL);
             let data = self.universes.lock().unwrap().clone();
 
             for universe in data {

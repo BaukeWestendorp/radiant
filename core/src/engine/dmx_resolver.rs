@@ -10,16 +10,6 @@ pub fn resolve(output_pipeline: &mut Pipeline, show: &mut Show) {
 
     // Resolve output pipeline.
     resolve_output_pipeline(output_pipeline, show);
-
-    let multiverse = output_pipeline.resolved_multiverse();
-    eprintln!(
-        "{:?}",
-        &multiverse
-            .universe(&dmx::UniverseId::new(1).unwrap())
-            .cloned()
-            .unwrap_or_default()
-            .values()[0..8]
-    );
 }
 
 fn resolve_executors(output_pipeline: &mut Pipeline, show: &Show) {

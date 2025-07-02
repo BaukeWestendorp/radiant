@@ -76,5 +76,5 @@ impl SacnSourceConfiguration {
 #[derive(serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SacnOutputType {
-    Unicast { destination_ip: Option<IpAddr> },
+    Unicast { destination_ip: IpAddr },
 }

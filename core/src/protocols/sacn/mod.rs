@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 //! # sACN
 //! This library provides a Rust interface for working with sACN.
 //!
@@ -6,10 +8,13 @@
 
 pub(crate) mod acn;
 pub mod packet;
+pub mod receiver;
 pub mod source;
 
 use arrayvec::ArrayVec;
 
+#[allow(unused_imports)]
+pub use receiver::*;
 pub use source::*;
 
 /// # E1.31 3.2 Universe

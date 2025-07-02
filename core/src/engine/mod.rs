@@ -18,6 +18,7 @@ pub use cmd::*;
 
 pub mod cmd;
 mod dmx_resolver;
+mod protocols;
 
 pub const DMX_OUTPUT_UPDATE_INTERVAL: Duration = Duration::from_millis(40);
 
@@ -30,6 +31,9 @@ pub struct Engine {
 
     /// The final output that will be sent to the DMX sources.
     output_pipeline: Pipeline,
+
+    /// Handles all DMX protocol interaction.
+    protocols: protocols::Protocols,
 
     // Needs to be kept alive.
     _midi_adapter: MidiAdapter,
@@ -44,13 +48,17 @@ impl Engine {
 
         let (midi_tx, midi_rx) = mpsc::channel();
 
-        let mut this = Self {
-            show,
-            output_pipeline: Pipeline::new(),
-            _midi_adapter: MidiAdapter::new(showfile.adapters().midi(), midi_tx)
-                .context("failed to create midi controller")?,
-            midi_rx,
-        };
+        let output_pipeline = Pipeline::new();
+
+        let _midi_adapter = MidiAdapter::new(showfile.adapters().midi(), midi_tx)
+            .context("failed to create midi controller")?;
+
+        let mut protocols = protocols::Protocols::new();
+        for config in showfile.protocols().sacn().sources() {
+            protocols.add_sacn_source(config).wrap_err("failed to add sACN source to engine")?;
+        }
+
+        let mut this = Self { show, output_pipeline, _midi_adapter, midi_rx, protocols };
 
         this.show.patch.gdtf_file_names = showfile.patch().gdtf_files().to_vec();
 
@@ -100,6 +108,8 @@ impl Engine {
 
         self.output_pipeline = Pipeline::default();
         dmx_resolver::resolve(&mut self.output_pipeline, &mut self.show);
+
+        self.protocols.update_dmx_output(self.output_pipeline.resolved_multiverse());
     }
 
     /// Gets the resolved output [Multiverse].

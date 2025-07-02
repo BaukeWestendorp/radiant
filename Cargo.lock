@@ -780,6 +780,7 @@ dependencies = [
  "serde",
  "serde_yaml",
  "socket2",
+ "spin_sleep",
  "thiserror 2.0.12",
  "uuid",
 ]
