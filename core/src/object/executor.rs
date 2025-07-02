@@ -66,8 +66,10 @@ impl Executor {
 
         let Some(sequence) = self.sequence(show) else { return };
 
+        // FIXME: We should add an option to change the end-of-sequence behaviour.
+        //        For now we just loop...
         if index > sequence.len() - 1 {
-            self.active_cue_index = Some(sequence.len() - 1);
+            self.active_cue_index = Some(0);
         } else {
             self.active_cue_index = Some(index);
         }
