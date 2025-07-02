@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{fs, io, path::PathBuf};
 
 use eyre::Context;
 
@@ -6,7 +6,7 @@ use crate::Result;
 
 /// Contains all information regarding the mapping of fixtures to the DMX universes.
 #[derive(Default)]
-#[derive(facet::Facet)]
+#[derive(serde::Deserialize)]
 pub struct Patch {
     gdtf_files: Vec<String>,
     fixtures: Vec<Fixture>,
@@ -23,15 +23,16 @@ impl Patch {
 
     /// Reads a patch from a file at the given path.
     pub fn read_from_file(path: &PathBuf) -> Result<Self> {
-        let yaml_str = std::fs::read_to_string(&path)
+        let file = fs::File::open(path)
             .with_context(|| format!("failed to open patch file at '{}'", path.display()))?;
-        facet_yaml::from_str(&yaml_str)
+        let reader = io::BufReader::new(file);
+        serde_yaml::from_reader(reader)
             .with_context(|| format!("failed to read patch file at '{}'", path.display()))
     }
 }
 
 /// Represents information about a single mapped fixture.
-#[derive(facet::Facet)]
+#[derive(serde::Deserialize)]
 pub struct Fixture {
     id: u32,
     gdtf_file_index: usize,

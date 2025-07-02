@@ -3,7 +3,13 @@ name = "dmx"
 version.workspace = true
 edition.workspace = true
 
+[features]
+serde = ["dep:serde", "dep:serde-big-array"]
+
 [dependencies]
 derive_more.workspace = true
-facet.workspace = true
 thiserror.workspace = true
+
+# feature = "serde"
+serde = { workspace = true, optional = true }
+serde-big-array = { version = "0.5.1", optional = true }

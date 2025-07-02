@@ -4,11 +4,9 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-facet-pretty.workspace = true
-facet.workspace = true
-facet-args = "0.19.15"
 simple_logger.workspace = true
 eyre.workspace = true
 log.workspace = true
 radiant.workspace = true
 spin_sleep = "1.3.2"
+clap = { version = "4.5.40", features = ["derive"] }

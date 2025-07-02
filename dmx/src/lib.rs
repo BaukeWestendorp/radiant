@@ -24,7 +24,7 @@ pub use error::Error;
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(derive_more::Deref, derive_more::DerefMut, derive_more::Display)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize))]
 pub struct Channel(u16);
 
 impl Channel {
@@ -51,6 +51,16 @@ impl Channel {
             1..=512 => Ok(Self(channel)),
             other => Err(Error::InvalidChannel(other)),
         }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> ::serde::Deserialize<'de> for Channel {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        Self::new(u16::deserialize(deserializer)?).map_err(::serde::de::Error::custom)
     }
 }
 
@@ -100,7 +110,7 @@ impl std::str::FromStr for Channel {
     derive_more::From,
     derive_more::Into
 )]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Value(pub u8);
 
 impl Value {
@@ -132,7 +142,7 @@ impl Value {
 /// assert_eq!(addr.channel, dmx::Channel::new(488).unwrap());
 /// ```
 #[derive(Debug, Clone, Default, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Address {
     /// The universe id for this address.
     pub universe: UniverseId,
@@ -249,7 +259,7 @@ impl std::fmt::Display for Address {
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(derive_more::Deref, derive_more::DerefMut, derive_more::Display)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize))]
 pub struct UniverseId(u16);
 
 impl UniverseId {
@@ -278,6 +288,16 @@ impl UniverseId {
         }
 
         Ok(Self(id))
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> ::serde::Deserialize<'de> for UniverseId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: ::serde::Deserializer<'de>,
+    {
+        Self::new(u16::deserialize(deserializer)?).map_err(::serde::de::Error::custom)
     }
 }
 
@@ -322,7 +342,7 @@ impl std::str::FromStr for UniverseId {
 /// let universe = dmx::Universe::new();
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Universe {
     values: [Value; 512],
 }
@@ -427,7 +447,7 @@ impl From<Universe> for Vec<u8> {
 /// let _removed_universe = multiverse.remove_universe(&id);
 /// ```
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Multiverse {
     universes: HashMap<UniverseId, Universe>,
 }
@@ -649,5 +669,58 @@ mod tests {
         let c = Address::new(UniverseId::new(4).unwrap(), Channel::new(1).unwrap());
         assert!(a < b);
         assert!(b < c);
+    }
+}
+
+#[cfg(feature = "serde")]
+mod serde {
+    #[cfg(test)]
+    mod tests {
+        use crate::*;
+
+        #[test]
+        fn serialize_channel() {
+            let channel = Channel::new(100).unwrap();
+            let serialized = serde_json::to_string(&channel).unwrap();
+            assert_eq!(serialized, "100");
+        }
+
+        #[test]
+        fn deserialize_channel() {
+            let channel: Channel = serde_json::from_str("100").unwrap();
+            assert_eq!(channel, Channel::new(100).unwrap());
+        }
+
+        #[test]
+        fn deserialize_invalid_channel() {
+            let result: Result<Channel, _> = serde_json::from_str("513");
+            assert!(result.is_err());
+        }
+
+        #[test]
+        fn serialize_universe_id() {
+            let universe_id = UniverseId::new(1).unwrap();
+            let serialized = serde_json::to_string(&universe_id).unwrap();
+            assert_eq!(serialized, "1");
+        }
+
+        #[test]
+        fn deserialize_universe_id() {
+            let universe_id: UniverseId = serde_json::from_str("1").unwrap();
+            assert_eq!(universe_id, UniverseId::new(1).unwrap());
+        }
+
+        #[test]
+        fn deserialize_invalid_universe_id() {
+            let result: Result<Channel, _> = serde_json::from_str("0");
+            assert!(result.is_err());
+        }
+
+        #[test]
+        fn deserialize_universe() {
+            let json = r#"{"id":1,"values":[0,0,0]}"#;
+            let universe: Result<Universe, _> = serde_json::from_str(json);
+            assert!(universe.is_err()); // Should fail as we need all 512 values
+        }
     }
 }

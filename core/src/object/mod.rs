@@ -26,6 +26,8 @@ macro_rules! define_object_id {
             derive_more::MulAssign,
             derive_more::DivAssign
         )]
+        #[derive(serde::Serialize, serde::Deserialize)]
+        #[serde(transparent)]
         pub struct $name(pub u32);
     };
 }

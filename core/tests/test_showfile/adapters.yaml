@@ -1,2 +1,4 @@
 midi:
   active_devices: []
+  actions:
+    executors:

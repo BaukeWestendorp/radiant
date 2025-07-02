@@ -1,11 +1,11 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::HashMap, fs, io, path::PathBuf};
 
 use eyre::Context;
 
-use crate::Result;
+use crate::{ExecutorId, Result};
 
 #[derive(Default)]
-#[derive(facet::Facet)]
+#[derive(serde::Deserialize)]
 pub struct Adapters {
     midi: MidiConfig,
 }
@@ -17,15 +17,16 @@ impl Adapters {
 
     /// Reads a io from a file at the given path.
     pub fn read_from_file(path: &PathBuf) -> Result<Self> {
-        let yaml_str = std::fs::read_to_string(&path)
+        let file = fs::File::open(path)
             .with_context(|| format!("failed to open adapters file at '{}'", path.display()))?;
-        facet_yaml::from_str(&yaml_str)
+        let reader = io::BufReader::new(file);
+        serde_yaml::from_reader(reader)
             .with_context(|| format!("failed to read adapters file at '{}'", path.display()))
     }
 }
 
 #[derive(Default)]
-#[derive(facet::Facet)]
+#[derive(serde::Deserialize)]
 pub struct MidiConfig {
     active_devices: Vec<String>,
     actions: MidiActions,
@@ -35,21 +36,25 @@ impl MidiConfig {
     pub fn active_devices(&self) -> &[String] {
         &self.active_devices
     }
+
+    pub fn actions(&self) -> &MidiActions {
+        &self.actions
+    }
 }
 
 #[derive(Default)]
-#[derive(facet::Facet)]
+#[derive(serde::Deserialize)]
 pub struct MidiActions {
-    executors: HashMap<u32, MidiExecutorAction>,
+    executors: HashMap<ExecutorId, MidiExecutorAction>,
 }
 
 impl MidiActions {
-    pub fn executors(&self) -> &HashMap<u32, MidiExecutorAction> {
+    pub fn executors(&self) -> &HashMap<ExecutorId, MidiExecutorAction> {
         &self.executors
     }
 }
 
-#[derive(facet::Facet)]
+#[derive(serde::Deserialize)]
 pub struct MidiExecutorAction {
     button: MidiExecutorButtonAction,
     fader: MidiExecutorFaderAction,
@@ -65,7 +70,7 @@ impl MidiExecutorAction {
     }
 }
 
-#[derive(facet::Facet)]
+#[derive(serde::Deserialize)]
 pub struct MidiExecutorButtonAction {
     channel: u8,
     note: u8,
@@ -81,7 +86,7 @@ impl MidiExecutorButtonAction {
     }
 }
 
-#[derive(facet::Facet)]
+#[derive(serde::Deserialize)]
 pub struct MidiExecutorFaderAction {
     channel: u8,
     cc: u8,
