@@ -21,9 +21,9 @@ pub fn run(showfile: Showfile) -> eyre::Result<()> {
     loop {
         match engine.lock().unwrap().handle_control_input() {
             Ok(()) => {}
-            Err(err) => {
+            Err(_err) => {
                 dmx_resolver_handle.join().unwrap();
-                return Err(err);
+                return Err(_err);
             }
         }
     }

@@ -6,8 +6,7 @@ use std::time::Duration;
 use eyre::{Context, ContextCompat};
 
 use super::pipeline::Pipeline;
-use crate::adapters::midi::MidiAdapter;
-use crate::midi::MidiCommand;
+use crate::adapters::midi::{MidiAdapter, MidiCommand};
 use crate::showfile::{RELATIVE_GDTF_FILE_FOLDER_PATH, Showfile};
 use crate::{
     AnyObjectId, AnyPreset, AnyPresetId, Cue, CueId, DimmerPreset, DmxMode, Executor, ExecutorId,
