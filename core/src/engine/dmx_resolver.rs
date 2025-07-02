@@ -39,7 +39,8 @@ fn resolve_recipe(recipe: &Recipe, level: f32, output_pipeline: &mut Pipeline, s
             };
 
             let content = match preset {
-                AnyPreset::Dimmer(preset) => &preset.content,
+                AnyPreset::Dimmer(preset) => preset.content,
+                AnyPreset::Color(preset) => preset.content,
             };
 
             match &content {

@@ -24,6 +24,60 @@ programmer set attribute 8 "Dimmer" 1.0
 create preset::dimmer 2 "All @ 100%"
 preset::dimmer 2 store
 
+programmer set attribute 1 "ColorAdd_R" 1.0
+programmer set attribute 2 "ColorAdd_R" 1.0
+programmer set attribute 3 "ColorAdd_R" 1.0
+programmer set attribute 4 "ColorAdd_R" 1.0
+programmer set attribute 5 "ColorAdd_R" 1.0
+programmer set attribute 6 "ColorAdd_R" 1.0
+programmer set attribute 7 "ColorAdd_R" 1.0
+programmer set attribute 8 "ColorAdd_R" 1.0
+programmer set attribute 1 "ColorAdd_G" 0.0
+programmer set attribute 2 "ColorAdd_G" 0.0
+programmer set attribute 3 "ColorAdd_G" 0.0
+programmer set attribute 4 "ColorAdd_G" 0.0
+programmer set attribute 5 "ColorAdd_G" 0.0
+programmer set attribute 6 "ColorAdd_G" 0.0
+programmer set attribute 7 "ColorAdd_G" 0.0
+programmer set attribute 8 "ColorAdd_G" 0.0
+programmer set attribute 1 "ColorAdd_B" 0.0
+programmer set attribute 2 "ColorAdd_B" 0.0
+programmer set attribute 3 "ColorAdd_B" 0.0
+programmer set attribute 4 "ColorAdd_B" 0.0
+programmer set attribute 5 "ColorAdd_B" 0.0
+programmer set attribute 6 "ColorAdd_B" 0.0
+programmer set attribute 7 "ColorAdd_B" 0.0
+programmer set attribute 8 "ColorAdd_B" 0.0
+create preset::color 1 "Red"
+preset::color 1 store
+
+programmer set attribute 1 "ColorAdd_R" 1.0
+programmer set attribute 2 "ColorAdd_R" 1.0
+programmer set attribute 3 "ColorAdd_R" 1.0
+programmer set attribute 4 "ColorAdd_R" 1.0
+programmer set attribute 5 "ColorAdd_R" 1.0
+programmer set attribute 6 "ColorAdd_R" 1.0
+programmer set attribute 7 "ColorAdd_R" 1.0
+programmer set attribute 8 "ColorAdd_R" 1.0
+programmer set attribute 1 "ColorAdd_G" 0.65
+programmer set attribute 2 "ColorAdd_G" 0.65
+programmer set attribute 3 "ColorAdd_G" 0.65
+programmer set attribute 4 "ColorAdd_G" 0.65
+programmer set attribute 5 "ColorAdd_G" 0.65
+programmer set attribute 6 "ColorAdd_G" 0.65
+programmer set attribute 7 "ColorAdd_G" 0.65
+programmer set attribute 8 "ColorAdd_G" 0.65
+programmer set attribute 1 "ColorAdd_B" 0.0
+programmer set attribute 2 "ColorAdd_B" 0.0
+programmer set attribute 3 "ColorAdd_B" 0.0
+programmer set attribute 4 "ColorAdd_B" 0.0
+programmer set attribute 5 "ColorAdd_B" 0.0
+programmer set attribute 6 "ColorAdd_B" 0.0
+programmer set attribute 7 "ColorAdd_B" 0.0
+programmer set attribute 8 "ColorAdd_B" 0.0
+create preset::color 2 "Orange"
+preset::color 2 store
+
 create fixture_group 1 "All"
 fixture_group 1 add 1, 2, 3, 4, 5, 6, 7, 8
 
@@ -54,6 +108,16 @@ sequence 2 add cue 3, cue 4
 
 create executor 2
 executor 2 set_sequence sequence 2
+
+create cue 5
+cue 5 add fixture_group 1 preset::color 1
+create cue 6
+cue 6 add fixture_group 1 preset::color 2
+create sequence 3 "Colors"
+sequence 3 add cue 5, cue 6
+
+create executor 3
+executor 3 set_sequence sequence 3
 
 executor 1 button press
 executor 1 button release

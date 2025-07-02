@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
-use crate::{Attribute, AttributeValue, FixtureId};
+use crate::{Attribute, AttributeValue, FeatureGroup, FixtureId};
 
 macro_rules! define_preset {
-    ($($name:ident, $id:ident, $new_name:literal, $any_name:ident),+ $(,)?) => {
+    ($(($name:ident, $id:ident, $any_name:ident, $new_name:literal)),+ $(,)?) => {
         $(
             crate::define_object_id!($id);
 
@@ -22,6 +22,10 @@ macro_rules! define_preset {
 
                 pub fn id(&self) -> $id {
                     self.id
+                }
+
+                pub fn into_any(self) -> AnyPreset {
+                    AnyPreset::$any_name(self)
                 }
             }
         )+
@@ -44,25 +48,10 @@ macro_rules! define_preset {
         )+
 
         $(
-            impl<'a> From<&'a mut $name> for &'a mut AnyPreset {
-                fn from(preset: &'a mut $name) -> Self {
-                    // SAFETY: This is safe because AnyPreset contains the same variants
-                    //         as AnyPresetId, and we're just getting a mutable reference to the
-                    //         variant that was created with From<$name> for AnyPreset
-                    unsafe {
-                        let any_preset = (preset as *mut $name).cast::<AnyPreset>();
-                        &mut *any_preset
-                    }
-                }
-            }
-        )+
-
-        $(
             impl<'a> TryFrom<&'a mut AnyPreset> for &'a mut $name {
                 type Error = ();
 
                 fn try_from(any_preset: &'a mut AnyPreset) -> Result<Self, Self::Error> {
-                    #[allow(unreachable_patterns)]
                     match any_preset {
                         AnyPreset::$any_name(preset) => Ok(preset),
                         _ => Err(()),
@@ -84,24 +73,9 @@ macro_rules! define_preset {
                 type Error = ();
 
                 fn try_from(any_id: AnyPresetId) -> Result<Self, Self::Error> {
-                    #[allow(unreachable_patterns)]
                     match any_id {
                         AnyPresetId::$any_name(id) => Ok(id),
                         _ => Err(()),
-                    }
-                }
-            }
-        )+
-
-        $(
-            impl<'a> From<&'a $name> for &'a AnyPreset {
-                fn from(preset: &'a $name) -> Self {
-                    // SAFETY: This is safe because AnyPreset contains the same variants
-                    //         as AnyPresetId, and we're just getting a reference to the
-                    //         variant that was created with From<$name> for AnyPreset
-                    unsafe {
-                        let any_preset = (preset as *const $name).cast::<AnyPreset>();
-                        &*any_preset
                     }
                 }
             }
@@ -147,21 +121,16 @@ pub enum PresetContent {
     Selective(SelectivePreset),
 }
 
-impl Default for PresetContent {
-    fn default() -> Self {
-        Self::Selective(Default::default())
-    }
-}
-
 /// A preset that has attribute values for specific fixures.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct SelectivePreset {
-    attribute_values: HashMap<(FixtureId, Attribute), AttributeValue>,
+    attribute_values: BTreeMap<(FixtureId, Attribute), AttributeValue>,
+    filter: FeatureGroup,
 }
 
 impl SelectivePreset {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(feature_group_filter: FeatureGroup) -> Self {
+        Self { attribute_values: BTreeMap::new(), filter: feature_group_filter }
     }
 
     pub fn get_attribute_values(
@@ -176,7 +145,9 @@ impl SelectivePreset {
         attribute: Attribute,
         value: AttributeValue,
     ) {
-        self.attribute_values.insert((fixture_id, attribute), value);
+        if attribute.feature_group().is_some_and(|fg| fg == self.filter) {
+            self.attribute_values.insert((fixture_id, attribute), value);
+        }
     }
 
     pub fn clear(&mut self) {
@@ -184,4 +155,7 @@ impl SelectivePreset {
     }
 }
 
-define_preset!(DimmerPreset, DimmerPresetId, "New Dimmer Preset", Dimmer);
+define_preset!(
+    (DimmerPreset, DimmerPresetId, Dimmer, "New Dimmer Preset"),
+    (ColorPreset, ColorPresetId, Color, "New Color Preset"),
+);

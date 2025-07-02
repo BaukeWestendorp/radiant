@@ -3,8 +3,8 @@ use std::path::PathBuf;
 
 use crate::pipeline::Pipeline;
 use crate::{
-    AnyPreset, AnyPresetId, Cue, CueId, DimmerPreset, DimmerPresetId, Executor, ExecutorId,
-    FixtureGroup, FixtureGroupId, Patch, Sequence, SequenceId,
+    AnyPreset, AnyPresetId, ColorPreset, ColorPresetId, Cue, CueId, DimmerPreset, DimmerPresetId,
+    Executor, ExecutorId, FixtureGroup, FixtureGroupId, Patch, Sequence, SequenceId,
 };
 
 #[derive(Debug, Clone, Default)]
@@ -21,6 +21,7 @@ pub struct Show {
     pub(crate) sequences: HashMap<SequenceId, Sequence>,
     pub(crate) cues: HashMap<CueId, Cue>,
     pub(crate) dimmer_presets: HashMap<DimmerPresetId, DimmerPreset>,
+    pub(crate) color_presets: HashMap<ColorPresetId, ColorPreset>,
 }
 
 impl Show {
@@ -101,23 +102,18 @@ impl Show {
     }
 
     /// Gets any kind of preset from it's corresponding id.
-    pub fn preset(&self, preset_id: impl Into<AnyPresetId>) -> Option<&AnyPreset> {
+    pub fn preset(&self, preset_id: impl Into<AnyPresetId>) -> Option<AnyPreset> {
         match preset_id.into() {
-            AnyPresetId::Dimmer(id) => Some(self.dimmer_presets.get(&id)?.into()),
-        }
-    }
-
-    /// Gets any kind of preset from it's corresponding id as mutable.
-    pub(crate) fn preset_mut(
-        &mut self,
-        preset_id: impl Into<AnyPresetId>,
-    ) -> Option<&mut AnyPreset> {
-        match preset_id.into() {
-            AnyPresetId::Dimmer(id) => Some(self.dimmer_presets.get_mut(&id)?.into()),
+            AnyPresetId::Dimmer(id) => Some(self.dimmer_presets.get(&id)?.clone().into_any()),
+            AnyPresetId::Color(id) => Some(self.color_presets.get(&id)?.clone().into_any()),
         }
     }
 
     pub fn preset_dimmer(&self, id: impl Into<DimmerPresetId>) -> Option<&DimmerPreset> {
         self.dimmer_presets.get(&id.into())
+    }
+
+    pub fn preset_color(&self, id: impl Into<ColorPresetId>) -> Option<&ColorPreset> {
+        self.color_presets.get(&id.into())
     }
 }

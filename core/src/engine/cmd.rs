@@ -4,11 +4,12 @@ use std::path::Path;
 use eyre::{Context, ContextCompat};
 
 use crate::{
-    AnyObjectId, AnyPreset, AnyPresetId, Command, Cue, CueCommand, CueId, DimmerPreset, Engine,
-    Executor, ExecutorButtonCommand, ExecutorCommand, ExecutorFaderCommand, ExecutorId, Fixture,
-    FixtureGroup, FixtureGroupCommand, FixtureGroupId, PatchCommand, PresetCommand, PresetContent,
-    ProgrammerCommand, ProgrammerSetCommand, Result, Sequence, SequenceCommand, SequenceId,
-    pipeline::Pipeline, showfile::RELATIVE_GDTF_FILE_FOLDER_PATH,
+    AnyObjectId, AnyPresetId, ColorPreset, Command, Cue, CueCommand, CueId, DimmerPreset, Engine,
+    Executor, ExecutorButtonCommand, ExecutorCommand, ExecutorFaderCommand, ExecutorId,
+    FeatureGroup, Fixture, FixtureGroup, FixtureGroupCommand, FixtureGroupId, PatchCommand,
+    PresetCommand, PresetContent, ProgrammerCommand, ProgrammerSetCommand, Result, SelectivePreset,
+    Sequence, SequenceCommand, SequenceId, pipeline::Pipeline,
+    showfile::RELATIVE_GDTF_FILE_FOLDER_PATH,
 };
 
 pub fn exec_cmd(engine: &mut Engine, cmd: Command) -> Result<()> {
@@ -139,11 +140,28 @@ fn exec_create_command(engine: &mut Engine, id: AnyObjectId, name: Option<String
         }
         AnyObjectId::Preset(id) => match id {
             AnyPresetId::Dimmer(id) => {
-                let mut dimmer_preset = DimmerPreset::new(id, PresetContent::default());
+                let mut preset = DimmerPreset::new(
+                    id,
+                    PresetContent::Selective(SelectivePreset::new(FeatureGroup::Dimmer)),
+                );
+
                 if let Some(name) = name {
-                    dimmer_preset.name = name;
+                    preset.name = name;
                 }
-                engine.show.dimmer_presets.insert(dimmer_preset.id(), dimmer_preset);
+
+                engine.show.dimmer_presets.insert(preset.id(), preset);
+            }
+            AnyPresetId::Color(id) => {
+                let mut preset = ColorPreset::new(
+                    id,
+                    PresetContent::Selective(SelectivePreset::new(FeatureGroup::Color)),
+                );
+
+                if let Some(name) = name {
+                    preset.name = name;
+                }
+
+                engine.show.color_presets.insert(preset.id(), preset);
             }
         },
     }
@@ -168,6 +186,9 @@ fn exec_remove_command(engine: &mut Engine, id: AnyObjectId) -> Result<()> {
         AnyObjectId::Preset(id) => match id {
             AnyPresetId::Dimmer(id) => {
                 engine.show.dimmer_presets.remove(&id);
+            }
+            AnyPresetId::Color(id) => {
+                engine.show.color_presets.remove(&id);
             }
         },
     }
@@ -194,16 +215,21 @@ fn exec_rename_command(engine: &mut Engine, id: AnyObjectId, name: String) -> Re
             engine.show.cue_mut(id).wrap_err("cue with id '{id}' not found")?.name = name;
         }
         AnyObjectId::Preset(any_preset_id) => match any_preset_id {
-            AnyPresetId::Dimmer(_) => {
-                match engine
+            AnyPresetId::Dimmer(id) => {
+                let preset = engine
                     .show
-                    .preset_mut(any_preset_id)
-                    .wrap_err("preset with id '{id}' not found")?
-                {
-                    AnyPreset::Dimmer(preset) => {
-                        preset.name = name;
-                    }
-                }
+                    .dimmer_presets
+                    .get_mut(&id)
+                    .wrap_err("preset with id '{id}' not found")?;
+                preset.name = name;
+            }
+            AnyPresetId::Color(id) => {
+                let preset = engine
+                    .show
+                    .color_presets
+                    .get_mut(&id)
+                    .wrap_err("preset with id '{id}' not found")?;
+                preset.name = name;
             }
         },
     }
@@ -339,31 +365,66 @@ fn exec_preset_command(engine: &mut Engine, id: AnyPresetId, cmd: PresetCommand)
             engine.show.programmer.resolve(&engine.show.patch);
             let resolved_attribute_values =
                 engine.show().programmer.resolved_attribute_values().clone();
-            let Some(preset) = engine.show.preset_mut(id) else {
-                eyre::bail!("preset with id '{id}' not found");
-            };
+
             for ((fid, attr), value) in resolved_attribute_values {
-                match preset {
-                    AnyPreset::Dimmer(preset) => match &mut preset.content {
-                        PresetContent::Selective(selective_preset) => {
-                            selective_preset.set_attribute_value(fid, attr, value);
+                match id {
+                    AnyPresetId::Dimmer(id) => {
+                        match &mut engine
+                            .show
+                            .dimmer_presets
+                            .get_mut(&id)
+                            .wrap_err("preset with id '{id}' not found")?
+                            .content
+                        {
+                            PresetContent::Selective(selective_preset) => {
+                                selective_preset.set_attribute_value(fid, attr, value);
+                            }
                         }
-                    },
+                    }
+                    AnyPresetId::Color(id) => {
+                        match &mut engine
+                            .show
+                            .color_presets
+                            .get_mut(&id)
+                            .wrap_err("preset with id '{id}' not found")?
+                            .content
+                        {
+                            PresetContent::Selective(selective_preset) => {
+                                selective_preset.set_attribute_value(fid, attr, value);
+                            }
+                        }
+                    }
                 }
             }
         }
-        PresetCommand::Clear => {
-            let Some(preset) = engine.show.preset_mut(id) else {
-                eyre::bail!("preset with id '{id}' not found");
-            };
-            match preset {
-                AnyPreset::Dimmer(preset) => match &mut preset.content {
+        PresetCommand::Clear => match id {
+            AnyPresetId::Dimmer(id) => {
+                match &mut engine
+                    .show
+                    .dimmer_presets
+                    .get_mut(&id)
+                    .wrap_err("preset with id '{id}' not found")?
+                    .content
+                {
                     PresetContent::Selective(selective_preset) => {
                         selective_preset.clear();
                     }
-                },
+                }
             }
-        }
+            AnyPresetId::Color(id) => {
+                match &mut engine
+                    .show
+                    .color_presets
+                    .get_mut(&id)
+                    .wrap_err("preset with id '{id}' not found")?
+                    .content
+                {
+                    PresetContent::Selective(selective_preset) => {
+                        selective_preset.clear();
+                    }
+                }
+            }
+        },
     }
 
     Ok(())

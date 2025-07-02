@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 /// A GDTF attribute.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Attribute {
     /// Controls the intensity of a fixture.
     Dimmer,
@@ -313,7 +313,6 @@ pub enum Attribute {
     FrostPulseClose(u8),
     /// Sets frequency of frost’s ramp.
     FrostRamp(u8),
-
     /// The fixture's prism wheel (n). Selects prisms in prism wheel (n). A different channel function sets the angle of the indexed position in the selected prism or the angular speed of its continuous rotation. This is the main attribute of prism wheel's (n) wheel control.
     Prism(u8),
     /// Selects prisms whose rotation is continuous in prism wheel (n) and controls the angular speed of the prism's spin within the same channel function.
@@ -573,6 +572,300 @@ pub enum Attribute {
     Custom(String),
 }
 
+impl Attribute {
+    pub fn feature_group(&self) -> Option<FeatureGroup> {
+        match self {
+            Self::Dimmer => Some(FeatureGroup::Dimmer),
+            Self::Pan
+            | Self::Tilt
+            | Self::PanRotate
+            | Self::TiltRotate
+            | Self::PositionEffect
+            | Self::PositionEffectRate
+            | Self::PositionEffectFade
+            | Self::XyzX
+            | Self::XyzY
+            | Self::XyzZ
+            | Self::RotX
+            | Self::RotY
+            | Self::RotZ
+            | Self::ScaleX
+            | Self::ScaleY
+            | Self::ScaleZ
+            | Self::ScaleXYZ => Some(FeatureGroup::Position),
+
+            Self::Gobo(_)
+            | Self::GoboSelectSpin(_)
+            | Self::GoboSelectShake(_)
+            | Self::GoboSelectEffects(_)
+            | Self::GoboWheelIndex(_)
+            | Self::GoboWheelSpin(_)
+            | Self::GoboWheelShake(_)
+            | Self::GoboWheelRandom(_)
+            | Self::GoboWheelAudio(_)
+            | Self::GoboPos(_)
+            | Self::GoboPosRotate(_)
+            | Self::GoboPosShake(_)
+            | Self::AnimationWheel(_)
+            | Self::AnimationWheelAudio(_)
+            | Self::AnimationWheelMacro(_)
+            | Self::AnimationWheelRandom(_)
+            | Self::AnimationWheelSelectEffects(_)
+            | Self::AnimationWheelSelectShake(_)
+            | Self::AnimationWheelSelectSpin(_)
+            | Self::AnimationWheelPos(_)
+            | Self::AnimationWheelPosRotate(_)
+            | Self::AnimationWheelPosShake(_)
+            | Self::AnimationSystem(_)
+            | Self::AnimationSystemRamp(_)
+            | Self::AnimationSystemShake(_)
+            | Self::AnimationSystemAudio(_)
+            | Self::AnimationSystemRandom(_)
+            | Self::AnimationSystemPos(_)
+            | Self::AnimationSystemPosRotate(_)
+            | Self::AnimationSystemPosShake(_)
+            | Self::AnimationSystemPosRandom(_)
+            | Self::AnimationSystemPosAudio(_)
+            | Self::AnimationSystemMacro(_)
+            | Self::MediaFolder(_)
+            | Self::MediaContent(_)
+            | Self::ModelFolder(_)
+            | Self::ModelContent(_)
+            | Self::PlayMode
+            | Self::PlayBegin
+            | Self::PlayEnd
+            | Self::PlaySpeed => Some(FeatureGroup::Gobo),
+
+            Self::ColorEffects(_)
+            | Self::Color(_)
+            | Self::ColorWheelIndex(_)
+            | Self::ColorWheelSpin(_)
+            | Self::ColorWheelRandom(_)
+            | Self::ColorWheelAudio(_)
+            | Self::ColorAddR
+            | Self::ColorAddG
+            | Self::ColorAddB
+            | Self::ColorAddC
+            | Self::ColorAddM
+            | Self::ColorAddY
+            | Self::ColorAddRY
+            | Self::ColorAddGY
+            | Self::ColorAddGC
+            | Self::ColorAddBC
+            | Self::ColorAddBM
+            | Self::ColorAddRM
+            | Self::ColorAddW
+            | Self::ColorAddWW
+            | Self::ColorAddCW
+            | Self::ColorAddUV
+            | Self::ColorSubR
+            | Self::ColorSubG
+            | Self::ColorSubB
+            | Self::ColorSubC
+            | Self::ColorSubM
+            | Self::ColorSubY
+            | Self::ColorMacro(_)
+            | Self::ColorMacroRate(_)
+            | Self::Cto
+            | Self::Ctc
+            | Self::Ctb
+            | Self::Tint
+            | Self::HsbHue
+            | Self::HsbSaturation
+            | Self::HsbBrightness
+            | Self::HsbQuality
+            | Self::CieX
+            | Self::CieY
+            | Self::CieBrightness
+            | Self::ColorRgbRed
+            | Self::ColorRgbGreen
+            | Self::ColorRgbBlue
+            | Self::ColorRgbCyan
+            | Self::ColorRgbMagenta
+            | Self::ColorRgbYellow
+            | Self::ColorRgbQuality
+            | Self::VideoBoostR
+            | Self::VideoBoostG
+            | Self::VideoBoostB
+            | Self::VideoHueShift
+            | Self::VideoSaturation
+            | Self::VideoBrightness
+            | Self::VideoContrast
+            | Self::VideoKeyColorR
+            | Self::VideoKeyColorG
+            | Self::VideoKeyColorB
+            | Self::VideoKeyIntensity
+            | Self::VideoKeyTolerance => Some(FeatureGroup::Color),
+
+            Self::StrobeDuration
+            | Self::StrobeRate
+            | Self::StrobeFrequency
+            | Self::StrobeModeShutter
+            | Self::StrobeModeStrobe
+            | Self::StrobeModePulse
+            | Self::StrobeModePulseOpen
+            | Self::StrobeModePulseClose
+            | Self::StrobeModeRandom
+            | Self::StrobeModeRandomPulse
+            | Self::StrobeModeRandomPulseOpen
+            | Self::StrobeModeRandomPulseClose
+            | Self::StrobeModeEffect
+            | Self::Shutter(_)
+            | Self::ShutterStrobe(_)
+            | Self::ShutterStrobePulse(_)
+            | Self::ShutterStrobePulseClose(_)
+            | Self::ShutterStrobePulseOpen(_)
+            | Self::ShutterStrobeRandom(_)
+            | Self::ShutterStrobeRandomPulse(_)
+            | Self::ShutterStrobeRandomPulseClose(_)
+            | Self::ShutterStrobeRandomPulseOpen(_)
+            | Self::ShutterStrobeEffect(_)
+            | Self::Iris
+            | Self::IrisStrobe
+            | Self::IrisStrobeRandom
+            | Self::IrisPulseClose
+            | Self::IrisPulseOpen
+            | Self::IrisRandomPulseClose
+            | Self::IrisRandomPulseOpen
+            | Self::Frost(_)
+            | Self::FrostPulseOpen(_)
+            | Self::FrostPulseClose(_)
+            | Self::FrostRamp(_)
+            | Self::Prism(_)
+            | Self::PrismSelectSpin(_)
+            | Self::PrismMacro(_)
+            | Self::PrismPos(_)
+            | Self::PrismPosRotate(_) => Some(FeatureGroup::Beam),
+
+            Self::Effects(_)
+            | Self::EffectsRate(_)
+            | Self::EffectsFade(_)
+            | Self::EffectsAdjust(_, _)
+            | Self::EffectsPos(_)
+            | Self::EffectsPosRotate(_)
+            | Self::EffectsSync
+            | Self::BeamShaper
+            | Self::BeamShaperMacro
+            | Self::BeamShaperPos
+            | Self::BeamShaperPosRotate
+            | Self::Zoom
+            | Self::ZoomModeSpot
+            | Self::ZoomModeBeam
+            | Self::DigitalZoom
+            | Self::Focus(_)
+            | Self::FocusAdjust(_)
+            | Self::FocusDistance(_) => Some(FeatureGroup::Focus),
+
+            Self::Control(_)
+            | Self::DimmerMode
+            | Self::DimmerCurve
+            | Self::BlackoutMode
+            | Self::LedFrequency
+            | Self::LedZoneMode
+            | Self::PixelMode
+            | Self::PanMode
+            | Self::TiltMode
+            | Self::PanTiltMode
+            | Self::PositionModes
+            | Self::GoboWheelMode(_)
+            | Self::GoboWheelShortcutMode
+            | Self::AnimationWheelMode(_)
+            | Self::AnimationWheelShortcutMode
+            | Self::ColorMode(_)
+            | Self::ColorWheelShortcutMode
+            | Self::CyanMode
+            | Self::MagentaMode
+            | Self::YellowMode
+            | Self::ColorMixMode
+            | Self::ChromaticMode
+            | Self::ColorCalibrationMode
+            | Self::ColorConsistency
+            | Self::ColorControl
+            | Self::ColorModelMode
+            | Self::ColorSettingsReset
+            | Self::ColorUniformity
+            | Self::CriMode
+            | Self::CustomColor
+            | Self::UvStability
+            | Self::WavelengthCorrection
+            | Self::WhiteCount
+            | Self::StrobeMode
+            | Self::ZoomMode
+            | Self::FocusMode
+            | Self::IrisMode
+            | Self::FanMode(_)
+            | Self::FollowSpotMode
+            | Self::BeamEffectIndexRotateMode
+            | Self::IntensityMSpeed
+            | Self::PositionMSpeed
+            | Self::ColorMixMSpeed
+            | Self::ColorWheelSelectMSpeed
+            | Self::GoboWheelMSpeed(_)
+            | Self::IrisMSpeed
+            | Self::PrismMSpeed(_)
+            | Self::FocusMSpeed
+            | Self::FrostMSpeed(_)
+            | Self::ZoomMSpeed
+            | Self::FrameMSpeed
+            | Self::GlobalMSpeed
+            | Self::ReflectorAdjust
+            | Self::FixtureGlobalReset
+            | Self::DimmerReset
+            | Self::ShutterReset
+            | Self::BeamReset
+            | Self::ColorMixReset
+            | Self::ColorWheelReset
+            | Self::FocusReset
+            | Self::FrameReset
+            | Self::GoboWheelReset
+            | Self::IntensityReset
+            | Self::IrisReset
+            | Self::PositionReset
+            | Self::PanReset
+            | Self::TiltReset
+            | Self::ZoomReset
+            | Self::CtbReset
+            | Self::CtoReset
+            | Self::CtcReset
+            | Self::AnimationSystemReset
+            | Self::FixtureCalibrationReset
+            | Self::Function
+            | Self::LampControl
+            | Self::DisplayIntensity
+            | Self::DmxInput
+            | Self::NoFeature
+            | Self::Blower(_)
+            | Self::Fan(_)
+            | Self::Fog(_)
+            | Self::Haze(_)
+            | Self::LampPowerMode
+            | Self::Fans => Some(FeatureGroup::Control),
+
+            Self::BladeA(_)
+            | Self::BladeB(_)
+            | Self::BladeRot(_)
+            | Self::ShaperRot
+            | Self::ShaperMacros
+            | Self::ShaperMacrosSpeed
+            | Self::BladeSoftA(_)
+            | Self::BladeSoftB(_)
+            | Self::KeyStoneA(_)
+            | Self::KeyStoneB(_) => Some(FeatureGroup::Shapers),
+
+            Self::Video
+            | Self::VideoEffectType(_)
+            | Self::VideoEffectParameter(_, _)
+            | Self::VideoCamera(_)
+            | Self::VideoSoundVolume(_)
+            | Self::VideoBlendMode
+            | Self::InputSource
+            | Self::FieldOfView => Some(FeatureGroup::Video),
+
+            Self::Custom(_) => None,
+        }
+    }
+}
+
 impl std::fmt::Display for Attribute {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -733,7 +1026,6 @@ impl std::fmt::Display for Attribute {
             Self::FrostPulseOpen(n) => write!(f, "Frost{n}PulseOpen"),
             Self::FrostPulseClose(n) => write!(f, "Frost{n}PulseClose"),
             Self::FrostRamp(n) => write!(f, "Frost{n}Ramp"),
-
             Self::Prism(n) => write!(f, "Prism{n}"),
             Self::PrismSelectSpin(n) => write!(f, "Prism{n}SelectSpin"),
             Self::PrismMacro(n) => write!(f, "Prism{n}Macro"),
@@ -1594,4 +1886,17 @@ impl From<AttributeValue> for dmx::Value {
     fn from(value: AttributeValue) -> Self {
         dmx::Value((value.0 * (u8::MAX as f32)) as u8)
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FeatureGroup {
+    Dimmer,
+    Position,
+    Gobo,
+    Color,
+    Beam,
+    Focus,
+    Control,
+    Shapers,
+    Video,
 }

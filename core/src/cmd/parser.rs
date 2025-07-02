@@ -28,6 +28,7 @@ const SEQUENCE: &str = "sequence";
 const CUE: &str = "cue";
 const PRESET: &str = "preset";
 const DIMMER: &str = "dimmer";
+const COLOR: &str = "color";
 
 pub struct Parser<'src> {
     lexer: Peekable<Lexer<'src>>,
@@ -279,9 +280,13 @@ impl<'src> Parser<'src> {
                 self.parse_token(&Token::Colon)?;
                 self.parse_token(&Token::Colon)?;
 
-                match self.parse_one_of_idents(&[DIMMER])? {
+                match self.parse_one_of_idents(&[DIMMER, COLOR])? {
                     DIMMER => {
                         let preset_id = AnyPresetId::Dimmer(self.parse_positive_int()?.into());
+                        Ok(AnyObjectId::Preset(preset_id))
+                    }
+                    COLOR => {
+                        let preset_id = AnyPresetId::Color(self.parse_positive_int()?.into());
                         Ok(AnyObjectId::Preset(preset_id))
                     }
                     _ => unreachable!(),
@@ -378,8 +383,8 @@ mod tests {
         SequenceCommand, parser::Parser,
     };
     use crate::object::{
-        AnyObjectId, AnyPresetId, DimmerPresetId, ExecutorButtonMode, ExecutorFaderMode,
-        ExecutorId, Recipe, RecipeContent,
+        AnyObjectId, AnyPresetId, ColorPresetId, DimmerPresetId, ExecutorButtonMode,
+        ExecutorFaderMode, ExecutorId, Recipe, RecipeContent,
     };
     use crate::patch::attr::{Attribute, AttributeValue};
     use crate::patch::fixture::{DmxMode, FixtureId};
@@ -505,6 +510,11 @@ mod tests {
         assert_eq!(
             Parser::new("preset::dimmer 0").parse_object_id().unwrap(),
             AnyObjectId::Preset(DimmerPresetId(0).into())
+        );
+
+        assert_eq!(
+            Parser::new("preset::color 0").parse_object_id().unwrap(),
+            AnyObjectId::Preset(ColorPresetId(0).into())
         );
 
         assert_eq!(
@@ -792,10 +802,18 @@ mod tests {
     }
 
     #[test]
-    fn parse_preset_store() {
+    fn parse_preset_store_dimmer() {
         assert_eq!(
             cmd!(r#"preset::dimmer 1 store"#),
             Command::Preset(AnyPresetId::Dimmer(1.into()), PresetCommand::Store)
+        );
+    }
+
+    #[test]
+    fn parse_preset_store_color() {
+        assert_eq!(
+            cmd!(r#"preset::color 1 store"#),
+            Command::Preset(AnyPresetId::Color(1.into()), PresetCommand::Store)
         );
     }
 
