@@ -7,6 +7,7 @@ pub mod showfile;
 
 mod adapters;
 mod pipeline;
+mod protocols;
 
 pub use engine::*;
 pub use error::*;

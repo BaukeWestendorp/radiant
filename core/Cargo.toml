@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+arrayvec = "0.7.6"
 derive_more.workspace = true
 dmx.workspace = true
 eyre.workspace = true
@@ -12,4 +13,6 @@ log.workspace = true
 midir = "0.10.1"
 serde.workspace = true
 serde_yaml = "0.9.34"
+socket2 = { version = "0.5.10", features = ["all"] }
 thiserror.workspace = true
+uuid = { version = "1.17.0", features = ["v4"] }
