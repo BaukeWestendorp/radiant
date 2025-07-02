@@ -344,6 +344,7 @@ impl std::str::FromStr for UniverseId {
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Universe {
+    #[cfg_attr(feature = "serde", serde(with = "serde_big_array::BigArray"))]
     values: [Value; 512],
 }
 

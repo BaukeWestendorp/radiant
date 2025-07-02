@@ -15,7 +15,7 @@ impl Adapters {
         &self.midi
     }
 
-    /// Reads a io from a file at the given path.
+    /// Reads the adapters configuration from a file at the given path.
     pub fn read_from_file(path: &PathBuf) -> Result<Self> {
         let file = fs::File::open(path)
             .with_context(|| format!("failed to open adapters file at '{}'", path.display()))?;

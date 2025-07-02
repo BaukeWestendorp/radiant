@@ -21,7 +21,7 @@ impl Patch {
         &self.fixtures
     }
 
-    /// Reads a patch from a file at the given path.
+    /// Reads the patch configuration from a file at the given path.
     pub fn read_from_file(path: &PathBuf) -> Result<Self> {
         let file = fs::File::open(path)
             .with_context(|| format!("failed to open patch file at '{}'", path.display()))?;

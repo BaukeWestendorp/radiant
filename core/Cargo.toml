@@ -6,8 +6,8 @@ edition.workspace = true
 [dependencies]
 arrayvec = "0.7.6"
 derive_more.workspace = true
-dmx.workspace = true
 eyre.workspace = true
+dmx = { workspace = true, features = ["serde"] }
 gdtf = "0.2.0"
 log.workspace = true
 midir = "0.10.1"
