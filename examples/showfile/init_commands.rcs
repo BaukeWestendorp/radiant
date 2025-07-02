@@ -7,6 +7,7 @@ programmer set attribute 4 "Dimmer" 0.5
 programmer set attribute 5 "Dimmer" 0.5
 programmer set attribute 6 "Dimmer" 0.5
 programmer set attribute 7 "Dimmer" 0.5
+programmer set attribute 8 "Dimmer" 0.5
 create preset::dimmer 1 "All @ 50%"
 preset::dimmer 1 store
 
@@ -19,6 +20,7 @@ programmer set attribute 4 "Dimmer" 1.0
 programmer set attribute 5 "Dimmer" 1.0
 programmer set attribute 6 "Dimmer" 1.0
 programmer set attribute 7 "Dimmer" 1.0
+programmer set attribute 8 "Dimmer" 1.0
 create preset::dimmer 2 "All @ 100%"
 preset::dimmer 2 store
 
@@ -50,6 +52,10 @@ cue 4 add fixture_group 3 preset::dimmer 2
 create sequence 2 "Switch Odd"
 sequence 2 add cue 3, cue 4
 
-
 create executor 2
 executor 2 set_sequence sequence 2
+
+executor 1 button press
+executor 1 button release
+executor 2 button press
+executor 2 button release
