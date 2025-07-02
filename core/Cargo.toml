@@ -12,4 +12,5 @@ facet-pretty.workspace = true
 facet-yaml = "0.25.12"
 gdtf = "0.2.0"
 log.workspace = true
+midir = "0.10.1"
 thiserror.workspace = true

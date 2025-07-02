@@ -18,13 +18,7 @@ pub fn run(showfile: Showfile) -> eyre::Result<()> {
         }
     });
 
-    handle_user_interaction(engine.clone());
-
     dmx_resolver_handle.join().unwrap();
 
     Ok(())
-}
-
-fn handle_user_interaction(_engine: Arc<Mutex<Engine>>) {
-    // FIXME: Implement
 }
