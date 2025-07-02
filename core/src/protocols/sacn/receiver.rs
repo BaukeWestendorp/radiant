@@ -51,7 +51,7 @@ impl Receiver {
         socket.set_reuse_port(true)?;
         socket.bind(&addr.into())?;
 
-        log::info!("Bound sACN Receiver on {}:{}", addr, config.port);
+        log::info!("bound sACN Receiver on {}:{}", addr, config.port);
 
         let inner = Arc::new(Inner { config: Mutex::new(config), socket });
 
@@ -68,7 +68,7 @@ impl Receiver {
 
     /// Shut down this [Receiver].
     pub fn shutdown(&mut self) -> Result<(), ReceiverError> {
-        log::info!("Shutting down sACN Receiver");
+        log::info!("shutting down sACN Receiver");
         self.inner.socket.shutdown(Shutdown::Both)?;
         self.thread_handle.take().unwrap().join().ok();
         Ok(())
@@ -151,15 +151,15 @@ struct Inner {
 
 impl Inner {
     pub fn start(&self, tx: &mpsc::Sender<Universe>) -> Result<(), ReceiverError> {
-        log::debug!("Starting sACN Receiver");
+        log::debug!("starting sACN Receiver");
         loop {
             let packet = match self.recv_packet() {
                 Ok(packet) => {
-                    log::debug!("Received packet: {:?}", packet);
+                    log::debug!("received packet: {:?}", packet);
                     packet
                 }
                 Err(ReceiverError::InvalidPacket(packet_err)) => {
-                    log::warn!("Received invalid packet: {}", packet_err);
+                    log::warn!("received invalid packet: {}", packet_err);
                     continue;
                 }
                 Err(ReceiverError::NoData) => {

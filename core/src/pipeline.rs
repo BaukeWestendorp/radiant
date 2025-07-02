@@ -8,8 +8,8 @@ use crate::{Attribute, AttributeValue, FixtureId, Patch};
 /// ``` markdown
 /// Layers:
 /// - (4) Resolve Presets            (e.g. Executors)
-/// - (3) Resolve Attribute Values   (e.g. Programmer, Presets >>)
-/// - (2) Resolve Direct DMX Values  (e.g. Attribute Values >>)
+/// - (3) Resolve Attribute Values   (e.g. Programmer, Presets)
+/// - (2) Resolve Direct DMX Values  (e.g. Attribute Values)
 /// - (1) Output DMX                 (e.g. Via sACN)
 /// ```
 #[derive(Debug, Default, Clone)]
