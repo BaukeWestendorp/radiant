@@ -1,3 +1,4 @@
+pub mod cmd;
 pub mod engine;
 pub mod error;
 pub mod object;
@@ -9,6 +10,7 @@ mod adapters;
 mod pipeline;
 mod protocols;
 
+pub use cmd::*;
 pub use engine::*;
 pub use error::*;
 pub use object::*;

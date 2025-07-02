@@ -372,12 +372,11 @@ impl<'src> Parser<'src> {
 #[cfg(test)]
 mod tests {
     use crate::cmd;
-    use crate::engine::cmd::{Command, parser::Parser};
-    use crate::engine::cmd::{
-        CueCommand, ExecutorCommand, FixtureGroupCommand, PatchCommand, PresetCommand,
-        ProgrammerCommand, ProgrammerSetCommand, SequenceCommand,
+    use crate::cmd::{
+        Command, CueCommand, ExecutorButtonCommand, ExecutorCommand, ExecutorFaderCommand,
+        FixtureGroupCommand, PatchCommand, PresetCommand, ProgrammerCommand, ProgrammerSetCommand,
+        SequenceCommand, parser::Parser,
     };
-    use crate::engine::{ExecutorButtonCommand, ExecutorFaderCommand};
     use crate::object::{
         AnyObjectId, AnyPresetId, DimmerPresetId, ExecutorButtonMode, ExecutorFaderMode,
         ExecutorId, Recipe, RecipeContent,
