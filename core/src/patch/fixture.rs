@@ -150,7 +150,7 @@ impl Fixture {
 
         for (i, offset) in info.offset.iter().enumerate() {
             let value = dmx::Value(bytes[i]);
-            let channel = dmx::Channel::new(u16::from(self.address.channel) + *offset)
+            let channel = dmx::Channel::new(u16::from(self.address.channel) + *offset - 1)
                 .expect("channel should always be in range of universe");
             values.push((channel, value));
         }
