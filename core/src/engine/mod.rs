@@ -47,7 +47,7 @@ impl Engine {
         let mut this = Self {
             show,
             output_pipeline: Pipeline::new(),
-            _midi_adapter: MidiAdapter::new(showfile.adapters().midi().active_devices(), midi_tx)
+            _midi_adapter: MidiAdapter::new(showfile.adapters().midi(), midi_tx)
                 .context("failed to create midi controller")?,
             midi_rx,
         };

@@ -1,2 +1,11 @@
 midi:
   active_devices: ["1931545623"]
+  actions:
+    executors:
+      1:
+        button:
+          channel: 1
+          note: 64
+        fader:
+          channel: 1
+          cc: 0

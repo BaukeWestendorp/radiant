@@ -1,4 +1,4 @@
-use crate::Result;
+use crate::{Result, showfile::MidiConfig};
 use midir::{MidiInput, MidiInputConnection};
 use std::sync::mpsc;
 
@@ -8,10 +8,7 @@ pub struct MidiAdapter {
 }
 
 impl MidiAdapter {
-    pub fn new<'id>(
-        active_device_ids: impl IntoIterator<Item = impl Into<&'id String>>,
-        midi_tx: mpsc::Sender<()>,
-    ) -> Result<Self> {
+    pub fn new<'id>(config: &MidiConfig, midi_tx: mpsc::Sender<()>) -> Result<Self> {
         let midi_input = MidiInput::new("Radiant MIDI Input").unwrap();
 
         let in_ports = midi_input.ports();
@@ -19,7 +16,7 @@ impl MidiAdapter {
             "available midi port ids: {:?}",
             midi_input.ports().iter().map(|port| port.id()).collect::<Vec<_>>()
         );
-        let ids = active_device_ids.into_iter().map(Into::into).collect::<Vec<_>>();
+        let ids = config.active_devices().iter().map(Into::into).collect::<Vec<_>>();
         let ports = in_ports.iter().filter(|port| ids.contains(&&port.id()));
 
         let mut connections = Vec::new();
@@ -34,6 +31,7 @@ impl MidiAdapter {
                 port,
                 &format!("Radiant MIDI Input ({})", port_name),
                 move |_stamp, _message, _| {
+                    dbg!(_message);
                     let midi_cmd = ();
                     midi_tx
                         .send(midi_cmd)
