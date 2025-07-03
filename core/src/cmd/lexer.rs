@@ -1,5 +1,7 @@
 use std::fmt;
 
+use crate::error::Result;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token<'src> {
     Ident(&'src str),
@@ -51,7 +53,7 @@ impl<'src> Lexer<'src> {
 }
 
 impl<'src> Iterator for Lexer<'src> {
-    type Item = Token<'src>;
+    type Item = Result<Token<'src>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.position >= self.source.len() {
@@ -67,12 +69,12 @@ impl<'src> Iterator for Lexer<'src> {
         let c = self.source.chars().nth(self.position).unwrap();
         self.position += 1;
         match c {
-            '[' => Some(Token::OpenBracket),
-            ']' => Some(Token::CloseBracket),
-            '(' => Some(Token::OpenParen),
-            ')' => Some(Token::CloseParen),
-            ',' => Some(Token::Comma),
-            ':' => Some(Token::Colon),
+            '[' => Some(Ok(Token::OpenBracket)),
+            ']' => Some(Ok(Token::CloseBracket)),
+            '(' => Some(Ok(Token::OpenParen)),
+            ')' => Some(Ok(Token::CloseParen)),
+            ',' => Some(Ok(Token::Comma)),
+            ':' => Some(Ok(Token::Colon)),
             '"' => {
                 let start = self.position;
                 while self.position < self.source.len()
@@ -83,8 +85,10 @@ impl<'src> Iterator for Lexer<'src> {
                 let content = &self.source[start..self.position];
                 if self.position < self.source.len() {
                     self.position += 1; // Skip closing quote.
+                } else {
+                    return Some(Err(eyre::eyre!("encountered unescaped string")));
                 }
-                Some(Token::String(content))
+                Some(Ok(Token::String(content)))
             }
             '0'..='9' | '-' => {
                 self.position -= 1;
@@ -96,11 +100,23 @@ impl<'src> Iterator for Lexer<'src> {
                 while self.position < self.source.len() {
                     let char = self.source.chars().nth(self.position).unwrap();
                     match char {
-                        '-' if self.position == start => self.position += 1,
+                        '-' => {
+                            if self.position == start {
+                                self.position += 1;
+                            } else {
+                                return Some(Err(eyre::eyre!(
+                                    "encountered unexpected '-' after number"
+                                )));
+                            }
+                        }
                         '0'..='9' => self.position += 1,
-                        '.' if !has_decimal => {
-                            has_decimal = true;
-                            self.position += 1;
+                        '.' => {
+                            if !has_decimal {
+                                has_decimal = true;
+                                self.position += 1;
+                            } else {
+                                return Some(Err(eyre::eyre!("unexpected '.' after number")));
+                            }
                         }
                         _ => break,
                     }
@@ -109,10 +125,10 @@ impl<'src> Iterator for Lexer<'src> {
                 let num_str = &self.source[start..self.position];
                 if has_decimal {
                     let num = num_str.parse::<f64>().expect("should be able to parse f64");
-                    Some(Token::Float(num))
+                    Some(Ok(Token::Float(num)))
                 } else {
                     let num = num_str.parse::<i64>().expect("should be able to parse i64");
-                    Some(Token::Integer(num))
+                    Some(Ok(Token::Integer(num)))
                 }
             }
             'a'..='z' | 'A'..='Z' | '_' => {
@@ -130,29 +146,29 @@ impl<'src> Iterator for Lexer<'src> {
                 }
 
                 let ident = &self.source[start..self.position];
-                Some(Token::Ident(ident))
+                Some(Ok(Token::Ident(ident)))
             }
-            invalid => Some(Token::Invalid(invalid)),
+            invalid => Some(Ok(Token::Invalid(invalid))),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::Lexer;
-    use super::Token;
+    use super::{Lexer, Token};
+    use crate::error::Result;
 
     #[test]
-    fn test_lexer_empty_input() {
+    fn lexer_empty_input() {
         let lexer = Lexer::new("");
-        let tokens: Vec<Token> = lexer.collect();
+        let tokens = lexer.collect::<Result<Vec<_>>>().unwrap();
         assert_eq!(tokens.len(), 0);
     }
 
     #[test]
-    fn test_lexer_simple_tokens() {
+    fn lexer_simple_tokens() {
         let lexer = Lexer::new("[ ] ( ) , :");
-        let tokens: Vec<Token> = lexer.collect();
+        let tokens = lexer.collect::<Result<Vec<_>>>().unwrap();
 
         assert_eq!(tokens.len(), 6);
         assert_eq!(tokens[0], Token::OpenBracket);
@@ -164,20 +180,21 @@ mod tests {
     }
 
     #[test]
-    fn test_lexer_identifiers() {
-        let lexer = Lexer::new("create executor sequence");
-        let tokens: Vec<Token> = lexer.collect();
+    fn lexer_identifiers() {
+        let lexer = Lexer::new("create executor sequence CAPS");
+        let tokens = lexer.collect::<Result<Vec<_>>>().unwrap();
 
-        assert_eq!(tokens.len(), 3);
+        assert_eq!(tokens.len(), 4);
         assert!(matches!(tokens[0], Token::Ident("create")));
         assert!(matches!(tokens[1], Token::Ident("executor")));
         assert!(matches!(tokens[2], Token::Ident("sequence")));
+        assert!(matches!(tokens[3], Token::Ident("CAPS")));
     }
 
     #[test]
-    fn test_lexer_numbers() {
+    fn lexer_numbers() {
         let lexer = Lexer::new("0 123 3.14 -2.876");
-        let tokens: Vec<Token> = lexer.collect();
+        let tokens = lexer.collect::<Result<Vec<_>>>().unwrap();
 
         assert_eq!(tokens.len(), 4);
         assert_eq!(tokens[0], Token::Integer(0));
@@ -187,9 +204,21 @@ mod tests {
     }
 
     #[test]
-    fn test_lexer_strings() {
+    fn lexer_invalid_numbers_with_minus() {
+        let lexer = Lexer::new("0-2");
+        assert!(lexer.collect::<Result<Vec<_>>>().is_err());
+    }
+
+    #[test]
+    fn lexer_invalid_numbers_with_two_periods() {
+        let lexer = Lexer::new("0.2.");
+        assert!(lexer.collect::<Result<Vec<_>>>().is_err());
+    }
+
+    #[test]
+    fn lexer_strings() {
         let lexer = Lexer::new("\"Example Executor\" \"Basic Cue\"");
-        let tokens: Vec<Token> = lexer.collect();
+        let tokens = lexer.collect::<Result<Vec<_>>>().unwrap();
 
         assert_eq!(tokens.len(), 2);
         assert_eq!(tokens[0], Token::String("Example Executor"));
@@ -197,10 +226,16 @@ mod tests {
     }
 
     #[test]
-    fn test_lexer_complex_input() {
+    fn lexer_unescaped_string() {
+        let lexer = Lexer::new("\"Example Exec");
+        assert!(lexer.collect::<Result<Vec<_>>>().is_err());
+    }
+
+    #[test]
+    fn lexer_complex_input() {
         let input = "create executor 0 \"Example Executor\"";
         let lexer = Lexer::new(input);
-        let tokens: Vec<Token> = lexer.collect();
+        let tokens = lexer.collect::<Result<Vec<_>>>().unwrap();
 
         assert_eq!(tokens.len(), 4);
         assert_eq!(tokens[0], Token::Ident("create"));
@@ -210,9 +245,9 @@ mod tests {
     }
 
     #[test]
-    fn test_invalid_token() {
+    fn lexer_invalid_token() {
         let lexer = Lexer::new("@#$%^");
-        let tokens: Vec<Token> = lexer.collect();
+        let tokens = lexer.collect::<Result<Vec<_>>>().unwrap();
 
         assert_eq!(tokens.len(), 5);
         assert_eq!(tokens[0], Token::Invalid('@'));
@@ -222,11 +257,21 @@ mod tests {
         assert_eq!(tokens[4], Token::Invalid('^'));
 
         let lexer = Lexer::new("valid_token @ 123");
-        let tokens: Vec<Token> = lexer.collect();
+        let tokens = lexer.collect::<Result<Vec<_>>>().unwrap();
 
         assert_eq!(tokens.len(), 3);
         assert_eq!(tokens[0], Token::Ident("valid_token"));
         assert_eq!(tokens[1], Token::Invalid('@'));
         assert_eq!(tokens[2], Token::Integer(123));
+    }
+
+    #[test]
+    fn lexer_token_to_string() {
+        let lexer = Lexer::new(r#"ident 1 -3.14 "string" [ ] ( ) , : @"#);
+        let tokens: Vec<_> = lexer.map(|token| token.unwrap().to_string()).collect();
+        assert_eq!(
+            tokens,
+            vec!["ident", "1", "-3.14", r#""string""#, "[", "]", "(", ")", ",", ":", "<invalid @>"]
+        );
     }
 }

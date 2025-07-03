@@ -315,7 +315,7 @@ fn rename_executor() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create executor 1 "Test Name""#)).unwrap();
     assert_eq!(engine.show().executor(1).unwrap().name(), "Test Name".to_string());
-    engine.exec_cmd(cmd!(r#"rename executor 1 "Other Name"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"rename executor 1 "Other Name""#)).unwrap();
     assert_eq!(engine.show().executor(1).unwrap().name(), "Other Name".to_string());
 }
 
@@ -324,7 +324,7 @@ fn rename_sequence() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create sequence 1 "Test Name""#)).unwrap();
     assert_eq!(engine.show().sequence(1).unwrap().name(), "Test Name".to_string());
-    engine.exec_cmd(cmd!(r#"rename sequence 1 "Other Name"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"rename sequence 1 "Other Name""#)).unwrap();
     assert_eq!(engine.show().sequence(1).unwrap().name(), "Other Name".to_string());
 }
 
@@ -333,7 +333,7 @@ fn rename_cue() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create cue 1 "Test Name""#)).unwrap();
     assert_eq!(engine.show().cue(1).unwrap().name(), "Test Name".to_string());
-    engine.exec_cmd(cmd!(r#"rename cue 1 "Other Name"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"rename cue 1 "Other Name""#)).unwrap();
     assert_eq!(engine.show().cue(1).unwrap().name(), "Other Name".to_string());
 }
 
@@ -342,7 +342,7 @@ fn rename_fixture_group() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create fixture_group 1 "Test Name""#)).unwrap();
     assert_eq!(engine.show().fixture_group(1).unwrap().name(), "Test Name".to_string());
-    engine.exec_cmd(cmd!(r#"rename fixture_group 1 "Other Name"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"rename fixture_group 1 "Other Name""#)).unwrap();
     assert_eq!(engine.show().fixture_group(1).unwrap().name(), "Other Name".to_string());
 }
 
