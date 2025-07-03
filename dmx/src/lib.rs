@@ -1,8 +1,14 @@
+#![warn(missing_docs)]
+
+//! This crate provides a few helper functions and structs to
+//! assist working safely with DMX addresses and values.
+
 use std::collections::HashMap;
 
-mod error;
-
 pub use error::Error;
+
+/// This module contains data types for error handling.
+mod error;
 
 /// A DMX channel.
 ///
