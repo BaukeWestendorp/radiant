@@ -55,7 +55,8 @@ impl Objects {
 
     /// Reads the [Objects] configuration from a file at the given path.
     ///
-    /// The file must be in YAML format and match the [Patch] structure.
+    /// The file must be in YAML format and match the
+    /// [Patch][crate::patch::Patch] structure.
     pub fn read_from_file(path: &PathBuf) -> Result<Self> {
         let file = fs::File::open(path)
             .with_context(|| format!("failed to open objects file at '{}'", path.display()))?;
