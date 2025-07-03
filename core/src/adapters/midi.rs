@@ -1,5 +1,7 @@
-use midir::{MidiInput, MidiInputConnection};
 use std::sync::mpsc;
+
+use eyre::WrapErr;
+use midir::{MidiInput, MidiInputConnection};
 
 use crate::error::Result;
 use crate::object::ExecutorId;
@@ -22,43 +24,54 @@ impl MidiAdapter {
     ///
     /// The adapter will listen to all active MIDI devices specified in the
     /// configuration, and send parsed [MidiCommand]s to the given channel.
-    pub fn new<'id>(config: &MidiConfiguration, tx: mpsc::Sender<MidiCommand>) -> Result<Self> {
-        let midi_input = MidiInput::new("Radiant MIDI Input").unwrap();
+    pub fn new(config: &MidiConfiguration, tx: mpsc::Sender<MidiCommand>) -> Result<Self> {
+        let midi_input =
+            MidiInput::new("Radiant MIDI Input").wrap_err("Failed to create Radiant MIDI Input")?;
 
         let in_ports = midi_input.ports();
         log::debug!(
-            "available midi port ids: {:?}",
-            midi_input.ports().iter().map(|port| port.id()).collect::<Vec<_>>()
+            "available MIDI port ids: {:?}",
+            in_ports.iter().map(|port| port.id()).collect::<Vec<_>>()
         );
         let ids = config.active_devices().iter().map(Into::into).collect::<Vec<_>>();
         let ports = in_ports.iter().filter(|port| ids.contains(&&port.id()));
 
         let mut connections = Vec::new();
         for port in ports {
-            let midi_input = MidiInput::new("Radiant MIDI Input").unwrap();
+            let midi_input = MidiInput::new("Radiant MIDI Input")
+                .wrap_err("Failed to create Radiant MIDI Input")?;
 
-            let port_name = midi_input.port_name(port)?;
-            log::info!("using MIDI port '{port_name}'");
+            let port_name = midi_input
+                .port_name(port)
+                .wrap_err_with(|| format!("failed to get port name for port id {:?}", port.id()))?;
+            log::info!("using MIDI port '{port_name}' (id: {:?})", port.id());
 
             let config = config.clone();
             let tx = tx.clone();
-            let connection = midi_input.connect(
-                port,
-                &format!("Radiant MIDI Input ({})", port_name),
-                move |_stamp, message, _| {
-                    let midi_cmds = get_midi_commands(message, &config);
-                    for midi_cmd in midi_cmds {
-                        tx.send(midi_cmd)
-                            .map_err(|err| {
+            let connection = midi_input
+                .connect(
+                    port,
+                    &format!("Radiant MIDI Input ({})", port_name),
+                    move |_stamp, message, _| {
+                        let midi_cmds = get_midi_commands(message, &config);
+                        for midi_cmd in midi_cmds {
+                            if let Err(err) = tx.send(midi_cmd) {
                                 log::error!("failed to send MIDI command from MIDI adapter: {err}");
-                            })
-                            .ok();
-                    }
-                },
-                (),
-            )?;
+                            }
+                        }
+                    },
+                    (),
+                )
+                .wrap_err_with(|| format!("failed to connect to MIDI port '{port_name}'"))?;
 
+            log::debug!("successfully connected to MIDI port '{port_name}'");
             connections.push(connection);
+        }
+
+        if connections.is_empty() {
+            log::warn!(
+                "no active MIDI connections were established. check your MIDI configuration and connected devices."
+            );
         }
 
         Ok(Self { _connections: connections })
@@ -155,7 +168,7 @@ fn get_midi_commands(message: &[u8], config: &MidiConfiguration) -> Vec<MidiComm
 pub enum MidiCommand {
     /// Virtually press an executor button.
     ExecutorButtonPress { executor_id: ExecutorId },
-    /// Virtually release an executor butotn.
+    /// Virtually release an executor button.
     ExecutorButtonRelease { executor_id: ExecutorId },
     /// Sets the value of an executor fader.
     ExecutorFaderSetValue { executor_id: ExecutorId, value: f32 },
