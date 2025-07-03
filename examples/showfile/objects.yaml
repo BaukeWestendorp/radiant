@@ -18,7 +18,7 @@ executors:
       level: 1.0
     master_level: 1.0
     sequence_id: 11
-    active_cue_index: 0
+    active_cue_index: 6
 sequences:
   - id: 1
     name: "Wash Intensity"
@@ -34,54 +34,93 @@ cues:
         content:
           type: Preset
           data: !Dimmer 1
+  - id: 11
+    name: "Wash White"
+    recipes:
       - fixture_group: 1
         content:
           type: Preset
           data: !Color 1
+  - id: 12
+    name: "Wash Red"
+    recipes:
       - fixture_group: 1
         content:
           type: Preset
           data: !Color 2
+  - id: 13
+    name: "Wash Orange"
+    recipes:
       - fixture_group: 1
         content:
           type: Preset
           data: !Color 3
+  - id: 14
+    name: "Wash Yellow"
+    recipes:
       - fixture_group: 1
         content:
           type: Preset
           data: !Color 4
+  - id: 15
+    name: "Wash Fern"
+    recipes:
       - fixture_group: 1
         content:
           type: Preset
           data: !Color 5
+  - id: 16
+    name: "Wash Green"
+    recipes:
       - fixture_group: 1
         content:
           type: Preset
           data: !Color 6
+  - id: 17
+    name: "Wash Sea"
+    recipes:
       - fixture_group: 1
         content:
           type: Preset
           data: !Color 7
+  - id: 18
+    name: "Wash Cyan"
+    recipes:
       - fixture_group: 1
         content:
           type: Preset
           data: !Color 8
+  - id: 19
+    name: "Wash Lavendar"
+    recipes:
       - fixture_group: 1
         content:
           type: Preset
           data: !Color 9
+  - id: 20
+    name: "Wash Blue"
+    recipes:
       - fixture_group: 1
         content:
           type: Preset
           data: !Color 10
+  - id: 21
+    name: "Wash Violet"
+    recipes:
       - fixture_group: 1
         content:
           type: Preset
           data: !Color 11
+  - id: 22
+    name: "Wash Magenta"
+    recipes:
       - fixture_group: 1
         content:
           type: Preset
           data: !Color 12
+  - id: 23
+    name: "Wash Pink"
+    recipes:
       - fixture_group: 1
         content:
           type: Preset

@@ -60,35 +60,7 @@ impl Engine {
 
         let mut this = Self { show, output_pipeline, protocols, adapters };
 
-        this.show.patch.gdtf_file_names = showfile.patch().gdtf_files().to_vec();
-
-        // Initialize patch.
-        for fixture in showfile.patch().fixtures() {
-            let id = FixtureId(fixture.id());
-
-            let address = dmx::Address::new(
-                dmx::UniverseId::new(fixture.universe())?,
-                dmx::Channel::new(fixture.channel())?,
-            );
-
-            let mode = DmxMode::new(fixture.dmx_mode());
-
-            let gdtf_file_name = showfile
-                .patch()
-                .gdtf_files()
-                .get(fixture.gdtf_file_index())
-                .wrap_err("failed to generate patch: tried to reference GDTF file index that is out of bounds")?
-                .to_string();
-
-            this.exec_cmd(Command::Patch(PatchCommand::Add { id, address, mode, gdtf_file_name }))?;
-        }
-
-        // Run init commands
-        for cmd in showfile.init_commands() {
-            this.exec_cmd(cmd.clone()).context("failed to run init command")?;
-        }
-
-        this.output_pipeline.clear_unresolved();
+        this.initialize_show(showfile).wrap_err("failed to initialize show")?;
 
         Ok(this)
     }
@@ -131,5 +103,59 @@ impl Engine {
     /// Gets the [Show] associated with this [Engine].
     pub fn show(&self) -> &Show {
         &self.show
+    }
+
+    fn initialize_show(&mut self, showfile: Showfile) -> Result<()> {
+        self.show.patch.gdtf_file_names = showfile.patch().gdtf_files().to_vec();
+
+        // Initialize patch.
+        for fixture in showfile.patch().fixtures() {
+            let id = FixtureId(fixture.id());
+
+            let address = dmx::Address::new(
+                dmx::UniverseId::new(fixture.universe())?,
+                dmx::Channel::new(fixture.channel())?,
+            );
+
+            let mode = DmxMode::new(fixture.dmx_mode());
+
+            let gdtf_file_name = showfile
+                .patch()
+                .gdtf_files()
+                .get(fixture.gdtf_file_index())
+                .wrap_err("failed to generate patch: tried to reference GDTF file index that is out of bounds")?
+                .to_string();
+
+            self.exec_cmd(Command::Patch(PatchCommand::Add { id, address, mode, gdtf_file_name }))?;
+        }
+
+        // Initialize objects.
+        for executor in showfile.objects().executors().to_vec() {
+            self.show.executors.insert(executor.id(), executor);
+        }
+        for sequence in showfile.objects().sequences().to_vec() {
+            self.show.sequences.insert(sequence.id(), sequence);
+        }
+        for cue in showfile.objects().cues().to_vec() {
+            self.show.cues.insert(cue.id(), cue);
+        }
+        for fixture_group in showfile.objects().fixture_groups().to_vec() {
+            self.show.fixture_groups.insert(fixture_group.id(), fixture_group);
+        }
+        for dimmer_preset in showfile.objects().dimmer_presets().to_vec() {
+            self.show.dimmer_presets.insert(dimmer_preset.id(), dimmer_preset);
+        }
+        for color_preset in showfile.objects().color_presets().to_vec() {
+            self.show.color_presets.insert(color_preset.id(), color_preset);
+        }
+
+        // Run init commands.
+        for cmd in showfile.init_commands() {
+            self.exec_cmd(cmd.clone()).context("failed to run init command")?;
+        }
+
+        self.output_pipeline.clear_unresolved();
+
+        Ok(())
     }
 }

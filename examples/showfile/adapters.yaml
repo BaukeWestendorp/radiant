@@ -9,17 +9,10 @@ midi:
         fader:
           channel: 0
           msg: !ControlChange 0
-      2:
+      11:
         button:
           channel: 0
           msg: !ControlChange 65
         fader:
           channel: 0
           msg: !ControlChange 1
-      3:
-        button:
-          channel: 0
-          msg: !ControlChange 66
-        fader:
-          channel: 0
-          msg: !ControlChange 2
