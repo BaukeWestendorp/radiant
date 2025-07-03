@@ -9,6 +9,7 @@ macro_rules! define_preset {
 
             #[doc = concat!("A ", stringify!($name), " preset")]
             #[derive(Debug, Clone, PartialEq)]
+            #[derive(serde::Deserialize)]
             pub struct $name {
                 id: $id,
                 pub(crate) name: String,
@@ -46,6 +47,7 @@ macro_rules! define_preset {
         /// Any preset id.
         #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
         #[derive(derive_more::Display, derive_more::From)]
+        #[derive(serde::Deserialize)]
         pub enum AnyPresetId {
             $(
                 #[doc = concat!("A ", stringify!($name), " preset id")]
@@ -137,6 +139,7 @@ macro_rules! define_preset {
 /// A collection of attribute values, either connected to specific fixtures,
 /// fixture types, or generic attributes.
 #[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Deserialize)]
 pub enum PresetContent {
     /// A preset that applies to specific fixtures with targeted attribute
     /// values.
@@ -149,6 +152,7 @@ pub enum PresetContent {
 /// attribute combinations, with filtering based on feature groups to ensure
 /// only compatible attributes are stored.
 #[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Deserialize)]
 pub struct SelectivePreset {
     attribute_values: BTreeMap<(FixtureId, Attribute), AttributeValue>,
     filter: FeatureGroup,

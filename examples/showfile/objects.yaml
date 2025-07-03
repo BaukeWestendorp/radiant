@@ -1,0 +1,228 @@
+executors:
+  - id: 1
+    name: "Wash Intensity"
+    button:
+      mode: Go
+    fader:
+      mode: Master
+      level: 1.0
+    master_level: 1.0
+    sequence_id: 1
+    active_cue_index: 0
+  - id: 11
+    name: "Color Cycle"
+    button:
+      mode: Go
+    fader:
+      mode: Master
+      level: 1.0
+    master_level: 1.0
+    sequence_id: 11
+    active_cue_index: 0
+sequences:
+  - id: 1
+    name: "Wash Intensity"
+    cues: [1]
+  - id: 11
+    name: "Color Cycle"
+    cues: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+cues:
+  - id: 1
+    name: "Wash 100%"
+    recipes:
+      - fixture_group: 1
+        content:
+          type: Preset
+          data: !Dimmer 1
+      - fixture_group: 1
+        content:
+          type: Preset
+          data: !Color 1
+      - fixture_group: 1
+        content:
+          type: Preset
+          data: !Color 2
+      - fixture_group: 1
+        content:
+          type: Preset
+          data: !Color 3
+      - fixture_group: 1
+        content:
+          type: Preset
+          data: !Color 4
+      - fixture_group: 1
+        content:
+          type: Preset
+          data: !Color 5
+      - fixture_group: 1
+        content:
+          type: Preset
+          data: !Color 6
+      - fixture_group: 1
+        content:
+          type: Preset
+          data: !Color 7
+      - fixture_group: 1
+        content:
+          type: Preset
+          data: !Color 8
+      - fixture_group: 1
+        content:
+          type: Preset
+          data: !Color 9
+      - fixture_group: 1
+        content:
+          type: Preset
+          data: !Color 10
+      - fixture_group: 1
+        content:
+          type: Preset
+          data: !Color 11
+      - fixture_group: 1
+        content:
+          type: Preset
+          data: !Color 12
+      - fixture_group: 1
+        content:
+          type: Preset
+          data: !Color 13
+fixture_groups:
+  - id: 1
+    name: "All"
+    fixtures: [1, 2, 3, 4, 5, 6, 7, 8]
+dimmer_presets:
+  - id: 1
+    name: "100%"
+    content: !Selective
+      attribute_values:
+        [1, Dimmer]: 1.0
+      filter: Dimmer
+  - id: 2
+    name: "75%"
+    content: !Selective
+      attribute_values:
+        [1, Dimmer]: 0.75
+      filter: Dimmer
+  - id: 3
+    name: "50%"
+    content: !Selective
+      attribute_values:
+        [1, Dimmer]: 0.5
+      filter: Dimmer
+  - id: 4
+    name: "25%"
+    content: !Selective
+      attribute_values:
+        [1, Dimmer]: 0.25
+      filter: Dimmer
+  - id: 5
+    name: "0%"
+    content: !Selective
+      attribute_values:
+        [1, Dimmer]: 0.0
+      filter: Dimmer
+color_presets:
+  - id: 1
+    name: "White"
+    content: !Selective
+      attribute_values:
+        [1, ColorAdd_R]: 1.0
+        [1, ColorAdd_G]: 1.0
+        [1, ColorAdd_B]: 1.0
+      filter: Color
+  - id: 2
+    name: "Red"
+    content: !Selective
+      attribute_values:
+        [1, ColorAdd_R]: 1.0
+        [1, ColorAdd_G]: 0.0
+        [1, ColorAdd_B]: 0.0
+      filter: Color
+  - id: 3
+    name: "Orange"
+    content: !Selective
+      attribute_values:
+        [1, ColorAdd_R]: 1.0
+        [1, ColorAdd_G]: 0.5
+        [1, ColorAdd_B]: 0.0
+      filter: Color
+  - id: 4
+    name: "Yellow"
+    content: !Selective
+      attribute_values:
+        [1, ColorAdd_R]: 1.0
+        [1, ColorAdd_G]: 1.0
+        [1, ColorAdd_B]: 0.0
+      filter: Color
+  - id: 5
+    name: "Fern"
+    content: !Selective
+      attribute_values:
+        [1, ColorAdd_R]: 0.5
+        [1, ColorAdd_G]: 1.0
+        [1, ColorAdd_B]: 0.2
+      filter: Color
+  - id: 6
+    name: "Green"
+    content: !Selective
+      attribute_values:
+        [1, ColorAdd_R]: 0.0
+        [1, ColorAdd_G]: 1.0
+        [1, ColorAdd_B]: 0.0
+      filter: Color
+  - id: 7
+    name: "Sea"
+    content: !Selective
+      attribute_values:
+        [1, ColorAdd_R]: 0.0
+        [1, ColorAdd_G]: 1.0
+        [1, ColorAdd_B]: 0.5
+      filter: Color
+  - id: 8
+    name: "Cyan"
+    content: !Selective
+      attribute_values:
+        [1, ColorAdd_R]: 0.0
+        [1, ColorAdd_G]: 1.0
+        [1, ColorAdd_B]: 1.0
+      filter: Color
+  - id: 9
+    name: "Lavender"
+    content: !Selective
+      attribute_values:
+        [1, ColorAdd_R]: 0.7
+        [1, ColorAdd_G]: 0.5
+        [1, ColorAdd_B]: 1.0
+      filter: Color
+  - id: 10
+    name: "Blue"
+    content: !Selective
+      attribute_values:
+        [1, ColorAdd_R]: 0.0
+        [1, ColorAdd_G]: 0.0
+        [1, ColorAdd_B]: 1.0
+      filter: Color
+  - id: 11
+    name: "Violet"
+    content: !Selective
+      attribute_values:
+        [1, ColorAdd_R]: 0.5
+        [1, ColorAdd_G]: 0.0
+        [1, ColorAdd_B]: 1.0
+      filter: Color
+  - id: 12
+    name: "Magenta"
+    content: !Selective
+      attribute_values:
+        [1, ColorAdd_R]: 1.0
+        [1, ColorAdd_G]: 0.0
+        [1, ColorAdd_B]: 0.5
+      filter: Color
+  - id: 13
+    name: "Pink"
+    content: !Selective
+      attribute_values:
+        [1, ColorAdd_R]: 1.0
+        [1, ColorAdd_G]: 0.5
+        [1, ColorAdd_B]: 0.7
+      filter: Color

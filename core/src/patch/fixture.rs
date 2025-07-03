@@ -16,6 +16,8 @@ use crate::patch::{Attribute, AttributeValue};
     derive_more::From,
     derive_more::Into
 )]
+#[derive(serde::Deserialize)]
+#[serde(transparent)]
 pub struct FixtureId(pub u32);
 
 /// A specific mode for a [Fixture]. Defined in the GDTF description.

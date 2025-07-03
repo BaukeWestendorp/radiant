@@ -12,13 +12,14 @@ super::define_object_id!(ExecutorId);
 /// determine their behavior. They can be assigned a sequence which contains
 /// cues to be played back.
 #[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Deserialize)]
 pub struct Executor {
     id: ExecutorId,
     pub(crate) name: String,
     pub(crate) button: ExecutorButton,
     pub(crate) fader: ExecutorFader,
-    pub(crate) sequence_id: Option<SequenceId>,
     pub(crate) master_level: f32,
+    pub(crate) sequence_id: Option<SequenceId>,
     active_cue_index: Option<usize>,
 }
 
@@ -30,8 +31,8 @@ impl Executor {
             name: "New Executor".to_string(),
             button: ExecutorButton::default(),
             fader: ExecutorFader::default(),
-            sequence_id: None,
             master_level: 1.0,
+            sequence_id: None,
             active_cue_index: None,
         }
     }
@@ -159,9 +160,12 @@ impl Executor {
 /// The button can be configured with different modes to control its behavior
 /// and tracks both current and previous press states.
 #[derive(Debug, Clone, PartialEq, Default)]
+#[derive(serde::Deserialize)]
 pub struct ExecutorButton {
     mode: ExecutorButtonMode,
+    #[serde(skip)]
     was_pressed: bool,
+    #[serde(skip)]
     currently_pressed: bool,
 }
 
@@ -212,6 +216,7 @@ impl ExecutorButton {
 
 /// Determines the function of an [Executor]'s button.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(serde::Deserialize)]
 pub enum ExecutorButtonMode {
     /// Button acts as a "Go" button, advancing to the next cue when pressed.
     #[default]
@@ -234,6 +239,7 @@ impl FromStr for ExecutorButtonMode {
 /// The fader can be configured with different modes to control its behavior
 /// and maintains a level value between 0.0 and 1.0.
 #[derive(Debug, Clone, PartialEq, Default)]
+#[derive(serde::Deserialize)]
 pub struct ExecutorFader {
     mode: ExecutorFaderMode,
     level: f32,
@@ -267,6 +273,7 @@ impl ExecutorFader {
 
 /// Determines the function of an [Executor]'s fader.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(serde::Deserialize)]
 pub enum ExecutorFaderMode {
     /// Fader controls the master level of the executor.
     #[default]

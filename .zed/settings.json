@@ -3,7 +3,13 @@
     "yaml-language-server": {
       "settings": {
         "yaml": {
-          "customTags": ["!unicast mapping", "!cc scalar"]
+          "customTags": [
+            "!Unicast mapping",
+            "!ControlChange scalar",
+            "!Selective mapping",
+            "!Dimmer scalar",
+            "!Color scalar"
+          ]
         }
       }
     }

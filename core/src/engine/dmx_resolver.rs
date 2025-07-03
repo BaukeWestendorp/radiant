@@ -35,8 +35,8 @@ fn resolve_recipe(recipe: &Recipe, level: f32, output_pipeline: &mut Pipeline, s
                 return;
             };
 
-            let Some(fixture_group) = show.fixture_group(recipe.fixture_group_id) else {
-                log::warn!("fixture group '{}' not found in recipe", recipe.fixture_group_id);
+            let Some(fixture_group) = show.fixture_group(recipe.fixture_group) else {
+                log::warn!("fixture group '{}' not found in recipe", recipe.fixture_group);
                 return;
             };
 

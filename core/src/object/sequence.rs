@@ -8,6 +8,7 @@ super::define_object_id!(SequenceId);
 /// Sequences provide an ordered collection of cues that can be played back
 /// sequentially through executor controls.
 #[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Deserialize)]
 pub struct Sequence {
     id: SequenceId,
     pub(crate) name: String,

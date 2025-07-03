@@ -120,9 +120,7 @@ impl MidiExecutorControl {
 #[derive(serde::Deserialize)]
 pub enum MidiAction {
     /// A MIDI Note On/Off message with the specified note number.
-    #[serde(rename = "note")]
     Note(u8),
     /// A MIDI Control Change (CC) message with the specified controller number.
-    #[serde(rename = "cc")]
     ControlChange(u8),
 }

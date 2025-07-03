@@ -1636,6 +1636,36 @@ impl FromStr for Attribute {
     }
 }
 
+impl<'de> serde::Deserialize<'de> for Attribute {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        use serde::de::{self, Visitor};
+        use std::fmt;
+
+        struct AttributeVisitor;
+
+        impl<'de> Visitor<'de> for AttributeVisitor {
+            type Value = Attribute;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a string representing an Attribute")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Attribute, E>
+            where
+                E: de::Error,
+            {
+                Attribute::from_str(v)
+                    .map_err(|_| E::custom(format!("invalid Attribute string: {}", v)))
+            }
+        }
+
+        deserializer.deserialize_str(AttributeVisitor)
+    }
+}
+
 #[cfg(test)]
 #[rustfmt::skip]
 mod tests {
@@ -1940,6 +1970,8 @@ mod tests {
 /// values to this valid range.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
 #[derive(derive_more::Deref, derive_more::DerefMut)]
+#[derive(serde::Deserialize)]
+#[serde(transparent)]
 pub struct AttributeValue(f32);
 
 impl AttributeValue {
@@ -2019,6 +2051,7 @@ impl From<AttributeValue> for dmx::Value {
 /// both control the position of a fixture, and so their feature group is
 /// 'Position'.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(serde::Deserialize)]
 pub enum FeatureGroup {
     /// Dimmer feature group.
     Dimmer,

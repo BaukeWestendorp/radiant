@@ -8,6 +8,7 @@ super::define_object_id!(FixtureGroupId);
 /// single unit, providing convenient access to collections of related lighting
 /// fixtures.
 #[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Deserialize)]
 pub struct FixtureGroup {
     id: FixtureGroupId,
     pub(crate) name: String,

@@ -14,10 +14,12 @@ use crate::cmd::Command;
 use crate::error::Result;
 
 pub use adapters::*;
+pub use objects::*;
 pub use patch::*;
 pub use protocols::*;
 
 mod adapters;
+mod objects;
 mod patch;
 mod protocols;
 
@@ -29,6 +31,8 @@ pub const FILE_EXTENSION: &str = "rsf";
 pub const RELATIVE_GDTF_FILE_FOLDER_PATH: &str = "gdtf_files";
 /// The relative path to the patch file within a [Showfile] directory.
 pub const RELATIVE_PATCH_FILE_PATH: &str = "patch.yaml";
+/// The relative path to the objects file within a [Showfile] directory.
+pub const RELATIVE_OBJECTS_FILE_PATH: &str = "objects.yaml";
 /// The relative path to the adapters file within a [Showfile] directory.
 pub const RELATIVE_ADAPTERS_FILE_PATH: &str = "adapters.yaml";
 /// The relative path to the protocols file within a [Showfile] directory.
@@ -45,6 +49,7 @@ pub struct Showfile {
     path: Option<PathBuf>,
 
     patch: Patch,
+    objects: Objects,
     adapters: Adapters,
     protocols: Protocols,
     init_commands: Vec<Command>,
@@ -60,6 +65,10 @@ impl Showfile {
     /// Returns a reference to the [Patch] contained in this [Showfile].
     pub fn patch(&self) -> &Patch {
         &self.patch
+    }
+
+    pub fn objects(&self) -> &Objects {
+        &self.objects
     }
 
     /// Returns a reference to the [Adapters] configuration contained in this
@@ -103,10 +112,18 @@ impl Showfile {
     /// Loads a [Showfile] from an unzipped folder.
     pub fn load_folder(path: &Path) -> Result<Self> {
         let patch = Patch::read_from_file(&path.join(RELATIVE_PATCH_FILE_PATH))?;
+        let objects = Objects::read_from_file(&path.join(RELATIVE_OBJECTS_FILE_PATH))?;
         let adapters = Adapters::read_from_file(&path.join(RELATIVE_ADAPTERS_FILE_PATH))?;
         let protocols = Protocols::read_from_file(&path.join(RELATIVE_PROTOCOLS_FILE_PATH))?;
         let init_commands = load_init_commands(&path.join(RELATIVE_INIT_COMMANDS_FILE_PATH))?;
-        Ok(Self { path: Some(path.to_path_buf()), patch, adapters, protocols, init_commands })
+        Ok(Self {
+            path: Some(path.to_path_buf()),
+            patch,
+            adapters,
+            protocols,
+            objects,
+            init_commands,
+        })
     }
 }
 

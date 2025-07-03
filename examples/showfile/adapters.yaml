@@ -5,21 +5,21 @@ midi:
       1:
         button:
           channel: 0
-          msg: !cc 64
+          msg: !ControlChange 64
         fader:
           channel: 0
-          msg: !cc 0
+          msg: !ControlChange 0
       2:
         button:
           channel: 0
-          msg: !cc 65
+          msg: !ControlChange 65
         fader:
           channel: 0
-          msg: !cc 1
+          msg: !ControlChange 1
       3:
         button:
           channel: 0
-          msg: !cc 66
+          msg: !ControlChange 66
         fader:
           channel: 0
-          msg: !cc 2
+          msg: !ControlChange 2

@@ -302,7 +302,7 @@ impl<'src> Parser<'src> {
 
     fn parse_recipe(&mut self) -> Result<Recipe> {
         Ok(Recipe {
-            fixture_group_id: self
+            fixture_group: self
                 .parse_object_id()?
                 .try_into()
                 .wrap_err("a recipe requires a fixture group id")?,
@@ -745,7 +745,7 @@ mod tests {
                 1.into(),
                 CueCommand::Add {
                     recipes: vec![Recipe {
-                        fixture_group_id: 2.into(),
+                        fixture_group: 2.into(),
                         content: RecipeContent::Preset(AnyPresetId::Dimmer(3.into()))
                     }]
                 }
@@ -762,11 +762,11 @@ mod tests {
                 CueCommand::Add {
                     recipes: vec![
                         Recipe {
-                            fixture_group_id: 2.into(),
+                            fixture_group: 2.into(),
                             content: RecipeContent::Preset(AnyPresetId::Dimmer(3.into()))
                         },
                         Recipe {
-                            fixture_group_id: 4.into(),
+                            fixture_group: 4.into(),
                             content: RecipeContent::Preset(AnyPresetId::Dimmer(5.into()))
                         }
                     ]
@@ -784,7 +784,7 @@ mod tests {
                 CueCommand::ReplaceAt {
                     index: 2,
                     recipe: Recipe {
-                        fixture_group_id: 2.into(),
+                        fixture_group: 2.into(),
                         content: RecipeContent::Preset(AnyPresetId::Dimmer(3.into()))
                     }
                 }

@@ -107,7 +107,6 @@ impl SacnSourceConfiguration {
 /// The [SacnOutputType] determines how DMX data is transmitted over the
 /// network, such as unicast to a specific IP address.
 #[derive(serde::Deserialize)]
-#[serde(rename_all = "snake_case")]
 pub enum SacnOutputType {
     /// Unicast output to a specific destination IP address.
     Unicast {
