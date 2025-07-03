@@ -6,6 +6,7 @@
           "customTags": [
             "!Unicast mapping",
             "!ControlChange scalar",
+            "!Universal mapping",
             "!Selective mapping",
             "!Dimmer scalar",
             "!Color scalar"

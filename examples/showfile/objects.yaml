@@ -132,136 +132,136 @@ fixture_groups:
 dimmer_presets:
   - id: 1
     name: "100%"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, Dimmer]: 1.0
+        Dimmer: 1.0
       filter: Dimmer
   - id: 2
     name: "75%"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, Dimmer]: 0.75
+        Dimmer: 0.75
       filter: Dimmer
   - id: 3
     name: "50%"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, Dimmer]: 0.5
+        Dimmer: 0.5
       filter: Dimmer
   - id: 4
     name: "25%"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, Dimmer]: 0.25
+        Dimmer: 0.25
       filter: Dimmer
   - id: 5
     name: "0%"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, Dimmer]: 0.0
+        Dimmer: 0.0
       filter: Dimmer
 color_presets:
   - id: 1
     name: "White"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, ColorAdd_R]: 1.0
-        [1, ColorAdd_G]: 1.0
-        [1, ColorAdd_B]: 1.0
+        ColorAdd_R: 1.0
+        ColorAdd_G: 1.0
+        ColorAdd_B: 1.0
       filter: Color
   - id: 2
     name: "Red"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, ColorAdd_R]: 1.0
-        [1, ColorAdd_G]: 0.0
-        [1, ColorAdd_B]: 0.0
+        ColorAdd_R: 1.0
+        ColorAdd_G: 0.0
+        ColorAdd_B: 0.0
       filter: Color
   - id: 3
     name: "Orange"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, ColorAdd_R]: 1.0
-        [1, ColorAdd_G]: 0.5
-        [1, ColorAdd_B]: 0.0
+        ColorAdd_R: 1.0
+        ColorAdd_G: 0.5
+        ColorAdd_B: 0.0
       filter: Color
   - id: 4
     name: "Yellow"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, ColorAdd_R]: 1.0
-        [1, ColorAdd_G]: 1.0
-        [1, ColorAdd_B]: 0.0
+        ColorAdd_R: 1.0
+        ColorAdd_G: 1.0
+        ColorAdd_B: 0.0
       filter: Color
   - id: 5
     name: "Fern"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, ColorAdd_R]: 0.5
-        [1, ColorAdd_G]: 1.0
-        [1, ColorAdd_B]: 0.2
+        ColorAdd_R: 0.5
+        ColorAdd_G: 1.0
+        ColorAdd_B: 0.2
       filter: Color
   - id: 6
     name: "Green"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, ColorAdd_R]: 0.0
-        [1, ColorAdd_G]: 1.0
-        [1, ColorAdd_B]: 0.0
+        ColorAdd_R: 0.0
+        ColorAdd_G: 1.0
+        ColorAdd_B: 0.0
       filter: Color
   - id: 7
     name: "Sea"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, ColorAdd_R]: 0.0
-        [1, ColorAdd_G]: 1.0
-        [1, ColorAdd_B]: 0.5
+        ColorAdd_R: 0.0
+        ColorAdd_G: 1.0
+        ColorAdd_B: 0.5
       filter: Color
   - id: 8
     name: "Cyan"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, ColorAdd_R]: 0.0
-        [1, ColorAdd_G]: 1.0
-        [1, ColorAdd_B]: 1.0
+        ColorAdd_R: 0.0
+        ColorAdd_G: 1.0
+        ColorAdd_B: 1.0
       filter: Color
   - id: 9
     name: "Lavender"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, ColorAdd_R]: 0.7
-        [1, ColorAdd_G]: 0.5
-        [1, ColorAdd_B]: 1.0
+        ColorAdd_R: 0.7
+        ColorAdd_G: 0.5
+        ColorAdd_B: 1.0
       filter: Color
   - id: 10
     name: "Blue"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, ColorAdd_R]: 0.0
-        [1, ColorAdd_G]: 0.0
-        [1, ColorAdd_B]: 1.0
+        ColorAdd_R: 0.0
+        ColorAdd_G: 0.0
+        ColorAdd_B: 1.0
       filter: Color
   - id: 11
     name: "Violet"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, ColorAdd_R]: 0.5
-        [1, ColorAdd_G]: 0.0
-        [1, ColorAdd_B]: 1.0
+        ColorAdd_R: 0.5
+        ColorAdd_G: 0.0
+        ColorAdd_B: 1.0
       filter: Color
   - id: 12
     name: "Magenta"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, ColorAdd_R]: 1.0
-        [1, ColorAdd_G]: 0.0
-        [1, ColorAdd_B]: 0.5
+        ColorAdd_R: 1.0
+        ColorAdd_G: 0.0
+        ColorAdd_B: 0.5
       filter: Color
   - id: 13
     name: "Pink"
-    content: !Selective
+    content: !Universal
       attribute_values:
-        [1, ColorAdd_R]: 1.0
-        [1, ColorAdd_G]: 0.5
-        [1, ColorAdd_B]: 0.7
+        ColorAdd_R: 1.0
+        ColorAdd_G: 0.5
+        ColorAdd_B: 0.7
       filter: Color

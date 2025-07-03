@@ -382,8 +382,11 @@ fn exec_preset_command(engine: &mut Engine, id: AnyPresetId, cmd: PresetCommand)
                             .wrap_err("preset with id '{id}' not found")?
                             .content
                         {
-                            PresetContent::Selective(selective_preset) => {
-                                selective_preset.set_attribute_value(fid, attr, value);
+                            PresetContent::Selective(preset) => {
+                                preset.set_attribute_value(fid, attr, value);
+                            }
+                            PresetContent::Universal(preset) => {
+                                preset.set_attribute_value(attr, value);
                             }
                         }
                     }
@@ -395,8 +398,11 @@ fn exec_preset_command(engine: &mut Engine, id: AnyPresetId, cmd: PresetCommand)
                             .wrap_err("preset with id '{id}' not found")?
                             .content
                         {
-                            PresetContent::Selective(selective_preset) => {
-                                selective_preset.set_attribute_value(fid, attr, value);
+                            PresetContent::Selective(preset) => {
+                                preset.set_attribute_value(fid, attr, value);
+                            }
+                            PresetContent::Universal(preset) => {
+                                preset.set_attribute_value(attr, value);
                             }
                         }
                     }
@@ -412,9 +418,8 @@ fn exec_preset_command(engine: &mut Engine, id: AnyPresetId, cmd: PresetCommand)
                     .wrap_err("preset with id '{id}' not found")?
                     .content
                 {
-                    PresetContent::Selective(selective_preset) => {
-                        selective_preset.clear();
-                    }
+                    PresetContent::Selective(preset) => preset.clear(),
+                    PresetContent::Universal(preset) => preset.clear(),
                 }
             }
             AnyPresetId::Color(id) => {
@@ -427,6 +432,9 @@ fn exec_preset_command(engine: &mut Engine, id: AnyPresetId, cmd: PresetCommand)
                 {
                     PresetContent::Selective(selective_preset) => {
                         selective_preset.clear();
+                    }
+                    PresetContent::Universal(preset) => {
+                        preset.clear();
                     }
                 }
             }

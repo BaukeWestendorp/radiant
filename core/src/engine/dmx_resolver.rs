@@ -68,6 +68,27 @@ fn resolve_recipe(recipe: &Recipe, level: f32, output_pipeline: &mut Pipeline, s
                         }
                     }
                 }
+                PresetContent::Universal(preset) => {
+                    for (attribute, value) in preset.get_attribute_values() {
+                        // NOTE: We only resolve attributes for
+                        //       fixtures that are both in the Fixture Group
+                        //       and in the Preset.
+                        for fixture_id in fixture_group.fixtures() {
+                            // FIXME: We should implement different merging strategies like HTP
+                            //        But for now let's just lerp with the existing value.
+                            let old_value = output_pipeline
+                                .get_attribute_value(*fixture_id, attribute)
+                                .unwrap_or_default();
+                            let lerped_value = AttributeValue::lerp(&old_value, value, level);
+
+                            output_pipeline.set_attribute_value(
+                                *fixture_id,
+                                attribute.clone(),
+                                lerped_value,
+                            );
+                        }
+                    }
+                }
             }
         }
     }

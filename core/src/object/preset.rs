@@ -141,9 +141,55 @@ macro_rules! define_preset {
 #[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Deserialize)]
 pub enum PresetContent {
+    /// A preset that applies to every fixture.
+    Universal(UniversalPreset),
     /// A preset that applies to specific fixtures with targeted attribute
     /// values.
     Selective(SelectivePreset),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Deserialize)]
+pub struct UniversalPreset {
+    attribute_values: BTreeMap<Attribute, AttributeValue>,
+    filter: FeatureGroup,
+}
+
+impl UniversalPreset {
+    /// Creates a new selective preset with the specified feature group filter.
+    ///
+    /// The filter determines which attributes can be stored in this preset
+    /// based on their feature group compatibility.
+    pub fn new(feature_group_filter: FeatureGroup) -> Self {
+        Self { attribute_values: BTreeMap::new(), filter: feature_group_filter }
+    }
+
+    /// Returns an iterator over all attribute values stored in this preset.
+    ///
+    /// Each item in the iterator is a tuple containing the fixture-attribute
+    /// key and the corresponding attribute value.
+    pub fn get_attribute_values(&self) -> impl IntoIterator<Item = (&Attribute, &AttributeValue)> {
+        self.attribute_values.iter()
+    }
+
+    /// Sets an attribute value for a specific fixture.
+    ///
+    /// The attribute value is only stored if the attribute's feature group
+    /// matches this preset's filter. Attributes that don't match the filter
+    /// are silently ignored.
+    pub fn set_attribute_value(&mut self, attribute: Attribute, value: AttributeValue) {
+        if attribute.feature_group().is_some_and(|fg| fg == self.filter) {
+            self.attribute_values.insert(attribute, value);
+        }
+    }
+
+    /// Clears all attribute values from this preset.
+    ///
+    /// After calling this method, the preset will contain no attribute values
+    /// but will retain its feature group filter.
+    pub fn clear(&mut self) {
+        self.attribute_values.clear();
+    }
 }
 
 /// A preset that has attribute values for specific fixtures.
