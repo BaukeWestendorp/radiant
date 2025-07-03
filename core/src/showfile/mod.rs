@@ -67,6 +67,7 @@ impl Showfile {
         &self.patch
     }
 
+    /// Returns a reference to the [Objects] contained in this [Showfile].
     pub fn objects(&self) -> &Objects {
         &self.objects
     }
