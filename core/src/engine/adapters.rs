@@ -1,10 +1,9 @@
 use std::sync::mpsc::{self};
 
-use crate::{
-    Command, Result,
-    adapters::midi::{MidiAdapter, MidiCommand},
-    showfile::MidiConfiguration,
-};
+use crate::adapters::midi::{MidiAdapter, MidiCommand};
+use crate::cmd::Command;
+use crate::error::Result;
+use crate::showfile::MidiConfiguration;
 
 pub struct Adapters {
     /// Receives MIDI commands from the MIDI adapter.

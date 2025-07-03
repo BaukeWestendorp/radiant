@@ -1,5 +1,5 @@
 [package]
-name = "radiant"
+name = "radiant-core"
 version.workspace = true
 edition.workspace = true
 

@@ -3,8 +3,8 @@ use std::thread;
 
 use eyre::Context;
 
-use radiant::showfile::Showfile;
-use radiant::{DMX_OUTPUT_UPDATE_INTERVAL, Engine};
+use radiant_core::engine::{DMX_OUTPUT_UPDATE_INTERVAL, Engine};
+use radiant_core::showfile::Showfile;
 
 /// Starts the app in headless mode.
 pub fn run(showfile: Showfile) -> eyre::Result<()> {

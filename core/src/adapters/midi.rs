@@ -1,16 +1,27 @@
-use crate::{
-    ExecutorId, Result,
-    showfile::{MidiAction, MidiConfiguration},
-};
 use midir::{MidiInput, MidiInputConnection};
 use std::sync::mpsc;
 
+use crate::error::Result;
+use crate::object::ExecutorId;
+use crate::showfile::{MidiAction, MidiConfiguration};
+
+/// Adapter for handling MIDI input and mapping MIDI messages to executor
+/// actions.
+///
+/// The [MidiAdapter] listens for MIDI messages from configured devices and
+/// translates them into [MidiCommand]s, which can be used to control the
+/// engine. The adapter must be kept alive for the duration of MIDI usage.
 pub struct MidiAdapter {
     // Needs to be kept alive.
     _connections: Vec<MidiInputConnection<()>>,
 }
 
 impl MidiAdapter {
+    /// Creates a new [MidiAdapter] using the provided [MidiConfiguration] and
+    /// a channel sender for [MidiCommand]s.
+    ///
+    /// The adapter will listen to all active MIDI devices specified in the
+    /// configuration, and send parsed [MidiCommand]s to the given channel.
     pub fn new<'id>(config: &MidiConfiguration, tx: mpsc::Sender<MidiCommand>) -> Result<Self> {
         let midi_input = MidiInput::new("Radiant MIDI Input").unwrap();
 
@@ -136,9 +147,16 @@ fn get_midi_commands(message: &[u8], config: &MidiConfiguration) -> Vec<MidiComm
     commands
 }
 
+/// Represents a command generated from a MIDI input event.
+///
+/// [MidiCommand]s are produced by the [MidiAdapter] and correspond to actions
+/// that can be executed by a MIDI command.
 #[derive(Debug, Clone, Copy)]
 pub enum MidiCommand {
+    /// Virtually press an executor button.
     ExecutorButtonPress { executor_id: ExecutorId },
+    /// Virtually release an executor butotn.
     ExecutorButtonRelease { executor_id: ExecutorId },
+    /// Sets the value of an executor fader.
     ExecutorFaderSetValue { executor_id: ExecutorId, value: f32 },
 }

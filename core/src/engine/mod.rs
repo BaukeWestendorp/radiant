@@ -1,16 +1,29 @@
+//! Core controller for Radiant.
+//!
+//! This module provides the [Engine] struct, which
+//! acts as the central controller for Radiant. The [Engine]
+//! manages the show lifecycle, executes incoming
+//! [Command]s, resolves DMX output, and coordinates
+//! protocol and adapter integration. It is the main entry point for
+//! embedding Radiant's backend in an application.
+
 use std::time::Duration;
 
 use eyre::{Context, ContextCompat};
 
 use super::pipeline::Pipeline;
+use crate::cmd::{Command, PatchCommand};
+use crate::error::Result;
+use crate::patch::{DmxMode, FixtureId};
+use crate::show::Show;
 use crate::showfile::Showfile;
-use crate::{Command, DmxMode, FixtureId, PatchCommand, Result, Show};
 
 mod adapters;
 mod cmd;
 mod dmx_resolver;
 mod protocols;
 
+/// The interval at which the host should update the DMX output.
 pub const DMX_OUTPUT_UPDATE_INTERVAL: Duration = Duration::from_millis(40);
 
 /// The [Engine] controls the flow of output data,
@@ -30,7 +43,8 @@ pub struct Engine {
 }
 
 impl Engine {
-    /// Creates a new [Engine] and internally converts the provided [Showfile] into a [Show].
+    /// Creates a new [Engine] and internally converts the provided [Showfile]
+    /// into a [Show].
     pub fn new(showfile: Showfile) -> Result<Self> {
         let show = Show::new(showfile.path().cloned());
 
@@ -85,7 +99,8 @@ impl Engine {
     }
 
     /// Do a single iteration of DMX resolving and executor state management.
-    /// This should be called in a loop externally, with a delay of [DMX_OUTPUT_UPDATE_INTERVAL].
+    /// This should be called in a loop externally, with a delay of
+    /// [DMX_OUTPUT_UPDATE_INTERVAL].
     pub fn resolve_dmx(&mut self) {
         // FIXME: Cloning the whole show is extremely cursed.
         let show = &self.show.clone();
@@ -99,7 +114,7 @@ impl Engine {
         self.protocols.update_dmx_output(self.output_pipeline.resolved_multiverse());
     }
 
-    /// Gets the resolved output [Multiverse].
+    /// Gets the resolved output [dmx::Multiverse].
     pub fn output_multiverse(&self) -> &dmx::Multiverse {
         self.output_pipeline.resolved_multiverse()
     }

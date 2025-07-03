@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use crate::{Attribute, AttributeValue, FixtureId, Patch};
+use crate::patch::{Attribute, AttributeValue, FixtureId, Patch};
 
-/// The pipeline is used to converge all different kinds
-/// of representation for DMX output into a single [Multiverse].
+/// The [Pipeline] resolves all representations of DMX output
+/// into a single [dmx::Multiverse].
 ///
 /// ``` markdown
 /// Layers:
@@ -14,32 +14,38 @@ use crate::{Attribute, AttributeValue, FixtureId, Patch};
 /// ```
 #[derive(Debug, Default, Clone)]
 pub struct Pipeline {
-    /// Unresolved attribute values that have been set.
-    /// These will be piped down into the unresolved [Multiverse].
+    /// Unresolved attribute values set for specific fixtures.
+    /// These are merged into the unresolved multiverse during
+    /// resolution.
     attribute_values: HashMap<(FixtureId, Attribute), AttributeValue>,
-    /// Unresolved direct DMX values that have been set.
+    /// Unresolved direct DMX values set at specific addresses.
     dmx_values: HashMap<dmx::Address, dmx::Value>,
-    /// Once [Pipeline::resolve] has been called,
-    /// all unresolved representations will be flushed into this [Multiverse].
+    /// The resolved DMX output after [Pipeline::resolve] is called.
     resolved_multiverse: dmx::Multiverse,
+    /// The resolved attribute values after [Pipeline::resolve].
     resolved_attribute_values: HashMap<(FixtureId, Attribute), AttributeValue>,
+    /// The resolved direct DMX values after [Pipeline::resolve].
     resolved_dmx_values: HashMap<dmx::Address, dmx::Value>,
 }
 
 impl Pipeline {
+    /// Creates a new, empty [Pipeline].
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Clears all unresolved representations.
+    /// Clears all unresolved attribute and DMX values.
+    ///
+    /// This does not affect the resolved output.
     pub fn clear_unresolved(&mut self) {
         self.dmx_values.clear();
         self.attribute_values.clear();
     }
 
-    /// Inserts an [AttributeValue] for a specific [Attribute]
-    /// on a fixture with the given [FixtureId]
-    /// to be resolved in the future.
+    /// Sets an unresolved [AttributeValue] for a given [FixtureId] and
+    /// [Attribute].
+    ///
+    /// This value will be included in the next resolution.
     pub fn set_attribute_value(
         &mut self,
         fixture_id: FixtureId,
@@ -49,8 +55,8 @@ impl Pipeline {
         self.attribute_values.insert((fixture_id, attribute), value);
     }
 
-    /// Gets an unresolved [AttributeValue] for a specific [Attribute]
-    /// on a fixture with the given [FixtureId].
+    /// Gets an unresolved [AttributeValue] for a given [FixtureId] and
+    /// [Attribute], if present.
     pub fn get_attribute_value(
         &self,
         fixture_id: FixtureId,
@@ -59,8 +65,9 @@ impl Pipeline {
         self.attribute_values.get(&(fixture_id, attribute.clone())).copied()
     }
 
-    /// Inserts a specific [dmx::Value] at the given [dmx::Address]
-    /// to be resolved in the future.
+    /// Sets an unresolved [dmx::Value] at the specified [dmx::Address].
+    ///
+    /// This value will be included in the next resolution.
     pub fn set_dmx_value(&mut self, address: dmx::Address, value: dmx::Value) {
         self.dmx_values.insert(address, value);
     }
@@ -96,29 +103,35 @@ impl Pipeline {
         self.resolved_dmx_values = self.dmx_values.clone();
     }
 
-    /// Resolves all unresolved representations into the resolved [Multiverse].
+    /// Resolves all unresolved values into the final [dmx::Multiverse] output.
     ///
-    /// You can get the resolved [Multiverse] with [Pipeline::output_multiverse].
+    /// This processes default values, attribute values, and direct DMX values
+    /// in order. The resolved output can be accessed with
+    /// [Pipeline::resolved_multiverse].
     pub fn resolve(&mut self, patch: &Patch) {
         self.resolve_default_values(patch);
         self.resolve_attribute_values(patch);
         self.resolve_direct_dmx_values();
     }
 
-    /// Gets the resolved [Multiverse]. This will not be cleared by [Pipeline::clear_unresolved].
+    /// Returns the resolved [dmx::Multiverse] after the last call to
+    /// [Pipeline::resolve].
+    ///
+    /// This output is not affected by [Pipeline::clear_unresolved].
     pub fn resolved_multiverse(&self) -> &dmx::Multiverse {
         &self.resolved_multiverse
     }
 
-    /// Gets the resolved [AttributeValue]s. This will not be cleared by [Pipeline::clear_unresolved].
+    /// Returns the resolved [AttributeValue]s after the last call to
+    /// [Pipeline::resolve].
     ///
-    /// This function does not return defaults, just changed values.
+    /// Only changed values are included; defaults are not returned.
     pub fn resolved_attribute_values(&self) -> &HashMap<(FixtureId, Attribute), AttributeValue> {
         &self.resolved_attribute_values
     }
 
-    /// Merges all relevant, unresolved data from this [Pipeline] into another.
-    pub fn merge_into(&self, other: &mut Pipeline) {
+    /// Merges all unresolved data from this [Pipeline] into another [Pipeline].
+    pub fn merge_unresolved_into(&self, other: &mut Pipeline) {
         for ((fixture_id, attribute), value) in &self.attribute_values {
             other.attribute_values.insert((*fixture_id, attribute.clone()), *value);
         }

@@ -10,15 +10,19 @@ pub enum Attribute {
     Pan,
     /// Controls the fixture’s upward and the downward movement (vertical axis).
     Tilt,
-    /// Controls the speed of the fixture’s continuous pan movement (horizontal axis).
+    /// Controls the speed of the fixture’s continuous pan movement (horizontal
+    /// axis).
     PanRotate,
-    /// Controls the speed of the fixture’s continuous tilt movement (vertical axis).
+    /// Controls the speed of the fixture’s continuous tilt movement (vertical
+    /// axis).
     TiltRotate,
     /// Selects the predefined position effects that are built into the fixture.
     PositionEffect,
-    /// Controls the speed of the predefined position effects that are built into the fixture.
+    /// Controls the speed of the predefined position effects that are built
+    /// into the fixture.
     PositionEffectRate,
-    /// Snaps or smooth fades with timing in running predefined position effects.
+    /// Snaps or smooth fades with timing in running predefined position
+    /// effects.
     PositionEffectFade,
     /// Defines a fixture’s x-coordinate within an XYZ coordinate system.
     XyzX,
@@ -41,17 +45,24 @@ pub enum Attribute {
     /// Unified scaling on all axis.
     ScaleXYZ,
 
-    /// The fixture’s gobo wheel (n). This is the main attribute of gobo wheel’s (n) wheel control. Selects gobos in gobo wheel (n). A different channel function sets the angle of the indexed position in the selected gobo or the angular speed of its continuous rotation.
+    /// The fixture’s gobo wheel (n). This is the main attribute of gobo wheel’s
+    /// (n) wheel control. Selects gobos in gobo wheel (n). A different channel
+    /// function sets the angle of the indexed position in the selected gobo or
+    /// the angular speed of its continuous rotation.
     Gobo(u8),
-    /// Selects gobos whose rotation is continuous in gobo wheel (n) and controls the angular speed of the gobo’s spin within the same channel function.
+    /// Selects gobos whose rotation is continuous in gobo wheel (n) and
+    /// controls the angular speed of the gobo’s spin within the same channel
+    /// function.
     GoboSelectSpin(u8),
-    /// Selects gobos which shake in gobo wheel (n) and controls the frequency of the gobo’s shake within the same channel function.
+    /// Selects gobos which shake in gobo wheel (n) and controls the frequency
+    /// of the gobo’s shake within the same channel function.
     GoboSelectShake(u8),
     /// Selects gobos which run effects in gobo wheel (n).
     GoboSelectEffects(u8),
     /// Controls angle of indexed rotation of gobo wheel (n).
     GoboWheelIndex(u8),
-    /// Controls the speed and direction of continuous rotation of gobo wheel (n).
+    /// Controls the speed and direction of continuous rotation of gobo wheel
+    /// (n).
     GoboWheelSpin(u8),
     /// Controls frequency of the shake of gobo wheel (n).
     GoboWheelShake(u8),
@@ -59,13 +70,19 @@ pub enum Attribute {
     GoboWheelRandom(u8),
     /// Controls audio-controlled functionality of gobo wheel (n).
     GoboWheelAudio(u8),
-    /// Controls angle of indexed rotation of gobos in gobo wheel (n). This is the main attribute of gobo wheel’s (n) wheel slot control.
+    /// Controls angle of indexed rotation of gobos in gobo wheel (n). This is
+    /// the main attribute of gobo wheel’s (n) wheel slot control.
     GoboPos(u8),
-    /// Controls the speed and direction of continuous rotation of gobos in gobo wheel (n).
+    /// Controls the speed and direction of continuous rotation of gobos in gobo
+    /// wheel (n).
     GoboPosRotate(u8),
     /// Controls frequency of the shake of gobos in gobo wheel (n).
     GoboPosShake(u8),
-    /// This is the main attribute of the animation wheel’s (n) wheel control. Selects slots in the animation wheel. A different channel function sets the angle of the indexed position in the selected slot or the angular speed of its continuous rotation. Is used for animation effects with multiple slots.
+    /// This is the main attribute of the animation wheel’s (n) wheel control.
+    /// Selects slots in the animation wheel. A different channel function sets
+    /// the angle of the indexed position in the selected slot or the angular
+    /// speed of its continuous rotation. Is used for animation effects with
+    /// multiple slots.
     AnimationWheel(u8),
     /// Controls audio-controlled functionality of animation wheel (n).
     AnimationWheelAudio(u8),
@@ -75,29 +92,40 @@ pub enum Attribute {
     AnimationWheelRandom(u8),
     /// Selects slots which run effects in animation wheel (n).
     AnimationWheelSelectEffects(u8),
-    /// Selects slots which shake in animation wheel and controls the frequency of the slots shake within the same channel function.
+    /// Selects slots which shake in animation wheel and controls the frequency
+    /// of the slots shake within the same channel function.
     AnimationWheelSelectShake(u8),
-    /// Selects slots whose rotation is continuous in animation wheel and controls the angular speed of the slot spin within the same channel function
+    /// Selects slots whose rotation is continuous in animation wheel and
+    /// controls the angular speed of the slot spin within the same channel
+    /// function
     AnimationWheelSelectSpin(u8),
-    /// Controls angle of indexed rotation of slots in animation wheel. This is the main attribute of animation wheel (n) wheel slot control.
+    /// Controls angle of indexed rotation of slots in animation wheel. This is
+    /// the main attribute of animation wheel (n) wheel slot control.
     AnimationWheelPos(u8),
-    /// Controls the speed and direction of continuous rotation of slots in animation wheel (n).
+    /// Controls the speed and direction of continuous rotation of slots in
+    /// animation wheel (n).
     AnimationWheelPosRotate(u8),
     /// Controls frequency of the shake of slots in animation wheel (n).
     AnimationWheelPosShake(u8),
-    /// This is the main attribute of the animation system insertion control. Controls the insertion of the fixture’s animation system in the light output. Is used for animation effects where a disk is inserted into the light output.
+    /// This is the main attribute of the animation system insertion control.
+    /// Controls the insertion of the fixture’s animation system in the light
+    /// output. Is used for animation effects where a disk is inserted into the
+    /// light output.
     AnimationSystem(u8),
     /// Sets frequency of animation system (n) insertion ramp.
     AnimationSystemRamp(u8),
     /// Sets frequency of animation system (n) insertion shake.
     AnimationSystemShake(u8),
-    /// Controls audio-controlled functionality of animation system (n) insertion.
+    /// Controls audio-controlled functionality of animation system (n)
+    /// insertion.
     AnimationSystemAudio(u8),
     /// Controls frequency of animation system (n) random insertion.
     AnimationSystemRandom(u8),
-    /// This is the main attribute of the animation system spinning control. Controls angle of indexed rotation of animation system (n) disk.
+    /// This is the main attribute of the animation system spinning control.
+    /// Controls angle of indexed rotation of animation system (n) disk.
     AnimationSystemPos(u8),
-    /// Controls the speed and direction of continuous rotation of animation system (n) disk.
+    /// Controls the speed and direction of continuous rotation of animation
+    /// system (n) disk.
     AnimationSystemPosRotate(u8),
     /// Controls frequency of the shake of animation system (n) disk.
     AnimationSystemPosShake(u8),
@@ -111,7 +139,8 @@ pub enum Attribute {
     MediaFolder(u8),
     /// Selects file with media content.
     MediaContent(u8),
-    /// Selects folder that contains 3D model content. For example 3D meshes for mapping.
+    /// Selects folder that contains 3D model content. For example 3D meshes for
+    /// mapping.
     ModelFolder(u8),
     /// Selects file with 3D model content.
     ModelContent(u8),
@@ -126,59 +155,83 @@ pub enum Attribute {
 
     /// Selects predefined color effects built into the fixture.
     ColorEffects(u8),
-    /// The fixture’s color wheel (n). Selects colors in color wheel (n). This is the main attribute of color wheel’s (n) wheel control.
+    /// The fixture’s color wheel (n). Selects colors in color wheel (n). This
+    /// is the main attribute of color wheel’s (n) wheel control.
     Color(u8),
     /// Controls angle of indexed rotation of color wheel (n)
     ColorWheelIndex(u8),
-    /// Controls the speed and direction of continuous rotation of color wheel (n).
+    /// Controls the speed and direction of continuous rotation of color wheel
+    /// (n).
     ColorWheelSpin(u8),
     /// Controls frequency of color wheel´s (n) random color slot selection.
     ColorWheelRandom(u8),
     /// Controls audio-controlled functionality of color wheel (n).
     ColorWheelAudio(u8),
-    /// Controls the intensity of the fixture’s red emitters for direct additive color mixing.
+    /// Controls the intensity of the fixture’s red emitters for direct additive
+    /// color mixing.
     ColorAddR,
-    /// Controls the intensity of the fixture’s green emitters for direct additive color mixing
+    /// Controls the intensity of the fixture’s green emitters for direct
+    /// additive color mixing
     ColorAddG,
-    /// Controls the intensity of the fixture’s blue emitters for direct additive color mixing.
+    /// Controls the intensity of the fixture’s blue emitters for direct
+    /// additive color mixing.
     ColorAddB,
-    /// Controls the intensity of the fixture’s cyan emitters for direct additive color mixing.
+    /// Controls the intensity of the fixture’s cyan emitters for direct
+    /// additive color mixing.
     ColorAddC,
-    /// Controls the intensity of the fixture’s magenta emitters for direct additive color mixing.
+    /// Controls the intensity of the fixture’s magenta emitters for direct
+    /// additive color mixing.
     ColorAddM,
-    /// Controls the intensity of the fixture’s yellow emitters for direct additive color mixing.
+    /// Controls the intensity of the fixture’s yellow emitters for direct
+    /// additive color mixing.
     ColorAddY,
-    /// Controls the intensity of the fixture’s amber emitters for direct additive color mixing.
+    /// Controls the intensity of the fixture’s amber emitters for direct
+    /// additive color mixing.
     ColorAddRY,
-    /// Controls the intensity of the fixture’s lime emitters for direct additive color mixing.
+    /// Controls the intensity of the fixture’s lime emitters for direct
+    /// additive color mixing.
     ColorAddGY,
-    /// Controls the intensity of the fixture’s blue-green emitters for direct additive color mixing.
+    /// Controls the intensity of the fixture’s blue-green emitters for direct
+    /// additive color mixing.
     ColorAddGC,
-    /// Controls the intensity of the fixture’s light-blue emitters for direct additive color mixing.
+    /// Controls the intensity of the fixture’s light-blue emitters for direct
+    /// additive color mixing.
     ColorAddBC,
-    /// Controls the intensity of the fixture’s purple emitters for direct additive color mixing.
+    /// Controls the intensity of the fixture’s purple emitters for direct
+    /// additive color mixing.
     ColorAddBM,
-    /// Controls the intensity of the fixture’s pink emitters for direct additive color mixing.
+    /// Controls the intensity of the fixture’s pink emitters for direct
+    /// additive color mixing.
     ColorAddRM,
-    /// Controls the intensity of the fixture’s white emitters for direct additive color mixing.
+    /// Controls the intensity of the fixture’s white emitters for direct
+    /// additive color mixing.
     ColorAddW,
-    /// Controls the intensity of the fixture’s warm white emitters for direct additive color mixing.
+    /// Controls the intensity of the fixture’s warm white emitters for direct
+    /// additive color mixing.
     ColorAddWW,
-    /// Controls the intensity of the fixture’s cool white emitters for direct additive color mixing.
+    /// Controls the intensity of the fixture’s cool white emitters for direct
+    /// additive color mixing.
     ColorAddCW,
-    /// Controls the intensity of the fixture’s UV emitters for direct additive color mixing.
+    /// Controls the intensity of the fixture’s UV emitters for direct additive
+    /// color mixing.
     ColorAddUV,
-    /// Controls the insertion of the fixture’s red filter flag for direct subtractive color mixing.
+    /// Controls the insertion of the fixture’s red filter flag for direct
+    /// subtractive color mixing.
     ColorSubR,
-    /// Controls the insertion of the fixture’s green filter flag for direct subtractive color mixing.
+    /// Controls the insertion of the fixture’s green filter flag for direct
+    /// subtractive color mixing.
     ColorSubG,
-    /// Controls the insertion of the fixture’s blue filter flag for direct subtractive color mixing.
+    /// Controls the insertion of the fixture’s blue filter flag for direct
+    /// subtractive color mixing.
     ColorSubB,
-    /// Controls the insertion of the fixture’s cyan filter flag for direct subtractive color mixing.
+    /// Controls the insertion of the fixture’s cyan filter flag for direct
+    /// subtractive color mixing.
     ColorSubC,
-    /// Controls the insertion of the fixture’s magenta filter flag for direct subtractive color mixing.
+    /// Controls the insertion of the fixture’s magenta filter flag for direct
+    /// subtractive color mixing.
     ColorSubM,
-    /// Controls the insertion of the fixture’s yellow filter flag for direct subtractive color mixing.
+    /// Controls the insertion of the fixture’s yellow filter flag for direct
+    /// subtractive color mixing.
     ColorSubY,
     /// Selects predefined colors that are programed in the fixture’s firmware.
     ColorMacro(u8),
@@ -190,7 +243,8 @@ pub enum Attribute {
     Ctc,
     /// Controls the fixture’s “Correct to blue” wheel or mixing system.
     Ctb,
-    /// Controls the fixture’s “Correct green to magenta” wheel or mixing system.
+    /// Controls the fixture’s “Correct green to magenta” wheel or mixing
+    /// system.
     Tint,
     /// Controls the fixture’s color attribute regarding the hue.
     HsbHue,
@@ -200,11 +254,14 @@ pub enum Attribute {
     HsbBrightness,
     /// Controls the fixture’s color attribute regarding the quality.
     HsbQuality,
-    /// Controls the fixture’s CIE 1931 color attribute regarding the chromaticity x.
+    /// Controls the fixture’s CIE 1931 color attribute regarding the
+    /// chromaticity x.
     CieX,
-    /// Controls the fixture’s CIE 1931 color attribute regarding the chromaticity y.
+    /// Controls the fixture’s CIE 1931 color attribute regarding the
+    /// chromaticity y.
     CieY,
-    /// Controls the fixture’s CIE 1931 color attribute regarding the brightness (Y).
+    /// Controls the fixture’s CIE 1931 color attribute regarding the brightness
+    /// (Y).
     CieBrightness,
     /// Controls the fixture’s red attribute for indirect RGB color mixing.
     ColorRgbRed,
@@ -251,45 +308,68 @@ pub enum Attribute {
     StrobeRate,
     /// Controls the frequency of strobe flashes.
     StrobeFrequency,
-    /// Strobe mode shutter. Use this attribute together with StrobeFrequency to define the type of the shutter / strobe.
+    /// Strobe mode shutter. Use this attribute together with StrobeFrequency to
+    /// define the type of the shutter / strobe.
     StrobeModeShutter,
-    /// Strobe mode strobe. Use this attribute together with StrobeFrequency to define the type of the shutter / strobe.
+    /// Strobe mode strobe. Use this attribute together with StrobeFrequency to
+    /// define the type of the shutter / strobe.
     StrobeModeStrobe,
-    /// Strobe mode pulse. Use this attribute together with StrobeFrequency to define the type of the shutter / strobe.
+    /// Strobe mode pulse. Use this attribute together with StrobeFrequency to
+    /// define the type of the shutter / strobe.
     StrobeModePulse,
-    /// Strobe mode opening pulse. Use this attribute together with StrobeFrequency to define the type of the shutter / strobe.
+    /// Strobe mode opening pulse. Use this attribute together with
+    /// StrobeFrequency to define the type of the shutter / strobe.
     StrobeModePulseOpen,
-    /// Strobe mode closing pulse. Use this attribute together with StrobeFrequency to define the type of the shutter / strobe.
+    /// Strobe mode closing pulse. Use this attribute together with
+    /// StrobeFrequency to define the type of the shutter / strobe.
     StrobeModePulseClose,
-    /// Strobe mode random strobe. Use this attribute together with StrobeFrequency to define the type of the shutter / strobe.
+    /// Strobe mode random strobe. Use this attribute together with
+    /// StrobeFrequency to define the type of the shutter / strobe.
     StrobeModeRandom,
-    /// Strobe mode random pulse. Use this attribute together with StrobeFrequency to define the type of the shutter / strobe.
+    /// Strobe mode random pulse. Use this attribute together with
+    /// StrobeFrequency to define the type of the shutter / strobe.
     StrobeModeRandomPulse,
-    /// Strobe mode random opening pulse. Use this attribute together with StrobeFrequency to define the type of the shutter / strobe.
+    /// Strobe mode random opening pulse. Use this attribute together with
+    /// StrobeFrequency to define the type of the shutter / strobe.
     StrobeModeRandomPulseOpen,
-    /// Strobe mode random closing pulse. Use this attribute together with StrobeFrequency to define the type of the shutter / strobe.
+    /// Strobe mode random closing pulse. Use this attribute together with
+    /// StrobeFrequency to define the type of the shutter / strobe.
     StrobeModeRandomPulseClose,
-    /// Strobe mode random shutter effect feature. Use this attribute together with StrobeFrequency to define the type of the shutter / strobe.
+    /// Strobe mode random shutter effect feature. Use this attribute together
+    /// with StrobeFrequency to define the type of the shutter / strobe.
     StrobeModeEffect,
     /// Controls the fixture´s mechanical or electronical shutter feature.
     Shutter(u8),
-    /// Controls the frequency of the fixture´s mechanical or electronical strobe shutter feature.
+    /// Controls the frequency of the fixture´s mechanical or electronical
+    /// strobe shutter feature.
     ShutterStrobe(u8),
-    /// Controls the frequency of the fixture´s mechanical or electronical pulse shutter feature.
+    /// Controls the frequency of the fixture´s mechanical or electronical pulse
+    /// shutter feature.
     ShutterStrobePulse(u8),
-    /// Controls the frequency of the fixture´s mechanical or electronical closing pulse shutter feature. The pulse is described by a ramp function.
+    /// Controls the frequency of the fixture´s mechanical or electronical
+    /// closing pulse shutter feature. The pulse is described by a ramp
+    /// function.
     ShutterStrobePulseClose(u8),
-    /// Controls the frequency of the fixture´s mechanical or electronical opening pulse shutter feature. The pulse is described by a ramp function.
+    /// Controls the frequency of the fixture´s mechanical or electronical
+    /// opening pulse shutter feature. The pulse is described by a ramp
+    /// function.
     ShutterStrobePulseOpen(u8),
-    /// Controls the frequency of the fixture´s mechanical or electronical random strobe shutter feature.
+    /// Controls the frequency of the fixture´s mechanical or electronical
+    /// random strobe shutter feature.
     ShutterStrobeRandom(u8),
-    /// Controls the frequency of the fixture´s mechanical or electronical random pulse shutter feature.
+    /// Controls the frequency of the fixture´s mechanical or electronical
+    /// random pulse shutter feature.
     ShutterStrobeRandomPulse(u8),
-    /// Controls the frequency of the fixture´s mechanical or electronical random closing pulse shutter feature. The pulse is described by a ramp function.
+    /// Controls the frequency of the fixture´s mechanical or electronical
+    /// random closing pulse shutter feature. The pulse is described by a ramp
+    /// function.
     ShutterStrobeRandomPulseClose(u8),
-    /// Controls the frequency of the fixture´s mechanical or electronical random opening pulse shutter feature. The pulse is described by a ramp function.
+    /// Controls the frequency of the fixture´s mechanical or electronical
+    /// random opening pulse shutter feature. The pulse is described by a ramp
+    /// function.
     ShutterStrobeRandomPulseOpen(u8),
-    /// Controls the frequency of the fixture´s mechanical or electronical shutter effect feature.
+    /// Controls the frequency of the fixture´s mechanical or electronical
+    /// shutter effect feature.
     ShutterStrobeEffect(u8),
     /// Controls the diameter of the fixture’s beam.
     Iris,
@@ -313,15 +393,22 @@ pub enum Attribute {
     FrostPulseClose(u8),
     /// Sets frequency of frost’s ramp.
     FrostRamp(u8),
-    /// The fixture's prism wheel (n). Selects prisms in prism wheel (n). A different channel function sets the angle of the indexed position in the selected prism or the angular speed of its continuous rotation. This is the main attribute of prism wheel's (n) wheel control.
+    /// The fixture's prism wheel (n). Selects prisms in prism wheel (n). A
+    /// different channel function sets the angle of the indexed position in the
+    /// selected prism or the angular speed of its continuous rotation. This is
+    /// the main attribute of prism wheel's (n) wheel control.
     Prism(u8),
-    /// Selects prisms whose rotation is continuous in prism wheel (n) and controls the angular speed of the prism's spin within the same channel function.
+    /// Selects prisms whose rotation is continuous in prism wheel (n) and
+    /// controls the angular speed of the prism's spin within the same channel
+    /// function.
     PrismSelectSpin(u8),
     /// Macro functions of prism wheel (n).
     PrismMacro(u8),
-    /// Controls angle of indexed rotation of prisms in prism wheel (n). This is the main attribute of prism wheel's 1 wheel slot control.
+    /// Controls angle of indexed rotation of prisms in prism wheel (n). This is
+    /// the main attribute of prism wheel's 1 wheel slot control.
     PrismPos(u8),
-    /// Controls the speed and direction of continuous rotation of prisms in prism wheel (n).
+    /// Controls the speed and direction of continuous rotation of prisms in
+    /// prism wheel (n).
     PrismPosRotate(u8),
 
     /// Generically predefined macros and effects of a fixture.
@@ -332,7 +419,9 @@ pub enum Attribute {
     EffectsFade(u8),
     /// Controls parameter (m) of effect (n).
     EffectsAdjust(u8, u8),
-    /// Controls angle of indexed rotation of slot/effect in effect wheel/macro (n). This is the main attribute of effect wheel/macro (n) slot/effect control.
+    /// Controls angle of indexed rotation of slot/effect in effect wheel/macro
+    /// (n). This is the main attribute of effect wheel/macro (n) slot/effect
+    /// control.
     EffectsPos(u8),
     /// Controls speed and direction of slot/effect in effect wheel (n).
     EffectsPosRotate(u8),
@@ -352,9 +441,11 @@ pub enum Attribute {
     ZoomModeSpot,
     /// Selects beam mode of zoom.
     ZoomModeBeam,
-    /// Controls the image size within the defined projection. Used on digital projection based devices.
+    /// Controls the image size within the defined projection. Used on digital
+    /// projection based devices.
     DigitalZoom,
-    /// Controls the sharpness of the fixture's spot light. Can blur or sharpen the edge of the spot.
+    /// Controls the sharpness of the fixture's spot light. Can blur or sharpen
+    /// the edge of the spot.
     Focus(u8),
     /// Autofocuses functionality using presets.
     FocusAdjust(u8),
@@ -367,7 +458,8 @@ pub enum Attribute {
     DimmerMode,
     /// Selects different dimmer curves of the fixture.
     DimmerCurve,
-    /// Close the light output under certain conditions (movement correction, gobo movement, etc.).
+    /// Close the light output under certain conditions (movement correction,
+    /// gobo movement, etc.).
     BlackoutMode,
     /// Controls LED frequency.
     LedFrequency,
@@ -375,33 +467,44 @@ pub enum Attribute {
     LedZoneMode,
     /// Controls behavior of LED pixels.
     PixelMode,
-    /// Selects fixture's pan mode. Selects between a limited pan range (e.g. -270 to 270) or a continuous pan range.
+    /// Selects fixture's pan mode. Selects between a limited pan range (e.g.
+    /// -270 to 270) or a continuous pan range.
     PanMode,
-    /// Selects fixture's pan mode. Selects between a limited tilt range (e.g. -130 to 130) or a continuous tilt range.
+    /// Selects fixture's pan mode. Selects between a limited tilt range (e.g.
+    /// -130 to 130) or a continuous tilt range.
     TiltMode,
-    /// Selects fixture's pan/tilt mode. Selects between a limited pan/tilt range or a continuous pan/tilt range.
+    /// Selects fixture's pan/tilt mode. Selects between a limited pan/tilt
+    /// range or a continuous pan/tilt range.
     PanTiltMode,
     /// Selects the fixture's position mode.
     PositionModes,
-    /// Changes control between selecting, indexing, and rotating the gobos of gobo wheel (n).
+    /// Changes control between selecting, indexing, and rotating the gobos of
+    /// gobo wheel (n).
     GoboWheelMode(u8),
-    /// Defines whether the gobo wheel takes the shortest distance between two positions.
+    /// Defines whether the gobo wheel takes the shortest distance between two
+    /// positions.
     GoboWheelShortcutMode,
-    /// Changes control between selecting, indexing, and rotating the slots of animation wheel (n).
+    /// Changes control between selecting, indexing, and rotating the slots of
+    /// animation wheel (n).
     AnimationWheelMode(u8),
-    /// Defines whether the animation wheel takes the shortest distance between two positions.
+    /// Defines whether the animation wheel takes the shortest distance between
+    /// two positions.
     AnimationWheelShortcutMode,
-    /// Changes control between selecting, continuous selection, half selection, random selection, color spinning, etc. in colors of color wheel (n).
+    /// Changes control between selecting, continuous selection, half selection,
+    /// random selection, color spinning, etc. in colors of color wheel (n).
     ColorMode(u8),
-    /// Defines whether the color wheel takes the shortest distance between two colors.
+    /// Defines whether the color wheel takes the shortest distance between two
+    /// colors.
     ColorWheelShortcutMode,
     /// Controls how Cyan is used within the fixture's cyan CMY-mixing feature.
     CyanMode,
     /// Controls how Cyan is used within the fixture's magenta CMY-mixing.
     MagentaMode,
-    /// Controls how Cyan is used within the fixture's yellow CMY-mixing feature.
+    /// Controls how Cyan is used within the fixture's yellow CMY-mixing
+    /// feature.
     YellowMode,
-    /// Changes control between selecting continuous selection, half selection, random selection, color spinning, etc. in color mixing.
+    /// Changes control between selecting continuous selection, half selection,
+    /// random selection, color spinning, etc. in color mixing.
     ColorMixMode,
     /// Selects chromatic behavior of the device.
     ChromaticMode,
@@ -427,7 +530,8 @@ pub enum Attribute {
     WavelengthCorrection,
     /// Controls if White LED is proportionally added to RGB.
     WhiteCount,
-    /// Changes strobe style - strobe, pulse, random strobe, etc. - of the shutter attribute.
+    /// Changes strobe style - strobe, pulse, random strobe, etc. - of the
+    /// shutter attribute.
     StrobeMode,
     /// Changes modes of the fixture´s zoom.
     ZoomMode,
@@ -542,9 +646,11 @@ pub enum Attribute {
     ShaperMacros,
     /// Speed of predefined effects on shapers.
     ShaperMacrosSpeed,
-    /// 1 of 2 soft edge blades that shape the top/right/bottom/left of the beam.
+    /// 1 of 2 soft edge blades that shape the top/right/bottom/left of the
+    /// beam.
     BladeSoftA(u8),
-    /// 2 of 2 soft edge blades that shape the top/right/bottom/left of the beam.
+    /// 2 of 2 soft edge blades that shape the top/right/bottom/left of the
+    /// beam.
     BladeSoftB(u8),
     /// 1 of 2 corners that shape the top/right/bottom/left of the beam.
     KeyStoneA(u8),
@@ -573,6 +679,8 @@ pub enum Attribute {
 }
 
 impl Attribute {
+    /// Get this attribute's [FeatureGroup]. If it's a custom attribute, it will
+    /// return `None`.
     pub fn feature_group(&self) -> Option<FeatureGroup> {
         match self {
             Self::Dimmer => Some(FeatureGroup::Dimmer),
@@ -1824,29 +1932,48 @@ mod tests {
     test_attr!(custom, "CustomAttribute", Attribute::Custom("CustomAttribute".to_string()));
 }
 
+/// A normalized value for lighting fixture attributes.
+///
+/// AttributeValue represents a floating-point value constrained to the range
+/// [0.0, 1.0], commonly used for lighting parameters such as intensity, color
+/// components, and other fixture attributes. All operations automatically clamp
+/// values to this valid range.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
 #[derive(derive_more::Deref, derive_more::DerefMut)]
 pub struct AttributeValue(f32);
 
 impl AttributeValue {
+    /// The minimum allowed value (0.0).
     pub const MIN: f32 = 0.0;
+
+    /// The maximum allowed value (1.0).
     pub const MAX: f32 = 1.0;
 
+    /// Creates a new AttributeValue with the specified value.
+    ///
+    /// The value is automatically clamped to the range [0.0, 1.0].
     #[inline]
     pub const fn new(value: f32) -> Self {
         Self(value.clamp(Self::MIN, Self::MAX))
     }
 
+    /// Sets the value of this AttributeValue.
+    ///
+    /// The value is automatically clamped to the range [0.0, 1.0].
     #[inline]
     pub fn set(&mut self, value: f32) {
         self.0 = value.clamp(Self::MIN, Self::MAX);
     }
 
+    /// Returns the underlying f32 value.
+    ///
+    /// The returned value is guaranteed to be in the range [0.0, 1.0].
     #[inline]
     pub fn as_f32(self) -> f32 {
         self.0
     }
 
+    /// Performs linear interpolation between this value and another.
     #[inline]
     pub fn lerp(&self, other: &Self, t: f32) -> Self {
         let t = t.clamp(Self::MIN, Self::MAX);
@@ -1888,15 +2015,27 @@ impl From<AttributeValue> for dmx::Value {
     }
 }
 
+/// Represents a group of features. For example, the 'Pan' and 'Tilt' attributes
+/// both control the position of a fixture, and so their feature group is
+/// 'Position'.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum FeatureGroup {
+    /// Dimmer feature group.
     Dimmer,
+    /// Position feature group.
     Position,
+    /// Gobo feature group.
     Gobo,
+    /// Color feature group.
     Color,
+    /// Beam feature group.
     Beam,
+    /// Focus feature group.
     Focus,
+    /// Control feature group.
     Control,
+    /// Shapers feature group.
     Shapers,
+    /// Video feature group.
     Video,
 }

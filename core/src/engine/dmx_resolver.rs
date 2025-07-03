@@ -1,5 +1,7 @@
+use crate::object::{AnyPreset, Cue, PresetContent, Recipe, RecipeContent};
+use crate::patch::AttributeValue;
 use crate::pipeline::Pipeline;
-use crate::{AnyPreset, AttributeValue, Cue, PresetContent, Recipe, RecipeContent, Show};
+use crate::show::Show;
 
 pub fn resolve(output_pipeline: &mut Pipeline, show: &mut Show) {
     // Resolve and merge executor outputs.
@@ -73,7 +75,7 @@ fn resolve_recipe(recipe: &Recipe, level: f32, output_pipeline: &mut Pipeline, s
 
 fn resolve_programmer(output_pipeline: &mut Pipeline, show: &mut Show) {
     show.programmer.resolve(&show.patch);
-    show.programmer.merge_into(output_pipeline);
+    show.programmer.merge_unresolved_into(output_pipeline);
 }
 
 fn resolve_output_pipeline(output_pipeline: &mut Pipeline, show: &Show) {

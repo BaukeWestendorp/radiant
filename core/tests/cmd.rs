@@ -1,12 +1,14 @@
 use std::path::Path;
 use std::str::FromStr;
 
-use radiant::showfile::Showfile;
-use radiant::{
-    AnyPreset, AnyPresetId, Attribute, AttributeValue, ColorPresetId, CueId, DimmerPresetId,
-    DmxMode, Engine, ExecutorButtonMode, ExecutorFaderMode, FeatureGroup, FixtureId, PresetContent,
-    Recipe, RecipeContent, SelectivePreset, SequenceId, cmd,
+use radiant_core::cmd;
+use radiant_core::engine::Engine;
+use radiant_core::object::{
+    AnyPreset, AnyPresetId, ColorPresetId, CueId, DimmerPresetId, ExecutorButtonMode,
+    ExecutorFaderMode, PresetContent, Recipe, RecipeContent, SelectivePreset, SequenceId,
 };
+use radiant_core::patch::{Attribute, AttributeValue, DmxMode, FeatureGroup, FixtureId};
+use radiant_core::showfile::Showfile;
 
 fn init_engine() -> Engine {
     let showfile = Showfile::load_folder(Path::new("tests/test_showfile")).unwrap();
@@ -209,7 +211,7 @@ fn programmer_clear() {
 fn create_with_name() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create executor 1 "Test Name""#)).unwrap();
-    assert_eq!(engine.show().executor(1).unwrap().name, "Test Name".to_string());
+    assert_eq!(engine.show().executor(1).unwrap().name(), "Test Name".to_string());
 }
 
 #[test]
@@ -312,36 +314,36 @@ fn remove_color_preset() {
 fn rename_executor() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create executor 1 "Test Name""#)).unwrap();
-    assert_eq!(engine.show().executor(1).unwrap().name, "Test Name".to_string());
+    assert_eq!(engine.show().executor(1).unwrap().name(), "Test Name".to_string());
     engine.exec_cmd(cmd!(r#"rename executor 1 "Other Name"#)).unwrap();
-    assert_eq!(engine.show().executor(1).unwrap().name, "Other Name".to_string());
+    assert_eq!(engine.show().executor(1).unwrap().name(), "Other Name".to_string());
 }
 
 #[test]
 fn rename_sequence() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create sequence 1 "Test Name""#)).unwrap();
-    assert_eq!(engine.show().sequence(1).unwrap().name, "Test Name".to_string());
+    assert_eq!(engine.show().sequence(1).unwrap().name(), "Test Name".to_string());
     engine.exec_cmd(cmd!(r#"rename sequence 1 "Other Name"#)).unwrap();
-    assert_eq!(engine.show().sequence(1).unwrap().name, "Other Name".to_string());
+    assert_eq!(engine.show().sequence(1).unwrap().name(), "Other Name".to_string());
 }
 
 #[test]
 fn rename_cue() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create cue 1 "Test Name""#)).unwrap();
-    assert_eq!(engine.show().cue(1).unwrap().name, "Test Name".to_string());
+    assert_eq!(engine.show().cue(1).unwrap().name(), "Test Name".to_string());
     engine.exec_cmd(cmd!(r#"rename cue 1 "Other Name"#)).unwrap();
-    assert_eq!(engine.show().cue(1).unwrap().name, "Other Name".to_string());
+    assert_eq!(engine.show().cue(1).unwrap().name(), "Other Name".to_string());
 }
 
 #[test]
 fn rename_fixture_group() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create fixture_group 1 "Test Name""#)).unwrap();
-    assert_eq!(engine.show().fixture_group(1).unwrap().name, "Test Name".to_string());
+    assert_eq!(engine.show().fixture_group(1).unwrap().name(), "Test Name".to_string());
     engine.exec_cmd(cmd!(r#"rename fixture_group 1 "Other Name"#)).unwrap();
-    assert_eq!(engine.show().fixture_group(1).unwrap().name, "Other Name".to_string());
+    assert_eq!(engine.show().fixture_group(1).unwrap().name(), "Other Name".to_string());
 }
 
 #[test]
@@ -351,13 +353,13 @@ fn rename_dimmer_preset() {
 
     let preset = engine.show().preset(DimmerPresetId(1)).unwrap();
     let AnyPreset::Dimmer(dimmer) = preset else { panic!() };
-    assert_eq!(dimmer.name, "Test Name".to_string());
+    assert_eq!(dimmer.name(), "Test Name".to_string());
 
     engine.exec_cmd(cmd!(r#"rename preset::dimmer 1 "Other Name""#)).unwrap();
 
     let preset = engine.show().preset(DimmerPresetId(1)).unwrap();
     let AnyPreset::Dimmer(dimmer) = preset else { panic!() };
-    assert_eq!(dimmer.name, "Other Name".to_string());
+    assert_eq!(dimmer.name(), "Other Name".to_string());
 }
 
 #[test]
@@ -367,13 +369,13 @@ fn rename_color_preset() {
 
     let preset = engine.show().preset(ColorPresetId(1)).unwrap();
     let AnyPreset::Color(color) = preset else { panic!() };
-    assert_eq!(color.name, "Test Name".to_string());
+    assert_eq!(color.name(), "Test Name".to_string());
 
     engine.exec_cmd(cmd!(r#"rename preset::color 1 "Other Name""#)).unwrap();
 
     let preset = engine.show().preset(ColorPresetId(1)).unwrap();
     let AnyPreset::Color(color) = preset else { panic!() };
-    assert_eq!(color.name, "Other Name".to_string());
+    assert_eq!(color.name(), "Other Name".to_string());
 }
 
 #[test]
@@ -656,8 +658,8 @@ fn preset_store_dimmer() {
     engine.exec_cmd(cmd!(r#"programmer clear"#)).unwrap();
 
     assert_eq!(
-        engine.show().preset_dimmer(1).unwrap().content,
-        PresetContent::Selective({
+        engine.show().preset_dimmer(1).unwrap().content(),
+        &PresetContent::Selective({
             let mut p = SelectivePreset::new(FeatureGroup::Dimmer);
             p.set_attribute_value(1.into(), Attribute::Dimmer, AttributeValue::new(0.25));
             p.set_attribute_value(2.into(), Attribute::Dimmer, AttributeValue::new(0.50));
@@ -678,8 +680,8 @@ fn preset_store_color() {
     engine.exec_cmd(cmd!(r#"programmer clear"#)).unwrap();
 
     assert_eq!(
-        engine.show().preset_color(1).unwrap().content,
-        PresetContent::Selective({
+        engine.show().preset_color(1).unwrap().content(),
+        &PresetContent::Selective({
             let mut p = SelectivePreset::new(FeatureGroup::Color);
             p.set_attribute_value(1.into(), Attribute::ColorAddR, AttributeValue::new(0.25));
             p.set_attribute_value(2.into(), Attribute::ColorAddG, AttributeValue::new(0.50));
@@ -699,8 +701,8 @@ fn preset_clear() {
     engine.exec_cmd(cmd!(r#"programmer clear"#)).unwrap();
 
     assert_eq!(
-        engine.show().preset_dimmer(1).unwrap().content,
-        PresetContent::Selective({
+        engine.show().preset_dimmer(1).unwrap().content(),
+        &PresetContent::Selective({
             let mut p = SelectivePreset::new(FeatureGroup::Dimmer);
             p.set_attribute_value(1.into(), Attribute::Dimmer, AttributeValue::new(0.25));
             p.set_attribute_value(2.into(), Attribute::Dimmer, AttributeValue::new(0.50));
@@ -711,7 +713,7 @@ fn preset_clear() {
     engine.exec_cmd(cmd!(r#"preset::dimmer 1 clear"#)).unwrap();
 
     assert_eq!(
-        engine.show().preset_dimmer(1).unwrap().content,
-        PresetContent::Selective(SelectivePreset::new(FeatureGroup::Dimmer))
+        engine.show().preset_dimmer(1).unwrap().content(),
+        &PresetContent::Selective(SelectivePreset::new(FeatureGroup::Dimmer))
     );
 }

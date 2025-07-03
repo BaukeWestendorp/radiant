@@ -502,7 +502,7 @@ dependencies = [
  "clap",
  "eyre",
  "log",
- "radiant",
+ "radiant-core",
  "simple_logger",
  "spin_sleep",
 ]
@@ -767,7 +767,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
 
 [[package]]
-name = "radiant"
+name = "radiant-core"
 version = "0.1.0"
 dependencies = [
  "arrayvec",

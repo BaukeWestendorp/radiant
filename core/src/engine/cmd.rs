@@ -3,14 +3,20 @@ use std::path::Path;
 
 use eyre::{Context, ContextCompat};
 
-use crate::{
-    AnyObjectId, AnyPresetId, ColorPreset, Command, Cue, CueCommand, CueId, DimmerPreset, Engine,
-    Executor, ExecutorButtonCommand, ExecutorCommand, ExecutorFaderCommand, ExecutorId,
-    FeatureGroup, Fixture, FixtureGroup, FixtureGroupCommand, FixtureGroupId, PatchCommand,
-    PresetCommand, PresetContent, ProgrammerCommand, ProgrammerSetCommand, Result, SelectivePreset,
-    Sequence, SequenceCommand, SequenceId, pipeline::Pipeline,
-    showfile::RELATIVE_GDTF_FILE_FOLDER_PATH,
+use crate::cmd::{
+    Command, CueCommand, ExecutorButtonCommand, ExecutorCommand, ExecutorFaderCommand,
+    FixtureGroupCommand, PatchCommand, PresetCommand, ProgrammerCommand, ProgrammerSetCommand,
+    SequenceCommand,
 };
+use crate::engine::Engine;
+use crate::error::Result;
+use crate::object::{
+    AnyObjectId, AnyPresetId, ColorPreset, Cue, CueId, DimmerPreset, Executor, ExecutorId,
+    FixtureGroup, FixtureGroupId, PresetContent, SelectivePreset, Sequence, SequenceId,
+};
+use crate::patch::{FeatureGroup, Fixture};
+use crate::pipeline::Pipeline;
+use crate::showfile::RELATIVE_GDTF_FILE_FOLDER_PATH;
 
 pub fn exec_cmd(engine: &mut Engine, cmd: Command) -> Result<()> {
     match cmd {

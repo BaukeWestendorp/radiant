@@ -1,12 +1,22 @@
+//! Show state and in-memory representation.
+//!
+//! Show state and in-memory representation.
+//!
+//! This module defines the [Show] type, which aggregates all objects, patch
+//! data, and runtime state for a loaded show.
+
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use crate::pipeline::Pipeline;
-use crate::{
+use crate::object::{
     AnyPreset, AnyPresetId, ColorPreset, ColorPresetId, Cue, CueId, DimmerPreset, DimmerPresetId,
-    Executor, ExecutorId, FixtureGroup, FixtureGroupId, Patch, Sequence, SequenceId,
+    Executor, ExecutorId, FixtureGroup, FixtureGroupId, Sequence, SequenceId,
 };
+use crate::patch::Patch;
+use crate::pipeline::Pipeline;
 
+/// Contains the state of the entire show. This includes the programmer, patch
+/// and objects.
 #[derive(Debug, Clone, Default)]
 pub struct Show {
     path: Option<PathBuf>,
@@ -25,19 +35,22 @@ pub struct Show {
 }
 
 impl Show {
+    /// Creates a new [Show].
     pub fn new(path: Option<PathBuf>) -> Self {
         Self { path, ..Default::default() }
     }
 
-    /// The path at which the [Showfile] is saved.
+    /// The path at which the [Showfile][crate::showfile::Showfile] is saved.
     /// Will be `None` if it has not been saved yet.
     pub fn path(&self) -> Option<&PathBuf> {
         self.path.as_ref()
     }
 
+    /// Gets a this show's [Patch].
     pub fn patch(&self) -> &Patch {
         &self.patch
     }
+
     /// Gets a [FixtureGroup].
     pub fn fixture_group(&self, id: impl Into<FixtureGroupId>) -> Option<&FixtureGroup> {
         self.fixture_groups.get(&id.into())
@@ -109,10 +122,12 @@ impl Show {
         }
     }
 
+    /// Gets a [DimmerPreset].
     pub fn preset_dimmer(&self, id: impl Into<DimmerPresetId>) -> Option<&DimmerPreset> {
         self.dimmer_presets.get(&id.into())
     }
 
+    /// Gets a [ColorPreset].
     pub fn preset_color(&self, id: impl Into<ColorPresetId>) -> Option<&ColorPreset> {
         self.color_presets.get(&id.into())
     }

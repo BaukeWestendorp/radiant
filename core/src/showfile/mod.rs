@@ -1,29 +1,46 @@
-use std::{
-    path::{Path, PathBuf},
-    str::FromStr,
-};
+//! Showfile abstraction and persistent show configuration.
+//!
+//! This module defines the [Showfile] type and methods for loading, saving, and
+//! representing showfiles on disk. A [Showfile] contains all persistent
+//! configuration, including the patch, adapters, protocols, and initialization
+//! commands. It can be loaded from disk and passed to an
+//! [Engine][crate::engine::Engine] to produce a [Show][crate::show::Show] for
+//! execution.
 
-use crate::{Command, Result};
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
-pub mod adapters;
-pub mod patch;
-pub mod protocols;
+use crate::cmd::Command;
+use crate::error::Result;
 
 pub use adapters::*;
 pub use patch::*;
 pub use protocols::*;
 
+mod adapters;
+mod patch;
+mod protocols;
+
 /// The showfile's file extension; 'rsf' (Radiant ShowFile).
+/// The file extension used for Radiant [Showfile]s.
 pub const FILE_EXTENSION: &str = "rsf";
 
+/// The relative path to the GDTF files folder within a [Showfile] directory.
 pub const RELATIVE_GDTF_FILE_FOLDER_PATH: &str = "gdtf_files";
+/// The relative path to the patch file within a [Showfile] directory.
 pub const RELATIVE_PATCH_FILE_PATH: &str = "patch.yaml";
+/// The relative path to the adapters file within a [Showfile] directory.
 pub const RELATIVE_ADAPTERS_FILE_PATH: &str = "adapters.yaml";
+/// The relative path to the protocols file within a [Showfile] directory.
 pub const RELATIVE_PROTOCOLS_FILE_PATH: &str = "protocols.yaml";
+/// The relative path to the initialization commands file within a [Showfile]
+/// directory.
 pub const RELATIVE_INIT_COMMANDS_FILE_PATH: &str = "init_commands.rcs";
 
-/// Represents the showfile that is saved on disk.
 #[derive(Default)]
+/// Represents a showfile that is saved on disk, containing all configuration
+/// and state required to load a show, including patch, adapters,
+/// protocols, and initialization commands.
 pub struct Showfile {
     path: Option<PathBuf>,
 
@@ -34,29 +51,37 @@ pub struct Showfile {
 }
 
 impl Showfile {
-    /// The path at which the [Showfile] is saved.
-    /// Will be `None` if it has not been saved yet.
+    /// Returns the path at which this [Showfile] is saved, or `None` if it has
+    /// not been saved yet.
     pub fn path(&self) -> Option<&PathBuf> {
         self.path.as_ref()
     }
 
+    /// Returns a reference to the [Patch] contained in this [Showfile].
     pub fn patch(&self) -> &Patch {
         &self.patch
     }
 
+    /// Returns a reference to the [Adapters] configuration contained in this
+    /// [Showfile].
     pub fn adapters(&self) -> &Adapters {
         &self.adapters
     }
 
+    /// Returns a reference to the [Protocols] configuration contained in this
+    /// [Showfile].
     pub fn protocols(&self) -> &Protocols {
         &self.protocols
     }
 
+    /// Returns a slice of initialization [Command]s contained in this
+    /// [Showfile].
     pub fn init_commands(&self) -> &[Command] {
         &self.init_commands
     }
 
-    /// Loads a [Showfile] from a path. It can be either a zipped folder, or an unzipped folder.
+    /// Loads a [Showfile] from the specified path. The path can refer to either
+    /// a zipped or unzipped folder.
     pub fn load(path: &Path) -> Result<Self> {
         match path.extension() {
             Some(ext) if ext == FILE_EXTENSION => Self::load_zipped(path),
@@ -85,6 +110,8 @@ impl Showfile {
     }
 }
 
+/// Loads initialization [Command]s from the specified file path, returning an
+/// empty vector if the file does not exist.
 fn load_init_commands(path: &Path) -> Result<Vec<Command>> {
     if !path.exists() {
         return Ok(Vec::new());

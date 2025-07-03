@@ -3,7 +3,8 @@ use std::str::FromStr;
 
 use eyre::ContextCompat;
 
-use crate::{Attribute, AttributeValue, Result};
+use crate::error::Result;
+use crate::patch::{Attribute, AttributeValue};
 
 /// A unique id for a [Fixture].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -17,22 +18,29 @@ use crate::{Attribute, AttributeValue, Result};
 )]
 pub struct FixtureId(pub u32);
 
-/// A specific mode for a [Fixture]. Often defined in the GDTF description.
+/// A specific mode for a [Fixture]. Defined in the GDTF description.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(derive_more::Display)]
 pub struct DmxMode(String);
 
 impl DmxMode {
+    /// Creates a new [DmxMode] with the given name.
     pub fn new(name: impl Into<String>) -> Self {
         Self(name.into())
     }
 
+    /// Gets a string slice of the mode's name.
     pub fn as_str(&self) -> &str {
         &self.0
     }
 }
 
 /// A single patched fixture and has information about its attributes.
+///
+/// A fixture represents a lighting device that has been patched into the
+/// system, containing information about its DMX address, supported attributes,
+/// and GDTF definition. It provides methods to convert between high-level
+/// attribute values and low-level DMX channel data.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Fixture {
     id: FixtureId,
@@ -45,6 +53,12 @@ pub struct Fixture {
 }
 
 impl Fixture {
+    /// Creates a new fixture from GDTF fixture type data.
+    ///
+    /// Parses the GDTF fixture type definition to extract attribute
+    /// information, DMX channel mappings, and default values. Returns an
+    /// error if the specified DMX mode is not found in the fixture type
+    /// definition.
     pub fn new(
         id: FixtureId,
         address: dmx::Address,
@@ -97,40 +111,52 @@ impl Fixture {
         Ok(Self { id, dmx_mode, gdtf_file_name, address, attributes, dmx_modes })
     }
 
+    /// Returns this fixture's unique id.
     pub fn id(&self) -> FixtureId {
         self.id
     }
 
+    /// Returns the DMX address of this fixture.
     pub fn address(&self) -> &dmx::Address {
         &self.address
     }
 
+    /// Returns the currently active DMX mode of this fixture.
     pub fn dmx_mode(&self) -> &DmxMode {
         &self.dmx_mode
     }
 
+    /// Returns the name of the GDTF file this fixture is based on.
     pub fn gdtf_file_name(&self) -> &str {
         &self.gdtf_file_name
     }
 
-    /// Gives an iterator over all attributes this
-    /// fixture has defined in its GDTF definition.
+    /// Returns an iterator over all attributes this fixture supports.
+    ///
+    /// The attributes are those defined in the fixture's GDTF definition
+    /// for the current DMX mode.
     pub fn supported_attributes(&self) -> impl Iterator<Item = &Attribute> {
         self.attributes.keys()
     }
 
+    /// Returns a slice of all DMX modes supported by this fixture.
     pub fn supported_dmx_modes(&self) -> &[DmxMode] {
         &self.dmx_modes
     }
 
-    /// Gets information about a specific [Attribute],
-    /// if this fixture supports that [Attribute].
+    /// Gets information about a specific [Attribute].
+    ///
+    /// Returns `None` if this fixture does not support the specified attribute.
     pub fn attribute_info(&self, attribute: &Attribute) -> Option<&AttributeInfo> {
         self.attributes.get(attribute)
     }
 
-    /// Gets the [dmx::Value]s of the used [dmx::Channel]s
-    /// for a given [Attribute] and [AttributeValue].
+    /// Converts an attribute value to DMX channel values.
+    ///
+    /// Takes a high-level [AttributeValue] and converts it to the corresponding
+    /// DMX channel and value pairs that should be sent to control this
+    /// attribute. Returns an error if the attribute is not supported by
+    /// this fixture.
     pub fn get_channel_values(
         &self,
         attribute: &Attribute,
@@ -158,11 +184,11 @@ impl Fixture {
         Ok(values)
     }
 
-    /// Gets a [Vec] of the [dmx::Value]s for each [dmx::Channel]
-    /// that contains the default [dmx::Value]s for this fixture.
+    /// Gets the default DMX channel values for this fixture.
     ///
-    /// For example, the Pan and Tilt attributes often default to the middle,
-    /// having a value of 0.5 instead of 0.
+    /// Returns DMX channel and value pairs that represent the fixture's
+    /// default state. For example, 'Pan' and 'Tilt' attributes often default
+    /// to the middle position (0.5) instead of zero.
     pub fn get_default_channel_values(&self) -> Vec<(dmx::Channel, dmx::Value)> {
         let mut values = Vec::new();
         for info in self.attributes.values() {
@@ -179,11 +205,12 @@ impl Fixture {
         values
     }
 
-    /// Gets a [Vec] of the [dmx::Value]s for each [dmx::Channel]
-    /// that contains the highlight [dmx::Value]s for this fixture.
+    /// Gets the highlight DMX channel values for this fixture.
     ///
-    /// For example, the Dimmer and Shutter attributes often should
-    /// change to give some basic visible output when checking its position.
+    /// Returns DMX channel and value pairs that make the fixture visible
+    /// for identification purposes. For example, Dimmer and Shutter attributes
+    /// are often set to provide basic visible output when checking the
+    /// fixture's position or functionality.
     pub fn get_highlight_channel_values(&self) -> Vec<(dmx::Channel, dmx::Value)> {
         let mut values = Vec::new();
         for info in self.attributes.values() {
@@ -214,8 +241,8 @@ pub struct AttributeInfo {
 impl AttributeInfo {
     /// The default value for an attribute.
     ///
-    /// For example, the Pan and Tilt attributes often default to the middle,
-    /// having a value of 0.5 instead of 0.
+    /// For example, the 'Pan' and 'Tilt' attributes often default to the
+    /// middle, having a value of 0.5 instead of 0.
     pub fn default_value(&self) -> AttributeValue {
         self.default_value
     }

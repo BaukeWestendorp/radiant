@@ -4,13 +4,17 @@ use std::str::FromStr;
 use eyre::{Context, ContextCompat};
 
 use super::lexer::{Lexer, Token};
-use crate::{
-    AnyObjectId, AnyPresetId, Attribute, AttributeValue, Command, CueCommand, CueId, DmxMode,
-    ExecutorButtonCommand, ExecutorButtonMode, ExecutorCommand, ExecutorFaderCommand,
-    ExecutorFaderMode, ExecutorId, FixtureGroupCommand, FixtureGroupId, FixtureId, PatchCommand,
-    PresetCommand, ProgrammerCommand, ProgrammerSetCommand, Recipe, RecipeContent, Result,
-    SequenceCommand, SequenceId,
+use crate::cmd::{
+    Command, CueCommand, ExecutorButtonCommand, ExecutorCommand, ExecutorFaderCommand,
+    FixtureGroupCommand, PatchCommand, PresetCommand, ProgrammerCommand, ProgrammerSetCommand,
+    SequenceCommand,
 };
+use crate::error::Result;
+use crate::object::{
+    AnyObjectId, AnyPresetId, CueId, ExecutorButtonMode, ExecutorFaderMode, ExecutorId,
+    FixtureGroupId, Recipe, RecipeContent, SequenceId,
+};
+use crate::patch::{Attribute, AttributeValue, DmxMode, FixtureId};
 
 const ERRMSG_UNEXPECTED_EOL: &str = "unexpected End Of Line";
 
@@ -377,17 +381,17 @@ impl<'src> Parser<'src> {
 #[cfg(test)]
 mod tests {
     use crate::cmd;
+    use crate::cmd::parser::Parser;
     use crate::cmd::{
         Command, CueCommand, ExecutorButtonCommand, ExecutorCommand, ExecutorFaderCommand,
         FixtureGroupCommand, PatchCommand, PresetCommand, ProgrammerCommand, ProgrammerSetCommand,
-        SequenceCommand, parser::Parser,
+        SequenceCommand,
     };
     use crate::object::{
         AnyObjectId, AnyPresetId, ColorPresetId, DimmerPresetId, ExecutorButtonMode,
         ExecutorFaderMode, ExecutorId, Recipe, RecipeContent,
     };
-    use crate::patch::attr::{Attribute, AttributeValue};
-    use crate::patch::fixture::{DmxMode, FixtureId};
+    use crate::patch::{Attribute, AttributeValue, DmxMode, FixtureId};
 
     #[test]
     fn whitespace() {

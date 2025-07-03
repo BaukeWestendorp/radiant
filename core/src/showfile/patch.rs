@@ -1,10 +1,17 @@
-use std::{fs, io, path::PathBuf};
+use std::path::PathBuf;
+use std::{fs, io};
 
 use eyre::Context;
 
-use crate::Result;
+use crate::error::Result;
 
-/// Contains all information regarding the mapping of fixtures to the DMX universes.
+/// Represents the patch configuration for a show, including all information
+/// about the mapping of fixtures to DMX universes and their associated GDTF
+/// files.
+///
+/// The [Patch] contains a list of GDTF file names and all [Fixture]s that are
+/// mapped in the show. It is responsible for describing how logical fixtures
+/// are assigned to physical DMX addresses and universes.
 #[derive(Default)]
 #[derive(serde::Deserialize)]
 pub struct Patch {
@@ -13,15 +20,19 @@ pub struct Patch {
 }
 
 impl Patch {
+    /// Returns the list of GDTF file names referenced by this patch.
     pub fn gdtf_files(&self) -> &[String] {
         &self.gdtf_files
     }
 
+    /// Returns the list of [Fixture]s mapped in this patch.
     pub fn fixtures(&self) -> &[Fixture] {
         &self.fixtures
     }
 
-    /// Reads the patch configuration from a file at the given path.
+    /// Reads the [Patch] configuration from a file at the given path.
+    ///
+    /// The file must be in YAML format and match the [Patch] structure.
     pub fn read_from_file(path: &PathBuf) -> Result<Self> {
         let file = fs::File::open(path)
             .with_context(|| format!("failed to open patch file at '{}'", path.display()))?;
@@ -31,7 +42,11 @@ impl Patch {
     }
 }
 
-/// Represents information about a single mapped fixture.
+/// Represents a single fixture mapped in the [Patch].
+///
+/// A [Fixture] describes the logical-to-physical mapping for a fixture,
+/// including its unique id, the index of its GDTF file, DMX universe and
+/// channel, and the DMX mode used for addressing.
 #[derive(serde::Deserialize)]
 pub struct Fixture {
     id: u32,
@@ -42,22 +57,27 @@ pub struct Fixture {
 }
 
 impl Fixture {
+    /// Returns the unique id of this fixture.
     pub fn id(&self) -> u32 {
         self.id
     }
 
+    /// Returns the index into the patch's GDTF file list for this fixture.
     pub fn gdtf_file_index(&self) -> usize {
         self.gdtf_file_index
     }
 
+    /// Returns the DMX universe this fixture is mapped to.
     pub fn universe(&self) -> u16 {
         self.universe
     }
 
+    /// Returns the starting DMX channel for this fixture within its universe.
     pub fn channel(&self) -> u16 {
         self.channel
     }
 
+    /// Returns the DMX mode string for this fixture.
     pub fn dmx_mode(&self) -> &str {
         &self.dmx_mode
     }

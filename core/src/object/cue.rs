@@ -1,37 +1,50 @@
-use crate::{AnyPresetId, FixtureGroupId};
+use crate::object::{AnyPresetId, FixtureGroupId};
 
-crate::define_object_id!(CueId);
+super::define_object_id!(CueId);
 
 /// A state of the stage output.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cue {
     id: CueId,
-    pub name: String,
+    pub(crate) name: String,
     pub(crate) recipes: Vec<Recipe>,
 }
 
 impl Cue {
+    /// Creates a new [Cue] with the specified id.
     pub fn new(id: impl Into<CueId>) -> Self {
         Self { id: id.into(), name: "New Cue".to_string(), recipes: Vec::new() }
     }
 
+    /// Returns this cue's id.
     pub fn id(&self) -> CueId {
         self.id
     }
 
+    /// Returns the name of this cue.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Returns the recipes contained in this cue.
     pub fn recipes(&self) -> &[Recipe] {
         &self.recipes
     }
 }
 
-/// A list of [FixtureGroup]-[Recipe] combinations.
+/// A list of fixture group to content combinations.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Recipe {
+    /// The id of the [FixtureGroup][crate::object::FixtureGroup] this recipe
+    /// applies to.
     pub fixture_group_id: FixtureGroupId,
+    /// The content of this recipe.
     pub content: RecipeContent,
 }
 
+/// Represents the different types of content that can be included in a recipe.
 #[derive(Debug, Clone, PartialEq)]
 pub enum RecipeContent {
+    /// A preset to be applied.
     Preset(AnyPresetId),
 }
