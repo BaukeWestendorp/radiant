@@ -148,6 +148,8 @@ pub enum PresetContent {
     Selective(SelectivePreset),
 }
 
+/// A preset that applies attribute values universally to all fixtures, filtered
+/// by feature group.
 #[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Deserialize)]
 pub struct UniversalPreset {
