@@ -2047,6 +2047,14 @@ impl From<AttributeValue> for dmx::Value {
     }
 }
 
+impl FromStr for AttributeValue {
+    type Err = eyre::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self::new(s.parse()?))
+    }
+}
+
 /// Represents a group of features. For example, the 'Pan' and 'Tilt' attributes
 /// both control the position of a fixture, and so their feature group is
 /// 'Position'.

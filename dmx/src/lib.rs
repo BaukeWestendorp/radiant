@@ -114,6 +114,7 @@ impl std::str::FromStr for Channel {
     derive_more::DerefMut,
     derive_more::Display,
     derive_more::From,
+    derive_more::FromStr,
     derive_more::Into
 )]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
@@ -133,8 +134,8 @@ impl Value {
 /// - A universe ID 1..=65536
 /// - A channel number 1..=512
 ///
-/// The address can be created either by explicitly providing the universe and channel,
-/// or by converting from an absolute address.
+/// The address can be created either by explicitly providing the universe and
+/// channel, or by converting from an absolute address.
 ///
 /// # Examples
 ///
@@ -200,8 +201,8 @@ impl Address {
 
     /// Returns a new [Address] with the channel offset by the specified amount.
     ///
-    /// This method adds the given offset to the current channel value and ensures
-    /// the resulting channel is valid (within 1..=512 range).
+    /// This method adds the given offset to the current channel value and
+    /// ensures the resulting channel is valid (within 1..=512 range).
     ///
     /// # Examples
     ///
@@ -213,7 +214,8 @@ impl Address {
     ///
     /// # Errors
     ///
-    /// Returns an error if the resulting channel would be outside the valid range (1..=512).
+    /// Returns an error if the resulting channel would be outside the valid
+    /// range (1..=512).
     ///
     /// ```rust
     /// let address = dmx::Address::new(dmx::UniverseId::new(1).unwrap(), dmx::Channel::new(500).unwrap());
@@ -404,17 +406,15 @@ impl Universe {
 
     /// Returns an immutable reference to the values.
     ///
-    /// **Note**: The indices of this array are 0-based but the channel values are 1-based.
-    /// For example, channel 1 maps to index 0 in the array.
-    ///
+    /// **Note**: The indices of this array are 0-based but the channel values
+    /// are 1-based. For example, channel 1 maps to index 0 in the array.
     pub fn values(&self) -> &[Value; 512] {
         &self.values
     }
 
     /// Returns a mutable reference to the values.
-    /// **Note**: The indices of this array are 0-based but the channel values are 1-based.
-    /// For example, channel 1 maps to index 0 in the array.
-    ///
+    /// **Note**: The indices of this array are 0-based but the channel values
+    /// are 1-based. For example, channel 1 maps to index 0 in the array.
     pub fn values_mut(&mut self) -> &mut [Value; 512] {
         &mut self.values
     }
@@ -465,7 +465,8 @@ impl Multiverse {
         Self { universes: HashMap::new() }
     }
 
-    /// Checks if a [Universe] with the given [UniverseId] exists in the [Multiverse].
+    /// Checks if a [Universe] with the given [UniverseId] exists in the
+    /// [Multiverse].
     ///
     /// # Examples
     ///
@@ -495,7 +496,8 @@ impl Multiverse {
 
     /// Removes a [Universe] with the given [UniverseId] from the [Multiverse].
     ///
-    /// Returns `Some(Universe)` if a universe for that ID was present, `None` otherwise.
+    /// Returns `Some(Universe)` if a universe for that ID was present, `None`
+    /// otherwise.
     ///
     /// # Examples
     ///
@@ -532,21 +534,24 @@ impl Multiverse {
         }
     }
 
-    /// Returns an immutable reference to the [Universe] with the given [UniverseId].
+    /// Returns an immutable reference to the [Universe] with the given
+    /// [UniverseId].
     ///
     /// Returns `None` if no universe exists with that ID.
     pub fn universe(&self, id: &UniverseId) -> Option<&Universe> {
         self.universes.get(id)
     }
 
-    /// Returns an mutable reference to the [Universe] with the given [UniverseId].
+    /// Returns an mutable reference to the [Universe] with the given
+    /// [UniverseId].
     ///
     /// Returns `None` if no universe exists with that ID.
     pub fn universe_mut(&mut self, id: &UniverseId) -> Option<&mut Universe> {
         self.universes.get_mut(id)
     }
 
-    /// Returns an iterator over a reference to every [Universe] in the [Multiverse].
+    /// Returns an iterator over a reference to every [Universe] in the
+    /// [Multiverse].
     pub fn universes(&self) -> impl Iterator<Item = (&UniverseId, &Universe)> {
         self.universes.iter()
     }

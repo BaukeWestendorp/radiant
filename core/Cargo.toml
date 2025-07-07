@@ -17,3 +17,5 @@ socket2 = { version = "0.5.10", features = ["all"] }
 spin_sleep.workspace = true
 thiserror.workspace = true
 uuid = { version = "1.17.0", features = ["v4"] }
+chumsky = "0.10.1"
+ariadne = "0.5.1"

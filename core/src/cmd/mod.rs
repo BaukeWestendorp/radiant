@@ -7,7 +7,7 @@
 //! module also provides parsing utilities and command variants for all
 //! supported operations.
 
-use std::str::FromStr;
+use chumsky::Parser;
 
 use crate::object::{
     AnyObjectId, AnyPresetId, CueId, ExecutorButtonMode, ExecutorFaderMode, ExecutorId,
@@ -15,7 +15,6 @@ use crate::object::{
 };
 use crate::patch::{Attribute, AttributeValue, DmxMode, FixtureId};
 
-mod lexer;
 mod parser;
 
 /// Parses a string into a [Command].
@@ -24,10 +23,9 @@ mod parser;
 /// This will panic if the provided command is not valid.
 #[macro_export]
 macro_rules! cmd {
-    ($cmd_str:expr) => {{
-        use std::str::FromStr;
-        $crate::cmd::Command::from_str($cmd_str).expect("failed to parse command")
-    }};
+    ($cmd_str:expr) => {
+        $crate::cmd::Command::parse($cmd_str).into_result().expect("failed to parse command")
+    };
 }
 
 /// The interface between the engine and the backend.
@@ -69,11 +67,12 @@ pub enum Command {
     Preset(AnyPresetId, PresetCommand),
 }
 
-impl FromStr for Command {
-    type Err = eyre::Error;
-
-    fn from_str(source: &str) -> Result<Self, Self::Err> {
-        parser::Parser::new(source).parse()
+impl Command {
+    /// Parse a [Command] from from a textual representation.
+    pub fn parse<'src>(
+        input: &'src str,
+    ) -> chumsky::ParseResult<Command, chumsky::error::Rich<'src, char>> {
+        parser::parser().parse(input)
     }
 }
 
@@ -83,7 +82,7 @@ pub enum PatchCommand {
     /// Add a fixture to the [Patch][crate::patch::Patch].
     Add {
         /// The [FixtureId] for the new fixture.
-        id: FixtureId,
+        fid: FixtureId,
         /// The [dmx::Address] for the new fixture.
         address: dmx::Address,
         /// The associated GDTF file name for the new fixture.
@@ -94,14 +93,14 @@ pub enum PatchCommand {
     /// Set the [dmx::Address] of a fixture in the [Patch][crate::patch::Patch].
     SetAddress {
         /// The id of the fixture to modify.
-        id: FixtureId,
+        fid: FixtureId,
         /// The new [dmx::Address].
         address: dmx::Address,
     },
     /// Set the [DmxMode] of a fixture.
     SetMode {
         /// The id of the fixture to modify.
-        id: FixtureId,
+        fid: FixtureId,
         /// The new [DmxMode].
         mode: DmxMode,
     },
@@ -109,14 +108,14 @@ pub enum PatchCommand {
     /// [Patch][crate::patch::Patch].
     SetGdtfFileName {
         /// The id of the fixture to modify.
-        id: FixtureId,
+        fid: FixtureId,
         /// The associated GDTF file name.
         name: String,
     },
     /// Remove a fixture from the [Patch][crate::patch::Patch].
     Remove {
         /// The id of the fixture to remove.
-        id: FixtureId,
+        fid: FixtureId,
     },
 }
 
@@ -142,7 +141,7 @@ pub enum ProgrammerSetCommand {
     /// Sets the [AttributeValue] of an [Attribute] for the given [FixtureId].
     Attribute {
         /// The id of the fixture.
-        id: FixtureId,
+        fid: FixtureId,
         /// The [Attribute] to change.
         attribute: Attribute,
         /// The new [AttributeValue] for the given [Attribute].
@@ -156,19 +155,19 @@ pub enum FixtureGroupCommand {
     /// Add a list of [FixtureId]s.
     Add {
         /// [FixtureId]s to add.
-        ids: Vec<FixtureId>,
+        fids: Vec<FixtureId>,
     },
     /// Replace a [FixtureId] at the given index.
     ReplaceAt {
         /// The index of the [FixtureId] you want to replace.
         index: usize,
         /// The new [FixtureId].
-        id: FixtureId,
+        fid: FixtureId,
     },
     /// Remove a [FixtureId].
     Remove {
         /// The [FixtureId] to remove.
-        id: FixtureId,
+        fid: FixtureId,
     },
     /// Remove a [FixtureId] at the given index.
     RemoveAt {

@@ -35,7 +35,7 @@ pub fn exec_cmd(engine: &mut Engine, cmd: Command) -> Result<()> {
 
 fn exec_patch_command(engine: &mut Engine, cmd: PatchCommand) -> Result<()> {
     match cmd {
-        PatchCommand::Add { id, address, gdtf_file_name, mode } => {
+        PatchCommand::Add { fid, address, gdtf_file_name, mode } => {
             let gdtf_file_path = {
                 let showfile_path = match engine.show.path() {
                     Some(path) => path,
@@ -59,37 +59,37 @@ fn exec_patch_command(engine: &mut Engine, cmd: PatchCommand) -> Result<()> {
                 .description
                 .fixture_types[0];
 
-            let fixture = Fixture::new(id, address, mode, gdtf_file_name, fixture_type)?;
+            let fixture = Fixture::new(fid, address, mode, gdtf_file_name, fixture_type)?;
 
             engine.show.patch.fixtures.push(fixture);
         }
-        PatchCommand::SetAddress { id, address } => {
-            if let Some(fixture) = engine.show.patch.fixture_mut(id) {
+        PatchCommand::SetAddress { fid, address } => {
+            if let Some(fixture) = engine.show.patch.fixture_mut(fid) {
                 fixture.address = address;
             }
         }
-        PatchCommand::SetMode { id, mode } => {
-            if let Some(fixture) = engine.show.patch.fixture_mut(id) {
+        PatchCommand::SetMode { fid, mode } => {
+            if let Some(fixture) = engine.show.patch.fixture_mut(fid) {
                 eyre::ensure!(
                     fixture.supported_dmx_modes().contains(&mode),
-                    "fixture with id '{id}' does not support dmx mode '{mode}'"
+                    "fixture with id '{fid}' does not support dmx mode '{mode}'"
                 );
 
                 fixture.dmx_mode = mode;
             }
         }
-        PatchCommand::SetGdtfFileName { id, name } => {
+        PatchCommand::SetGdtfFileName { fid, name } => {
             eyre::ensure!(
                 engine.show.patch.gdtf_file_names().contains(&name),
                 "the patch does not contain GDTF file with the name '{name}'"
             );
 
-            if let Some(fixture) = engine.show.patch.fixture_mut(id) {
+            if let Some(fixture) = engine.show.patch.fixture_mut(fid) {
                 fixture.gdtf_file_name = name;
             }
         }
-        PatchCommand::Remove { id } => {
-            engine.show.patch.remove_fixture(id);
+        PatchCommand::Remove { fid } => {
+            engine.show.patch.remove_fixture(fid);
         }
     }
 
@@ -101,8 +101,8 @@ fn exec_programmer_command(engine: &mut Engine, cmd: ProgrammerCommand) -> Resul
         ProgrammerCommand::Set(ProgrammerSetCommand::Direct { address, value }) => {
             engine.show.programmer.set_dmx_value(address, value);
         }
-        ProgrammerCommand::Set(ProgrammerSetCommand::Attribute { id, attribute, value }) => {
-            engine.show.programmer.set_attribute_value(id, attribute, value);
+        ProgrammerCommand::Set(ProgrammerSetCommand::Attribute { fid, attribute, value }) => {
+            engine.show.programmer.set_attribute_value(fid, attribute, value);
         }
         ProgrammerCommand::Clear => {
             // NOTE: We have to completely renew the pipeline,
@@ -244,28 +244,28 @@ fn exec_rename_command(engine: &mut Engine, id: AnyObjectId, name: String) -> Re
 
 fn exec_fixture_group_command(
     engine: &mut Engine,
-    id: FixtureGroupId,
+    fid: FixtureGroupId,
     cmd: FixtureGroupCommand,
 ) -> Result<()> {
-    let Some(fixture_group) = engine.show.fixture_groups.get_mut(&id) else {
-        eyre::bail!("fixture_group with id '{id}' not found");
+    let Some(fixture_group) = engine.show.fixture_groups.get_mut(&fid) else {
+        eyre::bail!("fixture_group with id '{fid}' not found");
     };
 
     match cmd {
-        FixtureGroupCommand::Add { ids } => {
-            fixture_group.fixtures.extend(ids);
+        FixtureGroupCommand::Add { fids } => {
+            fixture_group.fixtures.extend(fids);
         }
-        FixtureGroupCommand::ReplaceAt { index, id: fixture_id } => {
+        FixtureGroupCommand::ReplaceAt { index, fid } => {
             let Some(fixture_at_index) = fixture_group.fixtures.get_mut(index) else {
                 eyre::bail!(
-                    "index '{index}' is out of bounds for fixture_group '{id}' with length {}",
+                    "index '{index}' is out of bounds for fixture_group '{fid}' with length {}",
                     fixture_group.len()
                 );
             };
-            *fixture_at_index = fixture_id;
+            *fixture_at_index = fid;
         }
-        FixtureGroupCommand::Remove { id: fixture_id } => {
-            fixture_group.fixtures.retain(|fid| *fid != fixture_id);
+        FixtureGroupCommand::Remove { fid } => {
+            fixture_group.fixtures.retain(|f| *f != fid);
         }
         FixtureGroupCommand::RemoveAt { index } => {
             fixture_group.fixtures.remove(index);

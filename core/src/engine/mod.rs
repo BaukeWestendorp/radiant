@@ -110,7 +110,7 @@ impl Engine {
 
         // Initialize patch.
         for fixture in showfile.patch().fixtures() {
-            let id = FixtureId(fixture.id());
+            let fid = FixtureId(fixture.id());
 
             let address = dmx::Address::new(
                 dmx::UniverseId::new(fixture.universe())?,
@@ -126,7 +126,12 @@ impl Engine {
                 .wrap_err("failed to generate patch: tried to reference GDTF file index that is out of bounds")?
                 .to_string();
 
-            self.exec_cmd(Command::Patch(PatchCommand::Add { id, address, mode, gdtf_file_name }))?;
+            self.exec_cmd(Command::Patch(PatchCommand::Add {
+                fid,
+                address,
+                mode,
+                gdtf_file_name,
+            }))?;
         }
 
         // Initialize objects.

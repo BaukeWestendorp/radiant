@@ -8,7 +8,6 @@
 //! execution.
 
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
 
 use crate::cmd::Command;
 use crate::error::Result;
@@ -136,11 +135,34 @@ fn load_init_commands(path: &Path) -> Result<Vec<Command>> {
     }
 
     let content = std::fs::read_to_string(path)?;
-    let commands = content
-        .lines()
-        .filter(|line| !line.trim().is_empty())
-        .map(|line| Command::from_str(line))
-        .collect::<Result<Vec<_>>>()?;
+    let mut commands = Vec::new();
+
+    for line in content.lines().filter(|line| !line.trim().is_empty()) {
+        match Command::parse(line).into_result() {
+            Ok(cmd) => {
+                commands.push(cmd);
+            }
+            Err(parse_errs) => {
+                use ariadne::{Color, Label, Report, ReportKind, Source};
+
+                for err in parse_errs {
+                    // EmptyErr doesn't have span or other info
+                    let span_range = 0..line.len();
+                    Report::build(ReportKind::Error, ("input", span_range.clone()))
+                        .with_code(3)
+                        .with_message(format!("Parse error: {}", err))
+                        .with_label(
+                            Label::new(("input", span_range))
+                                .with_message("parsing failed here")
+                                .with_color(Color::Red),
+                        )
+                        .finish()
+                        .eprint(("input", Source::from(&line)))
+                        .unwrap();
+                }
+            }
+        }
+    }
 
     Ok(commands)
 }
