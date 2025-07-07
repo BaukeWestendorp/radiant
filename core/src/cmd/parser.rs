@@ -7,8 +7,17 @@ use crate::patch::{Attribute, AttributeValue, DmxMode, FixtureId};
 type ErrKind<'src> = extra::Full<Rich<'src, char>, (), ()>;
 
 pub fn parser<'src>() -> impl Parser<'src, &'src str, Command, ErrKind<'src>> {
-    // create, remove, rename, fixture_group, executor, cue, preset
-    choice((patch(), programmer()))
+    choice((
+        patch(),
+        programmer(),
+        create(),
+        remove(),
+        rename(),
+        fixture_group(),
+        executor(),
+        cue(),
+        preset(),
+    ))
 }
 
 fn patch<'src>() -> impl Parser<'src, &'src str, Command, ErrKind<'src>> {
@@ -96,6 +105,62 @@ fn programmer<'src>() -> impl Parser<'src, &'src str, Command, ErrKind<'src>> {
         .labelled("expected a command")
         .padded()
         .ignore_then(choice((set, clear)).labelled("expected a subcommand"))
+        .boxed()
+}
+
+fn create<'src>() -> impl Parser<'src, &'src str, Command, ErrKind<'src>> {
+    keyword("create")
+        .labelled("expected a command")
+        .padded()
+        .ignore_then(todo().labelled("expected a subcommand"))
+        .boxed()
+}
+
+fn remove<'src>() -> impl Parser<'src, &'src str, Command, ErrKind<'src>> {
+    keyword("remove")
+        .labelled("expected a command")
+        .padded()
+        .ignore_then(todo().labelled("expected a subcommand"))
+        .boxed()
+}
+
+fn rename<'src>() -> impl Parser<'src, &'src str, Command, ErrKind<'src>> {
+    keyword("rename")
+        .labelled("expected a command")
+        .padded()
+        .ignore_then(todo().labelled("expected a subcommand"))
+        .boxed()
+}
+
+fn fixture_group<'src>() -> impl Parser<'src, &'src str, Command, ErrKind<'src>> {
+    keyword("fixture_group")
+        .labelled("expected a command")
+        .padded()
+        .ignore_then(todo().labelled("expected a subcommand"))
+        .boxed()
+}
+
+fn executor<'src>() -> impl Parser<'src, &'src str, Command, ErrKind<'src>> {
+    keyword("executor")
+        .labelled("expected a command")
+        .padded()
+        .ignore_then(todo().labelled("expected a subcommand"))
+        .boxed()
+}
+
+fn cue<'src>() -> impl Parser<'src, &'src str, Command, ErrKind<'src>> {
+    keyword("cue")
+        .labelled("expected a command")
+        .padded()
+        .ignore_then(todo().labelled("expected a subcommand"))
+        .boxed()
+}
+
+fn preset<'src>() -> impl Parser<'src, &'src str, Command, ErrKind<'src>> {
+    keyword("preset")
+        .labelled("expected a command")
+        .padded()
+        .ignore_then(todo().labelled("expected a subcommand"))
         .boxed()
 }
 
