@@ -230,6 +230,13 @@ impl Fixture {
         }
         values
     }
+
+    /// Returns attributes supported by this fixture along with
+    /// their corresponding default [AttributeValue]s as
+    /// defined in the fixture's GDTF definition.
+    pub fn get_default_attribute_values(&self) -> Vec<(&Attribute, AttributeValue)> {
+        self.attributes.iter().map(|(attribute, info)| (attribute, info.default_value())).collect()
+    }
 }
 
 /// Some baked information about a specific attribute.

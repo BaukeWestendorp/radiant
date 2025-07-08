@@ -81,6 +81,15 @@ impl Engine {
         }
 
         self.output_pipeline = Pipeline::default();
+
+        // Put each fixture's default values into the output pipeline before resolving
+        // other values.
+        for fixture in self.show().patch().fixtures().to_vec() {
+            for (attribute, value) in fixture.get_default_attribute_values() {
+                self.output_pipeline.set_attribute_value(fixture.id(), attribute.clone(), value);
+            }
+        }
+
         dmx_resolver::resolve(&mut self.output_pipeline, &mut self.show);
 
         self.protocols.update_dmx_output(self.output_pipeline.resolved_multiverse());

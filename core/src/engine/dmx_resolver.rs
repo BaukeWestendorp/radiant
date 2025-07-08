@@ -8,10 +8,11 @@ pub fn resolve(output_pipeline: &mut Pipeline, show: &mut Show) {
     resolve_executors(output_pipeline, show);
 
     // Resolve and merge programmer pipeline with output pipeline.
-    resolve_programmer(output_pipeline, show);
+    show.programmer.resolve(&show.patch);
+    show.programmer.merge_unresolved_into(output_pipeline);
 
     // Resolve output pipeline.
-    resolve_output_pipeline(output_pipeline, show);
+    output_pipeline.resolve(&show.patch);
 }
 
 fn resolve_executors(output_pipeline: &mut Pipeline, show: &Show) {
@@ -46,15 +47,14 @@ fn resolve_recipe(recipe: &Recipe, level: f32, output_pipeline: &mut Pipeline, s
             };
 
             match &content {
-                PresetContent::Selective(selective_preset) => {
-                    for ((fixture_id, attribute), value) in selective_preset.get_attribute_values()
-                    {
+                PresetContent::Selective(preset) => {
+                    for ((fixture_id, attribute), value) in preset.get_attribute_values() {
                         // NOTE: We only resolve attributes for
                         //       fixtures that are both in the Fixture Group
-                        //       and in the Preset.
+                        //       and in the preset.
                         if fixture_group.contains(fixture_id) {
                             // FIXME: We should implement different merging strategies like HTP
-                            //        But for now let's just lerp with the existing value.
+                            //        but for now let's just lerp with the existing value.
                             let old_value = output_pipeline
                                 .get_attribute_value(*fixture_id, attribute)
                                 .unwrap_or_default();
@@ -72,15 +72,14 @@ fn resolve_recipe(recipe: &Recipe, level: f32, output_pipeline: &mut Pipeline, s
                     for (attribute, value) in preset.get_attribute_values() {
                         // NOTE: We only resolve attributes for
                         //       fixtures that are both in the Fixture Group
-                        //       and in the Preset.
+                        //       and in the preset.
                         for fixture_id in fixture_group.fixtures() {
                             // FIXME: We should implement different merging strategies like HTP
-                            //        But for now let's just lerp with the existing value.
+                            //        but for now let's just lerp with the existing value.
                             let old_value = output_pipeline
                                 .get_attribute_value(*fixture_id, attribute)
                                 .unwrap_or_default();
                             let lerped_value = AttributeValue::lerp(&old_value, value, level);
-
                             output_pipeline.set_attribute_value(
                                 *fixture_id,
                                 attribute.clone(),
@@ -92,13 +91,4 @@ fn resolve_recipe(recipe: &Recipe, level: f32, output_pipeline: &mut Pipeline, s
             }
         }
     }
-}
-
-fn resolve_programmer(output_pipeline: &mut Pipeline, show: &mut Show) {
-    show.programmer.resolve(&show.patch);
-    show.programmer.merge_unresolved_into(output_pipeline);
-}
-
-fn resolve_output_pipeline(output_pipeline: &mut Pipeline, show: &Show) {
-    output_pipeline.resolve(&show.patch);
 }

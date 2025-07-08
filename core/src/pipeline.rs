@@ -72,15 +72,6 @@ impl Pipeline {
         self.dmx_values.insert(address, value);
     }
 
-    fn resolve_default_values(&mut self, patch: &Patch) {
-        for fixture in patch.fixtures() {
-            for (channel, value) in fixture.get_default_channel_values() {
-                let address = dmx::Address::new(fixture.address().universe, channel);
-                self.resolved_multiverse.set_value(&address, value);
-            }
-        }
-    }
-
     fn resolve_attribute_values(&mut self, patch: &Patch) {
         for ((fixture_id, attribute), value) in self.attribute_values.clone() {
             let Some(fixture) = patch.fixture(fixture_id) else { continue };
@@ -96,7 +87,7 @@ impl Pipeline {
         self.resolved_attribute_values = self.attribute_values.clone();
     }
 
-    fn resolve_direct_dmx_values(&mut self) {
+    fn resolve_dmx_values(&mut self) {
         for (address, value) in &self.dmx_values {
             self.resolved_multiverse.set_value(address, *value);
         }
@@ -109,9 +100,8 @@ impl Pipeline {
     /// in order. The resolved output can be accessed with
     /// [Pipeline::resolved_multiverse].
     pub fn resolve(&mut self, patch: &Patch) {
-        self.resolve_default_values(patch);
+        self.resolve_dmx_values();
         self.resolve_attribute_values(patch);
-        self.resolve_direct_dmx_values();
     }
 
     /// Returns the resolved [dmx::Multiverse] after the last call to
