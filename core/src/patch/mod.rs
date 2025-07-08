@@ -15,7 +15,7 @@ mod fixture;
 /// universes.
 #[derive(Debug, Default, Clone)]
 pub struct Patch {
-    pub(crate) gdtf_file_names: Vec<String>,
+    pub(crate) gdtfs: Vec<String>,
     pub(crate) fixtures: Vec<Fixture>,
 }
 
@@ -26,8 +26,8 @@ impl Patch {
     }
 
     /// Get the names of all loaded GDTF files.
-    pub fn gdtf_file_names(&self) -> &[String] {
-        &self.gdtf_file_names
+    pub fn gdtfs(&self) -> &[String] {
+        &self.gdtfs
     }
 
     /// Get a reference to a specific [Fixture] for the given [FixtureId], if it

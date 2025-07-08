@@ -24,6 +24,7 @@ macro_rules! define_object_id {
         #[derive(
             derive_more::Display,
             derive_more::From,
+            derive_more::FromStr,
             derive_more::Into,
             derive_more::Add,
             derive_more::Sub,

@@ -19,7 +19,7 @@ fn init_engine() -> Engine {
 fn patch_add() {
     let mut engine = init_engine();
 
-    engine.exec_cmd(cmd!(r#"patch add 1 "2.3" "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch add 1 2.3 "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
 
     let f = &engine.show().patch().fixtures()[0];
 
@@ -28,10 +28,10 @@ fn patch_add() {
     assert_eq!(f.id(), FixtureId(1));
     assert_eq!(f.address(), &dmx::Address::from_str("2.3").unwrap());
     assert_eq!(f.dmx_mode(), &DmxMode::new("Default"));
-    assert_eq!(f.gdtf_file_name(), "Generic@Dimmer@Generic.gdtf".to_string());
+    assert_eq!(f.gdtf(), "Generic@Dimmer@Generic.gdtf".to_string());
 
-    engine.exec_cmd(cmd!(r#"patch add 4 "5.6" "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
-    engine.exec_cmd(cmd!(r#"patch add 7 "8.9" "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch add 4 5.6 "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch add 7 8.9 "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
 
     assert_eq!(engine.show().patch().fixtures().len(), 3);
 
@@ -52,8 +52,8 @@ fn patch_add() {
 fn patch_set_address() {
     let mut engine = init_engine();
 
-    engine.exec_cmd(cmd!(r#"patch add 1 "1.1" "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
-    engine.exec_cmd(cmd!(r#"patch add 2 "2.2" "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch add 1 1.1 "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch add 2 2.2 "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
 
     assert_eq!(
         engine.show().patch().fixture(1).unwrap().address(),
@@ -65,8 +65,8 @@ fn patch_set_address() {
         &dmx::Address::from_str("2.2").unwrap(),
     );
 
-    engine.exec_cmd(cmd!(r#"patch set address 1 "5.5""#)).unwrap();
-    engine.exec_cmd(cmd!(r#"patch set address 2 "6.6""#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch set address 1 5.5"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch set address 2 6.6"#)).unwrap();
 
     assert_eq!(
         engine.show().patch().fixture(1).unwrap().address(),
@@ -83,8 +83,8 @@ fn patch_set_address() {
 fn patch_set_mode() {
     let mut engine = init_engine();
 
-    engine.exec_cmd(cmd!(r#"patch add 1 "1.1" "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
-    engine.exec_cmd(cmd!(r#"patch add 2 "2.2" "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch add 1 1.1 "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch add 2 2.2 "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
 
     assert_eq!(engine.show().patch().fixture(1).unwrap().dmx_mode(), &DmxMode::new("Default"));
     assert_eq!(engine.show().patch().fixture(2).unwrap().dmx_mode(), &DmxMode::new("Default"));
@@ -100,65 +100,57 @@ fn patch_set_mode() {
 }
 
 #[test]
-fn patch_set_gdtf_file_name() {
+fn patch_set_gdtf() {
     let mut engine = init_engine();
 
-    engine.exec_cmd(cmd!(r#"patch add 1 "1.1" "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
-    engine.exec_cmd(cmd!(r#"patch add 2 "2.2" "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch add 1 1.1 "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch add 2 2.2 "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
 
     assert_eq!(
-        engine.show().patch().fixture(1).unwrap().gdtf_file_name(),
+        engine.show().patch().fixture(1).unwrap().gdtf(),
         "Generic@Dimmer@Generic.gdtf".to_string()
     );
     assert_eq!(
-        engine.show().patch().fixture(2).unwrap().gdtf_file_name(),
+        engine.show().patch().fixture(2).unwrap().gdtf(),
         "Generic@Dimmer@Generic.gdtf".to_string()
     );
 
-    engine.exec_cmd(cmd!(r#"patch set gdtf_file_name 1 "Generic@Dimmer2@Generic.gdtf""#)).unwrap();
-    engine.exec_cmd(cmd!(r#"patch set gdtf_file_name 2 "Generic@Dimmer2@Generic.gdtf""#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch set gdtf 1 "Generic@Dimmer2@Generic.gdtf""#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch set gdtf 2 "Generic@Dimmer2@Generic.gdtf""#)).unwrap();
 
     assert_eq!(
-        engine.show().patch().fixture(1).unwrap().gdtf_file_name(),
+        engine.show().patch().fixture(1).unwrap().gdtf(),
         "Generic@Dimmer2@Generic.gdtf".to_string()
     );
     assert_eq!(
-        engine.show().patch().fixture(2).unwrap().gdtf_file_name(),
+        engine.show().patch().fixture(2).unwrap().gdtf(),
         "Generic@Dimmer2@Generic.gdtf".to_string()
     );
 
-    assert!(
-        engine
-            .exec_cmd(cmd!(r#"patch set gdtf_file_name 1 "Generic@Invalid@Generic.gdtf""#))
-            .is_err()
-    );
-    assert!(
-        engine
-            .exec_cmd(cmd!(r#"patch set gdtf_file_name 2 "Generic@Invalid@Generic.gdtf""#))
-            .is_err()
-    );
+    assert!(engine.exec_cmd(cmd!(r#"patch set gdtf 1 "Generic@Invalid@Generic.gdtf""#)).is_err());
+    assert!(engine.exec_cmd(cmd!(r#"patch set gdtf 2 "Generic@Invalid@Generic.gdtf""#)).is_err());
 }
 
 #[test]
 fn patch_remove() {
     let mut engine = init_engine();
 
-    engine.exec_cmd(cmd!(r#"patch add 1 "1.1" "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
-    engine.exec_cmd(cmd!(r#"patch add 2 "2.2" "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch add 1 1.1 "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch add 2 2.2 "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
 
     assert_eq!(engine.show().patch().fixtures().len(), 2);
 
-    engine.exec_cmd(cmd!(r#"patch remove 1 "#)).unwrap();
-    engine.exec_cmd(cmd!(r#"patch remove 2 "#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch remove 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch remove 2"#)).unwrap();
 
     assert_eq!(engine.show().patch().fixtures().len(), 0);
 }
 
 #[test]
-fn programmer_set_direct() {
+fn programmer_set_address() {
     let mut engine = init_engine();
 
-    engine.exec_cmd(cmd!(r#"programmer set direct "1.1" 42"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer address 1.1 42"#)).unwrap();
 
     engine.resolve_dmx();
 
@@ -169,11 +161,11 @@ fn programmer_set_direct() {
 }
 
 #[test]
-fn programmer_set_attribute() {
+fn programmer_attribute() {
     let mut engine = init_engine();
 
-    engine.exec_cmd(cmd!(r#"patch add 1 "1.1" "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
-    engine.exec_cmd(cmd!(r#"programmer set attribute 1 "Dimmer" 0.5"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"patch add 1 1.1 "Generic@Dimmer@Generic.gdtf" "Default""#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer attribute 1 Dimmer 0.5"#)).unwrap();
 
     engine.resolve_dmx();
 
@@ -187,8 +179,8 @@ fn programmer_set_attribute() {
 fn programmer_clear() {
     let mut engine = init_engine();
 
-    engine.exec_cmd(cmd!(r#"programmer set direct "1.1" 42"#)).unwrap();
-    engine.exec_cmd(cmd!(r#"programmer set direct "1.2" 69"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer address 1.1 42"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer address 1.2 69"#)).unwrap();
 
     engine.resolve_dmx();
 
@@ -490,11 +482,11 @@ fn executor_set_fader_level() {
 }
 
 #[test]
-fn executor_set_sequence() {
+fn executor_sequence() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create executor 1"#)).unwrap();
     assert_eq!(engine.show().executor(1).unwrap().sequence_id(), None);
-    engine.exec_cmd(cmd!(r#"executor 1 set_sequence sequence 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"executor 1 sequence sequence 1"#)).unwrap();
     assert_eq!(engine.show().executor(1).unwrap().sequence_id(), Some(&SequenceId(1)));
 }
 
@@ -503,7 +495,7 @@ fn executor_clear() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create executor 1"#)).unwrap();
     assert_eq!(engine.show().executor(1).unwrap().sequence_id(), None);
-    engine.exec_cmd(cmd!(r#"executor 1 set_sequence sequence 1"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"executor 1 sequence sequence 1"#)).unwrap();
     assert_eq!(engine.show().executor(1).unwrap().sequence_id(), Some(&SequenceId(1)));
     engine.exec_cmd(cmd!(r#"executor 1 clear"#)).unwrap();
     assert_eq!(engine.show().executor(1).unwrap().sequence_id(), None);
@@ -651,9 +643,9 @@ fn preset_store_dimmer() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create preset::dimmer 1 "Test Preset""#)).unwrap();
 
-    engine.exec_cmd(cmd!(r#"programmer set attribute 1 "Dimmer" 0.25"#)).unwrap();
-    engine.exec_cmd(cmd!(r#"programmer set attribute 2 "Dimmer" 0.50"#)).unwrap();
-    engine.exec_cmd(cmd!(r#"programmer set attribute 3 "ColorAdd_R" 0.50"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer attribute 1 Dimmer 0.25"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer attribute 2 Dimmer 0.50"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer attribute 3 ColorAdd_R 0.50"#)).unwrap();
     engine.exec_cmd(cmd!(r#"preset::dimmer 1 store"#)).unwrap();
     engine.exec_cmd(cmd!(r#"programmer clear"#)).unwrap();
 
@@ -673,9 +665,9 @@ fn preset_store_color() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create preset::color 1 "Test Preset""#)).unwrap();
 
-    engine.exec_cmd(cmd!(r#"programmer set attribute 1 "ColorAdd_R" 0.25"#)).unwrap();
-    engine.exec_cmd(cmd!(r#"programmer set attribute 2 "ColorAdd_G" 0.50"#)).unwrap();
-    engine.exec_cmd(cmd!(r#"programmer set attribute 3 "Dimmer" 0.50"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer attribute 1 ColorAdd_R 0.25"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer attribute 2 ColorAdd_G 0.50"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer attribute 3 Dimmer 0.50"#)).unwrap();
     engine.exec_cmd(cmd!(r#"preset::color 1 store"#)).unwrap();
     engine.exec_cmd(cmd!(r#"programmer clear"#)).unwrap();
 
@@ -695,8 +687,8 @@ fn preset_clear() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create preset::dimmer 1 "Test Preset""#)).unwrap();
 
-    engine.exec_cmd(cmd!(r#"programmer set attribute 1 "Dimmer" 0.25"#)).unwrap();
-    engine.exec_cmd(cmd!(r#"programmer set attribute 2 "Dimmer" 0.50"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer attribute 1 Dimmer 0.25"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer attribute 2 Dimmer 0.50"#)).unwrap();
     engine.exec_cmd(cmd!(r#"preset::dimmer 1 store"#)).unwrap();
     engine.exec_cmd(cmd!(r#"programmer clear"#)).unwrap();
 

@@ -106,7 +106,7 @@ impl Engine {
     }
 
     fn initialize_show(&mut self, showfile: Showfile) -> Result<()> {
-        self.show.patch.gdtf_file_names = showfile.patch().gdtf_files().to_vec();
+        self.show.patch.gdtfs = showfile.patch().gdtf_files().to_vec();
 
         // Initialize patch.
         for fixture in showfile.patch().fixtures() {
@@ -119,19 +119,14 @@ impl Engine {
 
             let mode = DmxMode::new(fixture.dmx_mode());
 
-            let gdtf_file_name = showfile
+            let gdtf = showfile
                 .patch()
                 .gdtf_files()
                 .get(fixture.gdtf_file_index())
                 .wrap_err("failed to generate patch: tried to reference GDTF file index that is out of bounds")?
                 .to_string();
 
-            self.exec_cmd(Command::Patch(PatchCommand::Add {
-                fid,
-                address,
-                mode,
-                gdtf_file_name,
-            }))?;
+            self.exec_cmd(Command::Patch(PatchCommand::Add { fid, address, mode, gdtf }))?;
         }
 
         // Initialize objects.

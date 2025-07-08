@@ -55,16 +55,8 @@ pub enum Command {
         name: String,
     },
 
-    /// Modify a [FixtureGroup][crate::object::FixtureGroup] with the given id.
-    FixtureGroup(FixtureGroupId, FixtureGroupCommand),
-    /// Modify an [Executor][crate::object::Executor] with the given id.
-    Executor(ExecutorId, ExecutorCommand),
-    /// Modify a [Sequence][crate::object::Sequence] with the given id.
-    Sequence(SequenceId, SequenceCommand),
-    /// Modify a [Cue][crate::object::Cue] with the given id.
-    Cue(CueId, CueCommand),
-    /// Modify a preset with the given id.
-    Preset(AnyPresetId, PresetCommand),
+    /// Modify an object.
+    Object(ObjectCommand),
 }
 
 impl Command {
@@ -86,7 +78,7 @@ pub enum PatchCommand {
         /// The [dmx::Address] for the new fixture.
         address: dmx::Address,
         /// The associated GDTF file name for the new fixture.
-        gdtf_file_name: String,
+        gdtf: String,
         /// The [DmxMode] for the new fixture.
         mode: DmxMode,
     },
@@ -106,7 +98,7 @@ pub enum PatchCommand {
     },
     /// Set the associated GDTF file name of a fixture in the
     /// [Patch][crate::patch::Patch].
-    SetGdtfFileName {
+    SetGdtf {
         /// The id of the fixture to modify.
         fid: FixtureId,
         /// The associated GDTF file name.
@@ -122,24 +114,15 @@ pub enum PatchCommand {
 /// A sub-command to modify the programmer.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ProgrammerCommand {
-    /// Set a value in the programmer.
-    Set(ProgrammerSetCommand),
-    /// Clear all values in the programmer.
-    Clear,
-}
-
-/// A sub-command to set values in the programmer.
-#[derive(Debug, Clone, PartialEq)]
-pub enum ProgrammerSetCommand {
     /// Set a DMX value directly into the programmer.
-    Direct {
+    SetAddress {
         /// The [dmx::Address] to modify.
         address: dmx::Address,
         /// The new [dmx::Value] at the given address.
         value: dmx::Value,
     },
     /// Sets the [AttributeValue] of an [Attribute] for the given [FixtureId].
-    Attribute {
+    SetAttribute {
         /// The id of the fixture.
         fid: FixtureId,
         /// The [Attribute] to change.
@@ -147,6 +130,23 @@ pub enum ProgrammerSetCommand {
         /// The new [AttributeValue] for the given [Attribute].
         value: AttributeValue,
     },
+    /// Clear all values in the programmer.
+    Clear,
+}
+
+/// A sub-command to modify an object.
+#[derive(Debug, Clone, PartialEq)]
+pub enum ObjectCommand {
+    /// Modify a [FixtureGroup][crate::object::FixtureGroup] with the given id.
+    FixtureGroup(FixtureGroupId, FixtureGroupCommand),
+    /// Modify an [Executor][crate::object::Executor] with the given id.
+    Executor(ExecutorId, ExecutorCommand),
+    /// Modify a [Sequence][crate::object::Sequence] with the given id.
+    Sequence(SequenceId, SequenceCommand),
+    /// Modify a [Cue][crate::object::Cue] with the given id.
+    Cue(CueId, CueCommand),
+    /// Modify a preset with the given id.
+    Preset(AnyPresetId, PresetCommand),
 }
 
 /// A sub-command to modify a [FixtureGroup][crate::object::FixtureGroup].
@@ -154,8 +154,8 @@ pub enum ProgrammerSetCommand {
 pub enum FixtureGroupCommand {
     /// Add a list of [FixtureId]s.
     Add {
-        /// [FixtureId]s to add.
-        fids: Vec<FixtureId>,
+        /// [FixtureId] to add.
+        fid: FixtureId,
     },
     /// Replace a [FixtureId] at the given index.
     ReplaceAt {
@@ -181,11 +181,25 @@ pub enum FixtureGroupCommand {
 /// A sub-command to modify an [Executor][crate::object::Executor].
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExecutorCommand {
-    /// Modify or interact with the [Executor][crate::object::Executor]'s
-    /// button.
-    Button(ExecutorButtonCommand),
-    /// Modify or interact with the [Executor][crate::object::Executor]'s fader.
-    Fader(ExecutorFaderCommand),
+    /// Set the mode of operation for the executor button.
+    ButtonSetMode {
+        /// The new mode for the button.
+        mode: ExecutorButtonMode,
+    },
+    /// Simulate pressing the executor button.
+    ButtonPress,
+    /// Simulate releasing the executor button.
+    ButtonRelease,
+    /// Set the mode of operation for the executor fader.
+    FaderSetMode {
+        /// The new mode for the fader.
+        mode: ExecutorFaderMode,
+    },
+    /// Set the level of the executor fader.
+    FaderSetLevel {
+        /// The new level for the fader, in range 0.0 to 1.0.
+        level: f32,
+    },
     /// Set the sequence for this executor.
     SetSequence {
         /// The id of the sequence to associate with this executor.
@@ -195,44 +209,13 @@ pub enum ExecutorCommand {
     Clear,
 }
 
-/// A sub-command to modify or interact with an
-/// [Executor][crate::object::Executor]'s button.
-#[derive(Debug, Clone, PartialEq)]
-pub enum ExecutorButtonCommand {
-    /// Set the mode of operation for the executor button.
-    SetMode {
-        /// The new mode for the button.
-        mode: ExecutorButtonMode,
-    },
-    /// Simulate pressing the executor button.
-    Press,
-    /// Simulate releasing the executor button.
-    Release,
-}
-
-/// A sub-command to modify or interact with an
-/// [Executor][crate::object::Executor]'s fader.
-#[derive(Debug, Clone, PartialEq)]
-pub enum ExecutorFaderCommand {
-    /// Set the mode of operation for the executor fader.
-    SetMode {
-        /// The new mode for the fader.
-        mode: ExecutorFaderMode,
-    },
-    /// Set the level of the executor fader.
-    SetLevel {
-        /// The new level for the fader, in range 0.0 to 1.0.
-        level: f32,
-    },
-}
-
 /// A sub-command to modify a [Sequence][crate::object::Sequence].
 #[derive(Debug, Clone, PartialEq)]
 pub enum SequenceCommand {
     /// Add cues to the sequence.
     Add {
-        /// The ids of cues to add to the sequence.
-        cue_ids: Vec<CueId>,
+        /// The id of cue to add to the sequence.
+        cue_id: CueId,
     },
     /// Replace a cue at a specific index in the sequence.
     ReplaceAt {
@@ -260,8 +243,8 @@ pub enum SequenceCommand {
 pub enum CueCommand {
     /// Add recipes to the cue.
     Add {
-        /// The recipes to add to the cue.
-        recipes: Vec<Recipe>,
+        /// The recipe to add to the cue.
+        recipe: Recipe,
     },
     /// Replace a recipe at a specific index in the cue.
     ReplaceAt {

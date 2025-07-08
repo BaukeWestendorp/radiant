@@ -4,9 +4,8 @@ use std::path::Path;
 use eyre::{Context, ContextCompat};
 
 use crate::cmd::{
-    Command, CueCommand, ExecutorButtonCommand, ExecutorCommand, ExecutorFaderCommand,
-    FixtureGroupCommand, PatchCommand, PresetCommand, ProgrammerCommand, ProgrammerSetCommand,
-    SequenceCommand,
+    Command, CueCommand, ExecutorCommand, FixtureGroupCommand, ObjectCommand, PatchCommand,
+    PresetCommand, ProgrammerCommand, SequenceCommand,
 };
 use crate::engine::Engine;
 use crate::error::Result;
@@ -25,17 +24,13 @@ pub fn exec_cmd(engine: &mut Engine, cmd: Command) -> Result<()> {
         Command::Create { id, name } => exec_create_command(engine, id, name),
         Command::Remove { id } => exec_remove_command(engine, id),
         Command::Rename { id, name } => exec_rename_command(engine, id, name),
-        Command::FixtureGroup(id, cmd) => exec_fixture_group_command(engine, id, cmd),
-        Command::Executor(id, cmd) => exec_executor_command(engine, id, cmd),
-        Command::Sequence(id, cmd) => exec_sequence_command(engine, id, cmd),
-        Command::Cue(id, cmd) => exec_cue_command(engine, id, cmd),
-        Command::Preset(id, cmd) => exec_preset_command(engine, id, cmd),
+        Command::Object(cmd) => exec_object_command(engine, cmd),
     }
 }
 
 fn exec_patch_command(engine: &mut Engine, cmd: PatchCommand) -> Result<()> {
     match cmd {
-        PatchCommand::Add { fid, address, gdtf_file_name, mode } => {
+        PatchCommand::Add { fid, address, gdtf, mode } => {
             let gdtf_file_path = {
                 let showfile_path = match engine.show.path() {
                     Some(path) => path,
@@ -46,7 +41,7 @@ fn exec_patch_command(engine: &mut Engine, cmd: PatchCommand) -> Result<()> {
                     }
                 };
 
-                Path::new(&showfile_path).join(RELATIVE_GDTF_FILE_FOLDER_PATH).join(&gdtf_file_name)
+                Path::new(&showfile_path).join(RELATIVE_GDTF_FILE_FOLDER_PATH).join(&gdtf)
             };
 
             let gdtf_file = fs::File::open(&gdtf_file_path).wrap_err_with(|| {
@@ -59,7 +54,7 @@ fn exec_patch_command(engine: &mut Engine, cmd: PatchCommand) -> Result<()> {
                 .description
                 .fixture_types[0];
 
-            let fixture = Fixture::new(fid, address, mode, gdtf_file_name, fixture_type)?;
+            let fixture = Fixture::new(fid, address, mode, gdtf, fixture_type)?;
 
             engine.show.patch.fixtures.push(fixture);
         }
@@ -78,14 +73,14 @@ fn exec_patch_command(engine: &mut Engine, cmd: PatchCommand) -> Result<()> {
                 fixture.dmx_mode = mode;
             }
         }
-        PatchCommand::SetGdtfFileName { fid, name } => {
+        PatchCommand::SetGdtf { fid, name } => {
             eyre::ensure!(
-                engine.show.patch.gdtf_file_names().contains(&name),
+                engine.show.patch.gdtfs().contains(&name),
                 "the patch does not contain GDTF file with the name '{name}'"
             );
 
             if let Some(fixture) = engine.show.patch.fixture_mut(fid) {
-                fixture.gdtf_file_name = name;
+                fixture.gdtf = name;
             }
         }
         PatchCommand::Remove { fid } => {
@@ -98,10 +93,10 @@ fn exec_patch_command(engine: &mut Engine, cmd: PatchCommand) -> Result<()> {
 
 fn exec_programmer_command(engine: &mut Engine, cmd: ProgrammerCommand) -> Result<()> {
     match cmd {
-        ProgrammerCommand::Set(ProgrammerSetCommand::Direct { address, value }) => {
+        ProgrammerCommand::SetAddress { address, value } => {
             engine.show.programmer.set_dmx_value(address, value);
         }
-        ProgrammerCommand::Set(ProgrammerSetCommand::Attribute { fid, attribute, value }) => {
+        ProgrammerCommand::SetAttribute { fid, attribute, value } => {
             engine.show.programmer.set_attribute_value(fid, attribute, value);
         }
         ProgrammerCommand::Clear => {
@@ -242,18 +237,28 @@ fn exec_rename_command(engine: &mut Engine, id: AnyObjectId, name: String) -> Re
     Ok(())
 }
 
+fn exec_object_command(engine: &mut Engine, cmd: ObjectCommand) -> Result<()> {
+    match cmd {
+        ObjectCommand::Executor(id, cmd) => exec_executor_command(engine, id, cmd),
+        ObjectCommand::Sequence(id, cmd) => exec_sequence_command(engine, id, cmd),
+        ObjectCommand::Cue(id, cmd) => exec_cue_command(engine, id, cmd),
+        ObjectCommand::FixtureGroup(id, cmd) => exec_fixture_group_command(engine, id, cmd),
+        ObjectCommand::Preset(id, cmd) => exec_preset_command(engine, id, cmd),
+    }
+}
+
 fn exec_fixture_group_command(
     engine: &mut Engine,
-    fid: FixtureGroupId,
+    id: FixtureGroupId,
     cmd: FixtureGroupCommand,
 ) -> Result<()> {
-    let Some(fixture_group) = engine.show.fixture_groups.get_mut(&fid) else {
-        eyre::bail!("fixture_group with id '{fid}' not found");
+    let Some(fixture_group) = engine.show.fixture_groups.get_mut(&id) else {
+        eyre::bail!("fixture_group with id '{id}' not found");
     };
 
     match cmd {
-        FixtureGroupCommand::Add { fids } => {
-            fixture_group.fixtures.extend(fids);
+        FixtureGroupCommand::Add { fid } => {
+            fixture_group.fixtures.push(fid);
         }
         FixtureGroupCommand::ReplaceAt { index, fid } => {
             let Some(fixture_at_index) = fixture_group.fixtures.get_mut(index) else {
@@ -284,21 +289,13 @@ fn exec_executor_command(engine: &mut Engine, id: ExecutorId, cmd: ExecutorComma
     };
 
     match cmd {
-        ExecutorCommand::Button(cmd) => match cmd {
-            ExecutorButtonCommand::SetMode { mode } => executor.button.set_mode(mode),
-            ExecutorButtonCommand::Press => executor.button.press(),
-            ExecutorButtonCommand::Release => executor.button.release(),
-        },
-        ExecutorCommand::Fader(cmd) => match cmd {
-            ExecutorFaderCommand::SetMode { mode } => executor.fader.set_mode(mode),
-            ExecutorFaderCommand::SetLevel { level } => executor.fader.set_level(level),
-        },
-        ExecutorCommand::SetSequence { sequence_id } => {
-            executor.sequence_id = Some(sequence_id);
-        }
-        ExecutorCommand::Clear => {
-            executor.sequence_id = None;
-        }
+        ExecutorCommand::ButtonSetMode { mode } => executor.button.set_mode(mode),
+        ExecutorCommand::ButtonPress => executor.button.press(),
+        ExecutorCommand::ButtonRelease => executor.button.release(),
+        ExecutorCommand::FaderSetMode { mode } => executor.fader.set_mode(mode),
+        ExecutorCommand::FaderSetLevel { level } => executor.fader.set_level(level),
+        ExecutorCommand::SetSequence { sequence_id } => executor.sequence_id = Some(sequence_id),
+        ExecutorCommand::Clear => executor.sequence_id = None,
     }
 
     Ok(())
@@ -310,8 +307,8 @@ fn exec_sequence_command(engine: &mut Engine, id: SequenceId, cmd: SequenceComma
     };
 
     match cmd {
-        SequenceCommand::Add { cue_ids } => {
-            sequence.cues.extend(cue_ids);
+        SequenceCommand::Add { cue_id } => {
+            sequence.cues.push(cue_id);
         }
         SequenceCommand::ReplaceAt { index, cue_id } => {
             let Some(cue_at_index) = sequence.cues.get_mut(index) else {
@@ -342,8 +339,8 @@ fn exec_cue_command(engine: &mut Engine, id: CueId, cmd: CueCommand) -> Result<(
     };
 
     match cmd {
-        CueCommand::Add { recipes } => {
-            cue.recipes.extend(recipes);
+        CueCommand::Add { recipe } => {
+            cue.recipes.push(recipe);
         }
         CueCommand::ReplaceAt { index, recipe } => {
             let Some(recipe_at_index) = cue.recipes.get_mut(index) else {

@@ -48,7 +48,7 @@ pub struct Fixture {
     id: FixtureId,
     pub(crate) address: dmx::Address,
     pub(crate) dmx_mode: DmxMode,
-    pub(crate) gdtf_file_name: String,
+    pub(crate) gdtf: String,
     attributes: HashMap<Attribute, AttributeInfo>,
 
     dmx_modes: Vec<DmxMode>,
@@ -65,7 +65,7 @@ impl Fixture {
         id: FixtureId,
         address: dmx::Address,
         dmx_mode: DmxMode,
-        gdtf_file_name: String,
+        gdtf: String,
         fixture_type: &gdtf::fixture_type::FixtureType,
     ) -> Result<Self> {
         let mut attributes = HashMap::new();
@@ -110,7 +110,7 @@ impl Fixture {
             .flat_map(|dmx_mode| dmx_mode.name.as_ref().map(|name| DmxMode::new(name.as_ref())))
             .collect();
 
-        Ok(Self { id, dmx_mode, gdtf_file_name, address, attributes, dmx_modes })
+        Ok(Self { id, dmx_mode, gdtf, address, attributes, dmx_modes })
     }
 
     /// Returns this fixture's unique id.
@@ -129,8 +129,8 @@ impl Fixture {
     }
 
     /// Returns the name of the GDTF file this fixture is based on.
-    pub fn gdtf_file_name(&self) -> &str {
-        &self.gdtf_file_name
+    pub fn gdtf(&self) -> &str {
+        &self.gdtf
     }
 
     /// Returns an iterator over all attributes this fixture supports.
