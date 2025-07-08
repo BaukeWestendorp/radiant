@@ -7,7 +7,7 @@
 //! protocol and adapter integration. It is the main entry point for
 //! embedding Radiant's backend in an application.
 
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use eyre::{Context, ContextCompat};
 
@@ -40,6 +40,9 @@ pub struct Engine {
     protocols: protocols::Protocols,
 
     adapters: adapters::Adapters,
+
+    start_time: Instant,
+    frame: usize,
 }
 
 impl Engine {
@@ -58,7 +61,14 @@ impl Engine {
         let adapters = adapters::Adapters::new(&showfile.adapters().midi())
             .wrap_err("failed to create adapter handler")?;
 
-        let mut this = Self { show, output_pipeline, protocols, adapters };
+        let mut this = Self {
+            show,
+            output_pipeline,
+            protocols,
+            adapters,
+            start_time: Instant::now(),
+            frame: 0,
+        };
 
         this.initialize_show(showfile).wrap_err("failed to initialize show")?;
 
@@ -90,9 +100,11 @@ impl Engine {
             }
         }
 
-        dmx_resolver::resolve(&mut self.output_pipeline, &mut self.show);
+        dmx_resolver::resolve(self.uptime(), &mut self.output_pipeline, &mut self.show);
 
         self.protocols.update_dmx_output(self.output_pipeline.resolved_multiverse());
+
+        self.frame += 1;
     }
 
     /// Gets the resolved output [dmx::Multiverse].
@@ -112,6 +124,11 @@ impl Engine {
     /// Gets the [Show] associated with this [Engine].
     pub fn show(&self) -> &Show {
         &self.show
+    }
+
+    /// The amount of time the engine has been running.
+    pub fn uptime(&self) -> EngineUptime {
+        EngineUptime { frames: self.frame, duration: self.start_time.elapsed() }
     }
 
     fn initialize_show(&mut self, showfile: Showfile) -> Result<()> {
@@ -166,5 +183,27 @@ impl Engine {
         self.output_pipeline.clear_unresolved();
 
         Ok(())
+    }
+}
+
+/// Represents the uptime of the [Engine], including both the number of frames
+/// processed and the total elapsed duration since the engine started.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(derive_more::Add, derive_more::Div, derive_more::Mul)]
+pub struct EngineUptime {
+    frames: usize,
+    duration: Duration,
+}
+
+impl EngineUptime {
+    /// Returns the number of frames that have been processed since the engine
+    /// started.
+    pub fn frames(&self) -> usize {
+        self.frames
+    }
+
+    /// Returns the total elapsed duration since the engine started.
+    pub fn duration(&self) -> Duration {
+        self.duration
     }
 }

@@ -318,10 +318,11 @@ fn attribute_value<'src>() -> impl Parser<'src, &'src str, AttributeValue, ErrKi
 }
 
 fn recipe<'src>() -> impl Parser<'src, &'src str, Recipe, ErrKind<'src>> {
+    // FIXME: Parse level_effect.
     fixture_group_id()
         .padded()
         .then(any_preset_id().map(|id| RecipeContent::Preset(id)))
-        .map(|(fixture_group, content)| Recipe { fixture_group, content })
+        .map(|(fixture_group, content)| Recipe { fixture_group, content, level_effect: None })
 }
 
 fn quoted_string<'src>() -> impl Parser<'src, &'src str, String, ErrKind<'src>> {
@@ -659,7 +660,8 @@ mod tests {
             CueCommand::Add {
                 recipe: Recipe {
                     fixture_group: FixtureGroupId(1),
-                    content: RecipeContent::Preset(AnyPresetId::from(DimmerPresetId(2)))
+                    content: RecipeContent::Preset(AnyPresetId::from(DimmerPresetId(2))),
+                    level_effect: None,
                 }
             }
         ))
@@ -673,7 +675,8 @@ mod tests {
                 index: 1,
                 recipe: Recipe {
                     fixture_group: FixtureGroupId(2),
-                    content: RecipeContent::Preset(AnyPresetId::from(DimmerPresetId(3)))
+                    content: RecipeContent::Preset(AnyPresetId::from(DimmerPresetId(3))),
+                    level_effect: None,
                 }
             }
         ))

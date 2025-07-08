@@ -22,7 +22,7 @@ executors:
 sequences:
   - id: 1
     name: "Wash Intensity"
-    cues: [1]
+    cues: [1, 2]
   - id: 11
     name: "Color Cycle"
     cues: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
@@ -34,6 +34,23 @@ cues:
         content:
           type: Preset
           data: !Dimmer 1
+  - id: 2
+    name: "Wash 100% Strobe 100%"
+    recipes:
+      - fixture_group: 1
+        content:
+          type: Preset
+          data: !Dimmer 1
+        level_effect:
+          time_type: Frames
+          curve: Step
+          keyframes:
+            - time: 0
+              value: 0.0
+            - time: 1
+              value: 1.0
+            - time: 2
+              value: 0.0
   - id: 11
     name: "Wash White"
     recipes:

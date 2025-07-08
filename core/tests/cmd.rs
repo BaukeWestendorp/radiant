@@ -571,11 +571,13 @@ fn cue_add() {
     engine.exec_cmd(cmd!(r#"cue 1 add fixture_group 2 preset::dimmer 2"#)).unwrap();
     assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
         fixture_group: 1.into(),
-        content: RecipeContent::Preset(AnyPresetId::Dimmer(1.into()))
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(1.into())),
+        level_effect: None,
     }));
     assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
         fixture_group: 2.into(),
-        content: RecipeContent::Preset(AnyPresetId::Dimmer(2.into()))
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(2.into())),
+        level_effect: None,
     }));
 }
 
@@ -586,12 +588,14 @@ fn cue_replace_at() {
     engine.exec_cmd(cmd!(r#"cue 1 add fixture_group 1 preset::dimmer 1"#)).unwrap();
     assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
         fixture_group: 1.into(),
-        content: RecipeContent::Preset(AnyPresetId::Dimmer(1.into()))
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(1.into())),
+        level_effect: None,
     }));
     engine.exec_cmd(cmd!(r#"cue 1 replace_at 0 fixture_group 2 preset::dimmer 2"#)).unwrap();
     assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
         fixture_group: 2.into(),
-        content: RecipeContent::Preset(AnyPresetId::Dimmer(2.into()))
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(2.into())),
+        level_effect: None,
     }));
 }
 
@@ -603,20 +607,24 @@ fn cue_remove_at() {
     engine.exec_cmd(cmd!(r#"cue 1 add fixture_group 2 preset::dimmer 2"#)).unwrap();
     assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
         fixture_group: 1.into(),
-        content: RecipeContent::Preset(AnyPresetId::Dimmer(1.into()))
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(1.into())),
+        level_effect: None,
     }));
     assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
         fixture_group: 2.into(),
-        content: RecipeContent::Preset(AnyPresetId::Dimmer(2.into()))
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(2.into())),
+        level_effect: None,
     }));
     engine.exec_cmd(cmd!(r#"cue 1 remove_at 1"#)).unwrap();
     assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
         fixture_group: 1.into(),
-        content: RecipeContent::Preset(AnyPresetId::Dimmer(1.into()))
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(1.into())),
+        level_effect: None,
     }));
     assert!(!engine.show().cue(1).unwrap().recipes().contains(&Recipe {
         fixture_group: 2.into(),
-        content: RecipeContent::Preset(AnyPresetId::Dimmer(2.into()))
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(2.into())),
+        level_effect: None,
     }));
 }
 
@@ -628,11 +636,13 @@ fn cue_clear() {
     engine.exec_cmd(cmd!(r#"cue 1 add fixture_group 2 preset::dimmer 2"#)).unwrap();
     assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
         fixture_group: 1.into(),
-        content: RecipeContent::Preset(AnyPresetId::Dimmer(1.into()))
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(1.into())),
+        level_effect: None,
     }));
     assert!(engine.show().cue(1).unwrap().recipes().contains(&Recipe {
         fixture_group: 2.into(),
-        content: RecipeContent::Preset(AnyPresetId::Dimmer(2.into()))
+        content: RecipeContent::Preset(AnyPresetId::Dimmer(2.into())),
+        level_effect: None,
     }));
     engine.exec_cmd(cmd!(r#"cue 1 clear"#)).unwrap();
     assert!(engine.show().cue(1).unwrap().recipes().is_empty());
