@@ -45,12 +45,12 @@ fn resolve_recipe(
     match &recipe.content {
         RecipeContent::Preset(preset_id) => {
             let Some(preset) = show.preset(*preset_id) else {
-                log::warn!("{preset_id} not found in recipe");
+                log::warn!("{preset_id:?} not found for recipe");
                 return;
             };
 
             let Some(fixture_group) = show.fixture_group(recipe.fixture_group) else {
-                log::warn!("fixture group '{}' not found in recipe", recipe.fixture_group);
+                log::warn!("fixture group '{}' not found for recipe", recipe.fixture_group);
                 return;
             };
 

@@ -4,7 +4,10 @@ use std::{fs, io};
 use eyre::Context;
 
 use crate::error::Result;
-use crate::object::{ColorPreset, Cue, DimmerPreset, Executor, FixtureGroup, Sequence};
+use crate::object::{
+    BeamPreset, ColorPreset, ControlPreset, Cue, DimmerPreset, Executor, FixtureGroup, FocusPreset,
+    GoboPreset, PositionPreset, Sequence, ShapersPreset, VideoPreset,
+};
 
 /// A collection of lighting control objects loaded from configuration.
 ///
@@ -18,8 +21,16 @@ pub struct Objects {
     sequences: Vec<Sequence>,
     cues: Vec<Cue>,
     fixture_groups: Vec<FixtureGroup>,
+
     dimmer_presets: Vec<DimmerPreset>,
+    position_presets: Vec<PositionPreset>,
+    gobo_presets: Vec<GoboPreset>,
     color_presets: Vec<ColorPreset>,
+    beam_presets: Vec<BeamPreset>,
+    focus_presets: Vec<FocusPreset>,
+    shapers_presets: Vec<ShapersPreset>,
+    control_presets: Vec<ControlPreset>,
+    video_presets: Vec<VideoPreset>,
 }
 
 impl Objects {
@@ -48,9 +59,44 @@ impl Objects {
         &self.dimmer_presets
     }
 
+    /// Returns all [`PositionPreset`] objects.
+    pub fn position_presets(&self) -> &[PositionPreset] {
+        &self.position_presets
+    }
+
+    /// Returns all [`GoboPreset`] objects.
+    pub fn gobo_presets(&self) -> &[GoboPreset] {
+        &self.gobo_presets
+    }
+
     /// Returns all [`ColorPreset`] objects.
     pub fn color_presets(&self) -> &[ColorPreset] {
         &self.color_presets
+    }
+
+    /// Returns all [`BeamPreset`] objects.
+    pub fn beam_presets(&self) -> &[BeamPreset] {
+        &self.beam_presets
+    }
+
+    /// Returns all [`FocusPreset`] objects.
+    pub fn focus_presets(&self) -> &[FocusPreset] {
+        &self.focus_presets
+    }
+
+    /// Returns all [`ShapersPreset`] objects.
+    pub fn shapers_presets(&self) -> &[ShapersPreset] {
+        &self.shapers_presets
+    }
+
+    /// Returns all [`ControlPreset`] objects.
+    pub fn control_presets(&self) -> &[ControlPreset] {
+        &self.control_presets
+    }
+
+    /// Returns all [`VideoPreset`] objects.
+    pub fn video_presets(&self) -> &[VideoPreset] {
+        &self.video_presets
     }
 
     /// Reads the [Objects] configuration from a file at the given path.

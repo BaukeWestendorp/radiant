@@ -171,8 +171,29 @@ impl Engine {
         for dimmer_preset in showfile.objects().dimmer_presets().to_vec() {
             self.show.dimmer_presets.insert(dimmer_preset.id(), dimmer_preset);
         }
+        for position_preset in showfile.objects().position_presets().to_vec() {
+            self.show.position_presets.insert(position_preset.id(), position_preset);
+        }
+        for gobo_preset in showfile.objects().gobo_presets().to_vec() {
+            self.show.gobo_presets.insert(gobo_preset.id(), gobo_preset);
+        }
         for color_preset in showfile.objects().color_presets().to_vec() {
             self.show.color_presets.insert(color_preset.id(), color_preset);
+        }
+        for beam_preset in showfile.objects().beam_presets().to_vec() {
+            self.show.beam_presets.insert(beam_preset.id(), beam_preset);
+        }
+        for focus_preset in showfile.objects().focus_presets().to_vec() {
+            self.show.focus_presets.insert(focus_preset.id(), focus_preset);
+        }
+        for shapers_preset in showfile.objects().shapers_presets().to_vec() {
+            self.show.shapers_presets.insert(shapers_preset.id(), shapers_preset);
+        }
+        for control_preset in showfile.objects().control_presets().to_vec() {
+            self.show.control_presets.insert(control_preset.id(), control_preset);
+        }
+        for video_preset in showfile.objects().video_presets().to_vec() {
+            self.show.video_presets.insert(video_preset.id(), video_preset);
         }
 
         // Run init commands.

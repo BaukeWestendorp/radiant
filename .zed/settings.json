@@ -9,7 +9,14 @@
             "!Universal mapping",
             "!Selective mapping",
             "!Dimmer scalar",
-            "!Color scalar"
+            "!Position scalar",
+            "!Gobo scalar",
+            "!Color scalar",
+            "!Beam scalar",
+            "!Focus scalar",
+            "!Shapers scalar",
+            "!Control scalar",
+            "!Video scalar"
           ]
         }
       }
