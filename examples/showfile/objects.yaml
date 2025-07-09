@@ -185,6 +185,9 @@ color_presets:
         ColorAdd_R: 1.0
         ColorAdd_G: 1.0
         ColorAdd_B: 1.0
+        ColorSub_C: 0.0
+        ColorSub_M: 0.0
+        ColorSub_Y: 0.0
       filter: Color
   - id: 2
     name: "Red"
@@ -193,6 +196,9 @@ color_presets:
         ColorAdd_R: 1.0
         ColorAdd_G: 0.0
         ColorAdd_B: 0.0
+        ColorSub_C: 1.0
+        ColorSub_M: 0.0
+        ColorSub_Y: 0.0
       filter: Color
   - id: 3
     name: "Orange"
@@ -201,6 +207,9 @@ color_presets:
         ColorAdd_R: 1.0
         ColorAdd_G: 0.5
         ColorAdd_B: 0.0
+        ColorSub_C: 0.5
+        ColorSub_M: 0.2
+        ColorSub_Y: 0.0
       filter: Color
   - id: 4
     name: "Yellow"
@@ -209,6 +218,9 @@ color_presets:
         ColorAdd_R: 1.0
         ColorAdd_G: 1.0
         ColorAdd_B: 0.0
+        ColorSub_C: 0.0
+        ColorSub_M: 1.0
+        ColorSub_Y: 0.0
       filter: Color
   - id: 5
     name: "Fern"
@@ -217,6 +229,9 @@ color_presets:
         ColorAdd_R: 0.5
         ColorAdd_G: 1.0
         ColorAdd_B: 0.2
+        ColorSub_C: 0.2
+        ColorSub_M: 0.7
+        ColorSub_Y: 0.0
       filter: Color
   - id: 6
     name: "Green"
@@ -225,6 +240,9 @@ color_presets:
         ColorAdd_R: 0.0
         ColorAdd_G: 1.0
         ColorAdd_B: 0.0
+        ColorSub_C: 0.0
+        ColorSub_M: 1.0
+        ColorSub_Y: 1.0
       filter: Color
   - id: 7
     name: "Sea"
@@ -233,6 +251,9 @@ color_presets:
         ColorAdd_R: 0.0
         ColorAdd_G: 1.0
         ColorAdd_B: 0.5
+        ColorSub_C: 0.0
+        ColorSub_M: 0.5
+        ColorSub_Y: 1.0
       filter: Color
   - id: 8
     name: "Cyan"
@@ -241,6 +262,9 @@ color_presets:
         ColorAdd_R: 0.0
         ColorAdd_G: 1.0
         ColorAdd_B: 1.0
+        ColorSub_C: 0.0
+        ColorSub_M: 1.0
+        ColorSub_Y: 0.0
       filter: Color
   - id: 9
     name: "Lavender"
@@ -249,6 +273,9 @@ color_presets:
         ColorAdd_R: 0.7
         ColorAdd_G: 0.5
         ColorAdd_B: 1.0
+        ColorSub_C: 0.3
+        ColorSub_M: 0.0
+        ColorSub_Y: 0.5
       filter: Color
   - id: 10
     name: "Blue"
@@ -257,6 +284,9 @@ color_presets:
         ColorAdd_R: 0.0
         ColorAdd_G: 0.0
         ColorAdd_B: 1.0
+        ColorSub_C: 0.0
+        ColorSub_M: 0.0
+        ColorSub_Y: 1.0
       filter: Color
   - id: 11
     name: "Violet"
@@ -265,6 +295,9 @@ color_presets:
         ColorAdd_R: 0.5
         ColorAdd_G: 0.0
         ColorAdd_B: 1.0
+        ColorSub_C: 0.5
+        ColorSub_M: 0.0
+        ColorSub_Y: 1.0
       filter: Color
   - id: 12
     name: "Magenta"
@@ -273,6 +306,9 @@ color_presets:
         ColorAdd_R: 1.0
         ColorAdd_G: 0.0
         ColorAdd_B: 0.5
+        ColorSub_C: 1.0
+        ColorSub_M: 0.0
+        ColorSub_Y: 0.5
       filter: Color
   - id: 13
     name: "Pink"
@@ -281,4 +317,7 @@ color_presets:
         ColorAdd_R: 1.0
         ColorAdd_G: 0.5
         ColorAdd_B: 0.7
+        ColorSub_C: 0.3
+        ColorSub_M: 0.2
+        ColorSub_Y: 0.0
       filter: Color

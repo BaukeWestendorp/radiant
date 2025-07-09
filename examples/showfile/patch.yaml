@@ -1,44 +1,44 @@
 gdtf_files:
   - Generic@Dimmer@Generic.gdtf
-  - Chauvet_Professional%40COLORdash_Par_Quad_7%40Beta_1.0.1.gdtf
+  - Martin_Professional%40MAC_Viper_Profile%4020230516NoMeas.gdtf
 fixtures:
   - id: 1
     gdtf_file_index: 1
     universe: 1
     channel: 1
-    dmx_mode: 6-Ch
+    dmx_mode: Basic
   - id: 2
     gdtf_file_index: 1
     universe: 1
-    channel: 7
-    dmx_mode: 6-Ch
+    channel: 27
+    dmx_mode: Basic
   - id: 3
     gdtf_file_index: 1
     universe: 1
-    channel: 13
-    dmx_mode: 6-Ch
+    channel: 53
+    dmx_mode: Basic
   - id: 4
     gdtf_file_index: 1
     universe: 1
-    channel: 19
-    dmx_mode: 6-Ch
+    channel: 79
+    dmx_mode: Basic
   - id: 5
     gdtf_file_index: 1
     universe: 1
-    channel: 25
-    dmx_mode: 6-Ch
+    channel: 105
+    dmx_mode: Basic
   - id: 6
     gdtf_file_index: 1
     universe: 1
-    channel: 31
-    dmx_mode: 6-Ch
+    channel: 131
+    dmx_mode: Basic
   - id: 7
     gdtf_file_index: 1
     universe: 1
-    channel: 37
-    dmx_mode: 6-Ch
+    channel: 157
+    dmx_mode: Basic
   - id: 8
     gdtf_file_index: 1
     universe: 1
-    channel: 43
-    dmx_mode: 6-Ch
+    channel: 183
+    dmx_mode: Basic
