@@ -8,8 +8,9 @@ use crate::cmd::{
     PresetCommand, ProgrammerCommand, SequenceCommand,
 };
 use crate::object::{
-    AnyObjectId, AnyPresetId, ColorPresetId, CueId, DimmerPresetId, ExecutorButtonMode,
-    ExecutorFaderMode, ExecutorId, FixtureGroupId, Recipe, RecipeContent, SequenceId,
+    AnyObjectId, AnyPresetId, BeamPresetId, ColorPresetId, ControlPresetId, CueId, DimmerPresetId,
+    ExecutorButtonMode, ExecutorFaderMode, ExecutorId, FixtureGroupId, FocusPresetId, GoboPresetId,
+    PositionPresetId, Recipe, RecipeContent, SequenceId, ShapersPresetId, VideoPresetId,
 };
 use crate::patch::{Attribute, AttributeValue, DmxMode, FixtureId};
 
@@ -234,6 +235,20 @@ fn fixture_group_id<'src>() -> impl Parser<'src, &'src str, FixtureGroupId, ErrK
         .map(|s: &str| FixtureGroupId::from_str(s).unwrap())
 }
 
+fn preset_position_id<'src>() -> impl Parser<'src, &'src str, PositionPresetId, ErrKind<'src>> {
+    just("preset::position")
+        .padded()
+        .ignore_then(text::int(10))
+        .map(|s: &str| PositionPresetId::from_str(s).unwrap())
+}
+
+fn preset_gobo_id<'src>() -> impl Parser<'src, &'src str, GoboPresetId, ErrKind<'src>> {
+    just("preset::gobo")
+        .padded()
+        .ignore_then(text::int(10))
+        .map(|s: &str| GoboPresetId::from_str(s).unwrap())
+}
+
 fn preset_dimmer_id<'src>() -> impl Parser<'src, &'src str, DimmerPresetId, ErrKind<'src>> {
     just("preset::dimmer")
         .padded()
@@ -248,8 +263,53 @@ fn preset_color_id<'src>() -> impl Parser<'src, &'src str, ColorPresetId, ErrKin
         .map(|s: &str| ColorPresetId::from_str(s).unwrap())
 }
 
+fn preset_beam_id<'src>() -> impl Parser<'src, &'src str, BeamPresetId, ErrKind<'src>> {
+    just("preset::beam")
+        .padded()
+        .ignore_then(text::int(10))
+        .map(|s: &str| BeamPresetId::from_str(s).unwrap())
+}
+
+fn preset_focus_id<'src>() -> impl Parser<'src, &'src str, FocusPresetId, ErrKind<'src>> {
+    just("preset::focus")
+        .padded()
+        .ignore_then(text::int(10))
+        .map(|s: &str| FocusPresetId::from_str(s).unwrap())
+}
+
+fn preset_control_id<'src>() -> impl Parser<'src, &'src str, ControlPresetId, ErrKind<'src>> {
+    just("preset::control")
+        .padded()
+        .ignore_then(text::int(10))
+        .map(|s: &str| ControlPresetId::from_str(s).unwrap())
+}
+
+fn preset_shapers_id<'src>() -> impl Parser<'src, &'src str, ShapersPresetId, ErrKind<'src>> {
+    just("preset::shapers")
+        .padded()
+        .ignore_then(text::int(10))
+        .map(|s: &str| ShapersPresetId::from_str(s).unwrap())
+}
+
+fn preset_video_id<'src>() -> impl Parser<'src, &'src str, VideoPresetId, ErrKind<'src>> {
+    just("preset::video")
+        .padded()
+        .ignore_then(text::int(10))
+        .map(|s: &str| VideoPresetId::from_str(s).unwrap())
+}
+
 fn any_preset_id<'src>() -> impl Parser<'src, &'src str, AnyPresetId, ErrKind<'src>> {
-    choice((preset_dimmer_id().map(AnyPresetId::from), preset_color_id().map(AnyPresetId::from)))
+    choice((
+        preset_dimmer_id().map(AnyPresetId::from),
+        preset_position_id().map(AnyPresetId::from),
+        preset_gobo_id().map(AnyPresetId::from),
+        preset_color_id().map(AnyPresetId::from),
+        preset_beam_id().map(AnyPresetId::from),
+        preset_focus_id().map(AnyPresetId::from),
+        preset_control_id().map(AnyPresetId::from),
+        preset_shapers_id().map(AnyPresetId::from),
+        preset_video_id().map(AnyPresetId::from),
+    ))
 }
 
 fn any_object_id<'src>() -> impl Parser<'src, &'src str, AnyObjectId, ErrKind<'src>> {
@@ -356,8 +416,10 @@ mod tests {
         PresetCommand, ProgrammerCommand, SequenceCommand,
     };
     use crate::object::{
-        AnyObjectId, AnyPresetId, ColorPresetId, CueId, DimmerPresetId, ExecutorButtonMode,
-        ExecutorFaderMode, ExecutorId, FixtureGroupId, Recipe, RecipeContent, SequenceId,
+        AnyObjectId, AnyPresetId, BeamPresetId, ColorPresetId, ControlPresetId, CueId,
+        DimmerPresetId, ExecutorButtonMode, ExecutorFaderMode, ExecutorId, FixtureGroupId,
+        FocusPresetId, GoboPresetId, PositionPresetId, Recipe, RecipeContent, SequenceId,
+        ShapersPresetId, VideoPresetId,
     };
     use crate::patch::{Attribute, AttributeValue, DmxMode, FixtureId};
 
@@ -716,6 +778,40 @@ mod tests {
     );
 
     expect!(
+        preset_position_store,
+        r#"preset::position 1 store"#,
+        Command::Object(ObjectCommand::Preset(
+            AnyPresetId::from(PositionPresetId(1)),
+            PresetCommand::Store
+        ))
+    );
+    expect!(
+        preset_position_clear,
+        r#"preset::position 1 clear"#,
+        Command::Object(ObjectCommand::Preset(
+            AnyPresetId::from(PositionPresetId(1)),
+            PresetCommand::Clear
+        ))
+    );
+
+    expect!(
+        preset_gobo_store,
+        r#"preset::gobo 1 store"#,
+        Command::Object(ObjectCommand::Preset(
+            AnyPresetId::from(GoboPresetId(1)),
+            PresetCommand::Store
+        ))
+    );
+    expect!(
+        preset_gobo_clear,
+        r#"preset::gobo 1 clear"#,
+        Command::Object(ObjectCommand::Preset(
+            AnyPresetId::from(GoboPresetId(1)),
+            PresetCommand::Clear
+        ))
+    );
+
+    expect!(
         preset_color_store,
         r#"preset::color 1 store"#,
         Command::Object(ObjectCommand::Preset(
@@ -728,6 +824,91 @@ mod tests {
         r#"preset::color 1 clear"#,
         Command::Object(ObjectCommand::Preset(
             AnyPresetId::from(ColorPresetId(1)),
+            PresetCommand::Clear
+        ))
+    );
+
+    expect!(
+        preset_beam_store,
+        r#"preset::beam 1 store"#,
+        Command::Object(ObjectCommand::Preset(
+            AnyPresetId::from(BeamPresetId(1)),
+            PresetCommand::Store
+        ))
+    );
+    expect!(
+        preset_beam_clear,
+        r#"preset::beam 1 clear"#,
+        Command::Object(ObjectCommand::Preset(
+            AnyPresetId::from(BeamPresetId(1)),
+            PresetCommand::Clear
+        ))
+    );
+
+    expect!(
+        preset_focus_store,
+        r#"preset::focus 1 store"#,
+        Command::Object(ObjectCommand::Preset(
+            AnyPresetId::from(FocusPresetId(1)),
+            PresetCommand::Store
+        ))
+    );
+    expect!(
+        preset_focus_clear,
+        r#"preset::focus 1 clear"#,
+        Command::Object(ObjectCommand::Preset(
+            AnyPresetId::from(FocusPresetId(1)),
+            PresetCommand::Clear
+        ))
+    );
+
+    expect!(
+        preset_control_store,
+        r#"preset::control 1 store"#,
+        Command::Object(ObjectCommand::Preset(
+            AnyPresetId::from(ControlPresetId(1)),
+            PresetCommand::Store
+        ))
+    );
+    expect!(
+        preset_control_clear,
+        r#"preset::control 1 clear"#,
+        Command::Object(ObjectCommand::Preset(
+            AnyPresetId::from(ControlPresetId(1)),
+            PresetCommand::Clear
+        ))
+    );
+
+    expect!(
+        preset_shapers_store,
+        r#"preset::shapers 1 store"#,
+        Command::Object(ObjectCommand::Preset(
+            AnyPresetId::from(ShapersPresetId(1)),
+            PresetCommand::Store
+        ))
+    );
+    expect!(
+        preset_shapers_clear,
+        r#"preset::shapers 1 clear"#,
+        Command::Object(ObjectCommand::Preset(
+            AnyPresetId::from(ShapersPresetId(1)),
+            PresetCommand::Clear
+        ))
+    );
+
+    expect!(
+        preset_video_store,
+        r#"preset::video 1 store"#,
+        Command::Object(ObjectCommand::Preset(
+            AnyPresetId::from(VideoPresetId(1)),
+            PresetCommand::Store
+        ))
+    );
+    expect!(
+        preset_video_clear,
+        r#"preset::video 1 clear"#,
+        Command::Object(ObjectCommand::Preset(
+            AnyPresetId::from(VideoPresetId(1)),
             PresetCommand::Clear
         ))
     );

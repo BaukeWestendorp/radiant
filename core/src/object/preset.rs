@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use crate::patch::{Attribute, AttributeValue, FeatureGroup, FixtureId};
 
 macro_rules! define_preset {
-    ($(($name:ident, $id:ident, $any_name:ident, $new_name:literal)),+ $(,)?) => {
+    ($(($name:ident, $id:ident, $any_name:ident, $feature_group:expr, $new_name:literal)),+ $(,)?) => {
         $(
             super::define_object_id!($id);
 
@@ -18,8 +18,8 @@ macro_rules! define_preset {
 
             impl $name {
                 /// Creates a new preset with the specified id and content.
-                pub fn new(id: impl Into<$id>, content: PresetContent) -> Self {
-                    Self { id: id.into(), name: $new_name.to_string(), content }
+                pub fn new(id: impl Into<$id>) -> Self {
+                    Self { id: id.into(), name: $new_name.to_string(), content: PresetContent::Universal(UniversalPreset::new($feature_group)) }
                 }
 
                 /// Returns this preset's unique id.
@@ -148,6 +148,20 @@ pub enum PresetContent {
     Selective(SelectivePreset),
 }
 
+/// Represents the kind of content stored in a preset.
+///
+/// This enum distinguishes between presets that apply universally to all
+/// fixtures and those that apply selectively to specific fixtures.
+#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Deserialize)]
+pub enum PresetContentKind {
+    /// A preset that applies to every fixture.
+    Universal,
+    /// A preset that applies to specific fixtures with targeted attribute
+    /// values.
+    Selective,
+}
+
 /// A preset that applies attribute values universally to all fixtures, filtered
 /// by feature group.
 #[derive(Debug, Clone, PartialEq)]
@@ -251,6 +265,13 @@ impl SelectivePreset {
 }
 
 define_preset!(
-    (DimmerPreset, DimmerPresetId, Dimmer, "New Dimmer Preset"),
-    (ColorPreset, ColorPresetId, Color, "New Color Preset"),
+    (DimmerPreset, DimmerPresetId, Dimmer, FeatureGroup::Dimmer, "New Dimmer Preset"),
+    (PositionPreset, PositionPresetId, Position, FeatureGroup::Position, "New Position Preset"),
+    (GoboPreset, GoboPresetId, Gobo, FeatureGroup::Gobo, "New Gobo Preset"),
+    (ColorPreset, ColorPresetId, Color, FeatureGroup::Color, "New Color Preset"),
+    (BeamPreset, BeamPresetId, Beam, FeatureGroup::Beam, "New Beam Preset"),
+    (FocusPreset, FocusPresetId, Focus, FeatureGroup::Focus, "New Focus Preset"),
+    (ControlPreset, ControlPresetId, Control, FeatureGroup::Control, "New Control Preset"),
+    (ShapersPreset, ShapersPresetId, Shapers, FeatureGroup::Shapers, "New Shapers Preset"),
+    (VideoPreset, VideoPresetId, Video, FeatureGroup::Video, "New Video Preset")
 );

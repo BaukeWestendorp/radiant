@@ -10,10 +10,11 @@ use crate::cmd::{
 use crate::engine::Engine;
 use crate::error::Result;
 use crate::object::{
-    AnyObjectId, AnyPresetId, ColorPreset, Cue, CueId, DimmerPreset, Executor, ExecutorId,
-    FixtureGroup, FixtureGroupId, PresetContent, SelectivePreset, Sequence, SequenceId,
+    AnyObjectId, AnyPresetId, BeamPreset, ColorPreset, ControlPreset, Cue, CueId, DimmerPreset,
+    Executor, ExecutorId, FixtureGroup, FixtureGroupId, FocusPreset, GoboPreset, PositionPreset,
+    PresetContent, Sequence, SequenceId, ShapersPreset, VideoPreset,
 };
-use crate::patch::{FeatureGroup, Fixture};
+use crate::patch::Fixture;
 use crate::pipeline::Pipeline;
 use crate::showfile::RELATIVE_GDTF_FILE_FOLDER_PATH;
 
@@ -141,28 +142,67 @@ fn exec_create_command(engine: &mut Engine, id: AnyObjectId, name: Option<String
         }
         AnyObjectId::Preset(id) => match id {
             AnyPresetId::Dimmer(id) => {
-                let mut preset = DimmerPreset::new(
-                    id,
-                    PresetContent::Selective(SelectivePreset::new(FeatureGroup::Dimmer)),
-                );
-
+                let mut preset = DimmerPreset::new(id);
                 if let Some(name) = name {
                     preset.name = name;
                 }
-
                 engine.show.dimmer_presets.insert(preset.id(), preset);
             }
-            AnyPresetId::Color(id) => {
-                let mut preset = ColorPreset::new(
-                    id,
-                    PresetContent::Selective(SelectivePreset::new(FeatureGroup::Color)),
-                );
-
+            AnyPresetId::Position(id) => {
+                let mut preset = PositionPreset::new(id);
                 if let Some(name) = name {
                     preset.name = name;
                 }
-
+                engine.show.position_presets.insert(preset.id(), preset);
+            }
+            AnyPresetId::Gobo(id) => {
+                let mut preset = GoboPreset::new(id);
+                if let Some(name) = name {
+                    preset.name = name;
+                }
+                engine.show.gobo_presets.insert(preset.id(), preset);
+            }
+            AnyPresetId::Color(id) => {
+                let mut preset = ColorPreset::new(id);
+                if let Some(name) = name {
+                    preset.name = name;
+                }
                 engine.show.color_presets.insert(preset.id(), preset);
+            }
+            AnyPresetId::Beam(id) => {
+                let mut preset = BeamPreset::new(id);
+                if let Some(name) = name {
+                    preset.name = name;
+                }
+                engine.show.beam_presets.insert(preset.id(), preset);
+            }
+            AnyPresetId::Focus(id) => {
+                let mut preset = FocusPreset::new(id);
+                if let Some(name) = name {
+                    preset.name = name;
+                }
+                engine.show.focus_presets.insert(preset.id(), preset);
+            }
+            AnyPresetId::Control(id) => {
+                let mut preset = ControlPreset::new(id);
+                if let Some(name) = name {
+                    preset.name = name;
+                }
+                engine.show.control_presets.insert(preset.id(), preset);
+            }
+            AnyPresetId::Shapers(id) => {
+                let mut preset = ShapersPreset::new(id);
+                if let Some(name) = name {
+                    preset.name = name;
+                }
+                engine.show.shapers_presets.insert(preset.id(), preset);
+            }
+            AnyPresetId::Video(id) => {
+                let mut preset = VideoPreset::new(id);
+                if let Some(name) = name {
+                    preset.name = name;
+                }
+                engine.show.video_presets.insert(preset.id(), preset);
             }
         },
     }
@@ -188,8 +228,29 @@ fn exec_remove_command(engine: &mut Engine, id: AnyObjectId) -> Result<()> {
             AnyPresetId::Dimmer(id) => {
                 engine.show.dimmer_presets.remove(&id);
             }
+            AnyPresetId::Position(id) => {
+                engine.show.position_presets.remove(&id);
+            }
+            AnyPresetId::Gobo(id) => {
+                engine.show.gobo_presets.remove(&id);
+            }
             AnyPresetId::Color(id) => {
                 engine.show.color_presets.remove(&id);
+            }
+            AnyPresetId::Beam(id) => {
+                engine.show.beam_presets.remove(&id);
+            }
+            AnyPresetId::Focus(id) => {
+                engine.show.focus_presets.remove(&id);
+            }
+            AnyPresetId::Control(id) => {
+                engine.show.control_presets.remove(&id);
+            }
+            AnyPresetId::Shapers(id) => {
+                engine.show.shapers_presets.remove(&id);
+            }
+            AnyPresetId::Video(id) => {
+                engine.show.video_presets.remove(&id);
             }
         },
     }
@@ -215,24 +276,9 @@ fn exec_rename_command(engine: &mut Engine, id: AnyObjectId, name: String) -> Re
         AnyObjectId::Cue(id) => {
             engine.show.cue_mut(id).wrap_err("cue with id '{id}' not found")?.name = name;
         }
-        AnyObjectId::Preset(any_preset_id) => match any_preset_id {
-            AnyPresetId::Dimmer(id) => {
-                let preset = engine
-                    .show
-                    .dimmer_presets
-                    .get_mut(&id)
-                    .wrap_err("preset with id '{id}' not found")?;
-                preset.name = name;
-            }
-            AnyPresetId::Color(id) => {
-                let preset = engine
-                    .show
-                    .color_presets
-                    .get_mut(&id)
-                    .wrap_err("preset with id '{id}' not found")?;
-                preset.name = name;
-            }
-        },
+        AnyObjectId::Preset(id) => {
+            *engine.show.preset_name_mut(id).wrap_err("preset with id '{id}' not found")? = name;
+        }
     }
     Ok(())
 }
@@ -370,72 +416,30 @@ fn exec_preset_command(engine: &mut Engine, id: AnyPresetId, cmd: PresetCommand)
                 engine.show().programmer.resolved_attribute_values().clone();
 
             for ((fid, attr), value) in resolved_attribute_values {
-                match id {
-                    AnyPresetId::Dimmer(id) => {
-                        match &mut engine
-                            .show
-                            .dimmer_presets
-                            .get_mut(&id)
-                            .wrap_err("preset with id '{id}' not found")?
-                            .content
-                        {
-                            PresetContent::Selective(preset) => {
-                                preset.set_attribute_value(fid, attr, value);
-                            }
-                            PresetContent::Universal(preset) => {
-                                preset.set_attribute_value(attr, value);
-                            }
-                        }
+                match &mut engine
+                    .show
+                    .preset_content_mut(id)
+                    .wrap_err("preset with id '{id}' not found")?
+                {
+                    PresetContent::Selective(preset) => {
+                        preset.set_attribute_value(fid, attr, value);
                     }
-                    AnyPresetId::Color(id) => {
-                        match &mut engine
-                            .show
-                            .color_presets
-                            .get_mut(&id)
-                            .wrap_err("preset with id '{id}' not found")?
-                            .content
-                        {
-                            PresetContent::Selective(preset) => {
-                                preset.set_attribute_value(fid, attr, value);
-                            }
-                            PresetContent::Universal(preset) => {
-                                preset.set_attribute_value(attr, value);
-                            }
-                        }
+                    PresetContent::Universal(preset) => {
+                        preset.set_attribute_value(attr, value);
                     }
                 }
             }
         }
-        PresetCommand::Clear => match id {
-            AnyPresetId::Dimmer(id) => {
-                match &mut engine
-                    .show
-                    .dimmer_presets
-                    .get_mut(&id)
-                    .wrap_err("preset with id '{id}' not found")?
-                    .content
-                {
-                    PresetContent::Selective(preset) => preset.clear(),
-                    PresetContent::Universal(preset) => preset.clear(),
-                }
+        PresetCommand::Clear => {
+            match &mut engine
+                .show
+                .preset_content_mut(id)
+                .wrap_err("preset with id '{id}' not found")?
+            {
+                PresetContent::Selective(preset) => preset.clear(),
+                PresetContent::Universal(preset) => preset.clear(),
             }
-            AnyPresetId::Color(id) => {
-                match &mut engine
-                    .show
-                    .color_presets
-                    .get_mut(&id)
-                    .wrap_err("preset with id '{id}' not found")?
-                    .content
-                {
-                    PresetContent::Selective(selective_preset) => {
-                        selective_preset.clear();
-                    }
-                    PresetContent::Universal(preset) => {
-                        preset.clear();
-                    }
-                }
-            }
-        },
+        }
     }
 
     Ok(())

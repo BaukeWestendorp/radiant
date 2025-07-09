@@ -6,6 +6,7 @@ use radiant_core::engine::Engine;
 use radiant_core::object::{
     AnyPreset, AnyPresetId, ColorPresetId, CueId, DimmerPresetId, ExecutorButtonMode,
     ExecutorFaderMode, PresetContent, Recipe, RecipeContent, SelectivePreset, SequenceId,
+    UniversalPreset,
 };
 use radiant_core::patch::{Attribute, AttributeValue, DmxMode, FeatureGroup, FixtureId};
 use radiant_core::showfile::Showfile;
@@ -649,14 +650,86 @@ fn cue_clear() {
 }
 
 #[test]
-fn preset_store_dimmer() {
+fn preset_store_dimmer_universal() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create preset::dimmer 1 "Test Preset""#)).unwrap();
 
     engine.exec_cmd(cmd!(r#"programmer attribute 1 Dimmer 0.25"#)).unwrap();
     engine.exec_cmd(cmd!(r#"programmer attribute 2 Dimmer 0.50"#)).unwrap();
     engine.exec_cmd(cmd!(r#"programmer attribute 3 ColorAdd_R 0.50"#)).unwrap();
-    engine.exec_cmd(cmd!(r#"preset::dimmer 1 store"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"preset::dimmer 1 store universal"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer clear"#)).unwrap();
+
+    assert_eq!(
+        engine.show().preset_dimmer(1).unwrap().content(),
+        &PresetContent::Universal({
+            let mut p = UniversalPreset::new(FeatureGroup::Dimmer);
+            p.set_attribute_value(Attribute::Dimmer, AttributeValue::new(0.25));
+            p.set_attribute_value(Attribute::Dimmer, AttributeValue::new(0.50));
+            p
+        })
+    );
+}
+
+#[test]
+fn preset_store_color_universal() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create preset::color 1 "Test Preset""#)).unwrap();
+
+    engine.exec_cmd(cmd!(r#"programmer attribute 1 ColorAdd_R 0.25"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer attribute 2 ColorAdd_G 0.50"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer attribute 3 Dimmer 0.50"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"preset::color 1 store universal"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer clear"#)).unwrap();
+
+    assert_eq!(
+        engine.show().preset_color(1).unwrap().content(),
+        &PresetContent::Universal({
+            let mut p = UniversalPreset::new(FeatureGroup::Color);
+            p.set_attribute_value(Attribute::ColorAddR, AttributeValue::new(0.25));
+            p.set_attribute_value(Attribute::ColorAddG, AttributeValue::new(0.50));
+            p
+        })
+    );
+}
+
+#[test]
+fn preset_clear_universal() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create preset::dimmer 1 "Test Preset""#)).unwrap();
+
+    engine.exec_cmd(cmd!(r#"programmer attribute 1 Dimmer 0.25"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer attribute 2 Dimmer 0.50"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"preset::dimmer 1 store universal"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer clear"#)).unwrap();
+
+    assert_eq!(
+        engine.show().preset_dimmer(1).unwrap().content(),
+        &PresetContent::Universal({
+            let mut p = UniversalPreset::new(FeatureGroup::Dimmer);
+            p.set_attribute_value(Attribute::Dimmer, AttributeValue::new(0.25));
+            p.set_attribute_value(Attribute::Dimmer, AttributeValue::new(0.50));
+            p
+        })
+    );
+
+    engine.exec_cmd(cmd!(r#"preset::dimmer 1 clear"#)).unwrap();
+
+    assert_eq!(
+        engine.show().preset_dimmer(1).unwrap().content(),
+        &PresetContent::Universal(UniversalPreset::new(FeatureGroup::Dimmer))
+    );
+}
+
+#[test]
+fn preset_store_dimmer_selective() {
+    let mut engine = init_engine();
+    engine.exec_cmd(cmd!(r#"create preset::dimmer 1 "Test Preset""#)).unwrap();
+
+    engine.exec_cmd(cmd!(r#"programmer attribute 1 Dimmer 0.25"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer attribute 2 Dimmer 0.50"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"programmer attribute 3 ColorAdd_R 0.50"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"preset::dimmer 1 store selective"#)).unwrap();
     engine.exec_cmd(cmd!(r#"programmer clear"#)).unwrap();
 
     assert_eq!(
@@ -671,14 +744,14 @@ fn preset_store_dimmer() {
 }
 
 #[test]
-fn preset_store_color() {
+fn preset_store_color_selective() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create preset::color 1 "Test Preset""#)).unwrap();
 
     engine.exec_cmd(cmd!(r#"programmer attribute 1 ColorAdd_R 0.25"#)).unwrap();
     engine.exec_cmd(cmd!(r#"programmer attribute 2 ColorAdd_G 0.50"#)).unwrap();
     engine.exec_cmd(cmd!(r#"programmer attribute 3 Dimmer 0.50"#)).unwrap();
-    engine.exec_cmd(cmd!(r#"preset::color 1 store"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"preset::color 1 store selective"#)).unwrap();
     engine.exec_cmd(cmd!(r#"programmer clear"#)).unwrap();
 
     assert_eq!(
@@ -693,13 +766,13 @@ fn preset_store_color() {
 }
 
 #[test]
-fn preset_clear() {
+fn preset_clear_selective() {
     let mut engine = init_engine();
     engine.exec_cmd(cmd!(r#"create preset::dimmer 1 "Test Preset""#)).unwrap();
 
     engine.exec_cmd(cmd!(r#"programmer attribute 1 Dimmer 0.25"#)).unwrap();
     engine.exec_cmd(cmd!(r#"programmer attribute 2 Dimmer 0.50"#)).unwrap();
-    engine.exec_cmd(cmd!(r#"preset::dimmer 1 store"#)).unwrap();
+    engine.exec_cmd(cmd!(r#"preset::dimmer 1 store selective"#)).unwrap();
     engine.exec_cmd(cmd!(r#"programmer clear"#)).unwrap();
 
     assert_eq!(

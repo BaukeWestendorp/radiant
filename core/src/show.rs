@@ -9,8 +9,11 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use crate::object::{
-    AnyPreset, AnyPresetId, ColorPreset, ColorPresetId, Cue, CueId, DimmerPreset, DimmerPresetId,
-    Executor, ExecutorId, FixtureGroup, FixtureGroupId, Sequence, SequenceId,
+    AnyPreset, AnyPresetId, BeamPreset, BeamPresetId, ColorPreset, ColorPresetId, ControlPreset,
+    ControlPresetId, Cue, CueId, DimmerPreset, DimmerPresetId, Executor, ExecutorId, FixtureGroup,
+    FixtureGroupId, FocusPreset, FocusPresetId, GoboPreset, GoboPresetId, PositionPreset,
+    PositionPresetId, PresetContent, Sequence, SequenceId, ShapersPreset, ShapersPresetId,
+    VideoPreset, VideoPresetId,
 };
 use crate::patch::Patch;
 use crate::pipeline::Pipeline;
@@ -30,8 +33,16 @@ pub struct Show {
     pub(crate) executors: HashMap<ExecutorId, Executor>,
     pub(crate) sequences: HashMap<SequenceId, Sequence>,
     pub(crate) cues: HashMap<CueId, Cue>,
+
     pub(crate) dimmer_presets: HashMap<DimmerPresetId, DimmerPreset>,
+    pub(crate) position_presets: HashMap<PositionPresetId, PositionPreset>,
+    pub(crate) gobo_presets: HashMap<GoboPresetId, GoboPreset>,
     pub(crate) color_presets: HashMap<ColorPresetId, ColorPreset>,
+    pub(crate) beam_presets: HashMap<BeamPresetId, BeamPreset>,
+    pub(crate) focus_presets: HashMap<FocusPresetId, FocusPreset>,
+    pub(crate) control_presets: HashMap<ControlPresetId, ControlPreset>,
+    pub(crate) shapers_presets: HashMap<ShapersPresetId, ShapersPreset>,
+    pub(crate) video_presets: HashMap<VideoPresetId, VideoPreset>,
 }
 
 impl Show {
@@ -114,11 +125,52 @@ impl Show {
         self.cues.values()
     }
 
-    /// Gets any kind of preset from it's corresponding id.
+    /// Gets any kind of preset from its corresponding id.
     pub fn preset(&self, preset_id: impl Into<AnyPresetId>) -> Option<AnyPreset> {
         match preset_id.into() {
             AnyPresetId::Dimmer(id) => Some(self.dimmer_presets.get(&id)?.clone().into_any()),
+            AnyPresetId::Position(id) => Some(self.position_presets.get(&id)?.clone().into_any()),
+            AnyPresetId::Gobo(id) => Some(self.gobo_presets.get(&id)?.clone().into_any()),
             AnyPresetId::Color(id) => Some(self.color_presets.get(&id)?.clone().into_any()),
+            AnyPresetId::Beam(id) => Some(self.beam_presets.get(&id)?.clone().into_any()),
+            AnyPresetId::Focus(id) => Some(self.focus_presets.get(&id)?.clone().into_any()),
+            AnyPresetId::Control(id) => Some(self.control_presets.get(&id)?.clone().into_any()),
+            AnyPresetId::Shapers(id) => Some(self.shapers_presets.get(&id)?.clone().into_any()),
+            AnyPresetId::Video(id) => Some(self.video_presets.get(&id)?.clone().into_any()),
+        }
+    }
+
+    pub(crate) fn preset_content_mut(
+        &mut self,
+        preset_id: impl Into<AnyPresetId>,
+    ) -> Option<&mut PresetContent> {
+        match preset_id.into() {
+            AnyPresetId::Dimmer(id) => Some(&mut self.dimmer_presets.get_mut(&id)?.content),
+            AnyPresetId::Position(id) => Some(&mut self.position_presets.get_mut(&id)?.content),
+            AnyPresetId::Gobo(id) => Some(&mut self.gobo_presets.get_mut(&id)?.content),
+            AnyPresetId::Color(id) => Some(&mut self.color_presets.get_mut(&id)?.content),
+            AnyPresetId::Beam(id) => Some(&mut self.beam_presets.get_mut(&id)?.content),
+            AnyPresetId::Focus(id) => Some(&mut self.focus_presets.get_mut(&id)?.content),
+            AnyPresetId::Control(id) => Some(&mut self.control_presets.get_mut(&id)?.content),
+            AnyPresetId::Shapers(id) => Some(&mut self.shapers_presets.get_mut(&id)?.content),
+            AnyPresetId::Video(id) => Some(&mut self.video_presets.get_mut(&id)?.content),
+        }
+    }
+
+    pub(crate) fn preset_name_mut(
+        &mut self,
+        preset_id: impl Into<AnyPresetId>,
+    ) -> Option<&mut String> {
+        match preset_id.into() {
+            AnyPresetId::Dimmer(id) => Some(&mut self.dimmer_presets.get_mut(&id)?.name),
+            AnyPresetId::Position(id) => Some(&mut self.position_presets.get_mut(&id)?.name),
+            AnyPresetId::Gobo(id) => Some(&mut self.gobo_presets.get_mut(&id)?.name),
+            AnyPresetId::Color(id) => Some(&mut self.color_presets.get_mut(&id)?.name),
+            AnyPresetId::Beam(id) => Some(&mut self.beam_presets.get_mut(&id)?.name),
+            AnyPresetId::Focus(id) => Some(&mut self.focus_presets.get_mut(&id)?.name),
+            AnyPresetId::Control(id) => Some(&mut self.control_presets.get_mut(&id)?.name),
+            AnyPresetId::Shapers(id) => Some(&mut self.shapers_presets.get_mut(&id)?.name),
+            AnyPresetId::Video(id) => Some(&mut self.video_presets.get_mut(&id)?.name),
         }
     }
 
@@ -127,8 +179,43 @@ impl Show {
         self.dimmer_presets.get(&id.into())
     }
 
+    /// Gets a [PositionPreset].
+    pub fn preset_position(&self, id: impl Into<PositionPresetId>) -> Option<&PositionPreset> {
+        self.position_presets.get(&id.into())
+    }
+
+    /// Gets a [GoboPreset].
+    pub fn preset_gobo(&self, id: impl Into<GoboPresetId>) -> Option<&GoboPreset> {
+        self.gobo_presets.get(&id.into())
+    }
+
     /// Gets a [ColorPreset].
     pub fn preset_color(&self, id: impl Into<ColorPresetId>) -> Option<&ColorPreset> {
         self.color_presets.get(&id.into())
+    }
+
+    /// Gets a [BeamPreset].
+    pub fn preset_beam(&self, id: impl Into<BeamPresetId>) -> Option<&BeamPreset> {
+        self.beam_presets.get(&id.into())
+    }
+
+    /// Gets a [FocusPreset].
+    pub fn preset_focus(&self, id: impl Into<FocusPresetId>) -> Option<&FocusPreset> {
+        self.focus_presets.get(&id.into())
+    }
+
+    /// Gets a [ControlPreset].
+    pub fn preset_control(&self, id: impl Into<ControlPresetId>) -> Option<&ControlPreset> {
+        self.control_presets.get(&id.into())
+    }
+
+    /// Gets a [ShapersPreset].
+    pub fn preset_shapers(&self, id: impl Into<ShapersPresetId>) -> Option<&ShapersPreset> {
+        self.shapers_presets.get(&id.into())
+    }
+
+    /// Gets a [VideoPreset].
+    pub fn preset_video(&self, id: impl Into<VideoPresetId>) -> Option<&VideoPreset> {
+        self.video_presets.get(&id.into())
     }
 }

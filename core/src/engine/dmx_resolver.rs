@@ -57,6 +57,13 @@ fn resolve_recipe(
             let content = match preset {
                 AnyPreset::Dimmer(preset) => preset.content,
                 AnyPreset::Color(preset) => preset.content,
+                AnyPreset::Position(preset) => preset.content,
+                AnyPreset::Gobo(preset) => preset.content,
+                AnyPreset::Beam(preset) => preset.content,
+                AnyPreset::Focus(preset) => preset.content,
+                AnyPreset::Control(preset) => preset.content,
+                AnyPreset::Shapers(preset) => preset.content,
+                AnyPreset::Video(preset) => preset.content,
             };
 
             match &content {
