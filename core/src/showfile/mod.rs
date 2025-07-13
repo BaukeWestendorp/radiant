@@ -9,7 +9,6 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::cmd::Command;
 use crate::error::Result;
 
 pub use adapters::*;
@@ -36,9 +35,6 @@ pub const RELATIVE_OBJECTS_FILE_PATH: &str = "objects.yaml";
 pub const RELATIVE_ADAPTERS_FILE_PATH: &str = "adapters.yaml";
 /// The relative path to the protocols file within a [Showfile] directory.
 pub const RELATIVE_PROTOCOLS_FILE_PATH: &str = "protocols.yaml";
-/// The relative path to the initialization commands file within a [Showfile]
-/// directory.
-pub const RELATIVE_INIT_COMMANDS_FILE_PATH: &str = "init_commands.rcs";
 
 #[derive(Default)]
 /// Represents a showfile that is saved on disk, containing all configuration
@@ -51,7 +47,6 @@ pub struct Showfile {
     objects: Objects,
     adapters: Adapters,
     protocols: Protocols,
-    init_commands: Vec<Command>,
 }
 
 impl Showfile {
@@ -83,12 +78,6 @@ impl Showfile {
         &self.protocols
     }
 
-    /// Returns a slice of initialization [Command]s contained in this
-    /// [Showfile].
-    pub fn init_commands(&self) -> &[Command] {
-        &self.init_commands
-    }
-
     /// Loads a [Showfile] from the specified path. The path can refer to either
     /// a zipped or unzipped folder.
     pub fn load(path: &Path) -> Result<Self> {
@@ -115,54 +104,6 @@ impl Showfile {
         let objects = Objects::read_from_file(&path.join(RELATIVE_OBJECTS_FILE_PATH))?;
         let adapters = Adapters::read_from_file(&path.join(RELATIVE_ADAPTERS_FILE_PATH))?;
         let protocols = Protocols::read_from_file(&path.join(RELATIVE_PROTOCOLS_FILE_PATH))?;
-        let init_commands = load_init_commands(&path.join(RELATIVE_INIT_COMMANDS_FILE_PATH))?;
-        Ok(Self {
-            path: Some(path.to_path_buf()),
-            patch,
-            adapters,
-            protocols,
-            objects,
-            init_commands,
-        })
+        Ok(Self { path: Some(path.to_path_buf()), patch, adapters, protocols, objects })
     }
-}
-
-/// Loads initialization [Command]s from the specified file path, returning an
-/// empty vector if the file does not exist.
-fn load_init_commands(path: &Path) -> Result<Vec<Command>> {
-    if !path.exists() {
-        return Ok(Vec::new());
-    }
-
-    let content = std::fs::read_to_string(path)?;
-    let mut commands = Vec::new();
-
-    for line in content.lines().filter(|line| !line.trim().is_empty()) {
-        match Command::parse(line).into_result() {
-            Ok(cmd) => {
-                commands.push(cmd);
-            }
-            Err(parse_errs) => {
-                use ariadne::{Color, Label, Report, ReportKind, Source};
-
-                for err in parse_errs {
-                    // EmptyErr doesn't have span or other info
-                    let span_range = 0..line.len();
-                    Report::build(ReportKind::Error, ("input", span_range.clone()))
-                        .with_code(3)
-                        .with_message(format!("Parse error: {}", err))
-                        .with_label(
-                            Label::new(("input", span_range))
-                                .with_message("parsing failed here")
-                                .with_color(Color::Red),
-                        )
-                        .finish()
-                        .eprint(("input", Source::from(&line)))
-                        .unwrap();
-                }
-            }
-        }
-    }
-
-    Ok(commands)
 }

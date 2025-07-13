@@ -1,7 +1,7 @@
 use std::sync::mpsc::{self};
 
 use crate::adapters::midi::{MidiAdapter, MidiCommand};
-use crate::cmd::Command;
+use crate::cmd::{Command, ExecutorCommand, ObjectCommand};
 use crate::error::Result;
 use crate::showfile::MidiConfiguration;
 
@@ -25,15 +25,15 @@ impl Adapters {
 
         for midi_message in self.rx.try_iter().collect::<Vec<_>>() {
             let cmd = match midi_message {
-                MidiCommand::ExecutorButtonPress { executor_id } => {
-                    crate::cmd!(&format!("executor {executor_id} button press"))
-                }
-                MidiCommand::ExecutorButtonRelease { executor_id } => {
-                    crate::cmd!(&format!("executor {executor_id} button release"))
-                }
-                MidiCommand::ExecutorFaderSetValue { executor_id, value } => {
-                    crate::cmd!(&format!("executor {executor_id} fader level {value:?}"))
-                }
+                MidiCommand::ExecutorButtonPress { executor_id } => Command::Object(
+                    ObjectCommand::Executor(executor_id, ExecutorCommand::ButtonPress),
+                ),
+                MidiCommand::ExecutorButtonRelease { executor_id } => Command::Object(
+                    ObjectCommand::Executor(executor_id, ExecutorCommand::ButtonRelease),
+                ),
+                MidiCommand::ExecutorFaderSetLevel { executor_id, level } => Command::Object(
+                    ObjectCommand::Executor(executor_id, ExecutorCommand::FaderSetLevel { level }),
+                ),
             };
             commands.push(cmd);
         }

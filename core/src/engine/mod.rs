@@ -196,11 +196,6 @@ impl Engine {
             self.show.video_presets.insert(video_preset.id(), video_preset);
         }
 
-        // Run init commands.
-        for cmd in showfile.init_commands() {
-            self.exec_cmd(cmd.clone()).context("failed to run init command")?;
-        }
-
         self.output_pipeline.clear_unresolved();
 
         Ok(())

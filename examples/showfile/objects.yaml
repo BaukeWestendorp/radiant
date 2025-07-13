@@ -177,6 +177,8 @@ dimmer_presets:
       attribute_values:
         Dimmer: 0.0
       filter: Dimmer
+position_presets:
+gobo_presets:
 color_presets:
   - id: 1
     name: "White"
@@ -321,3 +323,8 @@ color_presets:
         ColorSub_M: 0.2
         ColorSub_Y: 0.0
       filter: Color
+beam_presets:
+focus_presets:
+shapers_presets:
+control_presets:
+video_presets:

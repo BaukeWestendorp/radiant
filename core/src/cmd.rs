@@ -7,26 +7,11 @@
 //! module also provides parsing utilities and command variants for all
 //! supported operations.
 
-use chumsky::Parser;
-
 use crate::object::{
     AnyObjectId, AnyPresetId, CueId, ExecutorButtonMode, ExecutorFaderMode, ExecutorId,
     FixtureGroupId, Recipe, SequenceId,
 };
 use crate::patch::{Attribute, AttributeValue, DmxMode, FixtureId};
-
-mod parser;
-
-/// Parses a string into a [Command].
-///
-/// # Panic
-/// This will panic if the provided command is not valid.
-#[macro_export]
-macro_rules! cmd {
-    ($cmd_str:expr) => {
-        $crate::cmd::Command::parse($cmd_str).into_result().expect("failed to parse command")
-    };
-}
 
 /// The interface between the engine and the backend.
 #[derive(Debug, Clone, PartialEq)]
@@ -57,15 +42,6 @@ pub enum Command {
 
     /// Modify an object.
     Object(ObjectCommand),
-}
-
-impl Command {
-    /// Parse a [Command] from from a textual representation.
-    pub fn parse<'src>(
-        input: &'src str,
-    ) -> chumsky::ParseResult<Command, chumsky::error::Rich<'src, char>> {
-        parser::parser().parse(input)
-    }
 }
 
 /// A sub-command to modify the [Patch][crate::patch::Patch].

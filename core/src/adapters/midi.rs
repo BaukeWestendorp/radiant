@@ -133,10 +133,10 @@ fn get_midi_commands(message: &[u8], config: &MidiConfiguration) -> Vec<MidiComm
                     if msg == data1 {
                         let cmd = match status {
                             NOTE_ON => {
-                                Some(MidiCommand::ExecutorFaderSetValue { executor_id, value: 1.0 })
+                                Some(MidiCommand::ExecutorFaderSetLevel { executor_id, level: 1.0 })
                             }
                             NOTE_OFF => {
-                                Some(MidiCommand::ExecutorFaderSetValue { executor_id, value: 0.0 })
+                                Some(MidiCommand::ExecutorFaderSetLevel { executor_id, level: 0.0 })
                             }
                             _ => None,
                         };
@@ -147,7 +147,10 @@ fn get_midi_commands(message: &[u8], config: &MidiConfiguration) -> Vec<MidiComm
                     if msg == data1 {
                         let value = data2 as f32 / 127.0;
                         let cmd = match status {
-                            CC => Some(MidiCommand::ExecutorFaderSetValue { executor_id, value }),
+                            CC => Some(MidiCommand::ExecutorFaderSetLevel {
+                                executor_id,
+                                level: value,
+                            }),
                             _ => None,
                         };
                         commands.extend(cmd);
@@ -171,5 +174,5 @@ pub enum MidiCommand {
     /// Virtually release an executor button.
     ExecutorButtonRelease { executor_id: ExecutorId },
     /// Sets the value of an executor fader.
-    ExecutorFaderSetValue { executor_id: ExecutorId, value: f32 },
+    ExecutorFaderSetLevel { executor_id: ExecutorId, level: f32 },
 }
