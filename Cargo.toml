@@ -1,5 +1,5 @@
 [workspace]
-members = [ "app","core", "dmx", "headless"]
+members = ["app", "radiant", "dmx", "headless"]
 resolver = "3"
 
 [workspace.package]
@@ -7,7 +7,7 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace.dependencies]
-radiant-core = { path = "./core" }
+radiant = { path = "./radiant" }
 dmx = { path = "./dmx" }
 
 derive_more = { version = "2.0.1", features = ["full"] }

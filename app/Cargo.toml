@@ -4,6 +4,5 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-radiant_core.workspace = true
-
 gpui = { git = "https://github.com/zed-industries/zed", rev = "1e67e30" }
+radiant.workspace = true

@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use eyre::Context;
-use radiant_core::showfile::Showfile;
+use radiant::showfile::Showfile;
 
 mod app;
 

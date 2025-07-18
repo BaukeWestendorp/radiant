@@ -1,4 +1,4 @@
-//! `radiant_core` is the headless backend for Radiant.
+//! `radiant` is the backend for any Radiant frontend.
 //!
 //! This crate provides the core logic, data structures, and engine for the
 //! Radiant lighting control system. It is frontend-agnostic and designed to be
