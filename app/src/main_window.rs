@@ -8,11 +8,14 @@ use gpui::{
 };
 
 use crate::app::AppState;
+use crate::attribute_editor::AttributeEditor;
 use crate::error::Result;
 use crate::ui::{ActiveTheme, InteractiveColor, root, titlebar};
 
 pub struct MainWindow {
     io_status: Entity<IoStatusIndicators>,
+
+    attribute_editor: Entity<AttributeEditor>,
 }
 
 impl MainWindow {
@@ -29,8 +32,11 @@ impl MainWindow {
             ..Default::default()
         };
 
-        cx.open_window(window_options, |_, cx| {
-            cx.new(|cx| Self { io_status: cx.new(IoStatusIndicators::new) })
+        cx.open_window(window_options, |window, cx| {
+            cx.new(|cx| Self {
+                io_status: cx.new(IoStatusIndicators::new),
+                attribute_editor: cx.new(|cx| AttributeEditor::new(window, cx)),
+            })
         })
         .map_err(|err| eyre::eyre!(err))
         .context("failed to open main window")
@@ -51,7 +57,7 @@ impl Render for MainWindow {
             .child(self.io_status.clone())
             .pr(crate::ui::TRAFFIC_LIGHT_POSITION.x);
 
-        let content = div().size_full();
+        let content = div().size_full().child(self.attribute_editor.clone());
 
         root(cx)
             .flex()

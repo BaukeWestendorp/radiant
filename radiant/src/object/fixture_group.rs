@@ -1,4 +1,6 @@
-use crate::patch::FixtureId;
+use std::collections::HashSet;
+
+use crate::patch::{Attribute, FixtureId, Patch};
 
 super::define_object_id!(FixtureGroupId);
 
@@ -53,5 +55,20 @@ impl FixtureGroup {
     /// Returns `true` if the group contains the specified fixture.
     pub fn contains(&self, fixture_id: &FixtureId) -> bool {
         self.fixtures.contains(fixture_id)
+    }
+
+    /// Returns all unique attributes that are supported by each fixture type in
+    /// the [FixtureGroup].
+    pub fn supported_attributes<'a>(&self, patch: &'a Patch) -> Vec<&'a Attribute> {
+        let mut attrs = HashSet::new();
+
+        for fid in self.fixtures() {
+            let Some(fixture) = patch.fixture(*fid) else { continue };
+            attrs.extend(fixture.supported_attributes());
+        }
+
+        let mut attrs = attrs.into_iter().collect::<Vec<_>>();
+        attrs.sort();
+        attrs
     }
 }
