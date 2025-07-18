@@ -6,3 +6,4 @@ edition.workspace = true
 [dependencies]
 gpui = { git = "https://github.com/zed-industries/zed", rev = "1e67e30" }
 radiant.workspace = true
+smallvec = "1.15.1"
