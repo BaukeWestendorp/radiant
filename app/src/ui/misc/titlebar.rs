@@ -3,8 +3,8 @@ use gpui::{App, Div, Pixels, Point, Stateful, Window, div, px};
 
 use crate::ui::ActiveTheme;
 
-pub const TRAFFIC_LIGHT_PADDING: Pixels = px(71.0);
-pub const TRAFFIC_LIGHT_POSITION: Point<Pixels> = Point::new(px(9.0), px(9.0));
+pub const TRAFFIC_LIGHT_PADDING: Pixels = px(69.0);
+pub const TRAFFIC_LIGHT_POSITION: Point<Pixels> = Point::new(px(8.0), px(8.0));
 
 pub fn titlebar(window: &Window, cx: &App) -> Stateful<Div> {
     let titlebar_height = (1.75 * window.rem_size()).max(px(34.));

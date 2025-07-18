@@ -39,7 +39,10 @@ pub struct Engine {
     /// Handles all DMX protocol interaction.
     protocols: protocols::Protocols,
 
+    /// Handles all user input.
     adapters: adapters::Adapters,
+
+    io_status: IoStatus,
 
     start_time: Instant,
     frame: usize,
@@ -67,6 +70,9 @@ impl Engine {
             output_pipeline,
             protocols,
             adapters,
+
+            io_status: IoStatus::default(),
+
             start_time: Instant::now(),
             frame: 0,
             last_dmx_resolution: Instant::now(),
@@ -105,6 +111,7 @@ impl Engine {
         dmx_resolver::resolve(self.uptime(), &mut self.output_pipeline, &mut self.show);
 
         self.protocols.update_dmx_output(self.output_pipeline.resolved_multiverse());
+        self.io_status.last_dmx_output = Some(Instant::now());
 
         let resolution_delay = self.last_dmx_resolution.elapsed();
         log::debug!("DMX resolution delay: {:?}", resolution_delay);
@@ -123,6 +130,7 @@ impl Engine {
         let commands = self.adapters.handle_input()?;
         for cmd in commands {
             self.exec_cmd(cmd)?;
+            self.io_status.last_adapter_input = Some(Instant::now());
         }
         Ok(())
     }
@@ -135,6 +143,11 @@ impl Engine {
     /// The amount of time the engine has been running.
     pub fn uptime(&self) -> EngineUptime {
         EngineUptime { frames: self.frame, duration: self.start_time.elapsed() }
+    }
+
+    /// Get information about the latest in- and output data.
+    pub fn io_status(&self) -> &IoStatus {
+        &self.io_status
     }
 
     fn initialize_show(&mut self, showfile: Showfile) -> Result<()> {
@@ -227,5 +240,24 @@ impl EngineUptime {
     /// Returns the total elapsed duration since the engine started.
     pub fn duration(&self) -> Duration {
         self.duration
+    }
+}
+
+/// Contains information about the latest in- and output events.
+#[derive(Default)]
+pub struct IoStatus {
+    last_dmx_output: Option<Instant>,
+    last_adapter_input: Option<Instant>,
+}
+
+impl IoStatus {
+    /// Returns the timestamp of the most recent DMX output event, if any.
+    pub fn last_dmx_output(&self) -> Option<Instant> {
+        self.last_dmx_output
+    }
+
+    /// Returns the timestamp of the most recent adapter input event, if any.
+    pub fn last_adapter_input(&self) -> Option<Instant> {
+        self.last_adapter_input
     }
 }

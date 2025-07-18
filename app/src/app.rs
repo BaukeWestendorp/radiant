@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use gpui::{App, AppContext, Application, AsyncWindowContext, Global, Timer, UpdateGlobal};
+use gpui::{App, Application, Global, Timer, UpdateGlobal};
 use radiant::engine::{DMX_OUTPUT_UPDATE_INTERVAL, Engine};
 use radiant::showfile::Showfile;
 
