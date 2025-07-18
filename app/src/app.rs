@@ -1,49 +1,57 @@
-use gpui::prelude::*;
-use gpui::{
-    App, Application, Bounds, Context, TitlebarOptions, Window, WindowBounds, WindowOptions, div,
-    px, size,
-};
+use std::path::PathBuf;
 
-use crate::ui::{ActiveTheme, root, titlebar};
+use gpui::{App, AppContext, Application, AsyncWindowContext, Global, Timer, UpdateGlobal};
+use radiant::engine::{DMX_OUTPUT_UPDATE_INTERVAL, Engine};
+use radiant::showfile::Showfile;
 
-struct MainWindowView {}
+use crate::main_window::MainWindow;
 
-impl Render for MainWindowView {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let titlebar = titlebar(window, cx);
-        let content = div().size_full();
-
-        root(cx)
-            .flex()
-            .flex_col()
-            .size_full()
-            .bg(cx.theme().colors.bg_primary)
-            .child(titlebar)
-            .child(content)
-    }
+pub struct AppState {
+    pub engine: Engine,
 }
 
-pub fn run() {
-    Application::new().run(|cx: &mut App| {
-        crate::ui::init(cx);
+impl Global for AppState {}
 
+pub fn run(showfile_path: Option<PathBuf>) {
+    Application::new().run(move |cx: &mut App| {
         cx.activate(true);
 
-        let bounds = Bounds::centered(None, size(px(500.0), px(500.0)), cx);
-        cx.open_window(
-            WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(bounds)),
-                titlebar: Some(TitlebarOptions {
-                    title: Some("Radiant".into()),
-                    appears_transparent: true,
-                    traffic_light_position: Some(crate::ui::TRAFFIC_LIGHT_POSITION),
-                }),
+        crate::ui::init(cx);
 
-                app_id: Some("radiant".to_string()),
-                ..Default::default()
-            },
-            |_, cx| cx.new(|_| MainWindowView {}),
-        )
-        .unwrap();
+        let showfile = match showfile_path {
+            Some(path) => Showfile::load(&path).expect("failed to load showfile"),
+            None => Showfile::default(),
+        };
+
+        // Start DMX resolver.
+        cx.spawn(async move |cx| {
+            loop {
+                cx.update(|cx| AppState::update_global(cx, |state, _| state.engine.resolve_dmx()))
+                    .map_err(|err| log::error!("failed to resolve dmx: {err}"))
+                    .ok();
+
+                Timer::interval(DMX_OUTPUT_UPDATE_INTERVAL).await;
+            }
+        })
+        .detach();
+
+        // Start adapter input handler.
+        cx.spawn(async move |cx| {
+            loop {
+                cx.update(|cx| {
+                    AppState::update_global(cx, |state, _| state.engine.handle_adapter_input())
+                })
+                .map_err(|err| log::error!("failed to handle adapter input: {err}"))
+                .ok();
+
+                Timer::after(DMX_OUTPUT_UPDATE_INTERVAL).await;
+            }
+        })
+        .detach();
+
+        let engine = Engine::new(showfile).expect("failed to create engine");
+        cx.set_global(AppState { engine });
+
+        MainWindow::open(cx).expect("failed to open main window");
     });
 }

@@ -7,12 +7,12 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace.dependencies]
-radiant = { path = "./radiant" }
+clap = { version = "4.5.40", features = ["derive"] }
 dmx = { path = "./dmx" }
-
 derive_more = { version = "2.0.1", features = ["full"] }
 eyre = "0.6.12"
 log = "0.4.27"
+radiant = { path = "./radiant" }
 serde = { version = "1.0.219", features = ["derive"] }
 simple_logger = "5.0.0"
 spin_sleep = "1.3.2"

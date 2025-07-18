@@ -43,6 +43,7 @@ pub struct Engine {
 
     start_time: Instant,
     frame: usize,
+    last_dmx_resolution: Instant,
 }
 
 impl Engine {
@@ -68,6 +69,7 @@ impl Engine {
             adapters,
             start_time: Instant::now(),
             frame: 0,
+            last_dmx_resolution: Instant::now(),
         };
 
         this.initialize_show(showfile).wrap_err("failed to initialize show")?;
@@ -104,7 +106,11 @@ impl Engine {
 
         self.protocols.update_dmx_output(self.output_pipeline.resolved_multiverse());
 
+        let resolution_delay = self.last_dmx_resolution.elapsed();
+        log::debug!("DMX resolution delay: {:?}", resolution_delay);
+
         self.frame += 1;
+        self.last_dmx_resolution = Instant::now();
     }
 
     /// Gets the resolved output [dmx::Multiverse].
