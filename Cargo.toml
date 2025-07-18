@@ -1,5 +1,5 @@
 [workspace]
-members = ["core", "dmx", "headless"]
+members = [ "app","core", "dmx", "headless"]
 resolver = "3"
 
 [workspace.package]
