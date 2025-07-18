@@ -1,0 +1,12 @@
+[package]
+name = "headless"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+simple_logger.workspace = true
+eyre.workspace = true
+log.workspace = true
+radiant-core.workspace = true
+spin_sleep.workspace = true
+clap = { version = "4.5.40", features = ["derive"] }

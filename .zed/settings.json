@@ -1,0 +1,25 @@
+{
+  "lsp": {
+    "yaml-language-server": {
+      "settings": {
+        "yaml": {
+          "customTags": [
+            "!Unicast mapping",
+            "!ControlChange scalar",
+            "!Universal mapping",
+            "!Selective mapping",
+            "!Dimmer scalar",
+            "!Position scalar",
+            "!Gobo scalar",
+            "!Color scalar",
+            "!Beam scalar",
+            "!Focus scalar",
+            "!Shapers scalar",
+            "!Control scalar",
+            "!Video scalar"
+          ]
+        }
+      }
+    }
+  }
+}

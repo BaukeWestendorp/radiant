@@ -1,0 +1,53 @@
+midi:
+  active_devices: ["1931545623"]
+  actions:
+    executors:
+      1:
+        button:
+          channel: 0
+          msg: !ControlChange 64
+        fader:
+          channel: 0
+          msg: !ControlChange 0
+      2:
+        button:
+          channel: 0
+          msg: !ControlChange 65
+        fader:
+          channel: 0
+          msg: !ControlChange 1
+      3:
+        button:
+          channel: 0
+          msg: !ControlChange 66
+        fader:
+          channel: 0
+          msg: !ControlChange 2
+      4:
+        button:
+          channel: 0
+          msg: !ControlChange 67
+        fader:
+          channel: 0
+          msg: !ControlChange 3
+      5:
+        button:
+          channel: 0
+          msg: !ControlChange 68
+        fader:
+          channel: 0
+          msg: !ControlChange 4
+      6:
+        button:
+          channel: 0
+          msg: !ControlChange 69
+        fader:
+          channel: 0
+          msg: !ControlChange 5
+      401:
+        button:
+          channel: 0
+          msg: !ControlChange 71
+        fader:
+          channel: 0
+          msg: !ControlChange 7

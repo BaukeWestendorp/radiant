@@ -1,0 +1,58 @@
+sacn:
+  sources:
+    - name: "sACN Universe 1"
+      local_universes: [1]
+      destination_universe: 1
+      priority: 100
+      preview_data: false
+      type: !Unicast
+        destination_ip: "192.168.1.88"
+    - name: "sACN Universe 2"
+      local_universes: [2]
+      destination_universe: 2
+      priority: 100
+      preview_data: false
+      type: !Unicast
+        destination_ip: "192.168.1.88"
+    - name: "sACN Universe 3"
+      local_universes: [3]
+      destination_universe: 3
+      priority: 100
+      preview_data: false
+      type: !Unicast
+        destination_ip: "192.168.1.88"
+    - name: "sACN Universe 4"
+      local_universes: [4]
+      destination_universe: 4
+      priority: 100
+      preview_data: false
+      type: !Unicast
+        destination_ip: "192.168.1.88"
+    - name: "sACN Universe 5"
+      local_universes: [5]
+      destination_universe: 5
+      priority: 100
+      preview_data: false
+      type: !Unicast
+        destination_ip: "192.168.1.88"
+    - name: "sACN Universe 6"
+      local_universes: [6]
+      destination_universe: 6
+      priority: 100
+      preview_data: false
+      type: !Unicast
+        destination_ip: "192.168.1.88"
+    - name: "sACN Universe 7"
+      local_universes: [7]
+      destination_universe: 7
+      priority: 100
+      preview_data: false
+      type: !Unicast
+        destination_ip: "192.168.1.88"
+    - name: "sACN Universe 8"
+      local_universes: [8]
+      destination_universe: 8
+      priority: 100
+      preview_data: false
+      type: !Unicast
+        destination_ip: "192.168.1.88"

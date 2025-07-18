@@ -1,0 +1,444 @@
+executors:
+  - id: 1
+    name: Wash INT
+    button:
+      mode: Go
+    fader:
+      mode: Master
+      level: 0.0
+    master_level: 0.0
+    sequence_id: 1
+    active_cue_index: 0
+  - id: 2
+    name: Spot INT
+    button:
+      mode: Go
+    fader:
+      mode: Master
+      level: 0.0
+    master_level: 0.0
+    sequence_id: 2
+    active_cue_index: 0
+  - id: 3
+    name: Beam INT
+    button:
+      mode: Go
+    fader:
+      mode: Master
+      level: 0.0
+    master_level: 0.0
+    sequence_id: null
+    active_cue_index: 0
+  - id: 4
+    name: Blinder INT
+    button:
+      mode: Go
+    fader:
+      mode: Master
+      level: 0.0
+    master_level: 0.0
+    sequence_id: 4
+    active_cue_index: 0
+  - id: 5
+    name: Front INT
+    button:
+      mode: Go
+    fader:
+      mode: Master
+      level: 0.0
+    master_level: 0.0
+    sequence_id: 5
+    active_cue_index: 0
+  - id: 6
+    name: Crowd INT
+    button:
+      mode: Go
+    fader:
+      mode: Master
+      level: 0.0
+    master_level: 0.0
+    sequence_id: 6
+    active_cue_index: 0
+  - id: 401
+    name: All COLOR
+    button:
+      mode: Go
+    fader:
+      mode: Master
+      level: 1.0
+    master_level: 1.0
+    sequence_id: 401
+    active_cue_index: 0
+sequences:
+  - id: 1
+    name: Wash INT
+    cues: [1]
+  - id: 2
+    name: Spot INT
+    cues: [2]
+  - id: 3
+    name: Beam INT
+    cues: [3]
+  - id: 4
+    name: Blinder INT
+    cues: [4]
+  - id: 5
+    name: Front INT
+    cues: [5]
+  - id: 6
+    name: Crowd INT
+    cues: [6]
+  - id: 401
+    name: All COLOR
+    cues: [401, 402]
+cues:
+  - id: 1
+    name: Wash INT
+    recipes:
+      - fixture_group: 1
+        content:
+          type: Preset
+          data: !Dimmer 1
+  - id: 2
+    name: Spot INT
+    recipes:
+      - fixture_group: 11
+        content:
+          type: Preset
+          data: !Dimmer 1
+  - id: 3
+    name: Beam INT
+    recipes:
+      - fixture_group: 0
+        content:
+          type: Preset
+          data: !Dimmer 1
+  - id: 4
+    name: Blinder INT
+    recipes:
+      - fixture_group: 21
+        content:
+          type: Preset
+          data: !Dimmer 1
+  - id: 5
+    name: Front INT
+    recipes:
+      - fixture_group: 31
+        content:
+          type: Preset
+          data: !Dimmer 1
+  - id: 6
+    name: Crowd INT
+    recipes:
+      - fixture_group: 41
+        content:
+          type: Preset
+          data: !Dimmer 1
+  - id: 401
+    name: All ORANGE
+    recipes:
+      - fixture_group: 999
+        content:
+          type: Preset
+          data: !Color 3
+  - id: 402
+    name: All FERN
+    recipes:
+      - fixture_group: 999
+        content:
+          type: Preset
+          data: !Color 5
+fixture_groups:
+  - id: 1
+    name: Spot ALL
+    fixtures:
+      [
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+      ]
+  - id: 2
+    name: Spot ODD
+    fixtures: [101, 103, 105, 107, 109, 111, 113, 115]
+  - id: 3
+    name: Spot EVEN
+    fixtures: [101, 104, 106, 108, 110, 112, 114]
+  - id: 0
+    name: NONE
+    fixtures: []
+  - id: 11
+    name: Wash ALL
+    fixtures: [201, 202, 203, 204, 205, 206, 207]
+  - id: 12
+    name: Wash ODD
+    fixtures: [201, 203, 205, 207]
+  - id: 13
+    name: Wash EVEN
+    fixtures: [202, 204, 206]
+  - id: 21
+    name: Blinder ALL
+    fixtures: [401, 402, 403, 404, 405, 406, 407, 408]
+  - id: 22
+    name: Blinder ODD
+    fixtures: [401, 403, 405, 407]
+  - id: 23
+    name: Blinder EVEN
+    fixtures: [402, 404, 406, 408]
+  - id: 31
+    name: Front ALL
+    fixtures: [501, 502, 503, 504, 505, 506]
+  - id: 32
+    name: Front ODD
+    fixtures: [501, 503, 505]
+  - id: 33
+    name: Front EVEN
+    fixtures: [502, 504, 506]
+  - id: 41
+    name: Crowd ALL
+    fixtures: [601, 602, 603, 604, 605]
+  - id: 42
+    name: Crowd ODD
+    fixtures: [601, 603, 605]
+  - id: 43
+    name: Crowd EVEN
+    fixtures: [602, 604]
+  - id: 999
+    name: ALL
+    fixtures:
+      [
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207,
+        401,
+        402,
+        403,
+        404,
+        405,
+        406,
+        407,
+        408,
+        501,
+        502,
+        503,
+        504,
+        505,
+        506,
+        601,
+        602,
+        603,
+        604,
+        605,
+      ]
+dimmer_presets:
+  - id: 1
+    name: 100%
+    content: !Universal
+      attribute_values:
+        Dimmer: 1.0
+      filter: Dimmer
+  - id: 2
+    name: 75%
+    content: !Universal
+      attribute_values:
+        Dimmer: 0.75
+      filter: Dimmer
+  - id: 3
+    name: 50%
+    content: !Universal
+      attribute_values:
+        Dimmer: 0.5
+      filter: Dimmer
+  - id: 4
+    name: 25%
+    content: !Universal
+      attribute_values:
+        Dimmer: 0.25
+      filter: Dimmer
+  - id: 5
+    name: 0%
+    content: !Universal
+      attribute_values:
+        Dimmer: 0.0
+      filter: Dimmer
+position_presets:
+gobo_presets:
+color_presets:
+  - id: 1
+    name: White
+    content: !Universal
+      attribute_values:
+        ColorAdd_R: 1.0
+        ColorAdd_G: 1.0
+        ColorAdd_B: 1.0
+        ColorSub_C: 0.0
+        ColorSub_M: 0.0
+        ColorSub_Y: 0.0
+      filter: Color
+  - id: 2
+    name: Red
+    content: !Universal
+      attribute_values:
+        ColorAdd_R: 1.0
+        ColorAdd_G: 0.0
+        ColorAdd_B: 0.0
+        ColorSub_C: 0.0
+        ColorSub_M: 1.0
+        ColorSub_Y: 1.0
+      filter: Color
+  - id: 3
+    name: Orange
+    content: !Universal
+      attribute_values:
+        ColorAdd_R: 1.0
+        ColorAdd_G: 0.5
+        ColorAdd_B: 0.0
+        ColorSub_C: 0.0
+        ColorSub_M: 0.5
+        ColorSub_Y: 1.0
+      filter: Color
+  - id: 4
+    name: Yellow
+    content: !Universal
+      attribute_values:
+        ColorAdd_R: 1.0
+        ColorAdd_G: 1.0
+        ColorAdd_B: 0.0
+        ColorSub_C: 0.0
+        ColorSub_M: 0.0
+        ColorSub_Y: 1.0
+      filter: Color
+  - id: 5
+    name: Fern
+    content: !Universal
+      attribute_values:
+        ColorAdd_R: 0.5
+        ColorAdd_G: 1.0
+        ColorAdd_B: 0.2
+        ColorSub_C: 0.5
+        ColorSub_M: 0.0
+        ColorSub_Y: 0.8
+      filter: Color
+  - id: 6
+    name: Green
+    content: !Universal
+      attribute_values:
+        ColorAdd_R: 0.0
+        ColorAdd_G: 1.0
+        ColorAdd_B: 0.0
+        ColorSub_C: 1.0
+        ColorSub_M: 0.0
+        ColorSub_Y: 1.0
+      filter: Color
+  - id: 7
+    name: Sea
+    content: !Universal
+      attribute_values:
+        ColorAdd_R: 0.0
+        ColorAdd_G: 1.0
+        ColorAdd_B: 0.5
+        ColorSub_C: 1.0
+        ColorSub_M: 0.0
+        ColorSub_Y: 0.5
+      filter: Color
+  - id: 8
+    name: Cyan
+    content: !Universal
+      attribute_values:
+        ColorAdd_R: 0.0
+        ColorAdd_G: 1.0
+        ColorAdd_B: 1.0
+        ColorSub_C: 1.0
+        ColorSub_M: 0.0
+        ColorSub_Y: 0.0
+      filter: Color
+  - id: 9
+    name: Lavender
+    content: !Universal
+      attribute_values:
+        ColorAdd_R: 0.7
+        ColorAdd_G: 0.5
+        ColorAdd_B: 1.0
+        ColorSub_C: 0.3
+        ColorSub_M: 0.5
+        ColorSub_Y: 0.0
+      filter: Color
+  - id: 10
+    name: Blue
+    content: !Universal
+      attribute_values:
+        ColorAdd_R: 0.0
+        ColorAdd_G: 0.0
+        ColorAdd_B: 1.0
+        ColorSub_C: 1.0
+        ColorSub_M: 1.0
+        ColorSub_Y: 0.0
+      filter: Color
+  - id: 11
+    name: Violet
+    content: !Universal
+      attribute_values:
+        ColorAdd_R: 0.5
+        ColorAdd_G: 0.0
+        ColorAdd_B: 1.0
+        ColorSub_C: 0.5
+        ColorSub_M: 1.0
+        ColorSub_Y: 0.0
+      filter: Color
+  - id: 12
+    name: Magenta
+    content: !Universal
+      attribute_values:
+        ColorAdd_R: 1.0
+        ColorAdd_G: 0.0
+        ColorAdd_B: 0.5
+        ColorSub_C: 0.0
+        ColorSub_M: 1.0
+        ColorSub_Y: 0.5
+      filter: Color
+  - id: 13
+    name: Pink
+    content: !Universal
+      attribute_values:
+        ColorAdd_R: 1.0
+        ColorAdd_G: 0.5
+        ColorAdd_B: 0.7
+        ColorSub_C: 0.0
+        ColorSub_M: 0.5
+        ColorSub_Y: 0.3
+      filter: Color
+beam_presets:
+focus_presets:
+shapers_presets:
+control_presets:
+video_presets:

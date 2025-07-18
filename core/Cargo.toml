@@ -1,0 +1,21 @@
+[package]
+name = "radiant-core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+arrayvec = "0.7.6"
+derive_more.workspace = true
+eyre.workspace = true
+dmx = { workspace = true, features = ["serde"] }
+gdtf = "0.2.0"
+log.workspace = true
+midir = "0.10.1"
+serde.workspace = true
+serde_yaml = "0.9.34"
+socket2 = { version = "0.5.10", features = ["all"] }
+spin_sleep.workspace = true
+thiserror.workspace = true
+uuid = { version = "1.17.0", features = ["v4"] }
+chumsky = "0.10.1"
+ariadne = "0.5.1"
