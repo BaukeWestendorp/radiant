@@ -62,7 +62,7 @@ impl Engine {
             protocols.add_sacn_source(config).wrap_err("failed to add sACN source to engine")?;
         }
 
-        let adapters = adapters::Adapters::new(&showfile.adapters().midi())
+        let adapters = adapters::Adapters::new(showfile.adapters().midi())
             .wrap_err("failed to create adapter handler")?;
 
         let mut this = Self {
@@ -95,7 +95,7 @@ impl Engine {
         // FIXME: Cloning the whole show is extremely cursed.
         let show = &self.show.clone();
         for executor in self.show.executors.values_mut() {
-            executor.manage_state(&show);
+            executor.manage_state(show);
         }
 
         self.output_pipeline = Pipeline::default();
@@ -114,7 +114,7 @@ impl Engine {
         self.io_status.last_dmx_output = Some(Instant::now());
 
         let resolution_delay = self.last_dmx_resolution.elapsed();
-        log::debug!("DMX resolution delay: {:?}", resolution_delay);
+        log::debug!("DMX resolution delay: {resolution_delay:?}");
 
         self.frame += 1;
         self.last_dmx_resolution = Instant::now();

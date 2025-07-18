@@ -107,7 +107,7 @@ where
                         div()
                             .id(row_id)
                             .w_full()
-                            .when(row_ix % 2 == 0, |e| e.bg(alternating_color))
+                            .when(row_ix.is_multiple_of(2), |e| e.bg(alternating_color))
                             .hover(|e| e.bg(cx.theme().colors.bg_tertiary.hovered()))
                             .flex()
                             .on_click({

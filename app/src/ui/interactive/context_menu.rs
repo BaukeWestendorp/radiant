@@ -88,7 +88,7 @@ impl ContextMenu {
         match item {
             ContextMenuItem::Action { label, action, destructive } => {
                 let action = action.boxed_clone();
-                interactive_container(SharedString::new(format!("item-{}", label)), None)
+                interactive_container(SharedString::new(format!("item-{label}")), None)
                     .destructive(*destructive)
                     .cursor_pointer()
                     .mx_1()

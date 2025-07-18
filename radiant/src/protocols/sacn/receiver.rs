@@ -155,11 +155,11 @@ impl Inner {
         loop {
             let packet = match self.recv_packet() {
                 Ok(packet) => {
-                    log::debug!("received packet: {:?}", packet);
+                    log::debug!("received packet: {packet:?}");
                     packet
                 }
                 Err(ReceiverError::InvalidPacket(packet_err)) => {
-                    log::warn!("received invalid packet: {}", packet_err);
+                    log::warn!("received invalid packet: {packet_err}");
                     continue;
                 }
                 Err(ReceiverError::NoData) => {

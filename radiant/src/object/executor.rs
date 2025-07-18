@@ -69,7 +69,7 @@ impl Executor {
     pub fn sequence<'a>(&self, show: &'a Show) -> Option<&'a Sequence> {
         let sequence_id = self.sequence_id?;
         show.sequence(sequence_id).or_else(move || {
-            log::warn!("sequence with id {} not found", sequence_id);
+            log::warn!("sequence with id {sequence_id} not found");
             None
         })
     }

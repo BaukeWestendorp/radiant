@@ -30,7 +30,7 @@ impl MainWindow {
         };
 
         cx.open_window(window_options, |_, cx| {
-            cx.new(|cx| Self { io_status: cx.new(|cx| IoStatusIndicators::new(cx)) })
+            cx.new(|cx| Self { io_status: cx.new(IoStatusIndicators::new) })
         })
         .map_err(|err| eyre::eyre!(err))
         .context("failed to open main window")

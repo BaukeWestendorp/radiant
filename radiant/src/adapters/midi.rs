@@ -33,7 +33,7 @@ impl MidiAdapter {
             "available MIDI port ids: {:?}",
             in_ports.iter().map(|port| port.id()).collect::<Vec<_>>()
         );
-        let ids = config.active_devices().iter().map(Into::into).collect::<Vec<_>>();
+        let ids = config.active_devices().iter().collect::<Vec<_>>();
         let ports = in_ports.iter().filter(|port| ids.contains(&&port.id()));
 
         let mut connections = Vec::new();
@@ -51,7 +51,7 @@ impl MidiAdapter {
             let connection = midi_input
                 .connect(
                     port,
-                    &format!("Radiant MIDI Input ({})", port_name),
+                    &format!("Radiant MIDI Input ({port_name})"),
                     move |_stamp, message, _| {
                         let midi_cmds = get_midi_commands(message, &config);
                         for midi_cmd in midi_cmds {

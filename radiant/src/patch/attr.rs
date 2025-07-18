@@ -1658,7 +1658,7 @@ impl<'de> serde::Deserialize<'de> for Attribute {
                 E: de::Error,
             {
                 Attribute::from_str(v)
-                    .map_err(|_| E::custom(format!("invalid Attribute string: {}", v)))
+                    .map_err(|_| E::custom(format!("invalid Attribute string: {v}")))
             }
         }
 
