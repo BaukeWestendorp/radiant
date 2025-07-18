@@ -18,7 +18,6 @@ pub struct MainWindow {
 impl MainWindow {
     pub fn open(cx: &mut App) -> Result<WindowHandle<MainWindow>> {
         let bounds = Bounds::centered(None, size(px(500.0), px(500.0)), cx);
-
         let window_options = WindowOptions {
             window_bounds: Some(WindowBounds::Windowed(bounds)),
             titlebar: Some(TitlebarOptions {
@@ -26,7 +25,6 @@ impl MainWindow {
                 appears_transparent: true,
                 traffic_light_position: Some(crate::ui::TRAFFIC_LIGHT_POSITION),
             }),
-
             app_id: Some("radiant".to_string()),
             ..Default::default()
         };
@@ -74,7 +72,7 @@ impl IoStatusIndicators {
         cx.spawn(async move |this, cx| {
             loop {
                 cx.update(|cx| cx.notify(this.entity_id())).ok();
-                Timer::after(IoStatusIndicators::INDICATOR_UPDATE_DELAY).await;
+                Timer::after(Self::INDICATOR_UPDATE_DELAY).await;
             }
         })
         .detach();
@@ -85,13 +83,13 @@ impl IoStatusIndicators {
 
 impl Render for IoStatusIndicators {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        fn recent(elapsed: Option<Instant>) -> bool {
+        fn is_recent(elapsed: Option<Instant>) -> bool {
             elapsed
                 .map(|t| t.elapsed() <= IoStatusIndicators::INDICATOR_UPDATE_DELAY)
                 .unwrap_or(false)
         }
 
-        fn indicator(is_recent: bool, color: Hsla) -> Div {
+        fn create_indicator(is_recent: bool, color: Hsla) -> Div {
             let (opacity, border_color) = if is_recent {
                 (1.0, gpui::white().opacity(0.15))
             } else {
@@ -108,9 +106,9 @@ impl Render for IoStatusIndicators {
 
         let io = AppState::global(cx).engine.io_status();
         let adapter_input_indicator =
-            indicator(recent(io.last_adapter_input()), cx.theme().colors.accent);
+            create_indicator(is_recent(io.last_adapter_input()), cx.theme().colors.accent);
         let dmx_output_indicator =
-            indicator(recent(io.last_dmx_output()), cx.theme().colors.accent);
+            create_indicator(is_recent(io.last_dmx_output()), cx.theme().colors.accent);
 
         div()
             .flex()

@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
-use clap::Parser as _;
+use clap::Parser;
 use radiant::error::Result;
 
-#[derive(clap::Parser)]
+#[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Args {
     showfile_path: Option<PathBuf>,

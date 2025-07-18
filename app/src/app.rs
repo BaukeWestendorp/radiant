@@ -15,43 +15,52 @@ impl Global for AppState {}
 pub fn run(showfile_path: Option<PathBuf>) {
     Application::new().run(move |cx: &mut App| {
         cx.activate(true);
-
         crate::ui::init(cx);
 
-        let showfile = match showfile_path {
-            Some(path) => Showfile::load(&path).expect("failed to load showfile"),
-            None => Showfile::default(),
-        };
-
-        // Start DMX resolver.
-        cx.spawn(async move |cx| {
-            loop {
-                cx.update(|cx| AppState::update_global(cx, |state, _| state.engine.resolve_dmx()))
-                    .map_err(|err| log::error!("failed to resolve dmx: {err}"))
-                    .ok();
-
-                Timer::interval(DMX_OUTPUT_UPDATE_INTERVAL).await;
-            }
-        })
-        .detach();
-
-        // Start adapter input handler.
-        cx.spawn(async move |cx| {
-            loop {
-                cx.update(|cx| {
-                    AppState::update_global(cx, |state, _| state.engine.handle_adapter_input())
-                })
-                .map_err(|err| log::error!("failed to handle adapter input: {err}"))
-                .ok();
-
-                Timer::after(DMX_OUTPUT_UPDATE_INTERVAL).await;
-            }
-        })
-        .detach();
-
+        let showfile = load_showfile(showfile_path);
         let engine = Engine::new(showfile).expect("failed to create engine");
         cx.set_global(AppState { engine });
 
+        spawn_dmx_resolver(cx);
+        spawn_adapter_handler(cx);
+
         MainWindow::open(cx).expect("failed to open main window");
     });
+}
+
+fn load_showfile(path: Option<PathBuf>) -> Showfile {
+    match path {
+        Some(path) => Showfile::load(&path).expect("failed to load showfile"),
+        None => Showfile::default(),
+    }
+}
+
+fn spawn_dmx_resolver(cx: &mut App) {
+    cx.spawn(async move |cx| {
+        loop {
+            if let Err(err) =
+                cx.update(|cx| AppState::update_global(cx, |state, _| state.engine.resolve_dmx()))
+            {
+                log::error!("failed to resolve DMX: {err}");
+            }
+
+            Timer::interval(DMX_OUTPUT_UPDATE_INTERVAL).await;
+        }
+    })
+    .detach();
+}
+
+fn spawn_adapter_handler(cx: &mut App) {
+    cx.spawn(async move |cx| {
+        loop {
+            if let Err(err) = cx.update(|cx| {
+                AppState::update_global(cx, |state, _| state.engine.handle_adapter_input())
+            }) {
+                log::error!("failed to handle adapter input: {err}");
+            }
+
+            Timer::after(DMX_OUTPUT_UPDATE_INTERVAL).await;
+        }
+    })
+    .detach();
 }
