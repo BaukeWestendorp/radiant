@@ -72,7 +72,7 @@ impl Fixture {
 
         let gdtf_dmx_mode = fixture_type.dmx_mode(dmx_mode.as_str()).with_context(|| {
             format!(
-                "fried to get dmx mode '{}' for fixture type '{}'",
+                "tried to get dmx mode '{}' for fixture type '{}'",
                 dmx_mode, fixture_type.long_name
             )
         })?;

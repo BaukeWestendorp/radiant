@@ -1,178 +1,292 @@
 executors:
   - id: 1
-    name: "Wash Intensity"
+    name: Wash INT
     button:
       mode: Go
     fader:
       mode: Master
-      level: 1.0
-    master_level: 1.0
+      level: 0.0
+    master_level: 0.0
     sequence_id: 1
     active_cue_index: 0
-  - id: 11
-    name: "Color Cycle"
+  - id: 2
+    name: Spot INT
+    button:
+      mode: Go
+    fader:
+      mode: Master
+      level: 0.0
+    master_level: 0.0
+    sequence_id: 2
+    active_cue_index: 0
+  - id: 3
+    name: Beam INT
+    button:
+      mode: Go
+    fader:
+      mode: Master
+      level: 0.0
+    master_level: 0.0
+    sequence_id: null
+    active_cue_index: 0
+  - id: 4
+    name: Blinder INT
+    button:
+      mode: Go
+    fader:
+      mode: Master
+      level: 0.0
+    master_level: 0.0
+    sequence_id: 4
+    active_cue_index: 0
+  - id: 5
+    name: Front INT
+    button:
+      mode: Go
+    fader:
+      mode: Master
+      level: 0.0
+    master_level: 0.0
+    sequence_id: 5
+    active_cue_index: 0
+  - id: 6
+    name: Crowd INT
+    button:
+      mode: Go
+    fader:
+      mode: Master
+      level: 0.0
+    master_level: 0.0
+    sequence_id: 6
+    active_cue_index: 0
+  - id: 401
+    name: All COLOR
     button:
       mode: Go
     fader:
       mode: Master
       level: 1.0
     master_level: 1.0
-    sequence_id: 11
-    active_cue_index: 6
+    sequence_id: 401
+    active_cue_index: 0
 sequences:
   - id: 1
-    name: "Wash Intensity"
-    cues: [1, 2]
-  - id: 11
-    name: "Color Cycle"
-    cues: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+    name: Wash INT
+    cues: [1]
+  - id: 2
+    name: Spot INT
+    cues: [2]
+  - id: 3
+    name: Beam INT
+    cues: [3]
+  - id: 4
+    name: Blinder INT
+    cues: [4]
+  - id: 5
+    name: Front INT
+    cues: [5]
+  - id: 6
+    name: Crowd INT
+    cues: [6]
+  - id: 401
+    name: All COLOR
+    cues: [401, 402]
 cues:
   - id: 1
-    name: "Wash 100%"
+    name: Wash INT
     recipes:
       - fixture_group: 1
         content:
           type: Preset
           data: !Dimmer 1
   - id: 2
-    name: "Wash 100% Strobe 100%"
+    name: Spot INT
     recipes:
-      - fixture_group: 1
+      - fixture_group: 11
         content:
           type: Preset
           data: !Dimmer 1
-        level_effect:
-          time_type: Frames
-          curve: Step
-          keyframes:
-            - time: 0
-              value: 0.0
-            - time: 1
-              value: 1.0
-            - time: 2
-              value: 0.0
-  - id: 11
-    name: "Wash White"
+  - id: 3
+    name: Beam INT
     recipes:
-      - fixture_group: 1
+      - fixture_group: 0
         content:
           type: Preset
-          data: !Color 1
-  - id: 12
-    name: "Wash Red"
+          data: !Dimmer 1
+  - id: 4
+    name: Blinder INT
     recipes:
-      - fixture_group: 1
+      - fixture_group: 21
         content:
           type: Preset
-          data: !Color 2
-  - id: 13
-    name: "Wash Orange"
+          data: !Dimmer 1
+  - id: 5
+    name: Front INT
     recipes:
-      - fixture_group: 1
+      - fixture_group: 31
+        content:
+          type: Preset
+          data: !Dimmer 1
+  - id: 6
+    name: Crowd INT
+    recipes:
+      - fixture_group: 41
+        content:
+          type: Preset
+          data: !Dimmer 1
+  - id: 401
+    name: All ORANGE
+    recipes:
+      - fixture_group: 999
         content:
           type: Preset
           data: !Color 3
-  - id: 14
-    name: "Wash Yellow"
+  - id: 402
+    name: All FERN
     recipes:
-      - fixture_group: 1
-        content:
-          type: Preset
-          data: !Color 4
-  - id: 15
-    name: "Wash Fern"
-    recipes:
-      - fixture_group: 1
+      - fixture_group: 999
         content:
           type: Preset
           data: !Color 5
-  - id: 16
-    name: "Wash Green"
-    recipes:
-      - fixture_group: 1
-        content:
-          type: Preset
-          data: !Color 6
-  - id: 17
-    name: "Wash Sea"
-    recipes:
-      - fixture_group: 1
-        content:
-          type: Preset
-          data: !Color 7
-  - id: 18
-    name: "Wash Cyan"
-    recipes:
-      - fixture_group: 1
-        content:
-          type: Preset
-          data: !Color 8
-  - id: 19
-    name: "Wash Lavendar"
-    recipes:
-      - fixture_group: 1
-        content:
-          type: Preset
-          data: !Color 9
-  - id: 20
-    name: "Wash Blue"
-    recipes:
-      - fixture_group: 1
-        content:
-          type: Preset
-          data: !Color 10
-  - id: 21
-    name: "Wash Violet"
-    recipes:
-      - fixture_group: 1
-        content:
-          type: Preset
-          data: !Color 11
-  - id: 22
-    name: "Wash Magenta"
-    recipes:
-      - fixture_group: 1
-        content:
-          type: Preset
-          data: !Color 12
-  - id: 23
-    name: "Wash Pink"
-    recipes:
-      - fixture_group: 1
-        content:
-          type: Preset
-          data: !Color 13
 fixture_groups:
   - id: 1
-    name: "All"
-    fixtures: [1, 2, 3, 4, 5, 6, 7, 8]
+    name: Spot ALL
+    fixtures:
+      [
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+      ]
+  - id: 2
+    name: Spot ODD
+    fixtures: [101, 103, 105, 107, 109, 111, 113, 115]
+  - id: 3
+    name: Spot EVEN
+    fixtures: [101, 104, 106, 108, 110, 112, 114]
+  - id: 0
+    name: NONE
+    fixtures: []
+  - id: 11
+    name: Wash ALL
+    fixtures: [201, 202, 203, 204, 205, 206, 207]
+  - id: 12
+    name: Wash ODD
+    fixtures: [201, 203, 205, 207]
+  - id: 13
+    name: Wash EVEN
+    fixtures: [202, 204, 206]
+  - id: 21
+    name: Blinder ALL
+    fixtures: [401, 402, 403, 404, 405, 406, 407, 408]
+  - id: 22
+    name: Blinder ODD
+    fixtures: [401, 403, 405, 407]
+  - id: 23
+    name: Blinder EVEN
+    fixtures: [402, 404, 406, 408]
+  - id: 31
+    name: Front ALL
+    fixtures: [501, 502, 503, 504, 505, 506]
+  - id: 32
+    name: Front ODD
+    fixtures: [501, 503, 505]
+  - id: 33
+    name: Front EVEN
+    fixtures: [502, 504, 506]
+  - id: 41
+    name: Crowd ALL
+    fixtures: [601, 602, 603, 604, 605]
+  - id: 42
+    name: Crowd ODD
+    fixtures: [601, 603, 605]
+  - id: 43
+    name: Crowd EVEN
+    fixtures: [602, 604]
+  - id: 999
+    name: ALL
+    fixtures:
+      [
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207,
+        401,
+        402,
+        403,
+        404,
+        405,
+        406,
+        407,
+        408,
+        501,
+        502,
+        503,
+        504,
+        505,
+        506,
+        601,
+        602,
+        603,
+        604,
+        605,
+      ]
 dimmer_presets:
   - id: 1
-    name: "100%"
+    name: 100%
     content: !Universal
       attribute_values:
         Dimmer: 1.0
       filter: Dimmer
   - id: 2
-    name: "75%"
+    name: 75%
     content: !Universal
       attribute_values:
         Dimmer: 0.75
       filter: Dimmer
   - id: 3
-    name: "50%"
+    name: 50%
     content: !Universal
       attribute_values:
         Dimmer: 0.5
       filter: Dimmer
   - id: 4
-    name: "25%"
+    name: 25%
     content: !Universal
       attribute_values:
         Dimmer: 0.25
       filter: Dimmer
   - id: 5
-    name: "0%"
+    name: 0%
     content: !Universal
       attribute_values:
         Dimmer: 0.0
@@ -181,7 +295,7 @@ position_presets:
 gobo_presets:
 color_presets:
   - id: 1
-    name: "White"
+    name: White
     content: !Universal
       attribute_values:
         ColorAdd_R: 1.0
@@ -192,136 +306,136 @@ color_presets:
         ColorSub_Y: 0.0
       filter: Color
   - id: 2
-    name: "Red"
+    name: Red
     content: !Universal
       attribute_values:
         ColorAdd_R: 1.0
         ColorAdd_G: 0.0
         ColorAdd_B: 0.0
-        ColorSub_C: 1.0
-        ColorSub_M: 0.0
-        ColorSub_Y: 0.0
+        ColorSub_C: 0.0
+        ColorSub_M: 1.0
+        ColorSub_Y: 1.0
       filter: Color
   - id: 3
-    name: "Orange"
+    name: Orange
     content: !Universal
       attribute_values:
         ColorAdd_R: 1.0
         ColorAdd_G: 0.5
         ColorAdd_B: 0.0
-        ColorSub_C: 0.5
-        ColorSub_M: 0.2
-        ColorSub_Y: 0.0
+        ColorSub_C: 0.0
+        ColorSub_M: 0.5
+        ColorSub_Y: 1.0
       filter: Color
   - id: 4
-    name: "Yellow"
+    name: Yellow
     content: !Universal
       attribute_values:
         ColorAdd_R: 1.0
         ColorAdd_G: 1.0
         ColorAdd_B: 0.0
         ColorSub_C: 0.0
-        ColorSub_M: 1.0
-        ColorSub_Y: 0.0
+        ColorSub_M: 0.0
+        ColorSub_Y: 1.0
       filter: Color
   - id: 5
-    name: "Fern"
+    name: Fern
     content: !Universal
       attribute_values:
         ColorAdd_R: 0.5
         ColorAdd_G: 1.0
         ColorAdd_B: 0.2
-        ColorSub_C: 0.2
-        ColorSub_M: 0.7
-        ColorSub_Y: 0.0
+        ColorSub_C: 0.5
+        ColorSub_M: 0.0
+        ColorSub_Y: 0.8
       filter: Color
   - id: 6
-    name: "Green"
+    name: Green
     content: !Universal
       attribute_values:
         ColorAdd_R: 0.0
         ColorAdd_G: 1.0
         ColorAdd_B: 0.0
-        ColorSub_C: 0.0
-        ColorSub_M: 1.0
+        ColorSub_C: 1.0
+        ColorSub_M: 0.0
         ColorSub_Y: 1.0
       filter: Color
   - id: 7
-    name: "Sea"
+    name: Sea
     content: !Universal
       attribute_values:
         ColorAdd_R: 0.0
         ColorAdd_G: 1.0
         ColorAdd_B: 0.5
-        ColorSub_C: 0.0
-        ColorSub_M: 0.5
-        ColorSub_Y: 1.0
+        ColorSub_C: 1.0
+        ColorSub_M: 0.0
+        ColorSub_Y: 0.5
       filter: Color
   - id: 8
-    name: "Cyan"
+    name: Cyan
     content: !Universal
       attribute_values:
         ColorAdd_R: 0.0
         ColorAdd_G: 1.0
         ColorAdd_B: 1.0
-        ColorSub_C: 0.0
-        ColorSub_M: 1.0
+        ColorSub_C: 1.0
+        ColorSub_M: 0.0
         ColorSub_Y: 0.0
       filter: Color
   - id: 9
-    name: "Lavender"
+    name: Lavender
     content: !Universal
       attribute_values:
         ColorAdd_R: 0.7
         ColorAdd_G: 0.5
         ColorAdd_B: 1.0
         ColorSub_C: 0.3
-        ColorSub_M: 0.0
-        ColorSub_Y: 0.5
+        ColorSub_M: 0.5
+        ColorSub_Y: 0.0
       filter: Color
   - id: 10
-    name: "Blue"
+    name: Blue
     content: !Universal
       attribute_values:
         ColorAdd_R: 0.0
         ColorAdd_G: 0.0
         ColorAdd_B: 1.0
-        ColorSub_C: 0.0
-        ColorSub_M: 0.0
-        ColorSub_Y: 1.0
+        ColorSub_C: 1.0
+        ColorSub_M: 1.0
+        ColorSub_Y: 0.0
       filter: Color
   - id: 11
-    name: "Violet"
+    name: Violet
     content: !Universal
       attribute_values:
         ColorAdd_R: 0.5
         ColorAdd_G: 0.0
         ColorAdd_B: 1.0
         ColorSub_C: 0.5
-        ColorSub_M: 0.0
-        ColorSub_Y: 1.0
+        ColorSub_M: 1.0
+        ColorSub_Y: 0.0
       filter: Color
   - id: 12
-    name: "Magenta"
+    name: Magenta
     content: !Universal
       attribute_values:
         ColorAdd_R: 1.0
         ColorAdd_G: 0.0
         ColorAdd_B: 0.5
-        ColorSub_C: 1.0
-        ColorSub_M: 0.0
+        ColorSub_C: 0.0
+        ColorSub_M: 1.0
         ColorSub_Y: 0.5
       filter: Color
   - id: 13
-    name: "Pink"
+    name: Pink
     content: !Universal
       attribute_values:
         ColorAdd_R: 1.0
         ColorAdd_G: 0.5
         ColorAdd_B: 0.7
-        ColorSub_C: 0.3
-        ColorSub_M: 0.2
-        ColorSub_Y: 0.0
+        ColorSub_C: 0.0
+        ColorSub_M: 0.5
+        ColorSub_Y: 0.3
       filter: Color
 beam_presets:
 focus_presets:
