@@ -1,10 +1,10 @@
 use gpui::prelude::*;
-use gpui::{EmptyView, Entity, ReadGlobal, Window, div};
+use gpui::{ElementId, Entity, ReadGlobal, Window, div};
 use radiant::object::FixtureGroupId;
 use radiant::patch::{AttributeInfo, FeatureGroup};
 
 use crate::app::AppState;
-use ui::{Disableable, Orientation, Tab, TabView};
+use ui::{Disableable, Orientation, Tab, TabView, button, interactive_container, section};
 
 pub struct AttributeEditor {
     tab_view: Entity<TabView>,
@@ -70,7 +70,7 @@ impl FeatureGroupEditor {
                     Tab::new(
                         attr.to_string(),
                         attr.to_string(),
-                        cx.new(|cx| ChannelSetEditor::new(info, window, cx)).into(),
+                        cx.new(|_| SingleAttributeEditor::new(info)).into(),
                     )
                 })
                 .collect(),
@@ -89,25 +89,28 @@ impl Render for FeatureGroupEditor {
     }
 }
 
-struct ChannelSetEditor {
-    tab_view: Entity<TabView>,
+struct SingleAttributeEditor {
+    attribute_info: AttributeInfo,
 }
 
-impl ChannelSetEditor {
-    pub fn new(attribute_info: AttributeInfo, window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let tabs = attribute_info
-            .channel_sets()
-            .iter()
-            .map(|set| Tab::new(set.name.clone(), set.name.clone(), cx.new(|_| EmptyView).into()))
-            .collect();
-
-        let tab_view = cx.new(|cx| TabView::new(tabs, window, cx));
-        Self { tab_view }
+impl SingleAttributeEditor {
+    pub fn new(attribute_info: AttributeInfo) -> Self {
+        Self { attribute_info }
     }
 }
 
-impl Render for ChannelSetEditor {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().child(self.tab_view.clone())
+impl Render for SingleAttributeEditor {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let channel_set_buttons = div().flex().flex_wrap().gap_1().children(
+            self.attribute_info.channel_sets().iter().map(|set| {
+                button(ElementId::Name(set.name.clone().into()), None, set.name.clone()).on_click({
+                    let from = set.from.clone();
+                    move |_, _, _| {
+                        log::info!("SET CHANNEL SET VALUE AT {:?}", from);
+                    }
+                })
+            }),
+        );
+        div().size_full().p_2().child(section("Channel Sets").child(channel_set_buttons))
     }
 }

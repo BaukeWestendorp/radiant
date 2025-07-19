@@ -302,7 +302,8 @@ impl AttributeInfo {
 pub struct ChannelSet {
     /// The name of the channel set.
     pub name: String,
-    /// The associated value for the channel set.
+    /// The associated dmx channel for the channel set.
+    pub from: AttributeValue,
     pub from: AttributeValue,
 }
 
