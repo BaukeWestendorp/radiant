@@ -4,7 +4,7 @@ use gpui::{
     Pixels, Point, ScrollWheelEvent, Window, div,
 };
 
-use crate::ui::utils::z_stack;
+use crate::utils::z_stack;
 
 pub struct Pannable {
     id: ElementId,

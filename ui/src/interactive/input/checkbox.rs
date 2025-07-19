@@ -1,7 +1,7 @@
 use gpui::prelude::*;
 use gpui::{ClickEvent, ElementId, EventEmitter, Window, div, px};
 
-use crate::ui::{ActiveTheme, Disableable, Selectable, interactive_container};
+use crate::{ActiveTheme, Disableable, Selectable, interactive_container};
 
 pub struct Checkbox {
     id: ElementId,

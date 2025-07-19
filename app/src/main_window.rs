@@ -10,7 +10,7 @@ use gpui::{
 use crate::app::AppState;
 use crate::attribute_editor::AttributeEditor;
 use crate::error::Result;
-use crate::ui::{ActiveTheme, InteractiveColor, root, titlebar};
+use ui::{ActiveTheme, InteractiveColor, root, titlebar};
 
 pub struct MainWindow {
     io_status: Entity<IoStatusIndicators>,
@@ -20,13 +20,13 @@ pub struct MainWindow {
 
 impl MainWindow {
     pub fn open(cx: &mut App) -> Result<WindowHandle<MainWindow>> {
-        let bounds = Bounds::centered(None, size(px(500.0), px(500.0)), cx);
+        let bounds = Bounds::centered(None, size(px(1080.0), px(720.0)), cx);
         let window_options = WindowOptions {
             window_bounds: Some(WindowBounds::Windowed(bounds)),
             titlebar: Some(TitlebarOptions {
                 title: Some("Radiant".into()),
                 appears_transparent: true,
-                traffic_light_position: Some(crate::ui::TRAFFIC_LIGHT_POSITION),
+                traffic_light_position: Some(ui::TRAFFIC_LIGHT_POSITION),
             }),
             app_id: Some("radiant".to_string()),
             ..Default::default()
@@ -55,7 +55,7 @@ impl Render for MainWindow {
             .justify_between()
             .child(div().text_sm().text_color(cx.theme().colors.text.muted()).child(showfile_path))
             .child(self.io_status.clone())
-            .pr(crate::ui::TRAFFIC_LIGHT_POSITION.x);
+            .pr(ui::TRAFFIC_LIGHT_POSITION.x);
 
         let content = div().size_full().child(self.attribute_editor.clone());
 

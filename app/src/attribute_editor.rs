@@ -1,12 +1,10 @@
-use std::collections::HashSet;
-
 use gpui::prelude::*;
 use gpui::{App, Entity, ReadGlobal, Window, div};
 use radiant::object::FixtureGroup;
-use radiant::patch::{FeatureGroup, Fixture};
+use radiant::patch::FeatureGroup;
 
 use crate::app::AppState;
-use crate::ui::{Orientation, Tab, TabView};
+use ui::{Orientation, Tab, TabView};
 
 pub struct AttributeEditor {
     tab_view: Entity<TabView>,
@@ -14,7 +12,7 @@ pub struct AttributeEditor {
 
 impl AttributeEditor {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let mut create_editor = |fg| cx.new(|cx| FeatureGroupEditor::new(fg));
+        let mut create_editor = |fg| cx.new(|_| FeatureGroupEditor::new(fg));
         let tabs = vec![
             Tab::new("dimmer", "Dimmer", create_editor(FeatureGroup::Dimmer).into()),
             Tab::new("position", "Position", create_editor(FeatureGroup::Position).into()),
@@ -40,7 +38,7 @@ impl AttributeEditor {
 }
 
 impl Render for AttributeEditor {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         div().size_full().child(self.tab_view.clone())
     }
 }

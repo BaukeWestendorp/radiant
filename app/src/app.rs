@@ -15,7 +15,7 @@ impl Global for AppState {}
 pub fn run(showfile_path: Option<PathBuf>) {
     Application::new().run(move |cx: &mut App| {
         cx.activate(true);
-        crate::ui::init(cx);
+        ui::init(cx);
 
         let showfile = load_showfile(showfile_path);
         let engine = Engine::new(showfile).expect("failed to create engine");

@@ -1,7 +1,7 @@
 use gpui::prelude::*;
 use gpui::{AnyElement, AnyView, Div, SharedString, Window, div};
 
-use crate::ui::{ActiveTheme, Disableable, Selectable, interactive_container};
+use crate::{ActiveTheme, Disableable, Selectable, interactive_container};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Tab {

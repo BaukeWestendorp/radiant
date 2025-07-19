@@ -1,4 +1,4 @@
-use crate::ui::utils::snap_point;
+use crate::utils::snap_point;
 use gpui::prelude::*;
 use gpui::{
     AnyView, DragMoveEvent, ElementId, EmptyView, EventEmitter, MouseButton, MouseUpEvent, Pixels,

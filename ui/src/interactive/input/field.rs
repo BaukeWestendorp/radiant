@@ -3,7 +3,7 @@ use gpui::{
     App, Context, ElementId, Entity, EventEmitter, FocusHandle, Focusable, SharedString, Window,
 };
 
-use crate::ui::{Disableable, TextInput, TextInputEvent, interactive_container};
+use crate::{Disableable, TextInput, TextInputEvent, interactive_container};
 
 pub struct Field<I: FieldImpl> {
     input: Entity<TextInput>,

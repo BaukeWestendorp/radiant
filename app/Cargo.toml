@@ -6,8 +6,8 @@ edition.workspace = true
 [dependencies]
 clap.workspace = true
 eyre.workspace = true
-gpui = { git = "https://github.com/zed-industries/zed", rev = "1e67e30" }
+gpui.workspace = true
 log.workspace = true
 radiant.workspace = true
 simple_logger.workspace = true
-smallvec = "1.15.1"
+ui.workspace = true

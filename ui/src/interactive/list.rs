@@ -4,7 +4,7 @@ use gpui::prelude::*;
 use gpui::{Div, ElementId, EventEmitter, FocusHandle, SharedString, Window, div, uniform_list};
 use smallvec::SmallVec;
 
-use crate::ui::{ContainerStyle, Selectable, SubmitEvent, interactive_container};
+use crate::{ContainerStyle, Selectable, SubmitEvent, interactive_container};
 
 pub struct List<T> {
     items: SmallVec<[T; 2]>,

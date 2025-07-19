@@ -1,7 +1,7 @@
 use gpui::prelude::*;
 use gpui::{App, Div, Pixels, Point, Stateful, Window, div, px};
 
-use crate::ui::ActiveTheme;
+use crate::ActiveTheme;
 
 pub const TRAFFIC_LIGHT_PADDING: Pixels = px(69.0);
 pub const TRAFFIC_LIGHT_POSITION: Point<Pixels> = Point::new(px(8.0), px(8.0));

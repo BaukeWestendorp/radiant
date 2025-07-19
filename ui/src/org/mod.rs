@@ -1,6 +1,6 @@
 use gpui::{App, Div, Styled, div, px};
 
-use crate::ui::{ActiveTheme, InteractiveColor};
+use crate::{ActiveTheme, InteractiveColor};
 
 mod container;
 mod section;

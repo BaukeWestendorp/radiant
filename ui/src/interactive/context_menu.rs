@@ -1,7 +1,7 @@
 use gpui::prelude::*;
 use gpui::{Action, DismissEvent, EventEmitter, FocusHandle, SharedString, Window, div};
 
-use crate::ui::{ContainerStyle, container, divider, interactive_container};
+use crate::{ContainerStyle, container, divider, interactive_container};
 
 pub enum ContextMenuItem {
     Action { label: SharedString, action: Box<dyn Action>, destructive: bool },

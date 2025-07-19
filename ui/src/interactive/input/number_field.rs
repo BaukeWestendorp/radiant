@@ -5,8 +5,8 @@ use gpui::{
     relative,
 };
 
-use crate::ui::utils::{bounds_updater, z_stack};
-use crate::ui::{
+use crate::utils::{bounds_updater, z_stack};
+use crate::{
     ActiveTheme, Disableable, FieldEvent, TextInput, TextInputEvent, interactive_container,
 };
 
