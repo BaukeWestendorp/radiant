@@ -2058,7 +2058,8 @@ impl FromStr for AttributeValue {
 /// Represents a group of features. For example, the 'Pan' and 'Tilt' attributes
 /// both control the position of a fixture, and so their feature group is
 /// 'Position'.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(derive_more::Display)]
 #[derive(serde::Deserialize)]
 pub enum FeatureGroup {
     /// Dimmer feature group.
@@ -2079,4 +2080,19 @@ pub enum FeatureGroup {
     Shapers,
     /// Video feature group.
     Video,
+}
+
+impl FeatureGroup {
+    /// An array of all [FeatureGroup]s.
+    pub const ALL: [Self; 9] = [
+        Self::Dimmer,
+        Self::Position,
+        Self::Gobo,
+        Self::Color,
+        Self::Beam,
+        Self::Focus,
+        Self::Control,
+        Self::Shapers,
+        Self::Video,
+    ];
 }

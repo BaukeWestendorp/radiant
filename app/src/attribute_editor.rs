@@ -1,29 +1,35 @@
 use gpui::prelude::*;
-use gpui::{App, Entity, ReadGlobal, Window, div};
-use radiant::object::FixtureGroup;
+use gpui::{EmptyView, Entity, ReadGlobal, Window, div};
+use radiant::object::FixtureGroupId;
 use radiant::patch::FeatureGroup;
 
 use crate::app::AppState;
-use ui::{Orientation, Tab, TabView};
+use ui::{Disableable, Orientation, Tab, TabView};
 
 pub struct AttributeEditor {
     tab_view: Entity<TabView>,
 }
 
 impl AttributeEditor {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let mut create_editor = |fg| cx.new(|_| FeatureGroupEditor::new(fg));
-        let tabs = vec![
-            Tab::new("dimmer", "Dimmer", create_editor(FeatureGroup::Dimmer).into()),
-            Tab::new("position", "Position", create_editor(FeatureGroup::Position).into()),
-            Tab::new("gobo", "Gobo", create_editor(FeatureGroup::Gobo).into()),
-            Tab::new("color", "Color", create_editor(FeatureGroup::Color).into()),
-            Tab::new("beam", "Beam", create_editor(FeatureGroup::Beam).into()),
-            Tab::new("focus", "Focus", create_editor(FeatureGroup::Focus).into()),
-            Tab::new("control", "Control", create_editor(FeatureGroup::Control).into()),
-            Tab::new("shapers", "Shapers", create_editor(FeatureGroup::Shapers).into()),
-            Tab::new("video", "Video", create_editor(FeatureGroup::Video).into()),
-        ];
+    pub fn new(
+        fixture_group_id: FixtureGroupId,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
+        let show = AppState::global(cx).engine.show();
+        let fixture_group = show.fixture_group(fixture_group_id);
+        let supported_feature_groups =
+            fixture_group.map(|fg| fg.supported_feature_groups(show.patch())).unwrap_or_default();
+
+        let tabs = FeatureGroup::ALL
+            .into_iter()
+            .map(|fg| {
+                let name = fg.to_string();
+                let editor = cx.new(|cx| FeatureGroupEditor::new(fixture_group_id, fg, window, cx));
+                let has_fg = supported_feature_groups.contains(&fg);
+                Tab::new(name.clone(), name, editor.into()).disabled(!has_fg)
+            })
+            .collect();
 
         Self {
             tab_view: cx.new(|cx| {
@@ -44,30 +50,37 @@ impl Render for AttributeEditor {
 }
 
 struct FeatureGroupEditor {
-    feature_group: FeatureGroup,
+    tab_view: Entity<TabView>,
 }
 
 impl FeatureGroupEditor {
-    pub fn new(feature_group: FeatureGroup) -> Self {
-        Self { feature_group }
-    }
-
-    fn fixture_group<'a>(&self, cx: &'a App) -> &'a FixtureGroup {
+    pub fn new(
+        fixture_group_id: FixtureGroupId,
+        feature_group: FeatureGroup,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
         let show = AppState::global(cx).engine.show();
-        show.fixture_group(1).unwrap()
+        let tabs = match show.fixture_group(fixture_group_id) {
+            Some(fg) => fg
+                .supported_attributes(show.patch())
+                .into_iter()
+                .filter(|attr| attr.feature_group() == Some(feature_group))
+                .map(|attr| {
+                    Tab::new(attr.to_string(), attr.to_string(), cx.new(|_| EmptyView).into())
+                })
+                .collect(),
+            None => Vec::new(),
+        };
+
+        let tab_view = cx.new(|cx| TabView::new(tabs, window, cx));
+
+        Self { tab_view }
     }
 }
 
 impl Render for FeatureGroupEditor {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let show = AppState::global(cx).engine.show();
-
-        let attrs = self
-            .fixture_group(cx)
-            .supported_attributes(show.patch())
-            .into_iter()
-            .filter(|attr| attr.feature_group() == Some(self.feature_group));
-
-        div().children(attrs.map(|attr| format!("{:?}", attr)))
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        div().size_full().child(self.tab_view.clone())
     }
 }

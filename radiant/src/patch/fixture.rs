@@ -1,10 +1,10 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 
 use eyre::ContextCompat;
 
 use crate::error::Result;
-use crate::patch::{Attribute, AttributeValue};
+use crate::patch::{Attribute, AttributeValue, FeatureGroup};
 
 /// A unique id for a [Fixture].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -139,6 +139,17 @@ impl Fixture {
     /// for the current DMX mode.
     pub fn supported_attributes(&self) -> impl Iterator<Item = &Attribute> {
         self.attributes.keys()
+    }
+    /// Returns a vector of all unique [FeatureGroup]s supported by this
+    /// fixture.
+    pub fn supported_feature_groups(&self) -> Vec<FeatureGroup> {
+        let mut set = HashSet::new();
+        for attr in self.supported_attributes() {
+            if let Some(fg) = attr.feature_group() {
+                set.insert(fg);
+            }
+        }
+        set.into_iter().collect()
     }
 
     /// Returns a slice of all DMX modes supported by this fixture.
