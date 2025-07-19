@@ -98,7 +98,20 @@ impl Fixture {
 
                 let attribute = Attribute::from_str(attribute_name).unwrap();
 
-                let info = AttributeInfo { default_value, highlight_value, offset: offset.clone() };
+                let channel_sets = channel_function
+                    .channel_sets
+                    .clone()
+                    .into_iter()
+                    .filter(|set| set.name.as_ref().is_some_and(|name| !name.is_empty()))
+                    .map(ChannelSet::from)
+                    .collect();
+
+                let info = AttributeInfo {
+                    default_value,
+                    highlight_value,
+                    channel_sets,
+                    offset: offset.clone(),
+                };
 
                 attributes.insert(attribute, info);
             }
@@ -137,14 +150,15 @@ impl Fixture {
     ///
     /// The attributes are those defined in the fixture's GDTF definition
     /// for the current DMX mode.
-    pub fn supported_attributes(&self) -> impl Iterator<Item = &Attribute> {
-        self.attributes.keys()
+    pub fn supported_attributes(&self) -> impl Iterator<Item = (&Attribute, &AttributeInfo)> {
+        self.attributes.iter()
     }
+
     /// Returns a vector of all unique [FeatureGroup]s supported by this
     /// fixture.
     pub fn supported_feature_groups(&self) -> Vec<FeatureGroup> {
         let mut set = HashSet::new();
-        for attr in self.supported_attributes() {
+        for (attr, _) in self.supported_attributes() {
             if let Some(fg) = attr.feature_group() {
                 set.insert(fg);
             }
@@ -255,6 +269,7 @@ impl Fixture {
 pub struct AttributeInfo {
     default_value: AttributeValue,
     highlight_value: Option<AttributeValue>,
+    channel_sets: Vec<ChannelSet>,
     offset: Vec<u16>,
 }
 
@@ -273,5 +288,33 @@ impl AttributeInfo {
     /// change to give some basic visible output when checking its position.
     pub fn highlight_value(&self) -> Option<AttributeValue> {
         self.highlight_value
+    }
+
+    /// All channel sets for this attribute.
+    pub fn channel_sets(&self) -> &[ChannelSet] {
+        &self.channel_sets
+    }
+}
+
+/// A channel set is a predefined range of values that correspond commonly used
+/// values.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ChannelSet {
+    /// The name of the channel set.
+    pub name: String,
+    /// The associated value for the channel set.
+    pub from: AttributeValue,
+}
+
+impl From<gdtf::dmx_mode::ChannelSet> for ChannelSet {
+    fn from(value: gdtf::dmx_mode::ChannelSet) -> Self {
+        ChannelSet {
+            name: value
+                .name
+                .as_ref()
+                .map(|name| name.to_string())
+                .unwrap_or("<unnamed>".to_string()),
+            from: value.dmx_from.into(),
+        }
     }
 }

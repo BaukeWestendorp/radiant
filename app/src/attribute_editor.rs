@@ -1,7 +1,7 @@
 use gpui::prelude::*;
 use gpui::{EmptyView, Entity, ReadGlobal, Window, div};
 use radiant::object::FixtureGroupId;
-use radiant::patch::FeatureGroup;
+use radiant::patch::{AttributeInfo, FeatureGroup};
 
 use crate::app::AppState;
 use ui::{Disableable, Orientation, Tab, TabView};
@@ -65,9 +65,13 @@ impl FeatureGroupEditor {
             Some(fg) => fg
                 .supported_attributes(show.patch())
                 .into_iter()
-                .filter(|attr| attr.feature_group() == Some(feature_group))
-                .map(|attr| {
-                    Tab::new(attr.to_string(), attr.to_string(), cx.new(|_| EmptyView).into())
+                .filter(|(attr, _)| attr.feature_group() == Some(feature_group))
+                .map(|(attr, info)| {
+                    Tab::new(
+                        attr.to_string(),
+                        attr.to_string(),
+                        cx.new(|cx| ChannelSetEditor::new(info, window, cx)).into(),
+                    )
                 })
                 .collect(),
             None => Vec::new(),
@@ -80,6 +84,29 @@ impl FeatureGroupEditor {
 }
 
 impl Render for FeatureGroupEditor {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        div().size_full().child(self.tab_view.clone())
+    }
+}
+
+struct ChannelSetEditor {
+    tab_view: Entity<TabView>,
+}
+
+impl ChannelSetEditor {
+    pub fn new(attribute_info: AttributeInfo, window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let tabs = attribute_info
+            .channel_sets()
+            .iter()
+            .map(|set| Tab::new(set.name.clone(), set.name.clone(), cx.new(|_| EmptyView).into()))
+            .collect();
+
+        let tab_view = cx.new(|cx| TabView::new(tabs, window, cx));
+        Self { tab_view }
+    }
+}
+
+impl Render for ChannelSetEditor {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         div().size_full().child(self.tab_view.clone())
     }

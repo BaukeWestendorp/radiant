@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::patch::{Attribute, FeatureGroup, FixtureId, Patch};
+use crate::patch::{Attribute, AttributeInfo, FeatureGroup, FixtureId, Patch};
 
 super::define_object_id!(FixtureGroupId);
 
@@ -59,32 +59,29 @@ impl FixtureGroup {
 
     /// Returns all unique attributes that are supported by each fixture type in
     /// the [FixtureGroup].
-    pub fn supported_attributes(&self, patch: &Patch) -> Vec<Attribute> {
-        let mut attrs = HashSet::new();
-
+    pub fn supported_attributes(&self, patch: &Patch) -> Vec<(Attribute, AttributeInfo)> {
+        let mut attrs = Vec::new();
         for fid in self.fixtures() {
             let Some(fixture) = patch.fixture(*fid) else { continue };
-            attrs.extend(fixture.supported_attributes().cloned());
+            for (supported_attr, supported_attr_info) in fixture.supported_attributes() {
+                if attrs.iter().all(|(attr, _)| attr != supported_attr) {
+                    attrs.push((supported_attr.clone(), supported_attr_info.clone()));
+                }
+            }
         }
-
         let mut attrs = attrs.into_iter().collect::<Vec<_>>();
-        attrs.sort();
+        attrs.sort_by(|a, b| a.0.cmp(&b.0));
         attrs
     }
 
     /// Returns all unique feature groups that are supported by the fixtures in
     /// this group.
-    ///
-    /// The feature groups are collected from all fixtures in the group,
-    /// deduplicated, and sorted.
     pub fn supported_feature_groups(&self, patch: &Patch) -> Vec<FeatureGroup> {
         let mut groups = HashSet::new();
-
         for fid in self.fixtures() {
             let Some(fixture) = patch.fixture(*fid) else { continue };
             groups.extend(fixture.supported_feature_groups());
         }
-
         let mut groups = groups.into_iter().collect::<Vec<_>>();
         groups.sort();
         groups
