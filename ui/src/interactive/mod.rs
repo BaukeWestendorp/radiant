@@ -1,3 +1,4 @@
+mod button;
 mod context_menu;
 mod draggable;
 mod event;
@@ -6,6 +7,7 @@ mod list;
 mod pannable;
 mod table;
 
+pub use button::*;
 pub use context_menu::*;
 pub use draggable::*;
 pub use event::*;

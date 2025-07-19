@@ -1,7 +1,7 @@
 use gpui::prelude::*;
 use gpui::{AnyElement, AnyView, Div, SharedString, Window, div};
 
-use crate::{ActiveTheme, Disableable, Selectable, interactive_container};
+use crate::{ActiveTheme, Disableable, Selectable, button};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Tab {
@@ -90,15 +90,13 @@ impl TabView {
 impl TabView {
     pub fn render_tabs(&mut self, cx: &mut Context<Self>) -> Div {
         let tabs = self.tabs.clone().into_iter().map(|tab| {
-            interactive_container(tab.id.clone(), None)
-                .cursor_pointer()
+            button(tab.id.clone(), None, tab.label.clone())
                 .w_full()
                 .disabled(tab.disabled)
                 .selected(self.selected_tab_id() == Some(&tab.id))
                 .on_click(cx.listener(move |this, _, _, _| {
                     this.selected_tab = Some(tab.id.clone());
                 }))
-                .child(div().px_2().py_1().child(tab.label.clone()))
         });
 
         div()
