@@ -7,9 +7,8 @@ use crate::patch::{Attribute, AttributeValue, FixtureId, Patch};
 ///
 /// ``` markdown
 /// Layers:
-/// - (4) Resolve Presets            (e.g. Executors)
-/// - (3) Resolve Attribute Values   (e.g. Programmer, Presets)
-/// - (2) Resolve Direct DMX Values  (e.g. Attribute Values)
+/// - (3) Resolve Presets            (e.g. Executors)
+/// - (2) Resolve Attribute Values   (e.g. Programmer, Presets)
 /// - (1) Output DMX                 (e.g. Via sACN)
 /// ```
 #[derive(Debug, Default, Clone)]
@@ -18,14 +17,10 @@ pub struct Pipeline {
     /// These are merged into the unresolved multiverse during
     /// resolution.
     attribute_values: HashMap<(FixtureId, Attribute), AttributeValue>,
-    /// Unresolved direct DMX values set at specific addresses.
-    dmx_values: HashMap<dmx::Address, dmx::Value>,
-    /// The resolved DMX output after [Pipeline::resolve] is called.
-    resolved_multiverse: dmx::Multiverse,
     /// The resolved attribute values after [Pipeline::resolve].
     resolved_attribute_values: HashMap<(FixtureId, Attribute), AttributeValue>,
-    /// The resolved direct DMX values after [Pipeline::resolve].
-    resolved_dmx_values: HashMap<dmx::Address, dmx::Value>,
+    /// The resolved DMX output after [Pipeline::resolve] is called.
+    resolved_multiverse: dmx::Multiverse,
 }
 
 impl Pipeline {
@@ -34,11 +29,10 @@ impl Pipeline {
         Self::default()
     }
 
-    /// Clears all unresolved attribute and DMX values.
+    /// Clears all unresolved attribute values.
     ///
     /// This does not affect the resolved output.
     pub fn clear_unresolved(&mut self) {
-        self.dmx_values.clear();
         self.attribute_values.clear();
     }
 
@@ -65,13 +59,6 @@ impl Pipeline {
         self.attribute_values.get(&(fixture_id, attribute.clone())).copied()
     }
 
-    /// Sets an unresolved [dmx::Value] at the specified [dmx::Address].
-    ///
-    /// This value will be included in the next resolution.
-    pub fn set_dmx_value(&mut self, address: dmx::Address, value: dmx::Value) {
-        self.dmx_values.insert(address, value);
-    }
-
     fn resolve_attribute_values(&mut self, patch: &Patch) {
         for ((fixture_id, attribute), value) in self.attribute_values.clone() {
             let Some(fixture) = patch.fixture(fixture_id) else { continue };
@@ -87,20 +74,11 @@ impl Pipeline {
         self.resolved_attribute_values = self.attribute_values.clone();
     }
 
-    fn resolve_dmx_values(&mut self) {
-        for (address, value) in &self.dmx_values {
-            self.resolved_multiverse.set_value(address, *value);
-        }
-        self.resolved_dmx_values = self.dmx_values.clone();
-    }
-
     /// Resolves all unresolved values into the final [dmx::Multiverse] output.
     ///
-    /// This processes default values, attribute values, and direct DMX values
-    /// in order. The resolved output can be accessed with
-    /// [Pipeline::resolved_multiverse].
+    /// This processes default values, attribute values in order. The resolved
+    /// output can be accessed with [Pipeline::resolved_multiverse].
     pub fn resolve(&mut self, patch: &Patch) {
-        self.resolve_dmx_values();
         self.resolve_attribute_values(patch);
     }
 
@@ -124,10 +102,6 @@ impl Pipeline {
     pub fn merge_unresolved_into(&self, other: &mut Pipeline) {
         for ((fixture_id, attribute), value) in &self.attribute_values {
             other.attribute_values.insert((*fixture_id, attribute.clone()), *value);
-        }
-
-        for (address, value) in &self.dmx_values {
-            other.dmx_values.insert(*address, *value);
         }
     }
 }

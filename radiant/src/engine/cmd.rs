@@ -94,9 +94,6 @@ fn exec_patch_command(engine: &mut Engine, cmd: PatchCommand) -> Result<()> {
 
 fn exec_programmer_command(engine: &mut Engine, cmd: ProgrammerCommand) -> Result<()> {
     match cmd {
-        ProgrammerCommand::SetAddress { address, value } => {
-            engine.show.programmer.set_dmx_value(address, value);
-        }
         ProgrammerCommand::SetAttribute { fid, attribute, value } => {
             engine.show.programmer.set_attribute_value(fid, attribute, value);
         }

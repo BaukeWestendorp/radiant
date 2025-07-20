@@ -90,13 +90,6 @@ pub enum PatchCommand {
 /// A sub-command to modify the programmer.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ProgrammerCommand {
-    /// Set a DMX value directly into the programmer.
-    SetAddress {
-        /// The [dmx::Address] to modify.
-        address: dmx::Address,
-        /// The new [dmx::Value] at the given address.
-        value: dmx::Value,
-    },
     /// Sets the [AttributeValue] of an [Attribute] for the given [FixtureId].
     SetAttribute {
         /// The id of the fixture.
