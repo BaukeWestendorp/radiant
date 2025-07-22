@@ -51,11 +51,6 @@ impl Pipeline {
         self.values.get(&(fixture_id, attribute.clone())).copied()
     }
 
-    /// Gets all unresolved values.
-    pub fn unresolved_values(&self) -> &HashMap<(FixtureId, Attribute), AttributeValue> {
-        &self.values
-    }
-
     /// Clears all unresolved attribute values.
     ///
     /// This does not affect the resolved output.
@@ -82,26 +77,11 @@ impl Pipeline {
         self.resolved_values = self.values.clone();
     }
 
-    /// Returns the resolved [AttributeValue]s
-    /// after the last call to [Pipeline::resolve].
-    ///
-    /// Only changed values are included; defaults are not returned.
-    pub fn resolved_values(&self) -> &HashMap<(FixtureId, Attribute), AttributeValue> {
-        &self.resolved_values
-    }
-
     /// Returns the resolved [dmx::Multiverse] after the last call to
     /// [Pipeline::resolve].
     ///
     /// This output is not affected by [Pipeline::clear_unresolved].
     pub fn resolved_multiverse(&self) -> &dmx::Multiverse {
         &self.resolved_multiverse
-    }
-
-    /// Merges all unresolved data from this [Pipeline] into another [Pipeline].
-    pub fn merge_unresolved_into(&self, other: &mut Pipeline) {
-        for ((fixture_id, attribute), value) in &self.values {
-            other.values.insert((*fixture_id, attribute.clone()), *value);
-        }
     }
 }
