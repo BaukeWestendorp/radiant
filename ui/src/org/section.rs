@@ -2,7 +2,7 @@ use gpui::prelude::*;
 use gpui::{AnyElement, App, Div, StyleRefinement, Window, div};
 use smallvec::SmallVec;
 
-use crate::{ActiveTheme, InteractiveColor, divider};
+use crate::{ActiveTheme, InteractiveColor, h_divider};
 
 pub fn section(title: &'static str) -> Section {
     Section::new(title)
@@ -41,7 +41,7 @@ impl RenderOnce for Section {
             .gap_2()
             .text_color(cx.theme().colors.text.muted())
             .child(self.title)
-            .child(divider(cx));
+            .child(h_divider(cx));
 
         self.base.child(header).children(self.children)
     }

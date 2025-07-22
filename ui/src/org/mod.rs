@@ -1,6 +1,6 @@
 use gpui::{App, Div, Styled, div, px};
 
-use crate::{ActiveTheme, InteractiveColor};
+use crate::ActiveTheme;
 
 mod container;
 mod section;
@@ -13,6 +13,10 @@ pub fn root(cx: &App) -> gpui::Div {
     gpui::div().text_color(cx.theme().colors.text)
 }
 
-pub fn divider(cx: &App) -> Div {
-    div().w_full().h(px(1.0)).bg(cx.theme().colors.border.muted())
+pub fn h_divider(cx: &App) -> Div {
+    div().w_full().h(px(1.0)).bg(cx.theme().colors.border)
+}
+
+pub fn v_divider(cx: &App) -> Div {
+    div().h_full().w(px(1.0)).bg(cx.theme().colors.border)
 }

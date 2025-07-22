@@ -1,7 +1,7 @@
 use gpui::prelude::*;
 use gpui::{Action, DismissEvent, EventEmitter, FocusHandle, SharedString, Window, div};
 
-use crate::{ContainerStyle, container, divider, interactive_container};
+use crate::{ContainerStyle, container, h_divider, interactive_container};
 
 pub enum ContextMenuItem {
     Action { label: SharedString, action: Box<dyn Action>, destructive: bool },
@@ -96,7 +96,7 @@ impl ContextMenu {
                     .child(div().px_1().child(label.clone()))
                     .into_any_element()
             }
-            ContextMenuItem::Divider => divider(cx).w_full().into_any_element(),
+            ContextMenuItem::Divider => h_divider(cx).w_full().into_any_element(),
         }
     }
 }
