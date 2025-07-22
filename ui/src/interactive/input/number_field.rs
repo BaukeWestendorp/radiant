@@ -178,9 +178,13 @@ impl<I: NumberFieldImpl + 'static> NumberField<I> {
         })
     }
 
+    pub fn submit(&self, cx: &mut Context<Self>) {
+        cx.emit(FieldEvent::Submit(self.value(cx)));
+    }
+
     fn commit_value(&mut self, cx: &mut Context<Self>) {
         self.set_value(self.value(cx), cx);
-        cx.emit(FieldEvent::Submit(self.value(cx)))
+        self.submit(cx);
     }
 
     pub fn is_slider(&self) -> bool {
