@@ -7,11 +7,13 @@
 //! module also provides parsing utilities and command variants for all
 //! supported operations.
 
+use uuid::Uuid;
+
 use crate::object::{
     AnyObjectId, AnyPresetId, CueId, ExecutorButtonMode, ExecutorFaderMode, ExecutorId,
     FixtureGroupId, Recipe, SequenceId,
 };
-use crate::patch::{Attribute, AttributeValue, DmxMode, FixtureId};
+use crate::patch::{Attribute, AttributeValue, FixtureId};
 
 /// The interface between the engine and the backend.
 #[derive(Debug, Clone, PartialEq)]
@@ -53,10 +55,10 @@ pub enum PatchCommand {
         fid: FixtureId,
         /// The [dmx::Address] for the new fixture.
         address: dmx::Address,
-        /// The associated GDTF file name for the new fixture.
-        gdtf: String,
+        /// The associated fixture type for the new fixture.
+        fixture_type_id: Uuid,
         /// The [DmxMode] for the new fixture.
-        mode: DmxMode,
+        dmx_mode: String,
     },
     /// Set the [dmx::Address] of a fixture in the [Patch][crate::patch::Patch].
     SetAddress {
@@ -66,19 +68,19 @@ pub enum PatchCommand {
         address: dmx::Address,
     },
     /// Set the [DmxMode] of a fixture.
-    SetMode {
+    SetDmxMode {
         /// The id of the fixture to modify.
         fid: FixtureId,
         /// The new [DmxMode].
-        mode: DmxMode,
+        dmx_mode: String,
     },
-    /// Set the associated GDTF file name of a fixture in the
+    /// Set the associated fixture type of a fixture in the
     /// [Patch][crate::patch::Patch].
-    SetGdtf {
+    SetTypeId {
         /// The id of the fixture to modify.
         fid: FixtureId,
-        /// The associated GDTF file name.
-        name: String,
+        /// The associated fixture type.
+        fixture_type_id: Uuid,
     },
     /// Remove a fixture from the [Patch][crate::patch::Patch].
     Remove {

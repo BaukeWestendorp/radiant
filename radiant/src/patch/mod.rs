@@ -7,6 +7,8 @@
 
 pub use attr::*;
 pub use fixture::*;
+use gdtf::fixture_type::FixtureType;
+use uuid::Uuid;
 
 mod attr;
 mod fixture;
@@ -15,7 +17,7 @@ mod fixture;
 /// universes.
 #[derive(Debug, Default, Clone)]
 pub struct Patch {
-    pub(crate) gdtfs: Vec<String>,
+    pub(crate) fixture_types: Vec<FixtureType>,
     pub(crate) fixtures: Vec<Fixture>,
 }
 
@@ -25,9 +27,14 @@ impl Patch {
         &self.fixtures
     }
 
-    /// Get the names of all loaded GDTF files.
-    pub fn gdtfs(&self) -> &[String] {
-        &self.gdtfs
+    /// Get all [FixtureType]s.
+    pub fn fixture_types(&self) -> &[FixtureType] {
+        &self.fixture_types
+    }
+
+    /// Gets the GDTF [FixtureType] this fixture is based on.
+    pub fn fixture_type(&self, id: Uuid) -> Option<&FixtureType> {
+        self.fixture_types.iter().find(|ft| ft.fixture_type_id == id)
     }
 
     /// Get a reference to a specific [Fixture] for the given [FixtureId], if it

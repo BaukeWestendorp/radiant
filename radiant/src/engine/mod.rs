@@ -7,16 +7,18 @@
 //! protocol and adapter integration. It is the main entry point for
 //! embedding Radiant's backend in an application.
 
+use std::fs::File;
 use std::time::{Duration, Instant};
 
 use eyre::{Context, ContextCompat};
+use gdtf::GdtfFile;
 
 use super::pipeline::Pipeline;
 use crate::cmd::{Command, PatchCommand};
 use crate::error::Result;
-use crate::patch::{DmxMode, FixtureId};
+use crate::patch::FixtureId;
 use crate::show::Show;
-use crate::showfile::Showfile;
+use crate::showfile::{RELATIVE_GDTF_FILE_FOLDER_PATH, Showfile};
 
 mod adapters;
 mod cmd;
@@ -79,6 +81,9 @@ impl Engine {
         };
 
         this.initialize_show(showfile).wrap_err("failed to initialize show")?;
+
+        // FIXME: Remove.
+        this.show.selected_fixture_ids = this.show.fixture_group(1).unwrap().fixtures.clone();
 
         Ok(this)
     }
@@ -151,8 +156,6 @@ impl Engine {
     }
 
     fn initialize_show(&mut self, showfile: Showfile) -> Result<()> {
-        self.show.patch.gdtfs = showfile.patch().gdtf_files().to_vec();
-
         // Initialize patch.
         for fixture in showfile.patch().fixtures() {
             let fid = FixtureId(fixture.id());
@@ -162,16 +165,36 @@ impl Engine {
                 dmx::Channel::new(fixture.channel())?,
             );
 
-            let mode = DmxMode::new(fixture.dmx_mode());
+            let mode = fixture.dmx_mode().to_string();
 
-            let gdtf = showfile
+            let gdtf_file_name = showfile
                 .patch()
                 .gdtf_files()
                 .get(fixture.gdtf_file_index())
-                .wrap_err("failed to generate patch: tried to reference GDTF file index that is out of bounds")?
+                .wrap_err("tried to reference GDTF file index that is out of bounds")?
                 .to_string();
+            let gdtf_file_path = showfile
+                .path()
+                .expect("showfile path must be set when loading a patch")
+                .join(RELATIVE_GDTF_FILE_FOLDER_PATH)
+                .join(&gdtf_file_name);
+            let file = File::open(&gdtf_file_path)
+                .wrap_err_with(|| format!("failed to open GDTF file at {:?}", gdtf_file_path))?;
+            let gdtf_file = GdtfFile::new(file).wrap_err("failed to read GDTF file")?;
+            let fixture_type = gdtf_file
+                .description
+                .fixture_types
+                .first()
+                .wrap_err("GDTF file should have at least one fixture definition")?;
 
-            self.exec_cmd(Command::Patch(PatchCommand::Add { fid, address, mode, gdtf }))?;
+            self.show.patch.fixture_types.push(fixture_type.clone());
+
+            self.exec_cmd(Command::Patch(PatchCommand::Add {
+                fid,
+                address,
+                fixture_type_id: fixture_type.fixture_type_id,
+                dmx_mode: mode,
+            }))?;
         }
 
         // Initialize objects.

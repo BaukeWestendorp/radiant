@@ -1,7 +1,4 @@
-use std::fs;
-use std::path::Path;
-
-use eyre::{Context, ContextCompat};
+use eyre::ContextCompat;
 
 use crate::cmd::{
     Command, CueCommand, ExecutorCommand, FixtureGroupCommand, ObjectCommand, PatchCommand,
@@ -15,8 +12,6 @@ use crate::object::{
     PresetContent, Sequence, SequenceId, ShapersPreset, VideoPreset,
 };
 use crate::patch::Fixture;
-use crate::pipeline::Pipeline;
-use crate::showfile::RELATIVE_GDTF_FILE_FOLDER_PATH;
 
 pub fn exec_cmd(engine: &mut Engine, cmd: Command) -> Result<()> {
     match cmd {
@@ -31,32 +26,8 @@ pub fn exec_cmd(engine: &mut Engine, cmd: Command) -> Result<()> {
 
 fn exec_patch_command(engine: &mut Engine, cmd: PatchCommand) -> Result<()> {
     match cmd {
-        PatchCommand::Add { fid, address, gdtf, mode } => {
-            let gdtf_file_path = {
-                let showfile_path = match engine.show.path() {
-                    Some(path) => path,
-                    None => {
-                        todo!(
-                            "support creating new showfiles and defining their temporary location"
-                        )
-                    }
-                };
-
-                Path::new(&showfile_path).join(RELATIVE_GDTF_FILE_FOLDER_PATH).join(&gdtf)
-            };
-
-            let gdtf_file = fs::File::open(&gdtf_file_path).wrap_err_with(|| {
-                format!("failed to open GDTF file at '{}'", gdtf_file_path.display())
-            })?;
-            let fixture_type = &gdtf::GdtfFile::new(gdtf_file)
-                .wrap_err_with(|| {
-                    format!("failed to read GDTF file at '{}'", gdtf_file_path.display())
-                })?
-                .description
-                .fixture_types[0];
-
-            let fixture = Fixture::new(fid, address, mode, gdtf, fixture_type)?;
-
+        PatchCommand::Add { fid, address, fixture_type_id, dmx_mode } => {
+            let fixture = Fixture::new(fid, address, fixture_type_id, dmx_mode);
             engine.show.patch.fixtures.push(fixture);
         }
         PatchCommand::SetAddress { fid, address } => {
@@ -64,24 +35,14 @@ fn exec_patch_command(engine: &mut Engine, cmd: PatchCommand) -> Result<()> {
                 fixture.address = address;
             }
         }
-        PatchCommand::SetMode { fid, mode } => {
+        PatchCommand::SetDmxMode { fid, dmx_mode } => {
             if let Some(fixture) = engine.show.patch.fixture_mut(fid) {
-                eyre::ensure!(
-                    fixture.supported_dmx_modes().contains(&mode),
-                    "fixture with id '{fid}' does not support dmx mode '{mode}'"
-                );
-
-                fixture.dmx_mode = mode;
+                fixture.dmx_mode = dmx_mode;
             }
         }
-        PatchCommand::SetGdtf { fid, name } => {
-            eyre::ensure!(
-                engine.show.patch.gdtfs().contains(&name),
-                "the patch does not contain GDTF file with the name '{name}'"
-            );
-
+        PatchCommand::SetTypeId { fid, fixture_type_id } => {
             if let Some(fixture) = engine.show.patch.fixture_mut(fid) {
-                fixture.gdtf = name;
+                fixture.fixture_type_id = fixture_type_id;
             }
         }
         PatchCommand::Remove { fid } => {

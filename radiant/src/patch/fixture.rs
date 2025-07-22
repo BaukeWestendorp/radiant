@@ -1,10 +1,13 @@
-use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 
 use eyre::ContextCompat;
+use gdtf::attribute::FeatureGroup;
+use gdtf::dmx_mode::DmxMode;
+use gdtf::fixture_type::FixtureType;
+use uuid::Uuid;
 
 use crate::error::Result;
-use crate::patch::{Attribute, AttributeValue, FeatureGroup};
+use crate::patch::{Attribute, AttributeValue, Patch};
 
 /// A unique id for a [Fixture].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -20,23 +23,6 @@ use crate::patch::{Attribute, AttributeValue, FeatureGroup};
 #[serde(transparent)]
 pub struct FixtureId(pub u32);
 
-/// A specific mode for a [Fixture]. Defined in the GDTF description.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(derive_more::Display)]
-pub struct DmxMode(String);
-
-impl DmxMode {
-    /// Creates a new [DmxMode] with the given name.
-    pub fn new(name: impl Into<String>) -> Self {
-        Self(name.into())
-    }
-
-    /// Gets a string slice of the mode's name.
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
 /// A single patched fixture and has information about its attributes.
 ///
 /// A fixture represents a lighting device that has been patched into the
@@ -47,83 +33,20 @@ impl DmxMode {
 pub struct Fixture {
     id: FixtureId,
     pub(crate) address: dmx::Address,
-    pub(crate) dmx_mode: DmxMode,
-    pub(crate) gdtf: String,
-    attributes: HashMap<Attribute, AttributeInfo>,
-
-    dmx_modes: Vec<DmxMode>,
+    pub(crate) fixture_type_id: Uuid,
+    pub(crate) dmx_mode: String,
 }
 
 impl Fixture {
-    /// Creates a new fixture from GDTF fixture type data.
-    ///
-    /// Parses the GDTF fixture type definition to extract attribute
-    /// information, DMX channel mappings, and default values. Returns an
-    /// error if the specified DMX mode is not found in the fixture type
-    /// definition.
+    /// Creates a new fixture with the corresponding patch information and
+    /// fixture definition.
     pub fn new(
         id: FixtureId,
         address: dmx::Address,
-        dmx_mode: DmxMode,
-        gdtf: String,
-        fixture_type: &gdtf::fixture_type::FixtureType,
-    ) -> Result<Self> {
-        let mut attributes = HashMap::new();
-
-        let gdtf_dmx_mode = fixture_type.dmx_mode(dmx_mode.as_str()).with_context(|| {
-            format!(
-                "tried to get dmx mode '{}' for fixture type '{}'",
-                dmx_mode, fixture_type.long_name
-            )
-        })?;
-
-        for channel in &gdtf_dmx_mode.dmx_channels {
-            let Some(offset) = channel.offset.clone().map(|o| {
-                o.into_iter()
-                    .map(|o| (o - 1).clamp(u16::MIN as i32, u16::MAX as i32) as u16)
-                    .collect::<Vec<u16>>()
-            }) else {
-                continue;
-            };
-
-            let Some((_, channel_function)) = channel.initial_function() else {
-                continue;
-            };
-
-            let default_value = channel_function.default.into();
-            let highlight_value = channel.highlight.map(From::from);
-
-            if let Some(attribute) = channel_function.attribute(fixture_type) {
-                let Some(attribute_name) = &attribute.name else { continue };
-
-                let attribute = Attribute::from_str(attribute_name).unwrap();
-
-                let channel_sets = channel_function
-                    .channel_sets
-                    .clone()
-                    .into_iter()
-                    .filter(|set| set.name.as_ref().is_some_and(|name| !name.is_empty()))
-                    .map(ChannelSet::from)
-                    .collect();
-
-                let info = AttributeInfo {
-                    default_value,
-                    highlight_value,
-                    channel_sets,
-                    offset: offset.clone(),
-                };
-
-                attributes.insert(attribute, info);
-            }
-        }
-
-        let dmx_modes = fixture_type
-            .dmx_modes
-            .iter()
-            .flat_map(|dmx_mode| dmx_mode.name.as_ref().map(|name| DmxMode::new(name.as_ref())))
-            .collect();
-
-        Ok(Self { id, dmx_mode, gdtf, address, attributes, dmx_modes })
+        fixture_type_id: Uuid,
+        dmx_mode: impl Into<String>,
+    ) -> Self {
+        Self { id, address, fixture_type_id, dmx_mode: dmx_mode.into() }
     }
 
     /// Returns this fixture's unique id.
@@ -131,51 +54,38 @@ impl Fixture {
         self.id
     }
 
-    /// Returns the DMX address of this fixture.
+    /// Returns the address of this fixture.
     pub fn address(&self) -> &dmx::Address {
         &self.address
     }
-
-    /// Returns the currently active DMX mode of this fixture.
-    pub fn dmx_mode(&self) -> &DmxMode {
-        &self.dmx_mode
-    }
-
-    /// Returns the name of the GDTF file this fixture is based on.
-    pub fn gdtf(&self) -> &str {
-        &self.gdtf
-    }
-
-    /// Returns an iterator over all attributes this fixture supports.
+    /// Returns a reference to the [FixtureType] associated with this fixture.
     ///
-    /// The attributes are those defined in the fixture's GDTF definition
-    /// for the current DMX mode.
-    pub fn supported_attributes(&self) -> impl Iterator<Item = (&Attribute, &AttributeInfo)> {
-        self.attributes.iter()
-    }
-
-    /// Returns a vector of all unique [FeatureGroup]s supported by this
-    /// fixture.
-    pub fn supported_feature_groups(&self) -> Vec<FeatureGroup> {
-        let mut set = HashSet::new();
-        for (attr, _) in self.supported_attributes() {
-            if let Some(fg) = attr.feature_group() {
-                set.insert(fg);
-            }
-        }
-        set.into_iter().collect()
-    }
-
-    /// Returns a slice of all DMX modes supported by this fixture.
-    pub fn supported_dmx_modes(&self) -> &[DmxMode] {
-        &self.dmx_modes
-    }
-
-    /// Gets information about a specific [Attribute].
+    /// # Panics
     ///
-    /// Returns `None` if this fixture does not support the specified attribute.
-    pub fn attribute_info(&self, attribute: &Attribute) -> Option<&AttributeInfo> {
-        self.attributes.get(attribute)
+    /// Panics if the fixture type id is not valid in the provided [Patch].
+    pub fn fixture_type<'a>(&self, patch: &'a Patch) -> &'a FixtureType {
+        patch
+            .fixture_type(self.fixture_type_id)
+            .expect("fixture should always have a valid fixture type id")
+    }
+
+    /// Returns a slice of [FeatureGroup]s supported by this fixture.
+    ///
+    /// This is derived from the fixture's GDTF definition.
+    pub fn feature_groups<'a>(&self, patch: &'a Patch) -> &'a [FeatureGroup] {
+        &self.fixture_type(patch).attribute_definitions.feature_groups
+    }
+
+    /// Returns a reference to the [DmxMode] for this fixture.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the DMX mode is not valid for the fixture type in the provided
+    /// [Patch].
+    pub fn dmx_mode<'a>(&self, patch: &'a Patch) -> &'a DmxMode {
+        self.fixture_type(patch)
+            .dmx_mode(&self.dmx_mode)
+            .expect("fixture should always have a valid dmx mode index")
     }
 
     /// Converts an attribute value to DMX channel values.
@@ -188,134 +98,90 @@ impl Fixture {
         &self,
         attribute: &Attribute,
         value: &AttributeValue,
+        patch: &Patch,
     ) -> Result<Vec<(dmx::Channel, dmx::Value)>> {
+        let channels = self.channels_for_attribute(attribute, patch)?;
         let mut values = Vec::new();
-
-        let info = self.attribute_info(attribute).with_context(|| {
-            format!(
-                "attribute info for attribute '{}' not found for fixture '{}'",
-                attribute, self.id
-            )
-        })?;
-
-        let int_value = (value.as_f32() * u32::MAX as f32) as u32;
-        let bytes: [u8; 4] = int_value.to_be_bytes();
-
-        for (i, offset) in info.offset.iter().enumerate() {
-            let value = dmx::Value(bytes[i]);
-            let channel = dmx::Channel::new(u16::from(self.address.channel) + *offset)
-                .expect("channel should always be in range of universe");
+        for (ix, channel) in channels.into_iter().enumerate() {
+            let int_value = (value.as_f32() * u32::MAX as f32) as u32;
+            let bytes: [u8; 4] = int_value.to_be_bytes();
+            let value = dmx::Value(bytes[ix]);
             values.push((channel, value));
         }
-
         Ok(values)
-    }
-
-    /// Gets the default DMX channel values for this fixture.
-    ///
-    /// Returns DMX channel and value pairs that represent the fixture's
-    /// default state. For example, 'Pan' and 'Tilt' attributes often default
-    /// to the middle position (0.5) instead of zero.
-    pub fn get_default_channel_values(&self) -> Vec<(dmx::Channel, dmx::Value)> {
-        let mut values = Vec::new();
-        for info in self.attributes.values() {
-            let int_value = (info.default_value().as_f32() * u32::MAX as f32) as u32;
-            let bytes: [u8; 4] = int_value.to_be_bytes();
-
-            for (i, offset) in info.offset.iter().enumerate() {
-                let value = dmx::Value(bytes[i]);
-                let channel = dmx::Channel::new(u16::from(self.address.channel) + *offset)
-                    .expect("channel should always be in range of universe");
-                values.push((channel, value));
-            }
-        }
-        values
-    }
-
-    /// Gets the highlight DMX channel values for this fixture.
-    ///
-    /// Returns DMX channel and value pairs that make the fixture visible
-    /// for identification purposes. For example, Dimmer and Shutter attributes
-    /// are often set to provide basic visible output when checking the
-    /// fixture's position or functionality.
-    pub fn get_highlight_channel_values(&self) -> Vec<(dmx::Channel, dmx::Value)> {
-        let mut values = Vec::new();
-        for info in self.attributes.values() {
-            let Some(highlight_value) = info.highlight_value else { continue };
-
-            let int_value = (highlight_value.as_f32() * u32::MAX as f32) as u32;
-            let bytes: [u8; 4] = int_value.to_be_bytes();
-
-            for (i, offset) in info.offset.iter().enumerate() {
-                let value = dmx::Value(bytes[i]);
-                let channel = dmx::Channel::new(u16::from(self.address.channel) + *offset)
-                    .expect("channel should always be in range of universe");
-                values.push((channel, value));
-            }
-        }
-        values
     }
 
     /// Returns attributes supported by this fixture along with
     /// their corresponding default [AttributeValue]s as
     /// defined in the fixture's GDTF definition.
-    pub fn get_default_attribute_values(&self) -> Vec<(&Attribute, AttributeValue)> {
-        self.attributes.iter().map(|(attribute, info)| (attribute, info.default_value())).collect()
-    }
-}
+    pub fn get_default_attribute_values(&self, patch: &Patch) -> Vec<(Attribute, AttributeValue)> {
+        let fixture_type = self.fixture_type(patch);
 
-/// Some baked information about a specific attribute.
-#[derive(Debug, Clone, PartialEq)]
-pub struct AttributeInfo {
-    default_value: AttributeValue,
-    highlight_value: Option<AttributeValue>,
-    channel_sets: Vec<ChannelSet>,
-    offset: Vec<u16>,
-}
+        let mut values = Vec::new();
+        for dmx_channel in &self.dmx_mode(patch).dmx_channels {
+            let Some((_, channel_function)) = dmx_channel.initial_function() else {
+                continue;
+            };
+            let Some(mut attribute) = channel_function.attribute(fixture_type) else {
+                continue;
+            };
+            if let Some(main_attribute) =
+                attribute.main_attribute(&fixture_type.attribute_definitions)
+            {
+                attribute = main_attribute;
+            };
 
-impl AttributeInfo {
-    /// The default value for an attribute.
-    ///
-    /// For example, the 'Pan' and 'Tilt' attributes often default to the
-    /// middle, having a value of 0.5 instead of 0.
-    pub fn default_value(&self) -> AttributeValue {
-        self.default_value
-    }
+            let Some(attribute_name) = attribute.name.as_ref() else { continue };
+            let attribute = Attribute::from_str(&attribute_name).unwrap();
 
-    /// The highlight value for an attribute.
-    ///
-    /// For example, the Dimmer and Shutter attributes often should
-    /// change to give some basic visible output when checking its position.
-    pub fn highlight_value(&self) -> Option<AttributeValue> {
-        self.highlight_value
-    }
-
-    /// All channel sets for this attribute.
-    pub fn channel_sets(&self) -> &[ChannelSet] {
-        &self.channel_sets
-    }
-}
-
-/// A channel set is a predefined range of values that correspond commonly used
-/// values.
-#[derive(Debug, Clone, PartialEq)]
-pub struct ChannelSet {
-    /// The name of the channel set.
-    pub name: String,
-    /// The associated dmx channel for the channel set.
-    pub from: AttributeValue,
-    pub from: AttributeValue,
-}
-
-impl From<gdtf::dmx_mode::ChannelSet> for ChannelSet {
-    fn from(value: gdtf::dmx_mode::ChannelSet) -> Self {
-        ChannelSet {
-            name: value
-                .name
-                .as_ref()
-                .map(|name| name.to_string())
-                .unwrap_or("<unnamed>".to_string()),
-            from: value.dmx_from.into(),
+            values.push((attribute, channel_function.default.into()));
         }
+        values
+    }
+
+    pub fn channels_for_attribute(
+        &self,
+        attribute: &Attribute,
+        patch: &Patch,
+    ) -> Result<Vec<dmx::Channel>> {
+        let dmx_channel = &self
+            .dmx_mode(patch)
+            .dmx_channels
+            .iter()
+            .find(|dmx_channel| {
+                dmx_channel.logical_channels.iter().any(|logical_channel| {
+                    let fixture_type = self.fixture_type(patch);
+                    if logical_channel.attribute(fixture_type).is_some_and(|attr| {
+                        attr.name.as_ref().is_some_and(|name| **name == attribute.to_string())
+                    }) {
+                        return true;
+                    } else if logical_channel.channel_functions.iter().any(|channel_function| {
+                        channel_function.attribute(fixture_type).is_some_and(|attr| {
+                            attr.name.as_ref().is_some_and(|name| **name == attribute.to_string())
+                        })
+                    }) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                })
+            })
+            .wrap_err_with(|| format!("channel not found for attribute {attribute}"))?;
+
+        let offsets = dmx_channel
+            .offset
+            .clone()
+            .unwrap_or_default()
+            .into_iter()
+            .map(|offset| (offset - 1).clamp(u16::MIN as i32, u16::MAX as i32) as u16);
+
+        let channels = offsets
+            .map(|offset| {
+                dmx::Channel::new(u16::from(self.address.channel) + offset)
+                    .expect("channel should always be in range of universe")
+            })
+            .collect();
+
+        Ok(channels)
     }
 }
