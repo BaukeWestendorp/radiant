@@ -15,8 +15,7 @@ use crate::object::{
     PositionPresetId, PresetContent, Sequence, SequenceId, ShapersPreset, ShapersPresetId,
     VideoPreset, VideoPresetId,
 };
-use crate::patch::Patch;
-use crate::pipeline::Pipeline;
+use crate::patch::{Attribute, AttributeValue, FixtureId, Patch};
 
 /// Contains the state of the entire show. This includes the programmer, patch
 /// and objects.
@@ -26,8 +25,7 @@ pub struct Show {
 
     pub(crate) patch: Patch,
 
-    /// The programmer contains WIP output data that can be saved to a preset.
-    pub(crate) programmer: Pipeline,
+    pub(crate) programmer: Programmer,
 
     pub(crate) fixture_groups: HashMap<FixtureGroupId, FixtureGroup>,
     pub(crate) executors: HashMap<ExecutorId, Executor>,
@@ -60,6 +58,10 @@ impl Show {
     /// Gets a this show's [Patch].
     pub fn patch(&self) -> &Patch {
         &self.patch
+    }
+
+    pub fn programmer(&self) -> &Programmer {
+        &self.programmer
     }
 
     /// Gets a [FixtureGroup].
@@ -217,5 +219,42 @@ impl Show {
     /// Gets a [VideoPreset].
     pub fn preset_video(&self, id: impl Into<VideoPresetId>) -> Option<&VideoPreset> {
         self.video_presets.get(&id.into())
+    }
+
+    /// Returns a slice of the selected [FixtureId]s.
+    pub fn selected_fixture_ids(&self) -> &[FixtureId] {
+        &self.selected_fixture_ids
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Programmer {
+    values: HashMap<(FixtureId, Attribute), AttributeValue>,
+}
+
+impl Programmer {
+    pub fn set_value(
+        &mut self,
+        fixture_id: FixtureId,
+        main_attribute: Attribute,
+        value: AttributeValue,
+    ) {
+        self.values.insert((fixture_id, main_attribute), value);
+    }
+
+    pub fn value(
+        &self,
+        fixture_id: FixtureId,
+        main_attribute: Attribute,
+    ) -> Option<AttributeValue> {
+        self.values.get(&(fixture_id, main_attribute)).copied()
+    }
+
+    pub fn values(&self) -> impl IntoIterator<Item = (FixtureId, &Attribute, AttributeValue)> {
+        self.values.iter().map(|((fid, attr), value)| (*fid, attr, *value))
+    }
+
+    pub fn clear(&mut self) {
+        self.values.clear();
     }
 }

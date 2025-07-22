@@ -95,12 +95,10 @@ fn exec_patch_command(engine: &mut Engine, cmd: PatchCommand) -> Result<()> {
 fn exec_programmer_command(engine: &mut Engine, cmd: ProgrammerCommand) -> Result<()> {
     match cmd {
         ProgrammerCommand::SetAttribute { fid, attribute, value } => {
-            engine.show.programmer.set_attribute_value(fid, attribute, value);
+            engine.show.programmer.set_value(fid, attribute, value);
         }
         ProgrammerCommand::Clear => {
-            // NOTE: We have to completely renew the pipeline,
-            //       as clearing it only clears unresolved values.
-            engine.show.programmer = Pipeline::new();
+            engine.show.programmer.clear();
         }
     }
 
@@ -408,11 +406,14 @@ fn exec_cue_command(engine: &mut Engine, id: CueId, cmd: CueCommand) -> Result<(
 fn exec_preset_command(engine: &mut Engine, id: AnyPresetId, cmd: PresetCommand) -> Result<()> {
     match cmd {
         PresetCommand::Store => {
-            engine.show.programmer.resolve(&engine.show.patch);
-            let resolved_attribute_values =
-                engine.show().programmer.resolved_attribute_values().clone();
-
-            for ((fid, attr), value) in resolved_attribute_values {
+            for (fid, attr, value) in engine
+                .show()
+                .programmer()
+                .values()
+                .into_iter()
+                .map(|(fid, attr, value)| (fid, attr.clone(), value))
+                .collect::<Vec<_>>()
+            {
                 match &mut engine
                     .show
                     .preset_content_mut(id)

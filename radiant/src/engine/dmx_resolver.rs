@@ -8,9 +8,10 @@ pub fn resolve(engine_uptime: EngineUptime, output_pipeline: &mut Pipeline, show
     // Resolve and merge executor outputs.
     resolve_executors(engine_uptime, output_pipeline, show);
 
-    // Resolve and merge programmer pipeline with output pipeline.
-    show.programmer.resolve(&show.patch);
-    show.programmer.merge_unresolved_into(output_pipeline);
+    // Merge programmer values into output pipeline.
+    for (fid, attr, value) in show.programmer().values() {
+        output_pipeline.set_value(fid, attr.clone(), value);
+    }
 
     // Resolve output pipeline.
     output_pipeline.resolve(&show.patch);
