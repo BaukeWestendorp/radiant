@@ -23,3 +23,8 @@ pub mod showfile;
 mod adapters;
 mod pipeline;
 mod protocols;
+
+/// Re-export of `gdtf` crate.
+pub mod gdtf {
+    pub use gdtf::*;
+}

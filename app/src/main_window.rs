@@ -6,7 +6,6 @@ use gpui::{
     App, Bounds, Context, Div, Entity, Hsla, ReadGlobal, Timer, TitlebarOptions, Window,
     WindowBounds, WindowHandle, WindowOptions, div, px, size,
 };
-use radiant::object::FixtureGroupId;
 
 use crate::app::AppState;
 use crate::attribute_editor::AttributeEditor;
@@ -36,7 +35,7 @@ impl MainWindow {
         cx.open_window(window_options, |window, cx| {
             cx.new(|cx| Self {
                 io_status: cx.new(IoStatusIndicators::new),
-                attribute_editor: cx.new(|cx| AttributeEditor::new(FixtureGroupId(1), window, cx)),
+                attribute_editor: cx.new(|cx| AttributeEditor::new(window, cx)),
             })
         })
         .map_err(|err| eyre::eyre!(err))

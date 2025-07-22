@@ -5,6 +5,14 @@ use crate::pipeline::Pipeline;
 use crate::show::Show;
 
 pub fn resolve(engine_uptime: EngineUptime, output_pipeline: &mut Pipeline, show: &mut Show) {
+    // Put each fixture's default values into the output pipeline before resolving
+    // other values.
+    for fixture in show.patch().fixtures().to_vec() {
+        for (attribute, value) in fixture.get_default_attribute_values(show.patch()) {
+            output_pipeline.set_value(fixture.id(), attribute.clone(), value);
+        }
+    }
+
     // Resolve and merge executor outputs.
     resolve_executors(engine_uptime, output_pipeline, show);
 
@@ -83,15 +91,11 @@ fn resolve_recipe(
                             // FIXME: We should implement different merging strategies like HTP
                             //        but for now let's just lerp with the existing value.
                             let old_value = output_pipeline
-                                .get_attribute_value(*fixture_id, attribute)
+                                .unresolved_value(*fixture_id, attribute)
                                 .unwrap_or_default();
                             let lerped_value = AttributeValue::lerp(&old_value, value, level);
 
-                            output_pipeline.set_attribute_value(
-                                *fixture_id,
-                                attribute.clone(),
-                                lerped_value,
-                            );
+                            output_pipeline.set_value(*fixture_id, attribute.clone(), lerped_value);
                         }
                     }
                 }
@@ -110,14 +114,10 @@ fn resolve_recipe(
                             // FIXME: We should implement different merging strategies like HTP
                             //        but for now let's just lerp with the existing value.
                             let old_value = output_pipeline
-                                .get_attribute_value(*fixture_id, attribute)
+                                .unresolved_value(*fixture_id, attribute)
                                 .unwrap_or_default();
                             let lerped_value = AttributeValue::lerp(&old_value, value, level);
-                            output_pipeline.set_attribute_value(
-                                *fixture_id,
-                                attribute.clone(),
-                                lerped_value,
-                            );
+                            output_pipeline.set_value(*fixture_id, attribute.clone(), lerped_value);
                         }
                     }
                 }

@@ -41,6 +41,8 @@ pub struct Show {
     pub(crate) control_presets: HashMap<ControlPresetId, ControlPreset>,
     pub(crate) shapers_presets: HashMap<ShapersPresetId, ShapersPreset>,
     pub(crate) video_presets: HashMap<VideoPresetId, VideoPreset>,
+
+    pub(crate) selected_fixture_ids: Vec<FixtureId>,
 }
 
 impl Show {

@@ -134,6 +134,7 @@ name = "app"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "dmx",
  "eyre",
  "gpui",
  "log",

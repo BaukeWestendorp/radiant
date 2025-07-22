@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 clap.workspace = true
+dmx.workspace = true
 eyre.workspace = true
 gpui.workspace = true
 log.workspace = true
