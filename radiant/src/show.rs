@@ -57,11 +57,12 @@ impl Show {
         self.path.as_ref()
     }
 
-    /// Gets a this show's [Patch].
+    /// Gets this shows [Patch].
     pub fn patch(&self) -> &Patch {
         &self.patch
     }
 
+    /// Gets this shows [Programmer].
     pub fn programmer(&self) -> &Programmer {
         &self.programmer
     }
@@ -229,12 +230,16 @@ impl Show {
     }
 }
 
+/// Contains 'work in progress' values that can be stored into presets.
 #[derive(Debug, Clone, Default)]
 pub struct Programmer {
     values: HashMap<(FixtureId, Attribute), AttributeValue>,
 }
 
 impl Programmer {
+    /// Sets an [AttributeValue] for a given (main) attribute [Attribute] on the
+    /// fixture with the given [FixtureId]. The attribute has to be a main
+    /// attribute to prevent double channel assignments.
     pub fn set_value(
         &mut self,
         fixture_id: FixtureId,
@@ -244,6 +249,8 @@ impl Programmer {
         self.values.insert((fixture_id, main_attribute), value);
     }
 
+    /// Gets an [AttributeValue] for the given (main) [Attribute] on the
+    /// fixture with the given [FixtureId].
     pub fn value(
         &self,
         fixture_id: FixtureId,
@@ -252,10 +259,12 @@ impl Programmer {
         self.values.get(&(fixture_id, main_attribute)).copied()
     }
 
+    /// Gets an iterator over all values.
     pub fn values(&self) -> impl IntoIterator<Item = (FixtureId, &Attribute, AttributeValue)> {
         self.values.iter().map(|((fid, attr), value)| (*fid, attr, *value))
     }
 
+    /// Clears all values.
     pub fn clear(&mut self) {
         self.values.clear();
     }

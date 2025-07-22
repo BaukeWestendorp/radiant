@@ -139,6 +139,7 @@ impl Fixture {
         values
     }
 
+    /// Get the [dmx::Channel]s for a given attribute on this fixture.
     pub fn channels_for_attribute(
         &self,
         attribute: &Attribute,
