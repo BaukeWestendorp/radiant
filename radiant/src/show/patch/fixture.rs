@@ -4,10 +4,9 @@ use eyre::ContextCompat;
 use gdtf::attribute::FeatureGroup;
 use gdtf::dmx_mode::DmxMode;
 use gdtf::fixture_type::FixtureType;
-use uuid::Uuid;
 
 use crate::error::Result;
-use crate::patch::{Attribute, AttributeValue, Patch};
+use crate::show::{Attribute, AttributeValue, Patch};
 
 /// A unique id for a [Fixture].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -31,9 +30,9 @@ pub struct FixtureId(pub u32);
 /// attribute values and low-level DMX channel data.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Fixture {
-    id: FixtureId,
+    fid: FixtureId,
     pub(crate) address: dmx::Address,
-    pub(crate) fixture_type_id: Uuid,
+    pub(crate) type_id: FixtureTypeId,
     pub(crate) dmx_mode: String,
 }
 
@@ -41,17 +40,17 @@ impl Fixture {
     /// Creates a new fixture with the corresponding patch information and
     /// fixture definition.
     pub fn new(
-        id: FixtureId,
+        fid: FixtureId,
         address: dmx::Address,
-        fixture_type_id: Uuid,
+        type_id: FixtureTypeId,
         dmx_mode: impl Into<String>,
     ) -> Self {
-        Self { id, address, fixture_type_id, dmx_mode: dmx_mode.into() }
+        Self { fid, address, type_id, dmx_mode: dmx_mode.into() }
     }
 
     /// Returns this fixture's unique id.
-    pub fn id(&self) -> FixtureId {
-        self.id
+    pub fn fid(&self) -> FixtureId {
+        self.fid
     }
 
     /// Returns the address of this fixture.
@@ -65,7 +64,7 @@ impl Fixture {
     /// Panics if the fixture type id is not valid in the provided [Patch].
     pub fn fixture_type<'a>(&self, patch: &'a Patch) -> &'a FixtureType {
         patch
-            .fixture_type(self.fixture_type_id)
+            .fixture_type(self.type_id)
             .expect("fixture should always have a valid fixture type id")
     }
 
@@ -186,3 +185,5 @@ impl Fixture {
         Ok(channels)
     }
 }
+
+pub type FixtureTypeId = uuid::Uuid;

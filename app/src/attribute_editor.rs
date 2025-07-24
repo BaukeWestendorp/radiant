@@ -5,10 +5,10 @@ use gpui::prelude::*;
 use gpui::{
     AnyElement, App, EmptyView, Entity, ReadGlobal, SharedString, UpdateGlobal, Window, div,
 };
-use radiant::cmd::{Command, ProgrammerCommand};
+use radiant::engine::Command;
 use radiant::gdtf::attribute::{Feature, FeatureGroup};
 use radiant::gdtf::dmx_mode::{ChannelFunction, LogicalChannel};
-use radiant::patch::{Attribute, AttributeValue, FixtureId, Patch};
+use radiant::show::{Attribute, AttributeValue, FixtureId, Patch};
 use ui::{Disableable, FieldEvent, NumberField, Tab, TabView, button, section, v_divider};
 
 use crate::app::AppState;
@@ -24,7 +24,7 @@ impl AttributeEditor {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let show = AppState::global(cx).engine.show();
 
-        let fids = show.selected_fixture_ids();
+        let fids = show.selected_fixtures();
 
         let feature_groups =
             feature_groups_for_fids(fids, show.patch()).into_iter().cloned().collect::<Vec<_>>();
@@ -107,7 +107,7 @@ struct FeatureEditor {
 impl FeatureEditor {
     pub fn new(feature: &Feature, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let show = AppState::global(cx).engine.show();
-        let fids = show.selected_fixture_ids();
+        let fids = show.selected_fixtures();
 
         let channels = channels_for_fids(fids, &feature, show.patch())
             .into_iter()
@@ -214,7 +214,7 @@ impl ChannelFunctionEditor {
         cx.subscribe(&function_relative_value_field, {
             move |this, _, event: &FieldEvent<f32>, cx| match event {
                 FieldEvent::Submit(value) => {
-                    let fids = AppState::global(cx).engine.show().selected_fixture_ids().to_vec();
+                    let fids = AppState::global(cx).engine.show().selected_fixtures().to_vec();
                     for fid in fids {
                         this.set_programmer_attribute(fid, *value, cx);
                     }
@@ -255,11 +255,7 @@ impl ChannelFunctionEditor {
         AppState::update_global(cx, |state, _| {
             state
                 .engine
-                .exec_cmd(Command::Programmer(ProgrammerCommand::SetAttribute {
-                    fid,
-                    attribute: attribute.clone(),
-                    value,
-                }))
+                .exec(Command::ProgrammerSetAttribute { fid, attribute: attribute.clone(), value })
                 .map_err(|err| log::error!("failed to execute command: {err}"))
                 .ok();
         });

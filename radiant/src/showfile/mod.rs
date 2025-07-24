@@ -11,12 +11,10 @@ use std::path::{Path, PathBuf};
 
 use crate::error::Result;
 
-pub use adapters::*;
 pub use objects::*;
 pub use patch::*;
 pub use protocols::*;
 
-mod adapters;
 mod objects;
 mod patch;
 mod protocols;
@@ -31,8 +29,6 @@ pub const RELATIVE_GDTF_FILE_FOLDER_PATH: &str = "gdtf_files";
 pub const RELATIVE_PATCH_FILE_PATH: &str = "patch.yaml";
 /// The relative path to the objects file within a [Showfile] directory.
 pub const RELATIVE_OBJECTS_FILE_PATH: &str = "objects.yaml";
-/// The relative path to the adapters file within a [Showfile] directory.
-pub const RELATIVE_ADAPTERS_FILE_PATH: &str = "adapters.yaml";
 /// The relative path to the protocols file within a [Showfile] directory.
 pub const RELATIVE_PROTOCOLS_FILE_PATH: &str = "protocols.yaml";
 
@@ -43,10 +39,9 @@ pub const RELATIVE_PROTOCOLS_FILE_PATH: &str = "protocols.yaml";
 pub struct Showfile {
     path: Option<PathBuf>,
 
-    patch: Patch,
-    objects: Objects,
-    adapters: Adapters,
-    protocols: Protocols,
+    pub(crate) patch: Patch,
+    pub(crate) objects: Objects,
+    pub(crate) protocols: Protocols,
 }
 
 impl Showfile {
@@ -54,28 +49,6 @@ impl Showfile {
     /// not been saved yet.
     pub fn path(&self) -> Option<&PathBuf> {
         self.path.as_ref()
-    }
-
-    /// Returns a reference to the [Patch] contained in this [Showfile].
-    pub fn patch(&self) -> &Patch {
-        &self.patch
-    }
-
-    /// Returns a reference to the [Objects] contained in this [Showfile].
-    pub fn objects(&self) -> &Objects {
-        &self.objects
-    }
-
-    /// Returns a reference to the [Adapters] configuration contained in this
-    /// [Showfile].
-    pub fn adapters(&self) -> &Adapters {
-        &self.adapters
-    }
-
-    /// Returns a reference to the [Protocols] configuration contained in this
-    /// [Showfile].
-    pub fn protocols(&self) -> &Protocols {
-        &self.protocols
     }
 
     /// Loads a [Showfile] from the specified path. The path can refer to either
@@ -102,8 +75,7 @@ impl Showfile {
     pub fn load_folder(path: &Path) -> Result<Self> {
         let patch = Patch::read_from_file(&path.join(RELATIVE_PATCH_FILE_PATH))?;
         let objects = Objects::read_from_file(&path.join(RELATIVE_OBJECTS_FILE_PATH))?;
-        let adapters = Adapters::read_from_file(&path.join(RELATIVE_ADAPTERS_FILE_PATH))?;
         let protocols = Protocols::read_from_file(&path.join(RELATIVE_PROTOCOLS_FILE_PATH))?;
-        Ok(Self { path: Some(path.to_path_buf()), patch, adapters, protocols, objects })
+        Ok(Self { path: Some(path.to_path_buf()), patch, protocols, objects })
     }
 }

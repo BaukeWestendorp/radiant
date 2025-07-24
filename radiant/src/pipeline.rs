@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::patch::{Attribute, AttributeValue, FixtureId, Patch};
+use crate::show::{Attribute, AttributeValue, FixtureId, Patch};
 
 /// The [Pipeline] resolves all representations of DMX output
 /// into a single [dmx::Multiverse].

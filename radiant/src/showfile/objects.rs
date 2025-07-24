@@ -4,9 +4,9 @@ use std::{fs, io};
 use eyre::Context;
 
 use crate::error::Result;
-use crate::object::{
-    BeamPreset, ColorPreset, ControlPreset, Cue, DimmerPreset, Executor, FixtureGroup, FocusPreset,
-    GoboPreset, PositionPreset, Sequence, ShapersPreset, VideoPreset,
+use crate::show::{
+    Group, PresetBeam, PresetColor, PresetControl, PresetDimmer, PresetFocus, PresetGobo,
+    PresetPosition, PresetShapers, PresetVideo,
 };
 
 /// A collection of lighting control objects loaded from configuration.
@@ -17,88 +17,20 @@ use crate::object::{
 #[derive(Default)]
 #[derive(serde::Deserialize)]
 pub struct Objects {
-    executors: Vec<Executor>,
-    sequences: Vec<Sequence>,
-    cues: Vec<Cue>,
-    fixture_groups: Vec<FixtureGroup>,
+    pub(crate) groups: Vec<Group>,
 
-    dimmer_presets: Vec<DimmerPreset>,
-    position_presets: Vec<PositionPreset>,
-    gobo_presets: Vec<GoboPreset>,
-    color_presets: Vec<ColorPreset>,
-    beam_presets: Vec<BeamPreset>,
-    focus_presets: Vec<FocusPreset>,
-    shapers_presets: Vec<ShapersPreset>,
-    control_presets: Vec<ControlPreset>,
-    video_presets: Vec<VideoPreset>,
+    pub(crate) dimmer_presets: Vec<PresetDimmer>,
+    pub(crate) position_presets: Vec<PresetPosition>,
+    pub(crate) gobo_presets: Vec<PresetGobo>,
+    pub(crate) color_presets: Vec<PresetColor>,
+    pub(crate) beam_presets: Vec<PresetBeam>,
+    pub(crate) focus_presets: Vec<PresetFocus>,
+    pub(crate) shapers_presets: Vec<PresetShapers>,
+    pub(crate) control_presets: Vec<PresetControl>,
+    pub(crate) video_presets: Vec<PresetVideo>,
 }
 
 impl Objects {
-    /// Returns all [`Executor`] objects.
-    pub fn executors(&self) -> &[Executor] {
-        &self.executors
-    }
-
-    /// Returns all [`Sequence`] objects.
-    pub fn sequences(&self) -> &[Sequence] {
-        &self.sequences
-    }
-
-    /// Returns all [`Cue`] objects.
-    pub fn cues(&self) -> &[Cue] {
-        &self.cues
-    }
-
-    /// Returns all [`FixtureGroup`] objects.
-    pub fn fixture_groups(&self) -> &[FixtureGroup] {
-        &self.fixture_groups
-    }
-
-    /// Returns all [`DimmerPreset`] objects.
-    pub fn dimmer_presets(&self) -> &[DimmerPreset] {
-        &self.dimmer_presets
-    }
-
-    /// Returns all [`PositionPreset`] objects.
-    pub fn position_presets(&self) -> &[PositionPreset] {
-        &self.position_presets
-    }
-
-    /// Returns all [`GoboPreset`] objects.
-    pub fn gobo_presets(&self) -> &[GoboPreset] {
-        &self.gobo_presets
-    }
-
-    /// Returns all [`ColorPreset`] objects.
-    pub fn color_presets(&self) -> &[ColorPreset] {
-        &self.color_presets
-    }
-
-    /// Returns all [`BeamPreset`] objects.
-    pub fn beam_presets(&self) -> &[BeamPreset] {
-        &self.beam_presets
-    }
-
-    /// Returns all [`FocusPreset`] objects.
-    pub fn focus_presets(&self) -> &[FocusPreset] {
-        &self.focus_presets
-    }
-
-    /// Returns all [`ShapersPreset`] objects.
-    pub fn shapers_presets(&self) -> &[ShapersPreset] {
-        &self.shapers_presets
-    }
-
-    /// Returns all [`ControlPreset`] objects.
-    pub fn control_presets(&self) -> &[ControlPreset] {
-        &self.control_presets
-    }
-
-    /// Returns all [`VideoPreset`] objects.
-    pub fn video_presets(&self) -> &[VideoPreset] {
-        &self.video_presets
-    }
-
     /// Reads the [Objects] configuration from a file at the given path.
     ///
     /// The file must be in YAML format and match the

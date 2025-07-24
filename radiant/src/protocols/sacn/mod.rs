@@ -20,7 +20,8 @@ pub use source::*;
 /// # E1.31 3.2 Universe
 ///
 /// A set of up to 512 data slots identified by universe number.
-/// Note: In E1.31 there may be multiple sources for a universe. See also: [Slot].
+/// Note: In E1.31 there may be multiple sources for a universe. See also:
+/// [Slot].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Universe {
     /// The universe number.
@@ -45,7 +46,7 @@ impl Universe {
         Universe { number, start_code_slot: start_code, data_slots: ArrayVec::new() }
     }
 
-    /// Returns a the start code slot and data slots.
+    /// Returns the start code slot and data slots.
     pub fn slots(&self) -> ArrayVec<Slot, { 1 + MAX_UNIVERSE_SIZE }> {
         let mut slots = ArrayVec::new();
         slots.push(self.start_code_slot);
@@ -56,10 +57,11 @@ impl Universe {
 
 /// # E1.31 3.3 Universe Number.
 ///
-/// Each E1.31 Data Packet contains a universe number identifying the universe it
-/// carries. From an ACN perspective, a receiving device has some number of properties whose value is
-/// addressed by the combination of a universe number and a data slot number. From an historical
-/// perspective, a receiving device consumes some number of DMX512-A [DMX] data slots.
+/// Each E1.31 Data Packet contains a universe number identifying the universe
+/// it carries. From an ACN perspective, a receiving device has some number of
+/// properties whose value is addressed by the combination of a universe number
+/// and a data slot number. From an historical perspective, a receiving device
+/// consumes some number of DMX512-A [DMX] data slots.
 pub type UniverseNumber = u16;
 
 /// # E1.31 3.4 Slot
@@ -73,8 +75,8 @@ pub type Slot = u8;
 /// as the same entity from day to day despite network
 /// interruptions, power down, or other disruptions.
 ///
-/// However, in some systems there may be situations in which volatile components
-/// are dynamically created "on the fly" and,
+/// However, in some systems there may be situations in which volatile
+/// components are dynamically created "on the fly" and,
 /// in these cases, the controlling process can generate CIDs as required.
 /// The choice of UUIDs for CIDs allows them to be generated as required
 /// without reference to any registration process or authority.

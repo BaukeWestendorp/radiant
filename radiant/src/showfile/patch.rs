@@ -4,6 +4,7 @@ use std::{fs, io};
 use eyre::Context;
 
 use crate::error::Result;
+use crate::show::FixtureTypeId;
 
 /// Represents the patch configuration for a show, including all information
 /// about the mapping of fixtures to DMX universes and their associated GDTF
@@ -15,21 +16,11 @@ use crate::error::Result;
 #[derive(Default)]
 #[derive(serde::Deserialize)]
 pub struct Patch {
-    gdtf_files: Vec<String>,
-    fixtures: Vec<Fixture>,
+    pub(crate) gdtf_file_names: Vec<String>,
+    pub(crate) fixtures: Vec<Fixture>,
 }
 
 impl Patch {
-    /// Returns the list of GDTF file names referenced by this patch.
-    pub fn gdtf_files(&self) -> &[String] {
-        &self.gdtf_files
-    }
-
-    /// Returns the list of [Fixture]s mapped in this patch.
-    pub fn fixtures(&self) -> &[Fixture] {
-        &self.fixtures
-    }
-
     /// Reads the [Patch] configuration from a file at the given path.
     ///
     /// The file must be in YAML format and match the [Patch] structure.
@@ -49,36 +40,9 @@ impl Patch {
 /// channel, and the DMX mode used for addressing.
 #[derive(serde::Deserialize)]
 pub struct Fixture {
-    id: u32,
-    gdtf_file_index: usize,
-    universe: u16,
-    channel: u16,
-    dmx_mode: String,
-}
-
-impl Fixture {
-    /// Returns the unique id of this fixture.
-    pub fn id(&self) -> u32 {
-        self.id
-    }
-
-    /// Returns the index into the patch's GDTF file list for this fixture.
-    pub fn gdtf_file_index(&self) -> usize {
-        self.gdtf_file_index
-    }
-
-    /// Returns the DMX universe this fixture is mapped to.
-    pub fn universe(&self) -> u16 {
-        self.universe
-    }
-
-    /// Returns the starting DMX channel for this fixture within its universe.
-    pub fn channel(&self) -> u16 {
-        self.channel
-    }
-
-    /// Returns the DMX mode string for this fixture.
-    pub fn dmx_mode(&self) -> &str {
-        &self.dmx_mode
-    }
+    pub(crate) fid: u32,
+    pub(crate) gdtf_type_id: FixtureTypeId,
+    pub(crate) universe: u16,
+    pub(crate) channel: u16,
+    pub(crate) dmx_mode: String,
 }

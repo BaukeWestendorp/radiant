@@ -148,10 +148,10 @@ cues:
         content:
           type: Preset
           data: !Color 5
-fixture_groups:
+groups:
   - id: 1
     name: Spot ALL
-    fixtures:
+    fids:
       [
         101,
         102,
@@ -171,52 +171,52 @@ fixture_groups:
       ]
   - id: 2
     name: Spot ODD
-    fixtures: [101, 103, 105, 107, 109, 111, 113, 115]
+    fids: [101, 103, 105, 107, 109, 111, 113, 115]
   - id: 3
     name: Spot EVEN
-    fixtures: [101, 104, 106, 108, 110, 112, 114]
+    fids: [101, 104, 106, 108, 110, 112, 114]
   - id: 0
     name: NONE
-    fixtures: []
+    fids: []
   - id: 11
     name: Wash ALL
-    fixtures: [201, 202, 203, 204, 205, 206, 207]
+    fids: [201, 202, 203, 204, 205, 206, 207]
   - id: 12
     name: Wash ODD
-    fixtures: [201, 203, 205, 207]
+    fids: [201, 203, 205, 207]
   - id: 13
     name: Wash EVEN
-    fixtures: [202, 204, 206]
+    fids: [202, 204, 206]
   - id: 21
     name: Blinder ALL
-    fixtures: [401, 402, 403, 404, 405, 406, 407, 408]
+    fids: [401, 402, 403, 404, 405, 406, 407, 408]
   - id: 22
     name: Blinder ODD
-    fixtures: [401, 403, 405, 407]
+    fids: [401, 403, 405, 407]
   - id: 23
     name: Blinder EVEN
-    fixtures: [402, 404, 406, 408]
+    fids: [402, 404, 406, 408]
   - id: 31
     name: Front ALL
-    fixtures: [501, 502, 503, 504, 505, 506]
+    fids: [501, 502, 503, 504, 505, 506]
   - id: 32
     name: Front ODD
-    fixtures: [501, 503, 505]
+    fids: [501, 503, 505]
   - id: 33
     name: Front EVEN
-    fixtures: [502, 504, 506]
+    fids: [502, 504, 506]
   - id: 41
     name: Crowd ALL
-    fixtures: [601, 602, 603, 604, 605]
+    fids: [601, 602, 603, 604, 605]
   - id: 42
     name: Crowd ODD
-    fixtures: [601, 603, 605]
+    fids: [601, 603, 605]
   - id: 43
     name: Crowd EVEN
-    fixtures: [602, 604]
+    fids: [602, 604]
   - id: 999
     name: ALL
-    fixtures:
+    fids:
       [
         101,
         102,
@@ -264,31 +264,31 @@ dimmer_presets:
   - id: 1
     name: 100%
     content: !Universal
-      attribute_values:
+      values:
         Dimmer: 1.0
       filter: Dimmer
   - id: 2
     name: 75%
     content: !Universal
-      attribute_values:
+      values:
         Dimmer: 0.75
       filter: Dimmer
   - id: 3
     name: 50%
     content: !Universal
-      attribute_values:
+      values:
         Dimmer: 0.5
       filter: Dimmer
   - id: 4
     name: 25%
     content: !Universal
-      attribute_values:
+      values:
         Dimmer: 0.25
       filter: Dimmer
   - id: 5
     name: 0%
     content: !Universal
-      attribute_values:
+      values:
         Dimmer: 0.0
       filter: Dimmer
 position_presets:
@@ -297,7 +297,7 @@ color_presets:
   - id: 1
     name: White
     content: !Universal
-      attribute_values:
+      values:
         ColorAdd_R: 1.0
         ColorAdd_G: 1.0
         ColorAdd_B: 1.0
@@ -308,7 +308,7 @@ color_presets:
   - id: 2
     name: Red
     content: !Universal
-      attribute_values:
+      values:
         ColorAdd_R: 1.0
         ColorAdd_G: 0.0
         ColorAdd_B: 0.0
@@ -319,7 +319,7 @@ color_presets:
   - id: 3
     name: Orange
     content: !Universal
-      attribute_values:
+      values:
         ColorAdd_R: 1.0
         ColorAdd_G: 0.5
         ColorAdd_B: 0.0
@@ -330,7 +330,7 @@ color_presets:
   - id: 4
     name: Yellow
     content: !Universal
-      attribute_values:
+      values:
         ColorAdd_R: 1.0
         ColorAdd_G: 1.0
         ColorAdd_B: 0.0
@@ -341,7 +341,7 @@ color_presets:
   - id: 5
     name: Fern
     content: !Universal
-      attribute_values:
+      values:
         ColorAdd_R: 0.5
         ColorAdd_G: 1.0
         ColorAdd_B: 0.2
@@ -352,7 +352,7 @@ color_presets:
   - id: 6
     name: Green
     content: !Universal
-      attribute_values:
+      values:
         ColorAdd_R: 0.0
         ColorAdd_G: 1.0
         ColorAdd_B: 0.0
@@ -363,7 +363,7 @@ color_presets:
   - id: 7
     name: Sea
     content: !Universal
-      attribute_values:
+      values:
         ColorAdd_R: 0.0
         ColorAdd_G: 1.0
         ColorAdd_B: 0.5
@@ -374,7 +374,7 @@ color_presets:
   - id: 8
     name: Cyan
     content: !Universal
-      attribute_values:
+      values:
         ColorAdd_R: 0.0
         ColorAdd_G: 1.0
         ColorAdd_B: 1.0
@@ -385,7 +385,7 @@ color_presets:
   - id: 9
     name: Lavender
     content: !Universal
-      attribute_values:
+      values:
         ColorAdd_R: 0.7
         ColorAdd_G: 0.5
         ColorAdd_B: 1.0
@@ -396,7 +396,7 @@ color_presets:
   - id: 10
     name: Blue
     content: !Universal
-      attribute_values:
+      values:
         ColorAdd_R: 0.0
         ColorAdd_G: 0.0
         ColorAdd_B: 1.0
@@ -407,7 +407,7 @@ color_presets:
   - id: 11
     name: Violet
     content: !Universal
-      attribute_values:
+      values:
         ColorAdd_R: 0.5
         ColorAdd_G: 0.0
         ColorAdd_B: 1.0
@@ -418,7 +418,7 @@ color_presets:
   - id: 12
     name: Magenta
     content: !Universal
-      attribute_values:
+      values:
         ColorAdd_R: 1.0
         ColorAdd_G: 0.0
         ColorAdd_B: 0.5
@@ -429,7 +429,7 @@ color_presets:
   - id: 13
     name: Pink
     content: !Universal
-      attribute_values:
+      values:
         ColorAdd_R: 1.0
         ColorAdd_G: 0.5
         ColorAdd_B: 0.7

@@ -8,7 +8,7 @@ edition = "2024"
 
 [workspace.dependencies]
 clap = { version = "4.5.40", features = ["derive"] }
-dmx = { path = "./dmx" }
+dmx = { path = "./dmx", features = ["serde"] }
 derive_more = { version = "2.0.1", features = ["full"] }
 eyre = "0.6.12"
 gpui = { git = "https://github.com/zed-industries/zed", rev = "1e67e30" }

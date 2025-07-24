@@ -1,10 +1,8 @@
-use std::time::{Duration, Instant};
-
 use eyre::Context as _;
 use gpui::prelude::*;
 use gpui::{
-    App, Bounds, Context, Div, Entity, Hsla, ReadGlobal, Timer, TitlebarOptions, Window,
-    WindowBounds, WindowHandle, WindowOptions, div, px, size,
+    App, Bounds, Context, Entity, ReadGlobal, TitlebarOptions, Window, WindowBounds, WindowHandle,
+    WindowOptions, div, px, size,
 };
 
 use crate::app::AppState;
@@ -13,8 +11,6 @@ use crate::error::Result;
 use ui::{ActiveTheme, InteractiveColor, root, titlebar};
 
 pub struct MainWindow {
-    io_status: Entity<IoStatusIndicators>,
-
     attribute_editor: Entity<AttributeEditor>,
 }
 
@@ -33,10 +29,8 @@ impl MainWindow {
         };
 
         cx.open_window(window_options, |window, cx| {
-            cx.new(|cx| Self {
-                io_status: cx.new(IoStatusIndicators::new),
-                attribute_editor: cx.new(|cx| AttributeEditor::new(window, cx)),
-            })
+            window.set_rem_size(px(12.0));
+            cx.new(|cx| Self { attribute_editor: cx.new(|cx| AttributeEditor::new(window, cx)) })
         })
         .map_err(|err| eyre::eyre!(err))
         .context("failed to open main window")
@@ -53,8 +47,7 @@ impl Render for MainWindow {
         let titlebar = titlebar(window, cx)
             .flex()
             .justify_between()
-            .child(div().text_sm().text_color(cx.theme().colors.text.muted()).child(showfile_path))
-            .child(self.io_status.clone())
+            .child(div().text_color(cx.theme().colors.text.muted()).child(showfile_path))
             .pr(ui::TRAFFIC_LIGHT_POSITION.x);
 
         let content = div().size_full().child(self.attribute_editor.clone());
@@ -66,63 +59,5 @@ impl Render for MainWindow {
             .bg(cx.theme().colors.bg_primary)
             .child(titlebar)
             .child(content)
-    }
-}
-
-struct IoStatusIndicators;
-
-impl IoStatusIndicators {
-    const INDICATOR_UPDATE_DELAY: Duration = Duration::from_millis(200);
-
-    pub fn new(cx: &mut Context<Self>) -> Self {
-        cx.spawn(async move |this, cx| {
-            loop {
-                cx.update(|cx| cx.notify(this.entity_id())).ok();
-                Timer::after(Self::INDICATOR_UPDATE_DELAY).await;
-            }
-        })
-        .detach();
-
-        Self
-    }
-}
-
-impl Render for IoStatusIndicators {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        fn is_recent(elapsed: Option<Instant>) -> bool {
-            elapsed
-                .map(|t| t.elapsed() <= IoStatusIndicators::INDICATOR_UPDATE_DELAY)
-                .unwrap_or(false)
-        }
-
-        fn create_indicator(is_recent: bool, color: Hsla) -> Div {
-            let (opacity, border_color) = if is_recent {
-                (1.0, gpui::white().opacity(0.15))
-            } else {
-                (0.5, gpui::black().opacity(0.3))
-            };
-
-            div()
-                .size_2()
-                .rounded_xs()
-                .bg(color.opacity(opacity))
-                .border_1()
-                .border_color(border_color)
-        }
-
-        let io = AppState::global(cx).engine.io_status();
-        let adapter_input_indicator =
-            create_indicator(is_recent(io.last_adapter_input()), cx.theme().colors.accent);
-        let dmx_output_indicator =
-            create_indicator(is_recent(io.last_dmx_output()), cx.theme().colors.accent);
-
-        div()
-            .flex()
-            .flex_col()
-            .justify_center()
-            .gap_1()
-            .h_full()
-            .child(adapter_input_indicator)
-            .child(dmx_output_indicator)
     }
 }

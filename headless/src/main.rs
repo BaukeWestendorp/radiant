@@ -1,8 +1,6 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use eyre::Context;
-use radiant::showfile::Showfile;
 
 mod app;
 
@@ -18,12 +16,7 @@ fn main() -> Result<(), eyre::Error> {
 
     let args = Args::parse();
 
-    let showfile = match &args.showfile_path {
-        Some(path) => Showfile::load(path).wrap_err("failed to load showfile from disk")?,
-        None => Showfile::default(),
-    };
-
-    app::run(showfile)?;
+    app::run(args.showfile_path.as_ref())?;
 
     Ok(())
 }

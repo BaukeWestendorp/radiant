@@ -5,12 +5,12 @@ edition.workspace = true
 
 [dependencies]
 arrayvec = "0.7.6"
+crossbeam-channel = "0.5.15"
 derive_more.workspace = true
+dmx.workspace = true
 eyre.workspace = true
-dmx = { workspace = true, features = ["serde"] }
 gdtf = "0.2.0"
 log.workspace = true
-midir = "0.10.1"
 serde.workspace = true
 serde_yaml = "0.9.34"
 socket2 = { version = "0.5.10", features = ["all"] }

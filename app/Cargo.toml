@@ -9,6 +9,6 @@ dmx.workspace = true
 eyre.workspace = true
 gpui.workspace = true
 log.workspace = true
-radiant.workspace = true
+radiant = { path = "../radiant" }
 simple_logger.workspace = true
 ui.workspace = true
