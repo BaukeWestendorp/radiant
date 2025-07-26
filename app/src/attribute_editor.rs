@@ -48,13 +48,7 @@ impl AttributeEditor {
             })
             .collect();
 
-        Self {
-            feature_group_tabs: cx.new(|cx| {
-                let mut tab_view = TabView::new(tabs, window, cx);
-                tab_view.set_header(|_, _| tab_view_header("Feature\nGroup"));
-                tab_view
-            }),
-        }
+        Self { feature_group_tabs: cx.new(|cx| TabView::new(tabs, window, cx)) }
     }
 }
 
@@ -87,7 +81,6 @@ impl FeatureGroupEditor {
             feature_tabs: cx.new(|cx| {
                 let mut tab_view = TabView::new(tabs, window, cx);
                 tab_view.set_show_tabs(feature_group.features.len() > 1);
-                tab_view.set_header(|_, _| tab_view_header("Feature"));
                 tab_view
             }),
         }
@@ -123,13 +116,7 @@ impl FeatureEditor {
                 Tab::new(name, pretty_name, editor.into())
             })
             .collect();
-        Self {
-            channel_tabs: cx.new(|cx| {
-                let mut tab_view = TabView::new(tabs, window, cx);
-                tab_view.set_header(|_, _| tab_view_header("Channel"));
-                tab_view
-            }),
-        }
+        Self { channel_tabs: cx.new(|cx| TabView::new(tabs, window, cx)) }
     }
 }
 
@@ -176,7 +163,6 @@ impl LogicalChannelEditor {
             channel_function_tabs: cx.new(|cx| {
                 let mut tab_view = TabView::new(tabs, window, cx);
                 tab_view.set_show_tabs(logical_channel.channel_functions.len() > 1);
-                tab_view.set_header(|_, _| tab_view_header("Function"));
                 tab_view
             }),
         }
@@ -368,8 +354,4 @@ fn channels_for_fids<'a>(
         }
     }
     channels
-}
-
-fn tab_view_header(header: &'static str) -> AnyElement {
-    div().text_sm().child(header).into_any_element()
 }

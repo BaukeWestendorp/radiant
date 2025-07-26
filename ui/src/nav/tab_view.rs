@@ -52,7 +52,6 @@ pub struct TabView {
     selected_tab: Option<SharedString>,
     orientation: Orientation,
     show_tabs: bool,
-    render_header: Option<Box<dyn Fn(&mut Window, &mut Context<Self>) -> AnyElement>>,
 }
 
 impl TabView {
@@ -62,13 +61,7 @@ impl TabView {
             None => None,
         };
 
-        Self {
-            tabs,
-            selected_tab,
-            orientation: Orientation::default(),
-            show_tabs: true,
-            render_header: None,
-        }
+        Self { tabs, selected_tab, orientation: Orientation::default(), show_tabs: true }
     }
 
     pub fn tabs(&self) -> &[Tab] {
@@ -106,70 +99,35 @@ impl TabView {
     pub fn show_tabs(&self) -> bool {
         self.show_tabs
     }
-
-    pub fn set_header<F>(&mut self, f: F)
-    where
-        F: Fn(&mut Window, &mut Context<Self>) -> AnyElement + 'static,
-    {
-        self.render_header = Some(Box::new(f));
-    }
 }
 
 impl TabView {
-    pub fn render_tabs(&mut self, window: &mut Window, cx: &mut Context<Self>) -> Div {
+    pub fn render_tabs(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> Div {
         let tabs = self
             .tabs
             .clone()
             .into_iter()
-            .enumerate()
-            .map(|(ix, tab)| {
+            .map(|tab| {
                 let selected = self.selected_tab_id() == Some(&tab.id);
-                div()
-                    .w_full()
-                    .p_2()
-                    .border_color(cx.theme().colors.border)
-                    .when(ix == 0, |e| e.border_l_1())
-                    .when(ix == self.tabs.len() - 1, |e| e.border_r_1())
-                    .when(self.tabs.len() > 1, |e| {
-                        e.when(!selected && self.orientation == Orientation::Horizontal, |e| {
-                            e.border_b_1()
-                        })
-                        .when(selected && self.orientation == Orientation::Horizontal, |e| {
-                            e.border_x_1()
-                        })
-                        .when(!selected && self.orientation == Orientation::Vertical, |e| {
-                            e.border_r_1()
-                        })
-                        .when(selected && self.orientation == Orientation::Vertical, |e| {
-                            e.border_y_1()
-                        })
-                    })
-                    .child(
-                        button(tab.id.clone(), None, tab.label.clone())
-                            .w_full()
-                            .disabled(tab.disabled)
-                            .selected(selected)
-                            .on_click(cx.listener(move |this, _, _, _| {
-                                this.selected_tab = Some(tab.id.clone());
-                            })),
-                    )
+                div().w_full().child(
+                    button(tab.id.clone(), None, tab.label.clone())
+                        .w_full()
+                        .disabled(tab.disabled)
+                        .selected(selected)
+                        .on_click(cx.listener(move |this, _, _, _| {
+                            this.selected_tab = Some(tab.id.clone());
+                        })),
+                )
             })
             .collect::<Vec<_>>();
 
         div()
             .flex()
             .when(self.orientation == Orientation::Vertical, |e| e.flex_col())
-            .children(self.render_header.as_ref().map(|f| {
-                div()
-                    .min_w_24()
-                    .max_w_24()
-                    .flex()
-                    .justify_center()
-                    .items_center()
-                    .border_b_1()
-                    .border_color(cx.theme().colors.border)
-                    .child(f(window, cx))
-            }))
+            .p_2()
+            .border_b_1()
+            .border_color(cx.theme().colors.border)
+            .gap_2()
             .children(tabs)
     }
 
