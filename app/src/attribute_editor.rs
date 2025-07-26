@@ -297,7 +297,11 @@ impl Render for ChannelFunctionEditor {
             .p_2()
             .flex()
             .gap_2()
-            .child(section("Value").size_full().child(self.function_relative_value_field.clone()))
+            .child(
+                section("Value")
+                    .size_full()
+                    .child(div().w_32().child(self.function_relative_value_field.clone())),
+            )
             .child(v_divider(cx))
             .child(section("Channel Sets").min_w_1_3().max_w_1_3().child(channel_set_buttons))
     }

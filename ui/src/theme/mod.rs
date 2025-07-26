@@ -20,7 +20,7 @@ impl Theme {
 
 impl Default for Theme {
     fn default() -> Self {
-        Self { colors: Colors::default(), radius: gpui::px(4.0), cursor_width: gpui::px(1.0) }
+        Self { colors: Colors::default(), radius: gpui::px(0.0), cursor_width: gpui::px(1.0) }
     }
 }
 

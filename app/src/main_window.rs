@@ -29,7 +29,6 @@ impl MainWindow {
         };
 
         cx.open_window(window_options, |window, cx| {
-            window.set_rem_size(px(12.0));
             cx.new(|cx| Self { attribute_editor: cx.new(|cx| AttributeEditor::new(window, cx)) })
         })
         .map_err(|err| eyre::eyre!(err))
@@ -47,7 +46,7 @@ impl Render for MainWindow {
         let titlebar = titlebar(window, cx)
             .flex()
             .justify_between()
-            .child(div().text_color(cx.theme().colors.text.muted()).child(showfile_path))
+            .child(div().text_sm().text_color(cx.theme().colors.text.muted()).child(showfile_path))
             .pr(ui::TRAFFIC_LIGHT_POSITION.x);
 
         let content = div().size_full().child(self.attribute_editor.clone());
