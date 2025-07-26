@@ -41,23 +41,6 @@ impl Pipeline {
         self.values.insert((fixture_id, attribute), value);
     }
 
-    /// Gets an unresolved [AttributeValue] for
-    /// a given [FixtureId] and [Attribute], if present.
-    pub fn unresolved_value(
-        &self,
-        fixture_id: FixtureId,
-        attribute: &Attribute,
-    ) -> Option<AttributeValue> {
-        self.values.get(&(fixture_id, attribute.clone())).copied()
-    }
-
-    /// Clears all unresolved attribute values.
-    ///
-    /// This does not affect the resolved output.
-    pub fn clear_unresolved(&mut self) {
-        self.values.clear();
-    }
-
     /// Resolves all unresolved values into the final [dmx::Multiverse] output.
     ///
     /// This processes default values, attribute values in order. The resolved

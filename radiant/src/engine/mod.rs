@@ -33,7 +33,7 @@ impl Engine {
             None => Showfile::default(),
         };
 
-        let pipeline = Arc::new(Mutex::new(Pipeline::default()));
+        let pipeline = Arc::new(Mutex::new(Pipeline::new()));
 
         let protocols = Protocols::new(pipeline.clone());
         for configuration in &showfile.protocols.sacn_source_configurations {
