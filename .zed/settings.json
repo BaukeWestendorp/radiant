@@ -16,7 +16,16 @@
             "!Focus scalar",
             "!Shapers scalar",
             "!Control scalar",
-            "!Video scalar"
+            "!Video scalar",
+            "!PresetDimmer scalar",
+            "!PresetPosition scalar",
+            "!PresetGobo scalar",
+            "!PresetColor scalar",
+            "!PresetBeam scalar",
+            "!PresetFocus scalar",
+            "!PresetShapers scalar",
+            "!PresetControl scalar",
+            "!PresetVideo scalar"
           ]
         }
       }

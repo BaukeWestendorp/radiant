@@ -1,153 +1,28 @@
-executors:
-  - id: 1
-    name: Wash INT
-    button:
-      mode: Go
-    fader:
-      mode: Master
-      level: 0.0
-    master_level: 0.0
-    sequence_id: 1
-    active_cue_index: 0
-  - id: 2
-    name: Spot INT
-    button:
-      mode: Go
-    fader:
-      mode: Master
-      level: 0.0
-    master_level: 0.0
-    sequence_id: 2
-    active_cue_index: 0
-  - id: 3
-    name: Beam INT
-    button:
-      mode: Go
-    fader:
-      mode: Master
-      level: 0.0
-    master_level: 0.0
-    sequence_id: null
-    active_cue_index: 0
-  - id: 4
-    name: Blinder INT
-    button:
-      mode: Go
-    fader:
-      mode: Master
-      level: 0.0
-    master_level: 0.0
-    sequence_id: 4
-    active_cue_index: 0
-  - id: 5
-    name: Front INT
-    button:
-      mode: Go
-    fader:
-      mode: Master
-      level: 0.0
-    master_level: 0.0
-    sequence_id: 5
-    active_cue_index: 0
-  - id: 6
-    name: Crowd INT
-    button:
-      mode: Go
-    fader:
-      mode: Master
-      level: 0.0
-    master_level: 0.0
-    sequence_id: 6
-    active_cue_index: 0
-  - id: 401
-    name: All COLOR
-    button:
-      mode: Go
-    fader:
-      mode: Master
-      level: 1.0
-    master_level: 1.0
-    sequence_id: 401
-    active_cue_index: 0
 sequences:
   - id: 1
-    name: Wash INT
-    cues: [1]
-  - id: 2
-    name: Spot INT
-    cues: [2]
-  - id: 3
-    name: Beam INT
-    cues: [3]
-  - id: 4
-    name: Blinder INT
-    cues: [4]
-  - id: 5
-    name: Front INT
-    cues: [5]
-  - id: 6
-    name: Crowd INT
-    cues: [6]
-  - id: 401
-    name: All COLOR
-    cues: [401, 402]
-cues:
-  - id: 1
-    name: Wash INT
-    recipes:
-      - fixture_group: 1
-        content:
-          type: Preset
-          data: !Dimmer 1
-  - id: 2
-    name: Spot INT
-    recipes:
-      - fixture_group: 11
-        content:
-          type: Preset
-          data: !Dimmer 1
-  - id: 3
-    name: Beam INT
-    recipes:
-      - fixture_group: 0
-        content:
-          type: Preset
-          data: !Dimmer 1
-  - id: 4
-    name: Blinder INT
-    recipes:
-      - fixture_group: 21
-        content:
-          type: Preset
-          data: !Dimmer 1
-  - id: 5
-    name: Front INT
-    recipes:
-      - fixture_group: 31
-        content:
-          type: Preset
-          data: !Dimmer 1
-  - id: 6
-    name: Crowd INT
-    recipes:
-      - fixture_group: 41
-        content:
-          type: Preset
-          data: !Dimmer 1
-  - id: 401
-    name: All ORANGE
-    recipes:
-      - fixture_group: 999
-        content:
-          type: Preset
-          data: !Color 3
-  - id: 402
-    name: All FERN
-    recipes:
-      - fixture_group: 999
-        content:
-          type: Preset
-          data: !Color 5
+    name: Subatomic
+    active_cue: [1]
+    cues:
+      - id: [0, 5]
+        name: SETUP
+        recipes:
+          - group: 31
+            preset: !Dimmer 4
+          - group: 11
+            preset: !Dimmer 4
+          - group: 11
+            preset: !Color 10
+      - id: [1]
+        name: Intro
+        recipes:
+          - group: 1
+            preset: !Dimmer 2
+          - group: 1
+            preset: !Color 11
+          - group: 11
+            preset: !Dimmer 2
+          - group: 11
+            preset: !Color 13
 groups:
   - id: 1
     name: Spot ALL
@@ -175,9 +50,6 @@ groups:
   - id: 3
     name: Spot EVEN
     fids: [101, 104, 106, 108, 110, 112, 114]
-  - id: 0
-    name: NONE
-    fids: []
   - id: 11
     name: Wash ALL
     fids: [201, 202, 203, 204, 205, 206, 207]
@@ -214,52 +86,6 @@ groups:
   - id: 43
     name: Crowd EVEN
     fids: [602, 604]
-  - id: 999
-    name: ALL
-    fids:
-      [
-        101,
-        102,
-        103,
-        104,
-        105,
-        106,
-        107,
-        108,
-        109,
-        110,
-        111,
-        112,
-        113,
-        114,
-        115,
-        201,
-        202,
-        203,
-        204,
-        205,
-        206,
-        207,
-        401,
-        402,
-        403,
-        404,
-        405,
-        406,
-        407,
-        408,
-        501,
-        502,
-        503,
-        504,
-        505,
-        506,
-        601,
-        602,
-        603,
-        604,
-        605,
-      ]
 dimmer_presets:
   - id: 1
     name: 100%
@@ -286,6 +112,12 @@ dimmer_presets:
         Dimmer: 0.25
       filter: Dimmer
   - id: 5
+    name: 10%
+    content: !Universal
+      values:
+        Dimmer: 0.10
+      filter: Dimmer
+  - id: 6
     name: 0%
     content: !Universal
       values:
