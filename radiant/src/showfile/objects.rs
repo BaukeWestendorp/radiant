@@ -6,7 +6,7 @@ use eyre::Context;
 use crate::error::Result;
 use crate::show::{
     Group, PresetBeam, PresetColor, PresetControl, PresetDimmer, PresetFocus, PresetGobo,
-    PresetPosition, PresetShapers, PresetVideo,
+    PresetPosition, PresetShapers, PresetVideo, Sequence,
 };
 
 /// A collection of lighting control objects loaded from configuration.
@@ -18,6 +18,7 @@ use crate::show::{
 #[derive(serde::Deserialize)]
 pub struct Objects {
     pub(crate) groups: Vec<Group>,
+    pub(crate) sequences: Vec<Sequence>,
 
     pub(crate) dimmer_presets: Vec<PresetDimmer>,
     pub(crate) position_presets: Vec<PresetPosition>,

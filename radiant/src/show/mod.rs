@@ -32,6 +32,9 @@ impl Show {
         for obj in &showfile.objects.groups {
             objects.insert(obj.id.into(), obj.clone().into());
         }
+        for obj in &showfile.objects.sequences {
+            objects.insert(obj.id.into(), obj.clone().into());
+        }
         for obj in &showfile.objects.dimmer_presets {
             objects.insert(obj.id.into(), obj.clone().into());
         }
@@ -90,7 +93,7 @@ impl Show {
             objects: Mutex::new(objects),
             patch,
             programmer: Programmer::default(),
-            selected_fixtures: vec![FixtureId(101)],
+            selected_fixtures: vec![],
         })
     }
 
@@ -113,6 +116,30 @@ impl Show {
                 .lock()
                 .unwrap()
                 .get(&AnyObjectId::Group(*id.into()))?
+                .clone()
+                .try_into()
+                .expect("objects map should always contain a matching id and object types"),
+        )
+    }
+
+    pub fn sequence(&self, id: impl Into<ObjectId<Sequence>>) -> Option<Sequence> {
+        Some(
+            self.objects
+                .lock()
+                .unwrap()
+                .get(&AnyObjectId::Sequence(*id.into()))?
+                .clone()
+                .try_into()
+                .expect("objects map should always contain a matching id and object types"),
+        )
+    }
+
+    pub fn any_preset(&self, id: impl Into<AnyPresetId>) -> Option<AnyPreset> {
+        Some(
+            self.objects
+                .lock()
+                .unwrap()
+                .get(&(id.into()).into())?
                 .clone()
                 .try_into()
                 .expect("objects map should always contain a matching id and object types"),

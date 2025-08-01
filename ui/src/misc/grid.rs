@@ -1,4 +1,4 @@
-use gpui::{Background, Bounds, Canvas, Pixels, Point, Styled, canvas, fill, point, px};
+use gpui::{Background, Bounds, Canvas, Pixels, Point, canvas, fill, point, px};
 
 /// Creates a canvas that draws a grid of dots.
 pub fn dot_grid(spacing: Pixels, color: impl Into<Background>) -> Canvas<()> {

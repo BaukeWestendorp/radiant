@@ -6,7 +6,7 @@ use crate::show::{
 
 pub enum Command {
     PatchAdd { fid: FixtureId, address: dmx::Address, type_id: FixtureTypeId, dmx_mode: String },
-    CreateGroup { id: ObjectId<Group>, name: Option<String>, fids: Vec<u32> },
+    CreateGroup { id: ObjectId<Group>, name: Option<String>, fids: Vec<FixtureId> },
     CreatePresetDimmer { id: ObjectId<PresetDimmer>, name: Option<String> },
     CreatePresetPosition { id: ObjectId<PresetPosition>, name: Option<String> },
     CreatePresetGobo { id: ObjectId<PresetGobo>, name: Option<String> },

@@ -53,6 +53,10 @@ impl Fixture {
         self.fid
     }
 
+    pub fn fixture_type_id(&self) -> &FixtureTypeId {
+        &self.type_id
+    }
+
     /// Returns the address of this fixture.
     pub fn address(&self) -> &dmx::Address {
         &self.address

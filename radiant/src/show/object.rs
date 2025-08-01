@@ -2,9 +2,8 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::ops::Deref;
 
-use crate::show::preset::{
-    Beam, Color, Control, Dimmer, Focus, Gobo, Position, PresetContent, Shapers, Video,
-};
+use crate::show::preset::PresetContent;
+use crate::show::{AnyPresetId, FixtureId};
 
 pub trait Object: Debug + Clone
 where
@@ -163,22 +162,52 @@ macro_rules! define_objects {
 
 define_objects! {
     pub struct Group {
-        pub(crate) fids: Vec<u32>,
+        pub(crate) fids: Vec<FixtureId>,
     }
 
-    pub struct PresetDimmer { pub(crate) content: PresetContent<Dimmer>, }
-    pub struct PresetPosition { pub(crate) content: PresetContent<Position>, }
-    pub struct PresetGobo { pub(crate) content: PresetContent<Gobo>, }
-    pub struct PresetColor { pub(crate) content: PresetContent<Color>, }
-    pub struct PresetBeam { pub(crate) content: PresetContent<Beam>, }
-    pub struct PresetFocus { pub(crate) content: PresetContent<Focus>, }
-    pub struct PresetControl { pub(crate) content: PresetContent<Control>, }
-    pub struct PresetShapers { pub(crate) content: PresetContent<Shapers>, }
-    pub struct PresetVideo { pub(crate) content: PresetContent<Video>, }
+    pub struct Sequence {
+        pub(crate) cues: Vec<Cue>,
+        pub(crate) active_cue: Option<CueId>,
+    }
+
+    pub struct PresetDimmer { pub(crate) content: PresetContent, }
+    pub struct PresetPosition { pub(crate) content: PresetContent, }
+    pub struct PresetGobo { pub(crate) content: PresetContent, }
+    pub struct PresetColor { pub(crate) content: PresetContent, }
+    pub struct PresetBeam { pub(crate) content: PresetContent, }
+    pub struct PresetFocus { pub(crate) content: PresetContent, }
+    pub struct PresetControl { pub(crate) content: PresetContent, }
+    pub struct PresetShapers { pub(crate) content: PresetContent, }
+    pub struct PresetVideo { pub(crate) content: PresetContent, }
 }
 
 impl Group {
-    pub fn fids(&self) -> &[u32] {
+    pub fn fids(&self) -> &[FixtureId] {
         &self.fids
     }
+}
+
+impl Sequence {
+    pub fn active_cue(&self) -> Option<&Cue> {
+        self.active_cue.as_ref().and_then(|id| self.cues.iter().find(|cue| cue.id == *id))
+    }
+}
+
+#[derive(Debug, Clone)]
+#[derive(serde::Deserialize)]
+pub struct Cue {
+    pub(crate) id: CueId,
+    pub(crate) name: String,
+    pub(crate) recipes: Vec<Recipe>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(serde::Deserialize)]
+pub struct CueId(pub(crate) Vec<u32>);
+
+#[derive(Debug, Clone)]
+#[derive(serde::Deserialize)]
+pub struct Recipe {
+    pub(crate) group: Option<ObjectId<Group>>,
+    pub(crate) preset: Option<AnyPresetId>,
 }
