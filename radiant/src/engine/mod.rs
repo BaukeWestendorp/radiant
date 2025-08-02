@@ -138,6 +138,11 @@ impl Engine {
             Command::ProgrammerSetAttribute { fid, attribute, value } => {
                 self.show().programmer().set_value(fid, attribute, value);
             }
+            Command::Go { executor } => {
+                if let Some(executor) = self.show().executor(executor) {
+                    self.show.
+                }
+            }
         }
 
         Ok(())

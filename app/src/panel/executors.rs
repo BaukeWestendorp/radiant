@@ -1,7 +1,8 @@
 use gpui::prelude::*;
 use gpui::{Entity, FontWeight, ReadGlobal, Window, div};
+use radiant::engine::Command;
 use radiant::show::{Executor, Object, ObjectId};
-use ui::{ActiveTheme, ContainerStyle, container};
+use ui::{ActiveTheme, ContainerStyle, button, container};
 
 use crate::app::AppState;
 use crate::main_window::CELL_SIZE;
@@ -11,7 +12,7 @@ pub struct ExecutorsPanel {
 }
 
 impl ExecutorsPanel {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(_window: &mut Window, cx: &mut Context<Self>) -> Self {
         Self {
             executors: vec![
                 cx.new(|_| ExecutorView::new(Some(1.into()))),
@@ -41,7 +42,9 @@ impl Render for ExecutorView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let show = AppState::global(cx).engine.show();
         let Some(executor) = self.executor_id.and_then(|id| show.executor(id)) else {
-            return container(ContainerStyle::normal(window, cx)).size(CELL_SIZE);
+            return container(ContainerStyle::normal(window, cx))
+                .size(CELL_SIZE)
+                .into_any_element();
         };
 
         let name = div()
@@ -80,10 +83,25 @@ impl Render for ExecutorView {
             None => div(),
         };
 
-        container(ContainerStyle::normal(window, cx))
-            .size(CELL_SIZE)
-            .text_xs()
-            .child(name)
-            .child(sequence_content)
+        div()
+            .flex()
+            .flex_col()
+            .child(
+                container(ContainerStyle::normal(window, cx))
+                    .size(CELL_SIZE)
+                    .text_xs()
+                    .child(name)
+                    .child(sequence_content),
+            )
+            .child(button("button_1", None, "Go").on_click({
+                let executor_id = executor.id();
+                move |_, _, cx| {
+                    AppState::global(cx)
+                        .engine
+                        .exec(Command::Go { executor: executor_id })
+                        .unwrap();
+                }
+            }))
+            .into_any_element()
     }
 }

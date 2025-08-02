@@ -1,7 +1,7 @@
 executors:
   - id: 1
     name: Subatomic
-    sequence: 1
+    sequence_id: 1
 sequences:
   - id: 1
     name: Subatomic

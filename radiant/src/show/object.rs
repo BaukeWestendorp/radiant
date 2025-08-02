@@ -171,7 +171,7 @@ define_objects! {
     }
 
     pub struct Executor {
-        pub(crate) sequence: Option<ObjectId<Sequence>>,
+        pub(crate) sequence_id: Option<ObjectId<Sequence>>,
     }
 
     pub struct PresetDimmer { pub(crate) content: PresetContent, }
@@ -224,8 +224,12 @@ impl Sequence {
 }
 
 impl Executor {
+    pub fn sequence_id(&self) -> Option<ObjectId<Sequence>> {
+        self.sequence_id
+    }
+
     pub fn sequence(&self, show: &Show) -> Option<Sequence> {
-        self.sequence.and_then(|sequence_id| show.sequence(sequence_id))
+        self.sequence_id.and_then(|sequence_id| show.sequence(sequence_id))
     }
 }
 

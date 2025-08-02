@@ -1,7 +1,7 @@
 use crate::show::{
-    Attribute, AttributeValue, FixtureId, FixtureTypeId, Group, ObjectId, PresetBeam, PresetColor,
-    PresetControl, PresetDimmer, PresetFocus, PresetGobo, PresetPosition, PresetShapers,
-    PresetVideo,
+    Attribute, AttributeValue, Executor, FixtureId, FixtureTypeId, Group, ObjectId, PresetBeam,
+    PresetColor, PresetControl, PresetDimmer, PresetFocus, PresetGobo, PresetPosition,
+    PresetShapers, PresetVideo,
 };
 
 pub enum Command {
@@ -17,4 +17,5 @@ pub enum Command {
     CreatePresetShapers { id: ObjectId<PresetShapers>, name: Option<String> },
     CreatePresetVideo { id: ObjectId<PresetVideo>, name: Option<String> },
     ProgrammerSetAttribute { fid: FixtureId, attribute: Attribute, value: AttributeValue },
+    Go { executor: ObjectId<Executor> },
 }
