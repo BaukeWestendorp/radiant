@@ -14,11 +14,11 @@ use crate::app::AppState;
 const ALL_FEATURE_GROUPS: [&str; 9] =
     ["Dimmer", "Position", "Gobo", "Color", "Beam", "Focus", "Control", "Shapers", "Video"];
 
-pub struct AttributeEditor {
+pub struct AttributeEditorPanel {
     feature_group_tabs: Entity<TabView>,
 }
 
-impl AttributeEditor {
+impl AttributeEditorPanel {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let show = AppState::global(cx).engine.show();
 
@@ -50,7 +50,7 @@ impl AttributeEditor {
     }
 }
 
-impl Render for AttributeEditor {
+impl Render for AttributeEditorPanel {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         div().size_full().child(self.feature_group_tabs.clone())
     }

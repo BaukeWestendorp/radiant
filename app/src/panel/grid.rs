@@ -23,7 +23,7 @@ impl PanelGrid {
 
 impl Render for PanelGrid {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let panels = div().children(self.panels.clone()).into_any();
+        let panels = z_stack(self.panels.clone()).size_full().into_any();
 
         div().w(CELL_SIZE * self.size.width as f32).h(CELL_SIZE * self.size.height as f32).child(
             z_stack([dot_grid(CELL_SIZE, cx.theme().colors.grid).size_full().into_any(), panels])

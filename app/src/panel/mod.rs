@@ -5,9 +5,11 @@ use ui::ActiveTheme;
 use crate::main_window::CELL_SIZE;
 
 pub use attribute_editor::*;
+pub use executors::*;
 pub use grid::*;
 
 pub mod attribute_editor;
+pub mod executors;
 pub mod grid;
 
 pub struct Panel {
@@ -27,7 +29,10 @@ impl Panel {
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
         let content = match kind {
-            WindowPanelKind::AttributeEditor(attribute_editor) => attribute_editor,
+            WindowPanelKind::AttributeEditor(attribute_editor) => {
+                attribute_editor.into_any_element()
+            }
+            WindowPanelKind::Executors(executors) => executors.into_any_element(),
         };
 
         div()
@@ -79,7 +84,8 @@ pub enum PanelKind {
 
 #[derive(Debug, Clone)]
 pub enum WindowPanelKind {
-    AttributeEditor(Entity<AttributeEditor>),
+    AttributeEditor(Entity<AttributeEditorPanel>),
+    Executors(Entity<ExecutorsPanel>),
 }
 
 #[derive(Debug, Clone)]
