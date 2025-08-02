@@ -1,7 +1,11 @@
+executors:
+  - id: 1
+    name: Subatomic
+    sequence: 1
 sequences:
   - id: 1
     name: Subatomic
-    active_cue: [1]
+    active_cue: [0, 5]
     cues:
       - id: [0, 5]
         name: SETUP

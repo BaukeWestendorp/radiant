@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use std::ops::Deref;
 
 use crate::show::preset::PresetContent;
-use crate::show::{AnyPresetId, FixtureId};
+use crate::show::{AnyPresetId, FixtureId, Show};
 
 pub trait Object: Debug + Clone
 where
@@ -170,6 +170,10 @@ define_objects! {
         pub(crate) active_cue: Option<CueId>,
     }
 
+    pub struct Executor {
+        pub(crate) sequence: Option<ObjectId<Sequence>>,
+    }
+
     pub struct PresetDimmer { pub(crate) content: PresetContent, }
     pub struct PresetPosition { pub(crate) content: PresetContent, }
     pub struct PresetGobo { pub(crate) content: PresetContent, }
@@ -188,8 +192,40 @@ impl Group {
 }
 
 impl Sequence {
+    pub fn previous_cue(&self) -> Option<&Cue> {
+        let mut index = self.active_cue_index()?;
+        if index == 0 {
+            index = self.cues.len();
+        } else {
+            index -= 1;
+        }
+        self.cues.get(index)
+    }
+
     pub fn active_cue(&self) -> Option<&Cue> {
         self.active_cue.as_ref().and_then(|id| self.cues.iter().find(|cue| cue.id == *id))
+    }
+
+    pub fn next_cue(&self) -> Option<&Cue> {
+        let mut index = self.active_cue_index()?;
+        if index == self.cues.len() {
+            index = 0;
+        } else {
+            index += 1;
+        }
+        self.cues.get(index)
+    }
+
+    pub fn active_cue_index(&self) -> Option<usize> {
+        self.active_cue
+            .as_ref()
+            .and_then(|cue_id| self.cues.iter().position(|cue| cue.id == *cue_id))
+    }
+}
+
+impl Executor {
+    pub fn sequence(&self, show: &Show) -> Option<Sequence> {
+        self.sequence.and_then(|sequence_id| show.sequence(sequence_id))
     }
 }
 
@@ -199,6 +235,20 @@ pub struct Cue {
     pub(crate) id: CueId,
     pub(crate) name: String,
     pub(crate) recipes: Vec<Recipe>,
+}
+
+impl Cue {
+    pub fn id(&self) -> &CueId {
+        &self.id
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn recipes(&self) -> &[Recipe] {
+        &self.recipes
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

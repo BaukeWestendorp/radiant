@@ -35,6 +35,9 @@ impl Show {
         for obj in &showfile.objects.sequences {
             objects.insert(obj.id.into(), obj.clone().into());
         }
+        for obj in &showfile.objects.executors {
+            objects.insert(obj.id.into(), obj.clone().into());
+        }
         for obj in &showfile.objects.dimmer_presets {
             objects.insert(obj.id.into(), obj.clone().into());
         }
@@ -93,7 +96,7 @@ impl Show {
             objects: Mutex::new(objects),
             patch,
             programmer: Programmer::default(),
-            selected_fixtures: vec![],
+            selected_fixtures: vec![FixtureId(101), FixtureId(102), FixtureId(103), FixtureId(104)],
         })
     }
 
@@ -128,6 +131,18 @@ impl Show {
                 .lock()
                 .unwrap()
                 .get(&AnyObjectId::Sequence(*id.into()))?
+                .clone()
+                .try_into()
+                .expect("objects map should always contain a matching id and object types"),
+        )
+    }
+
+    pub fn executor(&self, id: impl Into<ObjectId<Executor>>) -> Option<Executor> {
+        Some(
+            self.objects
+                .lock()
+                .unwrap()
+                .get(&AnyObjectId::Executor(*id.into()))?
                 .clone()
                 .try_into()
                 .expect("objects map should always contain a matching id and object types"),

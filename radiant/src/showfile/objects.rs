@@ -5,7 +5,7 @@ use eyre::Context;
 
 use crate::error::Result;
 use crate::show::{
-    Group, PresetBeam, PresetColor, PresetControl, PresetDimmer, PresetFocus, PresetGobo,
+    Executor, Group, PresetBeam, PresetColor, PresetControl, PresetDimmer, PresetFocus, PresetGobo,
     PresetPosition, PresetShapers, PresetVideo, Sequence,
 };
 
@@ -19,6 +19,7 @@ use crate::show::{
 pub struct Objects {
     pub(crate) groups: Vec<Group>,
     pub(crate) sequences: Vec<Sequence>,
+    pub(crate) executors: Vec<Executor>,
 
     pub(crate) dimmer_presets: Vec<PresetDimmer>,
     pub(crate) position_presets: Vec<PresetPosition>,
