@@ -1,3 +1,4 @@
+use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -20,9 +21,7 @@ pub use command::*;
 
 pub struct Engine {
     protocols: Protocols,
-
-    show: Arc<Show>,
-
+    show: ShowHandle,
     pipeline: Arc<Mutex<Pipeline>>,
 }
 
@@ -51,104 +50,151 @@ impl Engine {
 
         let show = Show::new(showfile).wrap_err("failed to create show from showfile")?;
 
-        Ok(Self { protocols, show: Arc::new(show), pipeline })
+        Ok(Self { protocols, show: ShowHandle { show: Arc::new(Mutex::new(show)) }, pipeline })
     }
 
     pub fn start(&self) {
         processor::start(self.pipeline.clone(), self.show.clone());
         self.protocols.start();
-        control_surface::start(self.show.clone());
+        control_surface::start();
     }
 
     pub fn exec(&self, command: Command) -> Result<(), crate::error::Error> {
         match command {
             Command::PatchAdd { fid, address, type_id, dmx_mode } => {
-                self.show.patch().insert_fixture(fid, address, type_id, dmx_mode);
+                self.show()
+                    .update(|show| show.patch.insert_fixture(fid, address, type_id, dmx_mode));
             }
             Command::CreateGroup { id, name, fids } => {
-                self.show.insert_object(Group {
-                    id,
-                    name: name.unwrap_or("New Group".to_string()),
-                    fids,
+                self.show().update(|show| {
+                    show.groups.insert(Group {
+                        id,
+                        name: name.unwrap_or("New Group".to_string()),
+                        fids,
+                    });
                 });
             }
             Command::CreatePresetDimmer { id, name } => {
-                self.show.insert_object(PresetDimmer {
-                    id,
-                    name: name.unwrap_or("New Dimmer Preset".to_string()),
-                    content: PresetContent::default(),
+                self.show().update(|show| {
+                    show.presets_dimmer.insert(PresetDimmer {
+                        id,
+                        name: name.unwrap_or("New Dimmer Preset".to_string()),
+                        content: PresetContent::default(),
+                    });
                 });
             }
             Command::CreatePresetPosition { id, name } => {
-                self.show.insert_object(PresetPosition {
-                    id,
-                    name: name.unwrap_or("New Position Preset".to_string()),
-                    content: PresetContent::default(),
+                self.show().update(|show| {
+                    show.presets_position.insert(PresetPosition {
+                        id,
+                        name: name.unwrap_or("New Position Preset".to_string()),
+                        content: PresetContent::default(),
+                    });
                 });
             }
             Command::CreatePresetGobo { id, name } => {
-                self.show.insert_object(PresetGobo {
-                    id,
-                    name: name.unwrap_or("New Gobo Preset".to_string()),
-                    content: PresetContent::default(),
+                self.show().update(|show| {
+                    show.presets_gobo.insert(PresetGobo {
+                        id,
+                        name: name.unwrap_or("New Gobo Preset".to_string()),
+                        content: PresetContent::default(),
+                    });
                 });
             }
             Command::CreatePresetColor { id, name } => {
-                self.show.insert_object(PresetColor {
-                    id,
-                    name: name.unwrap_or("New Color Preset".to_string()),
-                    content: PresetContent::default(),
+                self.show().update(|show| {
+                    show.presets_color.insert(PresetColor {
+                        id,
+                        name: name.unwrap_or("New Color Preset".to_string()),
+                        content: PresetContent::default(),
+                    });
                 });
             }
             Command::CreatePresetBeam { id, name } => {
-                self.show.insert_object(PresetBeam {
-                    id,
-                    name: name.unwrap_or("New Beam Preset".to_string()),
-                    content: PresetContent::default(),
+                self.show().update(|show| {
+                    show.presets_beam.insert(PresetBeam {
+                        id,
+                        name: name.unwrap_or("New Beam Preset".to_string()),
+                        content: PresetContent::default(),
+                    });
                 });
             }
             Command::CreatePresetFocus { id, name } => {
-                self.show.insert_object(PresetFocus {
-                    id,
-                    name: name.unwrap_or("New Focus Preset".to_string()),
-                    content: PresetContent::default(),
+                self.show().update(|show| {
+                    show.presets_focus.insert(PresetFocus {
+                        id,
+                        name: name.unwrap_or("New Focus Preset".to_string()),
+                        content: PresetContent::default(),
+                    });
                 });
             }
             Command::CreatePresetControl { id, name } => {
-                self.show.insert_object(PresetControl {
-                    id,
-                    name: name.unwrap_or("New Control Preset".to_string()),
-                    content: PresetContent::default(),
+                self.show().update(|show| {
+                    show.presets_control.insert(PresetControl {
+                        id,
+                        name: name.unwrap_or("New Control Preset".to_string()),
+                        content: PresetContent::default(),
+                    });
                 });
             }
             Command::CreatePresetShapers { id, name } => {
-                self.show.insert_object(PresetShapers {
-                    id,
-                    name: name.unwrap_or("New Shapers Preset".to_string()),
-                    content: PresetContent::default(),
+                self.show().update(|show| {
+                    show.presets_shapers.insert(PresetShapers {
+                        id,
+                        name: name.unwrap_or("New Shapers Preset".to_string()),
+                        content: PresetContent::default(),
+                    });
                 });
             }
-            Command::CreatePresetVideo { id, name } => {
-                self.show.insert_object(PresetVideo {
+            Command::CreatePresetVideo { id, name } => self.show().update(|show| {
+                show.presets_video.insert(PresetVideo {
                     id,
                     name: name.unwrap_or("New Video Preset".to_string()),
                     content: PresetContent::default(),
                 });
-            }
+            }),
             Command::ProgrammerSetAttribute { fid, attribute, value } => {
-                self.show().programmer().set_value(fid, attribute, value);
+                self.show().update(|show| {
+                    show.programmer.set_value(fid, attribute, value);
+                });
             }
             Command::Go { executor } => {
-                if let Some(executor) = self.show().executor(executor) {
-                    self.show.
-                }
+                self.show().update(|show| {
+                    let executor = show.executors.get(executor);
+                    let sequence_id = executor.and_then(|e| e.sequence_id);
+                    let sequence = sequence_id.and_then(|id| show.sequences.get_mut(id));
+                    let next_cue_index = sequence.as_ref().and_then(|seq| seq.next_cue_index());
+                    let next_cue_id = next_cue_index
+                        .and_then(|ix| sequence.as_ref().and_then(|seq| seq.cue_at(ix)))
+                        .map(|cue| cue.id().clone());
+                    if let (Some(seq), Some(next_id)) = (sequence, next_cue_id) {
+                        seq.set_active_cue(Some(next_id.clone()));
+                    }
+                });
             }
         }
 
         Ok(())
     }
 
-    pub fn show(&self) -> &Show {
+    pub fn show(&self) -> &ShowHandle {
         &self.show
+    }
+}
+
+#[derive(Clone)]
+pub struct ShowHandle {
+    show: Arc<Mutex<Show>>,
+}
+
+impl ShowHandle {
+    pub fn read<F: FnOnce(&Show) -> R, R>(&self, f: F) -> R {
+        let show = self.show.lock().unwrap();
+        f(show.deref())
+    }
+
+    pub fn update<F: FnOnce(&mut Show) -> R, R>(&self, f: F) -> R {
+        let mut show = self.show.lock().unwrap();
+        f(show.deref_mut())
     }
 }

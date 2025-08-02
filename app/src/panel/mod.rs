@@ -45,7 +45,7 @@ impl Panel {
 
     fn render_pool(
         &mut self,
-        kind: PoolPanelKind,
+        _kind: PoolPanelKind,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {

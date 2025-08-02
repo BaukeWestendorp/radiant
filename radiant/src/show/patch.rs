@@ -1,5 +1,3 @@
-use std::sync::Mutex;
-
 use gdtf::fixture_type::FixtureType;
 
 mod attribute;
@@ -13,13 +11,13 @@ pub use fixture::*;
 #[derive(Debug, Default)]
 pub struct Patch {
     pub(crate) fixture_types: Vec<FixtureType>,
-    pub(crate) fixtures: Mutex<Vec<Fixture>>,
+    pub(crate) fixtures: Vec<Fixture>,
 }
 
 impl Patch {
     /// Get all patched [Fixture]s.
     pub fn fixtures(&self) -> Vec<Fixture> {
-        self.fixtures.lock().unwrap().clone()
+        self.fixtures.clone()
     }
 
     /// Get all [FixtureType]s.
@@ -36,16 +34,16 @@ impl Patch {
     /// exists.
     pub fn fixture(&self, fixture_id: impl Into<FixtureId>) -> Option<Fixture> {
         let fid = fixture_id.into();
-        self.fixtures.lock().unwrap().iter().find(|f| f.fid() == fid).cloned()
+        self.fixtures.iter().find(|f| f.fid() == fid).cloned()
     }
 
     pub(crate) fn insert_fixture(
-        &self,
+        &mut self,
         fid: FixtureId,
         address: dmx::Address,
         type_id: FixtureTypeId,
         dmx_mode: String,
     ) {
-        self.fixtures.lock().unwrap().push(Fixture::new(fid, address, type_id, dmx_mode))
+        self.fixtures.push(Fixture::new(fid, address, type_id, dmx_mode))
     }
 }

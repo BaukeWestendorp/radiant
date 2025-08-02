@@ -8,24 +8,30 @@ use crate::show::patch::{Attribute, AttributeValue, FixtureId, FixtureTypeId};
 use crate::show::{AnyObject, AnyObjectId, ObjectId};
 
 macro_rules! preset_kind_and_content {
-    ($preset:ident) => {
+    ($kind:ident, $preset:ident) => {
         impl $preset {
             pub fn content(&self) -> &PresetContent {
                 &self.content
             }
         }
+
+        impl From<$preset> for AnyPreset {
+            fn from(preset: $preset) -> AnyPreset {
+                AnyPreset::$kind(preset)
+            }
+        }
     };
 }
 
-preset_kind_and_content!(PresetDimmer);
-preset_kind_and_content!(PresetPosition);
-preset_kind_and_content!(PresetGobo);
-preset_kind_and_content!(PresetColor);
-preset_kind_and_content!(PresetBeam);
-preset_kind_and_content!(PresetFocus);
-preset_kind_and_content!(PresetControl);
-preset_kind_and_content!(PresetShapers);
-preset_kind_and_content!(PresetVideo);
+preset_kind_and_content!(Dimmer, PresetDimmer);
+preset_kind_and_content!(Position, PresetPosition);
+preset_kind_and_content!(Gobo, PresetGobo);
+preset_kind_and_content!(Color, PresetColor);
+preset_kind_and_content!(Beam, PresetBeam);
+preset_kind_and_content!(Focus, PresetFocus);
+preset_kind_and_content!(Control, PresetControl);
+preset_kind_and_content!(Shapers, PresetShapers);
+preset_kind_and_content!(Video, PresetVideo);
 
 pub trait PresetKind {}
 

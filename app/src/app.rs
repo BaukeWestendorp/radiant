@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
-use gpui::{App, Application, Global};
+use gpui::{App, Application, Global, ReadGlobal};
 use radiant::engine::Engine;
+use radiant::show::Show;
 
 use crate::main_window::MainWindow;
 
@@ -22,4 +23,8 @@ pub fn run(showfile_path: Option<PathBuf>) {
 
         MainWindow::open(cx).expect("failed to open main window");
     });
+}
+
+pub fn with_show<F: FnOnce(&Show) -> R, R>(cx: &App, f: F) -> R {
+    AppState::global(cx).engine.show().read(f)
 }

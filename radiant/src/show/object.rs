@@ -1,4 +1,6 @@
+use std::collections::HashMap;
 use std::fmt::Debug;
+use std::hash::Hash;
 use std::marker::PhantomData;
 use std::ops::Deref;
 
@@ -14,7 +16,7 @@ where
     fn name(&self) -> &str;
 }
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, PartialOrd, Ord)]
 #[derive(serde::Deserialize)]
 #[serde(transparent)]
 pub struct ObjectId<T>(u32, PhantomData<T>);
@@ -32,6 +34,21 @@ impl<T> Clone for ObjectId<T> {
 }
 
 impl<T> Copy for ObjectId<T> {}
+
+impl<T> PartialEq for ObjectId<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0 && self.1 == other.1
+    }
+}
+
+impl<T> Eq for ObjectId<T> {}
+
+impl<T> Hash for ObjectId<T> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+        self.1.hash(state);
+    }
+}
 
 impl<T> From<ObjectId<T>> for u32 {
     fn from(id: ObjectId<T>) -> Self {
@@ -199,11 +216,15 @@ impl Sequence {
         } else {
             index -= 1;
         }
-        self.cues.get(index)
+        self.cue_at(index)
     }
 
     pub fn active_cue(&self) -> Option<&Cue> {
         self.active_cue.as_ref().and_then(|id| self.cues.iter().find(|cue| cue.id == *id))
+    }
+
+    pub fn set_active_cue(&mut self, id: Option<CueId>) {
+        self.active_cue = id;
     }
 
     pub fn next_cue(&self) -> Option<&Cue> {
@@ -213,13 +234,24 @@ impl Sequence {
         } else {
             index += 1;
         }
-        self.cues.get(index)
+        self.cue_at(index)
     }
 
     pub fn active_cue_index(&self) -> Option<usize> {
         self.active_cue
             .as_ref()
             .and_then(|cue_id| self.cues.iter().position(|cue| cue.id == *cue_id))
+    }
+
+    pub fn next_cue_index(&self) -> Option<usize> {
+        let active_index = self.active_cue_index()?;
+        let active_id = self.cue_at(active_index)?.id.clone();
+
+        self.cues.iter().enumerate().filter(|(_, cue)| cue.id > active_id).map(|(idx, _)| idx).min()
+    }
+
+    pub fn cue_at(&self, index: usize) -> Option<&Cue> {
+        self.cues.get(index)
     }
 }
 
@@ -228,8 +260,8 @@ impl Executor {
         self.sequence_id
     }
 
-    pub fn sequence(&self, show: &Show) -> Option<Sequence> {
-        self.sequence_id.and_then(|sequence_id| show.sequence(sequence_id))
+    pub fn sequence<'a>(&self, show: &'a Show) -> Option<&'a Sequence> {
+        self.sequence_id.and_then(|sequence_id| show.sequences.get(sequence_id))
     }
 }
 
@@ -255,7 +287,7 @@ impl Cue {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[derive(serde::Deserialize)]
 pub struct CueId(pub(crate) Vec<u32>);
 
@@ -264,4 +296,26 @@ pub struct CueId(pub(crate) Vec<u32>);
 pub struct Recipe {
     pub(crate) group: Option<ObjectId<Group>>,
     pub(crate) preset: Option<AnyPresetId>,
+}
+
+pub struct ObjectPool<T: Object> {
+    objects: HashMap<ObjectId<T>, T>,
+}
+
+impl<T: Object> ObjectPool<T> {
+    pub fn new() -> Self {
+        Self { objects: HashMap::new() }
+    }
+
+    pub fn get(&self, id: impl Into<ObjectId<T>>) -> Option<&T> {
+        self.objects.get(&id.into())
+    }
+
+    pub(crate) fn get_mut(&mut self, id: impl Into<ObjectId<T>>) -> Option<&mut T> {
+        self.objects.get_mut(&id.into())
+    }
+
+    pub(crate) fn insert(&mut self, object: T) {
+        self.objects.insert(object.id(), object);
+    }
 }

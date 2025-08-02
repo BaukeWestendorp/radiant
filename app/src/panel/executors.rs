@@ -4,7 +4,7 @@ use radiant::engine::Command;
 use radiant::show::{Executor, Object, ObjectId};
 use ui::{ActiveTheme, ContainerStyle, button, container};
 
-use crate::app::AppState;
+use crate::app::{AppState, with_show};
 use crate::main_window::CELL_SIZE;
 
 pub struct ExecutorsPanel {
@@ -40,8 +40,9 @@ impl ExecutorView {
 
 impl Render for ExecutorView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let show = AppState::global(cx).engine.show();
-        let Some(executor) = self.executor_id.and_then(|id| show.executor(id)) else {
+        let Some(executor) =
+            self.executor_id.and_then(|id| with_show(cx, |show| show.executors.get(id).cloned()))
+        else {
             return container(ContainerStyle::normal(window, cx))
                 .size(CELL_SIZE)
                 .into_any_element();
@@ -53,7 +54,7 @@ impl Render for ExecutorView {
             .font_weight(FontWeight::BOLD)
             .child(executor.name().to_string());
 
-        let sequence_content = match executor.sequence(show) {
+        let sequence_content = match with_show(cx, |show| executor.sequence(show).cloned()) {
             Some(sequence) => {
                 let prev_cue = sequence.previous_cue().map(|cue| cue.name()).unwrap_or_default();
                 let active_cue = sequence.active_cue().map(|cue| cue.name()).unwrap_or_default();

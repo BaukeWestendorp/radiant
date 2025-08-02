@@ -1,11 +1,13 @@
-use std::sync::Arc;
 use std::thread;
+use std::time::Duration;
 
-use crate::show::Show;
-
-pub fn start(_show: Arc<Show>) {
+pub fn start() {
     thread::Builder::new()
         .name("control_surface_handler".to_string())
-        .spawn(move || loop {})
+        .spawn(move || {
+            loop {
+                thread::sleep(Duration::from_secs(10));
+            }
+        })
         .unwrap();
 }

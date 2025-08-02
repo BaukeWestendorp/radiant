@@ -1,12 +1,12 @@
 use eyre::Context as _;
 use gpui::prelude::*;
 use gpui::{
-    App, Bounds, Context, Entity, Pixels, ReadGlobal, TitlebarOptions, Window, WindowBounds,
-    WindowHandle, WindowOptions, bounds, div, point, px, size,
+    App, Bounds, Context, Entity, Pixels, TitlebarOptions, Window, WindowBounds, WindowHandle,
+    WindowOptions, bounds, div, point, px, size,
 };
 use ui::{ActiveTheme, InteractiveColor, root, titlebar};
 
-use crate::app::AppState;
+use crate::app::with_show;
 use crate::error::Result;
 use crate::panel::{
     AttributeEditorPanel, ExecutorsPanel, Panel, PanelGrid, PanelKind, WindowPanelKind,
@@ -20,9 +20,9 @@ pub struct MainWindow {
 
 impl MainWindow {
     pub fn open(cx: &mut App) -> Result<WindowHandle<MainWindow>> {
-        let windwo_bounds = Bounds::centered(None, size(px(1600.0), px(994.0)), cx);
+        let window_bounds = Bounds::centered(None, size(px(1600.0), px(994.0)), cx);
         let window_options = WindowOptions {
-            window_bounds: Some(WindowBounds::Windowed(windwo_bounds)),
+            window_bounds: Some(WindowBounds::Windowed(window_bounds)),
             titlebar: Some(TitlebarOptions {
                 title: Some("Radiant".into()),
                 appears_transparent: true,
@@ -63,7 +63,7 @@ impl MainWindow {
 
 impl Render for MainWindow {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let showfile_path = match AppState::global(cx).engine.show().path() {
+        let showfile_path = match with_show(cx, |show| show.path().cloned()) {
             Some(path) => path.display().to_string(),
             None => "[unsaved showfile]".to_string(),
         };

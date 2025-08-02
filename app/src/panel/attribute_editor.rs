@@ -2,14 +2,14 @@ use std::ops::Range;
 use std::str::FromStr;
 
 use gpui::prelude::*;
-use gpui::{App, EmptyView, Entity, ReadGlobal, SharedString, UpdateGlobal, Window, div};
+use gpui::{App, EmptyView, Entity, SharedString, UpdateGlobal, Window, div};
 use radiant::engine::Command;
 use radiant::gdtf::attribute::{Feature, FeatureGroup};
 use radiant::gdtf::dmx_mode::{ChannelFunction, LogicalChannel};
-use radiant::show::{Attribute, AttributeValue, FixtureId, Patch};
+use radiant::show::{Attribute, AttributeValue, FixtureId};
 use ui::{Disableable, FieldEvent, NumberField, Tab, TabView, button, section, v_divider};
 
-use crate::app::AppState;
+use crate::app::{AppState, with_show};
 
 const ALL_FEATURE_GROUPS: [&str; 9] =
     ["Dimmer", "Position", "Gobo", "Color", "Beam", "Focus", "Control", "Shapers", "Video"];
@@ -20,12 +20,9 @@ pub struct AttributeEditorPanel {
 
 impl AttributeEditorPanel {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let show = AppState::global(cx).engine.show();
+        let fids = with_show(cx, |show| show.selected_fixtures().to_vec());
 
-        let fids = show.selected_fixtures();
-
-        let feature_groups =
-            feature_groups_for_fids(fids, show.patch()).into_iter().cloned().collect::<Vec<_>>();
+        let feature_groups = feature_groups_for_fids(&fids, cx);
 
         let tabs = ALL_FEATURE_GROUPS
             .into_iter()
@@ -97,13 +94,9 @@ struct FeatureEditor {
 
 impl FeatureEditor {
     pub fn new(feature: &Feature, window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let show = AppState::global(cx).engine.show();
-        let fids = show.selected_fixtures();
+        let fids = with_show(cx, |show| show.selected_fixtures().to_vec());
 
-        let channels = channels_for_fids(fids, &feature, show.patch())
-            .into_iter()
-            .cloned()
-            .collect::<Vec<_>>();
+        let channels = channels_for_fids(&fids, &feature, cx);
 
         let tabs = channels
             .into_iter()
@@ -198,7 +191,8 @@ impl ChannelFunctionEditor {
         cx.subscribe(&function_relative_value_field, {
             move |this, _, event: &FieldEvent<f32>, cx| match event {
                 FieldEvent::Submit(value) => {
-                    let fids = AppState::global(cx).engine.show().selected_fixtures().to_vec();
+                    let fids = with_show(cx, |show| show.selected_fixtures().to_vec());
+
                     for fid in fids {
                         this.set_programmer_attribute(fid, *value, cx);
                     }
@@ -212,29 +206,26 @@ impl ChannelFunctionEditor {
     }
 
     fn set_programmer_attribute(&self, fid: FixtureId, value: f32, cx: &mut App) {
-        let engine = &AppState::global(cx).engine;
-        let patch = engine.show().patch();
+        let Some((attribute, value)) = with_show(cx, |show| {
+            let Some(fixture) = show.patch().fixture(fid) else { return None };
+            let fixture_type = fixture.fixture_type(show.patch());
 
-        let Some(fixture) = patch.fixture(fid) else { return };
-        let fixture_type = fixture.fixture_type(patch);
+            let mut gdtf_attribute = self.channel_function.attribute(fixture_type)?;
 
-        let Some(mut gdtf_attribute) = self.channel_function.attribute(fixture_type) else {
+            if let Some(main_attribute) =
+                gdtf_attribute.main_attribute(&fixture_type.attribute_definitions)
+            {
+                gdtf_attribute = main_attribute;
+            }
+
+            let attribute =
+                gdtf_attribute.name.as_ref().and_then(|name| Attribute::from_str(&name).ok())?;
+            let value: AttributeValue = self.value_relative_to_function_range(value).into();
+
+            Some((attribute, value))
+        }) else {
             return;
         };
-
-        if let Some(main_attribute) =
-            gdtf_attribute.main_attribute(&fixture_type.attribute_definitions)
-        {
-            gdtf_attribute = main_attribute;
-        }
-
-        let Some(attribute) =
-            gdtf_attribute.name.as_ref().and_then(|name| Attribute::from_str(&name).ok())
-        else {
-            return;
-        };
-
-        let value: AttributeValue = self.value_relative_to_function_range(value).into();
 
         AppState::update_global(cx, |state, _| {
             state
@@ -315,45 +306,45 @@ fn map(value: f32, a_start: f32, a_end: f32, b_start: f32, b_end: f32) -> f32 {
     }
 }
 
-fn feature_groups_for_fids<'a>(fids: &[FixtureId], patch: &'a Patch) -> Vec<&'a FeatureGroup> {
-    let mut feature_groups = Vec::new();
-    for fid in fids {
-        let Some(fixture) = patch.fixture(*fid) else { continue };
-        for feature_group in fixture.feature_groups(patch) {
-            if !feature_groups.contains(&feature_group) {
-                feature_groups.push(feature_group);
+fn feature_groups_for_fids(fids: &[FixtureId], cx: &App) -> Vec<FeatureGroup> {
+    with_show(cx, |show| {
+        let mut feature_groups = Vec::new();
+        for fid in fids {
+            let Some(fixture) = show.patch().fixture(*fid) else { continue };
+            for feature_group in fixture.feature_groups(show.patch()) {
+                if !feature_groups.contains(feature_group) {
+                    feature_groups.push(feature_group.clone());
+                }
             }
         }
-    }
-    feature_groups
+        feature_groups
+    })
 }
 
-fn channels_for_fids<'a>(
-    fids: &[FixtureId],
-    feature: &Feature,
-    patch: &'a Patch,
-) -> Vec<&'a LogicalChannel> {
-    let mut channels = Vec::new();
-    for fid in fids {
-        let Some(fixture) = patch.fixture(*fid) else { continue };
-        let fixture_type = fixture.fixture_type(patch);
-        let logical_channels = fixture
-            .dmx_mode(patch)
-            .dmx_channels
-            .iter()
-            .flat_map(|dmx_channel| &dmx_channel.logical_channels)
-            .filter(|logical_channel| {
-                logical_channel.attribute(fixture_type).is_some_and(|attribute| {
-                    attribute
-                        .feature(&fixture_type.attribute_definitions)
-                        .is_some_and(|f| f == feature)
-                })
-            });
-        for logical_channel in logical_channels {
-            if !channels.contains(&logical_channel) {
-                channels.push(logical_channel);
+fn channels_for_fids(fids: &[FixtureId], feature: &Feature, cx: &App) -> Vec<LogicalChannel> {
+    with_show(cx, |show| {
+        let mut channels = Vec::new();
+        for fid in fids {
+            let Some(fixture) = show.patch().fixture(*fid) else { continue };
+            let fixture_type = fixture.fixture_type(show.patch());
+            let logical_channels = fixture
+                .dmx_mode(show.patch())
+                .dmx_channels
+                .iter()
+                .flat_map(|dmx_channel| &dmx_channel.logical_channels)
+                .filter(|logical_channel| {
+                    logical_channel.attribute(fixture_type).is_some_and(|attribute| {
+                        attribute
+                            .feature(&fixture_type.attribute_definitions)
+                            .is_some_and(|f| f == feature)
+                    })
+                });
+            for logical_channel in logical_channels {
+                if !channels.contains(logical_channel) {
+                    channels.push(logical_channel.clone());
+                }
             }
         }
-    }
-    channels
+        channels
+    })
 }
