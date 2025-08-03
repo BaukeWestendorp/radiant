@@ -1,6 +1,7 @@
 use gpui::prelude::*;
 use gpui::{Bounds, Entity, Window, div};
 use ui::ActiveTheme;
+use ui::utils::z_stack;
 
 use crate::main_window::CELL_SIZE;
 
@@ -35,12 +36,16 @@ impl Panel {
             WindowPanelKind::Executors(executors) => executors.into_any_element(),
         };
 
-        div()
-            .size_full()
-            .border_1()
-            .border_color(cx.theme().colors.border)
-            .rounded(cx.theme().radius)
-            .child(content)
+        z_stack([
+            div()
+                .size_full()
+                .border_1()
+                .border_color(cx.theme().colors.border)
+                .rounded(cx.theme().radius)
+                .into_any_element(),
+            content.into_any_element(),
+        ])
+        .size_full()
     }
 
     fn render_pool(

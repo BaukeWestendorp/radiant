@@ -42,6 +42,24 @@ sequences:
             preset: !Dimmer 2
           - group: 11
             preset: !Color 13
+      [2]:
+        id: [2]
+        name: Verse
+        fade_in_time:
+          secs: 2
+          nanos: 0
+        fade_out_time:
+          secs: 1
+          nanos: 0
+        recipes:
+          - group: 1
+            preset: !Dimmer 1
+          - group: 1
+            preset: !Color 11
+          - group: 21
+            preset: !Dimmer 2
+          - group: 21
+            preset: !Color 13
 groups:
   - id: 1
     name: Spot ALL

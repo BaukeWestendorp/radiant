@@ -283,6 +283,30 @@ impl Sequence {
         self.current_cue.as_ref().and_then(|id| self.cue_after(id))
     }
 
+    pub fn cue_fade_progress(&self, id: &CueId) -> Option<f32> {
+        if let Some(start) = self.cue_fade_in_starts.get(id) {
+            if let Some(cue) = self.cue(id) {
+                let elapsed = start.elapsed();
+                let total = cue.fade_in_time();
+                if total > Duration::from_millis(0) {
+                    let progress = (elapsed.as_secs_f32() / total.as_secs_f32()).min(1.0);
+                    return Some(progress);
+                }
+            }
+        }
+        if let Some(start) = self.cue_fade_out_starts.get(id) {
+            if let Some(cue) = self.cue(id) {
+                let elapsed = start.elapsed();
+                let total = cue.fade_out_time();
+                if total > Duration::from_millis(0) {
+                    let progress = 1.0 - (elapsed.as_secs_f32() / total.as_secs_f32()).min(1.0);
+                    return Some(progress);
+                }
+            }
+        }
+        None
+    }
+
     pub(crate) fn update_fade_times(&mut self) {
         let fade_in_to_remove: Vec<_> = self
             .cue_fade_in_starts
