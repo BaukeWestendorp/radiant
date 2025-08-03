@@ -184,8 +184,10 @@ define_objects! {
     }
 
     pub struct Sequence {
-        cues: Vec<Cue>,
-        pub(crate) current_cue: Option<CueId>,
+        cues: HashMap<CueId, Cue>,
+
+        current_cue: Option<CueId>,
+
         #[serde(skip)]
         pub(crate) cue_fade_in_starts: HashMap<CueId, Instant>,
         #[serde(skip)]
@@ -216,15 +218,15 @@ impl Group {
 
 impl Sequence {
     pub fn cue(&self, id: &CueId) -> Option<&Cue> {
-        self.cues().iter().find(|cue| &cue.id == id)
+        self.cues.get(id)
     }
 
-    pub fn cues(&self) -> &[Cue] {
-        &self.cues
+    pub fn cues(&self) -> impl IntoIterator<Item = &Cue> {
+        self.cues.values()
     }
 
     pub fn active_cues(&self) -> impl IntoIterator<Item = &Cue> {
-        self.cues.iter().filter(|cue| {
+        self.cues.values().filter(|cue| {
             let id = &cue.id;
             let is_current = self.current_cue.as_ref().map_or(false, |current_id| current_id == id);
             let is_fading_in = self.cue_fade_in_starts.contains_key(id);
@@ -233,28 +235,20 @@ impl Sequence {
         })
     }
 
-    pub fn cue_at(&self, index: usize) -> Option<&Cue> {
-        self.cues.get(index)
-    }
-
-    pub fn index_of(&self, id: &CueId) -> Option<usize> {
-        self.cues.iter().position(|cue| &cue.id == id)
-    }
-
-    pub fn current_cue_index(&self) -> Option<usize> {
-        self.index_of(self.current_cue.as_ref()?)
-    }
-
     pub fn first_cue(&self) -> Option<&Cue> {
-        self.cues.iter().min_by_key(|cue| &cue.id)
+        self.cues.values().min_by_key(|cue| &cue.id)
+    }
+
+    pub fn last_cue(&self) -> Option<&Cue> {
+        self.cues.values().max_by_key(|cue| &cue.id)
     }
 
     pub fn cue_before(&self, id: &CueId) -> Option<&Cue> {
-        self.index_of(id).and_then(|index| if index > 0 { self.cue_at(index - 1) } else { None })
+        self.cues.values().filter(|cue| cue.id < *id).max_by_key(|cue| &cue.id)
     }
 
     pub fn cue_after(&self, id: &CueId) -> Option<&Cue> {
-        self.index_of(id).and_then(|index| self.cue_at(index + 1))
+        self.cues.values().filter(|cue| cue.id > *id).min_by_key(|cue| &cue.id)
     }
 
     pub fn previous_cue(&self) -> Option<&Cue> {
@@ -262,7 +256,7 @@ impl Sequence {
     }
 
     pub fn current_cue(&self) -> Option<&Cue> {
-        self.current_cue.as_ref().and_then(|id| self.cues.iter().find(|cue| cue.id == *id))
+        self.current_cue.as_ref().and_then(|id| self.cues.get(id))
     }
 
     pub fn set_current_cue(&mut self, id: Option<CueId>) {
@@ -282,25 +276,11 @@ impl Sequence {
     }
 
     pub fn next_cue(&self) -> Option<&Cue> {
-        let mut index = self.current_cue_index()?;
-        if index == self.cues.len() {
-            index = 0;
-        } else {
-            index += 1;
+        if self.current_cue().is_none() {
+            return self.first_cue();
         }
-        self.cue_at(index)
-    }
 
-    pub fn next_cue_index(&self) -> Option<usize> {
-        let current_index = self.current_cue_index()?;
-        let current_id = self.cue_at(current_index)?.id.clone();
-
-        self.cues
-            .iter()
-            .enumerate()
-            .filter(|(_, cue)| cue.id > current_id)
-            .map(|(idx, _)| idx)
-            .min()
+        self.current_cue.as_ref().and_then(|id| self.cue_after(id))
     }
 
     pub(crate) fn update_fade_times(&mut self) {

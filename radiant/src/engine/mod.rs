@@ -164,17 +164,7 @@ impl Engine {
                     let Some(sequence_id) = executor.sequence_id else { return };
                     let Some(sequence) = show.sequences.get_mut(sequence_id) else { return };
 
-                    if sequence.current_cue().is_none() {
-                        sequence.set_current_cue(sequence.first_cue().map(|cue| cue.id().clone()));
-                        return;
-                    }
-
-                    let next_cue = sequence.next_cue_index().and_then(|ix| sequence.cue_at(ix));
-                    if let Some(next_cue) = next_cue {
-                        sequence.set_current_cue(Some(next_cue.id().clone()));
-                    } else {
-                        sequence.set_current_cue(None);
-                    }
+                    sequence.set_current_cue(sequence.next_cue().map(|cue| cue.id().clone()));
                 });
             }
         }

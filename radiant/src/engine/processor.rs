@@ -61,7 +61,7 @@ fn process_executors(pipeline: &Arc<Mutex<Pipeline>>, show: &mut Show) {
 
         for cue in sequence.active_cues() {
             let is_current =
-                sequence.current_cue.as_ref().is_some_and(|current| current == cue.id());
+                sequence.current_cue().as_ref().is_some_and(|current| current.id() == cue.id());
 
             if let Some(fade_in_start) = sequence.cue_fade_in_starts.get(cue.id()) {
                 let prev_cue = sequence.cue_before(cue.id());
