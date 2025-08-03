@@ -57,7 +57,7 @@ impl Render for ExecutorView {
         let sequence_content = match with_show(cx, |show| executor.sequence(show).cloned()) {
             Some(sequence) => {
                 let prev_cue = sequence.previous_cue().map(|cue| cue.name()).unwrap_or_default();
-                let active_cue = sequence.active_cue().map(|cue| cue.name()).unwrap_or_default();
+                let current_cue = sequence.current_cue().map(|cue| cue.name()).unwrap_or_default();
                 let next_cue = sequence.next_cue().map(|cue| cue.name()).unwrap_or_default();
 
                 div()
@@ -72,7 +72,7 @@ impl Render for ExecutorView {
                             .bg(cx.theme().colors.bg_selected_bright)
                             .border_b_1()
                             .border_color(cx.theme().colors.border)
-                            .child(active_cue.to_string()),
+                            .child(current_cue.to_string()),
                     )
                     .child(
                         div()

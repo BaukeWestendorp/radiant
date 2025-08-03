@@ -160,15 +160,20 @@ impl Engine {
             }
             Command::Go { executor } => {
                 self.show().update(|show| {
-                    let executor = show.executors.get(executor);
-                    let sequence_id = executor.and_then(|e| e.sequence_id);
-                    let sequence = sequence_id.and_then(|id| show.sequences.get_mut(id));
-                    let next_cue_index = sequence.as_ref().and_then(|seq| seq.next_cue_index());
-                    let next_cue_id = next_cue_index
-                        .and_then(|ix| sequence.as_ref().and_then(|seq| seq.cue_at(ix)))
-                        .map(|cue| cue.id().clone());
-                    if let (Some(seq), Some(next_id)) = (sequence, next_cue_id) {
-                        seq.set_active_cue(Some(next_id.clone()));
+                    let Some(executor) = show.executors.get(executor) else { return };
+                    let Some(sequence_id) = executor.sequence_id else { return };
+                    let Some(sequence) = show.sequences.get_mut(sequence_id) else { return };
+
+                    if sequence.current_cue().is_none() {
+                        sequence.set_current_cue(sequence.first_cue().map(|cue| cue.id().clone()));
+                        return;
+                    }
+
+                    let next_cue = sequence.next_cue_index().and_then(|ix| sequence.cue_at(ix));
+                    if let Some(next_cue) = next_cue {
+                        sequence.set_current_cue(Some(next_cue.id().clone()));
+                    } else {
+                        sequence.set_current_cue(None);
                     }
                 });
             }

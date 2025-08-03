@@ -67,4 +67,46 @@ impl Pipeline {
     pub fn resolved_multiverse(&self) -> &dmx::Multiverse {
         &self.resolved_multiverse
     }
+
+    pub fn lerp(&self, to: &Pipeline, t: f32, patch: &Patch) -> Pipeline {
+        let mut blended_values = HashMap::new();
+
+        // Collect all keys from both pipelines
+        let keys: std::collections::HashSet<_> =
+            self.values.keys().chain(to.values.keys()).cloned().collect();
+
+        for key in keys {
+            let default_value_for_key = patch
+                .fixture(key.0)
+                .and_then(|fixture| {
+                    fixture
+                        .get_default_attribute_values(patch)
+                        .iter()
+                        .find(|(attr, _)| attr == &key.1)
+                        .map(|(_, value)| *value)
+                })
+                .unwrap_or_default();
+
+            let value_a = self.values.get(&key).unwrap_or(&default_value_for_key);
+            let value_b = to.values.get(&key).unwrap_or(&default_value_for_key);
+            let blended = value_a.lerp(value_b, t);
+            blended_values.insert(key, blended);
+        }
+
+        Pipeline {
+            values: blended_values,
+            resolved_values: HashMap::new(),
+            resolved_multiverse: dmx::Multiverse::default(),
+        }
+    }
+
+    /// Merges the values from another [Pipeline] into this one.
+    ///
+    /// If a key exists in both pipelines, the value from `other` will overwrite
+    /// the value in `self`.
+    pub fn merge(&mut self, other: &Pipeline) {
+        for (key, value) in &other.values {
+            self.values.insert(key.clone(), value.clone());
+        }
+    }
 }

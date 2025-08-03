@@ -3,6 +3,7 @@ use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::PhantomData;
 use std::ops::Deref;
+use std::time::{Duration, Instant};
 
 use crate::show::preset::PresetContent;
 use crate::show::{AnyPresetId, FixtureId, Show};
@@ -75,7 +76,7 @@ macro_rules! define_objects {
     (
         $(
             $obj_vis:vis struct $obj:ident {
-                $( $field_vis:vis $field:ident : $field_ty:ty, )*
+                $( $(#[$field_attr:meta])* $field_vis:vis $field:ident : $field_ty:ty, )*
             }
         )*
     ) => {
@@ -116,7 +117,7 @@ macro_rules! define_objects {
                 pub(crate) id: ObjectId<$obj>,
                 pub(crate) name: String,
 
-                $( $field_vis $field : $field_ty, )*
+                $( $(#[$field_attr])* $field_vis $field : $field_ty, )*
             }
 
             impl Object for $obj {
@@ -183,12 +184,17 @@ define_objects! {
     }
 
     pub struct Sequence {
-        pub(crate) cues: Vec<Cue>,
-        pub(crate) active_cue: Option<CueId>,
+        cues: Vec<Cue>,
+        pub(crate) current_cue: Option<CueId>,
+        #[serde(skip)]
+        pub(crate) cue_fade_in_starts: HashMap<CueId, Instant>,
+        #[serde(skip)]
+        pub(crate) cue_fade_out_starts: HashMap<CueId, Instant>,
     }
 
     pub struct Executor {
         pub(crate) sequence_id: Option<ObjectId<Sequence>>,
+        pub(crate) is_on: bool,
     }
 
     pub struct PresetDimmer { pub(crate) content: PresetContent, }
@@ -209,26 +215,74 @@ impl Group {
 }
 
 impl Sequence {
+    pub fn cue(&self, id: &CueId) -> Option<&Cue> {
+        self.cues().iter().find(|cue| &cue.id == id)
+    }
+
+    pub fn cues(&self) -> &[Cue] {
+        &self.cues
+    }
+
+    pub fn active_cues(&self) -> impl IntoIterator<Item = &Cue> {
+        self.cues.iter().filter(|cue| {
+            let id = &cue.id;
+            let is_current = self.current_cue.as_ref().map_or(false, |current_id| current_id == id);
+            let is_fading_in = self.cue_fade_in_starts.contains_key(id);
+            let is_fading_out = self.cue_fade_out_starts.contains_key(id);
+            is_current || is_fading_in || is_fading_out
+        })
+    }
+
+    pub fn cue_at(&self, index: usize) -> Option<&Cue> {
+        self.cues.get(index)
+    }
+
+    pub fn index_of(&self, id: &CueId) -> Option<usize> {
+        self.cues.iter().position(|cue| &cue.id == id)
+    }
+
+    pub fn current_cue_index(&self) -> Option<usize> {
+        self.index_of(self.current_cue.as_ref()?)
+    }
+
+    pub fn first_cue(&self) -> Option<&Cue> {
+        self.cues.iter().min_by_key(|cue| &cue.id)
+    }
+
+    pub fn cue_before(&self, id: &CueId) -> Option<&Cue> {
+        self.index_of(id).and_then(|index| if index > 0 { self.cue_at(index - 1) } else { None })
+    }
+
+    pub fn cue_after(&self, id: &CueId) -> Option<&Cue> {
+        self.index_of(id).and_then(|index| self.cue_at(index + 1))
+    }
+
     pub fn previous_cue(&self) -> Option<&Cue> {
-        let mut index = self.active_cue_index()?;
-        if index == 0 {
-            index = self.cues.len();
-        } else {
-            index -= 1;
+        self.cue_before(self.current_cue.as_ref()?)
+    }
+
+    pub fn current_cue(&self) -> Option<&Cue> {
+        self.current_cue.as_ref().and_then(|id| self.cues.iter().find(|cue| cue.id == *id))
+    }
+
+    pub fn set_current_cue(&mut self, id: Option<CueId>) {
+        if let Some(current_cue) = self.current_cue() {
+            if current_cue.fade_out_time() > Duration::from_millis(0) {
+                self.cue_fade_out_starts.insert(current_cue.id().clone(), Instant::now());
+            }
         }
-        self.cue_at(index)
-    }
 
-    pub fn active_cue(&self) -> Option<&Cue> {
-        self.active_cue.as_ref().and_then(|id| self.cues.iter().find(|cue| cue.id == *id))
-    }
+        self.current_cue = id;
 
-    pub fn set_active_cue(&mut self, id: Option<CueId>) {
-        self.active_cue = id;
+        if let Some(current_cue) = self.current_cue() {
+            if current_cue.fade_in_time() > Duration::from_millis(0) {
+                self.cue_fade_in_starts.insert(current_cue.id().clone(), Instant::now());
+            }
+        }
     }
 
     pub fn next_cue(&self) -> Option<&Cue> {
-        let mut index = self.active_cue_index()?;
+        let mut index = self.current_cue_index()?;
         if index == self.cues.len() {
             index = 0;
         } else {
@@ -237,21 +291,50 @@ impl Sequence {
         self.cue_at(index)
     }
 
-    pub fn active_cue_index(&self) -> Option<usize> {
-        self.active_cue
-            .as_ref()
-            .and_then(|cue_id| self.cues.iter().position(|cue| cue.id == *cue_id))
-    }
-
     pub fn next_cue_index(&self) -> Option<usize> {
-        let active_index = self.active_cue_index()?;
-        let active_id = self.cue_at(active_index)?.id.clone();
+        let current_index = self.current_cue_index()?;
+        let current_id = self.cue_at(current_index)?.id.clone();
 
-        self.cues.iter().enumerate().filter(|(_, cue)| cue.id > active_id).map(|(idx, _)| idx).min()
+        self.cues
+            .iter()
+            .enumerate()
+            .filter(|(_, cue)| cue.id > current_id)
+            .map(|(idx, _)| idx)
+            .min()
     }
 
-    pub fn cue_at(&self, index: usize) -> Option<&Cue> {
-        self.cues.get(index)
+    pub(crate) fn update_fade_times(&mut self) {
+        let fade_in_to_remove: Vec<_> = self
+            .cue_fade_in_starts
+            .iter()
+            .filter_map(|(cue_id, start)| {
+                if let Some(cue) = self.cue(cue_id) {
+                    if start.elapsed() > cue.fade_in_time() { Some(cue_id.clone()) } else { None }
+                } else {
+                    Some(cue_id.clone())
+                }
+            })
+            .collect();
+
+        for cue_id in fade_in_to_remove {
+            self.cue_fade_in_starts.remove(&cue_id);
+        }
+
+        let fade_out_to_remove: Vec<_> = self
+            .cue_fade_out_starts
+            .iter()
+            .filter_map(|(cue_id, start)| {
+                if let Some(cue) = self.cue(cue_id) {
+                    if start.elapsed() > cue.fade_out_time() { Some(cue_id.clone()) } else { None }
+                } else {
+                    Some(cue_id.clone())
+                }
+            })
+            .collect();
+
+        for cue_id in fade_out_to_remove {
+            self.cue_fade_out_starts.remove(&cue_id);
+        }
     }
 }
 
@@ -263,14 +346,20 @@ impl Executor {
     pub fn sequence<'a>(&self, show: &'a Show) -> Option<&'a Sequence> {
         self.sequence_id.and_then(|sequence_id| show.sequences.get(sequence_id))
     }
+
+    pub fn is_on(&self) -> bool {
+        self.is_on
+    }
 }
 
 #[derive(Debug, Clone)]
 #[derive(serde::Deserialize)]
 pub struct Cue {
-    pub(crate) id: CueId,
-    pub(crate) name: String,
-    pub(crate) recipes: Vec<Recipe>,
+    id: CueId,
+    name: String,
+    fade_in_time: Duration,
+    fade_out_time: Duration,
+    recipes: Vec<Recipe>,
 }
 
 impl Cue {
@@ -282,12 +371,20 @@ impl Cue {
         &self.name
     }
 
+    pub fn fade_in_time(&self) -> Duration {
+        self.fade_in_time
+    }
+
+    pub fn fade_out_time(&self) -> Duration {
+        self.fade_out_time
+    }
+
     pub fn recipes(&self) -> &[Recipe] {
         &self.recipes
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(serde::Deserialize)]
 pub struct CueId(pub(crate) Vec<u32>);
 
@@ -309,6 +406,10 @@ impl<T: Object> ObjectPool<T> {
 
     pub fn get(&self, id: impl Into<ObjectId<T>>) -> Option<&T> {
         self.objects.get(&id.into())
+    }
+
+    pub fn objects(&self) -> impl IntoIterator<Item = &T> {
+        self.objects.values()
     }
 
     pub(crate) fn get_mut(&mut self, id: impl Into<ObjectId<T>>) -> Option<&mut T> {
