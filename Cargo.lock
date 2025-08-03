@@ -117,6 +117,7 @@ dependencies = [
  "gpui",
  "log",
  "radiant",
+ "rust-embed",
  "simple_logger",
  "ui",
 ]

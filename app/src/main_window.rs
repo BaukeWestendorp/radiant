@@ -1,8 +1,8 @@
 use eyre::Context as _;
 use gpui::prelude::*;
 use gpui::{
-    App, Bounds, Context, Entity, Pixels, TitlebarOptions, Window, WindowBounds, WindowHandle,
-    WindowOptions, bounds, div, point, px, size,
+    App, Bounds, Context, Entity, FontWeight, Pixels, TitlebarOptions, Window, WindowBounds,
+    WindowHandle, WindowOptions, bounds, div, point, px, size,
 };
 use ui::{ActiveTheme, InteractiveColor, root, titlebar};
 
@@ -61,7 +61,7 @@ impl Render for MainWindow {
         let titlebar = titlebar(window, cx)
             .flex()
             .justify_between()
-            .child(div().text_sm().text_color(cx.theme().colors.text.muted()).child(showfile_path))
+            .child(div().text_color(cx.theme().colors.text.muted()).child(showfile_path))
             .pr(ui::TRAFFIC_LIGHT_POSITION.x);
 
         let content = self.panel_grid.clone();
@@ -70,6 +70,8 @@ impl Render for MainWindow {
             .flex()
             .flex_col()
             .size_full()
+            .font_family("Tamzen")
+            .font_weight(FontWeight::BOLD)
             .bg(cx.theme().colors.bg_primary)
             .child(titlebar)
             .child(content)

@@ -4,6 +4,7 @@ use gpui::{App, Application, Global, ReadGlobal};
 use radiant::engine::Engine;
 use radiant::show::Show;
 
+use crate::assets::{self, Assets};
 use crate::main_window::MainWindow;
 
 pub struct AppState {
@@ -13,7 +14,9 @@ pub struct AppState {
 impl Global for AppState {}
 
 pub fn run(showfile_path: Option<PathBuf>) {
-    Application::new().run(move |cx: &mut App| {
+    Application::new().with_assets(Assets).run(move |cx: &mut App| {
+        assets::load_fonts(cx).expect("failed to load fonts");
+
         cx.activate(true);
         ui::init(cx);
 

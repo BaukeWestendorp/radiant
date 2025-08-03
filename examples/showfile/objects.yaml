@@ -1,11 +1,11 @@
 executors:
   - id: 1
-    name: Subatomic
+    name: Sub-atomic
     sequence_id: 1
     is_on: true
 sequences:
   - id: 1
-    name: Subatomic
+    name: Sub-atomic
     current_cue: [0, 5]
     cues:
       [0, 5]:
