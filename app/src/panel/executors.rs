@@ -1,6 +1,6 @@
 use gpui::prelude::*;
-use gpui::{App, Entity, UpdateGlobal, Window, div, relative};
-use radiant::engine::Command;
+use gpui::{App, Entity, ReadGlobal, UpdateGlobal, Window, div, relative};
+use radiant::engine::{Command, EngineEvent};
 use radiant::show::{Cue, Executor, Object, ObjectId, Sequence};
 use ui::utils::z_stack;
 use ui::{ActiveTheme, ContainerStyle, container};
@@ -14,6 +14,12 @@ pub struct ExecutorsPanel {
 
 impl ExecutorsPanel {
     pub fn new(columns: u32, _window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let engine_event_handler = AppState::global(cx).engine_event_handler.clone();
+        cx.subscribe(&engine_event_handler, |_, _, event, cx| match event {
+            EngineEvent::CueFadeInProgress => cx.notify(),
+        })
+        .detach();
+
         Self {
             executors: (0..columns)
                 .into_iter()

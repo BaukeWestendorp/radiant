@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use eyre::Context;
 
+use crate::engine::event::EventHandler;
 use crate::engine::protocols::Protocols;
 use crate::pipeline::Pipeline;
 use crate::show::{
@@ -14,15 +15,18 @@ use crate::showfile::{SacnOutputType, Showfile};
 
 mod command;
 mod control_surface;
+mod event;
 mod processor;
 mod protocols;
 
 pub use command::*;
+pub use event::EngineEvent;
 
 pub struct Engine {
     protocols: Protocols,
     show: ShowHandle,
     pipeline: Arc<Mutex<Pipeline>>,
+    event_handler: Arc<EventHandler>,
 }
 
 impl Engine {
@@ -50,13 +54,22 @@ impl Engine {
 
         let show = Show::new(showfile).wrap_err("failed to create show from showfile")?;
 
-        Ok(Self { protocols, show: ShowHandle { show: Arc::new(Mutex::new(show)) }, pipeline })
+        Ok(Self {
+            protocols,
+            show: ShowHandle { show: Arc::new(Mutex::new(show)) },
+            pipeline,
+            event_handler: Arc::new(EventHandler::new()),
+        })
     }
 
     pub fn start(&self) {
-        processor::start(self.pipeline.clone(), self.show.clone());
+        processor::start(self.pipeline.clone(), self.show.clone(), self.event_handler.clone());
         self.protocols.start();
         control_surface::start();
+    }
+
+    pub fn pending_events(&self) -> Vec<EngineEvent> {
+        self.event_handler.pending_events()
     }
 
     pub fn exec(&self, command: Command) -> Result<(), crate::error::Error> {

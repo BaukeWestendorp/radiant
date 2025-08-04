@@ -3,27 +3,32 @@ use std::thread;
 use std::time::Duration;
 
 use crate::engine::ShowHandle;
+use crate::engine::event::{EngineEvent, EventHandler};
 use crate::pipeline::Pipeline;
 use crate::show::{Cue, PresetContent, Show};
 
 const PROCESSOR_FRAME_TIME: Duration = Duration::from_millis(30);
 
-pub fn start(pipeline: Arc<Mutex<Pipeline>>, show: ShowHandle) {
+pub fn start(pipeline: Arc<Mutex<Pipeline>>, show: ShowHandle, event_handler: Arc<EventHandler>) {
     thread::Builder::new()
         .name("processor".to_string())
         .spawn(move || {
             loop {
-                process_frame(&pipeline, &show);
+                process_frame(&pipeline, &show, &event_handler);
                 spin_sleep::sleep(PROCESSOR_FRAME_TIME);
             }
         })
         .unwrap();
 }
 
-fn process_frame(pipeline: &Arc<Mutex<Pipeline>>, show: &ShowHandle) {
+fn process_frame(
+    pipeline: &Arc<Mutex<Pipeline>>,
+    show: &ShowHandle,
+    event_handler: &Arc<EventHandler>,
+) {
     show.update(|show| {
         process_default_values(pipeline, show);
-        process_executors(pipeline, show);
+        process_executors(pipeline, show, event_handler);
 
         // Merge programmer values into output pipeline.
         for (fid, attr, value) in show.programmer.values() {
@@ -45,12 +50,18 @@ fn process_default_values(pipeline: &Arc<Mutex<Pipeline>>, show: &Show) {
     }
 }
 
-fn process_executors(pipeline: &Arc<Mutex<Pipeline>>, show: &mut Show) {
+fn process_executors(
+    pipeline: &Arc<Mutex<Pipeline>>,
+    show: &mut Show,
+    event_handler: &Arc<EventHandler>,
+) {
     for executor in show.executors.objects() {
         let Some(sequence_id) = executor.sequence_id() else { continue };
         let Some(sequence) = show.sequences.get_mut(sequence_id) else { continue };
         sequence.update_fade_times();
     }
+
+    let mut fade_in_progress = false;
 
     for executor in show.executors.objects() {
         if !executor.is_on() {
@@ -69,16 +80,22 @@ fn process_executors(pipeline: &Arc<Mutex<Pipeline>>, show: &mut Show) {
                 let duration = cue.fade_in_time().as_secs_f32();
                 let t = if duration > 0.0 { (elapsed / duration).clamp(0.0, 1.0) } else { 1.0 };
                 fade_cue(prev_cue, Some(cue), t, pipeline, show);
+                fade_in_progress = true;
             } else if let Some(fade_out_start) = sequence.cue_fade_out_starts.get(cue.id()) {
                 let next_cue = sequence.cue_after(cue.id());
                 let elapsed = fade_out_start.elapsed().as_secs_f32();
                 let duration = cue.fade_out_time().as_secs_f32();
                 let t = if duration > 0.0 { (elapsed / duration).clamp(0.0, 1.0) } else { 1.0 };
                 fade_cue(Some(cue), next_cue, t, pipeline, show);
+                fade_in_progress = true;
             } else if is_current {
                 process_cue(cue, &mut pipeline.lock().unwrap(), show);
             }
         }
+    }
+
+    if fade_in_progress {
+        event_handler.emit_event(EngineEvent::CueFadeInProgress);
     }
 }
 
