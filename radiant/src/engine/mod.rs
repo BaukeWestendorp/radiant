@@ -27,6 +27,7 @@ pub struct Engine {
     show: ShowHandle,
     pipeline: Arc<Mutex<Pipeline>>,
     event_handler: Arc<EventHandler>,
+    is_running: bool,
 }
 
 impl Engine {
@@ -59,13 +60,20 @@ impl Engine {
             show: ShowHandle { show: Arc::new(Mutex::new(show)) },
             pipeline,
             event_handler: Arc::new(EventHandler::new()),
+            is_running: false,
         })
     }
 
-    pub fn start(&self) {
+    pub fn start(&mut self) {
+        if self.is_running {
+            return;
+        };
+
         processor::start(self.pipeline.clone(), self.show.clone(), self.event_handler.clone());
         self.protocols.start();
         control_surface::start();
+
+        self.is_running = true;
     }
 
     pub fn pending_events(&self) -> Vec<EngineEvent> {

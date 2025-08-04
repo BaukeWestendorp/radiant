@@ -1,10 +1,10 @@
 use gpui::prelude::*;
-use gpui::{App, ElementId, Entity, Subscription, UpdateGlobal, Window, div, px};
+use gpui::{App, ElementId, Entity, Subscription, Window, div, px};
 use radiant::engine::{Command, EngineEvent};
 use radiant::show::Fixture;
 use ui::{Table, TableColumn, TableDelegate, TableRow};
 
-use crate::app::{AppState, on_engine_event, with_show};
+use crate::state::{exec_cmd_and_log_err, on_engine_event, with_show};
 
 pub struct FixturesTablePanel {
     table: Entity<Table<FixturesTable>>,
@@ -69,9 +69,7 @@ impl TableDelegate for FixturesTable {
         _window: &mut Window,
         cx: &mut Context<Table<Self>>,
     ) {
-        AppState::update_global(cx, |state, _| {
-            state.engine.exec(Command::SelectFixture { fid: row.fixture.fid() });
-        });
+        exec_cmd_and_log_err(Command::SelectFixture { fid: row.fixture.fid() }, cx);
     }
 }
 

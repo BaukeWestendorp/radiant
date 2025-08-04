@@ -11,7 +11,7 @@ use radiant::gdtf::dmx_mode::{ChannelFunction, LogicalChannel};
 use radiant::show::{Attribute, AttributeValue, FixtureId};
 use ui::{Disableable, FieldEvent, NumberField, Tab, TabView, button, section, v_divider};
 
-use crate::app::{AppState, on_engine_event, with_show};
+use crate::state::{AppState, on_engine_event, with_show};
 
 const ALL_FEATURE_GROUPS: [&str; 9] =
     ["Dimmer", "Position", "Gobo", "Color", "Beam", "Focus", "Control", "Shapers", "Video"];

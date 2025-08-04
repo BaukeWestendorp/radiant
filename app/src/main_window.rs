@@ -1,17 +1,17 @@
 use eyre::Context as _;
 use gpui::prelude::*;
 use gpui::{
-    App, Bounds, Context, Entity, FontWeight, Pixels, TitlebarOptions, Window, WindowBounds,
-    WindowHandle, WindowOptions, bounds, div, point, px, size,
+    App, Bounds, Context, Entity, Pixels, TitlebarOptions, Window, WindowBounds, WindowHandle,
+    WindowOptions, bounds, div, point, px, size,
 };
 use ui::{ActiveTheme, InteractiveColor, root, titlebar};
 
-use crate::app::with_show;
 use crate::error::Result;
 use crate::panel::{
     ExecutorsPanel, FixturesTablePanel, GroupsPool, Panel, PanelGrid, PanelKind, PoolPanelKind,
     WindowPanelKind,
 };
+use crate::state::with_show;
 
 pub const CELL_SIZE: Pixels = px(80.0);
 
@@ -34,36 +34,7 @@ impl MainWindow {
         };
 
         cx.open_window(window_options, |window, cx| {
-            cx.new(|cx| Self {
-                panel_grid: cx.new(|cx| {
-                    let mut grid = PanelGrid::new(size(20, 12), window, cx);
-                    grid.add_panel(cx.new(|cx| {
-                        Panel::new(
-                            PanelKind::Window(WindowPanelKind::Executors(
-                                cx.new(|cx| ExecutorsPanel::new(20, window, cx)),
-                            )),
-                            bounds(point(0, 10), size(20, 2)),
-                        )
-                    }));
-                    grid.add_panel(cx.new(|cx| {
-                        Panel::new(
-                            PanelKind::Window(WindowPanelKind::FixturesTable(
-                                cx.new(|cx| FixturesTablePanel::new(window, cx)),
-                            )),
-                            bounds(point(0, 5), size(20, 4)),
-                        )
-                    }));
-                    grid.add_panel(cx.new(|cx| {
-                        Panel::new(
-                            PanelKind::Pool(PoolPanelKind::Groups(
-                                cx.new(|_| GroupsPool::new(size(20, 4))),
-                            )),
-                            bounds(point(0, 0), size(20, 4)),
-                        )
-                    }));
-                    grid
-                }),
-            })
+            cx.new(|cx| Self { panel_grid: temporary_panel_grid(window, cx) })
         })
         .map_err(|err| eyre::eyre!(err))
         .context("failed to open main window")
@@ -79,21 +50,39 @@ impl Render for MainWindow {
 
         let titlebar = titlebar(window, cx)
             .flex()
-            .justify_between()
-            .child(div().text_color(cx.theme().colors.text.muted()).child(showfile_path))
-            .pr(ui::TRAFFIC_LIGHT_POSITION.x);
+            .child(div().text_color(cx.theme().colors.text.muted()).child(showfile_path));
 
         let content = self.panel_grid.clone();
 
-        root(cx)
-            .flex()
-            .flex_col()
-            .size_full()
-            .font_family("Tamzen")
-            .font_weight(FontWeight::BOLD)
-            .line_height(px(14.0))
-            .bg(cx.theme().colors.bg_primary)
-            .child(titlebar)
-            .child(content)
+        root(cx).flex().flex_col().size_full().child(titlebar).child(content)
     }
+}
+
+fn temporary_panel_grid(window: &mut Window, cx: &mut App) -> Entity<PanelGrid> {
+    cx.new(|cx| {
+        let mut grid = PanelGrid::new(size(20, 12), window, cx);
+        grid.add_panel(cx.new(|cx| {
+            Panel::new(
+                PanelKind::Window(WindowPanelKind::Executors(
+                    cx.new(|cx| ExecutorsPanel::new(20, window, cx)),
+                )),
+                bounds(point(0, 10), size(20, 2)),
+            )
+        }));
+        grid.add_panel(cx.new(|cx| {
+            Panel::new(
+                PanelKind::Window(WindowPanelKind::FixturesTable(
+                    cx.new(|cx| FixturesTablePanel::new(window, cx)),
+                )),
+                bounds(point(0, 5), size(20, 4)),
+            )
+        }));
+        grid.add_panel(cx.new(|cx| {
+            Panel::new(
+                PanelKind::Pool(PoolPanelKind::Groups(cx.new(|_| GroupsPool::new(size(20, 4))))),
+                bounds(point(0, 0), size(20, 4)),
+            )
+        }));
+        grid
+    })
 }

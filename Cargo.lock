@@ -117,7 +117,6 @@ dependencies = [
  "gpui",
  "log",
  "radiant",
- "rust-embed",
  "simple_logger",
  "ui",
 ]
@@ -5191,7 +5190,9 @@ dependencies = [
 name = "ui"
 version = "0.1.0"
 dependencies = [
+ "eyre",
  "gpui",
+ "rust-embed",
  "smallvec",
 ]
 

@@ -15,7 +15,7 @@ pub fn titlebar(window: &Window, cx: &App) -> Stateful<Div> {
         .w_full()
         .min_h(titlebar_height)
         .max_h(titlebar_height)
-        .pl(TRAFFIC_LIGHT_PADDING)
+        .px(TRAFFIC_LIGHT_PADDING)
         .border_b_1()
         .border_color(cx.theme().colors.border)
         .bg(cx.theme().colors.bg_secondary)

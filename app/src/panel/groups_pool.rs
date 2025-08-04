@@ -1,11 +1,11 @@
 use gpui::prelude::*;
-use gpui::{ElementId, ReadGlobal, Size, Window, div};
+use gpui::{ElementId, Size, Window, div};
 use radiant::engine::Command;
 use radiant::show::{Group, Object, ObjectId};
 use ui::{ActiveTheme, ContainerStyle, container, interactive_container};
 
-use crate::app::{AppState, with_show};
 use crate::main_window::CELL_SIZE;
+use crate::state::{exec_cmd_and_log_err, with_show};
 
 pub struct GroupsPool {
     size: Size<u32>,
@@ -38,9 +38,10 @@ impl Render for GroupsPool {
                     .child(id.to_string())
                     .child(group.name().to_string())
                     .on_click(move |_, _, cx| {
-                        AppState::global(cx)
-                            .engine
-                            .exec(Command::SelectReferencedFixtures { id: id.into() });
+                        exec_cmd_and_log_err(
+                            Command::SelectReferencedFixtures { id: id.into() },
+                            cx,
+                        );
                     })
                     .into_any_element()
             } else {

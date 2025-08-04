@@ -10,6 +10,5 @@ eyre.workspace = true
 gpui.workspace = true
 log.workspace = true
 radiant = { path = "../radiant" }
-rust-embed = "8.7.2"
 simple_logger.workspace = true
 ui.workspace = true

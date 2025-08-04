@@ -1,12 +1,12 @@
 use gpui::prelude::*;
-use gpui::{App, Entity, UpdateGlobal, Window, div, relative};
+use gpui::{App, Entity, Window, div, relative};
 use radiant::engine::Command;
 use radiant::show::{Cue, Executor, Object, ObjectId, Sequence};
 use ui::utils::z_stack;
 use ui::{ActiveTheme, ContainerStyle, container};
 
-use crate::app::{AppState, with_show};
 use crate::main_window::CELL_SIZE;
+use crate::state::{exec_cmd_and_log_err, with_show};
 
 pub struct ExecutorsPanel {
     executors: Vec<Entity<ExecutorView>>,
@@ -144,14 +144,7 @@ impl Render for ExecutorView {
                 .on_click({
                     let executor_id = self.executor_id;
                     move |_, _, cx| {
-                        AppState::update_global(cx, {
-                            move |show, _cx| {
-                                show.engine
-                                    .exec(Command::Go { executor: executor_id })
-                                    .map_err(|err| log::error!("executor command error: {:?}", err))
-                                    .ok();
-                            }
-                        })
+                        exec_cmd_and_log_err(Command::Go { executor: executor_id }, cx);
                     }
                 })
         };
