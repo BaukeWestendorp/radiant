@@ -1,6 +1,6 @@
 use gpui::prelude::*;
-use gpui::{App, Entity, ReadGlobal, UpdateGlobal, Window, div, relative};
-use radiant::engine::{Command, EngineEvent};
+use gpui::{App, Entity, UpdateGlobal, Window, div, relative};
+use radiant::engine::Command;
 use radiant::show::{Cue, Executor, Object, ObjectId, Sequence};
 use ui::utils::z_stack;
 use ui::{ActiveTheme, ContainerStyle, container};
@@ -14,12 +14,6 @@ pub struct ExecutorsPanel {
 
 impl ExecutorsPanel {
     pub fn new(columns: u32, _window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let engine_event_handler = AppState::global(cx).engine_event_handler.clone();
-        cx.subscribe(&engine_event_handler, |_, _, event, cx| match event {
-            EngineEvent::CueFadeInProgress => cx.notify(),
-        })
-        .detach();
-
         Self {
             executors: (0..columns)
                 .into_iter()
@@ -57,16 +51,25 @@ impl Render for ExecutorView {
         let executor_name =
             executor.as_ref().map(|exec| exec.name().to_string()).unwrap_or_default();
 
+        let is_on = executor.as_ref().is_some_and(|exec| exec.is_on());
+
         let header = div()
-            .w_full()
             .flex()
-            .justify_center()
             .items_center()
-            .bg(cx.theme().colors.bg_primary)
-            .child(executor_name);
+            .p_1()
+            .w_full()
+            .bg(if is_on { cx.theme().colors.bg_active } else { cx.theme().colors.bg_primary })
+            .text_center()
+            .child(div().w_full().child(executor_name));
 
         let cues = with_show(cx, |show| {
-            let sequence = executor.and_then(|exec| exec.sequence(show).cloned());
+            let sequence = executor.as_ref().and_then(|exec| exec.sequence(show).cloned());
+
+            if let Some(sequence) = &sequence
+                && sequence.has_fading_cue()
+            {
+                window.request_animation_frame();
+            }
 
             let prev_cue = sequence.as_ref().and_then(|seq| seq.previous_cue());
             let current_cue = sequence.as_ref().and_then(|seq| seq.current_cue());
@@ -78,26 +81,32 @@ impl Render for ExecutorView {
                         let progress = seq.cue_fade_progress(cue.id());
                         let is_current =
                             seq.current_cue().is_some_and(|current| current.id() == cue.id());
-                        let name = cue.name();
+                        let name = format!("{} {}", cue.id().to_string(), cue.name());
 
                         z_stack([
                             div()
                                 .h_full()
                                 .w(relative(progress.unwrap_or_default()))
-                                .bg(cx.theme().colors.bg_selected_bright)
+                                .bg(cx.theme().colors.bg_active_bright)
                                 .opacity(0.5),
                             div()
                                 .h_full()
                                 .w(relative(if is_current { 1.0 } else { 0.0 }))
-                                .bg(cx.theme().colors.bg_selected_bright)
+                                .bg(cx.theme().colors.bg_active_bright)
                                 .opacity(if progress.is_some() { 0.5 } else { 1.0 }),
-                            div().px_1().child(name.to_string()),
+                            div()
+                                .flex()
+                                .items_center()
+                                .h_full()
+                                .px_1()
+                                .whitespace_nowrap()
+                                .child(div().w_full().child(name.to_string())),
                         ])
                         .size_full()
                     }
                     _ => div(),
                 };
-                div().h_1_3().w_full().child(content)
+                div().w_full().h_1_3().child(content)
             };
 
             div()
@@ -111,7 +120,12 @@ impl Render for ExecutorView {
                 .child(
                     render_cue(sequence.as_ref(), current_cue)
                         .border_b_1()
-                        .border_color(cx.theme().colors.border),
+                        .border_color(cx.theme().colors.border)
+                        .when(is_on, |e| {
+                            e.border_1()
+                                .border_color(cx.theme().colors.border_active)
+                                .bg(cx.theme().colors.bg_active)
+                        }),
                 )
                 .child(render_cue(sequence.as_ref(), next_cue))
         });
@@ -121,10 +135,12 @@ impl Render for ExecutorView {
                 .id(id)
                 .h_1_3()
                 .w_full()
+                .flex()
+                .items_center()
                 .px_1()
                 .bg(cx.theme().colors.bg_primary)
                 .cursor_pointer()
-                .child(label)
+                .child(div().w_full().child(label))
                 .on_click({
                     let executor_id = self.executor_id;
                     move |_, _, cx| {
@@ -169,25 +185,28 @@ impl Render for ExecutorView {
                     .child(render_button("button_1", "Go", cx)),
             );
 
-        container(ContainerStyle::normal(window, cx))
-            .flex()
-            .flex_col()
-            .w(CELL_SIZE * 1.0)
-            .h(CELL_SIZE * 2.0)
-            .child(
-                header
-                    .w_full()
-                    .h(CELL_SIZE * 0.5)
-                    .border_b_1()
-                    .border_color(cx.theme().colors.border),
-            )
-            .child(
-                cues.w_full()
-                    .h(CELL_SIZE * 0.75)
-                    .border_b_1()
-                    .border_color(cx.theme().colors.border),
-            )
-            .child(controls.w_full().h(CELL_SIZE * 0.75))
-            .into_any_element()
+        container(if is_on {
+            ContainerStyle {
+                background: ContainerStyle::normal(window, cx).background,
+                border: cx.theme().colors.border_active,
+                text_color: window.text_style().color,
+            }
+        } else {
+            ContainerStyle::normal(window, cx)
+        })
+        .flex()
+        .flex_col()
+        .w(CELL_SIZE * 1.0)
+        .h(CELL_SIZE * 2.0)
+        .child(header.w_full().h(CELL_SIZE * 0.5).border_b_1().border_color(if is_on {
+            cx.theme().colors.border_active
+        } else {
+            cx.theme().colors.border
+        }))
+        .child(
+            cues.w_full().h(CELL_SIZE * 0.75).border_b_1().border_color(cx.theme().colors.border),
+        )
+        .child(controls.w_full().h(CELL_SIZE * 0.75))
+        .into_any_element()
     }
 }

@@ -287,6 +287,10 @@ impl Sequence {
         self.current_cue.as_ref().and_then(|id| self.cue_after(id))
     }
 
+    pub fn has_fading_cue(&self) -> bool {
+        !self.cue_fade_in_starts.is_empty() || !self.cue_fade_out_starts.is_empty()
+    }
+
     pub fn cue_fade_progress(&self, id: &CueId) -> Option<f32> {
         if let Some(start) = self.cue_fade_in_starts.get(id) {
             if let Some(cue) = self.cue(id) {
@@ -395,6 +399,12 @@ impl Cue {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(serde::Deserialize)]
 pub struct CueId(pub(crate) Vec<u32>);
+
+impl std::fmt::Display for CueId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.iter().map(|n| n.to_string()).collect::<Vec<_>>().join("."))
+    }
+}
 
 #[derive(Debug, Clone)]
 #[derive(serde::Deserialize)]

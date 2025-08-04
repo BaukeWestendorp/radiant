@@ -42,7 +42,7 @@ impl MainWindow {
                             PanelKind::Window(WindowPanelKind::Executors(
                                 cx.new(|cx| ExecutorsPanel::new(20, window, cx)),
                             )),
-                            bounds(point(0, 9), size(20, 3)),
+                            bounds(point(0, 10), size(20, 2)),
                         )
                     }));
                     grid.add_panel(cx.new(|cx| {
@@ -91,6 +91,7 @@ impl Render for MainWindow {
             .size_full()
             .font_family("Tamzen")
             .font_weight(FontWeight::BOLD)
+            .line_height(px(14.0))
             .bg(cx.theme().colors.bg_primary)
             .child(titlebar)
             .child(content)
