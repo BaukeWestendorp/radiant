@@ -9,7 +9,8 @@ use ui::{ActiveTheme, InteractiveColor, root, titlebar};
 use crate::app::with_show;
 use crate::error::Result;
 use crate::panel::{
-    AttributeEditorPanel, ExecutorsPanel, Panel, PanelGrid, PanelKind, WindowPanelKind,
+    AttributeEditorPanel, ExecutorsPanel, GroupsPool, Panel, PanelGrid, PanelKind, PoolPanelKind,
+    WindowPanelKind,
 };
 
 pub const CELL_SIZE: Pixels = px(80.0);
@@ -50,6 +51,14 @@ impl MainWindow {
                                 cx.new(|cx| AttributeEditorPanel::new(window, cx)),
                             )),
                             bounds(point(0, 5), size(20, 4)),
+                        )
+                    }));
+                    grid.add_panel(cx.new(|cx| {
+                        Panel::new(
+                            PanelKind::Pool(PoolPanelKind::Groups(
+                                cx.new(|_| GroupsPool::new(size(20, 4))),
+                            )),
+                            bounds(point(0, 0), size(20, 4)),
                         )
                     }));
                     grid

@@ -8,10 +8,12 @@ use crate::main_window::CELL_SIZE;
 pub use attribute_editor::*;
 pub use executors::*;
 pub use grid::*;
+pub use groups_pool::*;
 
 pub mod attribute_editor;
 pub mod executors;
 pub mod grid;
+pub mod groups_pool;
 
 pub struct Panel {
     bounds: Bounds<u32>,
@@ -50,15 +52,24 @@ impl Panel {
 
     fn render_pool(
         &mut self,
-        _kind: PoolPanelKind,
+        kind: PoolPanelKind,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
-        div()
-            .size_full()
-            .border_1()
-            .border_color(cx.theme().colors.border)
-            .rounded(cx.theme().radius)
+        let content = match kind {
+            PoolPanelKind::Groups(pool) => pool.into_any_element(),
+        };
+
+        z_stack([
+            div()
+                .size_full()
+                .border_1()
+                .border_color(cx.theme().colors.border)
+                .rounded(cx.theme().radius)
+                .into_any_element(),
+            content.into_any_element(),
+        ])
+        .size_full()
     }
 }
 
@@ -94,4 +105,6 @@ pub enum WindowPanelKind {
 }
 
 #[derive(Debug, Clone)]
-pub enum PoolPanelKind {}
+pub enum PoolPanelKind {
+    Groups(Entity<GroupsPool>),
+}
