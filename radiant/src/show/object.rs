@@ -252,6 +252,10 @@ impl Sequence {
     }
 
     pub fn previous_cue(&self) -> Option<&Cue> {
+        if self.current_cue().is_none() {
+            return self.last_cue();
+        }
+
         self.cue_before(self.current_cue.as_ref()?)
     }
 

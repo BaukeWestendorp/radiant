@@ -43,7 +43,7 @@ impl EngineEventHandler {
                     })
                     .map_err(|err| eyre::eyre!(err))?;
 
-                Timer::after(Duration::from_secs_f32(1.0 / 60.0)).await;
+                Timer::after(Duration::from_secs_f32(1.0 / 30.0)).await;
             }
         })
         .detach_and_log_err(cx);
