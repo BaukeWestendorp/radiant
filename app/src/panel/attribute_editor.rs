@@ -2,24 +2,37 @@ use std::ops::Range;
 use std::str::FromStr;
 
 use gpui::prelude::*;
-use gpui::{App, EmptyView, Entity, SharedString, UpdateGlobal, Window, div};
-use radiant::engine::Command;
+use gpui::{
+    App, AppContext, EmptyView, Entity, SharedString, Subscription, UpdateGlobal, Window, div,
+};
+use radiant::engine::{Command, EngineEvent};
 use radiant::gdtf::attribute::{Feature, FeatureGroup};
 use radiant::gdtf::dmx_mode::{ChannelFunction, LogicalChannel};
 use radiant::show::{Attribute, AttributeValue, FixtureId};
 use ui::{Disableable, FieldEvent, NumberField, Tab, TabView, button, section, v_divider};
 
-use crate::app::{AppState, with_show};
+use crate::app::{AppState, on_engine_event, with_show};
 
 const ALL_FEATURE_GROUPS: [&str; 9] =
     ["Dimmer", "Position", "Gobo", "Color", "Beam", "Focus", "Control", "Shapers", "Video"];
 
 pub struct AttributeEditorPanel {
     feature_group_tabs: Entity<TabView>,
+    event_subscription: Option<Subscription>,
 }
 
 impl AttributeEditorPanel {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let event_subscription =
+            on_engine_event(cx, window, |panel, event, window, cx| match event {
+                EngineEvent::SelectionChanged => {
+                    panel.event_subscription.take();
+                    *panel = AttributeEditorPanel::new(window, cx);
+                    cx.notify();
+                }
+                _ => {}
+            });
+
         let fids = with_show(cx, |show| show.selected_fixtures().to_vec());
 
         let feature_groups = feature_groups_for_fids(&fids, cx);
@@ -43,7 +56,10 @@ impl AttributeEditorPanel {
             })
             .collect();
 
-        Self { feature_group_tabs: cx.new(|cx| TabView::new(tabs, window, cx)) }
+        Self {
+            feature_group_tabs: cx.new(|cx| TabView::new(tabs, window, cx)),
+            event_subscription: Some(event_subscription),
+        }
     }
 }
 

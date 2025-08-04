@@ -1,9 +1,10 @@
 use gpui::prelude::*;
-use gpui::{Size, Window, div};
+use gpui::{ElementId, ReadGlobal, Size, Window, div};
+use radiant::engine::Command;
 use radiant::show::{Group, Object, ObjectId};
-use ui::{ActiveTheme, ContainerStyle, container};
+use ui::{ActiveTheme, ContainerStyle, container, interactive_container};
 
-use crate::app::with_show;
+use crate::app::{AppState, with_show};
 use crate::main_window::CELL_SIZE;
 
 pub struct GroupsPool {
@@ -32,14 +33,21 @@ impl Render for GroupsPool {
             let group = with_show(cx, |show| show.groups.get(id).cloned());
 
             let cell = if let Some(group) = group {
-                container(ContainerStyle::normal(window, cx))
+                interactive_container(ElementId::NamedInteger("group".into(), *id as u64), None)
                     .size_full()
                     .child(id.to_string())
                     .child(group.name().to_string())
+                    .on_click(move |_, _, cx| {
+                        AppState::global(cx)
+                            .engine
+                            .exec(Command::AppendFixtureSelection { id: id.into() });
+                    })
+                    .into_any_element()
             } else {
                 container(ContainerStyle::normal(window, cx).disabled())
                     .size_full()
                     .child(id.to_string())
+                    .into_any_element()
             }
             .into_any_element();
             pool_cells.push(cell);

@@ -63,30 +63,13 @@ sequences:
 groups:
   - id: 1
     name: Spot ALL
-    fids:
-      [
-        101,
-        102,
-        103,
-        104,
-        105,
-        106,
-        107,
-        108,
-        109,
-        110,
-        111,
-        112,
-        113,
-        114,
-        115,
-      ]
+    fids: [101, 102, 103, 104]
   - id: 2
     name: Spot ODD
-    fids: [101, 103, 105, 107, 109, 111, 113, 115]
+    fids: [101, 103]
   - id: 3
     name: Spot EVEN
-    fids: [101, 104, 106, 108, 110, 112, 114]
+    fids: [102, 104]
   - id: 11
     name: Wash ALL
     fids: [201, 202, 203, 204, 205, 206, 207]
@@ -95,13 +78,13 @@ groups:
     fids: [201, 203, 205, 207]
   - id: 13
     name: Wash EVEN
-    fids: [202, 204, 206]
+    fids: [202, 204, 206, 208]
   - id: 21
     name: Blinder ALL
-    fids: [401, 402, 403, 404, 405, 406, 407, 408]
+    fids: [401, 403]
   - id: 22
     name: Blinder ODD
-    fids: [401, 403, 405, 407]
+    fids: [401, 405]
   - id: 23
     name: Blinder EVEN
     fids: [402, 404, 406, 408]
