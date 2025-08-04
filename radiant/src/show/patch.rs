@@ -16,8 +16,8 @@ pub struct Patch {
 
 impl Patch {
     /// Get all patched [Fixture]s.
-    pub fn fixtures(&self) -> Vec<Fixture> {
-        self.fixtures.clone()
+    pub fn fixtures(&self) -> &[Fixture] {
+        &self.fixtures
     }
 
     /// Get all [FixtureType]s.

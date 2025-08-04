@@ -8,8 +8,8 @@ use crate::engine::event::EventHandler;
 use crate::engine::protocols::Protocols;
 use crate::pipeline::Pipeline;
 use crate::show::{
-    Group, PresetBeam, PresetColor, PresetContent, PresetControl, PresetDimmer, PresetFocus,
-    PresetGobo, PresetPosition, PresetShapers, PresetVideo, Show,
+    AnyObjectId, Group, PresetBeam, PresetColor, PresetContent, PresetControl, PresetDimmer,
+    PresetFocus, PresetGobo, PresetPosition, PresetShapers, PresetVideo, Show,
 };
 use crate::showfile::{SacnOutputType, Showfile};
 
@@ -70,6 +70,10 @@ impl Engine {
 
     pub fn pending_events(&self) -> Vec<EngineEvent> {
         self.event_handler.pending_events()
+    }
+
+    pub fn drain_pending_events(&self) -> impl IntoIterator<Item = EngineEvent> {
+        self.event_handler.drain_pending_events()
     }
 
     pub fn exec(&self, command: Command) -> Result<(), crate::error::Error> {
@@ -179,6 +183,66 @@ impl Engine {
 
                     sequence.set_current_cue(sequence.next_cue().map(|cue| cue.id().clone()));
                 });
+            }
+            Command::AppendFixtureSelection { id } => self.show.update(|show| {
+                let fids = match id {
+                    AnyObjectId::Group(id) => {
+                        show.groups.get(id).map(|group| group.fids.clone()).unwrap_or_default()
+                    }
+                    AnyObjectId::Sequence(_) => vec![],
+                    AnyObjectId::Executor(_) => vec![],
+                    AnyObjectId::PresetDimmer(id) => show
+                        .presets_dimmer
+                        .get(id)
+                        .map(|preset| preset.fixture_ids(show.patch()))
+                        .unwrap_or_default(),
+                    AnyObjectId::PresetPosition(id) => show
+                        .presets_dimmer
+                        .get(id)
+                        .map(|preset| preset.fixture_ids(show.patch()))
+                        .unwrap_or_default(),
+                    AnyObjectId::PresetGobo(id) => show
+                        .presets_dimmer
+                        .get(id)
+                        .map(|preset| preset.fixture_ids(show.patch()))
+                        .unwrap_or_default(),
+                    AnyObjectId::PresetColor(id) => show
+                        .presets_dimmer
+                        .get(id)
+                        .map(|preset| preset.fixture_ids(show.patch()))
+                        .unwrap_or_default(),
+                    AnyObjectId::PresetBeam(id) => show
+                        .presets_dimmer
+                        .get(id)
+                        .map(|preset| preset.fixture_ids(show.patch()))
+                        .unwrap_or_default(),
+                    AnyObjectId::PresetFocus(id) => show
+                        .presets_dimmer
+                        .get(id)
+                        .map(|preset| preset.fixture_ids(show.patch()))
+                        .unwrap_or_default(),
+                    AnyObjectId::PresetControl(id) => show
+                        .presets_dimmer
+                        .get(id)
+                        .map(|preset| preset.fixture_ids(show.patch()))
+                        .unwrap_or_default(),
+                    AnyObjectId::PresetShapers(id) => show
+                        .presets_dimmer
+                        .get(id)
+                        .map(|preset| preset.fixture_ids(show.patch()))
+                        .unwrap_or_default(),
+                    AnyObjectId::PresetVideo(id) => show
+                        .presets_dimmer
+                        .get(id)
+                        .map(|preset| preset.fixture_ids(show.patch()))
+                        .unwrap_or_default(),
+                };
+                show.selected_fixtures.extend(fids);
+                self.event_handler.emit_event(EngineEvent::SelectionChanged);
+            }),
+            Command::ClearFixtureSelection => {
+                self.show().update(|show| show.selected_fixtures.clear());
+                self.event_handler.emit_event(EngineEvent::SelectionChanged);
             }
         }
 

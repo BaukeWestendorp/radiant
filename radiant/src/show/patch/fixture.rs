@@ -91,6 +91,41 @@ impl Fixture {
             .expect("fixture should always have a valid dmx mode index")
     }
 
+    pub fn has_attribute(&self, attribute: &Attribute, patch: &Patch) -> bool {
+        let fixture_type = self.fixture_type_id();
+        let fixture_type = patch.fixture_type(*fixture_type);
+        if fixture_type.is_none() {
+            return false;
+        }
+        let fixture_type = fixture_type.unwrap();
+        let dmx_mode = fixture_type.dmx_mode(&self.dmx_mode);
+        if dmx_mode.is_none() {
+            return false;
+        }
+        let dmx_mode = dmx_mode.unwrap();
+        for dmx_channel in &dmx_mode.dmx_channels {
+            for logical_channel in &dmx_channel.logical_channels {
+                if let Some(attr) = logical_channel.attribute(fixture_type) {
+                    if let Some(name) = attr.name.as_ref() {
+                        if **name == attribute.to_string() {
+                            return true;
+                        }
+                    }
+                }
+                for channel_function in &logical_channel.channel_functions {
+                    if let Some(attr) = channel_function.attribute(fixture_type) {
+                        if let Some(name) = attr.name.as_ref() {
+                            if **name == attribute.to_string() {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        false
+    }
+
     /// Converts an attribute value to DMX channel values.
     ///
     /// Takes a high-level [AttributeValue] and converts it to the corresponding

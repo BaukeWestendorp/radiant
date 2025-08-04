@@ -5,13 +5,43 @@ use crate::show::object::{
     PresetShapers, PresetVideo,
 };
 use crate::show::patch::{Attribute, AttributeValue, FixtureId, FixtureTypeId};
-use crate::show::{AnyObject, AnyObjectId, ObjectId};
+use crate::show::{AnyObject, AnyObjectId, ObjectId, Patch};
 
 macro_rules! preset_kind_and_content {
     ($kind:ident, $preset:ident) => {
         impl $preset {
             pub fn content(&self) -> &PresetContent {
                 &self.content
+            }
+
+            pub fn fixture_ids(&self, patch: &Patch) -> Vec<FixtureId> {
+                match &self.content {
+                    PresetContent::Universal(preset) => {
+                        let mut attributes = preset.values().keys();
+                        patch
+                            .fixtures()
+                            .iter()
+                            .filter(|fixture| {
+                                attributes.any(|attr| fixture.has_attribute(attr, patch))
+                            })
+                            .map(|f| f.fid())
+                            .collect()
+                    }
+                    PresetContent::Global(preset) => {
+                        let mut fixture_types = preset.values().keys().map(|(f_ty, _)| f_ty);
+                        patch
+                            .fixtures()
+                            .iter()
+                            .filter(|fixture| {
+                                fixture_types.any(|f_ty| f_ty == fixture.fixture_type_id())
+                            })
+                            .map(|f| f.fid())
+                            .collect()
+                    }
+                    PresetContent::Selective(preset) => {
+                        preset.values().keys().map(|(fid, _)| *fid).collect()
+                    }
+                }
             }
         }
 
