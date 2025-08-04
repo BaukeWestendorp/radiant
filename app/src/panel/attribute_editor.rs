@@ -18,7 +18,7 @@ const ALL_FEATURE_GROUPS: [&str; 9] =
 
 pub struct AttributeEditorPanel {
     feature_group_tabs: Entity<TabView>,
-    event_subscription: Option<Subscription>,
+    _event_subscription: Option<Subscription>,
 }
 
 impl AttributeEditorPanel {
@@ -26,7 +26,7 @@ impl AttributeEditorPanel {
         let event_subscription =
             on_engine_event(cx, window, |panel, event, window, cx| match event {
                 EngineEvent::SelectionChanged => {
-                    panel.event_subscription.take();
+                    panel._event_subscription.take();
                     *panel = AttributeEditorPanel::new(window, cx);
                     cx.notify();
                 }
@@ -58,7 +58,7 @@ impl AttributeEditorPanel {
 
         Self {
             feature_group_tabs: cx.new(|cx| TabView::new(tabs, window, cx)),
-            event_subscription: Some(event_subscription),
+            _event_subscription: Some(event_subscription),
         }
     }
 }

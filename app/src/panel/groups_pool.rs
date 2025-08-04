@@ -40,7 +40,7 @@ impl Render for GroupsPool {
                     .on_click(move |_, _, cx| {
                         AppState::global(cx)
                             .engine
-                            .exec(Command::AppendFixtureSelection { id: id.into() });
+                            .exec(Command::SelectReferencedFixtures { id: id.into() });
                     })
                     .into_any_element()
             } else {

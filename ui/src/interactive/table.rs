@@ -39,7 +39,11 @@ impl<D: TableDelegate> Table<D> {
         Self { delegate, id: id.into(), column_widths: HashMap::new() }
     }
 
-    pub fn width_for_column(&self, column: &D::Column) -> Pixels {
+    pub fn set_column_width(&mut self, column: D::Column, width: Pixels) {
+        self.column_widths.insert(column, width);
+    }
+
+    pub fn column_width(&self, column: &D::Column) -> Pixels {
         *self.column_widths.get(column).unwrap_or(&px(120.0))
     }
 }
@@ -50,7 +54,7 @@ impl<D: TableDelegate> Table<D> {
 
         let cells = D::Column::all().iter().map(|col| {
             div()
-                .w(self.width_for_column(col))
+                .w(self.column_width(col))
                 .h_full()
                 .px_1()
                 .border_r_1()
@@ -95,7 +99,7 @@ where
                             .iter()
                             .map(|col| {
                                 div()
-                                    .w(this.width_for_column(col))
+                                    .w(this.column_width(col))
                                     .when_some(row_height, |e, h| e.h(h))
                                     .border_b_1()
                                     .border_r_1()
@@ -110,6 +114,7 @@ where
                             .when(row_ix.is_multiple_of(2), |e| e.bg(alternating_color))
                             .hover(|e| e.bg(cx.theme().colors.bg_tertiary.hovered()))
                             .flex()
+                            .when(row.selected(cx), |e| e.bg(cx.theme().colors.bg_selected))
                             .on_click({
                                 let row = row.clone();
                                 cx.listener(move |this, event, w, cx| {
@@ -153,6 +158,10 @@ pub trait TableDelegate: Sized {
 
 pub trait TableRow<D: TableDelegate> {
     fn id(&self, cx: &mut Context<Table<D>>) -> ElementId;
+
+    fn selected(&self, _cx: &mut Context<Table<D>>) -> bool {
+        false
+    }
 
     fn render_cell(
         &self,

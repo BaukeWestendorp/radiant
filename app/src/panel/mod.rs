@@ -7,11 +7,13 @@ use crate::main_window::CELL_SIZE;
 
 pub use attribute_editor::*;
 pub use executors::*;
+pub use fixtures_table::*;
 pub use grid::*;
 pub use groups_pool::*;
 
 pub mod attribute_editor;
 pub mod executors;
+pub mod fixtures_table;
 pub mod grid;
 pub mod groups_pool;
 
@@ -36,6 +38,7 @@ impl Panel {
                 attribute_editor.into_any_element()
             }
             WindowPanelKind::Executors(executors) => executors.into_any_element(),
+            WindowPanelKind::FixturesTable(table) => table.into_any_element(),
         };
 
         z_stack([
@@ -102,6 +105,7 @@ pub enum PanelKind {
 pub enum WindowPanelKind {
     AttributeEditor(Entity<AttributeEditorPanel>),
     Executors(Entity<ExecutorsPanel>),
+    FixturesTable(Entity<FixturesTablePanel>),
 }
 
 #[derive(Debug, Clone)]

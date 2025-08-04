@@ -18,6 +18,7 @@ pub enum Command {
     CreatePresetVideo { id: ObjectId<PresetVideo>, name: Option<String> },
     ProgrammerSetAttribute { fid: FixtureId, attribute: Attribute, value: AttributeValue },
     Go { executor: ObjectId<Executor> },
-    AppendFixtureSelection { id: AnyObjectId },
+    SelectReferencedFixtures { id: AnyObjectId },
+    SelectFixture { fid: FixtureId },
     ClearFixtureSelection,
 }

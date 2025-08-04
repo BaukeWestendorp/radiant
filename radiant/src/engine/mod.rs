@@ -184,7 +184,7 @@ impl Engine {
                     sequence.set_current_cue(sequence.next_cue().map(|cue| cue.id().clone()));
                 });
             }
-            Command::AppendFixtureSelection { id } => self.show.update(|show| {
+            Command::SelectReferencedFixtures { id } => self.show.update(|show| {
                 let fids = match id {
                     AnyObjectId::Group(id) => {
                         show.groups.get(id).map(|group| group.fids.clone()).unwrap_or_default()
@@ -240,6 +240,10 @@ impl Engine {
                 show.selected_fixtures.extend(fids);
                 self.event_handler.emit_event(EngineEvent::SelectionChanged);
             }),
+            Command::SelectFixture { fid } => {
+                self.show().update(|show| show.selected_fixtures.push(fid));
+                self.event_handler.emit_event(EngineEvent::SelectionChanged);
+            }
             Command::ClearFixtureSelection => {
                 self.show().update(|show| show.selected_fixtures.clear());
                 self.event_handler.emit_event(EngineEvent::SelectionChanged);
