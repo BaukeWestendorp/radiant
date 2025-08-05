@@ -10,6 +10,15 @@ use crate::show::{AnyObject, AnyObjectId, ObjectId, Patch};
 macro_rules! preset_kind_and_content {
     ($kind:ident, $preset:ident) => {
         impl $preset {
+            pub fn new(id: impl Into<ObjectId<Self>>, name: String) -> Self {
+                Self {
+                    id: id.into(),
+                    uuid: uuid::Uuid::new_v4(),
+                    name,
+                    content: PresetContent::default(),
+                }
+            }
+
             pub fn content(&self) -> &PresetContent {
                 &self.content
             }

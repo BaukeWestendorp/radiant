@@ -8,8 +8,8 @@ use crate::engine::event::EventHandler;
 use crate::engine::protocols::Protocols;
 use crate::pipeline::Pipeline;
 use crate::show::{
-    AnyObjectId, Group, PresetBeam, PresetColor, PresetContent, PresetControl, PresetDimmer,
-    PresetFocus, PresetGobo, PresetPosition, PresetShapers, PresetVideo, Show,
+    AnyObjectId, Executor, Group, PresetBeam, PresetColor, PresetControl, PresetDimmer,
+    PresetFocus, PresetGobo, PresetPosition, PresetShapers, PresetVideo, Sequence, Show,
 };
 use crate::showfile::{SacnOutputType, Showfile};
 
@@ -92,91 +92,88 @@ impl Engine {
             }
             Command::CreateGroup { id, name, fids } => {
                 self.show().update(|show| {
-                    show.groups.insert(Group {
+                    show.groups.insert(Group::new(
                         id,
-                        name: name.unwrap_or("New Group".to_string()),
+                        name.unwrap_or("New Group".to_string()),
                         fids,
-                    });
+                    ));
+                });
+            }
+            Command::CreateSequence { id, name } => {
+                self.show().update(|show| {
+                    show.sequences
+                        .insert(Sequence::new(id, name.unwrap_or("New Sequence".to_string())));
+                });
+            }
+            Command::CreateExecutor { id, name } => {
+                self.show().update(|show| {
+                    show.executors
+                        .insert(Executor::new(id, name.unwrap_or("New Executor".to_string())));
                 });
             }
             Command::CreatePresetDimmer { id, name } => {
                 self.show().update(|show| {
-                    show.presets_dimmer.insert(PresetDimmer {
+                    show.presets_dimmer.insert(PresetDimmer::new(
                         id,
-                        name: name.unwrap_or("New Dimmer Preset".to_string()),
-                        content: PresetContent::default(),
-                    });
+                        name.unwrap_or("New Dimmer Preset".to_string()),
+                    ));
                 });
             }
             Command::CreatePresetPosition { id, name } => {
                 self.show().update(|show| {
-                    show.presets_position.insert(PresetPosition {
+                    show.presets_position.insert(PresetPosition::new(
                         id,
-                        name: name.unwrap_or("New Position Preset".to_string()),
-                        content: PresetContent::default(),
-                    });
+                        name.unwrap_or("New Position Preset".to_string()),
+                    ));
                 });
             }
             Command::CreatePresetGobo { id, name } => {
                 self.show().update(|show| {
-                    show.presets_gobo.insert(PresetGobo {
-                        id,
-                        name: name.unwrap_or("New Gobo Preset".to_string()),
-                        content: PresetContent::default(),
-                    });
+                    show.presets_gobo
+                        .insert(PresetGobo::new(id, name.unwrap_or("New Gobo Preset".to_string())));
                 });
             }
             Command::CreatePresetColor { id, name } => {
                 self.show().update(|show| {
-                    show.presets_color.insert(PresetColor {
+                    show.presets_color.insert(PresetColor::new(
                         id,
-                        name: name.unwrap_or("New Color Preset".to_string()),
-                        content: PresetContent::default(),
-                    });
+                        name.unwrap_or("New Color Preset".to_string()),
+                    ));
                 });
             }
             Command::CreatePresetBeam { id, name } => {
                 self.show().update(|show| {
-                    show.presets_beam.insert(PresetBeam {
-                        id,
-                        name: name.unwrap_or("New Beam Preset".to_string()),
-                        content: PresetContent::default(),
-                    });
+                    show.presets_beam
+                        .insert(PresetBeam::new(id, name.unwrap_or("New Beam Preset".to_string())));
                 });
             }
             Command::CreatePresetFocus { id, name } => {
                 self.show().update(|show| {
-                    show.presets_focus.insert(PresetFocus {
+                    show.presets_focus.insert(PresetFocus::new(
                         id,
-                        name: name.unwrap_or("New Focus Preset".to_string()),
-                        content: PresetContent::default(),
-                    });
+                        name.unwrap_or("New Focus Preset".to_string()),
+                    ));
                 });
             }
             Command::CreatePresetControl { id, name } => {
                 self.show().update(|show| {
-                    show.presets_control.insert(PresetControl {
+                    show.presets_control.insert(PresetControl::new(
                         id,
-                        name: name.unwrap_or("New Control Preset".to_string()),
-                        content: PresetContent::default(),
-                    });
+                        name.unwrap_or("New Control Preset".to_string()),
+                    ));
                 });
             }
             Command::CreatePresetShapers { id, name } => {
                 self.show().update(|show| {
-                    show.presets_shapers.insert(PresetShapers {
+                    show.presets_shapers.insert(PresetShapers::new(
                         id,
-                        name: name.unwrap_or("New Shapers Preset".to_string()),
-                        content: PresetContent::default(),
-                    });
+                        name.unwrap_or("New Shapers Preset".to_string()),
+                    ));
                 });
             }
             Command::CreatePresetVideo { id, name } => self.show().update(|show| {
-                show.presets_video.insert(PresetVideo {
-                    id,
-                    name: name.unwrap_or("New Video Preset".to_string()),
-                    content: PresetContent::default(),
-                });
+                show.presets_video
+                    .insert(PresetVideo::new(id, name.unwrap_or("New Video Preset".to_string())));
             }),
             Command::ProgrammerSetAttribute { fid, attribute, value } => {
                 self.show().update(|show| {

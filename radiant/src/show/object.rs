@@ -17,6 +17,8 @@ where
 {
     fn id(&self) -> ObjectId<Self>;
 
+    fn uuid(&self) -> uuid::Uuid;
+
     fn name(&self) -> &str;
 }
 
@@ -144,6 +146,7 @@ macro_rules! define_objects {
             #[derive(serde::Deserialize)]
             $obj_vis struct $obj {
                 pub(crate) id: ObjectId<$obj>,
+                pub(super) uuid: uuid::Uuid,
                 pub(crate) name: String,
 
                 $( $(#[$field_attr])* $field_vis $field : $field_ty, )*
@@ -152,6 +155,10 @@ macro_rules! define_objects {
             impl Object for $obj {
                 fn id(&self) -> ObjectId<Self> {
                     self.id
+                }
+
+                fn uuid(&self) -> uuid::Uuid {
+                    self.uuid
                 }
 
                 fn name(&self) -> &str {
@@ -240,12 +247,28 @@ define_objects! {
 }
 
 impl Group {
+    pub fn new(id: impl Into<ObjectId<Self>>, name: String, fids: Vec<FixtureId>) -> Self {
+        Self { id: id.into(), uuid: uuid::Uuid::new_v4(), name, fids }
+    }
+
     pub fn fids(&self) -> &[FixtureId] {
         &self.fids
     }
 }
 
 impl Sequence {
+    pub fn new(id: impl Into<ObjectId<Self>>, name: String) -> Self {
+        Self {
+            id: id.into(),
+            uuid: uuid::Uuid::new_v4(),
+            name,
+            cues: HashMap::new(),
+            current_cue: None,
+            cue_fade_in_starts: HashMap::new(),
+            cue_fade_out_starts: HashMap::new(),
+        }
+    }
+
     pub fn cue(&self, id: &CueId) -> Option<&Cue> {
         self.cues.get(id)
     }
@@ -380,6 +403,10 @@ impl Sequence {
 }
 
 impl Executor {
+    pub fn new(id: impl Into<ObjectId<Self>>, name: String) -> Self {
+        Self { id: id.into(), uuid: uuid::Uuid::new_v4(), name, sequence_id: None, is_on: false }
+    }
+
     pub fn sequence_id(&self) -> Option<ObjectId<Sequence>> {
         self.sequence_id
     }
