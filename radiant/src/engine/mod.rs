@@ -205,42 +205,42 @@ impl Engine {
                         .map(|preset| preset.fixture_ids(show.patch()))
                         .unwrap_or_default(),
                     AnyObjectId::PresetPosition(id) => show
-                        .presets_dimmer
+                        .presets_position
                         .get(id)
                         .map(|preset| preset.fixture_ids(show.patch()))
                         .unwrap_or_default(),
                     AnyObjectId::PresetGobo(id) => show
-                        .presets_dimmer
+                        .presets_gobo
                         .get(id)
                         .map(|preset| preset.fixture_ids(show.patch()))
                         .unwrap_or_default(),
                     AnyObjectId::PresetColor(id) => show
-                        .presets_dimmer
+                        .presets_color
                         .get(id)
                         .map(|preset| preset.fixture_ids(show.patch()))
                         .unwrap_or_default(),
                     AnyObjectId::PresetBeam(id) => show
-                        .presets_dimmer
+                        .presets_beam
                         .get(id)
                         .map(|preset| preset.fixture_ids(show.patch()))
                         .unwrap_or_default(),
                     AnyObjectId::PresetFocus(id) => show
-                        .presets_dimmer
+                        .presets_focus
                         .get(id)
                         .map(|preset| preset.fixture_ids(show.patch()))
                         .unwrap_or_default(),
                     AnyObjectId::PresetControl(id) => show
-                        .presets_dimmer
+                        .presets_control
                         .get(id)
                         .map(|preset| preset.fixture_ids(show.patch()))
                         .unwrap_or_default(),
                     AnyObjectId::PresetShapers(id) => show
-                        .presets_dimmer
+                        .presets_shapers
                         .get(id)
                         .map(|preset| preset.fixture_ids(show.patch()))
                         .unwrap_or_default(),
                     AnyObjectId::PresetVideo(id) => show
-                        .presets_dimmer
+                        .presets_video
                         .get(id)
                         .map(|preset| preset.fixture_ids(show.patch()))
                         .unwrap_or_default(),

@@ -1,3 +1,5 @@
+use std::num::NonZeroU32;
+
 use gpui::prelude::*;
 use gpui::{App, Entity, Window, div, relative};
 use radiant::engine::Command;
@@ -16,11 +18,11 @@ pub struct ExecutorsPanel {
 impl ExecutorsPanel {
     pub fn new(columns: u32, _window: &mut Window, cx: &mut Context<WindowPanel<Self>>) -> Self {
         Self {
-            executors: (0..columns)
+            executors: (1..columns)
                 .into_iter()
                 .map(|ix| {
                     cx.new(|_| {
-                        let id = ObjectId::new(ix);
+                        let id = ObjectId::new(NonZeroU32::new(ix).unwrap());
                         ExecutorView::new(id)
                     })
                 })

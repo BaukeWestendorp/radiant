@@ -1,10 +1,13 @@
+use core::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::PhantomData;
+use std::num::NonZeroU32;
 use std::ops::Deref;
 use std::time::{Duration, Instant};
 
+use crate::error::Error;
 use crate::show::preset::PresetContent;
 use crate::show::{AnyPresetId, FixtureId, Show};
 
@@ -17,13 +20,13 @@ where
     fn name(&self) -> &str;
 }
 
-#[derive(Debug, PartialOrd, Ord)]
+#[derive(Debug)]
 #[derive(serde::Deserialize)]
 #[serde(transparent)]
-pub struct ObjectId<T>(u32, PhantomData<T>);
+pub struct ObjectId<T>(NonZeroU32, PhantomData<T>);
 
 impl<T> ObjectId<T> {
-    pub fn new(id: u32) -> Self {
+    pub fn new(id: NonZeroU32) -> Self {
         Self(id, PhantomData::default())
     }
 }
@@ -36,6 +39,24 @@ impl<T> Clone for ObjectId<T> {
 
 impl<T> Copy for ObjectId<T> {}
 
+impl<T> PartialOrd for ObjectId<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match self.0.partial_cmp(&other.0) {
+            Some(Ordering::Equal) => {}
+            ord => return ord,
+        }
+        self.1.partial_cmp(&other.1)
+    }
+}
+
+impl<T> Ord for ObjectId<T> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        match self.0.cmp(&other.0) {
+            Ordering::Equal => self.1.cmp(&other.1),
+            ord => ord,
+        }
+    }
+}
 impl<T> PartialEq for ObjectId<T> {
     fn eq(&self, other: &Self) -> bool {
         self.0 == other.0 && self.1 == other.1
@@ -53,18 +74,26 @@ impl<T> Hash for ObjectId<T> {
 
 impl<T> From<ObjectId<T>> for u32 {
     fn from(id: ObjectId<T>) -> Self {
+        id.0.into()
+    }
+}
+
+impl<T> From<ObjectId<T>> for NonZeroU32 {
+    fn from(id: ObjectId<T>) -> Self {
         id.0
     }
 }
 
-impl<T> From<u32> for ObjectId<T> {
-    fn from(id: u32) -> Self {
-        Self::new(id)
+impl<T> TryFrom<u32> for ObjectId<T> {
+    type Error = Error;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        Ok(Self::new(value.try_into()?))
     }
 }
 
 impl<T> Deref for ObjectId<T> {
-    type Target = u32;
+    type Target = NonZeroU32;
 
     fn deref(&self) -> &Self::Target {
         &self.0
@@ -84,7 +113,7 @@ macro_rules! define_objects {
         #[derive(serde::Deserialize)]
         pub enum AnyObjectId {
             $(
-                $obj(u32),
+                $obj(ObjectId::<$obj>),
             )*
         }
 
@@ -135,7 +164,7 @@ macro_rules! define_objects {
 
                 fn try_from(id: AnyObjectId) -> Result<Self, Self::Error> {
                     match id {
-                        AnyObjectId::$obj(id) => Ok(ObjectId::<$obj>::new(id)),
+                        AnyObjectId::$obj(id) => Ok(id),
                         _ => eyre::bail!("failed to convert id"),
                     }
                 }

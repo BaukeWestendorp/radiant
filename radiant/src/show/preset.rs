@@ -82,15 +82,15 @@ pub enum AnyPresetId {
 impl From<AnyPresetId> for AnyObjectId {
     fn from(any_preset_id: AnyPresetId) -> Self {
         match any_preset_id {
-            AnyPresetId::Dimmer(id) => AnyObjectId::PresetDimmer(*id),
-            AnyPresetId::Position(id) => AnyObjectId::PresetPosition(*id),
-            AnyPresetId::Gobo(id) => AnyObjectId::PresetGobo(*id),
-            AnyPresetId::Color(id) => AnyObjectId::PresetColor(*id),
-            AnyPresetId::Beam(id) => AnyObjectId::PresetBeam(*id),
-            AnyPresetId::Focus(id) => AnyObjectId::PresetFocus(*id),
-            AnyPresetId::Control(id) => AnyObjectId::PresetControl(*id),
-            AnyPresetId::Shapers(id) => AnyObjectId::PresetShapers(*id),
-            AnyPresetId::Video(id) => AnyObjectId::PresetVideo(*id),
+            AnyPresetId::Dimmer(id) => AnyObjectId::PresetDimmer(id),
+            AnyPresetId::Position(id) => AnyObjectId::PresetPosition(id),
+            AnyPresetId::Gobo(id) => AnyObjectId::PresetGobo(id),
+            AnyPresetId::Color(id) => AnyObjectId::PresetColor(id),
+            AnyPresetId::Beam(id) => AnyObjectId::PresetBeam(id),
+            AnyPresetId::Focus(id) => AnyObjectId::PresetFocus(id),
+            AnyPresetId::Control(id) => AnyObjectId::PresetControl(id),
+            AnyPresetId::Shapers(id) => AnyObjectId::PresetShapers(id),
+            AnyPresetId::Video(id) => AnyObjectId::PresetVideo(id),
         }
     }
 }

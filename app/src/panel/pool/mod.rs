@@ -1,3 +1,5 @@
+use std::num::NonZeroU32;
+
 use gpui::prelude::*;
 use gpui::{Bounds, ClickEvent, ElementId, Entity, Window, div};
 use radiant::show::{Group, Sequence};
@@ -38,13 +40,13 @@ impl<D: PoolPanelDelegate + 'static> Render for PoolPanel<D> {
 }
 
 pub trait PoolPanelDelegate {
-    fn cell_has_content(&mut self, ix: u32, cx: &mut Context<PoolPanel<Self>>) -> bool
+    fn cell_has_content(&self, id: NonZeroU32, cx: &mut Context<PoolPanel<Self>>) -> bool
     where
         Self: Sized;
 
     fn handle_cell_click(
-        &mut self,
-        ix: u32,
+        &self,
+        id: NonZeroU32,
         event: &ClickEvent,
         window: &mut Window,
         cx: &mut Context<PoolPanel<Self>>,
@@ -52,8 +54,8 @@ pub trait PoolPanelDelegate {
         Self: Sized;
 
     fn render_cell_content(
-        &mut self,
-        ix: u32,
+        &self,
+        id: NonZeroU32,
         window: &mut Window,
         cx: &mut Context<PoolPanel<Self>>,
     ) -> impl IntoElement
@@ -61,27 +63,30 @@ pub trait PoolPanelDelegate {
         Self: Sized;
 
     fn render_cell(
-        &mut self,
-        ix: u32,
+        &self,
+        id: NonZeroU32,
         window: &mut Window,
         cx: &mut Context<PoolPanel<Self>>,
     ) -> impl IntoElement
     where
         Self: Sized + 'static,
     {
-        if self.cell_has_content(ix, cx) {
-            interactive_container(ElementId::NamedInteger("pool_cell".into(), ix as u64), None)
-                .size_full()
-                .child(ix.to_string())
-                .child(self.render_cell_content(ix, window, cx))
-                .on_click(cx.listener(move |this, event, window, cx| {
-                    this.delegate.handle_cell_click(ix, event, window, cx);
-                }))
-                .into_any_element()
+        if self.cell_has_content(id, cx) {
+            interactive_container(
+                ElementId::NamedInteger("pool_cell".into(), u32::from(id).into()),
+                None,
+            )
+            .size_full()
+            .child(id.to_string())
+            .child(self.render_cell_content(id, window, cx))
+            .on_click(cx.listener(move |this, event, window, cx| {
+                this.delegate.handle_cell_click(id, event, window, cx);
+            }))
+            .into_any_element()
         } else {
             container(ContainerStyle::normal(window, cx).disabled())
                 .size_full()
-                .child(ix.to_string())
+                .child(id.to_string())
                 .into_any_element()
         }
     }
@@ -98,8 +103,9 @@ pub trait PoolPanelDelegate {
         let area = bounds.size.width * bounds.size.height;
         let mut pool_cells = vec![];
         for ix in 1..area + 1 {
-            let cell = self.render_cell(ix, window, cx).into_any_element();
-            pool_cells.push(cell);
+            let id = NonZeroU32::new(ix).unwrap();
+            let cell_element = self.render_cell(id, window, cx).into_any_element();
+            pool_cells.push(cell_element);
         }
 
         div()

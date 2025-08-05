@@ -1,3 +1,5 @@
+use std::num::NonZeroU32;
+
 use gpui::prelude::*;
 use gpui::{Window, div};
 use radiant::engine::Command;
@@ -20,33 +22,34 @@ impl<T: Object + 'static> PoolPanelDelegate for ObjectPool<T>
 where
     AnyObjectId: From<ObjectId<T>>,
 {
-    fn cell_has_content(&mut self, ix: u32, cx: &mut Context<PoolPanel<Self>>) -> bool
+    fn cell_has_content(&self, id: NonZeroU32, cx: &mut Context<PoolPanel<Self>>) -> bool
     where
         Self: Sized,
     {
-        with_show(cx, |show| show.any_object(ObjectId::<T>::new(ix)).is_some())
+        let id = ObjectId::new(id);
+        with_show(cx, |show| show.any_object(id).is_some())
     }
 
     fn handle_cell_click(
-        &mut self,
-        ix: u32,
+        &self,
+        id: NonZeroU32,
         _event: &gpui::ClickEvent,
         _window: &mut Window,
         cx: &mut Context<PoolPanel<Self>>,
     ) where
         Self: Sized,
     {
-        let id = ObjectId::<T>::new(ix);
+        let id = ObjectId::new(id);
         exec_cmd_and_log_err(Command::SelectReferencedFixtures { id: id.into() }, cx);
     }
 
     fn render_cell_content(
-        &mut self,
-        ix: u32,
+        &self,
+        id: NonZeroU32,
         _window: &mut Window,
         cx: &mut Context<PoolPanel<Self>>,
     ) -> impl IntoElement {
-        let id = ObjectId::<T>::new(ix);
+        let id = ObjectId::new(id);
         let object = with_show(cx, |show| show.any_object(id));
         div().child(object.map(|object| object.name().to_string()).unwrap_or_default())
     }
