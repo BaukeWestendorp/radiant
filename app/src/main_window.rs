@@ -45,10 +45,14 @@ impl MainWindow {
 
 impl Render for MainWindow {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let showfile_path = match with_show(cx, |show| show.path().cloned()) {
+        let mut showfile_path = match with_show(cx, |show| show.path().cloned()) {
             Some(path) => path.display().to_string(),
             None => "[unsaved showfile]".to_string(),
         };
+
+        if cfg!(debug_assertions) {
+            showfile_path = format!("[DEBUG] {showfile_path}");
+        }
 
         let titlebar = titlebar(window, cx)
             .flex()
