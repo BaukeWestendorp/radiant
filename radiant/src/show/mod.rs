@@ -91,7 +91,7 @@ impl Show {
             objects: HashMap::new(),
 
             programmer: Programmer::default(),
-            selected_fixtures: vec![FixtureId(101), FixtureId(102), FixtureId(103), FixtureId(104)],
+            selected_fixtures: vec![],
         };
 
         for obj in &showfile.objects.groups {
