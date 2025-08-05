@@ -89,7 +89,7 @@ impl Colors {
             bg_focused: gpui::hsla(0.0, 0.0, 0.1, 1.0),
             bg_active: active.darken(0.75),
             bg_active_bright: selected.darken(0.2),
-            bg_selected: selected.darken(0.9),
+            bg_selected: selected.darken(0.5),
             bg_selected_bright: selected.darken(0.2),
             bg_alternating: gpui::hsla(0.0, 0.0, 0.1, 1.0),
             bg_destructive: destructive.darken(0.8),
