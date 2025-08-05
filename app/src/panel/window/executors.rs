@@ -3,7 +3,7 @@ use std::num::NonZeroU32;
 use gpui::prelude::*;
 use gpui::{App, Entity, Window, div, relative};
 use radiant::engine::Command;
-use radiant::show::{Cue, Executor, Object, ObjectId, Sequence};
+use radiant::show::{Cue, Executor, Object, ObjectId, PoolId, Sequence};
 use ui::utils::z_stack;
 use ui::{ActiveTheme, ContainerStyle, container};
 
@@ -21,8 +21,9 @@ impl ExecutorsPanel {
             executors: (1..columns)
                 .into_iter()
                 .map(|ix| {
-                    cx.new(|_| {
-                        let id = ObjectId::new(NonZeroU32::new(ix).unwrap());
+                    cx.new(|cx| {
+                        let pool_id = PoolId::<Executor>::new(NonZeroU32::new(ix).unwrap());
+                        let id = with_show(cx, |show| show.object_id_from_pool_id(pool_id));
                         ExecutorView::new(id)
                     })
                 })
@@ -42,18 +43,19 @@ impl WindowPanelDelegate for ExecutorsPanel {
 }
 
 struct ExecutorView {
-    executor_id: ObjectId<Executor>,
+    executor_id: Option<ObjectId>,
 }
 
 impl ExecutorView {
-    pub fn new(executor_id: ObjectId<Executor>) -> Self {
+    pub fn new(executor_id: Option<ObjectId>) -> Self {
         Self { executor_id }
     }
 }
 
 impl Render for ExecutorView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let executor = with_show(cx, |show| show.executors.get(self.executor_id).cloned());
+        let executor =
+            with_show(cx, |show| self.executor_id.and_then(|id| show.executor(&id).cloned()));
 
         let executor_name =
             executor.as_ref().map(|exec| exec.name().to_string()).unwrap_or_default();
@@ -151,7 +153,9 @@ impl Render for ExecutorView {
                 .on_click({
                     let executor_id = self.executor_id;
                     move |_, _, cx| {
-                        exec_cmd_and_log_err(Command::Go { executor: executor_id }, cx);
+                        if let Some(executor_id) = executor_id {
+                            exec_cmd_and_log_err(Command::Go { executor_id }, cx);
+                        }
                     }
                 })
         };

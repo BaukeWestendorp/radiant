@@ -1,12 +1,12 @@
 executors:
-  - id: 1
-    uuid: 6e2e7e2d-1b8e-4a2a-9e8c-1f2a1b2c3d4e
+  - pool_id: 1
+    id: 6e2e7e2d-1b8e-4a2a-9e8c-1f2a1b2c3d4e
     name: Sub-atomic
-    sequence_id: 1
+    sequence_id: 7f3f8f3e-2c9f-4b3b-8f9d-2e3b4c5d6e7f
     is_on: true
 sequences:
-  - id: 1
-    uuid: 7f3f8f3e-2c9f-4b3b-8f9d-2e3b4c5d6e7f
+  - pool_id: 1
+    id: 7f3f8f3e-2c9f-4b3b-8f9d-2e3b4c5d6e7f
     name: Sub-atomic
     current_cue: [0, 5]
     cues:
@@ -20,12 +20,12 @@ sequences:
           secs: 0
           nanos: 0
         recipes:
-          - group: 31
-            preset: !Dimmer 4
-          - group: 11
-            preset: !Dimmer 4
-          - group: 11
-            preset: !Color 10
+          - group_id: 456a6a7a-5a2a-6a6a-1a2a-5a6a7a8a9a0a
+            preset_id: d3456789-e012-7fab-1c34-56789abcdef0
+          - group_id: e0a0b0c1-9a6a-0a0a-5a6a-9a0c1d2e3f4a
+            preset_id: d3456789-e012-7fab-1c34-56789abcdef0
+          - group_id: e0a0b0c1-9a6a-0a0a-5a6a-9a0c1d2e3f4a
+            preset_id: 9abcdef0-1234-d401-7a90-bcdef0123456
       [1]:
         id: [1]
         name: Intro
@@ -36,131 +36,113 @@ sequences:
           secs: 1
           nanos: 0
         recipes:
-          - group: 1
-            preset: !Dimmer 2
-          - group: 1
-            preset: !Color 11
-          - group: 11
-            preset: !Dimmer 2
-          - group: 11
-            preset: !Color 13
-      [2]:
-        id: [2]
-        name: Verse
-        fade_in_time:
-          secs: 2
-          nanos: 0
-        fade_out_time:
-          secs: 1
-          nanos: 0
-        recipes:
-          - group: 1
-            preset: !Dimmer 1
-          - group: 1
-            preset: !Color 11
-          - group: 21
-            preset: !Dimmer 2
-          - group: 21
-            preset: !Color 13
+          - group_id: b7d7e7f8-6a3d-7f7f-2d3a-6a7f8a9b0c1d
+            preset_id: b1234567-c890-5def-9a12-3456789abcde
+          - group_id: b7d7e7f8-6a3d-7f7f-2d3a-6a7f8a9b0c1d
+            preset_id: abcdef01-2345-e512-8a01-cdef01234567
+          - group_id: e0a0b0c1-9a6a-0a0a-5a6a-9a0c1d2e3f4a
+            preset_id: b1234567-c890-5def-9a12-3456789abcde
+          - group_id: e0a0b0c1-9a6a-0a0a-5a6a-9a0c1d2e3f4a
+            preset_id: cdef0123-4567-0734-aa23-ef0123456789
 groups:
-  - id: 1
-    uuid: b7d7e7f8-6a3d-7f7f-2d3a-6a7f8a9b0c1d
+  - pool_id: 1
+    id: b7d7e7f8-6a3d-7f7f-2d3a-6a7f8a9b0c1d
     name: Spot ALL
     fids: [101, 102, 103, 104]
-  - id: 2
-    uuid: c8e8f8a9-7a4e-8a8a-3e4a-7a8a9b0c1d2e
+  - pool_id: 2
+    id: c8e8f8a9-7a4e-8a8a-3e4a-7a8a9b0c1d2e
     name: Spot ODD
     fids: [101, 103]
-  - id: 3
-    uuid: d9f9a9b0-8a5f-9a9a-4f5a-8a9b0c1d2e3f
+  - pool_id: 3
+    id: d9f9a9b0-8a5f-9a9a-4f5a-8a9b0c1d2e3f
     name: Spot EVEN
     fids: [102, 104]
-  - id: 11
-    uuid: e0a0b0c1-9a6a-0a0a-5a6a-9a0c1d2e3f4a
+  - pool_id: 11
+    id: e0a0b0c1-9a6a-0a0a-5a6a-9a0c1d2e3f4a
     name: Wash ALL
     fids: [201, 202, 203, 204, 205, 206, 207]
-  - id: 12
-    uuid: f1b1c1d2-0a7a-1a1a-6a7a-0a1d2e3f4a5a
+  - pool_id: 12
+    id: f1b1c1d2-0a7a-1a1a-6a7a-0a1d2e3f4a5a
     name: Wash ODD
     fids: [201, 203, 205, 207]
-  - id: 13
-    uuid: 012c2d3e-1a8a-2a2a-7a8a-1a2e3f4a5a6a
+  - pool_id: 13
+    id: 012c2d3e-1a8a-2a2a-7a8a-1a2e3f4a5a6a
     name: Wash EVEN
     fids: [202, 204, 206, 208]
-  - id: 21
-    uuid: 123d3e4f-2a9a-3a3a-8a9a-2a3f4a5a6a7a
+  - pool_id: 21
+    id: 123d3e4f-2a9a-3a3a-8a9a-2a3f4a5a6a7a
     name: Blinder ALL
     fids: [401, 403]
-  - id: 22
-    uuid: 234e4f5a-3a0a-4a4a-9a0a-3a4a5a6a7a8a
+  - pool_id: 22
+    id: 234e4f5a-3a0a-4a4a-9a0a-3a4a5a6a7a8a
     name: Blinder ODD
     fids: [401, 405]
-  - id: 23
-    uuid: 345f5a6a-4a1a-5a5a-0a1a-4a5a6a7a8a9a
+  - pool_id: 23
+    id: 345f5a6a-4a1a-5a5a-0a1a-4a5a6a7a8a9a
     name: Blinder EVEN
     fids: [402, 404, 406, 408]
-  - id: 31
-    uuid: 456a6a7a-5a2a-6a6a-1a2a-5a6a7a8a9a0a
+  - pool_id: 31
+    id: 456a6a7a-5a2a-6a6a-1a2a-5a6a7a8a9a0a
     name: Front ALL
     fids: [501, 502, 503, 504, 505, 506]
-  - id: 32
-    uuid: 567a7a8a-6a3a-7a7a-2a3a-6a7a8a9a0a1a
+  - pool_id: 32
+    id: 567a7a8a-6a3a-7a7a-2a3a-6a7a8a9a0a1a
     name: Front ODD
     fids: [501, 503, 505]
-  - id: 33
-    uuid: 678a8a9a-7a4a-8a8a-3a4a-7a8a9a0a1a2a
+  - pool_id: 33
+    id: 678a8a9a-7a4a-8a8a-3a4a-7a8a9a0a1a2a
     name: Front EVEN
     fids: [502, 504, 506]
-  - id: 41
-    uuid: 789a9a0a-8a5a-9a9a-4a5a-8a9a0a1a2a3a
+  - pool_id: 41
+    id: 789a9a0a-8a5a-9a9a-4a5a-8a9a0a1a2a3a
     name: Crowd ALL
     fids: [601, 602, 603, 604, 605]
-  - id: 42
-    uuid: 890a0a1a-9a6a-0a0a-5a6a-9a0a1a2a3a4a
+  - pool_id: 42
+    id: 890a0a1a-9a6a-0a0a-5a6a-9a0a1a2a3a4a
     name: Crowd ODD
     fids: [601, 603, 605]
-  - id: 43
-    uuid: 901a1a2a-0a7a-1a1a-6a7a-0a1a2a3a4a5a
+  - pool_id: 43
+    id: 901a1a2a-0a7a-1a1a-6a7a-0a1a2a3a4a5a
     name: Crowd EVEN
     fids: [602, 604]
 dimmer_presets:
-  - id: 1
-    uuid: a0123456-b789-4cde-8f01-23456789abcd
+  - pool_id: 1
+    id: a0123456-b789-4cde-8f01-23456789abcd
     name: 100%
     content: !Universal
       values:
         Dimmer: 1.0
       filter: Dimmer
-  - id: 2
-    uuid: b1234567-c890-5def-9a12-3456789abcde
+  - pool_id: 2
+    id: b1234567-c890-5def-9a12-3456789abcde
     name: 75%
     content: !Universal
       values:
         Dimmer: 0.75
       filter: Dimmer
-  - id: 3
-    uuid: c2345678-d901-6efa-0b23-456789abcdef
+  - pool_id: 3
+    id: c2345678-d901-6efa-0b23-456789abcdef
     name: 50%
     content: !Universal
       values:
         Dimmer: 0.5
       filter: Dimmer
-  - id: 4
-    uuid: d3456789-e012-7fab-1c34-56789abcdef0
+  - pool_id: 4
+    id: d3456789-e012-7fab-1c34-56789abcdef0
     name: 25%
     content: !Universal
       values:
         Dimmer: 0.25
       filter: Dimmer
-  - id: 5
-    uuid: e456789a-f123-80bc-2d45-6789abcdef01
+  - pool_id: 5
+    id: e456789a-f123-80bc-2d45-6789abcdef01
     name: 10%
     content: !Universal
       values:
         Dimmer: 0.10
       filter: Dimmer
-  - id: 6
-    uuid: f56789ab-0123-91cd-3e56-789abcdef012
+  - pool_id: 6
+    id: f56789ab-0123-91cd-3e56-789abcdef012
     name: 0%
     content: !Universal
       values:
@@ -169,8 +151,8 @@ dimmer_presets:
 position_presets:
 gobo_presets:
 color_presets:
-  - id: 1
-    uuid: 01234567-89ab-4cde-8f01-23456789abcd
+  - pool_id: 1
+    id: 01234567-89ab-4cde-8f01-23456789abcd
     name: White
     content: !Universal
       values:
@@ -181,8 +163,8 @@ color_presets:
         ColorSub_M: 0.0
         ColorSub_Y: 0.0
       filter: Color
-  - id: 2
-    uuid: 12345678-9abc-5def-9a12-3456789abcde
+  - pool_id: 2
+    id: 12345678-9abc-5def-9a12-3456789abcde
     name: Red
     content: !Universal
       values:
@@ -193,8 +175,8 @@ color_presets:
         ColorSub_M: 1.0
         ColorSub_Y: 1.0
       filter: Color
-  - id: 3
-    uuid: 23456789-abcd-6efa-0b23-456789abcdef
+  - pool_id: 3
+    id: 23456789-abcd-6efa-0b23-456789abcdef
     name: Orange
     content: !Universal
       values:
@@ -205,8 +187,8 @@ color_presets:
         ColorSub_M: 0.5
         ColorSub_Y: 1.0
       filter: Color
-  - id: 4
-    uuid: 3456789a-bcde-7fab-1c34-56789abcdef0
+  - pool_id: 4
+    id: 3456789a-bcde-7fab-1c34-56789abcdef0
     name: Yellow
     content: !Universal
       values:
@@ -217,8 +199,8 @@ color_presets:
         ColorSub_M: 0.0
         ColorSub_Y: 1.0
       filter: Color
-  - id: 5
-    uuid: 456789ab-cdef-80bc-2d45-6789abcdef01
+  - pool_id: 5
+    id: 456789ab-cdef-80bc-2d45-6789abcdef01
     name: Fern
     content: !Universal
       values:
@@ -229,8 +211,8 @@ color_presets:
         ColorSub_M: 0.0
         ColorSub_Y: 0.8
       filter: Color
-  - id: 6
-    uuid: 56789abc-def0-91cd-3e56-789abcdef012
+  - pool_id: 6
+    id: 56789abc-def0-91cd-3e56-789abcdef012
     name: Green
     content: !Universal
       values:
@@ -241,8 +223,8 @@ color_presets:
         ColorSub_M: 0.0
         ColorSub_Y: 1.0
       filter: Color
-  - id: 7
-    uuid: 6789abcd-ef01-a1de-4f67-89abcdef0123
+  - pool_id: 7
+    id: 6789abcd-ef01-a1de-4f67-89abcdef0123
     name: Sea
     content: !Universal
       values:
@@ -253,8 +235,8 @@ color_presets:
         ColorSub_M: 0.0
         ColorSub_Y: 0.5
       filter: Color
-  - id: 8
-    uuid: 789abcde-f012-b2ef-5a78-9abcdef01234
+  - pool_id: 8
+    id: 789abcde-f012-b2ef-5a78-9abcdef01234
     name: Cyan
     content: !Universal
       values:
@@ -265,8 +247,8 @@ color_presets:
         ColorSub_M: 0.0
         ColorSub_Y: 0.0
       filter: Color
-  - id: 9
-    uuid: 89abcdef-0123-c3f0-6a89-abcdef012345
+  - pool_id: 9
+    id: 89abcdef-0123-c3f0-6a89-abcdef012345
     name: Lavender
     content: !Universal
       values:
@@ -277,8 +259,8 @@ color_presets:
         ColorSub_M: 0.5
         ColorSub_Y: 0.0
       filter: Color
-  - id: 10
-    uuid: 9abcdef0-1234-d401-7a90-bcdef0123456
+  - pool_id: 10
+    id: 9abcdef0-1234-d401-7a90-bcdef0123456
     name: Blue
     content: !Universal
       values:
@@ -289,8 +271,8 @@ color_presets:
         ColorSub_M: 1.0
         ColorSub_Y: 0.0
       filter: Color
-  - id: 11
-    uuid: abcdef01-2345-e512-8a01-cdef01234567
+  - pool_id: 11
+    id: abcdef01-2345-e512-8a01-cdef01234567
     name: Violet
     content: !Universal
       values:
@@ -301,8 +283,8 @@ color_presets:
         ColorSub_M: 1.0
         ColorSub_Y: 0.0
       filter: Color
-  - id: 12
-    uuid: bcdef012-3456-f623-9a12-def012345678
+  - pool_id: 12
+    id: bcdef012-3456-f623-9a12-def012345678
     name: Magenta
     content: !Universal
       values:
@@ -313,8 +295,8 @@ color_presets:
         ColorSub_M: 1.0
         ColorSub_Y: 0.5
       filter: Color
-  - id: 13
-    uuid: cdef0123-4567-0734-aa23-ef0123456789
+  - pool_id: 13
+    id: cdef0123-4567-0734-aa23-ef0123456789
     name: Pink
     content: !Universal
       values:

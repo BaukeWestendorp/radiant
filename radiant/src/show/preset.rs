@@ -5,18 +5,13 @@ use crate::show::object::{
     PresetShapers, PresetVideo,
 };
 use crate::show::patch::{Attribute, AttributeValue, FixtureId, FixtureTypeId};
-use crate::show::{AnyObject, AnyObjectId, ObjectId, Patch};
+use crate::show::{AnyObject, ObjectId, Patch, PoolId};
 
 macro_rules! preset_kind_and_content {
     ($kind:ident, $preset:ident) => {
         impl $preset {
-            pub fn new(id: impl Into<ObjectId<Self>>, name: String) -> Self {
-                Self {
-                    id: id.into(),
-                    uuid: uuid::Uuid::new_v4(),
-                    name,
-                    content: PresetContent::default(),
-                }
+            pub fn new(pool_id: PoolId<Self>, name: String) -> Self {
+                Self { pool_id, id: ObjectId::new(), name, content: PresetContent::default() }
             }
 
             pub fn content(&self) -> &PresetContent {
@@ -73,55 +68,6 @@ preset_kind_and_content!(Shapers, PresetShapers);
 preset_kind_and_content!(Video, PresetVideo);
 
 pub trait PresetKind {}
-
-#[derive(Debug, Clone, Copy)]
-#[derive(serde::Deserialize)]
-pub enum AnyPresetId {
-    Dimmer(ObjectId<PresetDimmer>),
-    Position(ObjectId<PresetPosition>),
-    Gobo(ObjectId<PresetGobo>),
-    Color(ObjectId<PresetColor>),
-    Beam(ObjectId<PresetBeam>),
-    Focus(ObjectId<PresetFocus>),
-    Control(ObjectId<PresetControl>),
-    Shapers(ObjectId<PresetShapers>),
-    Video(ObjectId<PresetVideo>),
-}
-
-impl From<AnyPresetId> for AnyObjectId {
-    fn from(any_preset_id: AnyPresetId) -> Self {
-        match any_preset_id {
-            AnyPresetId::Dimmer(id) => AnyObjectId::PresetDimmer(id),
-            AnyPresetId::Position(id) => AnyObjectId::PresetPosition(id),
-            AnyPresetId::Gobo(id) => AnyObjectId::PresetGobo(id),
-            AnyPresetId::Color(id) => AnyObjectId::PresetColor(id),
-            AnyPresetId::Beam(id) => AnyObjectId::PresetBeam(id),
-            AnyPresetId::Focus(id) => AnyObjectId::PresetFocus(id),
-            AnyPresetId::Control(id) => AnyObjectId::PresetControl(id),
-            AnyPresetId::Shapers(id) => AnyObjectId::PresetShapers(id),
-            AnyPresetId::Video(id) => AnyObjectId::PresetVideo(id),
-        }
-    }
-}
-
-impl std::convert::TryFrom<AnyObjectId> for AnyPresetId {
-    type Error = ();
-
-    fn try_from(any_object_id: AnyObjectId) -> Result<Self, Self::Error> {
-        match any_object_id {
-            AnyObjectId::PresetDimmer(id) => Ok(AnyPresetId::Dimmer(id.into())),
-            AnyObjectId::PresetPosition(id) => Ok(AnyPresetId::Position(id.into())),
-            AnyObjectId::PresetGobo(id) => Ok(AnyPresetId::Gobo(id.into())),
-            AnyObjectId::PresetColor(id) => Ok(AnyPresetId::Color(id.into())),
-            AnyObjectId::PresetBeam(id) => Ok(AnyPresetId::Beam(id.into())),
-            AnyObjectId::PresetFocus(id) => Ok(AnyPresetId::Focus(id.into())),
-            AnyObjectId::PresetControl(id) => Ok(AnyPresetId::Control(id.into())),
-            AnyObjectId::PresetShapers(id) => Ok(AnyPresetId::Shapers(id.into())),
-            AnyObjectId::PresetVideo(id) => Ok(AnyPresetId::Video(id.into())),
-            _ => Err(()),
-        }
-    }
-}
 
 #[derive(Debug, Clone)]
 #[derive(serde::Deserialize)]

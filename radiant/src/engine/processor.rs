@@ -5,7 +5,7 @@ use std::time::Duration;
 use crate::engine::ShowHandle;
 use crate::engine::event::{EngineEvent, EventHandler};
 use crate::pipeline::Pipeline;
-use crate::show::{Cue, PresetContent, Show};
+use crate::show::{AnyPreset, Cue, FixtureId, PresetContent, Show};
 
 const PROCESSOR_FRAME_TIME: Duration = Duration::from_millis(30);
 
@@ -55,15 +55,15 @@ fn process_executors(
     show: &mut Show,
     event_handler: &Arc<EventHandler>,
 ) {
-    for executor in show.executors.objects() {
+    for executor in show.executors().cloned().collect::<Vec<_>>() {
         let Some(sequence_id) = executor.sequence_id() else { continue };
-        let Some(sequence) = show.sequences.get_mut(sequence_id) else { continue };
+        let Some(sequence) = show.sequence_mut(&sequence_id) else { continue };
         sequence.update_fade_times();
     }
 
     let mut fade_in_progress = false;
 
-    for executor in show.executors.objects() {
+    for executor in show.executors() {
         if !executor.is_on() {
             continue;
         }
@@ -121,43 +121,47 @@ fn fade_cue(
 
 fn process_cue(cue: &Cue, pipeline: &mut Pipeline, show: &Show) {
     for recipe in cue.recipes() {
-        let Some(group_id) = recipe.group else { continue };
-        let Some(group) = show.groups.get(group_id) else {
+        let Some(group_id) = recipe.group_id else { continue };
+        let Some(group) = show.group(&group_id) else {
             log::warn!("recipe references missing group id: {group_id:?}");
             continue;
         };
-        let Some(preset_id) = recipe.preset else { continue };
-        let Some(preset) = show.any_preset(preset_id) else {
+        let Some(preset_id) = recipe.preset_id else { continue };
+        let Some(preset) = show.preset(&preset_id) else {
             log::warn!("recipe references missing preset id: {preset_id:?}");
             continue;
         };
 
-        match preset.content() {
-            PresetContent::Universal(universal_preset) => {
-                for (attribute, value) in universal_preset.values() {
-                    for fid in group.fids() {
+        process_preset(&preset, group.fids(), pipeline, show);
+    }
+}
+
+fn process_preset(preset: &AnyPreset, fids: &[FixtureId], pipeline: &mut Pipeline, show: &Show) {
+    match preset.content() {
+        PresetContent::Universal(universal_preset) => {
+            for (attribute, value) in universal_preset.values() {
+                for fid in fids {
+                    pipeline.set_value(*fid, attribute.clone(), *value);
+                }
+            }
+        }
+        PresetContent::Global(global_preset) => {
+            for ((fixture_type_id, attribute), value) in global_preset.values() {
+                for fid in fids {
+                    let Some(fixture) = show.patch().fixture(*fid) else {
+                        continue;
+                    };
+                    if fixture.fixture_type_id() == fixture_type_id {
                         pipeline.set_value(*fid, attribute.clone(), *value);
                     }
                 }
             }
-            PresetContent::Global(global_preset) => {
-                for ((fixture_type_id, attribute), value) in global_preset.values() {
-                    for fid in group.fids() {
-                        let Some(fixture) = show.patch().fixture(*fid) else {
-                            continue;
-                        };
-                        if fixture.fixture_type_id() == fixture_type_id {
-                            pipeline.set_value(*fid, attribute.clone(), *value);
-                        }
-                    }
-                }
-            }
-            PresetContent::Selective(selective_preset) => {
-                for ((preset_fid, attribute), value) in selective_preset.values() {
-                    for fid in group.fids() {
-                        if fid == preset_fid {
-                            pipeline.set_value(*fid, attribute.clone(), *value);
-                        }
+        }
+        PresetContent::Selective(selective_preset) => {
+            for ((preset_fid, attribute), value) in selective_preset.values() {
+                for fid in fids {
+                    if fid == preset_fid {
+                        pipeline.set_value(*fid, attribute.clone(), *value);
                     }
                 }
             }

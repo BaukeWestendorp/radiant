@@ -1,105 +1,86 @@
-use core::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::marker::PhantomData;
 use std::num::NonZeroU32;
-use std::ops::Deref;
 use std::time::{Duration, Instant};
 
-use crate::error::Error;
 use crate::show::preset::PresetContent;
-use crate::show::{AnyPresetId, FixtureId, Show};
+use crate::show::{FixtureId, Show};
 
-pub trait Object: Debug + Clone
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(derive_more::Deref, derive_more::From, derive_more::Into, derive_more::FromStr)]
+#[derive(serde::Deserialize)]
+pub struct ObjectId(uuid::Uuid);
+
+#[derive(Debug)]
+pub struct PoolId<T>(NonZeroU32, PhantomData<T>);
+
+impl<'de, T> serde::Deserialize<'de> for PoolId<T> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let id = NonZeroU32::deserialize(deserializer)?;
+        Ok(PoolId(id, PhantomData))
+    }
+}
+
+impl<T> PoolId<T> {
+    pub fn new(id: NonZeroU32) -> Self {
+        PoolId(id, PhantomData)
+    }
+}
+
+impl<T> Clone for PoolId<T> {
+    fn clone(&self) -> Self {
+        PoolId(self.0, PhantomData)
+    }
+}
+
+impl<T> Copy for PoolId<T> {}
+
+impl<T> PartialEq for PoolId<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+
+impl<T> Eq for PoolId<T> {}
+
+impl<T> PartialOrd for PoolId<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.0.partial_cmp(&other.0)
+    }
+}
+
+impl<T> Ord for PoolId<T> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.0.cmp(&other.0)
+    }
+}
+
+impl<T> std::hash::Hash for PoolId<T> {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+    }
+}
+
+impl ObjectId {
+    pub fn new() -> Self {
+        Self(uuid::Uuid::new_v4())
+    }
+}
+
+pub trait Object: Debug + Clone + TryFrom<AnyObject>
 where
     Self: Sized,
 {
-    fn id(&self) -> ObjectId<Self>;
+    fn pool_id(&self) -> PoolId<Self>;
 
-    fn uuid(&self) -> uuid::Uuid;
+    fn id(&self) -> ObjectId;
 
     fn name(&self) -> &str;
-}
-
-#[derive(Debug)]
-#[derive(serde::Deserialize)]
-#[serde(transparent)]
-pub struct ObjectId<T>(NonZeroU32, PhantomData<T>);
-
-impl<T> ObjectId<T> {
-    pub fn new(id: NonZeroU32) -> Self {
-        Self(id, PhantomData::default())
-    }
-}
-
-impl<T> Clone for ObjectId<T> {
-    fn clone(&self) -> Self {
-        Self(self.0, PhantomData::default())
-    }
-}
-
-impl<T> Copy for ObjectId<T> {}
-
-impl<T> PartialOrd for ObjectId<T> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match self.0.partial_cmp(&other.0) {
-            Some(Ordering::Equal) => {}
-            ord => return ord,
-        }
-        self.1.partial_cmp(&other.1)
-    }
-}
-
-impl<T> Ord for ObjectId<T> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        match self.0.cmp(&other.0) {
-            Ordering::Equal => self.1.cmp(&other.1),
-            ord => ord,
-        }
-    }
-}
-impl<T> PartialEq for ObjectId<T> {
-    fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0 && self.1 == other.1
-    }
-}
-
-impl<T> Eq for ObjectId<T> {}
-
-impl<T> Hash for ObjectId<T> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.hash(state);
-        self.1.hash(state);
-    }
-}
-
-impl<T> From<ObjectId<T>> for u32 {
-    fn from(id: ObjectId<T>) -> Self {
-        id.0.into()
-    }
-}
-
-impl<T> From<ObjectId<T>> for NonZeroU32 {
-    fn from(id: ObjectId<T>) -> Self {
-        id.0
-    }
-}
-
-impl<T> TryFrom<u32> for ObjectId<T> {
-    type Error = Error;
-
-    fn try_from(value: u32) -> Result<Self, Self::Error> {
-        Ok(Self::new(value.try_into()?))
-    }
-}
-
-impl<T> Deref for ObjectId<T> {
-    type Target = NonZeroU32;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
 }
 
 #[macro_export]
@@ -111,14 +92,6 @@ macro_rules! define_objects {
             }
         )*
     ) => {
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-        #[derive(serde::Deserialize)]
-        pub enum AnyObjectId {
-            $(
-                $obj(ObjectId::<$obj>),
-            )*
-        }
-
         #[derive(Debug, Clone)]
         #[derive(serde::Deserialize)]
         pub enum AnyObject {
@@ -128,7 +101,7 @@ macro_rules! define_objects {
         }
 
         impl AnyObject {
-            pub fn id(&self) -> AnyObjectId {
+            pub fn id(&self) -> ObjectId {
                 match self {
                     $(Self::$obj(obj) => obj.id().into(),)*
                 }
@@ -145,41 +118,24 @@ macro_rules! define_objects {
             #[derive(Debug, Clone)]
             #[derive(serde::Deserialize)]
             $obj_vis struct $obj {
-                pub(crate) id: ObjectId<$obj>,
-                pub(super) uuid: uuid::Uuid,
+                pub(crate) pool_id: PoolId<Self>,
+                pub(super) id: ObjectId,
                 pub(crate) name: String,
 
                 $( $(#[$field_attr])* $field_vis $field : $field_ty, )*
             }
 
             impl Object for $obj {
-                fn id(&self) -> ObjectId<Self> {
-                    self.id
+                fn pool_id(&self) -> PoolId<Self> {
+                    self.pool_id
                 }
 
-                fn uuid(&self) -> uuid::Uuid {
-                    self.uuid
+                fn id(&self) -> ObjectId {
+                    self.id
                 }
 
                 fn name(&self) -> &str {
                     &self.name
-                }
-            }
-
-            impl TryFrom<AnyObjectId> for ObjectId<$obj> {
-                type Error = crate::error::Error;
-
-                fn try_from(id: AnyObjectId) -> Result<Self, Self::Error> {
-                    match id {
-                        AnyObjectId::$obj(id) => Ok(id),
-                        _ => eyre::bail!("failed to convert id"),
-                    }
-                }
-            }
-
-            impl From<ObjectId<$obj>> for AnyObjectId {
-                fn from(id: ObjectId<$obj>) -> Self {
-                    AnyObjectId::$obj(id.into())
                 }
             }
 
@@ -231,7 +187,7 @@ define_objects! {
     }
 
     pub struct Executor {
-        pub(crate) sequence_id: Option<ObjectId<Sequence>>,
+        pub(crate) sequence_id: Option<ObjectId>,
         pub(crate) is_on: bool,
     }
 
@@ -247,8 +203,8 @@ define_objects! {
 }
 
 impl Group {
-    pub fn new(id: impl Into<ObjectId<Self>>, name: String, fids: Vec<FixtureId>) -> Self {
-        Self { id: id.into(), uuid: uuid::Uuid::new_v4(), name, fids }
+    pub fn new(pool_id: PoolId<Self>, name: String, fids: Vec<FixtureId>) -> Self {
+        Self { pool_id, id: ObjectId::new(), name, fids }
     }
 
     pub fn fids(&self) -> &[FixtureId] {
@@ -257,10 +213,10 @@ impl Group {
 }
 
 impl Sequence {
-    pub fn new(id: impl Into<ObjectId<Self>>, name: String) -> Self {
+    pub fn new(pool_id: PoolId<Self>, name: String) -> Self {
         Self {
-            id: id.into(),
-            uuid: uuid::Uuid::new_v4(),
+            pool_id,
+            id: ObjectId::new(),
             name,
             cues: HashMap::new(),
             current_cue: None,
@@ -403,16 +359,16 @@ impl Sequence {
 }
 
 impl Executor {
-    pub fn new(id: impl Into<ObjectId<Self>>, name: String) -> Self {
-        Self { id: id.into(), uuid: uuid::Uuid::new_v4(), name, sequence_id: None, is_on: false }
+    pub fn new(pool_id: PoolId<Self>, name: String) -> Self {
+        Self { pool_id, id: ObjectId::new(), name, sequence_id: None, is_on: false }
     }
 
-    pub fn sequence_id(&self) -> Option<ObjectId<Sequence>> {
+    pub fn sequence_id(&self) -> Option<ObjectId> {
         self.sequence_id
     }
 
     pub fn sequence<'a>(&self, show: &'a Show) -> Option<&'a Sequence> {
-        self.sequence_id.and_then(|sequence_id| show.sequences.get(sequence_id))
+        self.sequence_id.and_then(|id| show.sequence(&id))
     }
 
     pub fn is_on(&self) -> bool {
@@ -465,32 +421,6 @@ impl std::fmt::Display for CueId {
 #[derive(Debug, Clone)]
 #[derive(serde::Deserialize)]
 pub struct Recipe {
-    pub(crate) group: Option<ObjectId<Group>>,
-    pub(crate) preset: Option<AnyPresetId>,
-}
-
-pub struct ObjectPool<T: Object> {
-    objects: HashMap<ObjectId<T>, T>,
-}
-
-impl<T: Object> ObjectPool<T> {
-    pub fn new() -> Self {
-        Self { objects: HashMap::new() }
-    }
-
-    pub fn get(&self, id: impl Into<ObjectId<T>>) -> Option<&T> {
-        self.objects.get(&id.into())
-    }
-
-    pub fn objects(&self) -> impl IntoIterator<Item = &T> {
-        self.objects.values()
-    }
-
-    pub(crate) fn get_mut(&mut self, id: impl Into<ObjectId<T>>) -> Option<&mut T> {
-        self.objects.get_mut(&id.into())
-    }
-
-    pub(crate) fn insert(&mut self, object: T) {
-        self.objects.insert(object.id(), object);
-    }
+    pub(crate) group_id: Option<ObjectId>,
+    pub(crate) preset_id: Option<ObjectId>,
 }

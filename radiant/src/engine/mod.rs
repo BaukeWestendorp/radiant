@@ -8,8 +8,8 @@ use crate::engine::event::EventHandler;
 use crate::engine::protocols::Protocols;
 use crate::pipeline::Pipeline;
 use crate::show::{
-    AnyObjectId, Executor, Group, PresetBeam, PresetColor, PresetControl, PresetDimmer,
-    PresetFocus, PresetGobo, PresetPosition, PresetShapers, PresetVideo, Sequence, Show,
+    AnyObject, Executor, Group, PresetBeam, PresetColor, PresetControl, PresetDimmer, PresetFocus,
+    PresetGobo, PresetPosition, PresetShapers, PresetVideo, Sequence, Show,
 };
 use crate::showfile::{SacnOutputType, Showfile};
 
@@ -90,157 +90,130 @@ impl Engine {
                 self.show()
                     .update(|show| show.patch.insert_fixture(fid, address, type_id, dmx_mode));
             }
-            Command::CreateGroup { id, name, fids } => {
+            Command::CreateGroup { pool_id, name, fids } => {
                 self.show().update(|show| {
-                    show.groups.insert(Group::new(
-                        id,
+                    show.insert_object(Group::new(
+                        pool_id,
                         name.unwrap_or("New Group".to_string()),
                         fids,
                     ));
                 });
             }
-            Command::CreateSequence { id, name } => {
+            Command::CreateSequence { pool_id, name } => {
                 self.show().update(|show| {
-                    show.sequences
-                        .insert(Sequence::new(id, name.unwrap_or("New Sequence".to_string())));
+                    show.insert_object(Sequence::new(
+                        pool_id,
+                        name.unwrap_or("New Sequence".to_string()),
+                    ));
                 });
             }
-            Command::CreateExecutor { id, name } => {
+            Command::CreateExecutor { pool_id, name } => {
                 self.show().update(|show| {
-                    show.executors
-                        .insert(Executor::new(id, name.unwrap_or("New Executor".to_string())));
+                    show.insert_object(Executor::new(
+                        pool_id,
+                        name.unwrap_or("New Executor".to_string()),
+                    ));
                 });
             }
-            Command::CreatePresetDimmer { id, name } => {
+            Command::CreatePresetDimmer { pool_id, name } => {
                 self.show().update(|show| {
-                    show.presets_dimmer.insert(PresetDimmer::new(
-                        id,
+                    show.insert_object(PresetDimmer::new(
+                        pool_id,
                         name.unwrap_or("New Dimmer Preset".to_string()),
                     ));
                 });
             }
-            Command::CreatePresetPosition { id, name } => {
+            Command::CreatePresetPosition { pool_id, name } => {
                 self.show().update(|show| {
-                    show.presets_position.insert(PresetPosition::new(
-                        id,
+                    show.insert_object(PresetPosition::new(
+                        pool_id,
                         name.unwrap_or("New Position Preset".to_string()),
                     ));
                 });
             }
-            Command::CreatePresetGobo { id, name } => {
+            Command::CreatePresetGobo { pool_id, name } => {
                 self.show().update(|show| {
-                    show.presets_gobo
-                        .insert(PresetGobo::new(id, name.unwrap_or("New Gobo Preset".to_string())));
+                    show.insert_object(PresetGobo::new(
+                        pool_id,
+                        name.unwrap_or("New Gobo Preset".to_string()),
+                    ));
                 });
             }
-            Command::CreatePresetColor { id, name } => {
+            Command::CreatePresetColor { pool_id, name } => {
                 self.show().update(|show| {
-                    show.presets_color.insert(PresetColor::new(
-                        id,
+                    show.insert_object(PresetColor::new(
+                        pool_id,
                         name.unwrap_or("New Color Preset".to_string()),
                     ));
                 });
             }
-            Command::CreatePresetBeam { id, name } => {
+            Command::CreatePresetBeam { pool_id, name } => {
                 self.show().update(|show| {
-                    show.presets_beam
-                        .insert(PresetBeam::new(id, name.unwrap_or("New Beam Preset".to_string())));
+                    show.insert_object(PresetBeam::new(
+                        pool_id,
+                        name.unwrap_or("New Beam Preset".to_string()),
+                    ));
                 });
             }
-            Command::CreatePresetFocus { id, name } => {
+            Command::CreatePresetFocus { pool_id, name } => {
                 self.show().update(|show| {
-                    show.presets_focus.insert(PresetFocus::new(
-                        id,
+                    show.insert_object(PresetFocus::new(
+                        pool_id,
                         name.unwrap_or("New Focus Preset".to_string()),
                     ));
                 });
             }
-            Command::CreatePresetControl { id, name } => {
+            Command::CreatePresetControl { pool_id, name } => {
                 self.show().update(|show| {
-                    show.presets_control.insert(PresetControl::new(
-                        id,
+                    show.insert_object(PresetControl::new(
+                        pool_id,
                         name.unwrap_or("New Control Preset".to_string()),
                     ));
                 });
             }
-            Command::CreatePresetShapers { id, name } => {
+            Command::CreatePresetShapers { pool_id, name } => {
                 self.show().update(|show| {
-                    show.presets_shapers.insert(PresetShapers::new(
-                        id,
+                    show.insert_object(PresetShapers::new(
+                        pool_id,
                         name.unwrap_or("New Shapers Preset".to_string()),
                     ));
                 });
             }
-            Command::CreatePresetVideo { id, name } => self.show().update(|show| {
-                show.presets_video
-                    .insert(PresetVideo::new(id, name.unwrap_or("New Video Preset".to_string())));
+            Command::CreatePresetVideo { pool_id, name } => self.show().update(|show| {
+                show.insert_object(PresetVideo::new(
+                    pool_id,
+                    name.unwrap_or("New Video Preset".to_string()),
+                ));
             }),
             Command::ProgrammerSetAttribute { fid, attribute, value } => {
                 self.show().update(|show| {
                     show.programmer.set_value(fid, attribute, value);
                 });
             }
-            Command::Go { executor } => {
+            Command::Go { executor_id } => {
                 self.show().update(|show| {
-                    let Some(executor) = show.executors.get(executor) else { return };
+                    let Some(executor) = show.executor(&executor_id) else { return };
                     let Some(sequence_id) = executor.sequence_id else { return };
-                    let Some(sequence) = show.sequences.get_mut(sequence_id) else { return };
+                    let Some(sequence) = show.sequence_mut(&sequence_id) else { return };
 
                     sequence.set_current_cue(sequence.next_cue().map(|cue| cue.id().clone()));
                 });
             }
             Command::SelectReferencedFixtures { id } => self.show.update(|show| {
-                let fids = match id {
-                    AnyObjectId::Group(id) => {
-                        show.groups.get(id).map(|group| group.fids.clone()).unwrap_or_default()
-                    }
-                    AnyObjectId::Sequence(_) => vec![],
-                    AnyObjectId::Executor(_) => vec![],
-                    AnyObjectId::PresetDimmer(id) => show
-                        .presets_dimmer
-                        .get(id)
-                        .map(|preset| preset.fixture_ids(show.patch()))
-                        .unwrap_or_default(),
-                    AnyObjectId::PresetPosition(id) => show
-                        .presets_position
-                        .get(id)
-                        .map(|preset| preset.fixture_ids(show.patch()))
-                        .unwrap_or_default(),
-                    AnyObjectId::PresetGobo(id) => show
-                        .presets_gobo
-                        .get(id)
-                        .map(|preset| preset.fixture_ids(show.patch()))
-                        .unwrap_or_default(),
-                    AnyObjectId::PresetColor(id) => show
-                        .presets_color
-                        .get(id)
-                        .map(|preset| preset.fixture_ids(show.patch()))
-                        .unwrap_or_default(),
-                    AnyObjectId::PresetBeam(id) => show
-                        .presets_beam
-                        .get(id)
-                        .map(|preset| preset.fixture_ids(show.patch()))
-                        .unwrap_or_default(),
-                    AnyObjectId::PresetFocus(id) => show
-                        .presets_focus
-                        .get(id)
-                        .map(|preset| preset.fixture_ids(show.patch()))
-                        .unwrap_or_default(),
-                    AnyObjectId::PresetControl(id) => show
-                        .presets_control
-                        .get(id)
-                        .map(|preset| preset.fixture_ids(show.patch()))
-                        .unwrap_or_default(),
-                    AnyObjectId::PresetShapers(id) => show
-                        .presets_shapers
-                        .get(id)
-                        .map(|preset| preset.fixture_ids(show.patch()))
-                        .unwrap_or_default(),
-                    AnyObjectId::PresetVideo(id) => show
-                        .presets_video
-                        .get(id)
-                        .map(|preset| preset.fixture_ids(show.patch()))
-                        .unwrap_or_default(),
+                let fids = match show.object(&id) {
+                    Some(AnyObject::Group(group)) => group.fids.clone(),
+                    Some(AnyObject::Sequence(_)) => Vec::new(),
+                    Some(AnyObject::Executor(_)) => Vec::new(),
+                    Some(AnyObject::PresetDimmer(preset)) => preset.fixture_ids(show.patch()),
+                    Some(AnyObject::PresetPosition(preset)) => preset.fixture_ids(show.patch()),
+                    Some(AnyObject::PresetGobo(preset)) => preset.fixture_ids(show.patch()),
+                    Some(AnyObject::PresetColor(preset)) => preset.fixture_ids(show.patch()),
+                    Some(AnyObject::PresetBeam(preset)) => preset.fixture_ids(show.patch()),
+                    Some(AnyObject::PresetFocus(preset)) => preset.fixture_ids(show.patch()),
+                    Some(AnyObject::PresetControl(preset)) => preset.fixture_ids(show.patch()),
+                    Some(AnyObject::PresetShapers(preset)) => preset.fixture_ids(show.patch()),
+                    Some(AnyObject::PresetVideo(preset)) => preset.fixture_ids(show.patch()),
+                    None => Vec::new(),
                 };
                 show.selected_fixtures.extend(fids);
                 self.event_handler.emit_event(EngineEvent::SelectionChanged);
