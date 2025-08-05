@@ -41,12 +41,13 @@ impl<T: Object + 'static> PoolPanelDelegate for ObjectPool<T> {
             return;
         };
 
-        with_show(cx, |show| match show.object(&id) {
+        let obj = with_show(cx, |show| show.object(&id).cloned());
+        match obj {
             Some(AnyObject::Group(_)) => {
                 exec_cmd_and_log_err(Command::SelectReferencedFixtures { id: id.into() }, cx);
             }
             _ => {}
-        });
+        }
     }
 
     fn render_cell_content(
