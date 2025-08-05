@@ -18,7 +18,7 @@ pub struct ExecutorsPanel {
 impl ExecutorsPanel {
     pub fn new(columns: u32, _window: &mut Window, cx: &mut Context<WindowPanel<Self>>) -> Self {
         Self {
-            executors: (1..columns)
+            executors: (1..columns + 1)
                 .into_iter()
                 .map(|ix| {
                     cx.new(|cx| {
