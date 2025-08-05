@@ -6,6 +6,7 @@ use ui::utils::z_stack;
 use ui::{ActiveTheme, ContainerStyle, container};
 
 use crate::main_window::CELL_SIZE;
+use crate::panel::window::{WindowPanel, WindowPanelDelegate};
 use crate::state::{exec_cmd_and_log_err, with_show};
 
 pub struct ExecutorsPanel {
@@ -13,7 +14,7 @@ pub struct ExecutorsPanel {
 }
 
 impl ExecutorsPanel {
-    pub fn new(columns: u32, _window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(columns: u32, _window: &mut Window, cx: &mut Context<WindowPanel<Self>>) -> Self {
         Self {
             executors: (0..columns)
                 .into_iter()
@@ -28,8 +29,12 @@ impl ExecutorsPanel {
     }
 }
 
-impl Render for ExecutorsPanel {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+impl WindowPanelDelegate for ExecutorsPanel {
+    fn render_content(
+        &mut self,
+        _window: &mut Window,
+        _cx: &mut Context<WindowPanel<Self>>,
+    ) -> impl IntoElement {
         div().size_full().flex().children(self.executors.clone())
     }
 }

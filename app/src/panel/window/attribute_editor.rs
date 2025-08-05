@@ -11,6 +11,7 @@ use radiant::gdtf::dmx_mode::{ChannelFunction, LogicalChannel};
 use radiant::show::{Attribute, AttributeValue, FixtureId};
 use ui::{Disableable, FieldEvent, NumberField, Tab, TabView, button, section, v_divider};
 
+use crate::panel::window::{WindowPanel, WindowPanelDelegate};
 use crate::state::{AppState, on_engine_event, with_show};
 
 const ALL_FEATURE_GROUPS: [&str; 9] =
@@ -22,12 +23,12 @@ pub struct AttributeEditorPanel {
 }
 
 impl AttributeEditorPanel {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(window: &mut Window, cx: &mut Context<WindowPanel<Self>>) -> Self {
         let event_subscription =
             on_engine_event(cx, window, |panel, event, window, cx| match event {
                 EngineEvent::SelectionChanged => {
-                    panel._event_subscription.take();
-                    *panel = AttributeEditorPanel::new(window, cx);
+                    panel.delegate._event_subscription.take();
+                    panel.delegate = AttributeEditorPanel::new(window, cx);
                     cx.notify();
                 }
                 _ => {}
@@ -63,8 +64,12 @@ impl AttributeEditorPanel {
     }
 }
 
-impl Render for AttributeEditorPanel {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+impl WindowPanelDelegate for AttributeEditorPanel {
+    fn render_content(
+        &mut self,
+        _window: &mut Window,
+        _cx: &mut Context<WindowPanel<Self>>,
+    ) -> impl IntoElement {
         div().size_full().child(self.feature_group_tabs.clone())
     }
 }

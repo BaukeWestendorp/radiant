@@ -4,6 +4,7 @@ use radiant::engine::{Command, EngineEvent};
 use radiant::show::Fixture;
 use ui::{Table, TableColumn, TableDelegate, TableRow};
 
+use crate::panel::window::{WindowPanel, WindowPanelDelegate};
 use crate::state::{exec_cmd_and_log_err, on_engine_event, with_show};
 
 pub struct FixturesTablePanel {
@@ -12,12 +13,12 @@ pub struct FixturesTablePanel {
 }
 
 impl FixturesTablePanel {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(window: &mut Window, cx: &mut Context<WindowPanel<Self>>) -> Self {
         let event_subscription =
             on_engine_event(cx, window, |panel, event, window, cx| match event {
                 EngineEvent::SelectionChanged => {
-                    panel._event_subscription.take();
-                    *panel = FixturesTablePanel::new(window, cx);
+                    panel.delegate._event_subscription.take();
+                    panel.delegate = FixturesTablePanel::new(window, cx);
                     cx.notify();
                 }
                 _ => {}
@@ -37,8 +38,12 @@ impl FixturesTablePanel {
     }
 }
 
-impl Render for FixturesTablePanel {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+impl WindowPanelDelegate for FixturesTablePanel {
+    fn render_content(
+        &mut self,
+        _window: &mut Window,
+        _cx: &mut Context<WindowPanel<Self>>,
+    ) -> impl IntoElement {
         div().size_full().child(self.table.clone())
     }
 }

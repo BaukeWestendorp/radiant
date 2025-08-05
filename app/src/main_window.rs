@@ -7,10 +7,12 @@ use gpui::{
 use ui::{ActiveTheme, InteractiveColor, root, titlebar};
 
 use crate::error::Result;
-use crate::panel::{
-    ExecutorsPanel, FixturesTablePanel, GroupsPool, Panel, PanelGrid, PanelKind, PoolPanelKind,
-    WindowPanelKind,
+use crate::panel::grid::PanelGrid;
+use crate::panel::pool::{ObjectPool, PoolPanel, PoolPanelKind};
+use crate::panel::window::{
+    AttributeEditorPanel, ExecutorsPanel, FixturesTablePanel, WindowPanel, WindowPanelKind,
 };
+use crate::panel::{Panel, PanelKind};
 use crate::state::with_show;
 
 pub const CELL_SIZE: Pixels = px(80.0);
@@ -61,28 +63,44 @@ impl Render for MainWindow {
 fn temporary_panel_grid(window: &mut Window, cx: &mut App) -> Entity<PanelGrid> {
     cx.new(|cx| {
         let mut grid = PanelGrid::new(size(20, 12), window, cx);
+
         grid.add_panel(cx.new(|cx| {
-            Panel::new(
-                PanelKind::Window(WindowPanelKind::Executors(
-                    cx.new(|cx| ExecutorsPanel::new(20, window, cx)),
-                )),
-                bounds(point(0, 10), size(20, 2)),
-            )
+            Panel::new(PanelKind::Pool(PoolPanelKind::Group(
+                cx.new(|_| PoolPanel::new(bounds(point(0, 0), size(7, 3)), ObjectPool::new())),
+            )))
         }));
+
         grid.add_panel(cx.new(|cx| {
-            Panel::new(
-                PanelKind::Window(WindowPanelKind::FixturesTable(
-                    cx.new(|cx| FixturesTablePanel::new(window, cx)),
-                )),
-                bounds(point(0, 5), size(20, 4)),
-            )
+            Panel::new(PanelKind::Pool(PoolPanelKind::Sequence(
+                cx.new(|_| PoolPanel::new(bounds(point(0, 3), size(7, 3)), ObjectPool::new())),
+            )))
         }));
+
         grid.add_panel(cx.new(|cx| {
-            Panel::new(
-                PanelKind::Pool(PoolPanelKind::Groups(cx.new(|_| GroupsPool::new(size(20, 4))))),
-                bounds(point(0, 0), size(20, 4)),
-            )
+            Panel::new(PanelKind::Window(WindowPanelKind::FixturesTable(cx.new(|cx| {
+                WindowPanel::new(
+                    bounds(point(12, 0), size(8, 7)),
+                    FixturesTablePanel::new(window, cx),
+                )
+            }))))
         }));
+
+        grid.add_panel(cx.new(|cx| {
+            Panel::new(PanelKind::Window(WindowPanelKind::AttributeEditor(cx.new(|cx| {
+                WindowPanel::new(
+                    bounds(point(0, 7), size(20, 3)),
+                    AttributeEditorPanel::new(window, cx),
+                )
+            }))))
+        }));
+
+        grid.add_panel(cx.new(|cx| {
+            Panel::new(PanelKind::Window(WindowPanelKind::Executors(cx.new(|cx| {
+                let bounds = bounds(point(0, 10), size(20, 2));
+                WindowPanel::new(bounds, ExecutorsPanel::new(bounds.size.width, window, cx))
+            }))))
+        }));
+
         grid
     })
 }

@@ -133,6 +133,25 @@ impl Show {
         &self.programmer
     }
 
+    pub fn any_object(&self, id: impl Into<AnyObjectId>) -> Option<AnyObject> {
+        match id.into() {
+            AnyObjectId::Group(id) => self.groups.get(id).cloned().map(Into::into),
+            AnyObjectId::Sequence(id) => self.sequences.get(id).cloned().map(Into::into),
+            AnyObjectId::Executor(id) => self.executors.get(id).cloned().map(Into::into),
+            AnyObjectId::PresetDimmer(id) => self.presets_dimmer.get(id).cloned().map(Into::into),
+            AnyObjectId::PresetPosition(id) => {
+                self.presets_position.get(id).cloned().map(Into::into)
+            }
+            AnyObjectId::PresetGobo(id) => self.presets_gobo.get(id).cloned().map(Into::into),
+            AnyObjectId::PresetColor(id) => self.presets_color.get(id).cloned().map(Into::into),
+            AnyObjectId::PresetBeam(id) => self.presets_beam.get(id).cloned().map(Into::into),
+            AnyObjectId::PresetFocus(id) => self.presets_focus.get(id).cloned().map(Into::into),
+            AnyObjectId::PresetControl(id) => self.presets_control.get(id).cloned().map(Into::into),
+            AnyObjectId::PresetShapers(id) => self.presets_shapers.get(id).cloned().map(Into::into),
+            AnyObjectId::PresetVideo(id) => self.presets_video.get(id).cloned().map(Into::into),
+        }
+    }
+
     pub fn any_preset(&self, id: impl Into<AnyPresetId>) -> Option<AnyPreset> {
         match id.into() {
             AnyPresetId::Dimmer(id) => self.presets_dimmer.get(id).cloned().map(Into::into),

@@ -1,114 +1,66 @@
 use gpui::prelude::*;
-use gpui::{Bounds, Entity, Window, div};
+use gpui::{App, Bounds, Window, div};
 use ui::ActiveTheme;
-use ui::utils::z_stack;
 
 use crate::main_window::CELL_SIZE;
+use crate::panel::pool::PoolPanelKind;
+use crate::panel::window::WindowPanelKind;
 
-pub use attribute_editor::*;
-pub use executors::*;
-pub use fixtures_table::*;
-pub use grid::*;
-pub use groups_pool::*;
-
-pub mod attribute_editor;
-pub mod executors;
-pub mod fixtures_table;
 pub mod grid;
-pub mod groups_pool;
+pub mod pool;
+pub mod window;
 
 pub struct Panel {
-    bounds: Bounds<u32>,
     kind: PanelKind,
 }
 
 impl Panel {
-    pub fn new(kind: PanelKind, bounds: Bounds<u32>) -> Self {
-        Self { kind, bounds }
-    }
-
-    fn render_window(
-        &mut self,
-        kind: WindowPanelKind,
-        _window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> impl IntoElement {
-        let content = match kind {
-            WindowPanelKind::AttributeEditor(attribute_editor) => {
-                attribute_editor.into_any_element()
-            }
-            WindowPanelKind::Executors(executors) => executors.into_any_element(),
-            WindowPanelKind::FixturesTable(table) => table.into_any_element(),
-        };
-
-        z_stack([
-            div()
-                .size_full()
-                .border_1()
-                .border_color(cx.theme().colors.border)
-                .rounded(cx.theme().radius)
-                .into_any_element(),
-            content.into_any_element(),
-        ])
-        .size_full()
-    }
-
-    fn render_pool(
-        &mut self,
-        kind: PoolPanelKind,
-        _window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> impl IntoElement {
-        let content = match kind {
-            PoolPanelKind::Groups(pool) => pool.into_any_element(),
-        };
-
-        z_stack([
-            div()
-                .size_full()
-                .border_1()
-                .border_color(cx.theme().colors.border)
-                .rounded(cx.theme().radius)
-                .into_any_element(),
-            content.into_any_element(),
-        ])
-        .size_full()
+    pub fn new(kind: PanelKind) -> Self {
+        Self { kind }
     }
 }
 
 impl Render for Panel {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let bounds = self.kind.bounds(cx);
         div()
-            .left(CELL_SIZE * self.bounds.origin.x as f32)
-            .top(CELL_SIZE * self.bounds.origin.y as f32)
-            .w(CELL_SIZE * self.bounds.size.width as f32)
-            .h(CELL_SIZE * self.bounds.size.height as f32)
+            .left(CELL_SIZE * bounds.origin.x as f32)
+            .top(CELL_SIZE * bounds.origin.y as f32)
+            .w(CELL_SIZE * bounds.size.width as f32)
+            .h(CELL_SIZE * bounds.size.height as f32)
             .bg(cx.theme().colors.bg_primary)
-            .child(match &self.kind {
-                PanelKind::Window(kind) => {
-                    self.render_window(kind.clone(), window, cx).into_any_element()
-                }
-                PanelKind::Pool(kind) => {
-                    self.render_pool(kind.clone(), window, cx).into_any_element()
-                }
+            .child(match self.kind.clone() {
+                PanelKind::Window(kind) => match kind {
+                    WindowPanelKind::Executors(panel) => panel.into_any_element(),
+                    WindowPanelKind::AttributeEditor(panel) => panel.into_any_element(),
+                    WindowPanelKind::FixturesTable(panel) => panel.into_any_element(),
+                },
+                PanelKind::Pool(kind) => match kind {
+                    PoolPanelKind::Group(panel) => panel.into_any_element(),
+                    PoolPanelKind::Sequence(panel) => panel.into_any_element(),
+                },
             })
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum PanelKind {
     Window(WindowPanelKind),
     Pool(PoolPanelKind),
 }
 
-#[derive(Debug, Clone)]
-pub enum WindowPanelKind {
-    AttributeEditor(Entity<AttributeEditorPanel>),
-    Executors(Entity<ExecutorsPanel>),
-    FixturesTable(Entity<FixturesTablePanel>),
-}
-
-#[derive(Debug, Clone)]
-pub enum PoolPanelKind {
-    Groups(Entity<GroupsPool>),
+impl PanelKind {
+    pub fn bounds(&self, cx: &App) -> Bounds<u32> {
+        match self {
+            PanelKind::Window(window_panel) => match window_panel {
+                WindowPanelKind::Executors(panel) => panel.read(cx).bounds(),
+                WindowPanelKind::AttributeEditor(panel) => panel.read(cx).bounds(),
+                WindowPanelKind::FixturesTable(panel) => panel.read(cx).bounds(),
+            },
+            PanelKind::Pool(pool_panel) => match pool_panel {
+                PoolPanelKind::Group(panel) => panel.read(cx).bounds(),
+                PoolPanelKind::Sequence(panel) => panel.read(cx).bounds(),
+            },
+        }
+    }
 }
