@@ -1,26 +1,124 @@
-use crate::show::{
-    Attribute, AttributeValue, Executor, FixtureId, FixtureTypeId, Group, ObjectId, PoolId,
-    PresetBeam, PresetColor, PresetControl, PresetDimmer, PresetFocus, PresetGobo, PresetPosition,
-    PresetShapers, PresetVideo, Sequence,
-};
+use eyre::{Context, ContextCompat};
 
+use crate::error::Result;
+use crate::show::{AnyPoolId, FixtureId, ObjectId};
+
+#[derive(Debug, Clone)]
 pub enum Command {
-    PatchAdd { fid: FixtureId, address: dmx::Address, type_id: FixtureTypeId, dmx_mode: String },
-    CreateGroup { pool_id: PoolId<Group>, name: Option<String>, fids: Vec<FixtureId> },
-    CreateSequence { pool_id: PoolId<Sequence>, name: Option<String> },
-    CreateExecutor { pool_id: PoolId<Executor>, name: Option<String> },
-    CreatePresetDimmer { pool_id: PoolId<PresetDimmer>, name: Option<String> },
-    CreatePresetPosition { pool_id: PoolId<PresetPosition>, name: Option<String> },
-    CreatePresetGobo { pool_id: PoolId<PresetGobo>, name: Option<String> },
-    CreatePresetColor { pool_id: PoolId<PresetColor>, name: Option<String> },
-    CreatePresetBeam { pool_id: PoolId<PresetBeam>, name: Option<String> },
-    CreatePresetFocus { pool_id: PoolId<PresetFocus>, name: Option<String> },
-    CreatePresetControl { pool_id: PoolId<PresetControl>, name: Option<String> },
-    CreatePresetShapers { pool_id: PoolId<PresetShapers>, name: Option<String> },
-    CreatePresetVideo { pool_id: PoolId<PresetVideo>, name: Option<String> },
-    ProgrammerSetAttribute { fid: FixtureId, attribute: Attribute, value: AttributeValue },
-    Go { executor_id: ObjectId },
-    SelectReferencedFixtures { id: ObjectId },
-    SelectFixture { fid: FixtureId },
-    ClearFixtureSelection,
+    Select { selection: Selection },
+    ClearSelection,
+
+    Store { destination: AnyPoolId },
+    Update { object: AnyPoolId },
+    Remove { object: AnyPoolId },
+}
+
+#[derive(Debug, Clone)]
+pub enum Keyword {
+    Select,
+    ClearSelection,
+
+    Store,
+    Update,
+    Remove,
+}
+
+#[derive(Debug, Clone)]
+#[derive(derive_more::TryInto)]
+pub enum Parameter {
+    Selection(Selection),
+    Object(AnyPoolId),
+}
+
+#[derive(Debug, Clone)]
+pub enum Selection {
+    FixtureId(FixtureId),
+    Group(ObjectId),
+    All,
+    None,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct CommandBuilder {
+    keyword: Option<Keyword>,
+    parameters: Vec<Parameter>,
+}
+
+impl CommandBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn process_input(&mut self, input: impl Into<CommandInput>) -> Result<()> {
+        match input.into() {
+            CommandInput::Keyword(keyword) => {
+                if self.keyword.is_none() {
+                    self.keyword = Some(keyword)
+                } else {
+                    eyre::bail!(
+                        "can't process another command keyword, as a command is being built already"
+                    )
+                }
+            }
+            CommandInput::ParameterValue(parameter) => self.parameters.push(parameter),
+        }
+
+        Ok(())
+    }
+
+    pub fn resolve(&mut self) -> Result<Option<Command>> {
+        let Some(keyword) = &self.keyword else { return Ok(None) };
+        let mut params = self.parameters.clone().into_iter();
+
+        let command = match keyword {
+            Keyword::Select => {
+                let selection = params
+                    .next()
+                    .wrap_err("missing selection")?
+                    .try_into()
+                    .wrap_err("expected selection")?;
+
+                Command::Select { selection }
+            }
+            Keyword::ClearSelection => Command::ClearSelection,
+            Keyword::Store => {
+                let destination = params
+                    .next()
+                    .wrap_err("missing destination")?
+                    .try_into()
+                    .wrap_err("expected destination")?;
+
+                Command::Store { destination }
+            }
+            Keyword::Update => {
+                let object = params
+                    .next()
+                    .wrap_err("missing object")?
+                    .try_into()
+                    .wrap_err("expected object")?;
+
+                Command::Update { object }
+            }
+            Keyword::Remove => {
+                let object = params
+                    .next()
+                    .wrap_err("missing object")?
+                    .try_into()
+                    .wrap_err("expected object")?;
+
+                Command::Remove { object }
+            }
+        };
+
+        *self = Self::default();
+
+        Ok(Some(command))
+    }
+}
+
+#[derive(Debug, Clone)]
+#[derive(derive_more::From)]
+pub enum CommandInput {
+    Keyword(Keyword),
+    ParameterValue(Parameter),
 }

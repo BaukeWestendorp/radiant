@@ -248,13 +248,14 @@ impl ChannelFunctionEditor {
             return;
         };
 
-        AppState::update_global(cx, |state, _| {
-            state
-                .engine
-                .exec(Command::ProgrammerSetAttribute { fid, attribute: attribute.clone(), value })
-                .map_err(|err| log::error!("failed to execute command: {err}"))
-                .ok();
-        });
+        // FIXME: AppState::update_global(cx, |state, _| {
+        //     state
+        //         .engine
+        //         .exec(Command::ProgrammerSetAttribute { fid, attribute:
+        //              attribute.clone(), value })         .map_err(|err|
+        //              log::error!("failed to execute command: {err}"))
+        //         .ok();
+        // });
     }
 
     fn value_relative_to_function_range(&self, value: f32) -> f32 {

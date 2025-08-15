@@ -7,10 +7,7 @@ use eyre::Context;
 use crate::engine::event::EventHandler;
 use crate::engine::protocols::Protocols;
 use crate::pipeline::Pipeline;
-use crate::show::{
-    Executor, Group, Object, ObjectId, PresetBeam, PresetColor, PresetControl, PresetDimmer,
-    PresetFocus, PresetGobo, PresetPosition, PresetShapers, PresetVideo, Sequence, Show,
-};
+use crate::show::{Group, Object, ObjectId, ObjectKind, PoolId, Show};
 use crate::showfile::{SacnOutputType, Showfile};
 
 mod command;
@@ -86,170 +83,66 @@ impl Engine {
 
     pub fn exec(&self, command: Command) -> Result<(), crate::error::Error> {
         match command {
-            Command::PatchAdd { fid, address, type_id, dmx_mode } => {
-                self.show()
-                    .update(|show| show.patch.insert_fixture(fid, address, type_id, dmx_mode));
-            }
-            Command::CreateGroup { pool_id, name, fids } => {
-                self.show().update(|show| {
-                    let mut group = Group::create(
-                        ObjectId::new(),
-                        pool_id,
-                        name.unwrap_or("New Group".to_string()),
-                    );
-                    group.fids = fids;
-                    show.objects.insert(group);
-                });
-            }
-            Command::CreateSequence { pool_id, name } => {
-                self.show().update(|show| {
-                    show.objects.insert(Sequence::create(
-                        ObjectId::new(),
-                        pool_id,
-                        name.unwrap_or("New Sequence".to_string()),
-                    ));
-                });
-            }
-            Command::CreateExecutor { pool_id, name } => {
-                self.show().update(|show| {
-                    show.objects.insert(Executor::create(
-                        ObjectId::new(),
-                        pool_id,
-                        name.unwrap_or("New Executor".to_string()),
-                    ));
-                });
-            }
-            Command::CreatePresetDimmer { pool_id, name } => {
-                self.show().update(|show| {
-                    show.objects.insert(PresetDimmer::create(
-                        ObjectId::new(),
-                        pool_id,
-                        name.unwrap_or("New Dimmer Preset".to_string()),
-                    ));
-                });
-            }
-            Command::CreatePresetPosition { pool_id, name } => {
-                self.show().update(|show| {
-                    show.objects.insert(PresetPosition::create(
-                        ObjectId::new(),
-                        pool_id,
-                        name.unwrap_or("New Position Preset".to_string()),
-                    ));
-                });
-            }
-            Command::CreatePresetGobo { pool_id, name } => {
-                self.show().update(|show| {
-                    show.objects.insert(PresetGobo::create(
-                        ObjectId::new(),
-                        pool_id,
-                        name.unwrap_or("New Gobo Preset".to_string()),
-                    ));
-                });
-            }
-            Command::CreatePresetColor { pool_id, name } => {
-                self.show().update(|show| {
-                    show.objects.insert(PresetColor::create(
-                        ObjectId::new(),
-                        pool_id,
-                        name.unwrap_or("New Color Preset".to_string()),
-                    ));
-                });
-            }
-            Command::CreatePresetBeam { pool_id, name } => {
-                self.show().update(|show| {
-                    show.objects.insert(PresetBeam::create(
-                        ObjectId::new(),
-                        pool_id,
-                        name.unwrap_or("New Beam Preset".to_string()),
-                    ));
-                });
-            }
-            Command::CreatePresetFocus { pool_id, name } => {
-                self.show().update(|show| {
-                    show.objects.insert(PresetFocus::create(
-                        ObjectId::new(),
-                        pool_id,
-                        name.unwrap_or("New Focus Preset".to_string()),
-                    ));
-                });
-            }
-            Command::CreatePresetControl { pool_id, name } => {
-                self.show().update(|show| {
-                    show.objects.insert(PresetControl::create(
-                        ObjectId::new(),
-                        pool_id,
-                        name.unwrap_or("New Control Preset".to_string()),
-                    ));
-                });
-            }
-            Command::CreatePresetShapers { pool_id, name } => {
-                self.show().update(|show| {
-                    show.objects.insert(PresetShapers::create(
-                        ObjectId::new(),
-                        pool_id,
-                        name.unwrap_or("New Shapers Preset".to_string()),
-                    ));
-                });
-            }
-            Command::CreatePresetVideo { pool_id, name } => self.show().update(|show| {
-                show.objects.insert(PresetVideo::create(
-                    ObjectId::new(),
-                    pool_id,
-                    name.unwrap_or("New Video Preset".to_string()),
-                ));
-            }),
-            Command::ProgrammerSetAttribute { fid, attribute, value } => {
-                self.show().update(|show| {
-                    show.programmer.set_value(fid, attribute, value);
-                });
-            }
-            Command::Go { executor_id } => {
-                self.show().update(|show| {
-                    let Some(executor) = show.objects.get::<Executor>(executor_id) else { return };
-                    let Some(sequence_id) = executor.sequence_id else { return };
-                    let Some(sequence) = show.objects.get_mut::<Sequence>(sequence_id) else {
-                        return;
-                    };
-
-                    sequence.set_current_cue(sequence.next_cue().map(|cue| cue.id().clone()));
-                });
-            }
-            Command::SelectReferencedFixtures { id } => self.show.update(|show| {
-                let fids = if let Some(group) = show.objects.get::<Group>(id) {
-                    group.fids.clone()
-                } else if let Some(preset) = show.objects.get::<PresetDimmer>(id) {
-                    preset.fixture_ids(show.patch())
-                } else if let Some(preset) = show.objects.get::<PresetPosition>(id) {
-                    preset.fixture_ids(show.patch())
-                } else if let Some(preset) = show.objects.get::<PresetGobo>(id) {
-                    preset.fixture_ids(show.patch())
-                } else if let Some(preset) = show.objects.get::<PresetColor>(id) {
-                    preset.fixture_ids(show.patch())
-                } else if let Some(preset) = show.objects.get::<PresetBeam>(id) {
-                    preset.fixture_ids(show.patch())
-                } else if let Some(preset) = show.objects.get::<PresetFocus>(id) {
-                    preset.fixture_ids(show.patch())
-                } else if let Some(preset) = show.objects.get::<PresetControl>(id) {
-                    preset.fixture_ids(show.patch())
-                } else if let Some(preset) = show.objects.get::<PresetShapers>(id) {
-                    preset.fixture_ids(show.patch())
-                } else if let Some(preset) = show.objects.get::<PresetVideo>(id) {
-                    preset.fixture_ids(show.patch())
-                } else {
-                    Vec::new()
-                };
-
-                show.selected_fixtures.extend(fids);
-                self.event_handler.emit_event(EngineEvent::SelectionChanged);
-            }),
-            Command::SelectFixture { fid } => {
-                self.show().update(|show| show.selected_fixtures.push(fid));
+            Command::Select { selection } => {
+                match selection {
+                    Selection::FixtureId(fid) => {
+                        self.show.update(|show| show.selected_fixtures.push(fid));
+                    }
+                    Selection::Group(object_id) => {
+                        self.show.update(|show| {
+                            if let Some(group) = show.objects.get::<Group>(object_id) {
+                                for fid in group.fids().to_vec() {
+                                    show.selected_fixtures.push(fid);
+                                }
+                            }
+                        });
+                    }
+                    Selection::All => {
+                        self.show.update(|show| {
+                            let fids =
+                                show.patch().fixtures().iter().map(|f| f.fid()).collect::<Vec<_>>();
+                            for fid in fids {
+                                show.selected_fixtures.push(fid);
+                            }
+                        });
+                    }
+                    Selection::None => {}
+                }
                 self.event_handler.emit_event(EngineEvent::SelectionChanged);
             }
-            Command::ClearFixtureSelection => {
-                self.show().update(|show| show.selected_fixtures.clear());
+            Command::ClearSelection => {
+                self.show.update(|show| show.selected_fixtures.clear());
                 self.event_handler.emit_event(EngineEvent::SelectionChanged);
             }
+            Command::Store { destination } => {
+                self.show.update(|show| match destination.kind {
+                    ObjectKind::Group => {
+                        let pool_id = PoolId::<Group>::new(destination.id);
+                        let fids = show.selected_fixtures().to_vec();
+                        if let Some(group) = show.objects.get_mut_by_pool_id(pool_id) {
+                            group.fids = fids;
+                        } else {
+                            let mut group =
+                                Group::create(ObjectId::new(), pool_id, "New Group".to_string());
+                            group.fids = fids;
+                            show.objects.insert(group);
+                        }
+                    }
+                    ObjectKind::Executor => todo!(),
+                    ObjectKind::Sequence => todo!(),
+                    ObjectKind::PresetDimmer => todo!(),
+                    ObjectKind::PresetPosition => todo!(),
+                    ObjectKind::PresetGobo => todo!(),
+                    ObjectKind::PresetColor => todo!(),
+                    ObjectKind::PresetBeam => todo!(),
+                    ObjectKind::PresetFocus => todo!(),
+                    ObjectKind::PresetControl => todo!(),
+                    ObjectKind::PresetShapers => todo!(),
+                    ObjectKind::PresetVideo => todo!(),
+                });
+            }
+            Command::Update { object: _ } => todo!(),
+            Command::Remove { object: _ } => todo!(),
         }
 
         Ok(())

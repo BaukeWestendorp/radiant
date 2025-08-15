@@ -16,17 +16,6 @@ mod group;
 mod preset;
 mod sequence;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[derive(derive_more::Deref, derive_more::From, derive_more::Into, derive_more::FromStr)]
-#[derive(serde::Deserialize)]
-pub struct ObjectId(Uuid);
-
-impl ObjectId {
-    pub fn new() -> Self {
-        Self(Uuid::new_v4())
-    }
-}
-
 pub trait Object: Any + Send {
     fn create(id: ObjectId, pool_id: PoolId<Self>, name: String) -> Self
     where
@@ -45,6 +34,23 @@ pub trait Object: Any + Send {
     fn set_pool_id(&mut self, pool_id: PoolId<Self>)
     where
         Self: Sized;
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ObjectKind {
+    Group,
+    Executor,
+    Sequence,
+
+    PresetDimmer,
+    PresetPosition,
+    PresetGobo,
+    PresetColor,
+    PresetBeam,
+    PresetFocus,
+    PresetControl,
+    PresetShapers,
+    PresetVideo,
 }
 
 #[derive(Default)]
@@ -69,6 +75,12 @@ impl ObjectContainer {
         self.objects.values().find_map(|obj| {
             let obj_ref = obj.as_ref().as_any().downcast_ref::<T>()?;
             if obj_ref.pool_id() == pool_id { Some(obj_ref) } else { None }
+        })
+    }
+    pub fn get_mut_by_pool_id<T: Object>(&mut self, pool_id: PoolId<T>) -> Option<&mut T> {
+        self.objects.values_mut().find_map(|obj| {
+            let obj_mut = obj.as_mut().as_mut_any().downcast_mut::<T>()?;
+            if obj_mut.pool_id() == pool_id { Some(obj_mut) } else { None }
         })
     }
 
@@ -108,6 +120,17 @@ impl dyn Object {
 
     fn as_mut_any(&mut self) -> &mut dyn Any {
         self
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
+#[derive(derive_more::Deref, derive_more::From, derive_more::Into, derive_more::FromStr)]
+#[derive(serde::Deserialize)]
+pub struct ObjectId(Uuid);
+
+impl ObjectId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
     }
 }
 
@@ -167,5 +190,17 @@ impl<T> std::hash::Hash for PoolId<T> {
 impl<T> Default for PoolId<T> {
     fn default() -> Self {
         Self(NonZeroU32::new(1).unwrap(), PhantomData::default())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct AnyPoolId {
+    pub id: NonZeroU32,
+    pub kind: ObjectKind,
+}
+
+impl AnyPoolId {
+    pub fn new(id: NonZeroU32, kind: ObjectKind) -> Self {
+        Self { id, kind }
     }
 }

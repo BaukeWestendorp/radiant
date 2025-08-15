@@ -3,7 +3,7 @@ use std::num::NonZeroU32;
 use gpui::prelude::*;
 use gpui::{Window, div};
 use radiant::engine::Command;
-use radiant::show::{Group, Object, PoolId};
+use radiant::show::{Group, Object, PoolId, Sequence};
 
 use crate::panel::pool::{PoolPanel, PoolPanelDelegate};
 use crate::state::{exec_cmd_and_log_err, with_show};
@@ -19,10 +19,7 @@ impl<T: Object> ObjectPool<T> {
 }
 
 impl<T: Object + 'static> PoolPanelDelegate for ObjectPool<T> {
-    fn cell_has_content(&self, pool_id: NonZeroU32, cx: &mut Context<PoolPanel<Self>>) -> bool
-    where
-        Self: Sized,
-    {
+    fn cell_has_content(&self, pool_id: NonZeroU32, cx: &mut Context<PoolPanel<Self>>) -> bool {
         let id = with_show(cx, |show| {
             show.objects().get_by_pool_id(PoolId::<T>::new(pool_id)).map(|obj| obj.id())
         });
@@ -35,13 +32,12 @@ impl<T: Object + 'static> PoolPanelDelegate for ObjectPool<T> {
         _event: &gpui::ClickEvent,
         _window: &mut Window,
         cx: &mut Context<PoolPanel<Self>>,
-    ) where
-        Self: Sized,
-    {
+    ) {
         if let Some(id) = with_show(cx, |show| {
             show.objects().get_by_pool_id::<Group>(PoolId::new(pool_id)).map(|group| group.id())
         }) {
-            exec_cmd_and_log_err(Command::SelectReferencedFixtures { id: id.into() }, cx);
+            // FIXME: exec_cmd_and_log_err(Command::SelectReferencedFixtures {
+            //        id: id.into() }, cx);
         }
     }
 
@@ -54,6 +50,10 @@ impl<T: Object + 'static> PoolPanelDelegate for ObjectPool<T> {
         with_show(cx, |show| {
             if let Some(group) = show.objects().get_by_pool_id::<Group>(PoolId::new(pool_id)) {
                 div().child(group.name().to_string())
+            } else if let Some(sequence) =
+                show.objects().get_by_pool_id::<Sequence>(PoolId::new(pool_id))
+            {
+                div().child(sequence.name().to_string())
             } else {
                 div()
             }

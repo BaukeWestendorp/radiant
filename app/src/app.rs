@@ -27,7 +27,7 @@ mod actions {
 
     use crate::state::exec_cmd_and_log_err;
 
-    gpui::actions!(app, [ClearFixtureSelection]);
+    gpui::actions!(app, [ClearSelection]);
 
     pub fn init(cx: &mut App) {
         bind_keys(cx);
@@ -35,12 +35,12 @@ mod actions {
     }
 
     fn bind_keys(cx: &mut App) {
-        cx.bind_keys([KeyBinding::new("escape", ClearFixtureSelection, None)]);
+        cx.bind_keys([KeyBinding::new("escape", ClearSelection, None)]);
     }
 
     fn bind_actions(cx: &mut App) {
-        cx.on_action::<ClearFixtureSelection>(|_, cx| {
-            exec_cmd_and_log_err(Command::ClearFixtureSelection, cx);
+        cx.on_action::<ClearSelection>(|_, cx| {
+            exec_cmd_and_log_err(Command::ClearSelection, cx);
         });
     }
 }

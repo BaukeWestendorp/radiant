@@ -157,7 +157,8 @@ impl Render for ExecutorView {
                     let executor_id = self.executor_id;
                     move |_, _, cx| {
                         if let Some(executor_id) = executor_id {
-                            exec_cmd_and_log_err(Command::Go { executor_id }, cx);
+                            // FIXME: exec_cmd_and_log_err(Command::Go {
+                            //        executor_id }, cx);
                         }
                     }
                 })

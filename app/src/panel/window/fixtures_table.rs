@@ -1,6 +1,6 @@
 use gpui::prelude::*;
 use gpui::{App, ElementId, Entity, Subscription, Window, div, px};
-use radiant::engine::{Command, EngineEvent};
+use radiant::engine::{Command, EngineEvent, Selection};
 use radiant::show::Fixture;
 use ui::{Table, TableColumn, TableDelegate, TableRow};
 
@@ -74,7 +74,10 @@ impl TableDelegate for FixturesTable {
         _window: &mut Window,
         cx: &mut Context<Table<Self>>,
     ) {
-        exec_cmd_and_log_err(Command::SelectFixture { fid: row.fixture.fid() }, cx);
+        exec_cmd_and_log_err(
+            Command::Select { selection: Selection::FixtureId(row.fixture.fid()) },
+            cx,
+        );
     }
 }
 
