@@ -14,13 +14,18 @@ use crate::show::{Attribute, AttributeValue, Patch};
     derive_more::FromStr,
     derive_more::Deref,
     derive_more::DerefMut,
-    derive_more::Display,
     derive_more::From,
     derive_more::Into
 )]
 #[derive(serde::Deserialize)]
 #[serde(transparent)]
 pub struct FixtureId(pub u32);
+
+impl std::fmt::Display for FixtureId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "fixture {}", self.0)
+    }
+}
 
 /// A single patched fixture and has information about its attributes.
 ///

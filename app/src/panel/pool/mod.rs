@@ -4,7 +4,7 @@ use gpui::prelude::*;
 use gpui::{Bounds, ClickEvent, ElementId, Entity, Window, div};
 use radiant::show::{Group, Sequence};
 use ui::utils::z_stack;
-use ui::{ActiveTheme, ContainerStyle, container, interactive_container};
+use ui::{ActiveTheme, Disableable, interactive_container};
 
 mod objects;
 
@@ -71,24 +71,17 @@ pub trait PoolPanelDelegate {
     where
         Self: Sized + 'static,
     {
-        if self.cell_has_content(pool_id, cx) {
-            interactive_container(
-                ElementId::NamedInteger("pool_cell".into(), u32::from(pool_id).into()),
-                None,
-            )
-            .size_full()
-            .child(pool_id.to_string())
-            .child(self.render_cell_content(pool_id, window, cx))
-            .on_click(cx.listener(move |this, event, window, cx| {
-                this.delegate.handle_cell_click(pool_id, event, window, cx);
-            }))
-            .into_any_element()
-        } else {
-            container(ContainerStyle::normal(window, cx).disabled())
-                .size_full()
-                .child(pool_id.to_string())
-                .into_any_element()
-        }
+        interactive_container(
+            ElementId::NamedInteger("pool_cell".into(), u32::from(pool_id).into()),
+            None,
+        )
+        .on_click(cx.listener(move |this, event, window, cx| {
+            this.delegate.handle_cell_click(pool_id, event, window, cx);
+        }))
+        .disabled(!self.cell_has_content(pool_id, cx))
+        .size_full()
+        .child(pool_id.to_string())
+        .child(self.render_cell_content(pool_id, window, cx))
     }
 
     fn render_content(

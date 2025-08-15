@@ -19,29 +19,28 @@ fn gen_impl_object(ident: &Ident, generics: &Generics) -> proc_macro2::TokenStre
 
     quote! {
         impl #impl_generics crate::show::Object for #ident #ty_generics #where_clause {
-            fn create(id: crate::show::ObjectId, pool_id: crate::show::PoolId<Self>, name: String) -> Self
+            fn create(id: crate::show::ObjectId, pool_id: crate::show::PoolId, name: String) -> Self
             {
                 Self { name, id, pool_id , ..Default::default() }
-            }
-
-            fn name(&self) -> &str {
-                &self.name
-            }
-
-            fn set_name(&mut self, name: String)
-            {
-                self.name = name;
             }
 
             fn id(&self) -> crate::show::ObjectId {
                 self.id
             }
 
-            fn pool_id(&self) -> crate::show::PoolId<Self> {
+            fn name(&self) -> &str {
+                &self.name
+            }
+
+            fn set_name(&mut self, name: String) {
+                self.name = name;
+            }
+
+            fn pool_id(&self) -> crate::show::PoolId {
                 self.pool_id
             }
 
-            fn set_pool_id(&mut self, pool_id: crate::show::PoolId<Self>) {
+            fn set_pool_id(&mut self, pool_id: crate::show::PoolId) {
                 self.pool_id = pool_id;
             }
         }
@@ -68,7 +67,7 @@ pub fn attribute(
                     );
                     fields.named.push(
                         syn::Field::parse_named
-                            .parse2(quote! { pub pool_id: crate::show::PoolId<Self> })
+                            .parse2(quote! { pub pool_id: crate::show::PoolId })
                             .unwrap(),
                     );
                 }

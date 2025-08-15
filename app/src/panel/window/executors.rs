@@ -2,8 +2,8 @@ use std::num::NonZeroU32;
 
 use gpui::prelude::*;
 use gpui::{App, Entity, Window, div, relative};
-use radiant::engine::Command;
-use radiant::show::{Cue, Executor, Object, ObjectId, PoolId, Sequence};
+use radiant::engine::{Command, ObjectReference};
+use radiant::show::{Cue, Executor, Object, ObjectId, ObjectKind, PoolId, Sequence};
 use ui::utils::z_stack;
 use ui::{ActiveTheme, ContainerStyle, container};
 
@@ -22,9 +22,9 @@ impl ExecutorsPanel {
                 .into_iter()
                 .map(|ix| {
                     cx.new(|cx| {
-                        let pool_id = PoolId::<Executor>::new(NonZeroU32::new(ix).unwrap());
+                        let pool_id = PoolId::new(NonZeroU32::new(ix).unwrap());
                         let id = with_show(cx, |show| {
-                            show.objects().get_by_pool_id(pool_id).map(|exec| exec.id())
+                            show.objects().get_by_pool_id::<Executor>(pool_id).map(|exec| exec.id())
                         });
                         ExecutorView::new(id)
                     })
@@ -156,10 +156,20 @@ impl Render for ExecutorView {
                 .on_click({
                     let executor_id = self.executor_id;
                     move |_, _, cx| {
-                        if let Some(executor_id) = executor_id {
-                            // FIXME: exec_cmd_and_log_err(Command::Go {
-                            //        executor_id }, cx);
-                        }
+                        let Some(executor_id) = executor_id else { return };
+
+                        let Some(pool_id) = with_show(cx, |show| {
+                            show.objects().get::<Executor>(executor_id).map(|exec| exec.pool_id())
+                        }) else {
+                            return;
+                        };
+
+                        exec_cmd_and_log_err(
+                            Command::Go {
+                                executor: ObjectReference { kind: ObjectKind::Executor, pool_id },
+                            },
+                            cx,
+                        );
                     }
                 })
         };

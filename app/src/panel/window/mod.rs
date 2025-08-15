@@ -4,10 +4,12 @@ use ui::ActiveTheme;
 use ui::utils::z_stack;
 
 mod attribute_editor;
+mod command_line;
 mod executors;
 mod fixtures_table;
 
 pub use attribute_editor::AttributeEditorPanel;
+pub use command_line::CommandLinePanel;
 pub use executors::ExecutorsPanel;
 pub use fixtures_table::FixturesTablePanel;
 
@@ -16,6 +18,7 @@ pub enum WindowPanelKind {
     Executors(Entity<WindowPanel<ExecutorsPanel>>),
     AttributeEditor(Entity<WindowPanel<AttributeEditorPanel>>),
     FixturesTable(Entity<WindowPanel<FixturesTablePanel>>),
+    CommandLine(Entity<WindowPanel<CommandLinePanel>>),
 }
 
 pub struct WindowPanel<D: WindowPanelDelegate> {

@@ -7,7 +7,7 @@ use eyre::Context;
 use crate::engine::event::EventHandler;
 use crate::engine::protocols::Protocols;
 use crate::pipeline::Pipeline;
-use crate::show::{Group, Object, ObjectId, ObjectKind, PoolId, Show};
+use crate::show::{Group, Object, ObjectId, ObjectKind, Show};
 use crate::showfile::{SacnOutputType, Showfile};
 
 mod command;
@@ -88,9 +88,11 @@ impl Engine {
                     Selection::FixtureId(fid) => {
                         self.show.update(|show| show.selected_fixtures.push(fid));
                     }
-                    Selection::Group(object_id) => {
+                    Selection::Group(object_ref) => {
                         self.show.update(|show| {
-                            if let Some(group) = show.objects.get::<Group>(object_id) {
+                            if let Some(group) =
+                                show.objects.get_by_pool_id::<Group>(object_ref.pool_id)
+                            {
                                 for fid in group.fids().to_vec() {
                                     show.selected_fixtures.push(fid);
                                 }
@@ -110,20 +112,24 @@ impl Engine {
                 }
                 self.event_handler.emit_event(EngineEvent::SelectionChanged);
             }
-            Command::ClearSelection => {
+            Command::Clear => {
                 self.show.update(|show| show.selected_fixtures.clear());
                 self.event_handler.emit_event(EngineEvent::SelectionChanged);
             }
             Command::Store { destination } => {
                 self.show.update(|show| match destination.kind {
                     ObjectKind::Group => {
-                        let pool_id = PoolId::<Group>::new(destination.id);
                         let fids = show.selected_fixtures().to_vec();
-                        if let Some(group) = show.objects.get_mut_by_pool_id(pool_id) {
+                        if let Some(group) =
+                            show.objects.get_mut_by_pool_id::<Group>(destination.pool_id)
+                        {
                             group.fids = fids;
                         } else {
-                            let mut group =
-                                Group::create(ObjectId::new(), pool_id, "New Group".to_string());
+                            let mut group = Group::create(
+                                ObjectId::new(),
+                                destination.pool_id,
+                                "New Group".to_string(),
+                            );
                             group.fids = fids;
                             show.objects.insert(group);
                         }
@@ -143,6 +149,10 @@ impl Engine {
             }
             Command::Update { object: _ } => todo!(),
             Command::Remove { object: _ } => todo!(),
+
+            Command::Go { executor: _ } => todo!(),
+
+            Command::SetAttribute { fid: _, attribute: _, value: _ } => todo!(),
         }
 
         Ok(())

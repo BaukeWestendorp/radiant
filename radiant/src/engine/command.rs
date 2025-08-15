@@ -1,46 +1,96 @@
+use std::num::NonZeroU32;
+
 use eyre::{Context, ContextCompat};
 
 use crate::error::Result;
-use crate::show::{AnyPoolId, FixtureId, ObjectId};
+use crate::show::{Attribute, AttributeValue, FixtureId, ObjectKind, PoolId};
 
 #[derive(Debug, Clone)]
 pub enum Command {
     Select { selection: Selection },
-    ClearSelection,
+    Clear,
 
-    Store { destination: AnyPoolId },
-    Update { object: AnyPoolId },
-    Remove { object: AnyPoolId },
+    Store { destination: ObjectReference },
+    Update { object: ObjectReference },
+    Remove { object: ObjectReference },
+
+    Go { executor: ObjectReference },
+
+    SetAttribute { fid: FixtureId, attribute: Attribute, value: AttributeValue },
 }
 
 #[derive(Debug, Clone)]
+#[derive(derive_more::Display)]
 pub enum Keyword {
+    #[display("select")]
     Select,
-    ClearSelection,
+    #[display("clear")]
+    Clear,
 
+    #[display("store")]
     Store,
+    #[display("update")]
     Update,
+    #[display("remove")]
     Remove,
+
+    #[display("go")]
+    Go,
+
+    #[display("set")]
+    Set,
+    #[display("at")]
+    At,
+
+    #[display("attribute")]
+    Attribute,
 }
 
 #[derive(Debug, Clone)]
-#[derive(derive_more::TryInto)]
+#[derive(derive_more::Display, derive_more::From, derive_more::TryInto)]
 pub enum Parameter {
+    Keyword(Keyword),
     Selection(Selection),
-    Object(AnyPoolId),
+    ObjectKind(ObjectKind),
+    Integer(i32),
+}
+
+impl TryInto<PoolId> for Parameter {
+    type Error = crate::error::Error;
+
+    fn try_into(self) -> std::result::Result<PoolId, Self::Error> {
+        match self {
+            Parameter::Integer(i) if i > 0 => Ok(PoolId::new(NonZeroU32::new(i as u32).unwrap())),
+            _ => Err(eyre::eyre!("Parameter cannot be converted to PoolId")),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
+#[derive(derive_more::Display)]
 pub enum Selection {
     FixtureId(FixtureId),
-    Group(ObjectId),
+    Group(ObjectReference),
+    #[display("all")]
     All,
+    #[display("none")]
     None,
+}
+
+#[derive(Debug, Clone)]
+pub struct ObjectReference {
+    pub kind: ObjectKind,
+    pub pool_id: PoolId,
+}
+
+impl std::fmt::Display for ObjectReference {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {}", self.kind, self.pool_id)
+    }
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct CommandBuilder {
-    keyword: Option<Keyword>,
     parameters: Vec<Parameter>,
 }
 
@@ -49,76 +99,70 @@ impl CommandBuilder {
         Self::default()
     }
 
-    pub fn process_input(&mut self, input: impl Into<CommandInput>) -> Result<()> {
-        match input.into() {
-            CommandInput::Keyword(keyword) => {
-                if self.keyword.is_none() {
-                    self.keyword = Some(keyword)
-                } else {
-                    eyre::bail!(
-                        "can't process another command keyword, as a command is being built already"
-                    )
-                }
-            }
-            CommandInput::ParameterValue(parameter) => self.parameters.push(parameter),
-        }
-
+    pub fn process_param(&mut self, parameter: impl Into<Parameter>) -> Result<()> {
+        self.parameters.push(parameter.into());
         Ok(())
     }
 
     pub fn resolve(&mut self) -> Result<Option<Command>> {
-        let Some(keyword) = &self.keyword else { return Ok(None) };
         let mut params = self.parameters.clone().into_iter();
 
-        let command = match keyword {
-            Keyword::Select => {
-                let selection = params
-                    .next()
-                    .wrap_err("missing selection")?
-                    .try_into()
-                    .wrap_err("expected selection")?;
-
-                Command::Select { selection }
-            }
-            Keyword::ClearSelection => Command::ClearSelection,
-            Keyword::Store => {
-                let destination = params
-                    .next()
-                    .wrap_err("missing destination")?
-                    .try_into()
-                    .wrap_err("expected destination")?;
-
-                Command::Store { destination }
-            }
-            Keyword::Update => {
-                let object = params
-                    .next()
-                    .wrap_err("missing object")?
-                    .try_into()
-                    .wrap_err("expected object")?;
-
-                Command::Update { object }
-            }
-            Keyword::Remove => {
-                let object = params
-                    .next()
-                    .wrap_err("missing object")?
-                    .try_into()
-                    .wrap_err("expected object")?;
-
-                Command::Remove { object }
-            }
+        let Some(first) = params.next() else {
+            return Ok(None);
         };
 
-        *self = Self::default();
+        let parse_obj_ref = |mut params: std::vec::IntoIter<Parameter>| -> Result<ObjectReference> {
+            let kind = params
+                .next()
+                .wrap_err("missing object kind")?
+                .try_into()
+                .wrap_err("expected object kind")?;
+            let pool_id = params
+                .next()
+                .wrap_err("missing pool id")?
+                .try_into()
+                .wrap_err("expected pool id")?;
+            Ok(ObjectReference { kind, pool_id })
+        };
+
+        let parse_selection = |mut params: std::vec::IntoIter<Parameter>| -> Result<Selection> {
+            let selection = params
+                .next()
+                .wrap_err("missing selection")?
+                .try_into()
+                .wrap_err("expected selection")?;
+            Ok(selection)
+        };
+
+        let command = match first {
+            Parameter::Keyword(Keyword::Select) => {
+                Command::Select { selection: parse_selection(params)? }
+            }
+            Parameter::Keyword(Keyword::Clear) => Command::Clear,
+            Parameter::Keyword(Keyword::Store) => {
+                Command::Store { destination: parse_obj_ref(params)? }
+            }
+            Parameter::Keyword(Keyword::Update) => {
+                Command::Update { object: parse_obj_ref(params)? }
+            }
+            Parameter::Keyword(Keyword::Remove) => {
+                Command::Remove { object: parse_obj_ref(params)? }
+            }
+            Parameter::Keyword(Keyword::Go) => Command::Go { executor: parse_obj_ref(params)? },
+            _ => eyre::bail!("unexpected start of command: {first}"),
+        };
 
         Ok(Some(command))
     }
+
+    pub fn clear(&mut self) {
+        self.parameters = Vec::new();
+    }
 }
 
-#[derive(Debug, Clone)]
-#[derive(derive_more::From)]
-pub enum CommandInput {
-    Keyword(Keyword),
-    ParameterValue(Parameter),
+impl std::fmt::Display for CommandBuilder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let params = self.parameters.iter().map(ToString::to_string).collect::<Vec<_>>().join(" ");
+        write!(f, "{}", params)
+    }
 }

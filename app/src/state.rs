@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use gpui::prelude::*;
 use gpui::{App, Entity, EventEmitter, Global, ReadGlobal, Subscription, Timer, Window};
-use radiant::engine::{Command, CommandBuilder, Engine, EngineEvent};
+use radiant::engine::{Command, CommandBuilder, Engine, EngineEvent, Parameter};
 use radiant::show::Show;
 
 pub fn init(engine: Engine, cx: &mut App) {
@@ -11,17 +11,20 @@ pub fn init(engine: Engine, cx: &mut App) {
 
 pub struct AppState {
     pub engine: Engine,
-    pub command_builder: CommandBuilder,
+    pub command_builder: Entity<CommandBuilder>,
     event_handler: Entity<EngineEventHandler>,
 }
 
 impl AppState {
     fn init(mut engine: Engine, cx: &mut App) {
         let engine_event_handler = cx.new(|cx| EngineEventHandler::new(cx));
+        let command_builder = cx.new(|_| CommandBuilder::new());
+
         engine.start();
+
         cx.set_global(AppState {
             engine,
-            command_builder: CommandBuilder::new(),
+            command_builder,
             event_handler: engine_event_handler.clone(),
         });
     }
@@ -67,6 +70,32 @@ pub fn exec_cmd_and_log_err(command: Command, cx: &App) {
     if let Err(err) = exec_cmd(command, cx) {
         log::error!("failed to run command: {err}");
     }
+}
+
+pub fn exec_current_cmd_and_log_err(cx: &mut App) {
+    let cb = AppState::global(cx).command_builder.clone();
+    let command = cb.update(cx, |cb, cx| {
+        let command = cb.resolve();
+        cb.clear();
+        cx.notify();
+        command
+    });
+
+    match command {
+        Ok(Some(command)) => exec_cmd_and_log_err(command, cx),
+        Ok(None) => {}
+        Err(err) => log::error!("failed to run command: {err}"),
+    }
+}
+
+pub fn process_cmd_param(param: impl Into<Parameter>, cx: &mut App) {
+    AppState::global(cx).command_builder.clone().update(cx, |cb, cx| {
+        let param = param.into();
+        if let Err(err) = cb.process_param(param.clone()) {
+            log::error!("failed to process command param '{param}': {err}");
+        }
+        cx.notify();
+    });
 }
 
 pub fn on_engine_event<

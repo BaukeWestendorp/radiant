@@ -10,7 +10,8 @@ use crate::error::Result;
 use crate::panel::grid::PanelGrid;
 use crate::panel::pool::{ObjectPool, PoolPanel, PoolPanelKind};
 use crate::panel::window::{
-    AttributeEditorPanel, ExecutorsPanel, FixturesTablePanel, WindowPanel, WindowPanelKind,
+    AttributeEditorPanel, CommandLinePanel, ExecutorsPanel, FixturesTablePanel, WindowPanel,
+    WindowPanelKind,
 };
 use crate::panel::{Panel, PanelKind};
 use crate::state::with_show;
@@ -75,9 +76,9 @@ fn temporary_panel_grid(window: &mut Window, cx: &mut App) -> Entity<PanelGrid> 
         }));
 
         grid.add_panel(cx.new(|cx| {
-            Panel::new(PanelKind::Pool(PoolPanelKind::Sequence(
-                cx.new(|_| PoolPanel::new(bounds(point(0, 3), size(7, 3)), ObjectPool::new())),
-            )))
+            Panel::new(PanelKind::Window(WindowPanelKind::CommandLine(cx.new(|cx| {
+                WindowPanel::new(bounds(point(0, 3), size(7, 3)), CommandLinePanel::new(cx))
+            }))))
         }));
 
         grid.add_panel(cx.new(|cx| {

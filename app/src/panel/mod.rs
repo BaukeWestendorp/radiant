@@ -34,6 +34,7 @@ impl Render for Panel {
                     WindowPanelKind::Executors(panel) => panel.into_any_element(),
                     WindowPanelKind::AttributeEditor(panel) => panel.into_any_element(),
                     WindowPanelKind::FixturesTable(panel) => panel.into_any_element(),
+                    WindowPanelKind::CommandLine(panel) => panel.into_any_element(),
                 },
                 PanelKind::Pool(kind) => match kind {
                     PoolPanelKind::Group(panel) => panel.into_any_element(),
@@ -56,6 +57,7 @@ impl PanelKind {
                 WindowPanelKind::Executors(panel) => panel.read(cx).bounds(),
                 WindowPanelKind::AttributeEditor(panel) => panel.read(cx).bounds(),
                 WindowPanelKind::FixturesTable(panel) => panel.read(cx).bounds(),
+                WindowPanelKind::CommandLine(panel) => panel.read(cx).bounds(),
             },
             PanelKind::Pool(pool_panel) => match pool_panel {
                 PoolPanelKind::Group(panel) => panel.read(cx).bounds(),

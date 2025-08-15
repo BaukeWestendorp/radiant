@@ -1,7 +1,6 @@
 use std::any::Any;
 use std::collections::HashMap;
 use std::hash::Hash;
-use std::marker::PhantomData;
 use std::num::NonZeroU32;
 
 use uuid::Uuid;
@@ -16,10 +15,40 @@ mod group;
 mod preset;
 mod sequence;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(derive_more::Display)]
+pub enum ObjectKind {
+    #[display("group")]
+    Group,
+    #[display("executor")]
+    Executor,
+    #[display("sequence")]
+    Sequence,
+
+    #[display("preset::dimmer")]
+    PresetDimmer,
+    #[display("preset::position")]
+    PresetPosition,
+    #[display("preset::gobo")]
+    PresetGobo,
+    #[display("preset::color")]
+    PresetColor,
+    #[display("preset::beam")]
+    PresetBeam,
+    #[display("preset::focus")]
+    PresetFocus,
+    #[display("preset::control")]
+    PresetControl,
+    #[display("preset::shapers")]
+    PresetShapers,
+    #[display("preset::video")]
+    PresetVideo,
+}
+
 pub trait Object: Any + Send {
-    fn create(id: ObjectId, pool_id: PoolId<Self>, name: String) -> Self
+    fn create(id: ObjectId, pool_id: PoolId, name: String) -> Self
     where
-        Self: Sized + Default;
+        Self: Default;
 
     fn name(&self) -> &str;
 
@@ -27,30 +56,9 @@ pub trait Object: Any + Send {
 
     fn id(&self) -> ObjectId;
 
-    fn pool_id(&self) -> PoolId<Self>
-    where
-        Self: Sized;
+    fn pool_id(&self) -> PoolId;
 
-    fn set_pool_id(&mut self, pool_id: PoolId<Self>)
-    where
-        Self: Sized;
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum ObjectKind {
-    Group,
-    Executor,
-    Sequence,
-
-    PresetDimmer,
-    PresetPosition,
-    PresetGobo,
-    PresetColor,
-    PresetBeam,
-    PresetFocus,
-    PresetControl,
-    PresetShapers,
-    PresetVideo,
+    fn set_pool_id(&mut self, pool_id: PoolId);
 }
 
 #[derive(Default)]
@@ -71,13 +79,14 @@ impl ObjectContainer {
         self.objects.get_mut(&id)?.as_mut().as_mut_any().downcast_mut::<T>()
     }
 
-    pub fn get_by_pool_id<T: Object>(&self, pool_id: PoolId<T>) -> Option<&T> {
+    pub fn get_by_pool_id<T: Object>(&self, pool_id: PoolId) -> Option<&T> {
         self.objects.values().find_map(|obj| {
             let obj_ref = obj.as_ref().as_any().downcast_ref::<T>()?;
             if obj_ref.pool_id() == pool_id { Some(obj_ref) } else { None }
         })
     }
-    pub fn get_mut_by_pool_id<T: Object>(&mut self, pool_id: PoolId<T>) -> Option<&mut T> {
+
+    pub fn get_mut_by_pool_id<T: Object>(&mut self, pool_id: PoolId) -> Option<&mut T> {
         self.objects.values_mut().find_map(|obj| {
             let obj_mut = obj.as_mut().as_mut_any().downcast_mut::<T>()?;
             if obj_mut.pool_id() == pool_id { Some(obj_mut) } else { None }
@@ -124,7 +133,13 @@ impl dyn Object {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[derive(derive_more::Deref, derive_more::From, derive_more::Into, derive_more::FromStr)]
+#[derive(
+    derive_more::Display,
+    derive_more::Deref,
+    derive_more::From,
+    derive_more::Into,
+    derive_more::FromStr
+)]
 #[derive(serde::Deserialize)]
 pub struct ObjectId(Uuid);
 
@@ -134,73 +149,25 @@ impl ObjectId {
     }
 }
 
-#[derive(Debug)]
-pub struct PoolId<T>(NonZeroU32, PhantomData<T>);
-
-impl<'de, T> serde::Deserialize<'de> for PoolId<T> {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let id = NonZeroU32::deserialize(deserializer)?;
-        Ok(PoolId(id, PhantomData))
-    }
-}
-
-impl<T> PoolId<T> {
-    pub fn new(id: NonZeroU32) -> Self {
-        PoolId(id, PhantomData)
-    }
-}
-
-impl<T> Clone for PoolId<T> {
-    fn clone(&self) -> Self {
-        PoolId(self.0, PhantomData)
-    }
-}
-
-impl<T> Copy for PoolId<T> {}
-
-impl<T> PartialEq for PoolId<T> {
-    fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
-    }
-}
-
-impl<T> Eq for PoolId<T> {}
-
-impl<T> PartialOrd for PoolId<T> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.0.partial_cmp(&other.0)
-    }
-}
-
-impl<T> Ord for PoolId<T> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.0.cmp(&other.0)
-    }
-}
-
-impl<T> std::hash::Hash for PoolId<T> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.hash(state);
-    }
-}
-
-impl<T> Default for PoolId<T> {
-    fn default() -> Self {
-        Self(NonZeroU32::new(1).unwrap(), PhantomData::default())
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct AnyPoolId {
-    pub id: NonZeroU32,
-    pub kind: ObjectKind,
+#[derive(
+    derive_more::Display,
+    derive_more::Deref,
+    derive_more::From,
+    derive_more::Into,
+    derive_more::FromStr
+)]
+#[derive(serde::Deserialize)]
+pub struct PoolId(NonZeroU32);
+
+impl Default for PoolId {
+    fn default() -> Self {
+        Self(NonZeroU32::new(1).unwrap())
+    }
 }
 
-impl AnyPoolId {
-    pub fn new(id: NonZeroU32, kind: ObjectKind) -> Self {
-        Self { id, kind }
+impl PoolId {
+    pub fn new(id: NonZeroU32) -> Self {
+        PoolId(id)
     }
 }

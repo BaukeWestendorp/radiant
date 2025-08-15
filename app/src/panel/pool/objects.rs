@@ -2,11 +2,10 @@ use std::num::NonZeroU32;
 
 use gpui::prelude::*;
 use gpui::{Window, div};
-use radiant::engine::Command;
 use radiant::show::{Group, Object, PoolId, Sequence};
 
 use crate::panel::pool::{PoolPanel, PoolPanelDelegate};
-use crate::state::{exec_cmd_and_log_err, with_show};
+use crate::state::with_show;
 
 pub struct ObjectPool<T: Object> {
     marker: std::marker::PhantomData<T>,
@@ -21,24 +20,19 @@ impl<T: Object> ObjectPool<T> {
 impl<T: Object + 'static> PoolPanelDelegate for ObjectPool<T> {
     fn cell_has_content(&self, pool_id: NonZeroU32, cx: &mut Context<PoolPanel<Self>>) -> bool {
         let id = with_show(cx, |show| {
-            show.objects().get_by_pool_id(PoolId::<T>::new(pool_id)).map(|obj| obj.id())
+            show.objects().get_by_pool_id::<T>(PoolId::new(pool_id)).map(|obj| obj.id())
         });
         id.is_some()
     }
 
     fn handle_cell_click(
         &self,
-        pool_id: NonZeroU32,
+        _pool_id: NonZeroU32,
         _event: &gpui::ClickEvent,
         _window: &mut Window,
-        cx: &mut Context<PoolPanel<Self>>,
+        _cx: &mut Context<PoolPanel<Self>>,
     ) {
-        if let Some(id) = with_show(cx, |show| {
-            show.objects().get_by_pool_id::<Group>(PoolId::new(pool_id)).map(|group| group.id())
-        }) {
-            // FIXME: exec_cmd_and_log_err(Command::SelectReferencedFixtures {
-            //        id: id.into() }, cx);
-        }
+        todo!();
     }
 
     fn render_cell_content(
