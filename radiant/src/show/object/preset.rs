@@ -1,19 +1,18 @@
 use std::collections::HashMap;
 
-use crate::show::object::{
-    PresetBeam, PresetColor, PresetControl, PresetDimmer, PresetFocus, PresetGobo, PresetPosition,
-    PresetShapers, PresetVideo,
-};
-use crate::show::patch::{Attribute, AttributeValue, FixtureId, FixtureTypeId};
-use crate::show::{AnyObject, ObjectId, Patch, PoolId};
+use crate::show::{Attribute, AttributeValue, FixtureId, FixtureTypeId, Patch};
 
 macro_rules! preset_kind_and_content {
     ($kind:ident, $preset:ident) => {
-        impl $preset {
-            pub fn new(pool_id: PoolId<Self>, name: String) -> Self {
-                Self { pool_id, id: ObjectId::new(), name, content: PresetContent::default() }
-            }
+        #[derive(object_derive::Object)]
+        #[object_derive::object]
+        #[derive(Clone, Default)]
+        #[derive(serde::Deserialize)]
+        pub struct $preset {
+            content: PresetContent,
+        }
 
+        impl $preset {
             pub fn content(&self) -> &PresetContent {
                 &self.content
             }
@@ -48,12 +47,6 @@ macro_rules! preset_kind_and_content {
                 }
             }
         }
-
-        impl From<$preset> for AnyPreset {
-            fn from(preset: $preset) -> AnyPreset {
-                AnyPreset::$kind(preset)
-            }
-        }
     };
 }
 
@@ -66,73 +59,6 @@ preset_kind_and_content!(Focus, PresetFocus);
 preset_kind_and_content!(Control, PresetControl);
 preset_kind_and_content!(Shapers, PresetShapers);
 preset_kind_and_content!(Video, PresetVideo);
-
-pub trait PresetKind {}
-
-#[derive(Debug, Clone)]
-#[derive(serde::Deserialize)]
-pub enum AnyPreset {
-    Dimmer(PresetDimmer),
-    Position(PresetPosition),
-    Gobo(PresetGobo),
-    Color(PresetColor),
-    Beam(PresetBeam),
-    Focus(PresetFocus),
-    Control(PresetControl),
-    Shapers(PresetShapers),
-    Video(PresetVideo),
-}
-
-impl AnyPreset {
-    pub fn content(&self) -> &PresetContent {
-        match self {
-            AnyPreset::Dimmer(preset) => preset.content(),
-            AnyPreset::Position(preset) => preset.content(),
-            AnyPreset::Gobo(preset) => preset.content(),
-            AnyPreset::Color(preset) => preset.content(),
-            AnyPreset::Beam(preset) => preset.content(),
-            AnyPreset::Focus(preset) => preset.content(),
-            AnyPreset::Control(preset) => preset.content(),
-            AnyPreset::Shapers(preset) => preset.content(),
-            AnyPreset::Video(preset) => preset.content(),
-        }
-    }
-}
-
-impl From<AnyPreset> for AnyObject {
-    fn from(preset_id: AnyPreset) -> Self {
-        match preset_id {
-            AnyPreset::Dimmer(preset) => AnyObject::PresetDimmer(preset),
-            AnyPreset::Position(preset) => AnyObject::PresetPosition(preset),
-            AnyPreset::Gobo(preset) => AnyObject::PresetGobo(preset),
-            AnyPreset::Color(preset) => AnyObject::PresetColor(preset),
-            AnyPreset::Beam(preset) => AnyObject::PresetBeam(preset),
-            AnyPreset::Focus(preset) => AnyObject::PresetFocus(preset),
-            AnyPreset::Control(preset) => AnyObject::PresetControl(preset),
-            AnyPreset::Shapers(preset) => AnyObject::PresetShapers(preset),
-            AnyPreset::Video(preset) => AnyObject::PresetVideo(preset),
-        }
-    }
-}
-
-impl std::convert::TryFrom<AnyObject> for AnyPreset {
-    type Error = ();
-
-    fn try_from(any_object: AnyObject) -> Result<Self, Self::Error> {
-        match any_object {
-            AnyObject::PresetDimmer(preset) => Ok(AnyPreset::Dimmer(preset)),
-            AnyObject::PresetPosition(preset) => Ok(AnyPreset::Position(preset)),
-            AnyObject::PresetGobo(preset) => Ok(AnyPreset::Gobo(preset)),
-            AnyObject::PresetColor(preset) => Ok(AnyPreset::Color(preset)),
-            AnyObject::PresetBeam(preset) => Ok(AnyPreset::Beam(preset)),
-            AnyObject::PresetFocus(preset) => Ok(AnyPreset::Focus(preset)),
-            AnyObject::PresetControl(preset) => Ok(AnyPreset::Control(preset)),
-            AnyObject::PresetShapers(preset) => Ok(AnyPreset::Shapers(preset)),
-            AnyObject::PresetVideo(preset) => Ok(AnyPreset::Video(preset)),
-            _ => Err(()),
-        }
-    }
-}
 
 #[derive(Debug, Clone)]
 #[derive(serde::Deserialize)]

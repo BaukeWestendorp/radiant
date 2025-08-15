@@ -5,7 +5,11 @@ use std::time::Duration;
 use crate::engine::ShowHandle;
 use crate::engine::event::{EngineEvent, EventHandler};
 use crate::pipeline::Pipeline;
-use crate::show::{AnyPreset, Cue, FixtureId, PresetContent, Show};
+use crate::show::{
+    Cue, Executor, FixtureId, Group, PresetBeam, PresetColor, PresetContent, PresetControl,
+    PresetDimmer, PresetFocus, PresetGobo, PresetPosition, PresetShapers, PresetVideo, Sequence,
+    Show,
+};
 
 const PROCESSOR_FRAME_TIME: Duration = Duration::from_millis(30);
 
@@ -55,15 +59,19 @@ fn process_executors(
     show: &mut Show,
     event_handler: &Arc<EventHandler>,
 ) {
-    for executor in show.executors().cloned().collect::<Vec<_>>() {
+    let executors = show.objects.all::<Executor>().cloned().collect::<Vec<_>>();
+
+    for executor in &executors {
         let Some(sequence_id) = executor.sequence_id() else { continue };
-        let Some(sequence) = show.sequence_mut(&sequence_id) else { continue };
+        let Some(sequence) = show.objects.get_mut::<Sequence>(sequence_id) else {
+            continue;
+        };
         sequence.update_fade_times();
     }
 
     let mut fade_in_progress = false;
 
-    for executor in show.executors() {
+    for executor in executors {
         if !executor.is_on() {
             continue;
         }
@@ -122,22 +130,45 @@ fn fade_cue(
 fn process_cue(cue: &Cue, pipeline: &mut Pipeline, show: &Show) {
     for recipe in cue.recipes() {
         let Some(group_id) = recipe.group_id else { continue };
-        let Some(group) = show.group(&group_id) else {
+        let Some(group) = show.objects.get::<Group>(group_id) else {
             log::warn!("recipe references missing group id: {group_id:?}");
             continue;
         };
         let Some(preset_id) = recipe.preset_id else { continue };
-        let Some(preset) = show.preset(&preset_id) else {
+        let content = if let Some(preset) = show.objects.get::<PresetDimmer>(preset_id) {
+            preset.content()
+        } else if let Some(preset) = show.objects.get::<PresetPosition>(preset_id) {
+            preset.content()
+        } else if let Some(preset) = show.objects.get::<PresetGobo>(preset_id) {
+            preset.content()
+        } else if let Some(preset) = show.objects.get::<PresetColor>(preset_id) {
+            preset.content()
+        } else if let Some(preset) = show.objects.get::<PresetBeam>(preset_id) {
+            preset.content()
+        } else if let Some(preset) = show.objects.get::<PresetFocus>(preset_id) {
+            preset.content()
+        } else if let Some(preset) = show.objects.get::<PresetControl>(preset_id) {
+            preset.content()
+        } else if let Some(preset) = show.objects.get::<PresetShapers>(preset_id) {
+            preset.content()
+        } else if let Some(preset) = show.objects.get::<PresetVideo>(preset_id) {
+            preset.content()
+        } else {
             log::warn!("recipe references missing preset id: {preset_id:?}");
             continue;
         };
 
-        process_preset(&preset, group.fids(), pipeline, show);
+        process_preset(&content, group.fids(), pipeline, show);
     }
 }
 
-fn process_preset(preset: &AnyPreset, fids: &[FixtureId], pipeline: &mut Pipeline, show: &Show) {
-    match preset.content() {
+fn process_preset(
+    content: &PresetContent,
+    fids: &[FixtureId],
+    pipeline: &mut Pipeline,
+    show: &Show,
+) {
+    match content {
         PresetContent::Universal(universal_preset) => {
             for (attribute, value) in universal_preset.values() {
                 for fid in fids {

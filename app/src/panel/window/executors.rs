@@ -23,7 +23,9 @@ impl ExecutorsPanel {
                 .map(|ix| {
                     cx.new(|cx| {
                         let pool_id = PoolId::<Executor>::new(NonZeroU32::new(ix).unwrap());
-                        let id = with_show(cx, |show| show.object_id_from_pool_id(pool_id));
+                        let id = with_show(cx, |show| {
+                            show.objects().get_by_pool_id(pool_id).map(|exec| exec.id())
+                        });
                         ExecutorView::new(id)
                     })
                 })
@@ -54,8 +56,9 @@ impl ExecutorView {
 
 impl Render for ExecutorView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let executor =
-            with_show(cx, |show| self.executor_id.and_then(|id| show.executor(&id).cloned()));
+        let executor = with_show(cx, |show| {
+            self.executor_id.and_then(|id| show.objects().get::<Executor>(id).cloned())
+        });
 
         let executor_name =
             executor.as_ref().map(|exec| exec.name().to_string()).unwrap_or_default();

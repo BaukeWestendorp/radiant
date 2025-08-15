@@ -3,7 +3,7 @@ use std::num::NonZeroU32;
 use gpui::prelude::*;
 use gpui::{Window, div};
 use radiant::engine::Command;
-use radiant::show::{AnyObject, Object, PoolId};
+use radiant::show::{Group, Object, PoolId};
 
 use crate::panel::pool::{PoolPanel, PoolPanelDelegate};
 use crate::state::{exec_cmd_and_log_err, with_show};
@@ -23,7 +23,9 @@ impl<T: Object + 'static> PoolPanelDelegate for ObjectPool<T> {
     where
         Self: Sized,
     {
-        let id = with_show(cx, |show| show.object_id_from_pool_id(PoolId::<T>::new(pool_id)));
+        let id = with_show(cx, |show| {
+            show.objects().get_by_pool_id(PoolId::<T>::new(pool_id)).map(|obj| obj.id())
+        });
         id.is_some()
     }
 
@@ -36,17 +38,10 @@ impl<T: Object + 'static> PoolPanelDelegate for ObjectPool<T> {
     ) where
         Self: Sized,
     {
-        let Some(id) = with_show(cx, |show| show.object_id_from_pool_id(PoolId::<T>::new(pool_id)))
-        else {
-            return;
-        };
-
-        let obj = with_show(cx, |show| show.object(&id).cloned());
-        match obj {
-            Some(AnyObject::Group(_)) => {
-                exec_cmd_and_log_err(Command::SelectReferencedFixtures { id: id.into() }, cx);
-            }
-            _ => {}
+        if let Some(id) = with_show(cx, |show| {
+            show.objects().get_by_pool_id::<Group>(PoolId::new(pool_id)).map(|group| group.id())
+        }) {
+            exec_cmd_and_log_err(Command::SelectReferencedFixtures { id: id.into() }, cx);
         }
     }
 
@@ -56,14 +51,12 @@ impl<T: Object + 'static> PoolPanelDelegate for ObjectPool<T> {
         _window: &mut Window,
         cx: &mut Context<PoolPanel<Self>>,
     ) -> impl IntoElement {
-        let Some(id) = with_show(cx, |show| show.object_id_from_pool_id(PoolId::<T>::new(pool_id)))
-        else {
-            return div();
-        };
-
-        with_show(cx, |show| match show.object(&id) {
-            Some(AnyObject::Group(group)) => div().child(group.name().to_string()),
-            _ => div(),
+        with_show(cx, |show| {
+            if let Some(group) = show.objects().get_by_pool_id::<Group>(PoolId::new(pool_id)) {
+                div().child(group.name().to_string())
+            } else {
+                div()
+            }
         })
     }
 }

@@ -3331,6 +3331,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "object_derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "radiant",
+ "syn 2.0.104",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3726,6 +3736,7 @@ dependencies = [
  "eyre",
  "gdtf",
  "log",
+ "object_derive",
  "serde",
  "serde_yaml",
  "socket2",
