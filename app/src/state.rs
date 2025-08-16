@@ -1,7 +1,9 @@
 use std::time::Duration;
 
 use gpui::prelude::*;
-use gpui::{App, Entity, EventEmitter, Global, ReadGlobal, Subscription, Timer, Window};
+use gpui::{
+    App, Entity, EventEmitter, Global, ReadGlobal, Subscription, Timer, UpdateGlobal, Window,
+};
 use radiant::engine::{Command, CommandBuilder, Engine, EngineEvent, Keyword, Parameter};
 use radiant::show::Show;
 
@@ -27,6 +29,10 @@ impl AppState {
             command_builder,
             event_handler: engine_event_handler.clone(),
         });
+    }
+
+    pub fn engine(&self) -> &Engine {
+        &self.engine
     }
 
     pub fn interaction_state(&self, cx: &App) -> InteractionState {
@@ -78,11 +84,11 @@ pub fn with_show<F: FnOnce(&Show) -> R, R>(cx: &App, f: F) -> R {
     AppState::global(cx).engine.show().read(f)
 }
 
-pub fn exec_cmd(command: Command, cx: &App) -> radiant::error::Result<()> {
-    AppState::global(cx).engine.exec(command)
+pub fn exec_cmd(command: Command, cx: &mut App) -> radiant::error::Result<()> {
+    AppState::update_global(cx, |state, _| state.engine.exec(command))
 }
 
-pub fn exec_cmd_and_log_err(command: Command, cx: &App) {
+pub fn exec_cmd_and_log_err(command: Command, cx: &mut App) {
     if let Err(err) = exec_cmd(command, cx) {
         log::error!("failed to run command: {err}");
     }

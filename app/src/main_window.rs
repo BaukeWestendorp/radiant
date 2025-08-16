@@ -77,7 +77,7 @@ fn temporary_panel_grid(window: &mut Window, cx: &mut App) -> Entity<PanelGrid> 
 
         grid.add_panel(cx.new(|cx| {
             Panel::new(PanelKind::Window(WindowPanelKind::CommandLine(cx.new(|cx| {
-                WindowPanel::new(bounds(point(0, 3), size(7, 3)), CommandLinePanel::new(cx))
+                WindowPanel::new(bounds(point(0, 3), size(7, 3)), CommandLinePanel::new(window, cx))
             }))))
         }));
 
