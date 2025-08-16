@@ -76,12 +76,6 @@ fn temporary_panel_grid(window: &mut Window, cx: &mut App) -> Entity<PanelGrid> 
         }));
 
         grid.add_panel(cx.new(|cx| {
-            Panel::new(PanelKind::Window(WindowPanelKind::CommandLine(cx.new(|cx| {
-                WindowPanel::new(bounds(point(0, 3), size(7, 3)), CommandLinePanel::new(window, cx))
-            }))))
-        }));
-
-        grid.add_panel(cx.new(|cx| {
             Panel::new(PanelKind::Window(WindowPanelKind::FixturesTable(cx.new(|cx| {
                 WindowPanel::new(
                     bounds(point(12, 0), size(8, 7)),
@@ -101,8 +95,17 @@ fn temporary_panel_grid(window: &mut Window, cx: &mut App) -> Entity<PanelGrid> 
 
         grid.add_panel(cx.new(|cx| {
             Panel::new(PanelKind::Window(WindowPanelKind::Executors(cx.new(|cx| {
-                let bounds = bounds(point(0, 10), size(20, 2));
+                let bounds = bounds(point(0, 10), size(15, 2));
                 WindowPanel::new(bounds, ExecutorsPanel::new(bounds.size.width, window, cx))
+            }))))
+        }));
+
+        grid.add_panel(cx.new(|cx| {
+            Panel::new(PanelKind::Window(WindowPanelKind::CommandLine(cx.new(|cx| {
+                WindowPanel::new(
+                    bounds(point(15, 10), size(5, 2)),
+                    CommandLinePanel::new(window, cx),
+                )
             }))))
         }));
 
