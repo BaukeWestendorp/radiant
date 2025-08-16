@@ -75,11 +75,13 @@ pub trait PoolPanelDelegate {
             ElementId::NamedInteger("pool_cell".into(), u32::from(pool_id).into()),
             None,
         )
+        .flex()
+        .flex_col()
+        .size_full()
         .on_click(cx.listener(move |this, event, window, cx| {
             this.delegate.handle_cell_click(pool_id, event, window, cx);
         }))
         .disabled(!self.cell_has_content(pool_id, cx))
-        .size_full()
         .child(pool_id.to_string())
         .child(self.render_cell_content(pool_id, window, cx))
     }

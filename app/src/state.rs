@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use gpui::prelude::*;
 use gpui::{App, Entity, EventEmitter, Global, ReadGlobal, Subscription, Timer, Window};
-use radiant::engine::{Command, CommandBuilder, Engine, EngineEvent, Parameter};
+use radiant::engine::{Command, CommandBuilder, Engine, EngineEvent, Keyword, Parameter};
 use radiant::show::Show;
 
 pub fn init(engine: Engine, cx: &mut App) {
@@ -10,7 +10,7 @@ pub fn init(engine: Engine, cx: &mut App) {
 }
 
 pub struct AppState {
-    pub engine: Engine,
+    engine: Engine,
     pub command_builder: Entity<CommandBuilder>,
     event_handler: Entity<EngineEventHandler>,
 }
@@ -27,6 +27,13 @@ impl AppState {
             command_builder,
             event_handler: engine_event_handler.clone(),
         });
+    }
+
+    pub fn interaction_state(&self, cx: &App) -> InteractionState {
+        match self.command_builder.read(cx).first_keyword() {
+            Some(Keyword::Store) => InteractionState::Store,
+            _ => InteractionState::None,
+        }
     }
 }
 
@@ -57,6 +64,11 @@ impl EngineEventHandler {
 }
 
 impl EventEmitter<EngineEvent> for EngineEventHandler {}
+
+pub enum InteractionState {
+    Store,
+    None,
+}
 
 pub fn with_show<F: FnOnce(&Show) -> R, R>(cx: &App, f: F) -> R {
     AppState::global(cx).engine.show().read(f)

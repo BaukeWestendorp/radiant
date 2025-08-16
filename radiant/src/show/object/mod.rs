@@ -59,6 +59,10 @@ pub trait Object: Any + Send {
     fn pool_id(&self) -> PoolId;
 
     fn set_pool_id(&mut self, pool_id: PoolId);
+
+    fn kind() -> ObjectKind
+    where
+        Self: Sized;
 }
 
 #[derive(Default)]

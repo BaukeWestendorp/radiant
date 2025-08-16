@@ -88,15 +88,28 @@ impl Engine {
                     Selection::FixtureId(fid) => {
                         self.show.update(|show| show.selected_fixtures.push(fid));
                     }
-                    Selection::Group(object_ref) => {
-                        self.show.update(|show| {
-                            if let Some(group) =
-                                show.objects.get_by_pool_id::<Group>(object_ref.pool_id)
-                            {
-                                for fid in group.fids().to_vec() {
-                                    show.selected_fixtures.push(fid);
+                    Selection::Object(object_ref) => {
+                        self.show.update(|show| match object_ref.kind {
+                            ObjectKind::Group => {
+                                if let Some(group) =
+                                    show.objects.get_by_pool_id::<Group>(object_ref.pool_id)
+                                {
+                                    for fid in group.fids().to_vec() {
+                                        show.selected_fixtures.push(fid);
+                                    }
                                 }
                             }
+                            ObjectKind::Executor => todo!(),
+                            ObjectKind::Sequence => todo!(),
+                            ObjectKind::PresetDimmer => todo!(),
+                            ObjectKind::PresetPosition => todo!(),
+                            ObjectKind::PresetGobo => todo!(),
+                            ObjectKind::PresetColor => todo!(),
+                            ObjectKind::PresetBeam => todo!(),
+                            ObjectKind::PresetFocus => todo!(),
+                            ObjectKind::PresetControl => todo!(),
+                            ObjectKind::PresetShapers => todo!(),
+                            ObjectKind::PresetVideo => todo!(),
                         });
                     }
                     Selection::All => {
@@ -146,6 +159,7 @@ impl Engine {
                     ObjectKind::PresetShapers => todo!(),
                     ObjectKind::PresetVideo => todo!(),
                 });
+                self.exec(Command::Clear)?;
             }
             Command::Update { object: _ } => todo!(),
             Command::Remove { object: _ } => todo!(),

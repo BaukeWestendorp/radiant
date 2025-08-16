@@ -1,11 +1,17 @@
 use std::num::NonZeroU32;
 
 use gpui::prelude::*;
-use gpui::{Window, div};
-use radiant::show::{Group, Object, PoolId, Sequence};
+use gpui::{ReadGlobal, Window, div};
+use radiant::engine::{Command, ObjectReference, Selection};
+use radiant::show::{Group, Object, ObjectKind, PoolId, Sequence};
+use ui::ActiveTheme;
 
 use crate::panel::pool::{PoolPanel, PoolPanelDelegate};
-use crate::state::with_show;
+use crate::state::{
+    AppState, InteractionState, exec_cmd_and_log_err, exec_current_cmd_and_log_err,
+    process_cmd_param, with_show,
+};
+use crate::ui::STORE_COLOR;
 
 pub struct ObjectPool<T: Object> {
     marker: std::marker::PhantomData<T>,
@@ -27,12 +33,40 @@ impl<T: Object + 'static> PoolPanelDelegate for ObjectPool<T> {
 
     fn handle_cell_click(
         &self,
-        _pool_id: NonZeroU32,
+        pool_id: NonZeroU32,
         _event: &gpui::ClickEvent,
         _window: &mut Window,
-        _cx: &mut Context<PoolPanel<Self>>,
+        cx: &mut Context<PoolPanel<Self>>,
     ) {
-        todo!();
+        let kind = T::kind();
+        let pool_id = PoolId::new(pool_id);
+
+        match AppState::global(cx).interaction_state(cx) {
+            InteractionState::Store => {
+                process_cmd_param(kind, cx);
+                process_cmd_param(pool_id, cx);
+                exec_current_cmd_and_log_err(cx);
+            }
+            InteractionState::None => match kind {
+                ObjectKind::Group => exec_cmd_and_log_err(
+                    Command::Select {
+                        selection: Selection::Object(ObjectReference { kind, pool_id }),
+                    },
+                    cx,
+                ),
+                ObjectKind::Executor => todo!(),
+                ObjectKind::Sequence => todo!(),
+                ObjectKind::PresetDimmer => todo!(),
+                ObjectKind::PresetPosition => todo!(),
+                ObjectKind::PresetGobo => todo!(),
+                ObjectKind::PresetColor => todo!(),
+                ObjectKind::PresetBeam => todo!(),
+                ObjectKind::PresetFocus => todo!(),
+                ObjectKind::PresetControl => todo!(),
+                ObjectKind::PresetShapers => todo!(),
+                ObjectKind::PresetVideo => todo!(),
+            },
+        }
     }
 
     fn render_cell_content(
@@ -41,6 +75,11 @@ impl<T: Object + 'static> PoolPanelDelegate for ObjectPool<T> {
         _window: &mut Window,
         cx: &mut Context<PoolPanel<Self>>,
     ) -> impl IntoElement {
+        let border_color = match AppState::global(cx).interaction_state(cx) {
+            InteractionState::Store => STORE_COLOR.opacity(0.80),
+            InteractionState::None => gpui::transparent_black(),
+        };
+
         with_show(cx, |show| {
             if let Some(group) = show.objects().get_by_pool_id::<Group>(PoolId::new(pool_id)) {
                 div().child(group.name().to_string())
@@ -52,5 +91,9 @@ impl<T: Object + 'static> PoolPanelDelegate for ObjectPool<T> {
                 div()
             }
         })
+        .size_full()
+        .border_2()
+        .border_color(border_color)
+        .rounded(cx.theme().radius)
     }
 }

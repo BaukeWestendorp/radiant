@@ -3,3 +3,4 @@ pub mod error;
 mod main_window;
 mod panel;
 mod state;
+mod ui;

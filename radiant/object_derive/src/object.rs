@@ -43,6 +43,10 @@ fn gen_impl_object(ident: &Ident, generics: &Generics) -> proc_macro2::TokenStre
             fn set_pool_id(&mut self, pool_id: crate::show::PoolId) {
                 self.pool_id = pool_id;
             }
+
+            fn kind() -> crate::show::ObjectKind {
+                crate::show::ObjectKind::#ident
+            }
         }
     }
 }

@@ -49,10 +49,15 @@ pub enum Keyword {
 #[derive(Debug, Clone)]
 #[derive(derive_more::Display, derive_more::From, derive_more::TryInto)]
 pub enum Parameter {
+    #[try_into]
     Keyword(Keyword),
+    #[try_into]
     Selection(Selection),
+    #[try_into]
     ObjectKind(ObjectKind),
+    #[try_into]
     Integer(i32),
+    PoolId(PoolId),
 }
 
 impl TryInto<PoolId> for Parameter {
@@ -61,6 +66,7 @@ impl TryInto<PoolId> for Parameter {
     fn try_into(self) -> std::result::Result<PoolId, Self::Error> {
         match self {
             Parameter::Integer(i) if i > 0 => Ok(PoolId::new(NonZeroU32::new(i as u32).unwrap())),
+            Parameter::PoolId(pool_id) => Ok(pool_id),
             _ => Err(eyre::eyre!("Parameter cannot be converted to PoolId")),
         }
     }
@@ -70,7 +76,7 @@ impl TryInto<PoolId> for Parameter {
 #[derive(derive_more::Display)]
 pub enum Selection {
     FixtureId(FixtureId),
-    Group(ObjectReference),
+    Object(ObjectReference),
     #[display("all")]
     All,
     #[display("none")]
@@ -110,6 +116,13 @@ impl CommandBuilder {
         match (len, first) {
             (1, Parameter::Keyword(Keyword::Clear)) => true,
             _ => false,
+        }
+    }
+
+    pub fn first_keyword(&self) -> Option<&Keyword> {
+        match self.parameters.first() {
+            Some(Parameter::Keyword(kw)) => Some(kw),
+            _ => None,
         }
     }
 
