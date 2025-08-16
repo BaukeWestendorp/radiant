@@ -25,6 +25,7 @@ pub struct Engine {
     pipeline: Arc<Mutex<Pipeline>>,
     event_handler: Arc<EventHandler>,
     is_running: bool,
+    command_history: Vec<Command>,
 }
 
 impl Engine {
@@ -58,6 +59,7 @@ impl Engine {
             pipeline,
             event_handler: Arc::new(EventHandler::new()),
             is_running: false,
+            command_history: Vec::new(),
         })
     }
 
@@ -73,6 +75,10 @@ impl Engine {
         self.is_running = true;
     }
 
+    pub fn command_history(&self) -> &[Command] {
+        &self.command_history
+    }
+
     pub fn pending_events(&self) -> Vec<EngineEvent> {
         self.event_handler.pending_events()
     }
@@ -81,12 +87,12 @@ impl Engine {
         self.event_handler.drain_pending_events()
     }
 
-    pub fn exec(&self, command: Command) -> Result<(), crate::error::Error> {
-        match command {
+    pub fn exec(&mut self, command: Command) -> Result<(), crate::error::Error> {
+        match &command {
             Command::Select { selection } => {
                 match selection {
                     Selection::FixtureId(fid) => {
-                        self.show.update(|show| show.select_fixture(fid));
+                        self.show.update(|show| show.select_fixture(*fid));
                     }
                     Selection::Object(object_ref) => {
                         self.show.update(|show| match object_ref.kind {
@@ -174,6 +180,8 @@ impl Engine {
 
             Command::SetAttribute { fid: _, attribute: _, value: _ } => todo!(),
         }
+
+        self.command_history.push(command);
 
         Ok(())
     }

@@ -23,6 +23,20 @@ pub enum Command {
     SetAttribute { fid: FixtureId, attribute: Attribute, value: AttributeValue },
 }
 
+impl std::fmt::Display for Command {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Command::Select { selection } => write!(f, "select {selection}"),
+            Command::Clear => write!(f, "clear"),
+            Command::Store { destination } => write!(f, "store {destination}"),
+            Command::Update { object } => write!(f, "update {object}"),
+            Command::Delete { object } => write!(f, "delete {object}"),
+            Command::Go { executor } => write!(f, "go {executor}"),
+            Command::SetAttribute { fid: _, attribute: _, value: _ } => todo!(),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 #[derive(derive_more::Display)]
 pub enum Keyword {
