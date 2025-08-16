@@ -104,6 +104,15 @@ impl CommandBuilder {
         Ok(())
     }
 
+    pub fn is_complete(&self) -> bool {
+        let len = self.parameters.len();
+        let Some(first) = self.parameters.first() else { return false };
+        match (len, first) {
+            (1, Parameter::Keyword(Keyword::Clear)) => true,
+            _ => false,
+        }
+    }
+
     pub fn resolve(&mut self) -> Result<Option<Command>> {
         let mut params = self.parameters.clone().into_iter();
 

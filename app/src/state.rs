@@ -89,13 +89,18 @@ pub fn exec_current_cmd_and_log_err(cx: &mut App) {
 }
 
 pub fn process_cmd_param(param: impl Into<Parameter>, cx: &mut App) {
-    AppState::global(cx).command_builder.clone().update(cx, |cb, cx| {
+    let is_complete = AppState::global(cx).command_builder.clone().update(cx, |cb, cx| {
         let param = param.into();
         if let Err(err) = cb.process_param(param.clone()) {
             log::error!("failed to process command param '{param}': {err}");
         }
         cx.notify();
+        cb.is_complete()
     });
+
+    if is_complete {
+        exec_current_cmd_and_log_err(cx);
+    }
 }
 
 pub fn on_engine_event<
