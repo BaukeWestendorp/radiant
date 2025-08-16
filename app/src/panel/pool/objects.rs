@@ -11,7 +11,7 @@ use crate::state::{
     AppState, InteractionState, exec_cmd_and_log_err, exec_current_cmd_and_log_err,
     process_cmd_param, with_show,
 };
-use crate::ui::STORE_COLOR;
+use crate::ui::{DELETE_COLOR, STORE_COLOR, UPDATE_COLOR};
 
 pub struct ObjectPool<T: Object> {
     marker: std::marker::PhantomData<T>,
@@ -47,6 +47,16 @@ impl<T: Object + 'static> PoolPanelDelegate for ObjectPool<T> {
                 process_cmd_param(pool_id, cx);
                 exec_current_cmd_and_log_err(cx);
             }
+            InteractionState::Update => {
+                process_cmd_param(kind, cx);
+                process_cmd_param(pool_id, cx);
+                exec_current_cmd_and_log_err(cx);
+            }
+            InteractionState::Delete => {
+                process_cmd_param(kind, cx);
+                process_cmd_param(pool_id, cx);
+                exec_current_cmd_and_log_err(cx);
+            }
             InteractionState::None => match kind {
                 ObjectKind::Group => exec_cmd_and_log_err(
                     Command::Select {
@@ -77,6 +87,8 @@ impl<T: Object + 'static> PoolPanelDelegate for ObjectPool<T> {
     ) -> impl IntoElement {
         let border_color = match AppState::global(cx).interaction_state(cx) {
             InteractionState::Store => STORE_COLOR.opacity(0.80),
+            InteractionState::Update => UPDATE_COLOR.opacity(0.80),
+            InteractionState::Delete => DELETE_COLOR.opacity(0.80),
             InteractionState::None => gpui::transparent_black(),
         };
 

@@ -32,6 +32,8 @@ impl AppState {
     pub fn interaction_state(&self, cx: &App) -> InteractionState {
         match self.command_builder.read(cx).first_keyword() {
             Some(Keyword::Store) => InteractionState::Store,
+            Some(Keyword::Update) => InteractionState::Update,
+            Some(Keyword::Delete) => InteractionState::Delete,
             _ => InteractionState::None,
         }
     }
@@ -67,6 +69,8 @@ impl EventEmitter<EngineEvent> for EngineEventHandler {}
 
 pub enum InteractionState {
     Store,
+    Update,
+    Delete,
     None,
 }
 

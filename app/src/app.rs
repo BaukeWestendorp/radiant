@@ -34,6 +34,8 @@ mod actions {
         [
             Clear,
             Store,
+            Update,
+            Delete,
             Group,
             Executor,
             Sequence,
@@ -59,6 +61,8 @@ mod actions {
             KeyBinding::new("enter", RunCommand, None),
             KeyBinding::new("escape", Clear, None),
             KeyBinding::new("s", Store, None),
+            KeyBinding::new("u", Update, None),
+            KeyBinding::new("d", Delete, None),
             KeyBinding::new("G", Group, None),
             KeyBinding::new("E", Executor, None),
             KeyBinding::new("S", Sequence, None),
@@ -78,6 +82,8 @@ mod actions {
         cx.on_action::<RunCommand>(|_, cx| exec_current_cmd_and_log_err(cx));
         cx.on_action::<Clear>(|_, cx| process_cmd_param(Keyword::Clear, cx));
         cx.on_action::<Store>(|_, cx| process_cmd_param(Keyword::Store, cx));
+        cx.on_action::<Update>(|_, cx| process_cmd_param(Keyword::Update, cx));
+        cx.on_action::<Delete>(|_, cx| process_cmd_param(Keyword::Delete, cx));
         cx.on_action::<Group>(|_, cx| process_cmd_param(ObjectKind::Group, cx));
         cx.on_action::<Executor>(|_, cx| process_cmd_param(ObjectKind::Executor, cx));
         cx.on_action::<Sequence>(|_, cx| process_cmd_param(ObjectKind::Sequence, cx));
