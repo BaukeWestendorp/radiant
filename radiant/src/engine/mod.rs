@@ -86,7 +86,7 @@ impl Engine {
             Command::Select { selection } => {
                 match selection {
                     Selection::FixtureId(fid) => {
-                        self.show.update(|show| show.selected_fixtures.push(fid));
+                        self.show.update(|show| show.select_fixture(fid));
                     }
                     Selection::Object(object_ref) => {
                         self.show.update(|show| match object_ref.kind {
@@ -95,7 +95,7 @@ impl Engine {
                                     show.objects.get_by_pool_id::<Group>(object_ref.pool_id)
                                 {
                                     for fid in group.fids().to_vec() {
-                                        show.selected_fixtures.push(fid);
+                                        show.select_fixture(fid);
                                     }
                                 }
                             }
@@ -117,7 +117,7 @@ impl Engine {
                             let fids =
                                 show.patch().fixtures().iter().map(|f| f.fid()).collect::<Vec<_>>();
                             for fid in fids {
-                                show.selected_fixtures.push(fid);
+                                show.select_fixture(fid);
                             }
                         });
                     }
@@ -126,7 +126,7 @@ impl Engine {
                 self.event_handler.emit_event(EngineEvent::SelectionChanged);
             }
             Command::Clear => {
-                self.show.update(|show| show.selected_fixtures.clear());
+                self.show.update(|show| show.clear_selected_fixtures());
                 self.event_handler.emit_event(EngineEvent::SelectionChanged);
             }
             Command::Store { destination } => {
@@ -162,7 +162,13 @@ impl Engine {
                 self.exec(Command::Clear)?;
             }
             Command::Update { object: _ } => todo!(),
-            Command::Remove { object: _ } => todo!(),
+            Command::Delete { object } => {
+                self.show.update(|show| {
+                    if let Some(object_id) = object.object_id(show) {
+                        show.objects.remove(&object_id);
+                    }
+                });
+            }
 
             Command::Go { executor: _ } => todo!(),
 

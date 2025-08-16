@@ -21,7 +21,7 @@ pub struct Show {
     pub(crate) objects: ObjectContainer,
     pub(crate) patch: Patch,
     pub(crate) programmer: Programmer,
-    pub(crate) selected_fixtures: Vec<FixtureId>,
+    selected_fixtures: Vec<FixtureId>,
 }
 
 impl Show {
@@ -97,5 +97,15 @@ impl Show {
 
     pub fn selected_fixtures(&self) -> &[FixtureId] {
         &self.selected_fixtures
+    }
+
+    pub fn select_fixture(&mut self, fid: FixtureId) {
+        if !self.selected_fixtures().contains(&fid) {
+            self.selected_fixtures.push(fid);
+        }
+    }
+
+    pub fn clear_selected_fixtures(&mut self) {
+        self.selected_fixtures.clear();
     }
 }
