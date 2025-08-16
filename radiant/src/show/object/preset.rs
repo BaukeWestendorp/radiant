@@ -7,7 +7,7 @@ macro_rules! preset_kind_and_content {
         #[derive(object_derive::Object)]
         #[object_derive::object]
         #[derive(Clone, Default)]
-        #[derive(serde::Deserialize)]
+        #[derive(serde::Serialize, serde::Deserialize)]
         pub struct $preset {
             content: PresetContent,
         }
@@ -61,7 +61,7 @@ preset_kind_and_content!(Shapers, PresetShapers);
 preset_kind_and_content!(Video, PresetVideo);
 
 #[derive(Debug, Clone)]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum PresetContent {
     Universal(UniversalPreset),
     Global(GlobalPreset),
@@ -75,7 +75,7 @@ impl Default for PresetContent {
 }
 
 #[derive(Debug, Clone)]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct UniversalPreset {
     values: HashMap<Attribute, AttributeValue>,
 }
@@ -93,7 +93,7 @@ impl Default for UniversalPreset {
 }
 
 #[derive(Debug, Clone)]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct GlobalPreset {
     values: HashMap<(FixtureTypeId, Attribute), AttributeValue>,
 }
@@ -111,7 +111,7 @@ impl Default for GlobalPreset {
 }
 
 #[derive(Debug, Clone)]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct SelectivePreset {
     values: HashMap<(FixtureId, Attribute), AttributeValue>,
 }

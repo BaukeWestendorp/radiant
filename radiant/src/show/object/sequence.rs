@@ -6,7 +6,7 @@ use crate::show::ObjectId;
 #[derive(object_derive::Object)]
 #[object_derive::object]
 #[derive(Clone, Default)]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Sequence {
     cues: HashMap<CueId, Cue>,
 
@@ -153,7 +153,7 @@ impl Sequence {
 }
 
 #[derive(Debug, Clone)]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cue {
     id: CueId,
     name: String,
@@ -185,7 +185,7 @@ impl Cue {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct CueId(pub(crate) Vec<u32>);
 
 impl std::fmt::Display for CueId {
@@ -195,7 +195,7 @@ impl std::fmt::Display for CueId {
 }
 
 #[derive(Debug, Clone)]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Recipe {
     pub(crate) group_id: Option<ObjectId>,
     pub(crate) preset_id: Option<ObjectId>,

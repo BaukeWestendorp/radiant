@@ -144,7 +144,7 @@ impl dyn Object {
     derive_more::Into,
     derive_more::FromStr
 )]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct ObjectId(Uuid);
 
 impl ObjectId {
@@ -161,7 +161,7 @@ impl ObjectId {
     derive_more::Into,
     derive_more::FromStr
 )]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct PoolId(NonZeroU32);
 
 impl Default for PoolId {

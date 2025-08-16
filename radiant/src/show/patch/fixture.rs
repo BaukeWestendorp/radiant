@@ -17,7 +17,7 @@ use crate::show::{Attribute, AttributeValue, Patch};
     derive_more::From,
     derive_more::Into
 )]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
 pub struct FixtureId(pub u32);
 

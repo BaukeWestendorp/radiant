@@ -13,7 +13,7 @@ use crate::error::Result;
 /// protocols, such as sACN. It is responsible for describing how DMX data is
 /// sent to external systems and devices.
 #[derive(Default)]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Protocols {
     pub(crate) sacn_source_configurations: Vec<SacnSourceConfiguration>,
 }
@@ -37,7 +37,7 @@ impl Protocols {
 /// are mapped to a destination universe and transmitted, including network
 /// addressing and output type.
 #[derive(Debug, Clone)]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct SacnSourceConfiguration {
     pub(crate) name: String,
     pub(crate) priority: u8,
@@ -50,7 +50,7 @@ pub struct SacnSourceConfiguration {
 /// The [SacnOutputType] determines how DMX data is transmitted over the
 /// network, such as unicast to a specific IP address.
 #[derive(Debug, Clone)]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum SacnOutputType {
     /// Unicast output to a specific destination IP address.
     Unicast {

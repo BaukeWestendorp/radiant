@@ -14,7 +14,7 @@ use crate::show::FixtureTypeId;
 /// mapped in the show. It is responsible for describing how logical fixtures
 /// are assigned to physical DMX addresses and universes.
 #[derive(Default)]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Patch {
     pub(crate) gdtf_file_names: Vec<String>,
     pub(crate) fixtures: Vec<Fixture>,
@@ -38,7 +38,7 @@ impl Patch {
 /// A [Fixture] describes the logical-to-physical mapping for a fixture,
 /// including its unique id, the index of its GDTF file, DMX universe and
 /// channel, and the DMX mode used for addressing.
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Fixture {
     pub(crate) fid: u32,
     pub(crate) gdtf_type_id: FixtureTypeId,

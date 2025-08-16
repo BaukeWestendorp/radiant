@@ -1642,6 +1642,15 @@ impl FromStr for Attribute {
     }
 }
 
+impl serde::Serialize for Attribute {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
 impl<'de> serde::Deserialize<'de> for Attribute {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -1976,7 +1985,7 @@ mod tests {
 /// values to this valid range.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
 #[derive(derive_more::Deref, derive_more::DerefMut)]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
 pub struct AttributeValue(f32);
 

@@ -15,7 +15,7 @@ use crate::show::{
 /// control system, such as executors, sequences, cues, fixture groups, and
 /// presets.
 #[derive(Default)]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Objects {
     pub(crate) groups: Vec<Group>,
     pub(crate) sequences: Vec<Sequence>,

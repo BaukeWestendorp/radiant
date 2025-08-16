@@ -3,7 +3,7 @@ use crate::show::{ObjectId, Sequence, Show};
 #[derive(object_derive::Object)]
 #[object_derive::object]
 #[derive(Clone, Default)]
-#[derive(serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Executor {
     pub(crate) sequence_id: Option<ObjectId>,
     pub(crate) is_on: bool,
