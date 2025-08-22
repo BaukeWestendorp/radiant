@@ -30,6 +30,15 @@ impl Patch {
         serde_yaml::from_reader(reader)
             .with_context(|| format!("failed to read patch file at '{}'", path.display()))
     }
+
+    pub fn write_to_file(&self, path: &PathBuf) -> Result<()> {
+        let file = fs::File::create(path)
+            .with_context(|| format!("failed to create patch file at '{}'", path.display()))?;
+        let writer = io::BufWriter::new(file);
+        serde_yaml::to_writer(writer, &self)
+            .with_context(|| format!("failed to write patch file at '{}'", path.display()))?;
+        Ok(())
+    }
 }
 
 /// Represents a single fixture mapped in the [Patch].

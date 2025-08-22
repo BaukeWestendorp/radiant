@@ -171,7 +171,7 @@ impl Engine {
 
             Command::Save => {
                 let showfile = self.show.read(|show| Showfile::from(show));
-                dbg!(showfile);
+                showfile.save()?
             }
         }
 

@@ -44,4 +44,12 @@ impl Objects {
         serde_yaml::from_reader(reader)
             .with_context(|| format!("failed to read objects file at '{}'", path.display()))
     }
+
+    pub fn write_to_file(&self, path: &PathBuf) -> Result<()> {
+        let file = fs::File::create(path)
+            .with_context(|| format!("failed to create objects file at '{}'", path.display()))?;
+        let writer = io::BufWriter::new(file);
+        serde_yaml::to_writer(writer, self)
+            .with_context(|| format!("failed to write objects file at '{}'", path.display()))
+    }
 }

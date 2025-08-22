@@ -1,12 +1,12 @@
-executors:
-sequences:
-groups:
-dimmer_presets:
-position_presets:
-gobo_presets:
-color_presets:
-beam_presets:
-focus_presets:
-shapers_presets:
-control_presets:
-video_presets:
+groups: []
+sequences: []
+executors: []
+dimmer_presets: []
+position_presets: []
+gobo_presets: []
+color_presets: []
+beam_presets: []
+focus_presets: []
+shapers_presets: []
+control_presets: []
+video_presets: []

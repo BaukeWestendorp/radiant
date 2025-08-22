@@ -83,6 +83,18 @@ impl Showfile {
         let protocols = Protocols::read_from_file(&path.join(RELATIVE_PROTOCOLS_FILE_PATH))?;
         Ok(Self { path: Some(path.to_path_buf()), patch, protocols, objects })
     }
+
+    pub fn save(&self) -> Result<()> {
+        let Some(path) = &self.path else {
+            eyre::bail!("Showfile path is not set");
+        };
+
+        self.patch.write_to_file(&path.join(RELATIVE_PATCH_FILE_PATH))?;
+        self.objects.write_to_file(&path.join(RELATIVE_OBJECTS_FILE_PATH))?;
+        self.protocols.write_to_file(&path.join(RELATIVE_PROTOCOLS_FILE_PATH))?;
+
+        Ok(())
+    }
 }
 
 impl From<&Show> for Showfile {
