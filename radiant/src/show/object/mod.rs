@@ -60,9 +60,21 @@ pub trait Object: Any + Send {
 
     fn set_pool_id(&mut self, pool_id: PoolId);
 
-    fn kind() -> ObjectKind
-    where
-        Self: Sized;
+    fn kind(&self) -> ObjectKind;
+}
+
+impl dyn Object {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn as_mut_any(&mut self) -> &mut dyn Any {
+        self
+    }
+
+    pub fn as_impl<T: Object>(&self) -> &T {
+        self.as_any().downcast_ref::<T>().unwrap()
+    }
 }
 
 #[derive(Default)]
@@ -123,16 +135,6 @@ impl ObjectContainer {
 
     pub fn iter(&self) -> impl Iterator<Item = (&ObjectId, &Box<dyn Object>)> {
         self.objects.iter()
-    }
-}
-
-impl dyn Object {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn as_mut_any(&mut self) -> &mut dyn Any {
-        self
     }
 }
 

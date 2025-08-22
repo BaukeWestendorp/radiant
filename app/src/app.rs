@@ -47,7 +47,8 @@ mod actions {
             PresetFocus,
             PresetShapers,
             PresetControl,
-            PresetVideo
+            PresetVideo,
+            Save,
         ]
     );
 
@@ -75,6 +76,7 @@ mod actions {
             KeyBinding::new("p s", PresetShapers, None),
             KeyBinding::new("p c", PresetControl, None),
             KeyBinding::new("p v", PresetVideo, None),
+            KeyBinding::new("secondary-s", Save, None),
         ]);
     }
 
@@ -96,6 +98,7 @@ mod actions {
         cx.on_action::<PresetShapers>(|_, cx| process_cmd_param(ObjectKind::PresetShapers, cx));
         cx.on_action::<PresetControl>(|_, cx| process_cmd_param(ObjectKind::PresetControl, cx));
         cx.on_action::<PresetVideo>(|_, cx| process_cmd_param(ObjectKind::PresetVideo, cx));
+        cx.on_action::<Save>(|_, cx| process_cmd_param(Keyword::Save, cx));
         cx.observe_keystrokes(|event, _, cx| match event.keystroke.key.as_str() {
             key @ ("0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9") => {
                 let num = key.parse().unwrap();

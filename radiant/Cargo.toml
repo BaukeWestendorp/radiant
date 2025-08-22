@@ -18,3 +18,4 @@ spin_sleep.workspace = true
 thiserror.workspace = true
 uuid = { version = "1.17.0", features = ["v4"] }
 object_derive = { path = "./object_derive" }
+itertools = "0.14.0"

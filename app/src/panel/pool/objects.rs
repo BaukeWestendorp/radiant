@@ -23,7 +23,7 @@ impl<T: Object> ObjectPool<T> {
     }
 }
 
-impl<T: Object + 'static> PoolPanelDelegate for ObjectPool<T> {
+impl<T: Object + Default + 'static> PoolPanelDelegate for ObjectPool<T> {
     fn cell_has_content(&self, pool_id: NonZeroU32, cx: &mut Context<PoolPanel<Self>>) -> bool {
         let id = with_show(cx, |show| {
             show.objects().get_by_pool_id::<T>(PoolId::new(pool_id)).map(|obj| obj.id())
@@ -38,7 +38,7 @@ impl<T: Object + 'static> PoolPanelDelegate for ObjectPool<T> {
         _window: &mut Window,
         cx: &mut Context<PoolPanel<Self>>,
     ) {
-        let kind = T::kind();
+        let kind = T::default().kind();
         let pool_id = PoolId::new(pool_id);
 
         match AppState::global(cx).interaction_state(cx) {

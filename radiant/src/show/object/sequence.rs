@@ -5,7 +5,7 @@ use crate::show::ObjectId;
 
 #[derive(object_derive::Object)]
 #[object_derive::object]
-#[derive(Clone, Default)]
+#[derive(Debug, Clone, Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Sequence {
     cues: HashMap<CueId, Cue>,

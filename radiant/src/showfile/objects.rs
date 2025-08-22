@@ -14,7 +14,7 @@ use crate::show::{
 /// The `Objects` struct contains all the major elements used in the lighting
 /// control system, such as executors, sequences, cues, fixture groups, and
 /// presets.
-#[derive(Default)]
+#[derive(Debug, Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Objects {
     pub(crate) groups: Vec<Group>,

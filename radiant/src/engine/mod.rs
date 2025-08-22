@@ -179,6 +179,11 @@ impl Engine {
             Command::Go { executor: _ } => todo!(),
 
             Command::SetAttribute { fid: _, attribute: _, value: _ } => todo!(),
+
+            Command::Save => {
+                let showfile = self.show.read(|show| Showfile::from(show));
+                dbg!(showfile);
+            }
         }
 
         self.command_history.push(command);

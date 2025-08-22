@@ -3735,6 +3735,7 @@ dependencies = [
  "dmx",
  "eyre",
  "gdtf",
+ "itertools 0.14.0",
  "log",
  "object_derive",
  "serde",

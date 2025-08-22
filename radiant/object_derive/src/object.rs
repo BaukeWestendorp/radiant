@@ -19,8 +19,7 @@ fn gen_impl_object(ident: &Ident, generics: &Generics) -> proc_macro2::TokenStre
 
     quote! {
         impl #impl_generics crate::show::Object for #ident #ty_generics #where_clause {
-            fn create(id: crate::show::ObjectId, pool_id: crate::show::PoolId, name: String) -> Self
-            {
+            fn create(id: crate::show::ObjectId, pool_id: crate::show::PoolId, name: String) -> Self {
                 Self { name, id, pool_id , ..Default::default() }
             }
 
@@ -44,7 +43,7 @@ fn gen_impl_object(ident: &Ident, generics: &Generics) -> proc_macro2::TokenStre
                 self.pool_id = pool_id;
             }
 
-            fn kind() -> crate::show::ObjectKind {
+            fn kind(&self) -> crate::show::ObjectKind {
                 crate::show::ObjectKind::#ident
             }
         }

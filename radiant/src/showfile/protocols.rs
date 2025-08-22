@@ -12,7 +12,7 @@ use crate::error::Result;
 /// The [Protocols] struct contains configuration for all supported output
 /// protocols, such as sACN. It is responsible for describing how DMX data is
 /// sent to external systems and devices.
-#[derive(Default)]
+#[derive(Debug, Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Protocols {
     pub(crate) sacn_source_configurations: Vec<SacnSourceConfiguration>,

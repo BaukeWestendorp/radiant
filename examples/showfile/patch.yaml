@@ -1,10 +1,3 @@
-gdtf_file_names:
-  - Clay_Paky%40Sharpy%40ClayPaky_Official_File_Fw_Ver_2_25_006.gdtf
-  - Elation%40Cuepix_Blinder_WW2%402023-26-06_First_Release.gdtf
-  - Elation%40DARTZ_360%402023-22-05_First_Release.gdtf
-  - Generic@Dimmer@Generic.gdtf
-  - GLP%40JDC_1%40Corrected_attributes%3B_Improved_subfixtures_and_channelsets.gdtf
-  - Robe_Lighting%40Robin_600_LEDWash%402024-03-25__Zoom_range_fix.gdtf
 fixtures:
   # SPOT
   - fid: 101

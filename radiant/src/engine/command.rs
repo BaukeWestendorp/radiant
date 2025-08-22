@@ -21,6 +21,8 @@ pub enum Command {
     Go { executor: ObjectReference },
 
     SetAttribute { fid: FixtureId, attribute: Attribute, value: AttributeValue },
+
+    Save,
 }
 
 impl std::fmt::Display for Command {
@@ -33,6 +35,7 @@ impl std::fmt::Display for Command {
             Command::Delete { object } => write!(f, "delete {object}"),
             Command::Go { executor } => write!(f, "go {executor}"),
             Command::SetAttribute { fid: _, attribute: _, value: _ } => todo!(),
+            Command::Save => write!(f, "save"),
         }
     }
 }
@@ -62,6 +65,9 @@ pub enum Keyword {
 
     #[display("attribute")]
     Attribute,
+
+    #[display("save")]
+    Save,
 }
 
 #[derive(Debug, Clone)]
@@ -154,6 +160,7 @@ impl CommandBuilder {
         let Some(first) = self.parameters.first() else { return false };
         match (len, first) {
             (1, Parameter::Keyword(Keyword::Clear)) => true,
+            (1, Parameter::Keyword(Keyword::Save)) => true,
             _ => false,
         }
     }
@@ -210,6 +217,7 @@ impl CommandBuilder {
                 Command::Delete { object: parse_obj_ref(params)? }
             }
             Parameter::Keyword(Keyword::Go) => Command::Go { executor: parse_obj_ref(params)? },
+            Parameter::Keyword(Keyword::Save) => Command::Save,
             _ => eyre::bail!("unexpected start of command: {first}"),
         };
 

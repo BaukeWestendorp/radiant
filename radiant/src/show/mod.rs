@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use eyre::Context;
 use gdtf::GdtfFile;
+use itertools::Itertools;
 
 use crate::error::Result;
 use crate::showfile::{RELATIVE_GDTF_FILE_FOLDER_PATH, Showfile};
@@ -20,19 +21,22 @@ pub struct Show {
 
     pub(crate) objects: ObjectContainer,
     pub(crate) patch: Patch,
+
     pub(crate) programmer: Programmer,
     selected_fixtures: Vec<FixtureId>,
 }
 
 impl Show {
     pub fn new(showfile: Showfile) -> Result<Self> {
+        let all_fixture_type_ids = showfile.patch.fixtures.iter().map(|f| f.gdtf_type_id).unique();
+
         let mut patch = Patch::default();
-        for gdtf_file_name in &showfile.patch.gdtf_file_names {
+        for fixture_type_id in all_fixture_type_ids {
             let path = showfile
                 .path()
                 .expect("we cannot load new showfiles without a showfile path yet")
                 .join(RELATIVE_GDTF_FILE_FOLDER_PATH)
-                .join(gdtf_file_name);
+                .join(fixture_type_id.to_string());
             let file = File::open(path).wrap_err("failed to open gdtf file")?;
             let gdtf_file = GdtfFile::new(file).wrap_err("failed to load gdtf file")?;
             let fixture_type = gdtf_file.description.fixture_types[0].clone();
@@ -69,7 +73,6 @@ impl Show {
             path: showfile.path().cloned(),
 
             patch,
-
             objects,
 
             programmer: Programmer::default(),
