@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::mem;
 use std::net::IpAddr;
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
@@ -10,6 +11,7 @@ use spin_sleep::SpinSleeper;
 use crate::error::Result;
 use crate::pipeline::Pipeline;
 use crate::protocols::sacn;
+use crate::show::{ProtocolConfig, SacnOutputType};
 
 // FIXME: We should find a way to create a unique UUID for a device, without it
 // changing over it's lifetime.
@@ -27,12 +29,34 @@ pub(crate) struct Protocols {
     tx: crossbeam_channel::Sender<()>,
     rx: crossbeam_channel::Receiver<()>,
     sacn_sources: RefCell<Vec<JoinHandle<()>>>,
+    shutdown: RefCell<bool>,
 }
 
 impl Protocols {
-    pub fn new(pipeline: Arc<Mutex<Pipeline>>) -> Self {
+    pub fn new(pipeline: Arc<Mutex<Pipeline>>, config: &ProtocolConfig) -> Result<Self> {
         let (tx, rx) = crossbeam_channel::unbounded();
-        Self { pipeline, tx, rx, sacn_sources: RefCell::new(Vec::new()) }
+        let this = Self {
+            pipeline,
+            tx,
+            rx,
+            sacn_sources: RefCell::new(Vec::new()),
+            shutdown: RefCell::new(false),
+        };
+
+        for sacn_config in &config.sacn_source_configurations {
+            let ip = match sacn_config.r#type {
+                SacnOutputType::Unicast { destination_ip } => destination_ip,
+            };
+
+            this.add_sacn_source(
+                sacn_config.name.clone(),
+                ip,
+                sacn_config.priority,
+                sacn_config.preview_data,
+            )?;
+        }
+
+        Ok(this)
     }
 
     pub fn start(&self) {
@@ -56,7 +80,24 @@ impl Protocols {
             .unwrap();
     }
 
-    pub fn add_sacn_source(
+    pub fn shutdown(&self) {
+        let mut shutdown = self.shutdown.borrow_mut();
+        if *shutdown {
+            return;
+        }
+        *shutdown = true;
+
+        // Drop the sender to close the channel
+        // Replace tx with a dummy sender so self remains usable
+        let _ = mem::replace(&mut self.tx.clone(), crossbeam_channel::unbounded().0);
+
+        // Join all threads
+        for handle in self.sacn_sources.borrow_mut().drain(..) {
+            let _ = handle.join();
+        }
+    }
+
+    fn add_sacn_source(
         &self,
         name: String,
         ip: IpAddr,
@@ -98,5 +139,11 @@ impl Protocols {
         });
 
         self.sacn_sources.borrow_mut().push(handle);
+    }
+}
+
+impl Drop for Protocols {
+    fn drop(&mut self) {
+        self.shutdown();
     }
 }

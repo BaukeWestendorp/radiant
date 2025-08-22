@@ -1,6 +1,7 @@
-sacn_source_configurations:
-  - name: "Radiant sACN Source"
-    priority: 100
-    preview_data: false
-    type: !Unicast
-      destination_ip: "192.168.1.88"
+protocol_config:
+  sacn_source_configurations:
+    - name: "Radiant sACN Source"
+      priority: 100
+      preview_data: false
+      type: !Unicast
+        destination_ip: "192.168.1.88"

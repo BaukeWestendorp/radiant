@@ -11,16 +11,19 @@ use crate::showfile::{RELATIVE_GDTF_FILE_FOLDER_PATH, Showfile};
 mod object;
 mod patch;
 mod programmer;
+mod protocol_config;
 
 pub use object::*;
 pub use patch::*;
 pub use programmer::*;
+pub use protocol_config::*;
 
 pub struct Show {
     path: Option<PathBuf>,
 
     pub(crate) objects: ObjectContainer,
     pub(crate) patch: Patch,
+    pub(crate) protocol_config: ProtocolConfig,
 
     pub(crate) programmer: Programmer,
     selected_fixtures: Vec<FixtureId>,
@@ -74,6 +77,7 @@ impl Show {
 
             patch,
             objects,
+            protocol_config: showfile.protocols.protocol_config,
 
             programmer: Programmer::default(),
             selected_fixtures: vec![],
@@ -86,6 +90,10 @@ impl Show {
 
     pub fn patch(&self) -> &Patch {
         &self.patch
+    }
+
+    pub fn protocol_config(&self) -> &ProtocolConfig {
+        &self.protocol_config
     }
 
     pub fn programmer(&self) -> &Programmer {

@@ -138,7 +138,7 @@ impl From<&Show> for Showfile {
             });
         }
 
-        let mut protocols = Protocols::default();
+        let protocols = Protocols { protocol_config: show.protocol_config.clone() };
 
         Self { path: show.path().cloned(), objects, patch, protocols }
     }

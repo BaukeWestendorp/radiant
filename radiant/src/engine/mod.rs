@@ -6,9 +6,10 @@ use eyre::Context;
 
 use crate::engine::event::EventHandler;
 use crate::engine::protocols::Protocols;
+use crate::error::Result;
 use crate::pipeline::Pipeline;
 use crate::show::{Group, Object, ObjectId, ObjectKind, Show};
-use crate::showfile::{SacnOutputType, Showfile};
+use crate::showfile::Showfile;
 
 mod command;
 mod control_surface;
@@ -29,7 +30,7 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn new(showfile_path: Option<&PathBuf>) -> Result<Self, crate::error::Error> {
+    pub fn new(showfile_path: Option<&PathBuf>) -> Result<Self> {
         let showfile = match showfile_path {
             Some(path) => Showfile::load(path).wrap_err("failed to load showfile")?,
             None => Showfile::default(),
@@ -37,19 +38,7 @@ impl Engine {
 
         let pipeline = Arc::new(Mutex::new(Pipeline::new()));
 
-        let protocols = Protocols::new(pipeline.clone());
-        for configuration in &showfile.protocols.sacn_source_configurations {
-            let ip = match configuration.r#type {
-                SacnOutputType::Unicast { destination_ip } => destination_ip,
-            };
-
-            protocols.add_sacn_source(
-                configuration.name.clone(),
-                ip,
-                configuration.priority,
-                configuration.preview_data,
-            )?;
-        }
+        let protocols = Protocols::new(pipeline.clone(), &showfile.protocols.protocol_config)?;
 
         let show = Show::new(showfile).wrap_err("failed to create show from showfile")?;
 
@@ -87,7 +76,7 @@ impl Engine {
         self.event_handler.drain_pending_events()
     }
 
-    pub fn exec(&mut self, command: Command) -> Result<(), crate::error::Error> {
+    pub fn exec(&mut self, command: Command) -> Result<()> {
         match &command {
             Command::Select { selection } => {
                 match selection {
