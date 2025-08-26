@@ -39,7 +39,9 @@ impl std::fmt::Display for Command {
 
             Command::Go { executor } => write!(f, "go {executor}"),
 
-            Command::SetAttribute { fid: _, attribute: _, value: _ } => todo!(),
+            Command::SetAttribute { fid, attribute, value } => {
+                write!(f, "set_attr {fid} {attribute} {value}")
+            }
 
             Command::Save => write!(f, "save"),
         }

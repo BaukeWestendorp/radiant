@@ -1984,7 +1984,7 @@ mod tests {
 /// components, and other fixture attributes. All operations automatically clamp
 /// values to this valid range.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
-#[derive(derive_more::Deref, derive_more::DerefMut)]
+#[derive(derive_more::Deref, derive_more::DerefMut, derive_more::Display)]
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
 pub struct AttributeValue(f32);

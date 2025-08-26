@@ -176,7 +176,11 @@ impl Engine {
 
             Command::Go { executor: _ } => todo!(),
 
-            Command::SetAttribute { fid: _, attribute: _, value: _ } => todo!(),
+            Command::SetAttribute { fid, attribute, value } => {
+                self.show.update(|show| {
+                    show.programmer.set_value(*fid, attribute.clone(), *value);
+                });
+            }
 
             Command::Save => {
                 let showfile = self.show.read(|show| Showfile::from(show));
