@@ -135,8 +135,14 @@ impl Engine {
                 self.event_handler.emit_event(EngineEvent::SelectionChanged);
             }
             Command::Clear => {
-                self.show.update(|show| show.clear_selected_fixtures());
-                self.event_handler.emit_event(EngineEvent::SelectionChanged);
+                self.show.update(|show| {
+                    if !show.selected_fixtures().is_empty() {
+                        show.clear_selected_fixtures();
+                        self.event_handler.emit_event(EngineEvent::SelectionChanged);
+                    } else if !show.programmer().is_empty() {
+                        show.programmer.clear();
+                    }
+                });
             }
             Command::Store { destination } => {
                 match destination.kind {

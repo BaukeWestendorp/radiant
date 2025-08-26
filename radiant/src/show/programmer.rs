@@ -31,4 +31,9 @@ impl Programmer {
     pub fn clear(&mut self) {
         self.values.clear();
     }
+
+    /// Returns `true` if there are no values stored in the programmer.
+    pub fn is_empty(&self) -> bool {
+        self.values.is_empty()
+    }
 }
