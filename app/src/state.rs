@@ -40,6 +40,7 @@ impl AppState {
             Some(Keyword::Store) => InteractionState::Store,
             Some(Keyword::Update) => InteractionState::Update,
             Some(Keyword::Delete) => InteractionState::Delete,
+            Some(Keyword::Rename) => InteractionState::Rename,
             _ => InteractionState::None,
         }
     }
@@ -77,6 +78,7 @@ pub enum InteractionState {
     Store,
     Update,
     Delete,
+    Rename,
     None,
 }
 

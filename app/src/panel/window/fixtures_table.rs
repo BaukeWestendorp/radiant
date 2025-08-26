@@ -2,7 +2,7 @@ use gpui::prelude::*;
 use gpui::{App, ElementId, Entity, Subscription, Window, div, px};
 use radiant::engine::{Command, EngineEvent, Selection};
 use radiant::show::Fixture;
-use ui::{Table, TableColumn, TableDelegate, TableRow};
+use ui::interactive::table::{Table, TableColumn, TableDelegate, TableRow};
 
 use crate::panel::window::{WindowPanel, WindowPanelDelegate};
 use crate::state::{exec_cmd_and_log_err, on_engine_event, with_show};

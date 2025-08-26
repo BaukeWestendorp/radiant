@@ -7,7 +7,11 @@ use radiant::engine::{Command, EngineEvent};
 use radiant::gdtf::attribute::{Feature, FeatureGroup};
 use radiant::gdtf::dmx_mode::{ChannelFunction, LogicalChannel};
 use radiant::show::{Attribute, AttributeValue, FixtureId};
-use ui::{Disableable, FieldEvent, NumberField, Tab, TabView, button, section, v_divider};
+use ui::Disableable;
+use ui::interactive::button::button;
+use ui::interactive::input::{FieldEvent, NumberField};
+use ui::nav::{Tab, TabView};
+use ui::org::{section, v_divider};
 
 use crate::panel::window::{WindowPanel, WindowPanelDelegate};
 use crate::state::{exec_cmd_and_log_err, on_engine_event, with_show};

@@ -1,6 +1,7 @@
 use gpui::prelude::*;
 use gpui::{Entity, ReadGlobal, Window, div};
-use ui::{ActiveTheme, Field};
+use ui::interactive::input::Field;
+use ui::theme::ActiveTheme;
 
 use crate::panel::window::{WindowPanel, WindowPanelDelegate};
 use crate::state::AppState;

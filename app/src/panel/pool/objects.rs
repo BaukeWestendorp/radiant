@@ -4,14 +4,16 @@ use gpui::prelude::*;
 use gpui::{ReadGlobal, Window, div};
 use radiant::engine::{Command, ObjectReference, Selection};
 use radiant::show::{Group, Object, ObjectKind, PoolId, Sequence};
-use ui::ActiveTheme;
+use ui::interactive::modal::ModalExt;
+use ui::theme::ActiveTheme;
 
 use crate::panel::pool::{PoolPanel, PoolPanelDelegate};
 use crate::state::{
     AppState, InteractionState, exec_cmd_and_log_err, exec_current_cmd_and_log_err,
     process_cmd_param, with_show,
 };
-use crate::ui::{DELETE_COLOR, STORE_COLOR, UPDATE_COLOR};
+use crate::ui::modal::StringModal;
+use crate::ui::{DELETE_COLOR, RENAME_COLOR, STORE_COLOR, UPDATE_COLOR};
 
 pub struct ObjectPool<T: Object> {
     marker: std::marker::PhantomData<T>,
@@ -35,7 +37,7 @@ impl<T: Object + Default + 'static> PoolPanelDelegate for ObjectPool<T> {
         &self,
         pool_id: NonZeroU32,
         _event: &gpui::ClickEvent,
-        _window: &mut Window,
+        window: &mut Window,
         cx: &mut Context<PoolPanel<Self>>,
     ) {
         let kind = T::default().kind();
@@ -56,6 +58,17 @@ impl<T: Object + Default + 'static> PoolPanelDelegate for ObjectPool<T> {
                 process_cmd_param(kind, cx);
                 process_cmd_param(pool_id, cx);
                 exec_current_cmd_and_log_err(cx);
+            }
+            InteractionState::Rename => {
+                cx.open_modal(move |cx| {
+                    StringModal::new(window, cx).on_submit(move |value, cx| {
+                        process_cmd_param(kind, cx);
+                        process_cmd_param(pool_id, cx);
+                        process_cmd_param(value.to_string(), cx);
+                        exec_current_cmd_and_log_err(cx);
+                        cx.close_modal();
+                    })
+                });
             }
             InteractionState::None => match kind {
                 ObjectKind::Group => exec_cmd_and_log_err(
@@ -89,6 +102,7 @@ impl<T: Object + Default + 'static> PoolPanelDelegate for ObjectPool<T> {
             InteractionState::Store => STORE_COLOR.opacity(0.80),
             InteractionState::Update => UPDATE_COLOR.opacity(0.80),
             InteractionState::Delete => DELETE_COLOR.opacity(0.80),
+            InteractionState::Rename => RENAME_COLOR.opacity(0.80),
             InteractionState::None => gpui::transparent_black(),
         };
 

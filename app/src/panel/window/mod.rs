@@ -1,6 +1,6 @@
 use gpui::prelude::*;
 use gpui::{Bounds, Entity, Window, div};
-use ui::ActiveTheme;
+use ui::theme::ActiveTheme;
 use ui::utils::z_stack;
 
 mod attribute_editor;

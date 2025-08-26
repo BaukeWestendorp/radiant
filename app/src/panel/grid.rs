@@ -1,7 +1,8 @@
 use gpui::prelude::*;
 use gpui::{Entity, Size, Window, div};
+use ui::misc::dot_grid;
+use ui::theme::ActiveTheme;
 use ui::utils::z_stack;
-use ui::{ActiveTheme, dot_grid};
 
 use crate::main_window::CELL_SIZE;
 use crate::panel::Panel;

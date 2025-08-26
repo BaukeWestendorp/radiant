@@ -1,6 +1,6 @@
 use gpui::prelude::*;
 use gpui::{App, Bounds, Window, div};
-use ui::ActiveTheme;
+use ui::theme::ActiveTheme;
 
 use crate::main_window::CELL_SIZE;
 use crate::panel::pool::PoolPanelKind;

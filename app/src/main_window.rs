@@ -1,10 +1,13 @@
 use eyre::Context as _;
 use gpui::prelude::*;
 use gpui::{
-    App, Bounds, Context, Entity, Pixels, TitlebarOptions, Window, WindowBounds, WindowHandle,
-    WindowOptions, bounds, div, point, px, size,
+    App, Bounds, Context, Entity, FocusHandle, Focusable, KeyContext, Pixels, TitlebarOptions,
+    Window, WindowBounds, WindowHandle, WindowOptions, bounds, div, point, px, size,
 };
-use ui::{ActiveTheme, InteractiveColor, root, titlebar};
+use ui::interactive::input::TEXT_INPUT_KEY_CONTEXT;
+use ui::misc::{TRAFFIC_LIGHT_POSITION, titlebar};
+use ui::org::root;
+use ui::theme::{ActiveTheme, InteractiveColor};
 
 use crate::error::Result;
 use crate::panel::grid::PanelGrid;
@@ -18,8 +21,12 @@ use crate::state::with_show;
 
 pub const CELL_SIZE: Pixels = px(80.0);
 
+pub const MAIN_WINDOW_KEY_CONTEXT: &str = "MainWindow";
+
 pub struct MainWindow {
     panel_grid: Entity<PanelGrid>,
+    focus_handle: FocusHandle,
+    has_rendered: bool,
 }
 
 impl MainWindow {
@@ -30,14 +37,18 @@ impl MainWindow {
             titlebar: Some(TitlebarOptions {
                 title: Some("Radiant".into()),
                 appears_transparent: true,
-                traffic_light_position: Some(ui::TRAFFIC_LIGHT_POSITION),
+                traffic_light_position: Some(TRAFFIC_LIGHT_POSITION),
             }),
             app_id: Some("radiant".to_string()),
             ..Default::default()
         };
 
         cx.open_window(window_options, |window, cx| {
-            cx.new(|cx| Self { panel_grid: temporary_panel_grid(window, cx) })
+            cx.new(|cx| Self {
+                panel_grid: temporary_panel_grid(window, cx),
+                focus_handle: cx.focus_handle(),
+                has_rendered: false,
+            })
         })
         .map_err(|err| eyre::eyre!(err))
         .context("failed to open main window")
@@ -61,7 +72,31 @@ impl Render for MainWindow {
 
         let content = self.panel_grid.clone();
 
-        root(cx).flex().flex_col().size_full().child(titlebar).child(content)
+        let root = root().flex().flex_col().size_full().child(titlebar).child(content);
+
+        let mut key_context = KeyContext::parse(MAIN_WINDOW_KEY_CONTEXT).unwrap();
+        if self.has_rendered {
+            // FIXME: This is kind of cursed, but I can't figure out why I'm unable to do
+            // this with key contexts.
+            if !window.context_stack().iter().any(|ctx| ctx.contains(TEXT_INPUT_KEY_CONTEXT)) {
+                key_context.add("cmd_allowed");
+            }
+        } else {
+            self.has_rendered = true;
+        }
+
+        div()
+            .id("main_window")
+            .track_focus(&self.focus_handle(cx))
+            .key_context(key_context)
+            .size_full()
+            .child(root)
+    }
+}
+
+impl Focusable for MainWindow {
+    fn focus_handle(&self, _cx: &App) -> FocusHandle {
+        self.focus_handle.clone()
     }
 }
 
