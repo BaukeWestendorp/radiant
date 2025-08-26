@@ -17,6 +17,7 @@ pub enum Command {
     Store { destination: ObjectReference },
     Update { object: ObjectReference },
     Delete { object: ObjectReference },
+    Rename { object: ObjectReference, name: String },
 
     Go { executor: ObjectReference },
 
@@ -30,11 +31,16 @@ impl std::fmt::Display for Command {
         match self {
             Command::Select { selection } => write!(f, "select {selection}"),
             Command::Clear => write!(f, "clear"),
+
             Command::Store { destination } => write!(f, "store {destination}"),
             Command::Update { object } => write!(f, "update {object}"),
             Command::Delete { object } => write!(f, "delete {object}"),
+            Command::Rename { object, name } => write!(f, "label {object} \"{name}\""),
+
             Command::Go { executor } => write!(f, "go {executor}"),
+
             Command::SetAttribute { fid: _, attribute: _, value: _ } => todo!(),
+
             Command::Save => write!(f, "save"),
         }
     }
@@ -54,6 +60,8 @@ pub enum Keyword {
     Update,
     #[display("delete")]
     Delete,
+    #[display("rename")]
+    Rename,
 
     #[display("go")]
     Go,
@@ -81,6 +89,8 @@ pub enum Parameter {
     ObjectKind(ObjectKind),
     #[try_into]
     Integer(i32),
+    #[try_into]
+    String(String),
     PoolId(PoolId),
 }
 
@@ -179,21 +189,22 @@ impl CommandBuilder {
             return Ok(None);
         };
 
-        let parse_obj_ref = |mut params: std::vec::IntoIter<Parameter>| -> Result<ObjectReference> {
-            let kind = params
-                .next()
-                .wrap_err("missing object kind")?
-                .try_into()
-                .wrap_err("expected object kind")?;
-            let pool_id = params
-                .next()
-                .wrap_err("missing pool id")?
-                .try_into()
-                .wrap_err("expected pool id")?;
-            Ok(ObjectReference { kind, pool_id })
-        };
+        let parse_obj_ref =
+            |params: &mut std::vec::IntoIter<Parameter>| -> Result<ObjectReference> {
+                let kind = params
+                    .next()
+                    .wrap_err("missing object kind")?
+                    .try_into()
+                    .wrap_err("expected object kind")?;
+                let pool_id = params
+                    .next()
+                    .wrap_err("missing pool id")?
+                    .try_into()
+                    .wrap_err("expected pool id")?;
+                Ok(ObjectReference { kind, pool_id })
+            };
 
-        let parse_selection = |mut params: std::vec::IntoIter<Parameter>| -> Result<Selection> {
+        let parse_selection = |params: &mut std::vec::IntoIter<Parameter>| -> Result<Selection> {
             let selection = params
                 .next()
                 .wrap_err("missing selection")?
@@ -202,21 +213,33 @@ impl CommandBuilder {
             Ok(selection)
         };
 
+        let parse_string = |params: &mut std::vec::IntoIter<Parameter>| -> Result<String> {
+            let string =
+                params.next().wrap_err("missing string")?.try_into().wrap_err("expected string")?;
+            Ok(string)
+        };
+
         let command = match first {
             Parameter::Keyword(Keyword::Select) => {
-                Command::Select { selection: parse_selection(params)? }
+                Command::Select { selection: parse_selection(&mut params)? }
             }
             Parameter::Keyword(Keyword::Clear) => Command::Clear,
             Parameter::Keyword(Keyword::Store) => {
-                Command::Store { destination: parse_obj_ref(params)? }
+                Command::Store { destination: parse_obj_ref(&mut params)? }
             }
             Parameter::Keyword(Keyword::Update) => {
-                Command::Update { object: parse_obj_ref(params)? }
+                Command::Update { object: parse_obj_ref(&mut params)? }
             }
             Parameter::Keyword(Keyword::Delete) => {
-                Command::Delete { object: parse_obj_ref(params)? }
+                Command::Delete { object: parse_obj_ref(&mut params)? }
             }
-            Parameter::Keyword(Keyword::Go) => Command::Go { executor: parse_obj_ref(params)? },
+            Parameter::Keyword(Keyword::Rename) => Command::Rename {
+                object: parse_obj_ref(&mut params)?,
+                name: parse_string(&mut params)?,
+            },
+            Parameter::Keyword(Keyword::Go) => {
+                Command::Go { executor: parse_obj_ref(&mut params)? }
+            }
             Parameter::Keyword(Keyword::Save) => Command::Save,
             _ => eyre::bail!("unexpected start of command: {first}"),
         };

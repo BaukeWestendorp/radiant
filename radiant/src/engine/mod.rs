@@ -164,6 +164,15 @@ impl Engine {
                     }
                 });
             }
+            Command::Rename { object, name } => {
+                self.show.update(|show| {
+                    if let Some(object_id) = object.object_id(show) {
+                        if let Some(object) = show.objects.get_object(object_id) {
+                            object.as_mut().set_name(name.clone());
+                        }
+                    }
+                });
+            }
 
             Command::Go { executor: _ } => todo!(),
 

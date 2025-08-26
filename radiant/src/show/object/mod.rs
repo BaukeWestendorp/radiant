@@ -109,6 +109,10 @@ impl ObjectContainer {
         })
     }
 
+    pub fn get_object(&mut self, id: ObjectId) -> Option<&mut Box<dyn Object>> {
+        self.objects.get_mut(&id)
+    }
+
     pub fn all<T: Object>(&self) -> impl Iterator<Item = &T> {
         self.objects.values().filter_map(|obj| obj.as_ref().as_any().downcast_ref::<T>())
     }
