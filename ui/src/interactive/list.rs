@@ -1,10 +1,29 @@
 use std::ops::Range;
 
 use gpui::prelude::*;
-use gpui::{Div, ElementId, EventEmitter, FocusHandle, SharedString, Window, div, uniform_list};
+use gpui::{
+    App, Div, ElementId, EventEmitter, FocusHandle, KeyBinding, SharedString, Window, div,
+    uniform_list,
+};
 use smallvec::SmallVec;
 
-use crate::{ContainerStyle, Selectable, SubmitEvent, interactive_container};
+use crate::Selectable;
+use crate::interactive::event::SubmitEvent;
+use crate::org::{ContainerStyle, interactive_container};
+
+pub const LIST_KEY_CONTEXT: &str = "List";
+
+pub mod actions {
+    gpui::actions!(new_node_menu, [SelectNextItem, SelectPreviousItem, Submit]);
+}
+
+pub(super) fn init(cx: &mut App) {
+    cx.bind_keys([
+        KeyBinding::new("up", actions::SelectPreviousItem, Some(LIST_KEY_CONTEXT)),
+        KeyBinding::new("down", actions::SelectNextItem, Some(LIST_KEY_CONTEXT)),
+        KeyBinding::new("enter", actions::Submit, Some(LIST_KEY_CONTEXT)),
+    ]);
+}
 
 pub struct List<T> {
     items: SmallVec<[T; 2]>,
@@ -143,7 +162,7 @@ impl<T: 'static> Render for List<T> {
             }),
         )
         .track_focus(&self.focus_handle)
-        .key_context(actions::KEY_CONTEXT)
+        .key_context(LIST_KEY_CONTEXT)
         .py_1()
         .size_full()
         .on_action(cx.listener(Self::handle_select_next_item))
@@ -153,23 +172,3 @@ impl<T: 'static> Render for List<T> {
 }
 
 impl<T: 'static> EventEmitter<SubmitEvent> for List<T> {}
-
-pub mod actions {
-    use gpui::{App, KeyBinding, actions};
-
-    pub const KEY_CONTEXT: &str = "List";
-
-    actions!(new_node_menu, [SelectNextItem, SelectPreviousItem, Submit]);
-
-    pub fn init(cx: &mut App) {
-        bind_keys(cx);
-    }
-
-    fn bind_keys(cx: &mut App) {
-        cx.bind_keys([
-            KeyBinding::new("up", SelectPreviousItem, Some(KEY_CONTEXT)),
-            KeyBinding::new("down", SelectNextItem, Some(KEY_CONTEXT)),
-            KeyBinding::new("enter", Submit, Some(KEY_CONTEXT)),
-        ]);
-    }
-}

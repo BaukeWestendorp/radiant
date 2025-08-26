@@ -1,7 +1,7 @@
 use gpui::prelude::*;
 use gpui::{ElementId, FocusHandle, div};
 
-use crate::{InteractiveContainer, interactive_container};
+use crate::org::{InteractiveContainer, interactive_container};
 
 pub fn button(
     id: impl Into<ElementId>,

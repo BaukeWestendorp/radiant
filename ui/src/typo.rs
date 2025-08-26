@@ -4,7 +4,7 @@ use gpui::{
     div, px,
 };
 
-use crate::{ActiveTheme, InteractiveColor};
+use crate::theme::{ActiveTheme, InteractiveColor};
 
 pub fn h1(text: impl Into<SharedString>) -> Div {
     div()

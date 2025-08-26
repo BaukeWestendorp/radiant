@@ -5,10 +5,11 @@ use gpui::{
     relative,
 };
 
+use crate::Disableable;
+use crate::interactive::input::{FieldEvent, TextInput, TextInputEvent};
+use crate::org::interactive_container;
+use crate::theme::ActiveTheme;
 use crate::utils::{bounds_updater, z_stack};
-use crate::{
-    ActiveTheme, Disableable, FieldEvent, TextInput, TextInputEvent, interactive_container,
-};
 
 pub struct NumberField<I: NumberFieldImpl> {
     id: ElementId,

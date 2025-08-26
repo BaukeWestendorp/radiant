@@ -1,27 +1,16 @@
-mod button;
-mod context_menu;
-mod draggable;
-mod event;
-mod input;
-mod list;
-mod pannable;
-mod table;
+pub mod button;
+pub mod context_menu;
+pub mod draggable;
+pub mod event;
+pub mod input;
+pub mod list;
+pub mod modal;
+pub mod pannable;
+pub mod table;
 
-pub use button::*;
-pub use context_menu::*;
-pub use draggable::*;
-pub use event::*;
-pub use input::*;
-pub use list::*;
-pub use pannable::*;
-pub use table::*;
-
-pub mod actions {
-    use gpui::App;
-
-    pub fn init(cx: &mut App) {
-        super::input::actions::init(cx);
-        super::context_menu::actions::init(cx);
-        super::list::actions::init(cx);
-    }
+pub(super) fn init(cx: &mut gpui::App) {
+    input::init(cx);
+    context_menu::init(cx);
+    list::init(cx);
+    modal::init(cx);
 }

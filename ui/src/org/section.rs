@@ -2,7 +2,8 @@ use gpui::prelude::*;
 use gpui::{AnyElement, App, Div, StyleRefinement, Window, div};
 use smallvec::SmallVec;
 
-use crate::{ActiveTheme, InteractiveColor, h_divider};
+use crate::org::h_divider;
+use crate::theme::{ActiveTheme, InteractiveColor};
 
 pub fn section(title: &'static str) -> Section {
     Section::new(title)

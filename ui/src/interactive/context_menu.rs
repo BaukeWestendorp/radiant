@@ -1,7 +1,24 @@
 use gpui::prelude::*;
-use gpui::{Action, DismissEvent, EventEmitter, FocusHandle, SharedString, Window, div};
+use gpui::{
+    Action, App, DismissEvent, EventEmitter, FocusHandle, KeyBinding, SharedString, Window, div,
+};
 
-use crate::{ContainerStyle, container, h_divider, interactive_container};
+use crate::org::{ContainerStyle, container, h_divider, interactive_container};
+
+pub const CONTEXT_MENU_KEY_CONTEXT: &str = "ContextMenu";
+
+pub mod actions {
+    gpui::actions!(graph_editor, [SelectNext, SelectPrevious, Confirm, Cancel]);
+}
+
+pub(super) fn init(cx: &mut App) {
+    cx.bind_keys([
+        KeyBinding::new("down", actions::SelectNext, Some(CONTEXT_MENU_KEY_CONTEXT)),
+        KeyBinding::new("up", actions::SelectPrevious, Some(CONTEXT_MENU_KEY_CONTEXT)),
+        KeyBinding::new("enter", actions::Confirm, Some(CONTEXT_MENU_KEY_CONTEXT)),
+        KeyBinding::new("escape", actions::Cancel, Some(CONTEXT_MENU_KEY_CONTEXT)),
+    ]);
+}
 
 pub enum ContextMenuItem {
     Action { label: SharedString, action: Box<dyn Action>, destructive: bool },
@@ -106,7 +123,7 @@ impl Render for ContextMenu {
         container(ContainerStyle::normal(window, cx)).occlude().shadow_md().child(
             div()
                 .track_focus(&self.focus_handle)
-                .key_context(actions::KEY_CONTEXT)
+                .key_context(CONTEXT_MENU_KEY_CONTEXT)
                 .id("context_menu")
                 .size_full()
                 .my_1()
@@ -127,24 +144,3 @@ impl Render for ContextMenu {
 }
 
 impl EventEmitter<DismissEvent> for ContextMenu {}
-
-pub mod actions {
-    use gpui::{App, KeyBinding, actions};
-
-    pub const KEY_CONTEXT: &str = "ContextMenu";
-
-    actions!(graph_editor, [SelectNext, SelectPrevious, Confirm, Cancel]);
-
-    pub fn init(cx: &mut App) {
-        bind_keys(cx);
-    }
-
-    fn bind_keys(cx: &mut App) {
-        cx.bind_keys([
-            KeyBinding::new("down", SelectNext, Some(KEY_CONTEXT)),
-            KeyBinding::new("up", SelectPrevious, Some(KEY_CONTEXT)),
-            KeyBinding::new("enter", Confirm, Some(KEY_CONTEXT)),
-            KeyBinding::new("escape", Cancel, Some(KEY_CONTEXT)),
-        ]);
-    }
-}

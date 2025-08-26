@@ -13,7 +13,7 @@ pub struct Theme {
 }
 
 impl Theme {
-    pub fn init(cx: &mut gpui::App) {
+    pub(super) fn init(cx: &mut gpui::App) {
         cx.set_global(Theme::default());
     }
 }

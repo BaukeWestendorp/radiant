@@ -23,7 +23,7 @@ impl AssetSource for Assets {
     }
 }
 
-pub fn load_fonts(cx: &mut App) -> gpui::Result<()> {
+pub(crate) fn load_fonts(cx: &mut App) -> gpui::Result<()> {
     let font_paths = cx.asset_source().list("fonts")?;
     let mut embedded_fonts = Vec::new();
     for font_path in font_paths {

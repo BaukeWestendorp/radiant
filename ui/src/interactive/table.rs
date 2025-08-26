@@ -4,7 +4,7 @@ use std::ops::Range;
 use gpui::prelude::*;
 use gpui::{App, ClickEvent, Div, ElementId, Pixels, Window, div, px, uniform_list};
 
-use crate::{ActiveTheme, InteractiveColor};
+use crate::theme::{ActiveTheme, InteractiveColor};
 
 pub struct Table<D: TableDelegate>
 where

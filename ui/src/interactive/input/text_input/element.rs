@@ -1,4 +1,5 @@
-use crate::{ActiveTheme, InteractiveColor, TextInput};
+use crate::interactive::input::TextInput;
+use crate::theme::{ActiveTheme, InteractiveColor};
 
 use gpui::prelude::*;
 use gpui::{

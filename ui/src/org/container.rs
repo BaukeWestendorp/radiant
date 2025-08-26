@@ -5,7 +5,8 @@ use gpui::{
 };
 use smallvec::SmallVec;
 
-use crate::{ActiveTheme, Disableable, InteractiveColor, Selectable};
+use crate::theme::{ActiveTheme, InteractiveColor};
+use crate::{Disableable, Selectable};
 
 pub fn container(style: ContainerStyle) -> Container {
     Container::new(style)
