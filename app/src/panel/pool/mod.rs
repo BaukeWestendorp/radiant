@@ -2,7 +2,10 @@ use std::num::NonZeroU32;
 
 use gpui::prelude::*;
 use gpui::{Bounds, ClickEvent, ElementId, Entity, Window, div};
-use radiant::show::{Group, Sequence};
+use radiant::show::{
+    Group, PresetBeam, PresetColor, PresetControl, PresetDimmer, PresetFocus, PresetGobo,
+    PresetPosition, PresetShapers, PresetVideo, Sequence,
+};
 use ui::Disableable;
 use ui::org::interactive_container;
 use ui::theme::ActiveTheme;
@@ -18,6 +21,15 @@ use crate::main_window::CELL_SIZE;
 pub enum PoolPanelKind {
     Group(Entity<PoolPanel<ObjectPool<Group>>>),
     Sequence(Entity<PoolPanel<ObjectPool<Sequence>>>),
+    PresetDimmer(Entity<PoolPanel<ObjectPool<PresetDimmer>>>),
+    PresetPosition(Entity<PoolPanel<ObjectPool<PresetPosition>>>),
+    PresetGobo(Entity<PoolPanel<ObjectPool<PresetGobo>>>),
+    PresetColor(Entity<PoolPanel<ObjectPool<PresetColor>>>),
+    PresetBeam(Entity<PoolPanel<ObjectPool<PresetBeam>>>),
+    PresetFocus(Entity<PoolPanel<ObjectPool<PresetFocus>>>),
+    PresetControl(Entity<PoolPanel<ObjectPool<PresetControl>>>),
+    PresetShapers(Entity<PoolPanel<ObjectPool<PresetShapers>>>),
+    PresetVideo(Entity<PoolPanel<ObjectPool<PresetVideo>>>),
 }
 
 pub struct PoolPanel<D: PoolPanelDelegate> {

@@ -4,4 +4,4 @@ protocol_config:
     priority: 100
     preview_data: false
     type: !Unicast
-      destination_ip: 192.168.1.88
+      destination_ip: 127.0.0.1

@@ -9,42 +9,16 @@ macro_rules! preset_kind_and_content {
         #[derive(Debug, Clone, Default)]
         #[derive(serde::Serialize, serde::Deserialize)]
         pub struct $preset {
-            content: PresetContent,
+            pub(crate) content: PresetContent,
         }
 
-        impl $preset {
-            pub fn content(&self) -> &PresetContent {
+        impl PresetObject for $preset {
+            fn content(&self) -> &PresetContent {
                 &self.content
             }
 
-            pub fn fixture_ids(&self, patch: &Patch) -> Vec<FixtureId> {
-                match &self.content {
-                    PresetContent::Universal(preset) => {
-                        let mut attributes = preset.values().keys();
-                        patch
-                            .fixtures()
-                            .iter()
-                            .filter(|fixture| {
-                                attributes.any(|attr| fixture.has_attribute(attr, patch))
-                            })
-                            .map(|f| f.fid())
-                            .collect()
-                    }
-                    PresetContent::Global(preset) => {
-                        let mut fixture_types = preset.values().keys().map(|(f_ty, _)| f_ty);
-                        patch
-                            .fixtures()
-                            .iter()
-                            .filter(|fixture| {
-                                fixture_types.any(|f_ty| f_ty == fixture.fixture_type_id())
-                            })
-                            .map(|f| f.fid())
-                            .collect()
-                    }
-                    PresetContent::Selective(preset) => {
-                        preset.values().keys().map(|(fid, _)| *fid).collect()
-                    }
-                }
+            fn content_mut(&mut self) -> &mut PresetContent {
+                &mut self.content
             }
         }
     };
@@ -59,6 +33,43 @@ preset_kind_and_content!(Focus, PresetFocus);
 preset_kind_and_content!(Control, PresetControl);
 preset_kind_and_content!(Shapers, PresetShapers);
 preset_kind_and_content!(Video, PresetVideo);
+
+pub trait PresetObject {
+    fn content(&self) -> &PresetContent;
+
+    fn content_mut(&mut self) -> &mut PresetContent;
+
+    fn fids(&self, patch: &Patch) -> Vec<FixtureId> {
+        match self.content() {
+            PresetContent::Universal(preset) => {
+                let attributes = preset.values().keys().collect::<Vec<_>>();
+                patch
+                    .fixtures()
+                    .iter()
+                    .filter(|fixture| {
+                        attributes.iter().any(|attr| fixture.has_attribute(attr, patch))
+                    })
+                    .map(|f| f.fid())
+                    .collect()
+            }
+            PresetContent::Global(preset) => {
+                let fixture_types =
+                    preset.values().keys().map(|(f_ty, _)| f_ty).collect::<Vec<_>>();
+                patch
+                    .fixtures()
+                    .iter()
+                    .filter(|fixture| {
+                        fixture_types.iter().any(|f_ty| *f_ty == fixture.fixture_type_id())
+                    })
+                    .map(|f| f.fid())
+                    .collect()
+            }
+            PresetContent::Selective(preset) => {
+                preset.values().keys().map(|(fid, _)| *fid).collect()
+            }
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -84,6 +95,10 @@ impl UniversalPreset {
     pub fn values(&self) -> &HashMap<Attribute, AttributeValue> {
         &self.values
     }
+
+    pub fn set_value(&mut self, attribute: Attribute, value: AttributeValue) {
+        self.values.insert(attribute, value);
+    }
 }
 
 impl Default for UniversalPreset {
@@ -102,6 +117,15 @@ impl GlobalPreset {
     pub fn values(&self) -> &HashMap<(FixtureTypeId, Attribute), AttributeValue> {
         &self.values
     }
+
+    pub fn set_value(
+        &mut self,
+        fixture_type_id: FixtureTypeId,
+        attribute: Attribute,
+        value: AttributeValue,
+    ) {
+        self.values.insert((fixture_type_id, attribute), value);
+    }
 }
 
 impl Default for GlobalPreset {
@@ -119,6 +143,10 @@ pub struct SelectivePreset {
 impl SelectivePreset {
     pub fn values(&self) -> &HashMap<(FixtureId, Attribute), AttributeValue> {
         &self.values
+    }
+
+    pub fn set_value(&mut self, fid: FixtureId, attribute: Attribute, value: AttributeValue) {
+        self.values.insert((fid, attribute), value);
     }
 }
 

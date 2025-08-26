@@ -18,6 +18,7 @@ pub enum Command {
     Update { object: ObjectReference },
     Delete { object: ObjectReference },
     Rename { object: ObjectReference, name: String },
+    Recall { object: ObjectReference },
 
     Go { executor: ObjectReference },
 
@@ -36,6 +37,7 @@ impl std::fmt::Display for Command {
             Command::Update { object } => write!(f, "update {object}"),
             Command::Delete { object } => write!(f, "delete {object}"),
             Command::Rename { object, name } => write!(f, "label {object} \"{name}\""),
+            Command::Recall { object } => write!(f, "recall {object}"),
 
             Command::Go { executor } => write!(f, "go {executor}"),
 
@@ -48,7 +50,7 @@ impl std::fmt::Display for Command {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[derive(derive_more::Display)]
 pub enum Keyword {
     #[display("select")]
@@ -64,6 +66,8 @@ pub enum Keyword {
     Delete,
     #[display("rename")]
     Rename,
+    #[display("recall")]
+    Recall,
 
     #[display("go")]
     Go,
@@ -239,6 +243,9 @@ impl CommandBuilder {
                 object: parse_obj_ref(&mut params)?,
                 name: parse_string(&mut params)?,
             },
+            Parameter::Keyword(Keyword::Recall) => {
+                Command::Recall { object: parse_obj_ref(&mut params)? }
+            }
             Parameter::Keyword(Keyword::Go) => {
                 Command::Go { executor: parse_obj_ref(&mut params)? }
             }

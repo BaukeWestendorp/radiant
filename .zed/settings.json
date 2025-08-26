@@ -7,6 +7,7 @@
             "!Unicast mapping",
             "!ControlChange scalar",
             "!Universal mapping",
+            "!Global mapping",
             "!Selective mapping",
             "!Dimmer scalar",
             "!Position scalar",

@@ -106,7 +106,12 @@ fn temporary_panel_grid(window: &mut Window, cx: &mut App) -> Entity<PanelGrid> 
 
         grid.add_panel(cx.new(|cx| {
             Panel::new(PanelKind::Pool(PoolPanelKind::Group(
-                cx.new(|_| PoolPanel::new(bounds(point(0, 0), size(7, 3)), ObjectPool::new())),
+                cx.new(|_| PoolPanel::new(bounds(point(0, 0), size(6, 3)), ObjectPool::new())),
+            )))
+        }));
+        grid.add_panel(cx.new(|cx| {
+            Panel::new(PanelKind::Pool(PoolPanelKind::PresetDimmer(
+                cx.new(|_| PoolPanel::new(bounds(point(0, 3), size(6, 3)), ObjectPool::new())),
             )))
         }));
 

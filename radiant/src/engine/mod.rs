@@ -8,7 +8,11 @@ use crate::engine::event::EventHandler;
 use crate::engine::protocols::Protocols;
 use crate::error::Result;
 use crate::pipeline::Pipeline;
-use crate::show::{Group, Object, ObjectId, ObjectKind, Show};
+use crate::show::{
+    Attribute, AttributeValue, FixtureId, Group, Object, ObjectId, ObjectKind, PoolId, PresetBeam,
+    PresetColor, PresetContent, PresetControl, PresetDimmer, PresetFocus, PresetGobo, PresetObject,
+    PresetPosition, PresetShapers, PresetVideo, Show,
+};
 use crate::showfile::Showfile;
 
 mod command;
@@ -83,30 +87,40 @@ impl Engine {
                     Selection::FixtureId(fid) => {
                         self.show.update(|show| show.select_fixture(*fid));
                     }
-                    Selection::Object(object_ref) => {
-                        self.show.update(|show| match object_ref.kind {
-                            ObjectKind::Group => {
+                    Selection::Object(object) => match object.kind {
+                        ObjectKind::Group => {
+                            self.show.update(|show| {
                                 if let Some(group) =
-                                    show.objects.get_by_pool_id::<Group>(object_ref.pool_id)
+                                    show.objects.get_by_pool_id::<Group>(object.pool_id)
                                 {
                                     for fid in group.fids().to_vec() {
                                         show.select_fixture(fid);
                                     }
                                 }
-                            }
-                            ObjectKind::Executor => todo!(),
-                            ObjectKind::Sequence => todo!(),
-                            ObjectKind::PresetDimmer => todo!(),
-                            ObjectKind::PresetPosition => todo!(),
-                            ObjectKind::PresetGobo => todo!(),
-                            ObjectKind::PresetColor => todo!(),
-                            ObjectKind::PresetBeam => todo!(),
-                            ObjectKind::PresetFocus => todo!(),
-                            ObjectKind::PresetControl => todo!(),
-                            ObjectKind::PresetShapers => todo!(),
-                            ObjectKind::PresetVideo => todo!(),
-                        });
-                    }
+                            });
+                        }
+                        ObjectKind::Executor => todo!(),
+                        ObjectKind::Sequence => todo!(),
+                        ObjectKind::PresetDimmer => {
+                            self.show.update(|show| {
+                                if let Some(preset) =
+                                    show.objects.get_by_pool_id::<PresetDimmer>(object.pool_id)
+                                {
+                                    for fid in preset.fids(show.patch()).to_vec() {
+                                        show.select_fixture(fid);
+                                    }
+                                }
+                            });
+                        }
+                        ObjectKind::PresetPosition => todo!(),
+                        ObjectKind::PresetGobo => todo!(),
+                        ObjectKind::PresetColor => todo!(),
+                        ObjectKind::PresetBeam => todo!(),
+                        ObjectKind::PresetFocus => todo!(),
+                        ObjectKind::PresetControl => todo!(),
+                        ObjectKind::PresetShapers => todo!(),
+                        ObjectKind::PresetVideo => todo!(),
+                    },
                     Selection::All => {
                         self.show.update(|show| {
                             let fids =
@@ -125,35 +139,55 @@ impl Engine {
                 self.event_handler.emit_event(EngineEvent::SelectionChanged);
             }
             Command::Store { destination } => {
-                self.show.update(|show| match destination.kind {
+                match destination.kind {
                     ObjectKind::Group => {
-                        let fids = show.selected_fixtures().to_vec();
-                        if let Some(group) =
-                            show.objects.get_mut_by_pool_id::<Group>(destination.pool_id)
-                        {
-                            group.fids = fids;
-                        } else {
-                            let mut group = Group::create(
-                                ObjectId::new(),
-                                destination.pool_id,
-                                "New Group".to_string(),
-                            );
-                            group.fids = fids;
-                            show.objects.insert(group);
-                        }
+                        self.show.update(|show| {
+                            let fids = show.selected_fixtures().to_vec();
+                            if let Some(group) =
+                                show.objects.get_mut_by_pool_id::<Group>(destination.pool_id)
+                            {
+                                group.fids = fids;
+                            } else {
+                                let mut group = Group::create(
+                                    ObjectId::new(),
+                                    destination.pool_id,
+                                    "New Group".to_string(),
+                                );
+                                group.fids = fids;
+                                show.objects.insert(group);
+                            }
+                        });
                     }
                     ObjectKind::Executor => todo!(),
                     ObjectKind::Sequence => todo!(),
-                    ObjectKind::PresetDimmer => todo!(),
-                    ObjectKind::PresetPosition => todo!(),
-                    ObjectKind::PresetGobo => todo!(),
-                    ObjectKind::PresetColor => todo!(),
-                    ObjectKind::PresetBeam => todo!(),
-                    ObjectKind::PresetFocus => todo!(),
-                    ObjectKind::PresetControl => todo!(),
-                    ObjectKind::PresetShapers => todo!(),
-                    ObjectKind::PresetVideo => todo!(),
-                });
+                    ObjectKind::PresetDimmer => {
+                        self.store_preset::<PresetDimmer>(destination.pool_id);
+                    }
+                    ObjectKind::PresetPosition => {
+                        self.store_preset::<PresetPosition>(destination.pool_id);
+                    }
+                    ObjectKind::PresetGobo => {
+                        self.store_preset::<PresetGobo>(destination.pool_id);
+                    }
+                    ObjectKind::PresetColor => {
+                        self.store_preset::<PresetColor>(destination.pool_id);
+                    }
+                    ObjectKind::PresetBeam => {
+                        self.store_preset::<PresetBeam>(destination.pool_id);
+                    }
+                    ObjectKind::PresetFocus => {
+                        self.store_preset::<PresetFocus>(destination.pool_id);
+                    }
+                    ObjectKind::PresetControl => {
+                        self.store_preset::<PresetControl>(destination.pool_id);
+                    }
+                    ObjectKind::PresetShapers => {
+                        self.store_preset::<PresetShapers>(destination.pool_id);
+                    }
+                    ObjectKind::PresetVideo => {
+                        self.store_preset::<PresetVideo>(destination.pool_id);
+                    }
+                }
                 self.exec(Command::Clear)?;
             }
             Command::Update { object: _ } => todo!(),
@@ -173,6 +207,40 @@ impl Engine {
                     }
                 });
             }
+            Command::Recall { object } => match object.kind {
+                ObjectKind::Group => {
+                    self.exec(Command::Select { selection: Selection::Object(object.clone()) })?;
+                }
+                ObjectKind::Executor => todo!(),
+                ObjectKind::Sequence => todo!(),
+                ObjectKind::PresetDimmer => {
+                    self.recall_preset::<PresetDimmer>(&object)?;
+                }
+                ObjectKind::PresetPosition => {
+                    self.recall_preset::<PresetPosition>(&object)?;
+                }
+                ObjectKind::PresetGobo => {
+                    self.recall_preset::<PresetGobo>(&object)?;
+                }
+                ObjectKind::PresetColor => {
+                    self.recall_preset::<PresetColor>(&object)?;
+                }
+                ObjectKind::PresetBeam => {
+                    self.recall_preset::<PresetBeam>(&object)?;
+                }
+                ObjectKind::PresetFocus => {
+                    self.recall_preset::<PresetFocus>(&object)?;
+                }
+                ObjectKind::PresetControl => {
+                    self.recall_preset::<PresetControl>(&object)?;
+                }
+                ObjectKind::PresetShapers => {
+                    self.recall_preset::<PresetShapers>(&object)?;
+                }
+                ObjectKind::PresetVideo => {
+                    self.recall_preset::<PresetVideo>(&object)?;
+                }
+            },
 
             Command::Go { executor: _ } => todo!(),
 
@@ -195,6 +263,117 @@ impl Engine {
 
     pub fn show(&self) -> &ShowHandle {
         &self.show
+    }
+
+    fn store_preset<T: Object + PresetObject + Default>(&self, pool_id: PoolId) {
+        // FIXME: Implement filtering.
+        self.show.update(|show| {
+            let preset_values = show
+                .programmer()
+                .values()
+                .into_iter()
+                .map(|(fid, attr, value)| (*fid, attr.clone(), *value))
+                .collect::<Vec<_>>();
+
+            fn insert_values(
+                content: &mut PresetContent,
+                show: &Show,
+                preset_values: &[(FixtureId, Attribute, AttributeValue)],
+            ) {
+                for (fid, attribute, value) in preset_values {
+                    let attribute = attribute.clone();
+                    match content {
+                        PresetContent::Universal(preset) => {
+                            preset.set_value(attribute, *value);
+                        }
+                        PresetContent::Global(preset) => {
+                            if let Some(fixture) = show.patch().fixture(*fid) {
+                                let fixture_type_id = fixture.fixture_type_id();
+                                preset.set_value(*fixture_type_id, attribute, *value);
+                            }
+                        }
+                        PresetContent::Selective(preset) => {
+                            preset.set_value(*fid, attribute, *value);
+                        }
+                    }
+                }
+            }
+
+            if show.objects().get_by_pool_id::<T>(pool_id).is_none() {
+                show.objects.insert(T::create(
+                    ObjectId::new(),
+                    pool_id,
+                    "New Dimmer Preset".to_string(),
+                ));
+            }
+
+            let preset = show.objects.get_by_pool_id::<T>(pool_id).unwrap();
+            let mut content = preset.content().clone();
+            insert_values(&mut content, show, &preset_values);
+            let preset = show.objects.get_mut_by_pool_id::<T>(pool_id).unwrap();
+            *preset.content_mut() = content;
+        });
+    }
+
+    fn recall_preset<T: Object + PresetObject>(&mut self, object: &ObjectReference) -> Result<()> {
+        self.exec(Command::Select { selection: Selection::Object(object.clone()) })?;
+
+        let Some(content) = self.show.read(|show| {
+            show.objects.get_by_pool_id::<T>(object.pool_id).map(|preset| preset.content().clone())
+        }) else {
+            return Ok(());
+        };
+
+        match content {
+            PresetContent::Universal(preset) => {
+                let fids = self.show.read(|show| show.selected_fixtures().to_vec());
+                for selected_fid in fids {
+                    for (attribute, &value) in preset.values() {
+                        self.exec(Command::SetAttribute {
+                            fid: selected_fid,
+                            attribute: attribute.clone(),
+                            value,
+                        })?;
+                    }
+                }
+            }
+            PresetContent::Global(preset) => {
+                let fids = self.show.read(|show| show.selected_fixtures().to_vec());
+                for selected_fid in fids {
+                    for ((fixture_type_id, attribute), &value) in preset.values() {
+                        let has_fti = self.show.read(|show| {
+                            show.patch()
+                                .fixture(selected_fid)
+                                .is_some_and(|f| f.fixture_type_id() == fixture_type_id)
+                        });
+
+                        if has_fti {
+                            self.exec(Command::SetAttribute {
+                                fid: selected_fid,
+                                attribute: attribute.clone(),
+                                value,
+                            })?;
+                        }
+                    }
+                }
+            }
+            PresetContent::Selective(preset) => {
+                let fids = self.show.read(|show| show.selected_fixtures().to_vec());
+                for selected_fid in fids {
+                    for ((fid, attribute), &value) in preset.values() {
+                        if selected_fid == *fid {
+                            self.exec(Command::SetAttribute {
+                                fid: selected_fid,
+                                attribute: attribute.clone(),
+                                value,
+                            })?;
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 

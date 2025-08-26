@@ -7,8 +7,8 @@ use crate::engine::event::{EngineEvent, EventHandler};
 use crate::pipeline::Pipeline;
 use crate::show::{
     Cue, Executor, FixtureId, Group, PresetBeam, PresetColor, PresetContent, PresetControl,
-    PresetDimmer, PresetFocus, PresetGobo, PresetPosition, PresetShapers, PresetVideo, Sequence,
-    Show,
+    PresetDimmer, PresetFocus, PresetGobo, PresetObject, PresetPosition, PresetShapers,
+    PresetVideo, Sequence, Show,
 };
 
 const PROCESSOR_FRAME_TIME: Duration = Duration::from_millis(30);

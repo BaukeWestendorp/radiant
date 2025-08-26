@@ -39,6 +39,15 @@ impl Render for Panel {
                 PanelKind::Pool(kind) => match kind {
                     PoolPanelKind::Group(panel) => panel.into_any_element(),
                     PoolPanelKind::Sequence(panel) => panel.into_any_element(),
+                    PoolPanelKind::PresetDimmer(panel) => panel.into_any_element(),
+                    PoolPanelKind::PresetPosition(panel) => panel.into_any_element(),
+                    PoolPanelKind::PresetGobo(panel) => panel.into_any_element(),
+                    PoolPanelKind::PresetColor(panel) => panel.into_any_element(),
+                    PoolPanelKind::PresetBeam(panel) => panel.into_any_element(),
+                    PoolPanelKind::PresetFocus(panel) => panel.into_any_element(),
+                    PoolPanelKind::PresetControl(panel) => panel.into_any_element(),
+                    PoolPanelKind::PresetShapers(panel) => panel.into_any_element(),
+                    PoolPanelKind::PresetVideo(panel) => panel.into_any_element(),
                 },
             })
     }
@@ -62,6 +71,15 @@ impl PanelKind {
             PanelKind::Pool(pool_panel) => match pool_panel {
                 PoolPanelKind::Group(panel) => panel.read(cx).bounds(),
                 PoolPanelKind::Sequence(panel) => panel.read(cx).bounds(),
+                PoolPanelKind::PresetDimmer(panel) => panel.read(cx).bounds(),
+                PoolPanelKind::PresetPosition(panel) => panel.read(cx).bounds(),
+                PoolPanelKind::PresetGobo(panel) => panel.read(cx).bounds(),
+                PoolPanelKind::PresetColor(panel) => panel.read(cx).bounds(),
+                PoolPanelKind::PresetBeam(panel) => panel.read(cx).bounds(),
+                PoolPanelKind::PresetFocus(panel) => panel.read(cx).bounds(),
+                PoolPanelKind::PresetControl(panel) => panel.read(cx).bounds(),
+                PoolPanelKind::PresetShapers(panel) => panel.read(cx).bounds(),
+                PoolPanelKind::PresetVideo(panel) => panel.read(cx).bounds(),
             },
         }
     }
