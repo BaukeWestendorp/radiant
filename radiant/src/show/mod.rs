@@ -58,25 +58,11 @@ impl Show {
             );
         }
 
-        let mut objects = ObjectContainer::new();
-        showfile.objects.groups.iter().for_each(|o| objects.insert(o.clone()));
-        showfile.objects.executors.iter().for_each(|o| objects.insert(o.clone()));
-        showfile.objects.sequences.iter().for_each(|o| objects.insert(o.clone()));
-        showfile.objects.dimmer_presets.iter().for_each(|o| objects.insert(o.clone()));
-        showfile.objects.position_presets.iter().for_each(|o| objects.insert(o.clone()));
-        showfile.objects.gobo_presets.iter().for_each(|o| objects.insert(o.clone()));
-        showfile.objects.color_presets.iter().for_each(|o| objects.insert(o.clone()));
-        showfile.objects.beam_presets.iter().for_each(|o| objects.insert(o.clone()));
-        showfile.objects.focus_presets.iter().for_each(|o| objects.insert(o.clone()));
-        showfile.objects.control_presets.iter().for_each(|o| objects.insert(o.clone()));
-        showfile.objects.shapers_presets.iter().for_each(|o| objects.insert(o.clone()));
-        showfile.objects.video_presets.iter().for_each(|o| objects.insert(o.clone()));
-
         Ok(Self {
             path: showfile.path().cloned(),
 
             patch,
-            objects,
+            objects: showfile.objects.object_container,
             protocol_config: showfile.protocols.protocol_config,
 
             programmer: Programmer::default(),

@@ -9,7 +9,7 @@ use crate::engine::protocols::Protocols;
 use crate::error::Result;
 use crate::pipeline::Pipeline;
 use crate::show::{
-    Attribute, AttributeValue, FixtureId, Group, Object, ObjectId, ObjectKind, PoolId, PresetBeam,
+    Attribute, AttributeValue, FixtureId, Group, Object, ObjectId, ObjectKind, PresetBeam,
     PresetColor, PresetContent, PresetControl, PresetDimmer, PresetFocus, PresetGobo, PresetObject,
     PresetPosition, PresetShapers, PresetVideo, Show,
 };
@@ -101,10 +101,20 @@ impl Engine {
                         }
                         ObjectKind::Executor => todo!(),
                         ObjectKind::Sequence => todo!(),
-                        ObjectKind::PresetDimmer => {
+                        ObjectKind::PresetDimmer
+                        | ObjectKind::PresetPosition
+                        | ObjectKind::PresetGobo
+                        | ObjectKind::PresetColor
+                        | ObjectKind::PresetBeam
+                        | ObjectKind::PresetFocus
+                        | ObjectKind::PresetControl
+                        | ObjectKind::PresetShapers
+                        | ObjectKind::PresetVideo => {
                             self.show.update(|show| {
-                                if let Some(preset) =
-                                    show.objects.get_by_pool_id::<PresetDimmer>(object.pool_id)
+                                if let Some(preset) = show
+                                    .objects
+                                    .get_any_by_obj_ref(object)
+                                    .and_then(|obj| obj.as_preset())
                                 {
                                     for fid in preset.fids(show.patch()).to_vec() {
                                         show.select_fixture(fid);
@@ -112,14 +122,6 @@ impl Engine {
                                 }
                             });
                         }
-                        ObjectKind::PresetPosition => todo!(),
-                        ObjectKind::PresetGobo => todo!(),
-                        ObjectKind::PresetColor => todo!(),
-                        ObjectKind::PresetBeam => todo!(),
-                        ObjectKind::PresetFocus => todo!(),
-                        ObjectKind::PresetControl => todo!(),
-                        ObjectKind::PresetShapers => todo!(),
-                        ObjectKind::PresetVideo => todo!(),
                     },
                     Selection::All => {
                         self.show.update(|show| {
@@ -166,33 +168,15 @@ impl Engine {
                     }
                     ObjectKind::Executor => todo!(),
                     ObjectKind::Sequence => todo!(),
-                    ObjectKind::PresetDimmer => {
-                        self.store_preset::<PresetDimmer>(destination.pool_id);
-                    }
-                    ObjectKind::PresetPosition => {
-                        self.store_preset::<PresetPosition>(destination.pool_id);
-                    }
-                    ObjectKind::PresetGobo => {
-                        self.store_preset::<PresetGobo>(destination.pool_id);
-                    }
-                    ObjectKind::PresetColor => {
-                        self.store_preset::<PresetColor>(destination.pool_id);
-                    }
-                    ObjectKind::PresetBeam => {
-                        self.store_preset::<PresetBeam>(destination.pool_id);
-                    }
-                    ObjectKind::PresetFocus => {
-                        self.store_preset::<PresetFocus>(destination.pool_id);
-                    }
-                    ObjectKind::PresetControl => {
-                        self.store_preset::<PresetControl>(destination.pool_id);
-                    }
-                    ObjectKind::PresetShapers => {
-                        self.store_preset::<PresetShapers>(destination.pool_id);
-                    }
-                    ObjectKind::PresetVideo => {
-                        self.store_preset::<PresetVideo>(destination.pool_id);
-                    }
+                    ObjectKind::PresetDimmer => self.store_preset::<PresetDimmer>(destination),
+                    ObjectKind::PresetPosition => self.store_preset::<PresetPosition>(destination),
+                    ObjectKind::PresetGobo => self.store_preset::<PresetGobo>(destination),
+                    ObjectKind::PresetColor => self.store_preset::<PresetColor>(destination),
+                    ObjectKind::PresetBeam => self.store_preset::<PresetBeam>(destination),
+                    ObjectKind::PresetFocus => self.store_preset::<PresetFocus>(destination),
+                    ObjectKind::PresetControl => self.store_preset::<PresetControl>(destination),
+                    ObjectKind::PresetShapers => self.store_preset::<PresetShapers>(destination),
+                    ObjectKind::PresetVideo => self.store_preset::<PresetVideo>(destination),
                 }
                 self.exec(Command::Clear)?;
             }
@@ -207,8 +191,8 @@ impl Engine {
             Command::Rename { object, name } => {
                 self.show.update(|show| {
                     if let Some(object_id) = object.object_id(show) {
-                        if let Some(object) = show.objects.get_object(object_id) {
-                            object.as_mut().set_name(name.clone());
+                        if let Some(object) = show.objects.get_any_mut(object_id) {
+                            object.as_object_mut().set_name(name.clone());
                         }
                     }
                 });
@@ -219,33 +203,15 @@ impl Engine {
                 }
                 ObjectKind::Executor => todo!(),
                 ObjectKind::Sequence => todo!(),
-                ObjectKind::PresetDimmer => {
-                    self.recall_preset::<PresetDimmer>(&object)?;
-                }
-                ObjectKind::PresetPosition => {
-                    self.recall_preset::<PresetPosition>(&object)?;
-                }
-                ObjectKind::PresetGobo => {
-                    self.recall_preset::<PresetGobo>(&object)?;
-                }
-                ObjectKind::PresetColor => {
-                    self.recall_preset::<PresetColor>(&object)?;
-                }
-                ObjectKind::PresetBeam => {
-                    self.recall_preset::<PresetBeam>(&object)?;
-                }
-                ObjectKind::PresetFocus => {
-                    self.recall_preset::<PresetFocus>(&object)?;
-                }
-                ObjectKind::PresetControl => {
-                    self.recall_preset::<PresetControl>(&object)?;
-                }
-                ObjectKind::PresetShapers => {
-                    self.recall_preset::<PresetShapers>(&object)?;
-                }
-                ObjectKind::PresetVideo => {
-                    self.recall_preset::<PresetVideo>(&object)?;
-                }
+                ObjectKind::PresetDimmer => self.recall_preset::<PresetDimmer>(&object)?,
+                ObjectKind::PresetPosition => self.recall_preset::<PresetPosition>(&object)?,
+                ObjectKind::PresetGobo => self.recall_preset::<PresetGobo>(&object)?,
+                ObjectKind::PresetColor => self.recall_preset::<PresetColor>(&object)?,
+                ObjectKind::PresetBeam => self.recall_preset::<PresetBeam>(&object)?,
+                ObjectKind::PresetFocus => self.recall_preset::<PresetFocus>(&object)?,
+                ObjectKind::PresetControl => self.recall_preset::<PresetControl>(&object)?,
+                ObjectKind::PresetShapers => self.recall_preset::<PresetShapers>(&object)?,
+                ObjectKind::PresetVideo => self.recall_preset::<PresetVideo>(&object)?,
             },
 
             Command::Go { executor: _ } => todo!(),
@@ -271,7 +237,10 @@ impl Engine {
         &self.show
     }
 
-    fn store_preset<T: Object + PresetObject + Default>(&self, pool_id: PoolId) {
+    fn store_preset<T>(&self, object: &ObjectReference)
+    where
+        T: PresetObject + Default + 'static,
+    {
         // FIXME: Implement filtering.
         self.show.update(|show| {
             let preset_values = show
@@ -305,23 +274,25 @@ impl Engine {
                 }
             }
 
-            if show.objects().get_by_pool_id::<T>(pool_id).is_none() {
-                show.objects.insert(T::create(
-                    ObjectId::new(),
-                    pool_id,
-                    "New Dimmer Preset".to_string(),
-                ));
+            if show.objects().get_any_by_obj_ref(object).is_none() {
+                show.objects.insert(
+                    T::create(ObjectId::new(), object.pool_id, "New Dimmer Preset".to_string())
+                        .into_any_object(),
+                );
             }
 
-            let preset = show.objects.get_by_pool_id::<T>(pool_id).unwrap();
+            let preset = show.objects.get_by_pool_id::<T>(object.pool_id).unwrap();
             let mut content = preset.content().clone();
             insert_values(&mut content, show, &preset_values);
-            let preset = show.objects.get_mut_by_pool_id::<T>(pool_id).unwrap();
+            let preset = show.objects.get_mut_by_pool_id::<T>(object.pool_id).unwrap();
             *preset.content_mut() = content;
         });
     }
 
-    fn recall_preset<T: Object + PresetObject>(&mut self, object: &ObjectReference) -> Result<()> {
+    fn recall_preset<T>(&mut self, object: &ObjectReference) -> Result<()>
+    where
+        T: PresetObject + Default + 'static,
+    {
         self.exec(Command::Select { selection: Selection::Object(object.clone()) })?;
 
         let Some(content) = self.show.read(|show| {

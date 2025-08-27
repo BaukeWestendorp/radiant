@@ -59,7 +59,7 @@ fn process_executors(
     show: &mut Show,
     event_handler: &Arc<EventHandler>,
 ) {
-    let executors = show.objects.all::<Executor>().cloned().collect::<Vec<_>>();
+    let executors = show.objects.all_of_type::<Executor>().into_iter().cloned().collect::<Vec<_>>();
 
     for executor in &executors {
         let Some(sequence_id) = executor.sequence_id() else { continue };

@@ -10,10 +10,7 @@
 use std::path::{Path, PathBuf};
 
 use crate::error::Result;
-use crate::show::{
-    Executor, Group, ObjectKind, PresetBeam, PresetColor, PresetControl, PresetDimmer, PresetFocus,
-    PresetGobo, PresetPosition, PresetShapers, PresetVideo, Sequence, Show,
-};
+use crate::show::Show;
 
 pub use objects::*;
 pub use patch::*;
@@ -36,11 +33,10 @@ pub const RELATIVE_OBJECTS_FILE_PATH: &str = "objects.yaml";
 /// The relative path to the protocols file within a [Showfile] directory.
 pub const RELATIVE_PROTOCOLS_FILE_PATH: &str = "protocols.yaml";
 
-#[derive(Default)]
 /// Represents a showfile that is saved on disk, containing all configuration
 /// and state required to load a show, including patch, adapters,
 /// protocols, and initialization commands.
-#[derive(Debug)]
+#[derive(Default)]
 pub struct Showfile {
     path: Option<PathBuf>,
 
@@ -99,45 +95,7 @@ impl Showfile {
 
 impl From<&Show> for Showfile {
     fn from(show: &Show) -> Self {
-        let mut objects = Objects::default();
-        for (_, object) in show.objects().iter() {
-            match object.kind() {
-                ObjectKind::Group => objects.groups.push(object.as_impl::<Group>().clone()),
-                ObjectKind::Executor => {
-                    objects.executors.push(object.as_impl::<Executor>().clone())
-                }
-                ObjectKind::Sequence => {
-                    objects.sequences.push(object.as_impl::<Sequence>().clone())
-                }
-                ObjectKind::PresetDimmer => {
-                    objects.dimmer_presets.push(object.as_impl::<PresetDimmer>().clone())
-                }
-                ObjectKind::PresetPosition => {
-                    objects.position_presets.push(object.as_impl::<PresetPosition>().clone())
-                }
-                ObjectKind::PresetGobo => {
-                    objects.gobo_presets.push(object.as_impl::<PresetGobo>().clone())
-                }
-                ObjectKind::PresetColor => {
-                    objects.color_presets.push(object.as_impl::<PresetColor>().clone())
-                }
-                ObjectKind::PresetBeam => {
-                    objects.beam_presets.push(object.as_impl::<PresetBeam>().clone())
-                }
-                ObjectKind::PresetFocus => {
-                    objects.focus_presets.push(object.as_impl::<PresetFocus>().clone())
-                }
-                ObjectKind::PresetControl => {
-                    objects.control_presets.push(object.as_impl::<PresetControl>().clone())
-                }
-                ObjectKind::PresetShapers => {
-                    objects.shapers_presets.push(object.as_impl::<PresetShapers>().clone())
-                }
-                ObjectKind::PresetVideo => {
-                    objects.video_presets.push(object.as_impl::<PresetVideo>().clone())
-                }
-            }
-        }
+        let objects = Objects { object_container: show.objects.clone() };
 
         let mut patch = Patch::default();
         for fixture in show.patch().fixtures() {

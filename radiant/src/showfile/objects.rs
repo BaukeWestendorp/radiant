@@ -4,32 +4,18 @@ use std::{fs, io};
 use eyre::Context;
 
 use crate::error::Result;
-use crate::show::{
-    Executor, Group, PresetBeam, PresetColor, PresetControl, PresetDimmer, PresetFocus, PresetGobo,
-    PresetPosition, PresetShapers, PresetVideo, Sequence,
-};
+use crate::show::ObjectContainer;
 
 /// A collection of lighting control objects loaded from configuration.
 ///
 /// The `Objects` struct contains all the major elements used in the lighting
 /// control system, such as executors, sequences, cues, fixture groups, and
 /// presets.
-#[derive(Debug, Default)]
+#[derive(Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Objects {
-    pub(crate) groups: Vec<Group>,
-    pub(crate) sequences: Vec<Sequence>,
-    pub(crate) executors: Vec<Executor>,
-
-    pub(crate) dimmer_presets: Vec<PresetDimmer>,
-    pub(crate) position_presets: Vec<PresetPosition>,
-    pub(crate) gobo_presets: Vec<PresetGobo>,
-    pub(crate) color_presets: Vec<PresetColor>,
-    pub(crate) beam_presets: Vec<PresetBeam>,
-    pub(crate) focus_presets: Vec<PresetFocus>,
-    pub(crate) shapers_presets: Vec<PresetShapers>,
-    pub(crate) control_presets: Vec<PresetControl>,
-    pub(crate) video_presets: Vec<PresetVideo>,
+    #[serde(default)]
+    pub(crate) object_container: ObjectContainer,
 }
 
 impl Objects {

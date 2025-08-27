@@ -3,11 +3,7 @@ use std::num::NonZeroU32;
 use eyre::{Context, ContextCompat};
 
 use crate::error::Result;
-use crate::show::{
-    Attribute, AttributeValue, Executor, FixtureId, Group, Object, ObjectId, ObjectKind, PoolId,
-    PresetBeam, PresetColor, PresetControl, PresetDimmer, PresetFocus, PresetGobo, PresetPosition,
-    PresetShapers, PresetVideo, Sequence, Show,
-};
+use crate::show::{Attribute, AttributeValue, FixtureId, ObjectId, ObjectKind, PoolId, Show};
 
 #[derive(Debug, Clone)]
 pub enum Command {
@@ -132,20 +128,7 @@ pub struct ObjectReference {
 impl ObjectReference {
     pub fn object_id(&self, show: &Show) -> Option<ObjectId> {
         let o = show.objects();
-        let id = match self.kind {
-            ObjectKind::Group => o.get_by_pool_id::<Group>(self.pool_id)?.id(),
-            ObjectKind::Executor => o.get_by_pool_id::<Executor>(self.pool_id)?.id(),
-            ObjectKind::Sequence => o.get_by_pool_id::<Sequence>(self.pool_id)?.id(),
-            ObjectKind::PresetDimmer => o.get_by_pool_id::<PresetDimmer>(self.pool_id)?.id(),
-            ObjectKind::PresetPosition => o.get_by_pool_id::<PresetPosition>(self.pool_id)?.id(),
-            ObjectKind::PresetGobo => o.get_by_pool_id::<PresetGobo>(self.pool_id)?.id(),
-            ObjectKind::PresetColor => o.get_by_pool_id::<PresetColor>(self.pool_id)?.id(),
-            ObjectKind::PresetBeam => o.get_by_pool_id::<PresetBeam>(self.pool_id)?.id(),
-            ObjectKind::PresetFocus => o.get_by_pool_id::<PresetFocus>(self.pool_id)?.id(),
-            ObjectKind::PresetControl => o.get_by_pool_id::<PresetControl>(self.pool_id)?.id(),
-            ObjectKind::PresetShapers => o.get_by_pool_id::<PresetShapers>(self.pool_id)?.id(),
-            ObjectKind::PresetVideo => o.get_by_pool_id::<PresetVideo>(self.pool_id)?.id(),
-        };
+        let id = o.get_any_by_obj_ref(self)?.as_object().id();
         Some(id)
     }
 }

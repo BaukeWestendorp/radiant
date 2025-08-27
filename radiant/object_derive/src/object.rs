@@ -5,16 +5,16 @@ use syn::{Data, DeriveInput, Generics, Ident, parse_macro_input};
 pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
-    let impl_object = gen_impl_object(&input.ident, &input.generics);
+    let impls = gen_impls(&input.ident, &input.generics);
 
     let extracted = quote! {
-        #impl_object
+        #impls
     };
 
     extracted.into()
 }
 
-fn gen_impl_object(ident: &Ident, generics: &Generics) -> proc_macro2::TokenStream {
+fn gen_impls(ident: &Ident, generics: &Generics) -> proc_macro2::TokenStream {
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
     quote! {
@@ -45,6 +45,20 @@ fn gen_impl_object(ident: &Ident, generics: &Generics) -> proc_macro2::TokenStre
 
             fn kind(&self) -> crate::show::ObjectKind {
                 crate::show::ObjectKind::#ident
+            }
+
+            fn as_any(&self) -> &dyn std::any::Any { self }
+
+            fn as_any_mut(&mut self) -> &mut dyn std::any::Any { self }
+
+            fn into_any_object(self) -> crate::show::AnyObject {
+                crate::show::AnyObject::from(self)
+            }
+        }
+
+        impl #impl_generics From<#ident #ty_generics> for crate::show::AnyObject #where_clause {
+            fn from(obj: #ident #ty_generics) -> crate::show::AnyObject {
+                crate::show::AnyObject::#ident(obj)
             }
         }
     }

@@ -10,10 +10,36 @@ pub use group::*;
 pub use preset::*;
 pub use sequence::*;
 
+use crate::engine::ObjectReference;
+
 mod executor;
 mod group;
 mod preset;
 mod sequence;
+
+pub trait Object: Send {
+    fn create(id: ObjectId, pool_id: PoolId, name: String) -> Self
+    where
+        Self: Default;
+
+    fn name(&self) -> &str;
+
+    fn set_name(&mut self, name: String);
+
+    fn id(&self) -> ObjectId;
+
+    fn pool_id(&self) -> PoolId;
+
+    fn set_pool_id(&mut self, pool_id: PoolId);
+
+    fn kind(&self) -> ObjectKind;
+
+    fn as_any(&self) -> &dyn Any;
+
+    fn as_any_mut(&mut self) -> &mut dyn Any;
+
+    fn into_any_object(self) -> AnyObject;
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(derive_more::Display)]
@@ -45,41 +71,96 @@ pub enum ObjectKind {
     PresetVideo,
 }
 
-pub trait Object: Any + Send {
-    fn create(id: ObjectId, pool_id: PoolId, name: String) -> Self
-    where
-        Self: Default;
+#[derive(Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub enum AnyObject {
+    Group(Group),
+    Executor(Executor),
+    Sequence(Sequence),
 
-    fn name(&self) -> &str;
-
-    fn set_name(&mut self, name: String);
-
-    fn id(&self) -> ObjectId;
-
-    fn pool_id(&self) -> PoolId;
-
-    fn set_pool_id(&mut self, pool_id: PoolId);
-
-    fn kind(&self) -> ObjectKind;
+    PresetDimmer(PresetDimmer),
+    PresetPosition(PresetPosition),
+    PresetGobo(PresetGobo),
+    PresetColor(PresetColor),
+    PresetBeam(PresetBeam),
+    PresetFocus(PresetFocus),
+    PresetControl(PresetControl),
+    PresetShapers(PresetShapers),
+    PresetVideo(PresetVideo),
 }
 
-impl dyn Object {
-    fn as_any(&self) -> &dyn Any {
-        self
+impl AnyObject {
+    pub fn as_object(&self) -> &dyn Object {
+        match self {
+            AnyObject::Group(o) => o,
+            AnyObject::Executor(o) => o,
+            AnyObject::Sequence(o) => o,
+
+            AnyObject::PresetDimmer(o) => o,
+            AnyObject::PresetPosition(o) => o,
+            AnyObject::PresetGobo(o) => o,
+            AnyObject::PresetColor(o) => o,
+            AnyObject::PresetBeam(o) => o,
+            AnyObject::PresetFocus(o) => o,
+            AnyObject::PresetControl(o) => o,
+            AnyObject::PresetShapers(o) => o,
+            AnyObject::PresetVideo(o) => o,
+        }
     }
 
-    fn as_mut_any(&mut self) -> &mut dyn Any {
-        self
+    pub fn as_object_mut(&mut self) -> &mut dyn Object {
+        match self {
+            AnyObject::Group(o) => o,
+            AnyObject::Executor(o) => o,
+            AnyObject::Sequence(o) => o,
+
+            AnyObject::PresetDimmer(o) => o,
+            AnyObject::PresetPosition(o) => o,
+            AnyObject::PresetGobo(o) => o,
+            AnyObject::PresetColor(o) => o,
+            AnyObject::PresetBeam(o) => o,
+            AnyObject::PresetFocus(o) => o,
+            AnyObject::PresetControl(o) => o,
+            AnyObject::PresetShapers(o) => o,
+            AnyObject::PresetVideo(o) => o,
+        }
     }
 
-    pub fn as_impl<T: Object>(&self) -> &T {
-        self.as_any().downcast_ref::<T>().unwrap()
+    pub fn as_preset(&self) -> Option<&dyn PresetObject> {
+        match self {
+            AnyObject::PresetDimmer(o) => Some(o),
+            AnyObject::PresetPosition(o) => Some(o),
+            AnyObject::PresetGobo(o) => Some(o),
+            AnyObject::PresetColor(o) => Some(o),
+            AnyObject::PresetBeam(o) => Some(o),
+            AnyObject::PresetFocus(o) => Some(o),
+            AnyObject::PresetControl(o) => Some(o),
+            AnyObject::PresetShapers(o) => Some(o),
+            AnyObject::PresetVideo(o) => Some(o),
+            _ => None,
+        }
+    }
+
+    pub fn as_preset_mut(&mut self) -> Option<&mut dyn PresetObject> {
+        match self {
+            AnyObject::PresetDimmer(o) => Some(o),
+            AnyObject::PresetPosition(o) => Some(o),
+            AnyObject::PresetGobo(o) => Some(o),
+            AnyObject::PresetColor(o) => Some(o),
+            AnyObject::PresetBeam(o) => Some(o),
+            AnyObject::PresetFocus(o) => Some(o),
+            AnyObject::PresetControl(o) => Some(o),
+            AnyObject::PresetShapers(o) => Some(o),
+            AnyObject::PresetVideo(o) => Some(o),
+            _ => None,
+        }
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct ObjectContainer {
-    objects: HashMap<ObjectId, Box<dyn Object>>,
+    objects: HashMap<ObjectId, AnyObject>,
 }
 
 impl ObjectContainer {
@@ -87,42 +168,68 @@ impl ObjectContainer {
         Self::default()
     }
 
-    pub fn get<T: Object>(&self, id: ObjectId) -> Option<&T> {
-        self.objects.get(&id)?.as_ref().as_any().downcast_ref::<T>()
+    pub fn get<T: Object + 'static>(&self, id: ObjectId) -> Option<&T> {
+        self.objects.get(&id).and_then(|obj| obj.as_object().as_any().downcast_ref::<T>())
     }
 
-    pub fn get_mut<T: Object>(&mut self, id: ObjectId) -> Option<&mut T> {
-        self.objects.get_mut(&id)?.as_mut().as_mut_any().downcast_mut::<T>()
+    pub fn get_mut<T: Object + 'static>(&mut self, id: ObjectId) -> Option<&mut T> {
+        self.objects
+            .get_mut(&id)
+            .and_then(|obj| obj.as_object_mut().as_any_mut().downcast_mut::<T>())
     }
 
-    pub fn get_by_pool_id<T: Object>(&self, pool_id: PoolId) -> Option<&T> {
-        self.objects.values().find_map(|obj| {
-            let obj_ref = obj.as_ref().as_any().downcast_ref::<T>()?;
-            if obj_ref.pool_id() == pool_id { Some(obj_ref) } else { None }
-        })
+    pub fn get_by_pool_id<T: Object + Default + 'static>(&self, pool_id: PoolId) -> Option<&T> {
+        let kind = T::default().kind();
+        self.get_any_by_obj_ref(&ObjectReference { kind, pool_id })?
+            .as_object()
+            .as_any()
+            .downcast_ref()
     }
 
-    pub fn get_mut_by_pool_id<T: Object>(&mut self, pool_id: PoolId) -> Option<&mut T> {
-        self.objects.values_mut().find_map(|obj| {
-            let obj_mut = obj.as_mut().as_mut_any().downcast_mut::<T>()?;
-            if obj_mut.pool_id() == pool_id { Some(obj_mut) } else { None }
-        })
+    pub fn get_mut_by_pool_id<T: Object + Default + 'static>(
+        &mut self,
+        pool_id: PoolId,
+    ) -> Option<&mut T> {
+        let kind = T::default().kind();
+        self.get_any_mut_by_obj_ref(&ObjectReference { kind, pool_id })?
+            .as_object_mut()
+            .as_any_mut()
+            .downcast_mut()
     }
 
-    pub fn get_object(&mut self, id: ObjectId) -> Option<&mut Box<dyn Object>> {
+    pub fn get_any(&self, id: ObjectId) -> Option<&AnyObject> {
+        self.objects.get(&id)
+    }
+
+    pub fn get_any_mut(&mut self, id: ObjectId) -> Option<&mut AnyObject> {
         self.objects.get_mut(&id)
     }
 
-    pub fn all<T: Object>(&self) -> impl Iterator<Item = &T> {
-        self.objects.values().filter_map(|obj| obj.as_ref().as_any().downcast_ref::<T>())
+    pub fn get_any_by_obj_ref(&self, obj_ref: &ObjectReference) -> Option<&AnyObject> {
+        self.objects.values().find(|obj| {
+            let obj = obj.as_object();
+            obj.pool_id() == obj_ref.pool_id && obj.kind() == obj_ref.kind
+        })
     }
 
-    pub fn insert<T: Object>(&mut self, object: T) {
-        self.objects.insert(object.id(), Box::new(object));
+    pub fn get_any_mut_by_obj_ref(&mut self, obj_ref: &ObjectReference) -> Option<&mut AnyObject> {
+        self.objects.values_mut().find(|obj| {
+            let obj = obj.as_object();
+            obj.pool_id() == obj_ref.pool_id && obj.kind() == obj_ref.kind
+        })
     }
 
-    pub fn remove(&mut self, id: &ObjectId) -> Option<Box<dyn Object>> {
-        self.objects.remove(id)
+    pub fn all_of_type<T: Object + 'static>(&self) -> impl IntoIterator<Item = &T> {
+        self.objects.values().filter_map(|obj| obj.as_object().as_any().downcast_ref::<T>())
+    }
+
+    pub fn insert(&mut self, object: impl Into<AnyObject>) {
+        let object = object.into();
+        self.objects.insert(object.as_object().id(), object.into());
+    }
+
+    pub fn remove(&mut self, id: &ObjectId) {
+        self.objects.remove(id);
     }
 
     pub fn contains(&self, id: &ObjectId) -> bool {
@@ -137,7 +244,7 @@ impl ObjectContainer {
         self.objects.is_empty()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = (&ObjectId, &Box<dyn Object>)> {
+    pub fn iter(&self) -> impl Iterator<Item = (&ObjectId, &AnyObject)> {
         self.objects.iter()
     }
 }

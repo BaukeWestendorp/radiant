@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::show::{Attribute, AttributeValue, FixtureId, FixtureTypeId, Patch};
+use crate::show::{Attribute, AttributeValue, FixtureId, FixtureTypeId, Object, Patch};
 
 macro_rules! preset_kind_and_content {
     ($kind:ident, $preset:ident) => {
@@ -34,7 +34,7 @@ preset_kind_and_content!(Control, PresetControl);
 preset_kind_and_content!(Shapers, PresetShapers);
 preset_kind_and_content!(Video, PresetVideo);
 
-pub trait PresetObject {
+pub trait PresetObject: Object {
     fn content(&self) -> &PresetContent;
 
     fn content_mut(&mut self) -> &mut PresetContent;
