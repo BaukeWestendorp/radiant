@@ -1,10 +1,5 @@
-use std::path::PathBuf;
-use std::{fs, io};
-
-use eyre::Context;
-
-use crate::error::Result;
 use crate::show::FixtureTypeId;
+use crate::showfile::ShowfileComponent;
 
 /// Represents the patch configuration for a show, including all information
 /// about the mapping of fixtures to DMX universes and their associated GDTF
@@ -19,26 +14,8 @@ pub struct Patch {
     pub(crate) fixtures: Vec<Fixture>,
 }
 
-impl Patch {
-    /// Reads the [Patch] configuration from a file at the given path.
-    ///
-    /// The file must be in YAML format and match the [Patch] structure.
-    pub fn read_from_file(path: &PathBuf) -> Result<Self> {
-        let file = fs::File::open(path)
-            .with_context(|| format!("failed to open patch file at '{}'", path.display()))?;
-        let reader = io::BufReader::new(file);
-        serde_yaml::from_reader(reader)
-            .with_context(|| format!("failed to read patch file at '{}'", path.display()))
-    }
-
-    pub fn write_to_file(&self, path: &PathBuf) -> Result<()> {
-        let file = fs::File::create(path)
-            .with_context(|| format!("failed to create patch file at '{}'", path.display()))?;
-        let writer = io::BufWriter::new(file);
-        serde_yaml::to_writer(writer, &self)
-            .with_context(|| format!("failed to write patch file at '{}'", path.display()))?;
-        Ok(())
-    }
+impl ShowfileComponent for Patch {
+    const RELATIVE_FILE_PATH: &str = "patch.yaml";
 }
 
 /// Represents a single fixture mapped in the [Patch].

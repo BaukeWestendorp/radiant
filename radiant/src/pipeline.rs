@@ -2,15 +2,6 @@ use std::collections::HashMap;
 
 use crate::show::{Attribute, AttributeValue, FixtureId, Patch};
 
-/// The [Pipeline] resolves all representations of DMX output
-/// into a single [dmx::Multiverse].
-///
-/// ``` markdown
-/// Layers:
-/// - (3) Resolve Presets            (e.g. Executors)
-/// - (2) Resolve Attribute Values   (e.g. Programmer, Presets)
-/// - (1) Output DMX                 (e.g. Via sACN)
-/// ```
 #[derive(Debug, Default, Clone)]
 pub struct Pipeline {
     /// Unresolved values set for specific fixtures.

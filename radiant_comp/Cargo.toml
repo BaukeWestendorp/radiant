@@ -1,0 +1,15 @@
+[package]
+name = "radiant_comp"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+dmx.workspace = true
+
+eyre.workspace = true
+gdtf = "0.2.0"
+serde.workspace = true
+serde_yaml = "0.9.34"
+strum = { version = "0.27.2", features = ["derive"] }
+typetag = "0.2.20"
+uuid = { version = "1.17.0", features = ["v4"] }

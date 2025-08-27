@@ -117,6 +117,7 @@ dependencies = [
  "gpui",
  "log",
  "radiant",
+ "serde",
  "simple_logger",
  "ui",
 ]
@@ -2190,7 +2191,7 @@ dependencies = [
  "slotmap",
  "smallvec",
  "smol",
- "strum 0.27.1",
+ "strum 0.27.2",
  "sum_tree",
  "taffy",
  "thiserror 2.0.12",
@@ -2265,7 +2266,7 @@ dependencies = [
  "clap",
  "eyre",
  "log",
- "radiant",
+ "radiant_comp",
  "simple_logger",
  "spin_sleep",
 ]
@@ -3747,6 +3748,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "radiant_comp"
+version = "0.1.0"
+dependencies = [
+ "dmx",
+ "eyre",
+ "gdtf",
+ "serde",
+ "serde_yaml",
+ "strum 0.27.2",
+ "typetag",
+ "uuid",
+]
+
+[[package]]
 name = "rand"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4605,9 +4620,9 @@ dependencies = [
 
 [[package]]
 name = "strum"
-version = "0.27.1"
+version = "0.27.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f64def088c51c9510a8579e3c5d67c65349dcf755e5479ad3d010aa6454e2c32"
+checksum = "af23d6f6c1a224baef9d3f61e287d2761385a5b88fdab4eb4c6f11aeb54c4bcf"
 dependencies = [
  "strum_macros 0.27.1",
 ]
@@ -5186,6 +5201,30 @@ name = "typenum"
 version = "1.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1dccffe3ce07af9386bfd29e80c0ab1a8205a2fc34e4bcd40364df902cfa8f3f"
+
+[[package]]
+name = "typetag"
+version = "0.2.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73f22b40dd7bfe8c14230cf9702081366421890435b2d625fa92b4acc4c3de6f"
+dependencies = [
+ "erased-serde",
+ "inventory",
+ "once_cell",
+ "serde",
+ "typetag-impl",
+]
+
+[[package]]
+name = "typetag-impl"
+version = "0.2.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "35f5380909ffc31b4de4f4bdf96b877175a016aa2ca98cee39fcfd8c4d53d952"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
 
 [[package]]
 name = "uds_windows"

@@ -11,14 +11,16 @@ use std::path::{Path, PathBuf};
 
 use crate::error::Result;
 use crate::show::Show;
+use crate::showfile::objects::Objects;
+use crate::showfile::patch::Patch;
+use crate::showfile::protocols::Protocols;
 
-pub use objects::*;
-pub use patch::*;
-pub use protocols::*;
-
+pub mod component;
 mod objects;
 mod patch;
 mod protocols;
+
+pub use component::*;
 
 /// The showfile's file extension; 'rsf' (Radiant ShowFile).
 /// The file extension used for Radiant [Showfile]s.
@@ -26,12 +28,6 @@ pub const FILE_EXTENSION: &str = "rsf";
 
 /// The relative path to the GDTF files folder within a [Showfile] directory.
 pub const RELATIVE_GDTF_FILE_FOLDER_PATH: &str = "gdtf_files";
-/// The relative path to the patch file within a [Showfile] directory.
-pub const RELATIVE_PATCH_FILE_PATH: &str = "patch.yaml";
-/// The relative path to the objects file within a [Showfile] directory.
-pub const RELATIVE_OBJECTS_FILE_PATH: &str = "objects.yaml";
-/// The relative path to the protocols file within a [Showfile] directory.
-pub const RELATIVE_PROTOCOLS_FILE_PATH: &str = "protocols.yaml";
 
 /// Represents a showfile that is saved on disk, containing all configuration
 /// and state required to load a show, including patch, adapters,
@@ -73,11 +69,11 @@ impl Showfile {
     }
 
     /// Loads a [Showfile] from an unzipped folder.
-    pub fn load_folder(path: &Path) -> Result<Self> {
-        let patch = Patch::read_from_file(&path.join(RELATIVE_PATCH_FILE_PATH))?;
-        let objects = Objects::read_from_file(&path.join(RELATIVE_OBJECTS_FILE_PATH))?;
-        let protocols = Protocols::read_from_file(&path.join(RELATIVE_PROTOCOLS_FILE_PATH))?;
-        Ok(Self { path: Some(path.to_path_buf()), patch, protocols, objects })
+    pub fn load_folder(showfile_folder: &Path) -> Result<Self> {
+        let patch = Patch::read_from_showfile_folder(showfile_folder)?;
+        let objects = Objects::read_from_showfile_folder(showfile_folder)?;
+        let protocols = Protocols::read_from_showfile_folder(showfile_folder)?;
+        Ok(Self { path: Some(showfile_folder.to_path_buf()), patch, protocols, objects })
     }
 
     pub fn save(&self) -> Result<()> {
@@ -85,9 +81,9 @@ impl Showfile {
             eyre::bail!("Showfile path is not set");
         };
 
-        self.patch.write_to_file(&path.join(RELATIVE_PATCH_FILE_PATH))?;
-        self.objects.write_to_file(&path.join(RELATIVE_OBJECTS_FILE_PATH))?;
-        self.protocols.write_to_file(&path.join(RELATIVE_PROTOCOLS_FILE_PATH))?;
+        self.patch.write_to_file(&path)?;
+        self.objects.write_to_file(&path)?;
+        self.protocols.write_to_file(&path)?;
 
         Ok(())
     }

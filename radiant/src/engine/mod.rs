@@ -1,3 +1,5 @@
+use std::any::{Any, TypeId};
+use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -13,7 +15,7 @@ use crate::show::{
     PresetColor, PresetContent, PresetControl, PresetDimmer, PresetFocus, PresetGobo, PresetObject,
     PresetPosition, PresetShapers, PresetVideo, Show,
 };
-use crate::showfile::Showfile;
+use crate::showfile::{Showfile, ShowfileComponent};
 
 mod command;
 mod control_surface;
@@ -25,12 +27,12 @@ pub use command::*;
 pub use event::EngineEvent;
 
 pub struct Engine {
-    protocols: Protocols,
-    show: ShowHandle,
     pipeline: Arc<Mutex<Pipeline>>,
     event_handler: Arc<EventHandler>,
     is_running: bool,
     command_history: Vec<Command>,
+
+    components: Arc<Mutex<HashMap<TypeId, Box<dyn Any>>>>,
 }
 
 impl Engine {
@@ -48,11 +50,12 @@ impl Engine {
 
         Ok(Self {
             protocols,
-            show: ShowHandle { show: Arc::new(Mutex::new(show)) },
             pipeline,
             event_handler: Arc::new(EventHandler::new()),
             is_running: false,
             command_history: Vec::new(),
+
+            components: Arc::new(Mutex::new(HashMap::new())),
         })
     }
 
@@ -66,6 +69,44 @@ impl Engine {
         control_surface::start();
 
         self.is_running = true;
+    }
+
+    // Register a component by its concrete type
+    pub fn register_showfile_component<T: ShowfileComponent + 'static>(&mut self, component: T) {
+        let type_id = TypeId::of::<T>();
+        self.components.insert(type_id, Box::new(component));
+    }
+
+    // Get a component by its concrete type
+    pub fn get_component<T: ShowfileComponent + 'static>(&self) -> Option<&T> {
+        let type_id = TypeId::of::<T>();
+        self.components.get(&type_id)?.downcast_ref::<T>()
+    }
+
+    // Get a mutable reference to a component by its concrete type
+    pub fn get_component_mut<T: ShowfileComponent + 'static>(&mut self) -> Option<&mut T> {
+        let type_id = TypeId::of::<T>();
+        self.components.get_mut(&type_id)?.downcast_mut::<T>()
+    }
+
+    // Check if a component type is registered
+    pub fn has_component<T: ShowfileComponent + 'static>(&self) -> bool {
+        let type_id = TypeId::of::<T>();
+        self.components.contains_key(&type_id)
+    }
+
+    // Remove a component by type
+    pub fn remove_component<T: ShowfileComponent + 'static>(&mut self) -> Option<T> {
+        let type_id = TypeId::of::<T>();
+        self.components.remove(&type_id)?.downcast().ok().map(|boxed| *boxed)
+    }
+
+    pub fn load_showfile_component<T: ShowfileComponent + Default>(&self) -> Result<T> {
+        let Some(path) = self.show().read(|show| show.path().cloned()) else {
+            return Ok(T::default());
+        };
+
+        T::read_from_showfile_folder(&path)
     }
 
     pub fn command_history(&self) -> &[Command] {

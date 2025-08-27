@@ -1,196 +1,274 @@
 fixtures:
-- fid: 101
-  gdtf_type_id: fb81889f-1992-4a7b-9ccb-414be4a033b5
-  universe: 1
-  channel: 1
-  dmx_mode: Standard
-- fid: 102
-  gdtf_type_id: fb81889f-1992-4a7b-9ccb-414be4a033b5
-  universe: 1
-  channel: 17
-  dmx_mode: Standard
-- fid: 103
-  gdtf_type_id: fb81889f-1992-4a7b-9ccb-414be4a033b5
-  universe: 1
-  channel: 33
-  dmx_mode: Standard
-- fid: 104
-  gdtf_type_id: fb81889f-1992-4a7b-9ccb-414be4a033b5
-  universe: 1
-  channel: 49
-  dmx_mode: Standard
-- fid: 201
-  gdtf_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
-  universe: 1
-  channel: 65
-  dmx_mode: Mode 3 Reduced RGBW Wash 8bit
-- fid: 202
-  gdtf_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
-  universe: 1
-  channel: 80
-  dmx_mode: Mode 3 Reduced RGBW Wash 8bit
-- fid: 203
-  gdtf_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
-  universe: 1
-  channel: 95
-  dmx_mode: Mode 3 Reduced RGBW Wash 8bit
-- fid: 204
-  gdtf_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
-  universe: 1
-  channel: 110
-  dmx_mode: Mode 3 Reduced RGBW Wash 8bit
-- fid: 205
-  gdtf_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
-  universe: 1
-  channel: 125
-  dmx_mode: Mode 3 Reduced RGBW Wash 8bit
-- fid: 206
-  gdtf_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
-  universe: 1
-  channel: 140
-  dmx_mode: Mode 3 Reduced RGBW Wash 8bit
-- fid: 207
-  gdtf_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
-  universe: 1
-  channel: 155
-  dmx_mode: Mode 3 Reduced RGBW Wash 8bit
-- fid: 208
-  gdtf_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
-  universe: 1
-  channel: 170
-  dmx_mode: Mode 3 Reduced RGBW Wash 8bit
-- fid: 301
-  gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
-  universe: 1
-  channel: 185
-  dmx_mode: Basic Pan540
-- fid: 302
-  gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
-  universe: 1
-  channel: 204
-  dmx_mode: Basic Pan540
-- fid: 303
-  gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
-  universe: 1
-  channel: 223
-  dmx_mode: Basic Pan540
-- fid: 304
-  gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
-  universe: 1
-  channel: 242
-  dmx_mode: Basic Pan540
-- fid: 305
-  gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
-  universe: 1
-  channel: 261
-  dmx_mode: Basic Pan540
-- fid: 306
-  gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
-  universe: 1
-  channel: 280
-  dmx_mode: Basic Pan540
-- fid: 307
-  gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
-  universe: 1
-  channel: 299
-  dmx_mode: Basic Pan540
-- fid: 308
-  gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
-  universe: 1
-  channel: 318
-  dmx_mode: Basic Pan540
-- fid: 309
-  gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
-  universe: 1
-  channel: 337
-  dmx_mode: Basic Pan540
-- fid: 310
-  gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
-  universe: 1
-  channel: 356
-  dmx_mode: Basic Pan540
-- fid: 311
-  gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
-  universe: 1
-  channel: 375
-  dmx_mode: Basic Pan540
-- fid: 312
-  gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
-  universe: 1
-  channel: 394
-  dmx_mode: Basic Pan540
-- fid: 401
-  gdtf_type_id: 9b181200-f6e3-4ee6-b385-fce095b46424
-  universe: 1
-  channel: 413
-  dmx_mode: Mode 1 Compressed Pro (14ch)
-- fid: 402
-  gdtf_type_id: 9b181200-f6e3-4ee6-b385-fce095b46424
-  universe: 1
-  channel: 427
-  dmx_mode: Mode 1 Compressed Pro (14ch)
-- fid: 403
-  gdtf_type_id: 9b181200-f6e3-4ee6-b385-fce095b46424
-  universe: 1
-  channel: 441
-  dmx_mode: Mode 1 Compressed Pro (14ch)
-- fid: 404
-  gdtf_type_id: 9b181200-f6e3-4ee6-b385-fce095b46424
-  universe: 1
-  channel: 455
-  dmx_mode: Mode 1 Compressed Pro (14ch)
-- fid: 501
-  gdtf_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
-  universe: 1
-  channel: 469
-  dmx_mode: Default
-- fid: 502
-  gdtf_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
-  universe: 1
-  channel: 470
-  dmx_mode: Default
-- fid: 503
-  gdtf_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
-  universe: 1
-  channel: 471
-  dmx_mode: Default
-- fid: 504
-  gdtf_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
-  universe: 1
-  channel: 472
-  dmx_mode: Default
-- fid: 505
-  gdtf_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
-  universe: 1
-  channel: 473
-  dmx_mode: Default
-- fid: 506
-  gdtf_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
-  universe: 1
-  channel: 474
-  dmx_mode: Default
-- fid: 601
-  gdtf_type_id: 24921e11-5786-4c84-b977-f3e0a514165f
-  universe: 1
-  channel: 475
-  dmx_mode: 01 CH
-- fid: 602
-  gdtf_type_id: 24921e11-5786-4c84-b977-f3e0a514165f
-  universe: 1
-  channel: 476
-  dmx_mode: 01 CH
-- fid: 603
-  gdtf_type_id: 24921e11-5786-4c84-b977-f3e0a514165f
-  universe: 1
-  channel: 477
-  dmx_mode: 01 CH
-- fid: 604
-  gdtf_type_id: 24921e11-5786-4c84-b977-f3e0a514165f
-  universe: 1
-  channel: 478
-  dmx_mode: 01 CH
-- fid: 605
-  gdtf_type_id: 24921e11-5786-4c84-b977-f3e0a514165f
-  universe: 1
-  channel: 479
-  dmx_mode: 01 CH
+  - name: Spot 01
+    fid: 101
+    gdtf_type_id: fb81889f-1992-4a7b-9ccb-414be4a033b5
+    address:
+      universe: 1
+      channel: 1
+    dmx_mode: Standard
+  - name: Spot 02
+    fid: 102
+    gdtf_type_id: fb81889f-1992-4a7b-9ccb-414be4a033b5
+    address:
+      universe: 1
+      channel: 17
+    dmx_mode: Standard
+  - name: Spot 03
+    fid: 103
+    gdtf_type_id: fb81889f-1992-4a7b-9ccb-414be4a033b5
+    address:
+      universe: 1
+      channel: 33
+    dmx_mode: Standard
+  - name: Spot 04
+    fid: 104
+    gdtf_type_id: fb81889f-1992-4a7b-9ccb-414be4a033b5
+    address:
+      universe: 1
+      channel: 49
+    dmx_mode: Standard
+  - name: Wash 01
+    fid: 201
+    gdtf_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
+    address:
+      universe: 1
+      channel: 65
+    dmx_mode: Mode 3 Reduced RGBW Wash 8bit
+  - name: Wash 02
+    fid: 202
+    gdtf_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
+    address:
+      universe: 1
+      channel: 80
+    dmx_mode: Mode 3 Reduced RGBW Wash 8bit
+  - name: Wash 03
+    fid: 203
+    gdtf_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
+    address:
+      universe: 1
+      channel: 95
+    dmx_mode: Mode 3 Reduced RGBW Wash 8bit
+  - name: Wash 04
+    fid: 204
+    gdtf_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
+    address:
+      universe: 1
+      channel: 110
+    dmx_mode: Mode 3 Reduced RGBW Wash 8bit
+  - name: Wash 05
+    fid: 205
+    gdtf_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
+    address:
+      universe: 1
+      channel: 125
+    dmx_mode: Mode 3 Reduced RGBW Wash 8bit
+  - name: Wash 06
+    fid: 206
+    gdtf_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
+    address:
+      universe: 1
+      channel: 140
+    dmx_mode: Mode 3 Reduced RGBW Wash 8bit
+  - name: Wash 07
+    fid: 207
+    gdtf_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
+    address:
+      universe: 1
+      channel: 155
+    dmx_mode: Mode 3 Reduced RGBW Wash 8bit
+  - name: Wash 08
+    fid: 208
+    gdtf_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
+    address:
+      universe: 1
+      channel: 170
+    dmx_mode: Mode 3 Reduced RGBW Wash 8bit
+  - name: Beam 01
+    fid: 301
+    gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
+    address:
+      universe: 1
+      channel: 185
+    dmx_mode: Basic Pan540
+  - name: Beam 02
+    fid: 302
+    gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
+    address:
+      universe: 1
+      channel: 204
+    dmx_mode: Basic Pan540
+  - name: Beam 03
+    fid: 303
+    gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
+    address:
+      universe: 1
+      channel: 223
+    dmx_mode: Basic Pan540
+  - name: Beam 04
+    fid: 304
+    gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
+    address:
+      universe: 1
+      channel: 242
+    dmx_mode: Basic Pan540
+  - name: Beam 05
+    fid: 305
+    gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
+    address:
+      universe: 1
+      channel: 261
+    dmx_mode: Basic Pan540
+  - name: Beam 06
+    fid: 306
+    gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
+    address:
+      universe: 1
+      channel: 280
+    dmx_mode: Basic Pan540
+  - name: Beam 07
+    fid: 307
+    gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
+    address:
+      universe: 1
+      channel: 299
+    dmx_mode: Basic Pan540
+  - name: Beam 08
+    fid: 308
+    gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
+    address:
+      universe: 1
+      channel: 318
+    dmx_mode: Basic Pan540
+  - name: Beam 09
+    fid: 309
+    gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
+    address:
+      universe: 1
+      channel: 337
+    dmx_mode: Basic Pan540
+  - name: Beam 10
+    fid: 310
+    gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
+    address:
+      universe: 1
+      channel: 356
+    dmx_mode: Basic Pan540
+  - name: Beam 11
+    fid: 311
+    gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
+    address:
+      universe: 1
+      channel: 375
+    dmx_mode: Basic Pan540
+  - name: Beam 12
+    fid: 312
+    gdtf_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
+    address:
+      universe: 1
+      channel: 394
+    dmx_mode: Basic Pan540
+  - name: Blind 1
+    fid: 401
+    gdtf_type_id: 9b181200-f6e3-4ee6-b385-fce095b46424
+    address:
+      universe: 1
+      channel: 413
+    dmx_mode: Mode 1 Compressed Pro (14ch)
+  - name: Blind 2
+    fid: 402
+    gdtf_type_id: 9b181200-f6e3-4ee6-b385-fce095b46424
+    address:
+      universe: 1
+      channel: 427
+    dmx_mode: Mode 1 Compressed Pro (14ch)
+  - name: Blind 3
+    fid: 403
+    gdtf_type_id: 9b181200-f6e3-4ee6-b385-fce095b46424
+    address:
+      universe: 1
+      channel: 441
+    dmx_mode: Mode 1 Compressed Pro (14ch)
+  - name: Blind 4
+    fid: 404
+    gdtf_type_id: 9b181200-f6e3-4ee6-b385-fce095b46424
+    address:
+      universe: 1
+      channel: 455
+    dmx_mode: Mode 1 Compressed Pro (14ch)
+  - name: Front 1
+    fid: 501
+    gdtf_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
+    address:
+      universe: 1
+      channel: 469
+    dmx_mode: Default
+  - name: Front 2
+    fid: 502
+    gdtf_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
+    address:
+      universe: 1
+      channel: 470
+    dmx_mode: Default
+  - name: Front 3
+    fid: 503
+    gdtf_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
+    address:
+      universe: 1
+      channel: 471
+    dmx_mode: Default
+  - name: Front 4
+    fid: 504
+    gdtf_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
+    address:
+      universe: 1
+      channel: 472
+    dmx_mode: Default
+  - name: Front 5
+    fid: 505
+    gdtf_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
+    address:
+      universe: 1
+      channel: 473
+    dmx_mode: Default
+  - name: Front 6
+    fid: 506
+    gdtf_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
+    address:
+      universe: 1
+      channel: 474
+    dmx_mode: Default
+  - name: Crowd 1
+    fid: 601
+    gdtf_type_id: 24921e11-5786-4c84-b977-f3e0a514165f
+    address:
+      universe: 1
+      channel: 475
+    dmx_mode: 01 CH
+  - name: Crowd 2
+    fid: 602
+    gdtf_type_id: 24921e11-5786-4c84-b977-f3e0a514165f
+    address:
+      universe: 1
+      channel: 476
+    dmx_mode: 01 CH
+  - name: Crowd 3
+    fid: 603
+    gdtf_type_id: 24921e11-5786-4c84-b977-f3e0a514165f
+    address:
+      universe: 1
+      channel: 477
+    dmx_mode: 01 CH
+  - name: Crowd 4
+    fid: 604
+    gdtf_type_id: 24921e11-5786-4c84-b977-f3e0a514165f
+    address:
+      universe: 1
+      channel: 478
+    dmx_mode: 01 CH
+  - name: Crowd 5
+    fid: 605
+    gdtf_type_id: 24921e11-5786-4c84-b977-f3e0a514165f
+    address:
+      universe: 1
+      channel: 479
+    dmx_mode: 01 CH

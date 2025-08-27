@@ -10,5 +10,6 @@ eyre.workspace = true
 gpui.workspace = true
 log.workspace = true
 radiant = { path = "../radiant" }
+serde.workspace = true
 simple_logger.workspace = true
 ui.workspace = true
