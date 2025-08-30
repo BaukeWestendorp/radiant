@@ -50,7 +50,12 @@ impl Engine {
         builtin::register(self).wrap_err("failed to register builtins")?;
 
         proc::ctrl_surf::start();
-        proc::processor::start(self.patch(), self.pipeline.clone());
+        proc::processor::start(
+            self.objects(),
+            self.patch(),
+            self.programmer(),
+            self.pipeline.clone(),
+        );
         proc::protocols::start(self.protocol_config(), self.pipeline.clone());
 
         Ok(())
