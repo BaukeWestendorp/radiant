@@ -12,7 +12,7 @@ use crate::error::Result;
 pub enum Command {
     PatchFixture {
         fid: FixtureId,
-        gdtf_type_id: GdtfFixtureTypeId,
+        fixture_type_id: GdtfFixtureTypeId,
         address: dmx::Address,
         dmx_mode: String,
         name: Option<String>,
@@ -38,35 +38,43 @@ pub enum Command {
 impl Command {
     pub(crate) fn exec(self, engine: &mut Engine) -> Result<()> {
         match self {
-            Command::PatchFixture { fid, gdtf_type_id, address, dmx_mode, name } => {
-                engine.patch_mut().add_fixture(Fixture::new(
-                    fid,
-                    gdtf_type_id,
-                    address,
-                    dmx_mode,
-                    name.unwrap_or("New Fixture".to_string()),
-                ))?;
+            Command::PatchFixture { fid, fixture_type_id, address, dmx_mode, name } => {
+                engine.patch().update(|patch| {
+                    patch.add_fixture(Fixture::new(
+                        fid,
+                        fixture_type_id,
+                        address,
+                        dmx_mode,
+                        name.unwrap_or("New Fixture".to_string()),
+                    ))
+                })?;
             }
 
             Command::Select { fid } => {
-                engine.programmer_mut().select(fid);
+                engine.programmer().update(|p| p.select(fid));
             }
             Command::Clear { mode } => {
                 let mode = mode.unwrap_or_default();
 
                 match mode {
-                    ClearMode::ProgrammerSelection => engine.programmer_mut().clear_selection(),
-                    ClearMode::ProgrammerValues => engine.programmer_mut().clear_values(),
+                    ClearMode::ProgrammerSelection => {
+                        engine.programmer().update(|p| p.clear_selection());
+                    }
+                    ClearMode::ProgrammerValues => {
+                        engine.programmer().update(|p| p.clear_values());
+                    }
                     ClearMode::Progressive => {
-                        if engine.programmer().has_selection() {
-                            engine.programmer_mut().clear_selection();
-                        } else if engine.programmer().has_values() {
-                            engine.programmer_mut().clear_values();
+                        if engine.programmer().read(|p| p.has_selection()) {
+                            engine.programmer().update(|p| p.clear_selection());
+                        } else if engine.programmer().read(|p| p.has_values()) {
+                            engine.programmer().update(|p| p.clear_values());
                         }
                     }
                     ClearMode::All => {
-                        engine.programmer_mut().clear_selection();
-                        engine.programmer_mut().clear_values();
+                        engine.programmer().update(|p| {
+                            p.clear_selection();
+                            p.clear_values();
+                        });
                     }
                 }
             }
@@ -81,14 +89,14 @@ impl Command {
                 }
 
                 let object_id = object.id();
-                engine.objects_mut().insert(object);
+                engine.objects().update(|objects| objects.insert(object));
 
-                engine.pools_mut().pool_mut(r#type).insert(pool_id, object_id);
+                engine.pools().update(|pools| pools.pool_mut(r#type).insert(pool_id, object_id));
             }
             Command::Remove { object_ref } => {
                 let object_id = object_ref.object_id(engine)?;
 
-                engine.objects_mut().remove(object_id);
+                engine.objects().update(|objects| objects.remove(object_id));
             }
         }
 
@@ -122,10 +130,10 @@ impl fmt::Display for Command {
         let mut parts = Vec::new();
 
         match self {
-            Command::PatchFixture { fid, gdtf_type_id, address, dmx_mode, name } => {
+            Command::PatchFixture { fid, fixture_type_id, address, dmx_mode, name } => {
                 push_keyword(&mut parts, "patch_fixture");
                 push_argument(&mut parts, fid);
-                push_argument(&mut parts, gdtf_type_id);
+                push_argument(&mut parts, fixture_type_id);
                 push_argument(&mut parts, address);
                 push_argument(&mut parts, dmx_mode);
                 push_optional_argument(&mut parts, "name", name);
@@ -166,7 +174,7 @@ impl ObjectReference {
     pub fn object_id(&self, engine: &Engine) -> Result<ObjectId> {
         match self {
             ObjectReference::PoolItem(object_type, pool_id) => {
-                engine.pools().get(*object_type, *pool_id).wrap_err_with(|| {
+                engine.pools().read(|pools| pools.get(*object_type, *pool_id)).wrap_err_with(|| {
                     format!("could not find object for pool id {pool_id} of type {object_type}")
                 })
             }

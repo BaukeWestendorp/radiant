@@ -27,7 +27,7 @@ impl ShowfileComponent for Patch {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Fixture {
     pub(crate) fid: u32,
-    pub(crate) gdtf_type_id: FixtureTypeId,
+    pub(crate) fixture_type_id: FixtureTypeId,
     pub(crate) universe: u16,
     pub(crate) channel: u16,
     pub(crate) dmx_mode: String,

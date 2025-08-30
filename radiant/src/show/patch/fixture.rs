@@ -66,6 +66,7 @@ impl Fixture {
     pub fn address(&self) -> &dmx::Address {
         &self.address
     }
+
     /// Returns a reference to the [FixtureType] associated with this fixture.
     ///
     /// # Panics

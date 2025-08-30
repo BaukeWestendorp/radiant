@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::comp::ShowfileComponent;
+use crate::comp::Component;
 use crate::engine::Engine;
 use crate::error::Result;
 
@@ -146,7 +146,7 @@ impl fmt::Display for ObjectType {
     }
 }
 
-impl ShowfileComponent for Objects {
+impl Component for Objects {
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }

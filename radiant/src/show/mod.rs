@@ -31,7 +31,8 @@ pub struct Show {
 
 impl Show {
     pub fn new(showfile: Showfile) -> Result<Self> {
-        let all_fixture_type_ids = showfile.patch.fixtures.iter().map(|f| f.gdtf_type_id).unique();
+        let all_fixture_type_ids =
+            showfile.patch.fixtures.iter().map(|f| f.fixture_type_id).unique();
 
         let mut patch = Patch::default();
         for fixture_type_id in all_fixture_type_ids {
@@ -53,7 +54,7 @@ impl Show {
             patch.insert_fixture(
                 fixture.fid.into(),
                 address,
-                fixture.gdtf_type_id,
+                fixture.fixture_type_id,
                 fixture.dmx_mode.clone(),
             );
         }

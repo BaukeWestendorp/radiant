@@ -10,5 +10,6 @@ pub(crate) fn register(engine: &mut Engine) -> Result<()> {
     comp::patch::register(engine)?;
     comp::pools::register(engine)?;
     comp::programmer::register(engine)?;
+    comp::protocol_config::register(engine)?;
     Ok(())
 }

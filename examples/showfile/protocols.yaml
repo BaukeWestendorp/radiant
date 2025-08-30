@@ -1,5 +1,4 @@
-protocol_config:
-  sacn_source_configurations:
+sacn_sources:
   - name: Radiant sACN Source
     priority: 100
     preview_data: false

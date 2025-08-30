@@ -3,7 +3,7 @@ use std::fmt;
 use std::num::NonZeroU32;
 
 use crate::builtin::{ObjectId, ObjectType};
-use crate::comp::ShowfileComponent;
+use crate::comp::Component;
 use crate::engine::Engine;
 use crate::error::Result;
 
@@ -29,7 +29,7 @@ impl Pools {
     }
 }
 
-impl ShowfileComponent for Pools {
+impl Component for Pools {
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }

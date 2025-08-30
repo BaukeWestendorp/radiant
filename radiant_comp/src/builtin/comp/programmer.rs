@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::attr::{Attribute, AttributeValue};
 use crate::builtin::FixtureId;
-use crate::comp::ShowfileComponent;
+use crate::comp::Component;
 use crate::engine::Engine;
 use crate::error::Result;
 
@@ -58,7 +58,7 @@ impl Programmer {
     }
 }
 
-impl ShowfileComponent for Programmer {
+impl Component for Programmer {
     fn as_any(&self) -> &dyn std::any::Any {
         self
     }

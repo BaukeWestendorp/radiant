@@ -3741,7 +3741,7 @@ dependencies = [
  "object_derive",
  "serde",
  "serde_yaml",
- "socket2",
+ "socket2 0.5.10",
  "spin_sleep",
  "thiserror 2.0.12",
  "uuid",
@@ -3751,13 +3751,18 @@ dependencies = [
 name = "radiant_comp"
 version = "0.1.0"
 dependencies = [
+ "arrayvec",
+ "crossbeam-channel",
  "dmx",
  "eyre",
  "gdtf",
  "log",
  "serde",
  "serde_yaml",
+ "socket2 0.6.0",
+ "spin_sleep",
  "strum 0.27.2",
+ "thiserror 2.0.12",
  "uuid",
 ]
 
@@ -4553,6 +4558,16 @@ checksum = "e22376abed350d73dd1cd119b57ffccad95b4e585a7cda43e286245ce23c0678"
 dependencies = [
  "libc",
  "windows-sys 0.52.0",
+]
+
+[[package]]
+name = "socket2"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "233504af464074f9d066d7b5416c5f9b894a5862a6506e306f7b816cdd6f1807"
+dependencies = [
+ "libc",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

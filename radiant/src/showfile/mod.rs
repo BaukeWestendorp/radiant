@@ -97,7 +97,7 @@ impl From<&Show> for Showfile {
         for fixture in show.patch().fixtures() {
             patch.fixtures.push(patch::Fixture {
                 fid: fixture.fid().into(),
-                gdtf_type_id: *fixture.fixture_type_id(),
+                fixture_type_id: *fixture.fixture_type_id(),
                 universe: fixture.address().universe.into(),
                 channel: fixture.address().channel.into(),
                 dmx_mode: fixture.dmx_mode.clone(),
