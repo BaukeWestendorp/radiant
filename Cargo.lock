@@ -2266,7 +2266,7 @@ dependencies = [
  "clap",
  "eyre",
  "log",
- "radiant_comp",
+ "radiant",
  "simple_logger",
  "spin_sleep",
 ]
@@ -3332,16 +3332,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "object_derive"
-version = "0.1.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "radiant",
- "syn 2.0.104",
-]
-
-[[package]]
 name = "once_cell"
 version = "1.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3732,34 +3722,13 @@ version = "0.1.0"
 dependencies = [
  "arrayvec",
  "crossbeam-channel",
- "derive_more 2.0.1",
- "dmx",
- "eyre",
- "gdtf",
- "itertools 0.14.0",
- "log",
- "object_derive",
- "serde",
- "serde_yaml",
- "socket2 0.5.10",
- "spin_sleep",
- "thiserror 2.0.12",
- "uuid",
-]
-
-[[package]]
-name = "radiant_comp"
-version = "0.1.0"
-dependencies = [
- "arrayvec",
- "crossbeam-channel",
  "dmx",
  "eyre",
  "gdtf",
  "log",
  "serde",
  "serde_yaml",
- "socket2 0.6.0",
+ "socket2",
  "spin_sleep",
  "strum 0.27.2",
  "thiserror 2.0.12",
@@ -4549,16 +4518,6 @@ name = "smol_str"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd538fb6910ac1099850255cf94a94df6551fbdd602454387d0adb2d1ca6dead"
-
-[[package]]
-name = "socket2"
-version = "0.5.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e22376abed350d73dd1cd119b57ffccad95b4e585a7cda43e286245ce23c0678"
-dependencies = [
- "libc",
- "windows-sys 0.52.0",
-]
 
 [[package]]
 name = "socket2"
@@ -5925,15 +5884,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "677d2418bec65e3338edb076e806bc1ec15693c5d0104683f2efe857f61056a9"
 dependencies = [
  "windows-targets 0.48.5",
-]
-
-[[package]]
-name = "windows-sys"
-version = "0.52.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "282be5f36a8ce781fad8c8ae18fa3f9beff57ec1b52cb3de0789201425d9a33d"
-dependencies = [
- "windows-targets 0.52.6",
 ]
 
 [[package]]

@@ -1,10 +1,9 @@
+pub mod attr;
+pub mod builtin;
+pub mod cmd;
+pub mod comp;
 pub mod engine;
 pub mod error;
-pub mod show;
-pub mod showfile;
-
-pub(crate) mod pipeline;
-pub(crate) mod protocols;
 
 /// Re-export of `gdtf` crate.
 pub mod gdtf {

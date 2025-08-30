@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use radiant_comp::engine::Engine;
+use radiant::engine::Engine;
 
 /// Starts the app in headless mode.
 pub fn run(showfile_path: PathBuf) -> eyre::Result<()> {

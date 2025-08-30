@@ -1,13 +1,5 @@
 [workspace]
-members = [
-    "app",
-    "radiant",
-    "radiant/object_derive",
-    "dmx",
-    "headless",
-    "ui",
-    "radiant_comp",
-]
+members = ["app", "dmx", "headless", "ui", "radiant"]
 resolver = "3"
 
 [workspace.package]
@@ -22,7 +14,6 @@ eyre = "0.6.12"
 gpui = { git = "https://github.com/zed-industries/zed", rev = "1e67e30" }
 log = "0.4.27"
 radiant = { path = "./radiant" }
-radiant_comp = { path = "./radiant_comp" }
 serde = { version = "1.0.219", features = ["derive"] }
 simple_logger = "5.0.0"
 spin_sleep = "1.3.2"
