@@ -1,3 +1,4 @@
+use std::fmt;
 use std::str::FromStr;
 
 use eyre::Context;
@@ -980,8 +981,8 @@ impl Attribute {
     }
 }
 
-impl std::fmt::Display for Attribute {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Attribute {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Dimmer => write!(f, "Dimmer"),
 
@@ -2024,6 +2025,12 @@ impl AttributeValue {
     pub fn lerp(&self, other: &Self, t: f32) -> Self {
         let t = t.clamp(Self::MIN, Self::MAX);
         Self::new(self.0 * (1.0 - t) + other.0 * t)
+    }
+}
+
+impl fmt::Display for AttributeValue {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 

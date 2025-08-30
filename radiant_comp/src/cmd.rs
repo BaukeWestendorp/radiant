@@ -2,6 +2,7 @@ use std::{fmt, str};
 
 use eyre::ContextCompat;
 
+use crate::attr::{Attribute, AttributeValue};
 use crate::builtin::{
     Fixture, FixtureId, GdtfFixtureTypeId, Object, ObjectId, ObjectKind, ObjectType, PoolId,
 };
@@ -23,6 +24,12 @@ pub enum Command {
     },
     Clear {
         mode: Option<ClearMode>,
+    },
+
+    ProgrammerSetValue {
+        fid: FixtureId,
+        attribute: Attribute,
+        value: AttributeValue,
     },
 
     Create {
@@ -77,6 +84,10 @@ impl Command {
                         });
                     }
                 }
+            }
+
+            Command::ProgrammerSetValue { fid, attribute, value } => {
+                engine.programmer().update(|p| p.set_value(fid, attribute, value));
             }
 
             Command::Create { r#type, pool_id, name } => {
@@ -146,6 +157,13 @@ impl fmt::Display for Command {
             Command::Clear { mode } => {
                 push_keyword(&mut parts, "clear");
                 push_optional_argument(&mut parts, "mode", mode);
+            }
+
+            Command::ProgrammerSetValue { fid, attribute, value } => {
+                push_keyword(&mut parts, "programmer_set_value");
+                push_argument(&mut parts, fid);
+                push_argument(&mut parts, attribute);
+                push_argument(&mut parts, value);
             }
 
             Command::Create { r#type, pool_id, name } => {
