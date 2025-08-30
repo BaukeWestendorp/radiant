@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt;
 
 use crate::comp::ShowfileComponent;
 use crate::engine::Engine;
@@ -23,14 +24,34 @@ impl Objects {
         self.0.get(&object_id.into())
     }
 
-    pub fn get_mut(&mut self, object_id: impl Into<ObjectId>) -> Option<&mut Object> {
+    pub(crate) fn get_mut(&mut self, object_id: impl Into<ObjectId>) -> Option<&mut Object> {
         self.0.get_mut(&object_id.into())
+    }
+
+    pub(crate) fn insert(&mut self, object: Object) {
+        self.0.insert(object.id(), object);
+    }
+
+    pub(crate) fn remove(&mut self, object_id: impl Into<ObjectId>) {
+        self.0.remove(&object_id.into());
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct ObjectId(uuid::Uuid);
+
+impl ObjectId {
+    pub fn new_unique() -> Self {
+        Self(uuid::Uuid::new_v4())
+    }
+}
+
+impl fmt::Display for ObjectId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 impl TryFrom<&str> for ObjectId {
     type Error = uuid::Error;
@@ -46,6 +67,16 @@ pub struct Object {
     id: ObjectId,
     pub name: String,
     pub kind: ObjectKind,
+}
+
+impl Object {
+    pub fn new(kind: ObjectKind) -> Self {
+        Self { id: ObjectId::new_unique(), name: format!("New {}", kind.r#type()), kind }
+    }
+
+    pub fn id(&self) -> ObjectId {
+        self.id
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -66,8 +97,61 @@ pub enum ObjectKind {
     PresetVideo(Preset<Video>),
 }
 
+impl ObjectKind {
+    pub fn r#type(&self) -> ObjectType {
+        match self {
+            ObjectKind::Group(_) => ObjectType::Group,
+            ObjectKind::PresetDimmer(_) => ObjectType::PresetDimmer,
+            ObjectKind::PresetPosition(_) => ObjectType::PresetPosition,
+            ObjectKind::PresetGobo(_) => ObjectType::PresetGobo,
+            ObjectKind::PresetColor(_) => ObjectType::PresetColor,
+            ObjectKind::PresetBeam(_) => ObjectType::PresetBeam,
+            ObjectKind::PresetFocus(_) => ObjectType::PresetFocus,
+            ObjectKind::PresetControl(_) => ObjectType::PresetControl,
+            ObjectKind::PresetShapers(_) => ObjectType::PresetShapers,
+            ObjectKind::PresetVideo(_) => ObjectType::PresetVideo,
+        }
+    }
+
+    pub fn default_for_type(r#type: ObjectType) -> ObjectKind {
+        match r#type {
+            ObjectType::Group => ObjectKind::Group(Group::default()),
+            ObjectType::PresetDimmer => ObjectKind::PresetDimmer(Preset::<Dimmer>::default()),
+            ObjectType::PresetPosition => ObjectKind::PresetPosition(Preset::<Position>::default()),
+            ObjectType::PresetGobo => ObjectKind::PresetGobo(Preset::<Gobo>::default()),
+            ObjectType::PresetColor => ObjectKind::PresetColor(Preset::<Color>::default()),
+            ObjectType::PresetBeam => ObjectKind::PresetBeam(Preset::<Beam>::default()),
+            ObjectType::PresetFocus => ObjectKind::PresetFocus(Preset::<Focus>::default()),
+            ObjectType::PresetControl => ObjectKind::PresetControl(Preset::<Control>::default()),
+            ObjectType::PresetShapers => ObjectKind::PresetShapers(Preset::<Shapers>::default()),
+            ObjectType::PresetVideo => ObjectKind::PresetVideo(Preset::<Video>::default()),
+        }
+    }
+}
+
+impl fmt::Display for ObjectType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ObjectType::Group => write!(f, "Group"),
+            ObjectType::PresetDimmer => write!(f, "Dimmer Preset"),
+            ObjectType::PresetPosition => write!(f, "Position Preset"),
+            ObjectType::PresetGobo => write!(f, "Gobo Preset"),
+            ObjectType::PresetColor => write!(f, "Color Preset"),
+            ObjectType::PresetBeam => write!(f, "Beam Preset"),
+            ObjectType::PresetFocus => write!(f, "Focus Preset"),
+            ObjectType::PresetControl => write!(f, "Control Preset"),
+            ObjectType::PresetShapers => write!(f, "Shapers Preset"),
+            ObjectType::PresetVideo => write!(f, "Video Preset"),
+        }
+    }
+}
+
 impl ShowfileComponent for Objects {
     fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
         self
     }
 

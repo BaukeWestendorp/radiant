@@ -7,6 +7,8 @@ use crate::error::Result;
 pub trait ShowfileComponent: Send + Sync + 'static {
     fn as_any(&self) -> &dyn std::any::Any;
 
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
+
     fn relative_file_path() -> &'static str
     where
         Self: Sized;
