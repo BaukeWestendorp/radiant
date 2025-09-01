@@ -1,9 +1,9 @@
 use std::collections::HashMap;
-use std::fmt;
 use std::fs::File;
 use std::num::NonZeroU32;
 use std::path::Path;
 use std::str::FromStr;
+use std::{fmt, str};
 
 use eyre::{Context, ContextCompat};
 use gdtf::GdtfFile;
@@ -40,13 +40,17 @@ impl Patch {
         self.fixtures.iter().find(|f| f.fid == fid)
     }
 
+    pub fn fixtures(&self) -> &[Fixture] {
+        &self.fixtures
+    }
+
     pub fn has_fixture(&self, fid: impl Into<FixtureId>) -> bool {
         let fid = fid.into();
         self.fixtures.iter().any(|f| f.fid == fid)
     }
 
     pub(crate) fn add_fixture(&mut self, fixture: Fixture) -> Result<()> {
-        if !self.has_fixture(fixture.fid) {
+        if self.has_fixture(fixture.fid) {
             eyre::bail!("fixture with fixture id '{}' already exists", fixture.fid);
         }
 
@@ -65,6 +69,10 @@ impl Patch {
         self.fixtures.push(fixture);
 
         Ok(())
+    }
+
+    pub(crate) fn remove_fixture(&mut self, fid: FixtureId) {
+        self.fixtures.retain(|f| f.fid != fid);
     }
 }
 
@@ -112,7 +120,7 @@ impl Component for Patch {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Fixture {
     pub name: String,
@@ -277,9 +285,32 @@ impl Fixture {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct FixtureId(pub NonZeroU32);
 
+impl Default for FixtureId {
+    fn default() -> Self {
+        Self(NonZeroU32::new(1).unwrap())
+    }
+}
+
+impl From<FixtureId> for u32 {
+    fn from(value: FixtureId) -> Self {
+        value.0.into()
+    }
+}
+
 impl fmt::Display for FixtureId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl str::FromStr for FixtureId {
+    type Err = eyre::Report;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let id = s.parse::<u32>()?;
+        let nonzero =
+            NonZeroU32::new(id).ok_or_else(|| eyre::eyre!("FixtureId must be non-zero"))?;
+        Ok(FixtureId(nonzero))
     }
 }
 

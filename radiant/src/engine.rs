@@ -1,4 +1,4 @@
-use std::any::TypeId;
+use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -8,24 +8,32 @@ use eyre::Context;
 use crate::builtin::{self, Objects, Patch, Pools, Programmer, ProtocolConfig};
 use crate::cmd::Command;
 use crate::comp::{Component, ComponentHandle};
+use crate::engine::event::EngineEvent;
 use crate::engine::pipeline::Pipeline;
 use crate::error::Result;
 
+pub mod event;
 mod pipeline;
 mod proc;
 
 pub struct Engine {
     showfile_path: PathBuf,
-    components: HashMap<TypeId, Arc<Mutex<dyn std::any::Any + Send + Sync>>>,
+    components: HashMap<TypeId, Arc<Mutex<dyn Any + Send + Sync>>>,
     pipeline: Arc<Mutex<Pipeline>>,
+    event_tx: crossbeam_channel::Sender<EngineEvent>,
+    event_rx: crossbeam_channel::Receiver<EngineEvent>,
 }
 
 impl Engine {
     pub fn new(showfile_path: PathBuf) -> Self {
+        let (tx, rx) = crossbeam_channel::unbounded();
+
         Self {
             showfile_path,
             components: HashMap::new(),
             pipeline: Arc::new(Mutex::new(Pipeline::new())),
+            event_rx: rx,
+            event_tx: tx,
         }
     }
 
@@ -71,6 +79,15 @@ impl Engine {
         self.exec(command.clone())
             .map_err(|err| log::error!("failed to run command '{command}': {err}"))
             .ok();
+    }
+
+    #[inline]
+    pub(crate) fn emit(&mut self, event: EngineEvent) {
+        self.event_tx.send(event).map_err(|err| format!("failed to send event: {err}")).ok();
+    }
+
+    pub fn event_rx(&self) -> crossbeam_channel::Receiver<EngineEvent> {
+        self.event_rx.clone()
     }
 
     #[inline]

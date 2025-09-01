@@ -7,45 +7,61 @@ use crate::builtin::{
     Fixture, FixtureId, GdtfFixtureTypeId, Object, ObjectId, ObjectKind, ObjectType, PoolId,
 };
 use crate::engine::Engine;
+use crate::engine::event::EngineEvent;
 use crate::error::Result;
 
 #[derive(Clone)]
 pub enum Command {
-    PatchFixture {
+    Patch(PatchCommand),
+
+    Select { fid: FixtureId },
+    Clear { mode: Option<ClearMode> },
+
+    ProgrammerSetValue { fid: FixtureId, attribute: Attribute, value: AttributeValue },
+
+    Create { r#type: ObjectType, pool_id: PoolId, name: Option<String> },
+    Remove { object_ref: ObjectReference },
+}
+
+#[derive(Clone)]
+pub enum PatchCommand {
+    AddFixture {
         fid: FixtureId,
         fixture_type_id: GdtfFixtureTypeId,
         address: dmx::Address,
         dmx_mode: String,
         name: Option<String>,
     },
-
-    Select {
+    RemoveFixture {
         fid: FixtureId,
     },
-    Clear {
-        mode: Option<ClearMode>,
-    },
-
-    ProgrammerSetValue {
+    ReplaceFixture {
         fid: FixtureId,
-        attribute: Attribute,
-        value: AttributeValue,
-    },
-
-    Create {
-        r#type: ObjectType,
-        pool_id: PoolId,
+        fixture_type_id: GdtfFixtureTypeId,
+        address: dmx::Address,
+        dmx_mode: String,
         name: Option<String>,
     },
-    Remove {
-        object_ref: ObjectReference,
+    SetName {
+        fid: FixtureId,
+        name: String,
+    },
+    SetFixtureId {
+        fid: FixtureId,
+        new_fid: FixtureId,
+    },
+    SetAddress {
+        fid: FixtureId,
+        address: dmx::Address,
     },
 }
 
-impl Command {
-    pub(crate) fn exec(self, engine: &mut Engine) -> Result<()> {
+impl PatchCommand {
+    fn exec(self, engine: &mut Engine) -> Result<()> {
+        engine.emit(EngineEvent::PatchChanged);
+
         match self {
-            Command::PatchFixture { fid, fixture_type_id, address, dmx_mode, name } => {
+            PatchCommand::AddFixture { fid, fixture_type_id, address, dmx_mode, name } => {
                 engine.patch().update(|patch| {
                     patch.add_fixture(Fixture::new(
                         fid,
@@ -55,6 +71,72 @@ impl Command {
                         name.unwrap_or("New Fixture".to_string()),
                     ))
                 })?;
+            }
+            PatchCommand::RemoveFixture { fid } => {
+                engine.patch().update(|patch| patch.remove_fixture(fid));
+            }
+            PatchCommand::ReplaceFixture { fid, fixture_type_id, address, dmx_mode, name } => {
+                engine.exec(Command::Patch(PatchCommand::RemoveFixture { fid }))?;
+                engine.exec(Command::Patch(PatchCommand::AddFixture {
+                    fid,
+                    fixture_type_id,
+                    address,
+                    dmx_mode,
+                    name,
+                }))?;
+            }
+            PatchCommand::SetName { fid, name } => {
+                let Some(fixture) = engine.patch().read(|patch| patch.fixture(fid).cloned()) else {
+                    return Ok(());
+                };
+
+                engine.exec(Command::Patch(PatchCommand::ReplaceFixture {
+                    fid,
+                    fixture_type_id: fixture.fixture_type_id,
+                    address: fixture.address,
+                    dmx_mode: fixture.dmx_mode,
+                    name: Some(name),
+                }))?;
+            }
+            PatchCommand::SetFixtureId { fid, new_fid } => {
+                let Some(fixture) = engine.patch().read(|patch| patch.fixture(fid).cloned()) else {
+                    return Ok(());
+                };
+
+                engine.exec(Command::Patch(PatchCommand::AddFixture {
+                    fid: new_fid,
+                    fixture_type_id: fixture.fixture_type_id,
+                    address: fixture.address,
+                    dmx_mode: fixture.dmx_mode,
+                    name: Some(fixture.name),
+                }))?;
+
+                engine.exec(Command::Patch(PatchCommand::RemoveFixture { fid }))?;
+            }
+            PatchCommand::SetAddress { fid, address } => {
+                let Some(fixture) = engine.patch().read(|patch| patch.fixture(fid).cloned()) else {
+                    return Ok(());
+                };
+
+                engine.exec(Command::Patch(PatchCommand::ReplaceFixture {
+                    fid,
+                    fixture_type_id: fixture.fixture_type_id,
+                    address,
+                    dmx_mode: fixture.dmx_mode,
+                    name: Some(fixture.name),
+                }))?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl Command {
+    pub(crate) fn exec(self, engine: &mut Engine) -> Result<()> {
+        match self {
+            Command::Patch(cmd) => {
+                cmd.exec(engine)?;
             }
 
             Command::Select { fid } => {
@@ -141,7 +223,13 @@ impl fmt::Display for Command {
         let mut parts = Vec::new();
 
         match self {
-            Command::PatchFixture { fid, fixture_type_id, address, dmx_mode, name } => {
+            Command::Patch(PatchCommand::AddFixture {
+                fid,
+                fixture_type_id,
+                address,
+                dmx_mode,
+                name,
+            }) => {
                 push_keyword(&mut parts, "patch_fixture");
                 push_argument(&mut parts, fid);
                 push_argument(&mut parts, fixture_type_id);
@@ -149,7 +237,39 @@ impl fmt::Display for Command {
                 push_argument(&mut parts, dmx_mode);
                 push_optional_argument(&mut parts, "name", name);
             }
-
+            Command::Patch(PatchCommand::RemoveFixture { fid }) => {
+                push_keyword(&mut parts, "patch_remove_fixture");
+                push_argument(&mut parts, fid);
+            }
+            Command::Patch(PatchCommand::ReplaceFixture {
+                fid,
+                fixture_type_id,
+                address,
+                dmx_mode,
+                name,
+            }) => {
+                push_keyword(&mut parts, "patch_replace_fixture");
+                push_argument(&mut parts, fid);
+                push_argument(&mut parts, fixture_type_id);
+                push_argument(&mut parts, address);
+                push_argument(&mut parts, dmx_mode);
+                push_optional_argument(&mut parts, "name", name);
+            }
+            Command::Patch(PatchCommand::SetName { fid, name }) => {
+                push_keyword(&mut parts, "patch_set_name");
+                push_argument(&mut parts, fid);
+                push_argument(&mut parts, name);
+            }
+            Command::Patch(PatchCommand::SetFixtureId { fid, new_fid }) => {
+                push_keyword(&mut parts, "patch_set_address");
+                push_argument(&mut parts, fid);
+                push_argument(&mut parts, new_fid);
+            }
+            Command::Patch(PatchCommand::SetAddress { fid, address }) => {
+                push_keyword(&mut parts, "patch_set_address");
+                push_argument(&mut parts, fid);
+                push_argument(&mut parts, address);
+            }
             Command::Select { fid } => {
                 push_keyword(&mut parts, "select");
                 push_argument(&mut parts, fid);
@@ -158,14 +278,12 @@ impl fmt::Display for Command {
                 push_keyword(&mut parts, "clear");
                 push_optional_argument(&mut parts, "mode", mode);
             }
-
             Command::ProgrammerSetValue { fid, attribute, value } => {
                 push_keyword(&mut parts, "programmer_set_value");
                 push_argument(&mut parts, fid);
                 push_argument(&mut parts, attribute);
                 push_argument(&mut parts, value);
             }
-
             Command::Create { r#type, pool_id, name } => {
                 push_keyword(&mut parts, "create");
                 push_argument(&mut parts, r#type);

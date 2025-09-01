@@ -24,10 +24,6 @@ impl Objects {
         self.0.get(&object_id.into())
     }
 
-    pub(crate) fn get_mut(&mut self, object_id: impl Into<ObjectId>) -> Option<&mut Object> {
-        self.0.get_mut(&object_id.into())
-    }
-
     pub(crate) fn insert(&mut self, object: Object) {
         self.0.insert(object.id(), object);
     }

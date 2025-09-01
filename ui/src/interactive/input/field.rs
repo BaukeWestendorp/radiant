@@ -1,14 +1,16 @@
 use gpui::prelude::*;
 use gpui::{
     App, Context, ElementId, Entity, EventEmitter, FocusHandle, Focusable, SharedString, Window,
+    div,
 };
 
 use crate::Disableable;
 use crate::interactive::input::{TextInput, TextInputEvent};
-use crate::org::interactive_container;
+use crate::org::{ContainerStyle, interactive_container};
 
 pub struct Field<I: FieldImpl> {
     input: Entity<TextInput>,
+    styled: bool,
 
     _marker: std::marker::PhantomData<I>,
 }
@@ -37,7 +39,7 @@ impl<I: FieldImpl + 'static> Field<I> {
         })
         .detach();
 
-        Self { input, _marker: std::marker::PhantomData }
+        Self { input, styled: true, _marker: std::marker::PhantomData }
     }
 
     pub fn value(&self, cx: &App) -> I::Value {
@@ -49,6 +51,11 @@ impl<I: FieldImpl + 'static> Field<I> {
         self.input.update(cx, |text_field, cx| {
             text_field.set_text(I::to_shared_string(value), cx);
         })
+    }
+
+    pub fn with_value(self, value: &I::Value, cx: &mut App) -> Self {
+        self.set_value(value, cx);
+        self
     }
 
     fn commit_value(&self, cx: &mut App) {
@@ -65,6 +72,11 @@ impl<I: FieldImpl + 'static> Field<I> {
         })
     }
 
+    pub fn with_placeholder(self, placeholder: impl Into<SharedString>, cx: &mut App) -> Self {
+        self.set_placeholder(placeholder, cx);
+        self
+    }
+
     pub fn disabled(&self, cx: &App) -> bool {
         self.input.read(cx).disabled()
     }
@@ -73,12 +85,35 @@ impl<I: FieldImpl + 'static> Field<I> {
         self.input.update(cx, |text_field, _cx| text_field.set_disabled(disabled));
     }
 
+    pub fn with_disabled(self, disabled: bool, cx: &mut App) -> Self {
+        self.set_disabled(disabled, cx);
+        self
+    }
+
     pub fn masked(&self, cx: &App) -> bool {
         self.input.read(cx).masked()
     }
 
     pub fn set_masked(&self, masked: bool, cx: &mut App) {
         self.input.update(cx, |text_field, _cx| text_field.set_masked(masked));
+    }
+
+    pub fn with_masked(self, masked: bool, cx: &mut App) -> Self {
+        self.set_masked(masked, cx);
+        self
+    }
+
+    pub fn styled(&self) -> bool {
+        self.styled
+    }
+
+    pub fn set_styled(&mut self, styled: bool) {
+        self.styled = styled;
+    }
+
+    pub fn with_styled(mut self, styled: bool) -> Self {
+        self.set_styled(styled);
+        self
     }
 }
 
@@ -89,13 +124,18 @@ impl<I: FieldImpl + 'static> Focusable for Field<I> {
 }
 
 impl<I: FieldImpl + 'static> Render for Field<I> {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let focus_handle = self.input.read(cx).focus_handle(cx);
 
         interactive_container(ElementId::View(cx.entity_id()), Some(focus_handle))
             .w_full()
+            .normal_container_style(ContainerStyle {
+                background: gpui::transparent_black(),
+                border: gpui::transparent_black(),
+                text_color: window.text_style().color,
+            })
             .disabled(self.disabled(cx))
-            .child(self.input.clone())
+            .child(div().size_full().p_0p5().child(self.input.clone()))
     }
 }
 

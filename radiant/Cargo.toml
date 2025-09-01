@@ -5,9 +5,8 @@ edition.workspace = true
 
 [dependencies]
 arrayvec = "0.7.6"
-crossbeam-channel = "0.5.15"
+crossbeam-channel.workspace = true
 dmx.workspace = true
-
 eyre.workspace = true
 gdtf = "0.2.0"
 log.workspace = true
