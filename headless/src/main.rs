@@ -7,7 +7,7 @@ mod app;
 #[derive(clap::Parser)]
 #[command(version, about, long_about = None)]
 struct Args {
-    showfile_path: Option<PathBuf>,
+    showfile_path: PathBuf,
 }
 
 fn main() -> Result<(), eyre::Error> {
@@ -16,7 +16,7 @@ fn main() -> Result<(), eyre::Error> {
 
     let args = Args::parse();
 
-    app::run(args.showfile_path.as_ref())?;
+    app::run(args.showfile_path)?;
 
     Ok(())
 }

@@ -1,12 +1,12 @@
 use std::path::PathBuf;
 
+use app::error::Result;
 use clap::Parser;
-use radiant::error::Result;
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Args {
-    showfile_path: Option<PathBuf>,
+    showfile_path: PathBuf,
 }
 
 fn main() -> Result<()> {

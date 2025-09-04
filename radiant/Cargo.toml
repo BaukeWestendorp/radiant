@@ -5,17 +5,15 @@ edition.workspace = true
 
 [dependencies]
 arrayvec = "0.7.6"
-crossbeam-channel = "0.5.15"
-derive_more.workspace = true
+crossbeam-channel.workspace = true
 dmx.workspace = true
 eyre.workspace = true
 gdtf = "0.2.0"
 log.workspace = true
 serde.workspace = true
 serde_yaml = "0.9.34"
-socket2 = { version = "0.5.10", features = ["all"] }
+socket2 = { version = "0.6.0", features = ["all"] }
 spin_sleep.workspace = true
+strum = { version = "0.27.2", features = ["derive"] }
 thiserror.workspace = true
 uuid = { version = "1.17.0", features = ["v4"] }
-object_derive = { path = "./object_derive" }
-itertools = "0.14.0"

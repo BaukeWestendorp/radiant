@@ -91,7 +91,7 @@ impl Colors {
             bg_active_bright: selected.darken(0.2),
             bg_selected: selected.darken(0.5),
             bg_selected_bright: selected.darken(0.2),
-            bg_alternating: gpui::hsla(0.0, 0.0, 0.1, 1.0),
+            bg_alternating: gpui::hsla(0.0, 0.0, 0.08, 1.0),
             bg_destructive: destructive.darken(0.8),
             bg_destructive_focused: destructive.darken(0.4),
             bg_destructive_selected: destructive.darken(0.2),
@@ -140,7 +140,7 @@ pub trait InteractiveColor {
 
 impl InteractiveColor for Hsla {
     fn hovered(self) -> Self {
-        self.lighten(0.1).with_opacity(self.a + 0.1)
+        self.lighten(0.13).with_opacity(self.a + 0.1)
     }
 
     fn muted(self) -> Self {
