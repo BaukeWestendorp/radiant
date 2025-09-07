@@ -1,5 +1,5 @@
 use gpui::prelude::*;
-use gpui::{App, Entity, ReadGlobal, Window, WindowHandle, div};
+use gpui::{App, Entity, Window, WindowHandle, div};
 use radiant::builtin::Patch;
 use ui::interactive::table::{Column, Selection, Table, TableDelegate};
 
@@ -16,16 +16,9 @@ impl PatchWindow {
     }
 
     fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let patch =
-            cx.new(|cx| EngineManager::global(cx).engine.patch().read(|patch| patch.clone()));
-        Self {
-            table: cx.new(|cx| {
-                let mut table = Table::new(PatchTable::new(patch), window, cx);
-                table.start_selection("name", 2, cx);
-                table.end_selection(5, cx);
-                table
-            }),
-        }
+        let patch = cx.new(|cx| EngineManager::read_patch(cx, |patch| patch.clone()));
+
+        Self { table: cx.new(|cx| Table::new(PatchTable::new(patch), window, cx)) }
     }
 }
 
@@ -81,52 +74,16 @@ impl TableDelegate for PatchTable {
             return self.render_empty(window, cx).into_any_element();
         };
 
+        let render_cell = |content| {
+            div().size_full().flex().items_center().px_1().child(content).into_any_element()
+        };
+
         match column.id.to_string().as_str() {
-            "fid" => {
-                return div()
-                    .size_full()
-                    .flex()
-                    .items_center()
-                    .px_1()
-                    .child(fixture.fid.to_string())
-                    .into_any_element();
-            }
-            "name" => {
-                return div()
-                    .size_full()
-                    .flex()
-                    .items_center()
-                    .px_1()
-                    .child(fixture.name.to_string())
-                    .into_any_element();
-            }
-            "addr" => {
-                return div()
-                    .size_full()
-                    .flex()
-                    .items_center()
-                    .px_1()
-                    .child(fixture.address.to_string())
-                    .into_any_element();
-            }
-            "ft_id" => {
-                return div()
-                    .size_full()
-                    .flex()
-                    .items_center()
-                    .px_1()
-                    .child(fixture.fixture_type_id.to_string())
-                    .into_any_element();
-            }
-            "dmx_mode" => {
-                return div()
-                    .size_full()
-                    .flex()
-                    .items_center()
-                    .px_1()
-                    .child(fixture.dmx_mode.to_string())
-                    .into_any_element();
-            }
+            "fid" => render_cell(fixture.fid.to_string()),
+            "name" => render_cell(fixture.name.to_string()),
+            "addr" => render_cell(fixture.address.to_string()),
+            "ft_id" => render_cell(fixture.fixture_type_id.to_string()),
+            "dmx_mode" => render_cell(fixture.dmx_mode.to_string()),
             _ => self.render_empty(window, cx).into_any_element(),
         }
     }
