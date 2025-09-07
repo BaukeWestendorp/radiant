@@ -13,4 +13,5 @@ pub(super) fn init(cx: &mut gpui::App) {
     context_menu::init(cx);
     list::init(cx);
     modal::init(cx);
+    table::init(cx);
 }

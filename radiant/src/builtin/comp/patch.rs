@@ -21,7 +21,7 @@ pub(crate) fn register(engine: &mut Engine) -> Result<()> {
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Patch {
     #[serde(skip)]
