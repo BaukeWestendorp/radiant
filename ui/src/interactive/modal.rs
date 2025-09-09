@@ -1,31 +1,37 @@
 use gpui::prelude::*;
 use gpui::{
-    AnyView, App, AppContext, FocusHandle, Focusable, Global, KeyBinding, ReadGlobal, UpdateGlobal,
-    Window, div,
+    AnyView, App, AppContext, FocusHandle, Focusable, FontWeight, Global, ReadGlobal, SharedString,
+    UpdateGlobal, Window, div,
 };
 
-use crate::org::interactive_container;
+use crate::theme::ActiveTheme;
 
 pub mod actions {
+    use gpui::{App, KeyBinding};
+
+    use super::ModalManager;
+
     gpui::actions!(modal, [Close]);
-}
 
-pub const MODAL_KEY_CONTEXT: &str = "Modal";
+    pub const KEY_CONTEXT: &str = "Modal";
 
-pub(super) fn init(cx: &mut App) {
-    cx.set_global(ModalManager::new());
+    pub(crate) fn init(cx: &mut App) {
+        cx.set_global(ModalManager::new());
 
-    cx.bind_keys([KeyBinding::new("escape", actions::Close, Some(MODAL_KEY_CONTEXT))]);
+        cx.bind_keys([KeyBinding::new("escape", Close, Some(KEY_CONTEXT))]);
+    }
 }
 
 pub struct Modal<D: ModalDelegate> {
+    title: SharedString,
+
     pub delegate: D,
     focus_handle: FocusHandle,
 }
 
 impl<D: ModalDelegate + 'static> Modal<D> {
-    fn new(delegate: D, cx: &mut Context<Self>) -> Self {
-        Self { delegate, focus_handle: cx.focus_handle() }
+    fn new(title: SharedString, delegate: D, focus_handle: FocusHandle) -> Self {
+        Self { title, delegate, focus_handle }
     }
 
     fn handle_close(
@@ -57,19 +63,40 @@ pub trait ModalDelegate {
 
 impl<D: ModalDelegate + 'static> Render for Modal<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        interactive_container("modal", Some(self.focus_handle(cx)))
-            .key_context(MODAL_KEY_CONTEXT)
+        div()
+            .id("modal")
+            .track_focus(&self.focus_handle)
+            .key_context(actions::KEY_CONTEXT)
+            .bg(cx.theme().modal)
+            .border_1()
+            .border_color(cx.theme().modal_border)
+            .rounded(cx.theme().radius)
+            .occlude()
             .on_action(cx.listener(Self::handle_close))
-            .w_40()
-            .h_32()
-            .p_2()
-            .child(self.delegate.render_content(window, cx))
+            .on_mouse_down_out(
+                cx.listener(|this, _, window, cx| this.handle_close(&actions::Close, window, cx)),
+            )
+            .when(cx.theme().shadow, |e| e.shadow_md())
+            .child(
+                div()
+                    .p_2()
+                    .font_weight(FontWeight::BOLD)
+                    .child(self.title.clone())
+                    .border_b_1()
+                    .border_color(cx.theme().modal_border),
+            )
+            .child(div().p_2().child(self.delegate.render_content(window, cx)))
     }
 }
 
 pub trait ModalExt {
-    fn open_modal<D: ModalDelegate + 'static, F: FnOnce(&mut Context<Modal<D>>) -> D>(
+    fn open_modal<
+        D: ModalDelegate + 'static,
+        F: FnOnce(FocusHandle, &mut Window, &mut Context<Modal<D>>) -> D,
+    >(
         &mut self,
+        title: impl Into<SharedString>,
+        window: &mut Window,
         modal_builder: F,
     );
 
@@ -77,18 +104,34 @@ pub trait ModalExt {
 }
 
 impl ModalExt for App {
-    fn open_modal<D: ModalDelegate + 'static, F: FnOnce(&mut Context<Modal<D>>) -> D>(
+    fn open_modal<
+        D: ModalDelegate + 'static,
+        F: FnOnce(FocusHandle, &mut Window, &mut Context<Modal<D>>) -> D,
+    >(
         &mut self,
+        title: impl Into<SharedString>,
+        window: &mut Window,
         modal_builder: F,
     ) {
         ModalManager::update_global(self, |mm, cx| {
-            mm.modal = Some(cx.new(|cx| Modal::new(modal_builder(cx), cx)).into());
+            let focus_handle = cx.focus_handle();
+            let modal = cx.new(|cx| {
+                Modal::new(
+                    title.into(),
+                    modal_builder(focus_handle.clone(), window, cx),
+                    focus_handle.clone(),
+                )
+            });
+            window.defer(cx, move |window, _| window.focus(&focus_handle));
+            mm.modal = Some(modal.into());
         });
     }
 
     fn close_modal(&mut self) {
-        ModalManager::update_global(self, |mm, _| {
-            mm.modal = None;
+        self.defer(|cx| {
+            ModalManager::update_global(cx, |mm, _| {
+                mm.modal = None;
+            });
         });
     }
 }

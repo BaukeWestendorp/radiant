@@ -1,42 +1,66 @@
-use gpui::Pixels;
+use std::ops::{Deref, DerefMut};
 
-mod color;
+use gpui::{App, Context, Global, Pixels, px};
 
-pub use color::*;
+mod colors;
 
-pub struct Theme {
-    pub colors: Colors,
+pub use colors::*;
 
-    pub radius: Pixels,
-
-    pub cursor_width: Pixels,
+pub(super) fn init(cx: &mut App) {
+    cx.set_global(Theme::default());
 }
 
-impl Theme {
-    pub(super) fn init(cx: &mut gpui::App) {
-        cx.set_global(Theme::default());
+/// Stores theme colors and UI style properties.
+pub struct Theme {
+    colors: ThemeColors,
+
+    /// Default border radius for UI elements.
+    pub radius: Pixels,
+    /// Cursor width.
+    pub cursor_width: Pixels,
+    /// Enable shadows.
+    pub shadow: bool,
+}
+
+impl Deref for Theme {
+    type Target = ThemeColors;
+
+    fn deref(&self) -> &Self::Target {
+        &self.colors
+    }
+}
+
+impl DerefMut for Theme {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.colors
     }
 }
 
 impl Default for Theme {
     fn default() -> Self {
-        Self { colors: Colors::default(), radius: gpui::px(3.0), cursor_width: gpui::px(1.0) }
+        Self {
+            colors: ThemeColors::default(),
+            radius: px(3.0),
+            cursor_width: px(2.0),
+            shadow: true,
+        }
     }
 }
 
-impl gpui::Global for Theme {}
+impl Global for Theme {}
 
+/// Trait for accessing the active theme.
 pub trait ActiveTheme {
     fn theme(&self) -> &Theme;
 }
 
-impl<E> ActiveTheme for gpui::Context<'_, E> {
+impl<E> ActiveTheme for Context<'_, E> {
     fn theme(&self) -> &Theme {
         self.global()
     }
 }
 
-impl ActiveTheme for gpui::App {
+impl ActiveTheme for App {
     fn theme(&self) -> &Theme {
         self.global()
     }

@@ -4,26 +4,21 @@ use gpui::{
     div,
 };
 
-use crate::Disableable;
 use crate::interactive::input::{TextInput, TextInputEvent};
-use crate::org::{ContainerStyle, interactive_container};
+use crate::theme::ActiveTheme;
 
-pub struct Field<I: FieldImpl> {
+pub struct TextField {
     input: Entity<TextInput>,
-    styled: bool,
-
-    _marker: std::marker::PhantomData<I>,
 }
 
-impl<I: FieldImpl + 'static> Field<I> {
+impl TextField {
     pub fn new(
         id: impl Into<ElementId>,
         focus_handle: FocusHandle,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
-        let input =
-            cx.new(|cx| TextInput::new(id, focus_handle, window, cx).px(window.rem_size() * 0.25));
+        let input = cx.new(|cx| TextInput::new(id, focus_handle, window, cx));
 
         cx.subscribe(&input, |this, _, event, cx| {
             cx.notify();
@@ -33,33 +28,33 @@ impl<I: FieldImpl + 'static> Field<I> {
                     this.commit_value(cx);
                     cx.emit(FieldEvent::Blur);
                 }
-                TextInputEvent::Submit(_) => cx.emit(FieldEvent::Submit(this.value(cx))),
-                TextInputEvent::Change(_) => cx.emit(FieldEvent::Change(this.value(cx))),
+                TextInputEvent::Submit(_) => cx.emit(FieldEvent::Submit),
+                TextInputEvent::Change(_) => cx.emit(FieldEvent::Change),
             }
         })
         .detach();
 
-        Self { input, styled: true, _marker: std::marker::PhantomData }
+        Self { input }
     }
 
-    pub fn value(&self, cx: &App) -> I::Value {
-        let s = self.input.read(cx).text();
-        I::from_str_or_default(s)
+    pub fn value<'a>(&self, cx: &'a App) -> &'a SharedString {
+        self.input.read(cx).text()
     }
 
-    pub fn set_value(&self, value: &I::Value, cx: &mut App) {
-        self.input.update(cx, |text_field, cx| {
-            text_field.set_text(I::to_shared_string(value), cx);
+    pub fn set_value(&self, value: SharedString, cx: &mut App) {
+        self.input.update(cx, |this, cx| {
+            this.set_text(value, cx);
+            this.move_to_end_of_line(cx);
         })
     }
 
-    pub fn with_value(self, value: &I::Value, cx: &mut App) -> Self {
+    pub fn with_value(self, value: SharedString, cx: &mut App) -> Self {
         self.set_value(value, cx);
         self
     }
 
     fn commit_value(&self, cx: &mut App) {
-        self.set_value(&self.value(cx), cx);
+        self.set_value(self.value(cx).clone(), cx);
     }
 
     pub fn placeholder<'a>(&self, cx: &'a App) -> &'a SharedString {
@@ -102,71 +97,35 @@ impl<I: FieldImpl + 'static> Field<I> {
         self.set_masked(masked, cx);
         self
     }
-
-    pub fn styled(&self) -> bool {
-        self.styled
-    }
-
-    pub fn set_styled(&mut self, styled: bool) {
-        self.styled = styled;
-    }
-
-    pub fn with_styled(mut self, styled: bool) -> Self {
-        self.set_styled(styled);
-        self
-    }
 }
 
-impl<I: FieldImpl + 'static> Focusable for Field<I> {
+impl Focusable for TextField {
     fn focus_handle(&self, cx: &App) -> FocusHandle {
         self.input.focus_handle(cx)
     }
 }
 
-impl<I: FieldImpl + 'static> Render for Field<I> {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+impl Render for TextField {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let focus_handle = self.input.read(cx).focus_handle(cx);
 
-        interactive_container(ElementId::View(cx.entity_id()), Some(focus_handle))
+        div()
+            .id(ElementId::View(cx.entity_id()))
+            .track_focus(&focus_handle)
+            .bg(cx.theme().input)
+            .border_1()
+            .border_color(cx.theme().input_border)
+            .rounded(cx.theme().radius)
             .w_full()
-            .normal_container_style(ContainerStyle {
-                background: gpui::transparent_black(),
-                border: gpui::transparent_black(),
-                text_color: window.text_style().color,
-            })
-            .disabled(self.disabled(cx))
             .child(div().size_full().p_0p5().child(self.input.clone()))
     }
 }
 
-impl<I: FieldImpl + 'static> EventEmitter<FieldEvent<I::Value>> for Field<I> {}
+impl EventEmitter<FieldEvent> for TextField {}
 
-pub trait FieldImpl {
-    type Value: Default;
-
-    fn from_str_or_default(s: &str) -> Self::Value;
-
-    fn to_shared_string(value: &Self::Value) -> SharedString;
-}
-
-impl<T> FieldImpl for T
-where
-    T: Default + std::str::FromStr + std::fmt::Display,
-{
-    type Value = T;
-
-    fn from_str_or_default(s: &str) -> Self::Value {
-        s.parse().unwrap_or_default()
-    }
-
-    fn to_shared_string(value: &Self::Value) -> SharedString {
-        value.to_string().into()
-    }
-}
-
-pub enum FieldEvent<T> {
+pub enum FieldEvent {
     Focus,
     Blur,
-    Submit(T),
-    Change(T),
+    Submit,
+    Change,
 }

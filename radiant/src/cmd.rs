@@ -4,7 +4,8 @@ use eyre::ContextCompat;
 
 use crate::attr::{Attribute, AttributeValue};
 use crate::builtin::{
-    Fixture, FixtureId, GdtfFixtureTypeId, Object, ObjectId, ObjectKind, ObjectType, PoolId,
+    Fixture, FixtureId, FixtureReference, GdtfFixtureTypeId, Object, ObjectId, ObjectKind,
+    ObjectType, PoolId,
 };
 use crate::engine::Engine;
 use crate::engine::event::EngineEvent;
@@ -26,33 +27,26 @@ pub enum Command {
 #[derive(Clone)]
 pub enum PatchCommand {
     AddFixture {
-        fid: FixtureId,
+        fid: Option<FixtureId>,
         fixture_type_id: GdtfFixtureTypeId,
-        address: dmx::Address,
+        address: Option<dmx::Address>,
         dmx_mode: String,
         name: Option<String>,
     },
     RemoveFixture {
-        fid: FixtureId,
-    },
-    ReplaceFixture {
-        fid: FixtureId,
-        fixture_type_id: GdtfFixtureTypeId,
-        address: dmx::Address,
-        dmx_mode: String,
-        name: Option<String>,
+        fixture_ref: FixtureReference,
     },
     SetName {
-        fid: FixtureId,
+        fixture_ref: FixtureReference,
         name: String,
     },
     SetFixtureId {
-        fid: FixtureId,
-        new_fid: FixtureId,
+        fixture_ref: FixtureReference,
+        new_fid: Option<FixtureId>,
     },
     SetAddress {
-        fid: FixtureId,
-        address: dmx::Address,
+        fixture_ref: FixtureReference,
+        address: Option<dmx::Address>,
     },
 }
 
@@ -72,59 +66,46 @@ impl PatchCommand {
                     ))
                 })?;
             }
-            PatchCommand::RemoveFixture { fid } => {
-                engine.patch().update(|patch| patch.remove_fixture(fid));
+            PatchCommand::RemoveFixture { fixture_ref } => {
+                engine.patch().update(|patch| patch.remove_fixture(fixture_ref));
             }
-            PatchCommand::ReplaceFixture { fid, fixture_type_id, address, dmx_mode, name } => {
-                engine.exec(Command::Patch(PatchCommand::RemoveFixture { fid }))?;
-                engine.exec(Command::Patch(PatchCommand::AddFixture {
-                    fid,
-                    fixture_type_id,
-                    address,
-                    dmx_mode,
-                    name,
-                }))?;
+            PatchCommand::SetName { fixture_ref, name } => {
+                engine.patch().update(|patch| {
+                    if let Some(fixture) = patch.fixture_mut(fixture_ref) {
+                        fixture.name = name;
+                        Ok(())
+                    } else {
+                        eyre::bail!("fixture with reference {fixture_ref} not found");
+                    }
+                })?;
             }
-            PatchCommand::SetName { fid, name } => {
-                let Some(fixture) = engine.patch().read(|patch| patch.fixture(fid).cloned()) else {
-                    return Ok(());
-                };
+            PatchCommand::SetFixtureId { fixture_ref, new_fid } => {
+                engine.patch().update(|patch| {
+                    if let Some(new_fid) = new_fid {
+                        if let Some(conflicting_fixture) = patch.fixture_mut(new_fid) {
+                            conflicting_fixture.fid = None;
+                        }
+                    }
+                });
 
-                engine.exec(Command::Patch(PatchCommand::ReplaceFixture {
-                    fid,
-                    fixture_type_id: fixture.fixture_type_id,
-                    address: fixture.address,
-                    dmx_mode: fixture.dmx_mode,
-                    name: Some(name),
-                }))?;
+                engine.patch().update(|patch| {
+                    if let Some(fixture) = patch.fixture_mut(fixture_ref) {
+                        fixture.fid = new_fid;
+                        Ok(())
+                    } else {
+                        eyre::bail!("fixture with reference {fixture_ref} not found");
+                    }
+                })?;
             }
-            PatchCommand::SetFixtureId { fid, new_fid } => {
-                let Some(fixture) = engine.patch().read(|patch| patch.fixture(fid).cloned()) else {
-                    return Ok(());
-                };
-
-                engine.exec(Command::Patch(PatchCommand::AddFixture {
-                    fid: new_fid,
-                    fixture_type_id: fixture.fixture_type_id,
-                    address: fixture.address,
-                    dmx_mode: fixture.dmx_mode,
-                    name: Some(fixture.name),
-                }))?;
-
-                engine.exec(Command::Patch(PatchCommand::RemoveFixture { fid }))?;
-            }
-            PatchCommand::SetAddress { fid, address } => {
-                let Some(fixture) = engine.patch().read(|patch| patch.fixture(fid).cloned()) else {
-                    return Ok(());
-                };
-
-                engine.exec(Command::Patch(PatchCommand::ReplaceFixture {
-                    fid,
-                    fixture_type_id: fixture.fixture_type_id,
-                    address,
-                    dmx_mode: fixture.dmx_mode,
-                    name: Some(fixture.name),
-                }))?;
+            PatchCommand::SetAddress { fixture_ref, address } => {
+                engine.patch().update(|patch| {
+                    if let Some(fixture) = patch.fixture_mut(fixture_ref) {
+                        fixture.address = address;
+                        Ok(())
+                    } else {
+                        eyre::bail!("fixture with reference {fixture_ref} not found");
+                    }
+                })?;
             }
         }
 
@@ -231,44 +212,42 @@ impl fmt::Display for Command {
                 name,
             }) => {
                 push_keyword(&mut parts, "patch_fixture");
-                push_argument(&mut parts, fid);
+                push_argument(
+                    &mut parts,
+                    fid.map(|fid| fid.to_string()).unwrap_or("none".to_string()),
+                );
                 push_argument(&mut parts, fixture_type_id);
-                push_argument(&mut parts, address);
+                push_argument(
+                    &mut parts,
+                    address.map(|address| address.to_string()).unwrap_or("none".to_string()),
+                );
                 push_argument(&mut parts, dmx_mode);
                 push_optional_argument(&mut parts, "name", name);
             }
-            Command::Patch(PatchCommand::RemoveFixture { fid }) => {
+            Command::Patch(PatchCommand::RemoveFixture { fixture_ref }) => {
                 push_keyword(&mut parts, "patch_remove_fixture");
-                push_argument(&mut parts, fid);
+                push_argument(&mut parts, fixture_ref);
             }
-            Command::Patch(PatchCommand::ReplaceFixture {
-                fid,
-                fixture_type_id,
-                address,
-                dmx_mode,
-                name,
-            }) => {
-                push_keyword(&mut parts, "patch_replace_fixture");
-                push_argument(&mut parts, fid);
-                push_argument(&mut parts, fixture_type_id);
-                push_argument(&mut parts, address);
-                push_argument(&mut parts, dmx_mode);
-                push_optional_argument(&mut parts, "name", name);
-            }
-            Command::Patch(PatchCommand::SetName { fid, name }) => {
+            Command::Patch(PatchCommand::SetName { fixture_ref, name }) => {
                 push_keyword(&mut parts, "patch_set_name");
-                push_argument(&mut parts, fid);
+                push_argument(&mut parts, fixture_ref);
                 push_argument(&mut parts, name);
             }
-            Command::Patch(PatchCommand::SetFixtureId { fid, new_fid }) => {
+            Command::Patch(PatchCommand::SetFixtureId { fixture_ref, new_fid }) => {
                 push_keyword(&mut parts, "patch_set_address");
-                push_argument(&mut parts, fid);
-                push_argument(&mut parts, new_fid);
+                push_argument(&mut parts, fixture_ref);
+                push_argument(
+                    &mut parts,
+                    new_fid.map(|fid| fid.to_string()).unwrap_or("none".to_string()),
+                );
             }
-            Command::Patch(PatchCommand::SetAddress { fid, address }) => {
+            Command::Patch(PatchCommand::SetAddress { fixture_ref, address }) => {
                 push_keyword(&mut parts, "patch_set_address");
-                push_argument(&mut parts, fid);
-                push_argument(&mut parts, address);
+                push_argument(&mut parts, fixture_ref);
+                push_argument(
+                    &mut parts,
+                    address.map(|address| address.to_string()).unwrap_or("none".to_string()),
+                );
             }
             Command::Select { fid } => {
                 push_keyword(&mut parts, "select");

@@ -16,4 +16,4 @@ socket2 = { version = "0.6.0", features = ["all"] }
 spin_sleep.workspace = true
 strum = { version = "0.27.2", features = ["derive"] }
 thiserror.workspace = true
-uuid = { version = "1.17.0", features = ["v4"] }
+uuid.workspace=true

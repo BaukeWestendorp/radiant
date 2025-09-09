@@ -199,32 +199,47 @@ impl Address {
         (self.universe.0 as u32 - 1) * 512 + self.channel.0 as u32
     }
 
-    /// Returns a new [Address] with the channel offset by the specified amount.
+    /// Returns a new [Address] with the channel offset by the specified amount,
+    /// wrapping over to the next universe(s) if necessary.
     ///
-    /// This method adds the given offset to the current channel value and
-    /// ensures the resulting channel is valid (within 1..=512 range).
+    /// This method adds the given offset to the current channel value. If the
+    /// resulting channel exceeds 512, it wraps to the next universe(s) and
+    /// continues counting from channel 1. If the resulting universe ID would be
+    /// invalid (zero), it will overflow without error.
     ///
     /// # Examples
     ///
     /// ```rust
     /// let address = dmx::Address::new(dmx::UniverseId::new(1).unwrap(), dmx::Channel::new(500).unwrap());
-    /// let new_address = address.with_channel_offset(10).unwrap();
+    /// let new_address = address.with_channel_offset(10);
     /// assert_eq!(new_address.channel, dmx::Channel::new(510).unwrap());
+    ///
+    /// // Wraps to next universe
+    /// let address = dmx::Address::new(dmx::UniverseId::new(1).unwrap(), dmx::Channel::new(510).unwrap());
+    /// let new_address = address.with_channel_offset(5);
+    /// assert_eq!(new_address.universe, dmx::UniverseId::new(2).unwrap());
+    /// assert_eq!(new_address.channel, dmx::Channel::new(3).unwrap());
     /// ```
     ///
-    /// # Errors
+    /// # Note
     ///
-    /// Returns an error if the resulting channel would be outside the valid
-    /// range (1..=512).
+    /// If the resulting universe ID would overflow, it wraps around without
+    /// error.
     ///
     /// ```rust
-    /// let address = dmx::Address::new(dmx::UniverseId::new(1).unwrap(), dmx::Channel::new(500).unwrap());
-    /// let result = address.with_channel_offset(20); // Would be channel 520
-    /// assert!(result.is_err());
+    /// let address = dmx::Address::new(dmx::UniverseId::new(u16::MAX).unwrap(), dmx::Channel::new(512).unwrap());
+    /// let new_address = address.with_channel_offset(1);
+    /// // new_address.universe will wrap to 1
+    /// assert_eq!(new_address.universe, dmx::UniverseId::new(1).unwrap());
     /// ```
-    pub fn with_channel_offset(mut self, offset: u16) -> Result<Self, Error> {
-        self.channel = Channel::new(self.channel.0 + offset)?;
-        Ok(self)
+    pub fn with_channel_offset(mut self, offset: u16) -> Self {
+        let total_channel = self.channel.0 as u32 + offset as u32;
+        let universe_offset = (total_channel - 1) / 512;
+        let new_channel = ((total_channel - 1) % 512 + 1) as u16;
+        let new_universe_id = self.universe.0.wrapping_add(universe_offset as u16);
+        self.universe = UniverseId(new_universe_id);
+        self.channel = Channel(new_channel);
+        self
     }
 }
 

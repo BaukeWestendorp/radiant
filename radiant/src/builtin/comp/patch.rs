@@ -10,6 +10,7 @@ use gdtf::GdtfFile;
 use gdtf::attribute::FeatureGroup;
 use gdtf::dmx_mode::DmxMode;
 use gdtf::fixture_type::FixtureType;
+use uuid::Uuid;
 
 use crate::attr::{Attribute, AttributeValue};
 use crate::comp::Component;
@@ -35,27 +36,53 @@ impl Patch {
         self.fixture_types.get(fixture_type_id)
     }
 
-    pub fn fixture(&self, fid: impl Into<FixtureId>) -> Option<&Fixture> {
-        let fid = fid.into();
-        self.fixtures.iter().find(|f| f.fid == fid)
+    pub fn fixture(&self, fixture_ref: impl Into<FixtureReference>) -> Option<&Fixture> {
+        let fixture_ref = fixture_ref.into();
+        self.fixtures.iter().find(|f| match fixture_ref {
+            FixtureReference::FixtureId(fid) => f.fid == Some(fid),
+            FixtureReference::Uuid(uuid) => f.uuid() == uuid,
+        })
+    }
+
+    pub(crate) fn fixture_mut(
+        &mut self,
+        fixture_ref: impl Into<FixtureReference>,
+    ) -> Option<&mut Fixture> {
+        let fixture_ref = fixture_ref.into();
+        self.fixtures.iter_mut().find(|f| match fixture_ref {
+            FixtureReference::FixtureId(fid) => f.fid == Some(fid),
+            FixtureReference::Uuid(uuid) => f.uuid() == uuid,
+        })
     }
 
     pub fn fixtures(&self) -> &[Fixture] {
         &self.fixtures
     }
 
-    pub fn has_fixture(&self, fid: impl Into<FixtureId>) -> bool {
-        let fid = fid.into();
-        self.fixtures.iter().any(|f| f.fid == fid)
+    pub fn fixture_ids(&self) -> impl IntoIterator<Item = &FixtureId> {
+        self.fixtures.iter().filter_map(|f| f.fid.as_ref())
+    }
+
+    pub fn has_fixture(&self, fixture_ref: impl Into<FixtureReference>) -> bool {
+        let fixture_ref = fixture_ref.into();
+        self.fixtures.iter().any(|f| match fixture_ref {
+            FixtureReference::FixtureId(fid) => f.fid == Some(fid),
+            FixtureReference::Uuid(uuid) => f.uuid() == uuid,
+        })
     }
 
     pub(crate) fn add_fixture(&mut self, fixture: Fixture) -> Result<()> {
-        if self.has_fixture(fixture.fid) {
-            eyre::bail!("fixture with fixture id '{}' already exists", fixture.fid);
+        if let Some(fid) = fixture.fid {
+            if let Some(fixture) = self.fixture_mut(fid) {
+                fixture.fid = None;
+            }
         }
 
         let Some(fixture_type) = self.fixture_types.get(&fixture.fixture_type_id) else {
-            eyre::bail!("fixture type with id '{}' not found", fixture.fid);
+            eyre::bail!(
+                "fixture type with id '{}' not found",
+                fixture.fid.map_or("None".to_string(), |f| f.to_string())
+            );
         };
 
         if fixture_type.dmx_mode(&fixture.dmx_mode).is_none() {
@@ -71,8 +98,12 @@ impl Patch {
         Ok(())
     }
 
-    pub(crate) fn remove_fixture(&mut self, fid: FixtureId) {
-        self.fixtures.retain(|f| f.fid != fid);
+    pub(crate) fn remove_fixture(&mut self, fixture_ref: impl Into<FixtureReference>) {
+        let fixture_ref = fixture_ref.into();
+        self.fixtures.retain(|f| match fixture_ref {
+            FixtureReference::FixtureId(fid) => f.fid != Some(fid),
+            FixtureReference::Uuid(uuid) => f.uuid() != uuid,
+        });
     }
 }
 
@@ -123,22 +154,29 @@ impl Component for Patch {
 #[derive(Debug, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Fixture {
+    #[serde(default = "Uuid::new_v4")]
+    uuid: Uuid,
+
     pub name: String,
-    pub fid: FixtureId,
+    pub fid: Option<FixtureId>,
     pub fixture_type_id: GdtfFixtureTypeId,
-    pub address: dmx::Address,
+    pub address: Option<dmx::Address>,
     pub dmx_mode: String,
 }
 
 impl Fixture {
     pub fn new(
-        fid: FixtureId,
+        fid: Option<FixtureId>,
         fixture_type_id: GdtfFixtureTypeId,
-        address: dmx::Address,
+        address: Option<dmx::Address>,
         dmx_mode: String,
         name: String,
     ) -> Self {
-        Self { fid, fixture_type_id, address, dmx_mode, name }
+        Self { uuid: Uuid::new_v4(), fid, fixture_type_id, address, dmx_mode, name }
+    }
+
+    pub fn uuid(&self) -> Uuid {
+        self.uuid
     }
 
     pub fn fixture_type<'a>(&self, patch: &'a Patch) -> &'a FixtureType {
@@ -239,6 +277,10 @@ impl Fixture {
         attribute: &Attribute,
         patch: &Patch,
     ) -> Result<Vec<dmx::Channel>> {
+        let Some(address) = self.address else {
+            eyre::bail!("fixture does not have an address");
+        };
+
         let dmx_channel = &self
             .dmx_mode(patch)
             .dmx_channels
@@ -272,12 +314,44 @@ impl Fixture {
 
         let channels = offsets
             .map(|offset| {
-                dmx::Channel::new(u16::from(self.address.channel) + offset)
+                dmx::Channel::new(u16::from(address.channel) + offset)
                     .expect("channel should always be in range of universe")
             })
             .collect();
 
         Ok(channels)
+    }
+
+    pub fn channel_count(&self, patch: &Patch) -> Result<u16> {
+        let Some(address) = self.address else {
+            eyre::bail!("fixture does not have an address");
+        };
+
+        let mut low = 0;
+        let mut high = 0;
+
+        let dmx_mode = self.dmx_mode(patch);
+
+        for dmx_channel in &dmx_mode.dmx_channels {
+            let offsets = dmx_channel
+                .offset
+                .clone()
+                .unwrap_or_default()
+                .into_iter()
+                .map(|offset| (offset - 1).clamp(u16::MIN as i32, u16::MAX as i32) as u16);
+
+            for offset in offsets {
+                let channel = u16::from(address.channel) + offset;
+                if low == 0 || channel < low {
+                    low = channel;
+                }
+                if high == 0 || channel > high {
+                    high = channel;
+                }
+            }
+        }
+
+        Ok(high - low + 1)
     }
 }
 
@@ -311,6 +385,33 @@ impl str::FromStr for FixtureId {
         let nonzero =
             NonZeroU32::new(id).ok_or_else(|| eyre::eyre!("FixtureId must be non-zero"))?;
         Ok(FixtureId(nonzero))
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FixtureReference {
+    FixtureId(FixtureId),
+    Uuid(Uuid),
+}
+
+impl fmt::Display for FixtureReference {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FixtureReference::FixtureId(fixture_id) => write!(f, "{fixture_id}"),
+            FixtureReference::Uuid(uuid) => write!(f, "{uuid}"),
+        }
+    }
+}
+
+impl From<FixtureId> for FixtureReference {
+    fn from(fid: FixtureId) -> Self {
+        Self::FixtureId(fid)
+    }
+}
+
+impl From<Uuid> for FixtureReference {
+    fn from(uuid: Uuid) -> Self {
+        Self::Uuid(uuid)
     }
 }
 

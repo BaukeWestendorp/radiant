@@ -26,8 +26,13 @@ impl Pipeline {
                 continue;
             };
 
+            let Some(address) = fixture.address else {
+                log::error!("fixture does not have an address");
+                continue;
+            };
+
             for (channel, value) in values {
-                let address = dmx::Address::new(fixture.address.universe, channel);
+                let address = dmx::Address::new(address.universe, channel);
                 self.resolved_multiverse.set_value(&address, value);
             }
         }

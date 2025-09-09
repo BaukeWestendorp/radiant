@@ -1,14 +1,17 @@
+/// Provides a UI section component with a title and children.
 use gpui::prelude::*;
 use gpui::{AnyElement, App, Div, StyleRefinement, Window, div};
 use smallvec::SmallVec;
 
 use crate::org::h_divider;
-use crate::theme::{ActiveTheme, InteractiveColor};
+use crate::theme::ActiveTheme;
 
+/// Creates a new [Section] with the given title.
 pub fn section(title: &'static str) -> Section {
     Section::new(title)
 }
 
+/// A UI section with a title and child elements.
 #[derive(IntoElement)]
 pub struct Section {
     title: &'static str,
@@ -40,7 +43,7 @@ impl RenderOnce for Section {
             .flex()
             .items_center()
             .gap_2()
-            .text_color(cx.theme().colors.text.muted())
+            .text_color(cx.theme().muted_foreground)
             .child(self.title)
             .child(h_divider(cx));
 

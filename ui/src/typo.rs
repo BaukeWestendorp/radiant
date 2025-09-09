@@ -4,8 +4,9 @@ use gpui::{
     div, px,
 };
 
-use crate::theme::{ActiveTheme, InteractiveColor};
+use crate::theme::ActiveTheme;
 
+/// Heading 1 style (large, bold).
 pub fn h1(text: impl Into<SharedString>) -> Div {
     div()
         .text_size(AbsoluteLength::Pixels(px(48.0)))
@@ -13,6 +14,7 @@ pub fn h1(text: impl Into<SharedString>) -> Div {
         .child(text.into())
 }
 
+/// Heading 2 style (slightly smaller, semibold).
 pub fn h2(text: impl Into<SharedString>) -> Div {
     div()
         .text_size(AbsoluteLength::Pixels(px(36.0)))
@@ -20,6 +22,7 @@ pub fn h2(text: impl Into<SharedString>) -> Div {
         .child(text.into())
 }
 
+/// Heading 3 style.
 pub fn h3(text: impl Into<SharedString>) -> Div {
     div()
         .text_size(AbsoluteLength::Pixels(px(24.0)))
@@ -27,6 +30,7 @@ pub fn h3(text: impl Into<SharedString>) -> Div {
         .child(text.into())
 }
 
+/// Heading 4 style.
 pub fn h4(text: impl Into<SharedString>) -> Div {
     div()
         .text_size(AbsoluteLength::Pixels(px(20.0)))
@@ -34,6 +38,7 @@ pub fn h4(text: impl Into<SharedString>) -> Div {
         .child(text.into())
 }
 
+/// Heading 5 style.
 pub fn h5(text: impl Into<SharedString>) -> Div {
     div()
         .text_size(AbsoluteLength::Pixels(px(16.0)))
@@ -41,6 +46,7 @@ pub fn h5(text: impl Into<SharedString>) -> Div {
         .child(text.into())
 }
 
+/// Heading 6 style.
 pub fn h6(text: impl Into<SharedString>) -> Div {
     div()
         .text_size(AbsoluteLength::Pixels(px(14.0)))
@@ -48,6 +54,7 @@ pub fn h6(text: impl Into<SharedString>) -> Div {
         .child(text.into())
 }
 
+/// Paragraph style (normal font).
 pub fn p(text: impl Into<SharedString>) -> Div {
     div()
         .text_size(AbsoluteLength::Pixels(px(16.0)))
@@ -55,6 +62,7 @@ pub fn p(text: impl Into<SharedString>) -> Div {
         .child(text.into())
 }
 
+/// Styled link that opens a URL when clicked.
 pub fn link(
     id: impl Into<ElementId>,
     url: &'static str,
@@ -64,9 +72,10 @@ pub fn link(
     div()
         .id(id.into())
         .underline()
-        .text_color(cx.theme().colors.accent)
+        .text_color(cx.theme().link)
         .on_click(|_event, _w, cx| cx.open_url(url))
-        .hover(|e| e.text_color(cx.theme().colors.accent.hovered()))
+        .hover(|e| e.text_color(cx.theme().link_hover))
+        .active(|e| e.text_color(cx.theme().link_active))
         .cursor_pointer()
         .child(text)
 }

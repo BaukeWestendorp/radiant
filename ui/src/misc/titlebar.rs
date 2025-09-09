@@ -17,12 +17,12 @@ pub fn titlebar(window: &Window, cx: &App) -> Stateful<Div> {
         .max_h(titlebar_height)
         .px(TRAFFIC_LIGHT_PADDING)
         .border_b_1()
-        .border_color(cx.theme().colors.border)
-        .bg(cx.theme().colors.bg_secondary)
+        .border_color(cx.theme().title_bar_border)
+        .bg(cx.theme().title_bar)
         .flex()
         .items_center()
         .on_click(|event, window, _| {
-            if event.down.click_count == 2 {
+            if event.click_count() == 2 {
                 window.titlebar_double_click();
             }
         })

@@ -3,8 +3,9 @@ use crate::theme::{ActiveTheme, InteractiveColor};
 
 use gpui::prelude::*;
 use gpui::{
-    App, Bounds, ElementId, ElementInputHandler, Entity, GlobalElementId, InspectorElementId,
-    LayoutId, Pixels, ShapedLine, Style, Window, fill, point, px, size,
+    App, BorderStyle, Bounds, ElementId, ElementInputHandler, Entity, GlobalElementId,
+    InspectorElementId, LayoutId, Pixels, ShapedLine, Style, Window, fill, outline, point, px,
+    size,
 };
 
 pub(super) struct TextElement {
@@ -65,7 +66,7 @@ impl Element for TextElement {
         let text_len = display_text.len();
         let mut run = style.to_run(text_len);
         if field.text().is_empty() {
-            run.color = run.color.muted()
+            run.color = cx.theme().muted_foreground;
         };
         let line = window.text_system().shape_line(display_text.into(), font_size, &[run], None);
 
@@ -135,15 +136,20 @@ impl Element for TextElement {
 
         let text_offset = point(-field.scroll_offset, px(0.0));
 
+        // Paint selection.
+        window.paint_quad(fill(*selection_bounds + text_offset, cx.theme().selected));
+        window.paint_quad(outline(
+            *selection_bounds + text_offset,
+            cx.theme().selected_border.with_opacity(0.25),
+            BorderStyle::Solid,
+        ));
+
         // Paint text.
         _ = line.paint(bounds.origin + text_offset, window.line_height(), window, cx);
 
-        // Paint selection.
-        window.paint_quad(fill(*selection_bounds + text_offset, cx.theme().colors.highlight));
-
         // Paint cursor if visible and field is not disabled.
         if should_show_cursor {
-            window.paint_quad(fill(*cursor_bounds + text_offset, cx.theme().colors.cursor));
+            window.paint_quad(fill(*cursor_bounds + text_offset, cx.theme().cursor));
         }
     }
 

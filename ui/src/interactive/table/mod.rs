@@ -1,11 +1,11 @@
 mod column;
 mod delegate;
 
-use std::ops::Range;
+use std::ops::{Deref, DerefMut, Range};
 
 use gpui::prelude::*;
 use gpui::{
-    App, Context, FocusHandle, IntoElement, KeyBinding, MouseButton, Pixels, Window, div,
+    Context, FocusHandle, FontWeight, IntoElement, MouseButton, Pixels, SharedString, Window, div,
     uniform_list,
 };
 
@@ -16,43 +16,75 @@ use crate::theme::ActiveTheme;
 use crate::utils::z_stack;
 
 pub mod actions {
-    gpui::actions!(table, [ClearSelection, EditSelection]);
-}
+    use gpui::{App, KeyBinding};
 
-pub const TABLE_KEY_CONTEXT: &str = "Table";
+    gpui::actions!(
+        table,
+        [
+            ClearSelection,
+            EditSelection,
+            NextColumn,
+            PrevColumn,
+            NextRow,
+            PrevRow,
+            ExtendSelectionNext,
+            ExtendSelectionPrev
+        ]
+    );
 
-pub(super) fn init(cx: &mut App) {
-    cx.bind_keys([
-        KeyBinding::new("escape", actions::ClearSelection, Some(TABLE_KEY_CONTEXT)),
-        KeyBinding::new("enter", actions::EditSelection, Some(TABLE_KEY_CONTEXT)),
-    ]);
+    pub const KEY_CONTEXT: &str = "Table";
+
+    pub(crate) fn init(cx: &mut App) {
+        cx.bind_keys([
+            KeyBinding::new("escape", ClearSelection, Some(KEY_CONTEXT)),
+            KeyBinding::new("enter", EditSelection, Some(KEY_CONTEXT)),
+            KeyBinding::new("right", NextColumn, Some(KEY_CONTEXT)),
+            KeyBinding::new("left", PrevColumn, Some(KEY_CONTEXT)),
+            KeyBinding::new("down", NextRow, Some(KEY_CONTEXT)),
+            KeyBinding::new("up", PrevRow, Some(KEY_CONTEXT)),
+            KeyBinding::new("shift-down", ExtendSelectionNext, Some(KEY_CONTEXT)),
+            KeyBinding::new("shift-up", ExtendSelectionPrev, Some(KEY_CONTEXT)),
+        ]);
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct Selection {
-    pub column_id: String,
-    pub start: usize,
-    pub end: usize,
+    pub column_id: SharedString,
+    pub start_ix: usize,
+    pub end_ix: usize,
     pub inverted: bool,
 }
 
 impl Selection {
     pub fn contains(&self, row_ix: usize) -> bool {
-        if self.inverted {
-            row_ix >= self.end && row_ix <= self.start
+        let (low, high) = if self.start_ix <= self.end_ix {
+            (self.start_ix, self.end_ix)
         } else {
-            row_ix >= self.start && row_ix <= self.end
-        }
+            (self.end_ix, self.start_ix)
+        };
+        row_ix >= low && row_ix <= high
+    }
+
+    pub fn size(&self) -> usize {
+        let (low, high) = if self.start_ix <= self.end_ix {
+            (self.start_ix, self.end_ix)
+        } else {
+            (self.end_ix, self.start_ix)
+        };
+        high - low + 1
     }
 }
 
 pub struct Table<D: TableDelegate> {
     delegate: D,
-    focus_handle: FocusHandle,
-    selection: Option<Selection>,
-    row_height: Pixels,
 
+    focus_handle: FocusHandle,
+
+    selection: Option<Selection>,
     is_selecting: bool,
+
+    row_height: Pixels,
 }
 
 impl<D: TableDelegate> Table<D> {
@@ -66,9 +98,15 @@ impl<D: TableDelegate> Table<D> {
             is_selecting: false,
         }
     }
-}
 
-impl<D: TableDelegate> Table<D> {
+    pub fn refresh(&mut self, window: &mut Window, cx: &mut Context<Self>)
+    where
+        D: Clone,
+    {
+        *self = Self::new(self.delegate.clone(), window, cx);
+        cx.notify();
+    }
+
     pub fn delegate(&self) -> &D {
         &self.delegate
     }
@@ -79,14 +117,14 @@ impl<D: TableDelegate> Table<D> {
 
     pub fn start_selection(
         &mut self,
-        column_id: impl Into<String>,
+        column_id: impl Into<SharedString>,
         row_ix: usize,
         cx: &mut Context<Self>,
     ) {
         self.selection = Some(Selection {
             column_id: column_id.into(),
-            start: row_ix,
-            end: row_ix,
+            start_ix: row_ix,
+            end_ix: row_ix,
             inverted: false,
         });
         cx.notify();
@@ -94,14 +132,14 @@ impl<D: TableDelegate> Table<D> {
 
     pub fn end_selection(&mut self, row_ix: usize, cx: &mut Context<Self>) {
         if let Some(selection) = &mut self.selection {
-            selection.end = row_ix;
-            selection.inverted = row_ix <= selection.start;
+            selection.end_ix = row_ix;
+            selection.inverted = row_ix <= selection.start_ix;
         }
         cx.notify();
     }
 
-    pub fn select_column(&mut self, column_id: impl Into<String>, cx: &mut Context<Self>) {
-        let row_count = self.delegate().row_count(cx);
+    pub fn select_column(&mut self, column_id: impl Into<SharedString>, cx: &mut Context<Self>) {
+        let row_count = self.sorted_row_ids(cx).len();
         if row_count != 0 {
             self.start_selection(column_id, 0, cx);
             self.end_selection(row_count - 1, cx);
@@ -121,15 +159,38 @@ impl<D: TableDelegate> Table<D> {
         cx.notify();
     }
 
-    pub fn edit_selection(&mut self, cx: &mut App) {
-        if let Some(selection) = self.selection.clone() {
-            self.delegate_mut().edit_selection(selection, cx)
+    pub fn edit_selection(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let Some(column_id) = self.selection.as_ref().map(|s| s.column_id.clone()) else {
+            return;
+        };
+
+        let selected_row_ids = self.selected_row_ids(cx);
+        self.delegate_mut().edit_selection(&column_id, selected_row_ids, window, cx)
+    }
+
+    pub fn selected_row_ids(&self, cx: &Context<Self>) -> Vec<D::RowId> {
+        let Some(selection) = self.selection.as_ref() else { return Vec::new() };
+
+        let row_ixs: Vec<usize> = if selection.inverted {
+            (selection.end_ix..=selection.start_ix).rev().collect()
+        } else {
+            (selection.start_ix..=selection.end_ix).collect()
+        };
+
+        let mut ids = Vec::new();
+        for row_ix in row_ixs {
+            ids.push(self.row_id(row_ix, cx).unwrap());
         }
+        ids
+    }
+
+    fn row_id(&self, row_ix: usize, cx: &Context<Self>) -> Option<D::RowId> {
+        self.sorted_row_ids(cx).get(row_ix).cloned()
     }
 
     fn render_header(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let cells = (0..self.delegate().column_count(cx)).into_iter().map(|col_ix| {
-            let column = self.delegate().column(col_ix, cx);
+        let cells = (0..self.column_count(cx)).into_iter().map(|col_ix| {
+            let column = self.column(col_ix, cx);
 
             div()
                 .flex()
@@ -137,17 +198,30 @@ impl<D: TableDelegate> Table<D> {
                 .px_1()
                 .w(column.width)
                 .h(self.row_height)
-                .bg(cx.theme().colors.bg_tertiary)
+                .bg(cx.theme().table_header)
+                .hover(|e| e.bg(cx.theme().table_header_hover))
+                .text_color(cx.theme().table_header_foreground)
+                .font_weight(FontWeight::BOLD)
                 .border_b_1()
                 .border_r_1()
-                .when(col_ix == self.delegate().column_count(cx) - 1, |e| e.border_r_0())
-                .border_color(cx.theme().colors.border)
+                .when(col_ix == self.column_count(cx) - 1, |e| e.border_r_0())
+                .border_color(cx.theme().table_header_border)
                 .on_mouse_down(
                     MouseButton::Left,
                     cx.listener({
                         let column_id = column.id.to_string();
                         move |this, _, _, cx| {
                             this.select_column(&column_id, cx);
+                        }
+                    }),
+                )
+                .on_mouse_down(
+                    MouseButton::Right,
+                    cx.listener({
+                        let column_id = column.id.to_string();
+                        move |this, _, window, cx| {
+                            this.select_column(&column_id, cx);
+                            this.edit_selection(window, cx);
                         }
                     }),
                 )
@@ -158,48 +232,57 @@ impl<D: TableDelegate> Table<D> {
     }
 
     fn render_body(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let row_count = self.sorted_row_ids(cx).len();
         uniform_list(
             "table_list",
-            self.delegate().row_count(cx),
-            cx.processor(|table, range: Range<usize>, window, cx| {
+            row_count,
+            cx.processor(|this, range: Range<usize>, window, cx| {
                 range
-                    .map(|row_ix| table.render_row(row_ix, window, cx).into_any_element())
+                    .map(|row_ix| {
+                        let row_id = this.row_id(row_ix, cx).unwrap();
+                        this.render_row(&row_id, row_ix, window, cx).into_any_element()
+                    })
                     .collect()
             }),
         )
+        .bg(cx.theme().table)
         .size_full()
     }
 
     fn render_row(
         &mut self,
+        row_id: &D::RowId,
         row_ix: usize,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
-        let cells = (0..self.delegate().column_count(cx))
-            .into_iter()
-            .map(|col_ix| self.render_cell(row_ix, col_ix, window, cx).into_any_element());
+        let bg_color = if row_ix % 2 == 0 { cx.theme().table_even } else { cx.theme().table };
 
-        div().flex().w_full().children(cells)
+        div().flex().w_full().bg(bg_color).hover(|e| e.bg(cx.theme().table_row_hover)).children(
+            (0..self.column_count(cx)).into_iter().map(|col_ix| {
+                self.render_cell(row_id, row_ix, col_ix, window, cx).into_any_element()
+            }),
+        )
     }
 
     fn render_cell(
         &mut self,
+        row_id: &D::RowId,
         row_ix: usize,
         col_ix: usize,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
-        let column = self.delegate().column(col_ix, cx);
+        let column = self.column(col_ix, cx);
 
         let content = div()
             .size_full()
             .border_b_1()
             .border_r_1()
-            .when(col_ix == self.delegate().column_count(cx) - 1, |e| e.border_r_1())
-            .border_color(cx.theme().colors.border)
+            .when(col_ix == self.column_count(cx) - 1, |e| e.border_r_1())
+            .border_color(cx.theme().table_row_border)
             .overflow_hidden()
-            .child(self.delegate().render_cell(row_ix, col_ix, window, cx));
+            .child(self.delegate().render_cell(row_id, col_ix, window, cx));
 
         let row_is_selected = self.selection_contains(row_ix);
         let column_is_selected = self.selected_column() == Some(&column.id);
@@ -210,10 +293,10 @@ impl<D: TableDelegate> Table<D> {
                 .border_x_2()
                 .when(!self.selection_contains(prev_row_ix), |e| e.border_t_2())
                 .when(!self.selection_contains(next_row_ix), |e| e.border_b_2())
-                .border_color(cx.theme().colors.border_selected)
+                .border_color(cx.theme().selected_border)
                 .on_mouse_down(
                     MouseButton::Right,
-                    cx.listener(|this, _, _, cx| this.edit_selection(cx)),
+                    cx.listener(|this, _, window, cx| this.edit_selection(window, cx)),
                 )
         } else {
             div()
@@ -223,21 +306,20 @@ impl<D: TableDelegate> Table<D> {
         z_stack([content.into_any_element(), selection_highlight.into_any_element()])
             .w(column.width)
             .h(self.row_height)
-            .bg(if column_is_selected && row_is_selected {
-                cx.theme().colors.bg_selected
-            } else if row_ix % 2 == 0 {
-                cx.theme().colors.bg_secondary
-            } else {
-                cx.theme().colors.bg_alternating
-            })
+            .when(column_is_selected && row_is_selected, |e| e.bg(cx.theme().selected))
             .on_mouse_down(
                 MouseButton::Left,
                 cx.listener({
                     let column_id = column.id.clone();
-                    move |this, _, _, cx| {
-                        this.is_selecting = true;
-                        this.clear_selection(cx);
-                        this.start_selection(column_id.clone(), row_ix, cx);
+                    move |this, _, event, cx| {
+                        if event.modifiers().shift && this.is_selecting == false {
+                            this.is_selecting = true;
+                            this.end_selection(row_ix, cx);
+                        } else {
+                            this.is_selecting = true;
+                            this.clear_selection(cx);
+                            this.start_selection(column_id.clone(), row_ix, cx);
+                        }
                     }
                 }),
             )
@@ -259,24 +341,152 @@ impl<D: TableDelegate> Table<D> {
                 }),
             )
     }
+
+    fn move_selection_column(&mut self, offset: isize, cx: &mut Context<Self>) {
+        let col_count = self.column_count(cx);
+        let last_col_ix = col_count - 1;
+        if let Some(selection) = self.selection.as_ref() {
+            let current_col_ix = self.column_ix(&selection.column_id, cx) as isize;
+            let target_ix = (current_col_ix + offset).clamp(0, last_col_ix as isize) as usize;
+            let id = self.column(target_ix, cx).id.clone();
+            if let Some(selection) = &mut self.selection {
+                selection.column_id = id;
+            }
+        } else if offset < 0 {
+            self.select_column(self.column(last_col_ix, cx).id.clone(), cx);
+        } else {
+            self.select_column(self.column(0, cx).id.clone(), cx);
+        };
+
+        cx.notify();
+    }
+
+    fn move_selection_row(&mut self, mut offset: isize, cx: &mut Context<Self>) {
+        let row_count = self.sorted_row_ids(cx).len();
+        let last_row_ix = row_count - 1;
+        let (column_id, target_ix) = if let Some(selection) = self.selection.as_ref() {
+            if selection.size() > 1 {
+                offset = 0
+            };
+
+            (selection.column_id.clone(), selection.end_ix as isize + offset)
+        } else if offset < 0 {
+            (self.column(0, cx).id.clone(), last_row_ix as isize)
+        } else {
+            (self.column(0, cx).id.clone(), 0)
+        };
+        let target_ix = target_ix.clamp(0, last_row_ix as isize) as usize;
+        self.start_selection(column_id, target_ix, cx);
+        cx.notify();
+    }
+
+    fn extend_selection(&mut self, offset: isize, cx: &mut Context<Self>) {
+        if let Some(selection) = &self.selection {
+            let new_end = (selection.end_ix as isize + offset).max(0) as usize;
+            self.end_selection(new_end, cx);
+        } else if offset > 0 {
+            cx.dispatch_action(&actions::NextRow);
+        } else {
+            cx.dispatch_action(&actions::PrevRow);
+        }
+        cx.notify();
+    }
+
+    fn handle_clear_selection(
+        &mut self,
+        _: &actions::ClearSelection,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.clear_selection(cx);
+        cx.notify();
+    }
+
+    fn handle_edit_selection(
+        &mut self,
+        _: &actions::EditSelection,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.edit_selection(window, cx);
+    }
+
+    fn handle_next_column(
+        &mut self,
+        _: &actions::NextColumn,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.move_selection_column(1, cx);
+    }
+
+    fn handle_prev_column(
+        &mut self,
+        _: &actions::PrevColumn,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.move_selection_column(-1, cx);
+    }
+
+    fn handle_next_row(&mut self, _: &actions::NextRow, _: &mut Window, cx: &mut Context<Self>) {
+        self.move_selection_row(1, cx);
+    }
+
+    fn handle_prev_row(&mut self, _: &actions::PrevRow, _: &mut Window, cx: &mut Context<Self>) {
+        self.move_selection_row(-1, cx);
+    }
+
+    fn handle_extend_selection_next(
+        &mut self,
+        _: &actions::ExtendSelectionNext,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.extend_selection(1, cx);
+    }
+
+    fn handle_extend_selection_prev(
+        &mut self,
+        _: &actions::ExtendSelectionPrev,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.extend_selection(-1, cx);
+    }
+}
+
+impl<D: TableDelegate> Deref for Table<D> {
+    type Target = D;
+
+    fn deref(&self) -> &Self::Target {
+        &self.delegate
+    }
+}
+
+impl<D: TableDelegate> DerefMut for Table<D> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.delegate
+    }
 }
 
 impl<D: TableDelegate + 'static> Render for Table<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
-            .key_context(TABLE_KEY_CONTEXT)
+            .key_context(actions::KEY_CONTEXT)
             .track_focus(&self.focus_handle)
             .id("table")
             .flex()
             .flex_col()
             .size_full()
-            .on_action::<actions::ClearSelection>(cx.listener(|this, _, _, cx| {
-                this.clear_selection(cx);
-                cx.notify();
-            }))
-            .on_action::<actions::EditSelection>(
-                cx.listener(|this, _, _, cx| this.edit_selection(cx)),
-            )
+            .on_action(cx.listener(Self::handle_clear_selection))
+            .on_action(cx.listener(Self::handle_edit_selection))
+            .on_action(cx.listener(Self::handle_prev_column))
+            .on_action(cx.listener(Self::handle_next_column))
+            .on_action(cx.listener(Self::handle_next_row))
+            .on_action(cx.listener(Self::handle_prev_row))
+            .on_action(cx.listener(Self::handle_extend_selection_next))
+            .on_action(cx.listener(Self::handle_extend_selection_prev))
             .child(self.render_header(window, cx))
             .child(self.render_body(window, cx))
     }

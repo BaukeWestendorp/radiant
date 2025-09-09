@@ -1,17 +1,15 @@
 use gpui::prelude::*;
 use gpui::{
     App, Bounds, ClickEvent, DragMoveEvent, ElementId, EmptyView, Entity, EventEmitter,
-    FocusHandle, Focusable, MouseButton, MouseUpEvent, Pixels, Point, SharedString, Window, div,
-    relative,
+    FocusHandle, Focusable, MouseButton, MouseUpEvent, Pixels, Point, Window, div, relative,
 };
 
 use crate::Disableable;
 use crate::interactive::input::{FieldEvent, TextInput, TextInputEvent};
-use crate::org::interactive_container;
 use crate::theme::ActiveTheme;
 use crate::utils::{bounds_updater, z_stack};
 
-pub struct NumberField<I: NumberFieldImpl> {
+pub struct NumberField {
     id: ElementId,
     input: Entity<TextInput>,
 
@@ -21,11 +19,9 @@ pub struct NumberField<I: NumberFieldImpl> {
 
     bounds: Bounds<Pixels>,
     prev_mouse_pos: Option<Point<Pixels>>,
-
-    _marker: std::marker::PhantomData<I>,
 }
 
-impl<I: NumberFieldImpl + 'static> NumberField<I> {
+impl NumberField {
     pub fn new(
         id: impl Into<ElementId>,
         focus_handle: FocusHandle,
@@ -66,8 +62,6 @@ impl<I: NumberFieldImpl + 'static> NumberField<I> {
 
             bounds: Bounds::default(),
             prev_mouse_pos: None,
-
-            _marker: std::marker::PhantomData,
         };
 
         this.set_min(I::MIN, cx);
@@ -213,7 +207,7 @@ impl<I: NumberFieldImpl + 'static> NumberField<I> {
     }
 }
 
-impl<I: NumberFieldImpl + 'static> NumberField<I> {
+impl NumberField {
     fn handle_on_click(
         &mut self,
         _event: &ClickEvent,
@@ -256,14 +250,14 @@ impl<I: NumberFieldImpl + 'static> NumberField<I> {
     }
 }
 
-impl<I: NumberFieldImpl + 'static> Render for NumberField<I> {
+impl Render for NumberField {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let is_interactive = !self.input.read(cx).is_interactive();
         let focus_handle = self.input.read(cx).focus_handle(cx);
 
         let slider_bar = match self.relative_value(cx) {
             Some(relative_value) => {
-                div().w(relative(relative_value)).h_full().bg(cx.theme().colors.bg_tertiary)
+                div().w(relative(relative_value)).h_full().bg(cx.theme().input_secondary)
             }
             None => div().size_full(),
         };
@@ -272,8 +266,7 @@ impl<I: NumberFieldImpl + 'static> Render for NumberField<I> {
             .cursor_ew_resize()
             .when(!self.disabled(cx), |e| {
                 e.on_click(cx.listener(Self::handle_on_click)).when(is_interactive, |e| {
-                    let drag =
-                        (self.id.clone(), I::as_f32(&self.value(cx)), window.mouse_position().x);
+                    let drag = (self.id.clone(), self.value(cx), window.mouse_position().x);
                     e.on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
                         .on_drag(drag, |_, _, _, cx| cx.new(|_cx| EmptyView))
                         .on_drag_move(cx.listener(Self::handle_drag_move))
@@ -298,65 +291,4 @@ impl<I: NumberFieldImpl + 'static> Render for NumberField<I> {
     }
 }
 
-impl<I: NumberFieldImpl + 'static> EventEmitter<FieldEvent<I::Value>> for NumberField<I> {}
-
-pub trait NumberFieldImpl {
-    type Value: Default;
-
-    const MIN: Option<Self::Value>;
-    const MAX: Option<Self::Value>;
-    const STEP: Option<f32>;
-
-    fn from_str_or_default(s: &str) -> Self::Value;
-
-    fn to_shared_string(value: &Self::Value) -> SharedString;
-
-    fn from_f32(v: f32) -> Self::Value;
-
-    fn as_f32(value: &Self::Value) -> f32;
-}
-
-macro_rules! impl_number_field_value {
-    ($ty:ty, $min:expr, $max:expr, $step:expr) => {
-        impl NumberFieldImpl for $ty {
-            type Value = $ty;
-
-            const MIN: Option<Self::Value> = $min;
-            const MAX: Option<Self::Value> = $max;
-            const STEP: Option<f32> = $step;
-
-            fn from_str_or_default(s: &str) -> Self::Value {
-                let f64_value = s.parse::<f64>().unwrap_or_default();
-                f64_value.clamp(
-                    $min.map(|v: $ty| v as f64).unwrap_or(<$ty>::MIN as f64),
-                    $max.map(|v: $ty| v as f64).unwrap_or(<$ty>::MAX as f64),
-                ) as Self
-            }
-
-            fn to_shared_string(value: &Self::Value) -> SharedString {
-                value.to_string().into()
-            }
-
-            fn from_f32(v: f32) -> Self::Value {
-                v as Self
-            }
-
-            fn as_f32(value: &Self::Value) -> f32 {
-                *value as f32
-            }
-        }
-    };
-}
-
-impl_number_field_value!(f32, None, None, None);
-impl_number_field_value!(f64, None, None, None);
-impl_number_field_value!(u8, Some(u8::MIN), Some(u8::MAX), Some(1.0));
-impl_number_field_value!(u16, Some(u16::MIN), Some(u16::MAX), Some(1.0));
-impl_number_field_value!(u32, Some(u32::MIN), Some(u32::MAX), Some(1.0));
-impl_number_field_value!(u64, Some(u64::MIN), Some(u64::MAX), Some(1.0));
-impl_number_field_value!(u128, Some(u128::MIN), Some(u128::MAX), Some(1.0));
-impl_number_field_value!(i8, Some(i8::MIN), Some(i8::MAX), Some(1.0));
-impl_number_field_value!(i16, Some(i16::MIN), Some(i16::MAX), Some(1.0));
-impl_number_field_value!(i32, Some(i32::MIN), Some(i32::MAX), Some(1.0));
-impl_number_field_value!(i64, Some(i64::MIN), Some(i64::MAX), Some(1.0));
-impl_number_field_value!(i128, Some(i128::MIN), Some(i128::MAX), Some(1.0));
+impl EventEmitter<FieldEvent> for NumberField {}

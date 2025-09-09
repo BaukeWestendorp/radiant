@@ -1,13 +1,29 @@
+use std::hash::Hash;
+
 use gpui::prelude::*;
 use gpui::{App, Window, div};
 
-use crate::interactive::table::{Column, Selection, Table};
+use crate::interactive::table::{Column, Table};
 
 pub trait TableDelegate: Sized + 'static {
+    type RowId: Clone + Eq + Hash;
+
     fn column_count(&self, cx: &App) -> usize;
-    fn row_count(&self, cx: &App) -> usize;
 
     fn column(&self, col_ix: usize, cx: &App) -> &Column;
+
+    fn column_ix(&self, column_id: &str, cx: &App) -> usize;
+
+    fn sorted_row_ids(&self, cx: &App) -> Vec<Self::RowId>;
+
+    fn edit_selection(
+        &mut self,
+        _column_id: &str,
+        _row_ids: Vec<Self::RowId>,
+        _window: &mut Window,
+        _cx: &mut Context<Table<Self>>,
+    ) {
+    }
 
     fn render_empty(
         &self,
@@ -27,11 +43,9 @@ pub trait TableDelegate: Sized + 'static {
 
     fn render_cell(
         &self,
-        row_ix: usize,
+        row_id: &Self::RowId,
         col_ix: usize,
         window: &mut Window,
         cx: &mut Context<Table<Self>>,
     ) -> impl IntoElement;
-
-    fn edit_selection(&mut self, _selection: Selection, _cx: &mut App) {}
 }

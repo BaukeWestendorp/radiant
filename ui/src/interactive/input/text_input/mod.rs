@@ -3,17 +3,19 @@ use element::TextElement;
 use gpui::prelude::*;
 use gpui::{
     App, Bounds, ClipboardItem, DragMoveEvent, ElementId, EmptyView, Entity, EntityInputHandler,
-    EventEmitter, FocusHandle, Focusable, KeyBinding, MouseButton, MouseDownEvent, MouseUpEvent,
-    Pixels, SharedString, UTF16Selection, Window, div, point, px,
+    EventEmitter, FocusHandle, Focusable, MouseButton, MouseDownEvent, MouseUpEvent, Pixels,
+    SharedString, UTF16Selection, Window, div, point, px,
 };
 use std::ops::Range;
 
 mod blink;
 mod element;
 
-pub const TEXT_INPUT_KEY_CONTEXT: &str = "TextInput";
-
 pub mod actions {
+    use gpui::{App, KeyBinding};
+
+    pub const KEY_CONTEXT: &str = "TextInput";
+
     gpui::actions!(
         text_input,
         [
@@ -38,55 +40,55 @@ pub mod actions {
             Submit
         ]
     );
-}
 
-pub(super) fn init(cx: &mut App) {
-    macro_rules! kb {
-        (macos = $kb_macos:literal, other = $kb_other:literal, $action:expr) => {
-            if cfg!(target_os = "macos") {
-                KeyBinding::new($kb_macos, $action, Some(TEXT_INPUT_KEY_CONTEXT))
-            } else {
-                KeyBinding::new($kb_other, $action, Some(TEXT_INPUT_KEY_CONTEXT))
-            }
-        };
-        (macos = $kb_macos:literal, $action:expr) => {
-            #[cfg(target_os = "macos")]
-            KeyBinding::new($kb_macos, $action, Some(TEXT_INPUT_KEY_CONTEXT))
-        };
-        (all = $kb:literal, $action:expr) => {
-            kb!(macos = $kb, other = $kb, $action)
-        };
+    pub(crate) fn init(cx: &mut App) {
+        macro_rules! kb {
+            (macos = $kb_macos:literal, other = $kb_other:literal, $action:expr) => {
+                if cfg!(target_os = "macos") {
+                    KeyBinding::new($kb_macos, $action, Some(KEY_CONTEXT))
+                } else {
+                    KeyBinding::new($kb_other, $action, Some(KEY_CONTEXT))
+                }
+            };
+            (macos = $kb_macos:literal, $action:expr) => {
+                #[cfg(target_os = "macos")]
+                KeyBinding::new($kb_macos, $action, Some(KEY_CONTEXT))
+            };
+            (all = $kb:literal, $action:expr) => {
+                kb!(macos = $kb, other = $kb, $action)
+            };
+        }
+
+        cx.bind_keys([
+            kb!(all = "left", MoveLeft),
+            kb!(all = "right", MoveRight),
+            //
+            kb!(all = "home", MoveToStartOfLine),
+            kb!(all = "pageup", MoveToStartOfLine),
+            kb!(macos = "cmd-left", MoveToStartOfLine),
+            //
+            kb!(all = "pagedown", MoveToEndOfLine),
+            kb!(all = "end", MoveToEndOfLine),
+            kb!(macos = "cmd-right", MoveToEndOfLine),
+            //
+            kb!(all = "shift-left", SelectLeft),
+            kb!(all = "shift-right", SelectRight),
+            kb!(all = "backspace", Backspace),
+            kb!(all = "delete", Delete),
+            kb!(all = "enter", Submit),
+            //
+            kb!(macos = "shift-cmd-left", other = "shift-home", SelectToStartOfLine),
+            kb!(macos = "shift-cmd-right", other = "shift-end", SelectToEndOfLine),
+            kb!(macos = "alt-left", other = "ctrl-left", MoveToPreviousWord),
+            kb!(macos = "alt-right", other = "ctrl-right", MoveToNextWord),
+            kb!(macos = "alt-shift-left", other = "shift-ctrl-left", SelectToStartOfWord),
+            kb!(macos = "alt-shift-right", other = "shift-ctrl-right", SelectToEndOfWord),
+            kb!(all = "secondary-a", SelectAll),
+            kb!(all = "secondary-c", Copy),
+            kb!(all = "secondary-x", Cut),
+            kb!(all = "secondary-v", Paste),
+        ]);
     }
-
-    cx.bind_keys([
-        kb!(all = "left", actions::MoveLeft),
-        kb!(all = "right", actions::MoveRight),
-        //
-        kb!(all = "home", actions::MoveToStartOfLine),
-        kb!(all = "pageup", actions::MoveToStartOfLine),
-        kb!(macos = "cmd-left", actions::MoveToStartOfLine),
-        //
-        kb!(all = "pagedown", actions::MoveToEndOfLine),
-        kb!(all = "end", actions::MoveToEndOfLine),
-        kb!(macos = "cmd-right", actions::MoveToEndOfLine),
-        //
-        kb!(all = "shift-left", actions::SelectLeft),
-        kb!(all = "shift-right", actions::SelectRight),
-        kb!(all = "backspace", actions::Backspace),
-        kb!(all = "delete", actions::Delete),
-        kb!(all = "enter", actions::Submit),
-        //
-        kb!(macos = "shift-cmd-left", other = "shift-home", actions::SelectToStartOfLine),
-        kb!(macos = "shift-cmd-right", other = "shift-end", actions::SelectToEndOfLine),
-        kb!(macos = "alt-left", other = "ctrl-left", actions::MoveToPreviousWord),
-        kb!(macos = "alt-right", other = "ctrl-right", actions::MoveToNextWord),
-        kb!(macos = "alt-shift-left", other = "shift-ctrl-left", actions::SelectToStartOfWord),
-        kb!(macos = "alt-shift-right", other = "shift-ctrl-right", actions::SelectToEndOfWord),
-        kb!(all = "secondary-a", actions::SelectAll),
-        kb!(all = "secondary-c", actions::Copy),
-        kb!(all = "secondary-x", actions::Cut),
-        kb!(all = "secondary-v", actions::Paste),
-    ]);
 }
 
 pub struct TextInput {
@@ -843,7 +845,7 @@ impl Render for TextInput {
         } else {
             div().id(self.id.clone()).track_focus(&self.focus_handle)
         }
-        .key_context(TEXT_INPUT_KEY_CONTEXT)
+        .key_context(actions::KEY_CONTEXT)
         .size_full()
         .px(self.padding_x)
         .child(div().child(TextElement::new(cx.entity().clone())).overflow_hidden())
