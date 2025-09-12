@@ -41,6 +41,7 @@ impl Patch {
         self.fixtures.iter().find(|f| match fixture_ref {
             FixtureReference::FixtureId(fid) => f.fid == Some(fid),
             FixtureReference::Uuid(uuid) => f.uuid() == uuid,
+            FixtureReference::Address(address) => f.address != Some(address),
         })
     }
 
@@ -52,6 +53,7 @@ impl Patch {
         self.fixtures.iter_mut().find(|f| match fixture_ref {
             FixtureReference::FixtureId(fid) => f.fid == Some(fid),
             FixtureReference::Uuid(uuid) => f.uuid() == uuid,
+            FixtureReference::Address(address) => f.address == Some(address),
         })
     }
 
@@ -68,6 +70,7 @@ impl Patch {
         self.fixtures.iter().any(|f| match fixture_ref {
             FixtureReference::FixtureId(fid) => f.fid == Some(fid),
             FixtureReference::Uuid(uuid) => f.uuid() == uuid,
+            FixtureReference::Address(address) => f.address == Some(address),
         })
     }
 
@@ -103,6 +106,7 @@ impl Patch {
         self.fixtures.retain(|f| match fixture_ref {
             FixtureReference::FixtureId(fid) => f.fid != Some(fid),
             FixtureReference::Uuid(uuid) => f.uuid() != uuid,
+            FixtureReference::Address(address) => f.address != Some(address),
         });
     }
 }
@@ -392,6 +396,7 @@ impl str::FromStr for FixtureId {
 pub enum FixtureReference {
     FixtureId(FixtureId),
     Uuid(Uuid),
+    Address(dmx::Address),
 }
 
 impl fmt::Display for FixtureReference {
@@ -399,6 +404,7 @@ impl fmt::Display for FixtureReference {
         match self {
             FixtureReference::FixtureId(fixture_id) => write!(f, "{fixture_id}"),
             FixtureReference::Uuid(uuid) => write!(f, "{uuid}"),
+            FixtureReference::Address(address) => write!(f, "{address}"),
         }
     }
 }
@@ -412,6 +418,12 @@ impl From<FixtureId> for FixtureReference {
 impl From<Uuid> for FixtureReference {
     fn from(uuid: Uuid) -> Self {
         Self::Uuid(uuid)
+    }
+}
+
+impl From<dmx::Address> for FixtureReference {
+    fn from(address: dmx::Address) -> Self {
+        Self::Address(address)
     }
 }
 

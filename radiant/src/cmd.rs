@@ -73,10 +73,11 @@ impl PatchCommand {
                 engine.patch().update(|patch| {
                     if let Some(fixture) = patch.fixture_mut(fixture_ref) {
                         fixture.name = name;
-                        Ok(())
                     } else {
                         eyre::bail!("fixture with reference {fixture_ref} not found");
                     }
+
+                    Ok(())
                 })?;
             }
             PatchCommand::SetFixtureId { fixture_ref, new_fid } => {
@@ -86,25 +87,31 @@ impl PatchCommand {
                             conflicting_fixture.fid = None;
                         }
                     }
-                });
 
-                engine.patch().update(|patch| {
                     if let Some(fixture) = patch.fixture_mut(fixture_ref) {
                         fixture.fid = new_fid;
-                        Ok(())
                     } else {
                         eyre::bail!("fixture with reference {fixture_ref} not found");
                     }
+
+                    Ok(())
                 })?;
             }
             PatchCommand::SetAddress { fixture_ref, address } => {
                 engine.patch().update(|patch| {
+                    if let Some(address) = address {
+                        if let Some(conflicting_fixture) = patch.fixture_mut(address) {
+                            conflicting_fixture.address = None;
+                        }
+                    }
+
                     if let Some(fixture) = patch.fixture_mut(fixture_ref) {
                         fixture.address = address;
-                        Ok(())
                     } else {
                         eyre::bail!("fixture with reference {fixture_ref} not found");
                     }
+
+                    Ok(())
                 })?;
             }
         }
