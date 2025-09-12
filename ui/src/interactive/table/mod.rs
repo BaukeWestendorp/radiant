@@ -196,16 +196,15 @@ impl<D: TableDelegate> Table<D> {
                 .flex()
                 .items_center()
                 .px_1()
-                .w(column.width)
-                .h(self.row_height)
+                .min_w(column.width)
+                .max_w(column.width)
+                .h_full()
                 .bg(cx.theme().table_header)
-                .hover(|e| e.bg(cx.theme().table_header_hover))
-                .text_color(cx.theme().table_header_foreground)
-                .font_weight(FontWeight::BOLD)
-                .border_b_1()
                 .border_r_1()
-                .when(col_ix == self.column_count(cx) - 1, |e| e.border_r_0())
+                .border_b_1()
                 .border_color(cx.theme().table_header_border)
+                .hover(|e| e.bg(cx.theme().table_header_hover))
+                .when(col_ix == self.column_count(cx) - 1, |e| e.border_r_0())
                 .on_mouse_down(
                     MouseButton::Left,
                     cx.listener({
@@ -228,7 +227,13 @@ impl<D: TableDelegate> Table<D> {
                 .child(column.label.clone())
         });
 
-        div().flex().w_full().children(cells)
+        div()
+            .min_h(self.row_height)
+            .max_h(self.row_height)
+            .flex()
+            .text_color(cx.theme().table_header_foreground)
+            .font_weight(FontWeight::BOLD)
+            .children(cells)
     }
 
     fn render_body(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -245,8 +250,8 @@ impl<D: TableDelegate> Table<D> {
                     .collect()
             }),
         )
-        .bg(cx.theme().table)
         .size_full()
+        .bg(cx.theme().table)
     }
 
     fn render_row(
@@ -258,11 +263,17 @@ impl<D: TableDelegate> Table<D> {
     ) -> impl IntoElement {
         let bg_color = if row_ix % 2 == 0 { cx.theme().table_even } else { cx.theme().table };
 
-        div().flex().w_full().bg(bg_color).hover(|e| e.bg(cx.theme().table_row_hover)).children(
-            (0..self.column_count(cx)).into_iter().map(|col_ix| {
+        div()
+            .flex()
+            .min_h(self.row_height)
+            .max_h(self.row_height)
+            .bg(bg_color)
+            .border_color(cx.theme().table_row_border)
+            .hover(|e| e.bg(cx.theme().table_row_hover))
+            .border_b_1()
+            .children((0..self.column_count(cx)).into_iter().map(|col_ix| {
                 self.render_cell(row_id, row_ix, col_ix, window, cx).into_any_element()
-            }),
-        )
+            }))
     }
 
     fn render_cell(
@@ -277,9 +288,8 @@ impl<D: TableDelegate> Table<D> {
 
         let content = div()
             .size_full()
-            .border_b_1()
             .border_r_1()
-            .when(col_ix == self.column_count(cx) - 1, |e| e.border_r_1())
+            .when(col_ix == self.column_count(cx) - 1, |e| e.border_r_0())
             .border_color(cx.theme().table_row_border)
             .overflow_hidden()
             .child(self.delegate().render_cell(row_id, col_ix, window, cx));
@@ -304,8 +314,9 @@ impl<D: TableDelegate> Table<D> {
         .size_full();
 
         z_stack([content.into_any_element(), selection_highlight.into_any_element()])
-            .w(column.width)
-            .h(self.row_height)
+            .min_w(column.width)
+            .max_w(column.width)
+            .h_full()
             .when(column_is_selected && row_is_selected, |e| e.bg(cx.theme().selected))
             .on_mouse_down(
                 MouseButton::Left,
@@ -319,6 +330,18 @@ impl<D: TableDelegate> Table<D> {
                             this.is_selecting = true;
                             this.clear_selection(cx);
                             this.start_selection(column_id.clone(), row_ix, cx);
+                        }
+                    }
+                }),
+            )
+            .on_mouse_down(
+                MouseButton::Right,
+                cx.listener({
+                    let column_id = column.id.clone();
+                    move |this, _, window, cx| {
+                        if this.selection.as_ref().is_some_and(|s| s.size() <= 1) {
+                            this.start_selection(column_id.clone(), row_ix, cx);
+                            this.edit_selection(window, cx);
                         }
                     }
                 }),
@@ -479,6 +502,8 @@ impl<D: TableDelegate + 'static> Render for Table<D> {
             .flex()
             .flex_col()
             .size_full()
+            .overflow_y_hidden()
+            .overflow_x_scroll()
             .on_action(cx.listener(Self::handle_clear_selection))
             .on_action(cx.listener(Self::handle_edit_selection))
             .on_action(cx.listener(Self::handle_prev_column))

@@ -1,5 +1,5 @@
 use gpui::prelude::*;
-use gpui::{App, Div, Pixels, Point, Stateful, Window, div, px};
+use gpui::{App, Div, Pixels, Point, Stateful, Window, WindowControlArea, div, px};
 
 use crate::theme::ActiveTheme;
 
@@ -11,7 +11,7 @@ pub fn titlebar(window: &Window, cx: &App) -> Stateful<Div> {
 
     div()
         .id("titlebar")
-        .window_control_area(gpui::WindowControlArea::Drag)
+        .window_control_area(WindowControlArea::Drag)
         .w_full()
         .min_h(titlebar_height)
         .max_h(titlebar_height)

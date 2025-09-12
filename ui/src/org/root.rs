@@ -29,7 +29,7 @@ impl RenderOnce for Root {
             .bg(cx.theme().background)
             .child(
                 z_stack([
-                    div().size_full().children(self.children),
+                    div().flex().flex_col().size_full().children(self.children),
                     div().size_full().child(modal_container(cx)),
                 ])
                 .size_full(),

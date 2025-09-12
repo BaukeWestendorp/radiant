@@ -31,8 +31,7 @@ impl PatchWindow {
 
 impl Render for PatchWindow {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        super::window_root(window, cx)
-            .child(div().size_full().id("patch_window_root").border_1().child(self.table.clone()))
+        super::window_root(window, cx).child(div().size_full().p_2().child(self.table.clone()))
     }
 }
 
