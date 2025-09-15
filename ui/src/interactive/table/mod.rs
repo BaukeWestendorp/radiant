@@ -243,6 +243,7 @@ impl<D: TableDelegate> Table<D> {
         div()
             .min_h(self.row_height)
             .max_h(self.row_height)
+            .bg(cx.theme().table_header)
             .flex()
             .text_color(cx.theme().table_header_foreground)
             .font_weight(FontWeight::BOLD)

@@ -25,8 +25,8 @@ impl FixtureTypePicker {
         let tabs = cx.new(|cx| {
             Tabs::new(
                 vec![
-                    Tab::new("from_showfile", "From Showfile", from_showfile.into()),
-                    Tab::new("from_library", "From Library", from_library.into()),
+                    Tab::new("from_showfile", "From Showfile", from_showfile),
+                    Tab::new("from_library", "From Library", from_library),
                 ],
                 window,
                 cx,

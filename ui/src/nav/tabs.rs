@@ -17,9 +17,9 @@ impl Tab {
     pub fn new(
         id: impl Into<SharedString>,
         label: impl Into<SharedString>,
-        content: AnyView,
+        content: impl Into<AnyView>,
     ) -> Self {
-        Self { id: id.into(), label: label.into(), disabled: false, content }
+        Self { id: id.into(), label: label.into(), disabled: false, content: content.into() }
     }
 
     pub fn id(&self) -> &SharedString {
@@ -90,12 +90,22 @@ impl Tabs {
         self.orientation = orientation;
     }
 
+    pub fn with_orientation(mut self, orientation: Orientation) -> Self {
+        self.orientation = orientation;
+        self
+    }
+
     pub fn orientation(&self) -> Orientation {
         self.orientation
     }
 
     pub fn set_show_tabs(&mut self, show_tabs: bool) {
         self.show_tabs = show_tabs;
+    }
+
+    pub fn with_show_tabs(mut self, show_tabs: bool) -> Self {
+        self.show_tabs = show_tabs;
+        self
     }
 
     pub fn show_tabs(&self) -> bool {
@@ -124,11 +134,14 @@ impl Tabs {
             .collect::<Vec<_>>();
 
         div()
+            .bg(cx.theme().background)
             .flex()
-            .when(self.orientation == Orientation::Vertical, |e| e.flex_col())
             .p_2()
             .border_b_1()
             .border_color(cx.theme().border)
+            .when(self.orientation == Orientation::Vertical, |e| {
+                e.flex_col().content_stretch().min_w_40().max_w_40().border_b_0().border_r_1()
+            })
             .gap_2()
             .children(tabs)
     }

@@ -1,31 +1,34 @@
 use gpui::prelude::*;
-use gpui::{App, Entity, Window, WindowHandle, div};
+use gpui::{Entity, Window, div};
 use ui::Disableable;
 use ui::interactive::button::button;
 use ui::interactive::table::{Table, TableDelegate};
 use ui::theme::ActiveTheme;
 
-use crate::window::patch::patch_table::PatchTable;
+use patch_table::PatchTable;
+
+use crate::window::main::MainWindow;
 
 mod ft_picker;
 mod patch_table;
 
-pub struct PatchWindow {
+pub struct PatchSettings {
     table: Entity<Table<PatchTable>>,
 }
 
-impl PatchWindow {
-    pub fn open(cx: &mut App) -> WindowHandle<Self> {
-        cx.open_window(super::window_options(), |window, cx| cx.new(|cx| Self::new(window, cx)))
-            .expect("should open patch window")
-    }
-
-    fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        Self { table: cx.new(|cx| Table::new(PatchTable::new(window, cx), window, cx)) }
+impl PatchSettings {
+    pub fn new(
+        main_window: Entity<MainWindow>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
+        Self {
+            table: cx.new(|cx| Table::new(PatchTable::new(main_window, window, cx), window, cx)),
+        }
     }
 }
 
-impl Render for PatchWindow {
+impl Render for PatchSettings {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let selected_rows = self.table.read(cx).selected_row_ids(cx).len();
         let table_valid = self.table.read(cx).validate(cx);
@@ -45,6 +48,6 @@ impl Render for PatchWindow {
             })
             .child(button("save_patch", None, "Save Patch").disabled(!table_valid));
 
-        super::window_root().child(div().size_full().child(self.table.clone())).child(info_bar)
+        div().size_full().child(self.table.clone()).child(info_bar)
     }
 }

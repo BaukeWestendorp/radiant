@@ -3,7 +3,6 @@ use gpui::{TitlebarOptions, WindowOptions};
 use ui::org::{Root, root};
 
 pub mod main;
-pub mod patch;
 
 pub fn window_options() -> WindowOptions {
     WindowOptions {
