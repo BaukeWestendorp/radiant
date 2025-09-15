@@ -2,9 +2,11 @@ use gpui::{App, Div, Styled, div, px};
 
 use crate::theme::ActiveTheme;
 
+mod container;
 mod root;
 mod section;
 
+pub use container::*;
 pub use root::*;
 pub use section::*;
 

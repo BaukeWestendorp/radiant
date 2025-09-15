@@ -4,22 +4,23 @@ use gpui::{
     UpdateGlobal, Window, div,
 };
 
+use crate::org::container;
 use crate::theme::ActiveTheme;
 
 pub mod actions {
     use gpui::{App, KeyBinding};
-
-    use super::ModalManager;
 
     gpui::actions!(modal, [Close]);
 
     pub const KEY_CONTEXT: &str = "Modal";
 
     pub(crate) fn init(cx: &mut App) {
-        cx.set_global(ModalManager::new());
-
         cx.bind_keys([KeyBinding::new("escape", Close, Some(KEY_CONTEXT))]);
     }
+}
+
+pub(crate) fn init(cx: &mut App) {
+    cx.set_global(ModalManager::new());
 }
 
 pub struct Modal<D: ModalDelegate> {
@@ -63,19 +64,8 @@ pub trait ModalDelegate {
 
 impl<D: ModalDelegate + 'static> Render for Modal<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .id("modal")
-            .track_focus(&self.focus_handle)
-            .key_context(actions::KEY_CONTEXT)
-            .bg(cx.theme().modal)
-            .border_1()
-            .border_color(cx.theme().modal_border)
-            .rounded(cx.theme().radius)
-            .occlude()
-            .on_action(cx.listener(Self::handle_close))
-            .on_mouse_down_out(
-                cx.listener(|this, _, window, cx| this.handle_close(&actions::Close, window, cx)),
-            )
+        let container = container(window, cx)
+            .size_full()
             .when(cx.theme().shadow, |e| e.shadow_md())
             .child(
                 div()
@@ -85,7 +75,18 @@ impl<D: ModalDelegate + 'static> Render for Modal<D> {
                     .border_b_1()
                     .border_color(cx.theme().modal_border),
             )
-            .child(div().p_2().child(self.delegate.render_content(window, cx)))
+            .child(div().p_2().child(self.delegate.render_content(window, cx)));
+
+        div()
+            .occlude()
+            .id("modal")
+            .track_focus(&self.focus_handle)
+            .key_context(actions::KEY_CONTEXT)
+            .on_action(cx.listener(Self::handle_close))
+            .on_mouse_down_out(
+                cx.listener(|this, _, window, cx| this.handle_close(&actions::Close, window, cx)),
+            )
+            .child(container)
     }
 }
 

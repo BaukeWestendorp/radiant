@@ -1,1 +1,1 @@
-mod tab_view;
+pub mod tabs;

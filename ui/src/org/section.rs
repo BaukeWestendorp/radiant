@@ -4,7 +4,7 @@ use gpui::{AnyElement, App, Div, StyleRefinement, Window, div};
 use smallvec::SmallVec;
 
 use crate::org::h_divider;
-use crate::theme::ActiveTheme;
+use crate::theme::{ActiveTheme, InteractiveColor};
 
 /// Creates a new [Section] with the given title.
 pub fn section(title: &'static str) -> Section {
@@ -43,7 +43,7 @@ impl RenderOnce for Section {
             .flex()
             .items_center()
             .gap_2()
-            .text_color(cx.theme().muted_foreground)
+            .text_color(cx.theme().foreground.muted())
             .child(self.title)
             .child(h_divider(cx));
 

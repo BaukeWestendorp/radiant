@@ -5,8 +5,6 @@ pub struct ThemeColors {
     pub accent: Hsla,
     /// Used for accent text color.
     pub accent_foreground: Hsla,
-    /// Used for hovered accent text color.
-    pub accent_foreground_hover: Hsla,
 
     /// Default background color.
     pub background: Hsla,
@@ -29,33 +27,29 @@ pub struct ThemeColors {
 
     /// Link text color.
     pub link: Hsla,
-    /// Active link text color.
-    pub link_active: Hsla,
-    /// Hover link text color.
-    pub link_hover: Hsla,
 
     /// Modal background color.
     pub modal: Hsla,
     /// Modal border color.
     pub modal_border: Hsla,
 
-    /// Muted background color.
-    pub muted: Hsla,
-    /// Muted text color.
-    pub muted_foreground: Hsla,
-
-    /// Used for focus ring.
+    /// Focus background color.
     pub focus: Hsla,
+    /// Focus border background color.
+    pub focus_border: Hsla,
+
+    /// Button background color.
+    pub button: Hsla,
+    /// Button text color.
+    pub button_foreground: Hsla,
+    /// Button border color.
+    pub button_border: Hsla,
 
     /// Secondary background color.
     pub secondary: Hsla,
-    /// Active secondary background color.
-    pub secondary_active: Hsla,
     /// Secondary text color, used for secondary button text color or secondary
     /// text.
     pub secondary_foreground: Hsla,
-    /// Hover secondary background color.
-    pub secondary_hover: Hsla,
 
     /// Input selection background color.
     pub selected: Hsla,
@@ -68,14 +62,10 @@ pub struct ThemeColors {
     pub table_even: Hsla,
     /// Table header background color.
     pub table_header: Hsla,
-    /// Table header hover color.
-    pub table_header_hover: Hsla,
     /// Table header text color.
     pub table_header_foreground: Hsla,
     /// Table header border color.
     pub table_header_border: Hsla,
-    /// Table item hover background color.
-    pub table_row_hover: Hsla,
     /// Table row border color.
     pub table_row_border: Hsla,
     /// Title bar background color, use for window title bar.
@@ -96,7 +86,6 @@ impl ThemeColors {
         Self {
             accent: rgb(0xee5622).into(),
             accent_foreground: rgb(0xee5622).into(),
-            accent_foreground_hover: rgb(0xf16d41).into(),
 
             background: rgb(0x000000).into(),
 
@@ -111,21 +100,19 @@ impl ThemeColors {
             foreground: rgb(0xffffff).into(),
 
             link: rgb(0xee5622).into(),
-            link_active: Hsla::from(rgb(0xee5622)).lighten(0.2).into(),
-            link_hover: Hsla::from(rgb(0xee5622)).with_opacity(0.8),
 
             modal: rgb(0x202020).into(),
             modal_border: rgb(0x282828).into(),
 
-            muted: rgb(0x253340).into(),
-            muted_foreground: rgb(0x626a73).into(),
+            focus: rgb(0x59c2ff).into(),
+            focus_border: Hsla::from(rgb(0x59c2ff)).with_opacity(0.5),
 
-            focus: Hsla::from(rgb(0x59c2ff)).with_opacity(0.5),
+            button: Hsla::from(rgb(0xee5622)).with_opacity(0.3),
+            button_foreground: rgb(0xffffff).into(),
+            button_border: rgb(0xee5622).into(),
 
             secondary: rgb(0x101010).into(),
-            secondary_active: Hsla::from(rgb(0x101010)).with_opacity(0.8),
             secondary_foreground: rgb(0xffffff).into(),
-            secondary_hover: Hsla::from(rgb(0x101010)).with_opacity(0.6),
 
             selected: Hsla::from(rgb(0xee5622)).with_opacity(0.4),
             selected_border: rgb(0xee5622).into(),
@@ -133,10 +120,8 @@ impl ThemeColors {
             table: rgb(0x000000).into(),
             table_even: rgb(0x141414).into(),
             table_header: rgb(0x242424).into(),
-            table_header_hover: rgb(0x303030).into(),
             table_header_foreground: rgb(0xffffff).into(),
             table_header_border: rgb(0x383838).into(),
-            table_row_hover: rgb(0x202020).into(),
             table_row_border: rgb(0x242424).into(),
 
             title_bar: rgb(0x101010).into(),
@@ -164,6 +149,34 @@ pub trait InteractiveColor {
     fn lighten(&self, factor: f32) -> Self;
 
     fn darken(&self, factor: f32) -> Self;
+
+    fn muted(&self) -> Self
+    where
+        Self: Sized,
+    {
+        self.darken(0.3)
+    }
+
+    fn disabled(&self) -> Self
+    where
+        Self: Sized,
+    {
+        self.darken(0.2)
+    }
+
+    fn hovered(&self) -> Self
+    where
+        Self: Sized,
+    {
+        self.lighten(0.1)
+    }
+
+    fn active(&self) -> Self
+    where
+        Self: Sized,
+    {
+        self.lighten(0.2)
+    }
 }
 
 impl InteractiveColor for Hsla {

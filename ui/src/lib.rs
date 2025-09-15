@@ -4,9 +4,9 @@ pub mod interactive;
 pub mod misc;
 pub mod nav;
 pub mod org;
+pub mod overlay;
 pub mod theme;
 pub mod typo;
-
 pub mod utils;
 
 use eyre::Context;
@@ -24,6 +24,7 @@ pub fn init(cx: &mut gpui::App) -> Result<()> {
 
     theme::init(cx);
     interactive::init(cx);
+    overlay::init(cx);
 
     Ok(())
 }

@@ -4,7 +4,7 @@ use gpui::{
     div, px,
 };
 
-use crate::theme::ActiveTheme;
+use crate::theme::{ActiveTheme, InteractiveColor};
 
 /// Heading 1 style (large, bold).
 pub fn h1(text: impl Into<SharedString>) -> Div {
@@ -74,8 +74,8 @@ pub fn link(
         .underline()
         .text_color(cx.theme().link)
         .on_click(|_event, _w, cx| cx.open_url(url))
-        .hover(|e| e.text_color(cx.theme().link_hover))
-        .active(|e| e.text_color(cx.theme().link_active))
+        .hover(|e| e.text_color(cx.theme().link.hovered()))
+        .active(|e| e.text_color(cx.theme().link.active()))
         .cursor_pointer()
         .child(text)
 }

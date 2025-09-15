@@ -1,1 +1,3 @@
-pub struct SubmitEvent;
+pub struct SubmitEvent<T> {
+    pub value: T,
+}

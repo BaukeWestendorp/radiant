@@ -12,7 +12,7 @@ use gpui::{
 pub use column::*;
 pub use delegate::*;
 
-use crate::theme::ActiveTheme;
+use crate::theme::{ActiveTheme, InteractiveColor};
 use crate::utils::z_stack;
 
 pub mod actions {
@@ -203,7 +203,7 @@ impl<D: TableDelegate> Table<D> {
                 .border_r_1()
                 .border_b_1()
                 .border_color(cx.theme().table_header_border)
-                .hover(|e| e.bg(cx.theme().table_header_hover))
+                .hover(|e| e.bg(cx.theme().table_header.hovered()))
                 .when(col_ix == self.column_count(cx) - 1, |e| e.border_r_0())
                 .on_mouse_down(
                     MouseButton::Left,
@@ -269,7 +269,7 @@ impl<D: TableDelegate> Table<D> {
             .max_h(self.row_height)
             .bg(bg_color)
             .border_color(cx.theme().table_row_border)
-            .hover(|e| e.bg(cx.theme().table_row_hover))
+            .hover(|e| e.bg(cx.theme().table.hovered()))
             .border_b_1()
             .children((0..self.column_count(cx)).into_iter().map(|col_ix| {
                 self.render_cell(row_id, row_ix, col_ix, window, cx).into_any_element()

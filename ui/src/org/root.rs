@@ -3,6 +3,8 @@ use gpui::{AnyElement, App, Div, Interactivity, RenderOnce, StyleRefinement, Win
 use smallvec::SmallVec;
 
 use crate::interactive::modal::modal_container;
+use crate::misc::titlebar;
+use crate::overlay::overlay_container;
 use crate::theme::ActiveTheme;
 use crate::utils::z_stack;
 
@@ -20,17 +22,19 @@ impl Root {
 }
 
 impl RenderOnce for Root {
-    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         div()
             .size_full()
             .text_color(cx.theme().foreground)
             .font_family("Tamzen")
             .line_height(px(14.0))
             .bg(cx.theme().background)
+            .child(titlebar(window, cx))
             .child(
                 z_stack([
                     div().flex().flex_col().size_full().children(self.children),
                     div().size_full().child(modal_container(cx)),
+                    div().size_full().child(overlay_container(cx)),
                 ])
                 .size_full(),
             )
