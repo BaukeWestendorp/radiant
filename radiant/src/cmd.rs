@@ -51,6 +51,7 @@ pub enum PatchCommand {
     SetFixtureTypeId {
         fixture_ref: FixtureReference,
         fixture_type_id: GdtfFixtureTypeId,
+        dmx_mode: String,
     },
 }
 
@@ -118,10 +119,11 @@ impl PatchCommand {
                     Ok(())
                 })?;
             }
-            PatchCommand::SetFixtureTypeId { fixture_ref, fixture_type_id } => {
+            PatchCommand::SetFixtureTypeId { fixture_ref, fixture_type_id, dmx_mode } => {
                 engine.patch().update(|patch| {
                     if let Some(fixture) = patch.fixture_mut(fixture_ref) {
                         fixture.fixture_type_id = fixture_type_id;
+                        fixture.dmx_mode = dmx_mode;
                     } else {
                         eyre::bail!("fixture with reference {fixture_ref} not found");
                     }
@@ -271,10 +273,15 @@ impl fmt::Display for Command {
                     address.map(|address| address.to_string()).unwrap_or("none".to_string()),
                 );
             }
-            Command::Patch(PatchCommand::SetFixtureTypeId { fixture_ref, fixture_type_id }) => {
+            Command::Patch(PatchCommand::SetFixtureTypeId {
+                fixture_ref,
+                fixture_type_id,
+                dmx_mode,
+            }) => {
                 push_keyword(&mut parts, "patch_set_fixture_type_id");
                 push_argument(&mut parts, fixture_ref);
                 push_argument(&mut parts, fixture_type_id);
+                push_argument(&mut parts, dmx_mode);
             }
             Command::Select { fid } => {
                 push_keyword(&mut parts, "select");

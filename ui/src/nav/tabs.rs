@@ -145,7 +145,7 @@ impl Tabs {
 impl Render for Tabs {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let tabs = if self.show_tabs { Some(self.render_tabs(window, cx)) } else { None };
-        let content = div().size_full().child(self.render_content(cx));
+        let content = self.render_content(cx);
 
         div()
             .flex()

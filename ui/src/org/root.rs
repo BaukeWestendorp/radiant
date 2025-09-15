@@ -25,6 +25,8 @@ impl RenderOnce for Root {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         div()
             .size_full()
+            .flex()
+            .flex_col()
             .text_color(cx.theme().foreground)
             .font_family("Tamzen")
             .line_height(px(14.0))

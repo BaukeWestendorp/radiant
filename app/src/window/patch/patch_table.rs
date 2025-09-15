@@ -155,9 +155,9 @@ impl PatchTable {
         ) -> Vec<dmx::Address> {
             fixture_uuids
                 .iter()
-                .filter_map(|uuid| {
+                .map(|uuid| {
                     EngineManager::read_patch(cx, |patch| {
-                        patch.fixture(*uuid).unwrap().channel_count(patch).ok()
+                        radiant::gdtf::channel_count(patch.fixture(*uuid).unwrap().dmx_mode(patch))
                     })
                 })
                 .scan(0, |state, channel_count| {
@@ -225,21 +225,33 @@ impl PatchTable {
     fn edit_fts(&mut self, row_ids: Vec<Uuid>, window: &mut Window, cx: &mut Context<Table<Self>>) {
         let ft_picker = self.open_ft_picker(window, cx);
 
-        cx.subscribe(&ft_picker, move |_, _, event: &SubmitEvent<GdtfFixtureTypeId>, cx| {
-            let ft_id = event.value;
+        cx.subscribe(
+            &ft_picker,
+            move |_, _, event: &SubmitEvent<(GdtfFixtureTypeId, String)>, cx| {
+                let (ft_id, dmx_mode) = &event.value;
 
-            for row_id in &row_ids {
-                EngineManager::exec_and_log_err(
-                    Command::Patch(PatchCommand::SetFixtureTypeId {
-                        fixture_ref: (*row_id).into(),
-                        fixture_type_id: ft_id,
-                    }),
-                    cx,
-                );
-            }
+                for row_id in &row_ids {
+                    EngineManager::exec_and_log_err(
+                        Command::Patch(PatchCommand::SetFixtureTypeId {
+                            fixture_ref: (*row_id).into(),
+                            fixture_type_id: *ft_id,
+                            dmx_mode: dmx_mode.clone(),
+                        }),
+                        cx,
+                    );
 
-            cx.close_overlay();
-        })
+                    EngineManager::exec_and_log_err(
+                        Command::Patch(PatchCommand::SetAddress {
+                            fixture_ref: (*row_id).into(),
+                            address: None,
+                        }),
+                        cx,
+                    );
+                }
+
+                cx.close_overlay();
+            },
+        )
         .detach();
     }
 
@@ -249,7 +261,7 @@ impl PatchTable {
         cx: &mut Context<Table<Self>>,
     ) -> Entity<FixtureTypePicker> {
         let ft_picker = cx.new(|cx| FixtureTypePicker::new(window, cx));
-        cx.open_overlay(ft_picker.clone());
+        cx.open_overlay("Fixture Types", ft_picker.clone());
         ft_picker
     }
 }
@@ -274,6 +286,16 @@ impl TableDelegate for PatchTable {
             let mut fixtures = patch.fixtures().to_vec();
             fixtures.sort_by(|a, b| a.fid.cmp(&b.fid));
             fixtures.iter().map(|f| f.uuid()).collect()
+        })
+    }
+
+    fn validate(&self, cx: &App) -> bool {
+        let ids = self.sorted_row_ids(cx).to_vec();
+
+        EngineManager::read_patch(cx, |patch| {
+            ids.iter().all(|uuid| {
+                patch.fixture(*uuid).is_some_and(|f| f.fid.is_some() && f.address.is_some())
+            })
         })
     }
 

@@ -1,6 +1,9 @@
 use gpui::prelude::*;
 use gpui::{App, Entity, Window, WindowHandle, div};
-use ui::interactive::table::Table;
+use ui::Disableable;
+use ui::interactive::button::button;
+use ui::interactive::table::{Table, TableDelegate};
+use ui::theme::ActiveTheme;
 
 use crate::window::patch::patch_table::PatchTable;
 
@@ -23,7 +26,25 @@ impl PatchWindow {
 }
 
 impl Render for PatchWindow {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        super::window_root().child(div().size_full().p_2().child(self.table.clone()))
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let selected_rows = self.table.read(cx).selected_row_ids(cx).len();
+        let table_valid = self.table.read(cx).validate(cx);
+        let info_bar = div()
+            .w_full()
+            .h_10()
+            .flex()
+            .px_2()
+            .justify_between()
+            .items_center()
+            .border_t_1()
+            .border_color(cx.theme().border)
+            .child(if selected_rows > 0 {
+                format!("Selected rows: {}", selected_rows)
+            } else {
+                "".to_string()
+            })
+            .child(button("save_patch", None, "Save Patch").disabled(!table_valid));
+
+        super::window_root().child(div().size_full().child(self.table.clone())).child(info_bar)
     }
 }

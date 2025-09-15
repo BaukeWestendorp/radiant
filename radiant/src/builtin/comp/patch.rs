@@ -329,38 +329,6 @@ impl Fixture {
 
         Ok(channels)
     }
-
-    pub fn channel_count(&self, patch: &Patch) -> Result<u16> {
-        let Some(address) = self.address else {
-            eyre::bail!("fixture does not have an address");
-        };
-
-        let mut low = 0;
-        let mut high = 0;
-
-        let dmx_mode = self.dmx_mode(patch);
-
-        for dmx_channel in &dmx_mode.dmx_channels {
-            let offsets = dmx_channel
-                .offset
-                .clone()
-                .unwrap_or_default()
-                .into_iter()
-                .map(|offset| (offset - 1).clamp(u16::MIN as i32, u16::MAX as i32) as u16);
-
-            for offset in offsets {
-                let channel = u16::from(address.channel) + offset;
-                if low == 0 || channel < low {
-                    low = channel;
-                }
-                if high == 0 || channel > high {
-                    high = channel;
-                }
-            }
-        }
-
-        Ok(high - low + 1)
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

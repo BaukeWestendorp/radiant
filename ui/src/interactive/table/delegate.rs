@@ -16,6 +16,14 @@ pub trait TableDelegate: Sized + 'static {
 
     fn sorted_row_ids(&self, cx: &App) -> Vec<Self::RowId>;
 
+    fn can_select_multiple_rows(&self, _cx: &App) -> bool {
+        true
+    }
+
+    fn validate(&self, _cx: &App) -> bool {
+        true
+    }
+
     fn edit_selection(
         &mut self,
         _column_id: &str,

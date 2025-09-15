@@ -47,6 +47,6 @@ impl RenderOnce for Section {
             .child(self.title)
             .child(h_divider(cx));
 
-        self.base.child(header).children(self.children)
+        self.base.flex().flex_col().child(header).children(self.children)
     }
 }

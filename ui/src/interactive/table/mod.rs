@@ -1,19 +1,21 @@
-mod column;
-mod delegate;
-
 use std::ops::{Deref, DerefMut, Range};
 
 use gpui::prelude::*;
 use gpui::{
-    Context, FocusHandle, FontWeight, IntoElement, MouseButton, Pixels, SharedString, Window, div,
-    uniform_list,
+    App, Context, EventEmitter, FocusHandle, FontWeight, IntoElement, MouseButton, Pixels,
+    SharedString, Window, div, uniform_list,
 };
 
 pub use column::*;
 pub use delegate::*;
+pub use event::*;
 
 use crate::theme::{ActiveTheme, InteractiveColor};
 use crate::utils::z_stack;
+
+mod column;
+mod delegate;
+mod event;
 
 pub mod actions {
     use gpui::{App, KeyBinding};
@@ -127,14 +129,22 @@ impl<D: TableDelegate> Table<D> {
             end_ix: row_ix,
             inverted: false,
         });
+        cx.emit(TableEvent::SelectionChanged);
         cx.notify();
     }
 
     pub fn end_selection(&mut self, row_ix: usize, cx: &mut Context<Self>) {
+        let can_select_multiple = self.can_select_multiple_rows(cx);
+
         if let Some(selection) = &mut self.selection {
+            if !can_select_multiple {
+                selection.start_ix = row_ix;
+            }
+
             selection.end_ix = row_ix;
             selection.inverted = row_ix <= selection.start_ix;
         }
+        cx.emit(TableEvent::SelectionChanged);
         cx.notify();
     }
 
@@ -142,7 +152,10 @@ impl<D: TableDelegate> Table<D> {
         let row_count = self.sorted_row_ids(cx).len();
         if row_count != 0 {
             self.start_selection(column_id, 0, cx);
-            self.end_selection(row_count - 1, cx);
+
+            if self.can_select_multiple_rows(cx) {
+                self.end_selection(row_count - 1, cx);
+            }
         }
     }
 
@@ -168,7 +181,7 @@ impl<D: TableDelegate> Table<D> {
         self.delegate_mut().edit_selection(&column_id, selected_row_ids, window, cx)
     }
 
-    pub fn selected_row_ids(&self, cx: &Context<Self>) -> Vec<D::RowId> {
+    pub fn selected_row_ids(&self, cx: &App) -> Vec<D::RowId> {
         let Some(selection) = self.selection.as_ref() else { return Vec::new() };
 
         let row_ixs: Vec<usize> = if selection.inverted {
@@ -184,7 +197,7 @@ impl<D: TableDelegate> Table<D> {
         ids
     }
 
-    fn row_id(&self, row_ix: usize, cx: &Context<Self>) -> Option<D::RowId> {
+    fn row_id(&self, row_ix: usize, cx: &App) -> Option<D::RowId> {
         self.sorted_row_ids(cx).get(row_ix).cloned()
     }
 
@@ -261,16 +274,23 @@ impl<D: TableDelegate> Table<D> {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
-        let bg_color = if row_ix % 2 == 0 { cx.theme().table_even } else { cx.theme().table };
+        let selected = self.selection_contains(row_ix);
+
+        let bg_color = if selected {
+            cx.theme().selected
+        } else {
+            if row_ix % 2 == 1 { cx.theme().table_even } else { cx.theme().table }
+        };
 
         div()
             .flex()
             .min_h(self.row_height)
             .max_h(self.row_height)
             .bg(bg_color)
+            .hover(|e| e.bg(bg_color.hovered()))
             .border_color(cx.theme().table_row_border)
-            .hover(|e| e.bg(cx.theme().table.hovered()))
             .border_b_1()
+            .cursor_crosshair()
             .children((0..self.column_count(cx)).into_iter().map(|col_ix| {
                 self.render_cell(row_id, row_ix, col_ix, window, cx).into_any_element()
             }))
@@ -300,9 +320,9 @@ impl<D: TableDelegate> Table<D> {
             let prev_row_ix = row_ix.overflowing_sub(1).0;
             let next_row_ix = row_ix + 1;
             div()
-                .border_x_2()
-                .when(!self.selection_contains(prev_row_ix), |e| e.border_t_2())
-                .when(!self.selection_contains(next_row_ix), |e| e.border_b_2())
+                .border_x_1()
+                .when(!self.selection_contains(prev_row_ix), |e| e.border_t_1())
+                .when(!self.selection_contains(next_row_ix), |e| e.border_b_1())
                 .border_color(cx.theme().selected_border)
                 .on_mouse_down(
                     MouseButton::Right,
@@ -516,3 +536,5 @@ impl<D: TableDelegate + 'static> Render for Table<D> {
             .child(self.render_body(window, cx))
     }
 }
+
+impl<D: TableDelegate + 'static> EventEmitter<TableEvent> for Table<D> {}

@@ -235,9 +235,6 @@ impl RenderOnce for InteractiveContainer {
             style = style.disabled();
         }
 
-        let mut container = container(window, cx).size_full().children(self.children);
-        container.style = style;
-
         if self.disabled || self.selected {
             self.base
                 .focusable()
@@ -249,7 +246,13 @@ impl RenderOnce for InteractiveContainer {
         } else {
             self.base.focusable()
         }
-        .child(container)
+        .bg(style.background)
+        .border_1()
+        .border_color(style.border)
+        .rounded(cx.theme().radius)
+        .text_color(style.text_color)
+        .overflow_hidden()
+        .cursor_pointer()
         .when(self.disabled, |e| e.cursor_not_allowed())
         .when(!self.disabled, |e| {
             let hover_active_style =
@@ -264,6 +267,6 @@ impl RenderOnce for InteractiveContainer {
                     .border_color(hover_active_style.active().border)
             })
         })
-        .overflow_hidden()
+        .children(self.children)
     }
 }

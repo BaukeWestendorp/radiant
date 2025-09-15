@@ -25,6 +25,13 @@ pub struct ThemeColors {
     /// Default text color.
     pub foreground: Hsla,
 
+    /// Header background color.
+    pub header: Hsla,
+    /// Header border color.
+    pub header_border: Hsla,
+    /// Header text color.
+    pub header_foreground: Hsla,
+
     /// Link text color.
     pub link: Hsla,
 
@@ -101,6 +108,10 @@ impl ThemeColors {
 
             link: rgb(0xee5622).into(),
 
+            header: rgb(0x14305a).into(),
+            header_border: rgb(0x28508a).into(),
+            header_foreground: rgb(0xffffff).into(),
+
             modal: rgb(0x202020).into(),
             modal_border: rgb(0x282828).into(),
 
@@ -168,14 +179,14 @@ pub trait InteractiveColor {
     where
         Self: Sized,
     {
-        self.lighten(0.1)
+        self.lighten(0.4)
     }
 
     fn active(&self) -> Self
     where
         Self: Sized,
     {
-        self.lighten(0.2)
+        self.lighten(0.5)
     }
 }
 
@@ -184,16 +195,32 @@ impl InteractiveColor for Hsla {
         Self { a: opacity, ..*self }
     }
 
+    /// Gamma-corrected lightening.
     fn lighten(&self, factor: f32) -> Self {
-        let l = match self.l {
-            0.0 => factor,
-            l => l * (1.0 + factor),
+        let gamma = 2.2;
+
+        // Handle pure black as a special case
+        let l = if self.l == 0.0 {
+            // For pure black, directly apply the factor as the new lightness with a scaling
+            // factor.
+            (factor * 0.2).min(1.0)
+        } else {
+            // For non-black colors, use gamma correction
+            let gamma_l = self.l.powf(gamma);
+            let brightened_gamma = gamma_l * (1.0 + factor);
+            brightened_gamma.powf(1.0 / gamma).min(1.0)
         };
+
         Hsla { l, ..*self }
     }
 
+    /// Gamma-corrected darkening.
     fn darken(&self, factor: f32) -> Self {
-        let l = self.l * (1.0 - factor);
+        let gamma = 2.2;
+        let gamma_l = self.l.powf(gamma);
+        let darkened_gamma = gamma_l * (1.0 - factor);
+        let l = darkened_gamma.powf(1.0 / gamma);
+
         Self { l, ..*self }
     }
 }
