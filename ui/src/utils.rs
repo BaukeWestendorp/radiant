@@ -29,6 +29,7 @@ pub fn snap_point(mut point: Point<Pixels>, threshold: Pixels) -> Point<Pixels> 
     point
 }
 
+/// Creates a placeholder TODO element.
 pub fn todo(cx: &App) -> Div {
     div()
         .size_full()
