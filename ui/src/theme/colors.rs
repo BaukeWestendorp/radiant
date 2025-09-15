@@ -186,7 +186,7 @@ pub trait InteractiveColor {
     where
         Self: Sized,
     {
-        self.lighten(0.5)
+        self.lighten(0.8)
     }
 }
 

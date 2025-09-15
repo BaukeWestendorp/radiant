@@ -1,5 +1,7 @@
 use gpui::prelude::*;
-use gpui::{Bounds, Canvas, Div, Entity, Pixels, Point, canvas, div};
+use gpui::{App, Bounds, Canvas, Div, Entity, FontWeight, Pixels, Point, canvas, div};
+
+use crate::theme::{ActiveTheme, InteractiveColor};
 
 /// Stack elements on top of each other.
 pub fn z_stack(children: impl IntoIterator<Item = impl IntoElement>) -> Div {
@@ -25,4 +27,18 @@ pub fn snap_point(mut point: Point<Pixels>, threshold: Pixels) -> Point<Pixels> 
     point.x = (point.x / threshold).floor() * threshold;
     point.y = (point.y / threshold).floor() * threshold;
     point
+}
+
+pub fn todo(cx: &App) -> Div {
+    div()
+        .size_full()
+        .flex()
+        .justify_center()
+        .items_center()
+        .bg(cx.theme().red.with_opacity(0.1))
+        .text_color(cx.theme().red)
+        .font_weight(FontWeight::BOLD)
+        .border_1()
+        .border_color(cx.theme().red)
+        .child("TODO")
 }

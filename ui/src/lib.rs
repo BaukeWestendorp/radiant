@@ -32,7 +32,6 @@ pub fn init(cx: &mut gpui::App) -> Result<()> {
 /// A trait for types that can be disabled.
 pub trait Disableable {
     /// Sets the disabled state.
-
     fn disabled(self, disabled: bool) -> Self;
 }
 
