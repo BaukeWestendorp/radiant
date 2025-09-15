@@ -1,13 +1,13 @@
 use gpui::prelude::*;
-use gpui::{App, Div, Pixels, Point, Stateful, Window, WindowControlArea, div, px};
+use gpui::{App, Div, Pixels, Point, Stateful, WindowControlArea, div, px};
 
 use crate::theme::ActiveTheme;
 
 pub const TRAFFIC_LIGHT_PADDING: Pixels = px(69.0);
 pub const TRAFFIC_LIGHT_POSITION: Point<Pixels> = Point::new(px(8.0), px(8.0));
 
-pub fn titlebar(window: &Window, cx: &App) -> Stateful<Div> {
-    let titlebar_height = (1.75 * window.rem_size()).max(px(34.));
+pub fn titlebar(cx: &App) -> Stateful<Div> {
+    let titlebar_height = px(33.0);
 
     div()
         .id("titlebar")
@@ -15,7 +15,8 @@ pub fn titlebar(window: &Window, cx: &App) -> Stateful<Div> {
         .w_full()
         .min_h(titlebar_height)
         .max_h(titlebar_height)
-        .px(TRAFFIC_LIGHT_PADDING)
+        .pl(TRAFFIC_LIGHT_PADDING)
+        .pr(TRAFFIC_LIGHT_POSITION.x)
         .border_b_1()
         .border_color(cx.theme().title_bar_border)
         .bg(cx.theme().title_bar)

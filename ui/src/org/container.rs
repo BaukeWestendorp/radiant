@@ -252,6 +252,7 @@ impl RenderOnce for InteractiveContainer {
         .rounded(cx.theme().radius)
         .text_color(style.text_color)
         .overflow_hidden()
+        .occlude()
         .cursor_pointer()
         .when(self.disabled, |e| e.cursor_not_allowed())
         .when(!self.disabled, |e| {
