@@ -5,7 +5,7 @@ use gpui::{App, Application};
 use crate::engine::EngineManager;
 use crate::window::main::MainWindow;
 
-pub fn run(showfile_path: PathBuf) {
+pub fn run(showfile_path: Option<PathBuf>) {
     Application::new().with_assets(ui::assets::Assets).run(move |cx: &mut App| {
         cx.activate(true);
         ui::init(cx).expect("failed to initialize ui crate");

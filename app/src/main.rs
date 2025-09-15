@@ -6,7 +6,7 @@ use clap::Parser;
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
 struct Args {
-    showfile_path: PathBuf,
+    showfile_path: Option<PathBuf>,
 }
 
 fn main() -> Result<()> {

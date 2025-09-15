@@ -17,7 +17,7 @@ pub struct EngineManager {
 }
 
 impl EngineManager {
-    pub fn init(showfile_path: PathBuf, cx: &mut App) -> Result<()> {
+    pub fn init(showfile_path: Option<PathBuf>, cx: &mut App) -> Result<()> {
         let mut engine = Engine::new(showfile_path);
         engine.start()?;
 
