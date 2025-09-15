@@ -11,9 +11,12 @@ pub(crate) fn register(engine: &mut Engine) -> Result<()> {
     Ok(())
 }
 
+#[derive(Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Programmer {
+    #[serde(default)]
     selection: Vec<FixtureId>,
+    #[serde(default)]
     values: HashMap<(FixtureId, Attribute), AttributeValue>,
 }
 

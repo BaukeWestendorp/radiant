@@ -22,12 +22,13 @@ pub(crate) fn register(engine: &mut Engine) -> Result<()> {
     Ok(())
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Patch {
-    #[serde(skip)]
+    #[serde(skip, default)]
     fixture_types: HashMap<GdtfFixtureTypeId, FixtureType>,
 
+    #[serde(default)]
     fixtures: Vec<Fixture>,
 }
 

@@ -9,9 +9,10 @@ pub(crate) fn register(engine: &mut Engine) -> Result<()> {
     Ok(())
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct ProtocolConfig {
+    #[serde(default)]
     pub(crate) sacn_sources: Vec<SacnSourceConfiguration>,
 }
 

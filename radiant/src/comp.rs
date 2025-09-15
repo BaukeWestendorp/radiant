@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::error::Result;
 
-pub trait Component: Send + Sync + 'static {
+pub trait Component: Send + Sync + Default + 'static {
     fn as_any(&self) -> &dyn std::any::Any;
 
     fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
@@ -21,7 +21,9 @@ pub trait Component: Send + Sync + 'static {
         Self: serde::Serialize + for<'de> serde::Deserialize<'de>,
     {
         let file_path = showfile_path.join(Self::relative_file_path());
-        let file = File::open(&file_path)?;
+        let Ok(file) = File::open(&file_path) else {
+            return Ok(Self::default());
+        };
         let reader = BufReader::new(file);
         let mut this: Self = serde_yaml::from_reader(reader)?;
         this.after_load_from_showfile(showfile_path)?;

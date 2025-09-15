@@ -16,8 +16,9 @@ pub(crate) fn register(engine: &mut Engine) -> Result<()> {
     Ok(())
 }
 
+#[derive(Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub struct Objects(HashMap<ObjectId, Object>);
+pub struct Objects(#[serde(default)] HashMap<ObjectId, Object>);
 
 impl Objects {
     pub fn get(&self, object_id: impl Into<ObjectId>) -> Option<&Object> {

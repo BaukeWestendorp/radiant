@@ -12,8 +12,9 @@ pub(crate) fn register(engine: &mut Engine) -> Result<()> {
     Ok(())
 }
 
+#[derive(Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub struct Pools(HashMap<ObjectType, Pool>);
+pub struct Pools(#[serde(default)] HashMap<ObjectType, Pool>);
 
 impl Pools {
     pub fn pool(&self, object_type: ObjectType) -> &Pool {

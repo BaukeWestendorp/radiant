@@ -25,8 +25,13 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn new(showfile_path: PathBuf) -> Self {
+    pub fn new(showfile_path: Option<PathBuf>) -> Self {
         let (tx, rx) = crossbeam_channel::unbounded();
+
+        let showfile_path = match showfile_path {
+            Some(showfile_path) => showfile_path,
+            None => create_temp_showfile().expect("failed to crate temporary showfile"),
+        };
 
         Self {
             showfile_path,
@@ -114,4 +119,21 @@ impl Engine {
     pub fn protocol_config(&self) -> ComponentHandle<ProtocolConfig> {
         self.component::<ProtocolConfig>()
     }
+}
+
+fn create_temp_showfile() -> Result<PathBuf> {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    use std::{env, fs};
+
+    let mut temp_dir = env::temp_dir().join("radiant");
+
+    let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
+    let folder_name = format!("showfile_{}", timestamp);
+
+    temp_dir.push(folder_name);
+
+    fs::create_dir_all(&temp_dir)
+        .wrap_err_with(|| format!("failed to create temp showfile directory at {:?}", temp_dir))?;
+
+    Ok(temp_dir)
 }
