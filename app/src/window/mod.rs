@@ -1,6 +1,5 @@
 use gpui::prelude::*;
-use gpui::{App, TitlebarOptions, Window, WindowOptions};
-use ui::misc::titlebar;
+use gpui::{TitlebarOptions, WindowOptions};
 use ui::org::{Root, root};
 
 pub mod patch;
@@ -18,6 +17,6 @@ pub fn window_options() -> WindowOptions {
     }
 }
 
-pub fn window_root(window: &mut Window, cx: &mut App) -> Root {
-    root().flex().flex_col().child(titlebar(window, cx))
+pub fn window_root() -> Root {
+    root().flex().flex_col()
 }

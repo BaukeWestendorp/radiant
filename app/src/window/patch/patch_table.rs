@@ -1,11 +1,13 @@
 use gpui::prelude::*;
-use gpui::{App, Entity, Window, WindowHandle, div, px};
-use radiant::builtin::FixtureId;
+use gpui::{App, Entity, IntoElement, Window, div, px};
+use radiant::builtin::{FixtureId, GdtfFixtureTypeId};
 use radiant::cmd::{Command, PatchCommand};
 use radiant::engine::event::EngineEvent;
+use ui::interactive::event::SubmitEvent;
 use ui::interactive::input::FieldEvent;
 use ui::interactive::modal::ModalExt;
 use ui::interactive::table::{Column, Table, TableDelegate};
+use ui::overlay::OverlayExt;
 use ui::theme::{ActiveTheme, InteractiveColor};
 use uuid::Uuid;
 
@@ -13,30 +15,10 @@ use std::num::NonZeroU32;
 
 use crate::engine::EngineManager;
 use crate::text_modal::TextModal;
-
-pub struct PatchWindow {
-    table: Entity<Table<PatchTable>>,
-}
-
-impl PatchWindow {
-    pub fn open(cx: &mut App) -> WindowHandle<Self> {
-        cx.open_window(super::window_options(), |window, cx| cx.new(|cx| Self::new(window, cx)))
-            .expect("should open patch window")
-    }
-
-    fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        Self { table: cx.new(|cx| Table::new(PatchTable::new(window, cx), window, cx)) }
-    }
-}
-
-impl Render for PatchWindow {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        super::window_root(window, cx).child(div().size_full().p_2().child(self.table.clone()))
-    }
-}
+use crate::window::patch::ft_picker::FixtureTypePicker;
 
 #[derive(Clone)]
-struct PatchTable {
+pub struct PatchTable {
     columns: Vec<Column>,
 }
 
@@ -239,6 +221,37 @@ impl PatchTable {
             modal
         });
     }
+
+    fn edit_fts(&mut self, row_ids: Vec<Uuid>, window: &mut Window, cx: &mut Context<Table<Self>>) {
+        let ft_picker = self.open_ft_picker(window, cx);
+
+        cx.subscribe(&ft_picker, move |_, _, event: &SubmitEvent<GdtfFixtureTypeId>, cx| {
+            let ft_id = event.value;
+
+            for row_id in &row_ids {
+                EngineManager::exec_and_log_err(
+                    Command::Patch(PatchCommand::SetFixtureTypeId {
+                        fixture_ref: (*row_id).into(),
+                        fixture_type_id: ft_id,
+                    }),
+                    cx,
+                );
+            }
+
+            cx.close_overlay();
+        })
+        .detach();
+    }
+
+    fn open_ft_picker(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Table<Self>>,
+    ) -> Entity<FixtureTypePicker> {
+        let ft_picker = cx.new(|cx| FixtureTypePicker::new(window, cx));
+        cx.open_overlay(ft_picker.clone());
+        ft_picker
+    }
 }
 
 impl TableDelegate for PatchTable {
@@ -279,7 +292,7 @@ impl TableDelegate for PatchTable {
             "fid" => self.edit_fids(row_ids, window, cx),
             "name" => self.edit_names(row_ids, window, cx),
             "addr" => self.edit_addrs(row_ids, window, cx),
-            "ft" => {}
+            "ft" => self.edit_fts(row_ids, window, cx),
             _ => {}
         }
     }

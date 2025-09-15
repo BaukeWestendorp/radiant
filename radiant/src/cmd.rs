@@ -48,6 +48,10 @@ pub enum PatchCommand {
         fixture_ref: FixtureReference,
         address: Option<dmx::Address>,
     },
+    SetFixtureTypeId {
+        fixture_ref: FixtureReference,
+        fixture_type_id: GdtfFixtureTypeId,
+    },
 }
 
 impl PatchCommand {
@@ -107,6 +111,17 @@ impl PatchCommand {
 
                     if let Some(fixture) = patch.fixture_mut(fixture_ref) {
                         fixture.address = address;
+                    } else {
+                        eyre::bail!("fixture with reference {fixture_ref} not found");
+                    }
+
+                    Ok(())
+                })?;
+            }
+            PatchCommand::SetFixtureTypeId { fixture_ref, fixture_type_id } => {
+                engine.patch().update(|patch| {
+                    if let Some(fixture) = patch.fixture_mut(fixture_ref) {
+                        fixture.fixture_type_id = fixture_type_id;
                     } else {
                         eyre::bail!("fixture with reference {fixture_ref} not found");
                     }
@@ -218,7 +233,7 @@ impl fmt::Display for Command {
                 dmx_mode,
                 name,
             }) => {
-                push_keyword(&mut parts, "patch_fixture");
+                push_keyword(&mut parts, "patch_add_fixture");
                 push_argument(
                     &mut parts,
                     fid.map(|fid| fid.to_string()).unwrap_or("none".to_string()),
@@ -241,7 +256,7 @@ impl fmt::Display for Command {
                 push_argument(&mut parts, name);
             }
             Command::Patch(PatchCommand::SetFixtureId { fixture_ref, new_fid }) => {
-                push_keyword(&mut parts, "patch_set_address");
+                push_keyword(&mut parts, "patch_set_fixture_id");
                 push_argument(&mut parts, fixture_ref);
                 push_argument(
                     &mut parts,
@@ -255,6 +270,11 @@ impl fmt::Display for Command {
                     &mut parts,
                     address.map(|address| address.to_string()).unwrap_or("none".to_string()),
                 );
+            }
+            Command::Patch(PatchCommand::SetFixtureTypeId { fixture_ref, fixture_type_id }) => {
+                push_keyword(&mut parts, "patch_set_fixture_type_id");
+                push_argument(&mut parts, fixture_ref);
+                push_argument(&mut parts, fixture_type_id);
             }
             Command::Select { fid } => {
                 push_keyword(&mut parts, "select");

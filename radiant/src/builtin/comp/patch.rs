@@ -36,6 +36,10 @@ impl Patch {
         self.fixture_types.get(fixture_type_id)
     }
 
+    pub fn fixture_types(&self) -> &HashMap<GdtfFixtureTypeId, FixtureType> {
+        &self.fixture_types
+    }
+
     pub fn fixture(&self, fixture_ref: impl Into<FixtureReference>) -> Option<&Fixture> {
         let fixture_ref = fixture_ref.into();
         self.fixtures.iter().find(|f| match fixture_ref {
