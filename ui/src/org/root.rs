@@ -4,7 +4,6 @@ use smallvec::SmallVec;
 
 use crate::interactive::modal::modal_container;
 use crate::misc::titlebar;
-use crate::overlay::overlay_container;
 use crate::theme::ActiveTheme;
 use crate::utils::z_stack;
 
@@ -52,7 +51,6 @@ impl RenderOnce for Root {
                 z_stack([
                     div().flex().flex_col().size_full().children(self.children),
                     div().size_full().child(modal_container(cx)),
-                    div().size_full().child(overlay_container(cx)),
                 ])
                 .size_full(),
             )
