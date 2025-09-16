@@ -267,8 +267,9 @@ impl PatchTable {
         cx: &mut Context<Table<Self>>,
     ) -> Entity<FixtureTypePicker> {
         let ft_picker = cx.new(|cx| FixtureTypePicker::new(window, cx));
-        self.main_window
-            .update(cx, |mw, cx| mw.push_overlay("Select a Fixture Type", ft_picker.clone(), cx));
+        self.main_window.update(cx, |mw, cx| {
+            mw.push_overlay("patch_ft_picker", "Select a Fixture Type", ft_picker.clone(), cx)
+        });
         ft_picker
     }
 }

@@ -25,11 +25,12 @@ impl MainWindow {
 
     pub fn push_overlay(
         &mut self,
+        id: impl Into<SharedString>,
         title: impl Into<SharedString>,
         content: impl Into<AnyView>,
         cx: &mut App,
     ) {
-        self.pane().update(cx, |pane, cx| pane.push_overlay(title.into(), content.into(), cx));
+        self.pane().update(cx, |pane, cx| pane.push_overlay(id, title, content, cx));
     }
 
     pub fn pop_overlay(&mut self, cx: &mut App) {
@@ -56,7 +57,12 @@ impl MainWindow {
         cx: &mut Context<Self>,
     ) {
         let this = cx.entity();
-        self.push_overlay("Settings", cx.new(|cx| SettingsPane::new(this, window, cx)), cx)
+        self.push_overlay(
+            "settings",
+            "Settings",
+            cx.new(|cx| SettingsPane::new(this, window, cx)),
+            cx,
+        )
     }
 }
 

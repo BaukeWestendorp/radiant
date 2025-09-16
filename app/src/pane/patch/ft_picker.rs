@@ -118,23 +118,22 @@ impl FromShowfileTab {
 
 impl Render for FromShowfileTab {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let selected_ft_dmx_mode = match (self.selected_ft_id(cx), self.selected_dmx_mode(cx)) {
-            (Some(ft_id), Some(dmx_mode)) => {
-                let ft_name = EngineManager::read_patch(cx, |patch| {
-                    patch.fixture_type(&ft_id).unwrap().long_name.clone()
-                });
-                Some(format!("{} ({})", ft_name, dmx_mode.trim()))
-            }
-            (Some(ft_id), None) => {
-                let ft_name = EngineManager::read_patch(cx, |patch| {
-                    patch.fixture_type(&ft_id).unwrap().long_name.clone()
-                });
-                Some(format!("{} (---)", ft_name))
-            }
-            _ => None,
-        };
-
-        let has_selection = selected_ft_dmx_mode.is_some();
+        let (has_selection, selected_ft_dmx_mode) =
+            match (self.selected_ft_id(cx), self.selected_dmx_mode(cx)) {
+                (Some(ft_id), Some(dmx_mode)) => {
+                    let ft_name = EngineManager::read_patch(cx, |patch| {
+                        patch.fixture_type(&ft_id).unwrap().long_name.clone()
+                    });
+                    (true, Some(format!("{} ({})", ft_name, dmx_mode.trim())))
+                }
+                (Some(ft_id), None) => {
+                    let ft_name = EngineManager::read_patch(cx, |patch| {
+                        patch.fixture_type(&ft_id).unwrap().long_name.clone()
+                    });
+                    (false, Some(format!("{} (---)", ft_name)))
+                }
+                _ => (false, None),
+            };
 
         let tables = div()
             .size_full()

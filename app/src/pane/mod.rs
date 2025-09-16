@@ -8,7 +8,7 @@ pub mod patch;
 pub mod settings;
 
 pub struct Pane {
-    overlays: Vec<(SharedString, AnyView)>,
+    overlays: Vec<Overlay>,
 }
 
 impl Pane {
@@ -18,11 +18,17 @@ impl Pane {
 
     pub fn push_overlay(
         &mut self,
+        id: impl Into<SharedString>,
         title: impl Into<SharedString>,
         content: impl Into<AnyView>,
         cx: &mut Context<Self>,
     ) {
-        self.overlays.push((title.into(), content.into()));
+        let id = id.into();
+        if self.overlays.last().is_some_and(|overlay| &overlay.id == &id) {
+            return;
+        };
+
+        self.overlays.push(Overlay { id, title: title.into(), content: content.into() });
         cx.notify();
     }
 
@@ -34,7 +40,7 @@ impl Pane {
 
 impl Render for Pane {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let render_overlay = |(title, content)| {
+        let render_overlay = |overlay: Overlay| {
             let header = div()
                 .w_full()
                 .min_h(px(32.0))
@@ -47,20 +53,27 @@ impl Render for Pane {
                 .border_1()
                 .border_color(cx.theme().header_border)
                 .text_color(cx.theme().header_foreground)
-                .child(div().font_weight(FontWeight::BOLD).child(title))
+                .child(div().font_weight(FontWeight::BOLD).child(overlay.title))
                 .child(
                     button("close", None, "X")
                         .on_click(cx.listener(|this, _, _, cx| this.pop_overlay(cx))),
                 );
 
-            div().flex().flex_col().size_full().occlude().child(header).child(content)
+            div().flex().flex_col().size_full().occlude().child(header).child(overlay.content)
         };
 
-        let overlays = self.overlays.iter().cloned().map(render_overlay);
+        let overlays = self.overlays.last().cloned().map(render_overlay);
 
         let mut layers = vec![div().size_full().child(ui::utils::todo(cx))];
         layers.extend(overlays);
 
         z_stack(layers).size_full()
     }
+}
+
+#[derive(Debug, Clone)]
+struct Overlay {
+    pub id: SharedString,
+    pub title: SharedString,
+    pub content: AnyView,
 }
