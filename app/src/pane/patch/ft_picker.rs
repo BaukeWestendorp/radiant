@@ -68,6 +68,8 @@ impl FromShowfileTab {
                 TableEvent::SelectionChanged => {
                     if let Some(ft_id) = table.read(cx).selected_row_ids(cx).get(0) {
                         this.open_dmx_mode_table(ft_id, window, cx);
+                    } else {
+                        this.close_dmx_mode_table(cx);
                     }
                 }
             },
@@ -85,6 +87,12 @@ impl FromShowfileTab {
     ) {
         let table = cx.new(|cx| Table::new(DmxModeTable::new(ft_id, cx), window, cx));
         self.dmx_mode_table = Some(table);
+        cx.notify();
+    }
+
+    fn close_dmx_mode_table(&mut self, cx: &mut Context<Self>) {
+        self.dmx_mode_table = None;
+        cx.notify();
     }
 
     fn selected_ft_id(&self, cx: &App) -> Option<GdtfFixtureTypeId> {
@@ -177,8 +185,8 @@ impl Render for FromShowfileTab {
 struct FromLibraryTab {}
 
 impl Render for FromLibraryTab {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().child("TODO")
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        ui::utils::todo(cx)
     }
 }
 
