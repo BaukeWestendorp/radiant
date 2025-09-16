@@ -169,6 +169,7 @@ impl<D: TableDelegate> Table<D> {
 
     pub fn clear_selection(&mut self, cx: &mut Context<Self>) {
         self.selection = None;
+        cx.emit(TableEvent::SelectionChanged);
         cx.notify();
     }
 
