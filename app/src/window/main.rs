@@ -1,20 +1,45 @@
 use gpui::prelude::*;
 use gpui::{
-    AnyView, App, ClickEvent, Entity, FontWeight, SharedString, Window, WindowHandle, div, px,
+    AnyView, App, Entity, FocusHandle, Focusable, FontWeight, SharedString, Window, WindowHandle,
+    div, px,
 };
 use ui::interactive::button::button;
 
 use crate::pane::Pane;
 use crate::pane::settings::SettingsPane;
 
+pub mod actions {
+    use gpui::{App, KeyBinding};
+
+    gpui::actions!(main_window, [OpenSettings]);
+
+    pub const KEY_CONTEXT: &str = "MainWindow";
+
+    pub(crate) fn init(cx: &mut App) {
+        cx.bind_keys([
+            KeyBinding::new("f12", OpenSettings, Some(KEY_CONTEXT)),
+            KeyBinding::new("secondary-,", OpenSettings, Some(KEY_CONTEXT)),
+        ]);
+    }
+}
+
 pub struct MainWindow {
     pane: Entity<Pane>,
+
+    focus_handle: FocusHandle,
 }
 
 impl MainWindow {
     pub fn open(cx: &mut App) -> WindowHandle<Self> {
-        cx.open_window(super::window_options(), |_, cx| {
-            cx.new(|cx| Self { pane: cx.new(|_cx| Pane::new()) })
+        cx.open_window(super::window_options(), |window, cx| {
+            let main_window = cx.new(|cx| Self {
+                pane: cx.new(|_cx| Pane::new()),
+                focus_handle: cx.focus_handle(),
+            });
+
+            window.focus(&main_window.focus_handle(cx));
+
+            main_window
         })
         .expect("should open main window")
     }
@@ -37,9 +62,11 @@ impl MainWindow {
         self.pane().update(cx, |pane, cx| pane.pop_overlay(cx));
     }
 
-    fn render_titlebar_content(&self, cx: &Context<Self>) -> impl IntoElement {
+    fn render_titlebar_content(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let settings_button =
-            button("settings", None, "=").on_click(cx.listener(Self::handle_click_settings_button));
+            button("settings", None, "=").on_click(cx.listener(|this, _, window, cx| {
+                this.handle_open_settings(&actions::OpenSettings, window, cx)
+            }));
 
         div()
             .size_full()
@@ -50,9 +77,9 @@ impl MainWindow {
             .child(settings_button)
     }
 
-    fn handle_click_settings_button(
+    fn handle_open_settings(
         &mut self,
-        _event: &ClickEvent,
+        _: &actions::OpenSettings,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -66,10 +93,24 @@ impl MainWindow {
     }
 }
 
+impl Focusable for MainWindow {
+    fn focus_handle(&self, _cx: &App) -> FocusHandle {
+        self.focus_handle.clone()
+    }
+}
+
 impl Render for MainWindow {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        super::window_root()
-            .titlebar_child(self.render_titlebar_content(cx))
-            .child(self.pane.clone())
+        div()
+            .id("main_window")
+            .track_focus(&self.focus_handle)
+            .key_context(actions::KEY_CONTEXT)
+            .on_action(cx.listener(Self::handle_open_settings))
+            .size_full()
+            .child(
+                super::window_root()
+                    .titlebar_child(self.render_titlebar_content(cx))
+                    .child(self.pane.clone()),
+            )
     }
 }
