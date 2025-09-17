@@ -1,5 +1,5 @@
 [workspace]
-members = ["app", "dmx", "headless", "ui", "radlib"]
+members = ["radiant", "dmx", "headless", "ui", "radlib"]
 resolver = "3"
 
 

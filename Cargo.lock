@@ -117,24 +117,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0674a1ddeecb70197781e945de4b3b8ffb61fa939a5597bcf48503737663100"
 
 [[package]]
-name = "app"
-version = "0.1.0"
-dependencies = [
- "clap",
- "crossbeam-channel",
- "dmx",
- "eyre",
- "gpui",
- "log",
- "radlib",
- "regex",
- "serde",
- "simple_logger",
- "ui",
- "uuid",
-]
-
-[[package]]
 name = "arbitrary"
 version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4097,6 +4079,24 @@ name = "r-efi"
 version = "5.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69cdb34c158ceb288df11e18b4bd39de994f6657d83847bdffdbd7f346754b0f"
+
+[[package]]
+name = "radiant"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "crossbeam-channel",
+ "dmx",
+ "eyre",
+ "gpui",
+ "log",
+ "radlib",
+ "regex",
+ "serde",
+ "simple_logger",
+ "ui",
+ "uuid",
+]
 
 [[package]]
 name = "radlib"
