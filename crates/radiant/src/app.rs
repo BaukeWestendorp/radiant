@@ -21,11 +21,11 @@ pub fn run(showfile_path: Option<PathBuf>) {
         cx.activate(true);
 
         ui::init(cx).expect("failed to initialize ui crate");
-        window::main::actions::init(cx);
 
         actions::init(cx);
         init_menus(cx);
         init_actions(cx);
+        AppState::init(cx);
 
         EngineManager::init(showfile_path, cx).expect("failed to initialize AppState");
         MainWindow::open(cx);

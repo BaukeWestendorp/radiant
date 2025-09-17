@@ -15,20 +15,14 @@ use std::num::NonZeroU32;
 use super::ft_picker::FixtureTypePicker;
 use crate::engine::EngineManager;
 use crate::text_modal::TextModal;
-use crate::window::main::MainWindow;
 
 #[derive(Clone)]
 pub struct PatchTable {
-    main_window: Entity<MainWindow>,
     columns: Vec<Column>,
 }
 
 impl PatchTable {
-    pub fn new(
-        main_window: Entity<MainWindow>,
-        window: &mut Window,
-        cx: &mut Context<Table<Self>>,
-    ) -> Self {
+    pub fn new(window: &mut Window, cx: &mut Context<Table<Self>>) -> Self {
         let event_handler = EngineManager::event_handler(cx);
         cx.subscribe_in(&event_handler, window, |table, _, event, window, cx| match event {
             EngineEvent::PatchChanged => table.refresh(window, cx),
@@ -36,7 +30,6 @@ impl PatchTable {
         .detach();
 
         Self {
-            main_window,
             columns: vec![
                 Column::new("fid", "Fixture Id"),
                 Column::new("name", "Name").with_width(px(250.0)),
@@ -233,7 +226,7 @@ impl PatchTable {
 
         cx.subscribe(
             &ft_picker,
-            move |this, _, event: &SubmitEvent<(GdtfFixtureTypeId, String)>, cx| {
+            move |_, _, event: &SubmitEvent<(GdtfFixtureTypeId, String)>, cx| {
                 let (ft_id, dmx_mode) = &event.value;
 
                 for row_id in &row_ids {
@@ -255,7 +248,7 @@ impl PatchTable {
                     );
                 }
 
-                this.main_window.update(cx, |mw, cx| mw.pop_overlay(cx));
+                // TODO: this.main_window.update(cx, |mw, cx| mw.pop_overlay(cx));
             },
         )
         .detach();
@@ -267,9 +260,7 @@ impl PatchTable {
         cx: &mut Context<Table<Self>>,
     ) -> Entity<FixtureTypePicker> {
         let ft_picker = cx.new(|cx| FixtureTypePicker::new(window, cx));
-        self.main_window.update(cx, |mw, cx| {
-            mw.push_overlay("patch_ft_picker", "Select a Fixture Type", ft_picker.clone(), cx)
-        });
+        // TODO: mw.push_overlay("patch_ft_picker", "Select a Fixture Type", ft_picker.clone(), cx)
         ft_picker
     }
 }

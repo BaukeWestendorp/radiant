@@ -7,8 +7,6 @@ use ui::theme::ActiveTheme;
 
 use patch_table::PatchTable;
 
-use crate::window::main::MainWindow;
-
 mod ft_picker;
 mod patch_table;
 
@@ -17,14 +15,8 @@ pub struct PatchSettings {
 }
 
 impl PatchSettings {
-    pub fn new(
-        main_window: Entity<MainWindow>,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> Self {
-        Self {
-            table: cx.new(|cx| Table::new(PatchTable::new(main_window, window, cx), window, cx)),
-        }
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        Self { table: cx.new(|cx| Table::new(PatchTable::new(window, cx), window, cx)) }
     }
 }
 
@@ -34,6 +26,9 @@ impl Render for PatchSettings {
 
         let selected_rows = self.table.read(cx).selected_row_ids(cx).len();
         let table_valid = self.table.read(cx).validate(cx);
+        let save_button = button("save_patch", None, "Save Patch")
+            .disabled(!table_valid)
+            .on_click(|_, window, _| window.remove_window());
         let info_bar = div()
             .flex()
             .justify_between()
@@ -49,7 +44,7 @@ impl Render for PatchSettings {
             } else {
                 "".to_string()
             })
-            .child(button("save_patch", None, "Save Patch").disabled(!table_valid));
+            .child(save_button);
 
         div().flex().flex_col().size_full().overflow_hidden().child(table).child(info_bar)
     }

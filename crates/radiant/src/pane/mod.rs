@@ -4,9 +4,6 @@ use ui::interactive::button::button;
 use ui::theme::ActiveTheme;
 use ui::utils::z_stack;
 
-pub mod patch;
-pub mod settings;
-
 pub struct Pane {
     overlays: Vec<Overlay>,
 }
