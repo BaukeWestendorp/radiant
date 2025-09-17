@@ -3,16 +3,17 @@ use std::path::PathBuf;
 use gpui::{App, Application, Menu, MenuItem};
 
 use crate::engine::EngineManager;
-use crate::window;
+use crate::state::AppState;
 use crate::window::main::MainWindow;
 
 pub mod actions {
     use gpui::{App, KeyBinding};
 
-    gpui::actions!(radiant, [Quit]);
+    gpui::actions!(radiant, [Quit, OpenSettings]);
 
     pub(crate) fn init(cx: &mut App) {
         cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
+        cx.bind_keys([KeyBinding::new("secondary-,", OpenSettings, None)]);
     }
 }
 
@@ -44,5 +45,6 @@ fn init_menus(cx: &mut App) {
 }
 
 fn init_actions(cx: &mut App) {
-    cx.on_action::<actions::Quit>(|_, cx| cx.quit())
+    cx.on_action::<actions::Quit>(|_, cx| cx.quit());
+    cx.on_action::<actions::OpenSettings>(|_, cx| AppState::open_settings(cx));
 }
