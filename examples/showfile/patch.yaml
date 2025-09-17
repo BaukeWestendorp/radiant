@@ -1,6 +1,7 @@
 fixtures:
   - name: Spot 01
     fid: 101
+    uuid: 10100000-0000-4000-8000-000000000101
     fixture_type_id: fb81889f-1992-4a7b-9ccb-414be4a033b5
     address:
       universe: 1
@@ -8,6 +9,7 @@ fixtures:
     dmx_mode: Standard
   - name: Spot 02
     fid: 102
+    uuid: 10200000-0000-4000-8000-000000000102
     fixture_type_id: fb81889f-1992-4a7b-9ccb-414be4a033b5
     address:
       universe: 1
@@ -15,6 +17,7 @@ fixtures:
     dmx_mode: Standard
   - name: Spot 03
     fid: 103
+    uuid: 10300000-0000-4000-8000-000000000103
     fixture_type_id: fb81889f-1992-4a7b-9ccb-414be4a033b5
     address:
       universe: 1
@@ -22,6 +25,7 @@ fixtures:
     dmx_mode: Standard
   - name: Spot 04
     fid: 104
+    uuid: 10400000-0000-4000-8000-000000000104
     fixture_type_id: fb81889f-1992-4a7b-9ccb-414be4a033b5
     address:
       universe: 1
@@ -29,6 +33,7 @@ fixtures:
     dmx_mode: Standard
   - name: Wash 01
     fid: 201
+    uuid: 20100000-0000-4000-8000-000000000201
     fixture_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
     address:
       universe: 1
@@ -36,6 +41,7 @@ fixtures:
     dmx_mode: Mode 3 Reduced RGBW Wash 8bit
   - name: Wash 02
     fid: 202
+    uuid: 20200000-0000-4000-8000-000000000202
     fixture_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
     address:
       universe: 1
@@ -43,6 +49,7 @@ fixtures:
     dmx_mode: Mode 3 Reduced RGBW Wash 8bit
   - name: Wash 03
     fid: 203
+    uuid: 20300000-0000-4000-8000-000000000203
     fixture_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
     address:
       universe: 1
@@ -50,6 +57,7 @@ fixtures:
     dmx_mode: Mode 3 Reduced RGBW Wash 8bit
   - name: Wash 04
     fid: 204
+    uuid: 20400000-0000-4000-8000-000000000204
     fixture_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
     address:
       universe: 1
@@ -57,6 +65,7 @@ fixtures:
     dmx_mode: Mode 3 Reduced RGBW Wash 8bit
   - name: Wash 05
     fid: 205
+    uuid: 20500000-0000-4000-8000-000000000205
     fixture_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
     address:
       universe: 1
@@ -64,6 +73,7 @@ fixtures:
     dmx_mode: Mode 3 Reduced RGBW Wash 8bit
   - name: Wash 06
     fid: 206
+    uuid: 20600000-0000-4000-8000-000000000206
     fixture_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
     address:
       universe: 1
@@ -71,6 +81,7 @@ fixtures:
     dmx_mode: Mode 3 Reduced RGBW Wash 8bit
   - name: Wash 07
     fid: 207
+    uuid: 20700000-0000-4000-8000-000000000207
     fixture_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
     address:
       universe: 1
@@ -78,6 +89,7 @@ fixtures:
     dmx_mode: Mode 3 Reduced RGBW Wash 8bit
   - name: Wash 08
     fid: 208
+    uuid: 20800000-0000-4000-8000-000000000208
     fixture_type_id: 1c8c3db6-a31f-4220-bd67-99035290b312
     address:
       universe: 1
@@ -85,6 +97,7 @@ fixtures:
     dmx_mode: Mode 3 Reduced RGBW Wash 8bit
   - name: Beam 01
     fid: 301
+    uuid: 30100000-0000-4000-8000-000000000301
     fixture_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
     address:
       universe: 1
@@ -92,6 +105,7 @@ fixtures:
     dmx_mode: Basic Pan540
   - name: Beam 02
     fid: 302
+    uuid: 30200000-0000-4000-8000-000000000302
     fixture_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
     address:
       universe: 1
@@ -99,6 +113,7 @@ fixtures:
     dmx_mode: Basic Pan540
   - name: Beam 03
     fid: 303
+    uuid: 30300000-0000-4000-8000-000000000303
     fixture_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
     address:
       universe: 1
@@ -106,6 +121,7 @@ fixtures:
     dmx_mode: Basic Pan540
   - name: Beam 04
     fid: 304
+    uuid: 30400000-0000-4000-8000-000000000304
     fixture_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
     address:
       universe: 1
@@ -113,6 +129,7 @@ fixtures:
     dmx_mode: Basic Pan540
   - name: Beam 05
     fid: 305
+    uuid: 30500000-0000-4000-8000-000000000305
     fixture_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
     address:
       universe: 1
@@ -120,6 +137,7 @@ fixtures:
     dmx_mode: Basic Pan540
   - name: Beam 06
     fid: 306
+    uuid: 30600000-0000-4000-8000-000000000306
     fixture_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
     address:
       universe: 1
@@ -127,6 +145,7 @@ fixtures:
     dmx_mode: Basic Pan540
   - name: Beam 07
     fid: 307
+    uuid: 30700000-0000-4000-8000-000000000307
     fixture_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
     address:
       universe: 1
@@ -134,6 +153,7 @@ fixtures:
     dmx_mode: Basic Pan540
   - name: Beam 08
     fid: 308
+    uuid: 30800000-0000-4000-8000-000000000308
     fixture_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
     address:
       universe: 1
@@ -141,6 +161,7 @@ fixtures:
     dmx_mode: Basic Pan540
   - name: Beam 09
     fid: 309
+    uuid: 30900000-0000-4000-8000-000000000309
     fixture_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
     address:
       universe: 1
@@ -148,6 +169,7 @@ fixtures:
     dmx_mode: Basic Pan540
   - name: Beam 10
     fid: 310
+    uuid: 31000000-0000-4000-8000-000000000310
     fixture_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
     address:
       universe: 1
@@ -155,6 +177,7 @@ fixtures:
     dmx_mode: Basic Pan540
   - name: Beam 11
     fid: 311
+    uuid: 31100000-0000-4000-8000-000000000311
     fixture_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
     address:
       universe: 1
@@ -162,6 +185,7 @@ fixtures:
     dmx_mode: Basic Pan540
   - name: Beam 12
     fid: 312
+    uuid: 31200000-0000-4000-8000-000000000312
     fixture_type_id: 58f6904d-7e61-49b3-bf24-db70c25b7151
     address:
       universe: 1
@@ -169,6 +193,7 @@ fixtures:
     dmx_mode: Basic Pan540
   - name: Blind 1
     fid: 401
+    uuid: 40100000-0000-4000-8000-000000000401
     fixture_type_id: 9b181200-f6e3-4ee6-b385-fce095b46424
     address:
       universe: 1
@@ -176,6 +201,7 @@ fixtures:
     dmx_mode: Mode 1 Compressed Pro (14ch)
   - name: Blind 2
     fid: 402
+    uuid: 40200000-0000-4000-8000-000000000402
     fixture_type_id: 9b181200-f6e3-4ee6-b385-fce095b46424
     address:
       universe: 1
@@ -183,6 +209,7 @@ fixtures:
     dmx_mode: Mode 1 Compressed Pro (14ch)
   - name: Blind 3
     fid: 403
+    uuid: 40300000-0000-4000-8000-000000000403
     fixture_type_id: 9b181200-f6e3-4ee6-b385-fce095b46424
     address:
       universe: 1
@@ -190,6 +217,7 @@ fixtures:
     dmx_mode: Mode 1 Compressed Pro (14ch)
   - name: Blind 4
     fid: 404
+    uuid: 40400000-0000-4000-8000-000000000404
     fixture_type_id: 9b181200-f6e3-4ee6-b385-fce095b46424
     address:
       universe: 1
@@ -197,6 +225,7 @@ fixtures:
     dmx_mode: Mode 1 Compressed Pro (14ch)
   - name: Front 1
     fid: 501
+    uuid: 50100000-0000-4000-8000-000000000501
     fixture_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
     address:
       universe: 1
@@ -204,6 +233,7 @@ fixtures:
     dmx_mode: Default
   - name: Front 2
     fid: 502
+    uuid: 50200000-0000-4000-8000-000000000502
     fixture_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
     address:
       universe: 1
@@ -211,6 +241,7 @@ fixtures:
     dmx_mode: Default
   - name: Front 3
     fid: 503
+    uuid: 50300000-0000-4000-8000-000000000503
     fixture_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
     address:
       universe: 1
@@ -218,6 +249,7 @@ fixtures:
     dmx_mode: Default
   - name: Front 4
     fid: 504
+    uuid: 50400000-0000-4000-8000-000000000504
     fixture_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
     address:
       universe: 1
@@ -225,6 +257,7 @@ fixtures:
     dmx_mode: Default
   - name: Front 5
     fid: 505
+    uuid: 50500000-0000-4000-8000-000000000505
     fixture_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
     address:
       universe: 1
@@ -232,6 +265,7 @@ fixtures:
     dmx_mode: Default
   - name: Front 6
     fid: 506
+    uuid: 50600000-0000-4000-8000-000000000506
     fixture_type_id: b4daff6b-3e52-451b-afdb-e6c94c64f85d
     address:
       universe: 1
@@ -239,6 +273,7 @@ fixtures:
     dmx_mode: Default
   - name: Crowd 1
     fid: 601
+    uuid: 60100000-0000-4000-8000-000000000601
     fixture_type_id: 24921e11-5786-4c84-b977-f3e0a514165f
     address:
       universe: 1
@@ -246,6 +281,7 @@ fixtures:
     dmx_mode: 01 CH
   - name: Crowd 2
     fid: 602
+    uuid: 60200000-0000-4000-8000-000000000602
     fixture_type_id: 24921e11-5786-4c84-b977-f3e0a514165f
     address:
       universe: 1
@@ -253,6 +289,7 @@ fixtures:
     dmx_mode: 01 CH
   - name: Crowd 3
     fid: 603
+    uuid: 60300000-0000-4000-8000-000000000603
     fixture_type_id: 24921e11-5786-4c84-b977-f3e0a514165f
     address:
       universe: 1
@@ -260,6 +297,7 @@ fixtures:
     dmx_mode: 01 CH
   - name: Crowd 4
     fid: 604
+    uuid: 60400000-0000-4000-8000-000000000604
     fixture_type_id: 24921e11-5786-4c84-b977-f3e0a514165f
     address:
       universe: 1
@@ -267,6 +305,7 @@ fixtures:
     dmx_mode: 01 CH
   - name: Crowd 5
     fid: 605
+    uuid: 60500000-0000-4000-8000-000000000605
     fixture_type_id: 24921e11-5786-4c84-b977-f3e0a514165f
     address:
       universe: 1

@@ -1,0 +1,19 @@
+[package]
+name = "radiant"
+version.workspace = true
+edition.workspace = true
+default-run = "radiant"
+
+[dependencies]
+clap.workspace = true
+crossbeam-channel.workspace = true
+dmx.workspace = true
+eyre.workspace = true
+gpui.workspace = true
+log.workspace = true
+radlib.workspace = true
+regex = "1.11.2"
+serde.workspace = true
+simple_logger.workspace = true
+ui.workspace = true
+uuid.workspace = true
