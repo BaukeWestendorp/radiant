@@ -1,8 +1,8 @@
 use gpui::prelude::*;
 use gpui::{App, Entity, IntoElement, Window, div, px};
-use radiant::builtin::{FixtureId, GdtfFixtureTypeId};
-use radiant::cmd::{Command, PatchCommand};
-use radiant::engine::event::EngineEvent;
+use radlib::builtin::{FixtureId, GdtfFixtureTypeId};
+use radlib::cmd::{Command, PatchCommand};
+use radlib::engine::event::EngineEvent;
 use ui::interactive::event::SubmitEvent;
 use ui::interactive::input::FieldEvent;
 use ui::interactive::modal::ModalExt;
@@ -163,7 +163,7 @@ impl PatchTable {
                 .iter()
                 .map(|uuid| {
                     EngineManager::read_patch(cx, |patch| {
-                        radiant::gdtf::channel_count(patch.fixture(*uuid).unwrap().dmx_mode(patch))
+                        radlib::gdtf::channel_count(patch.fixture(*uuid).unwrap().dmx_mode(patch))
                     })
                 })
                 .scan(0, |state, channel_count| {

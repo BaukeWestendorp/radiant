@@ -1,5 +1,5 @@
 [package]
-name = "radiant"
+name = "radlib"
 version.workspace = true
 edition.workspace = true
 

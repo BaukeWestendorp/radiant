@@ -1,7 +1,7 @@
 use gpui::prelude::*;
 use gpui::{App, ClickEvent, Entity, EventEmitter, Window, div, px};
-use radiant::builtin::GdtfFixtureTypeId;
-use radiant::gdtf::fixture_type::FixtureType;
+use radlib::builtin::GdtfFixtureTypeId;
+use radlib::gdtf::fixture_type::FixtureType;
 use ui::Disableable;
 use ui::interactive::button::button;
 use ui::interactive::event::SubmitEvent;
@@ -335,7 +335,7 @@ impl TableDelegate for DmxModeTable {
                 render_cell(name).into_any_element()
             }
             "channel_count" => {
-                let channel_count = radiant::gdtf::channel_count(dmx_mode);
+                let channel_count = radlib::gdtf::channel_count(dmx_mode);
 
                 render_cell(channel_count.to_string()).into_any_element()
             }

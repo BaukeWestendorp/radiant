@@ -3,11 +3,11 @@ use std::time::Duration;
 
 use crossbeam_channel::Receiver;
 use gpui::{App, AppContext, Context, Entity, EventEmitter, Global, Timer};
-use radiant::builtin::{Objects, Patch, Pools, Programmer, ProtocolConfig};
-use radiant::cmd::Command;
-use radiant::comp::Component;
-use radiant::engine::Engine;
-use radiant::engine::event::EngineEvent;
+use radlib::builtin::{Objects, Patch, Pools, Programmer, ProtocolConfig};
+use radlib::cmd::Command;
+use radlib::comp::Component;
+use radlib::engine::Engine;
+use radlib::engine::event::EngineEvent;
 
 use crate::error::Result;
 
