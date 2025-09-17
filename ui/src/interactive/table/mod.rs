@@ -93,7 +93,9 @@ impl<D: TableDelegate> Table<D> {
     pub fn new(delegate: D, window: &mut Window, cx: &mut Context<Self>) -> Self {
         Self {
             delegate,
+
             focus_handle: cx.focus_handle(),
+
             selection: None,
             row_height: window.line_height(),
 
@@ -518,9 +520,9 @@ impl<D: TableDelegate> DerefMut for Table<D> {
 impl<D: TableDelegate + 'static> Render for Table<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
+            .id("table")
             .key_context(actions::KEY_CONTEXT)
             .track_focus(&self.focus_handle)
-            .id("table")
             .flex()
             .flex_col()
             .size_full()
