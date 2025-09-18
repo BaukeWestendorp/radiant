@@ -21,6 +21,11 @@ impl MainWindow {
 
             window.focus(&main_window.focus_handle(cx));
 
+            window.on_window_should_close(cx, |_, cx| {
+                AppState::close_all_windows(cx);
+                true
+            });
+
             main_window
         })
         .expect("should open main window")

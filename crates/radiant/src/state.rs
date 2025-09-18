@@ -23,6 +23,14 @@ impl AppState {
         Self::close_window::<SettingsWindow>(cx);
     }
 
+    pub fn close_all_windows(cx: &mut App) {
+        Self::update_global(cx, |this, cx| {
+            for (_, handle) in this.opened_secondary_windows.drain() {
+                Self::close_any_window(handle, cx);
+            }
+        });
+    }
+
     fn open_window<T: 'static>(handle: WindowHandle<T>, cx: &mut App) {
         Self::close_settings(cx);
 
@@ -37,10 +45,14 @@ impl AppState {
         cx.defer(move |cx| {
             Self::update_global(cx, |this, cx| {
                 if let Some(handle) = this.opened_secondary_windows.remove(&TypeId::of::<T>()) {
-                    cx.update_window(handle.into(), |_, window, _| window.remove_window()).ok();
+                    Self::close_any_window(handle.into(), cx);
                 }
             });
         });
+    }
+
+    fn close_any_window(handle: AnyWindowHandle, cx: &mut App) {
+        cx.update_window(handle, |_, window, _| window.remove_window()).ok();
     }
 }
 

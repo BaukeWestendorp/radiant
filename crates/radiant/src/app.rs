@@ -30,6 +30,13 @@ pub fn run(showfile_path: Option<PathBuf>) {
 
         EngineManager::init(showfile_path, cx).expect("failed to initialize AppState");
         MainWindow::open(cx);
+
+        cx.on_window_closed(|cx| {
+            if cx.windows().is_empty() {
+                quit(cx);
+            }
+        })
+        .detach();
     });
 }
 
@@ -45,6 +52,10 @@ fn init_menus(cx: &mut App) {
 }
 
 fn init_actions(cx: &mut App) {
-    cx.on_action::<actions::Quit>(|_, cx| cx.quit());
+    cx.on_action::<actions::Quit>(|_, cx| quit(cx));
     cx.on_action::<actions::OpenSettings>(|_, cx| AppState::open_settings(cx));
+}
+
+fn quit(cx: &mut App) {
+    cx.quit();
 }
