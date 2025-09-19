@@ -7,6 +7,7 @@ use ui::interactive::event::SubmitEvent;
 use ui::interactive::input::FieldEvent;
 use ui::interactive::modal::ModalExt;
 use ui::interactive::table::{Column, Table, TableDelegate};
+use ui::overlay::Overlay;
 use ui::theme::{ActiveTheme, InteractiveColor};
 use uuid::Uuid;
 
@@ -261,11 +262,27 @@ impl PatchTable {
 
     fn open_ft_picker(
         &mut self,
+        fixture_uuid: Uuid,
         window: &mut Window,
         cx: &mut Context<Table<Self>>,
     ) -> Entity<FixtureTypePicker> {
-        let ft_picker = cx.new(|cx| FixtureTypePicker::new(window, cx));
-        // TODO: mw.push_overlay("patch_ft_picker", "Select a Fixture Type", ft_picker.clone(), cx)
+        let (ft_id, dmx_mode) = EngineManager::read_patch(cx, |patch| {
+            let fixture = patch.fixture(fixture_uuid).unwrap();
+            (fixture.fixture_type_id, fixture.dmx_mode.clone())
+        });
+
+        let ft_picker = cx.new(|cx| {
+            FixtureTypePicker::new(window, cx).with_selected(ft_id, dmx_mode, window, cx)
+        });
+
+        RadiantApp::overlays(window, cx).update(cx, |overlays, cx| {
+            overlays.open(
+                FT_PICKER_OVERLAY_ID,
+                Overlay::new("Select a Fixture Type", ft_picker.clone()),
+                cx,
+            )
+        });
+
         ft_picker
     }
 }

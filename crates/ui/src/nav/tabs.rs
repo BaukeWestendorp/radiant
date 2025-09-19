@@ -10,16 +10,16 @@ pub struct Tab {
     id: SharedString,
     label: SharedString,
     disabled: bool,
-    content: AnyView,
+    view: AnyView,
 }
 
 impl Tab {
     pub fn new(
         id: impl Into<SharedString>,
         label: impl Into<SharedString>,
-        content: impl Into<AnyView>,
+        view: impl Into<AnyView>,
     ) -> Self {
-        Self { id: id.into(), label: label.into(), disabled: false, content: content.into() }
+        Self { id: id.into(), label: label.into(), disabled: false, view: view.into() }
     }
 
     pub fn id(&self) -> &SharedString {
@@ -32,6 +32,10 @@ impl Tab {
 
     pub fn label(&self) -> &SharedString {
         &self.label
+    }
+
+    pub fn view(&self) -> &AnyView {
+        &self.view
     }
 }
 
@@ -151,20 +155,20 @@ impl Tabs {
             return div().into_any_element();
         };
 
-        tab.content.clone().into_any_element()
+        tab.view.clone().into_any_element()
     }
 }
 
 impl Render for Tabs {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let tabs = if self.show_tabs { Some(self.render_tabs(window, cx)) } else { None };
-        let content = self.render_content(cx);
+        let view = self.render_content(cx);
 
         div()
             .flex()
             .when(self.orientation == Orientation::Horizontal, |e| e.flex_col())
             .size_full()
             .children(tabs)
-            .child(content)
+            .child(view)
     }
 }

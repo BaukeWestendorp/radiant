@@ -1,5 +1,5 @@
 use gpui::prelude::*;
-use gpui::{App, ClickEvent, Entity, EventEmitter, Window, div, px};
+use gpui::{App, ClickEvent, Entity, EventEmitter, SharedString, Window, div, px};
 use radlib::builtin::GdtfFixtureTypeId;
 use radlib::gdtf::fixture_type::FixtureType;
 use ui::Disableable;
@@ -34,6 +34,26 @@ impl FixtureTypePicker {
         });
 
         Self { tabs }
+    }
+
+    pub fn with_selected(
+        self,
+        ft_id: GdtfFixtureTypeId,
+        dmx_mode: impl Into<SharedString>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
+        self.tabs.update(cx, |tabs, _| tabs.select_tab(Some("from_showfile".into())));
+
+        if let Some(tab) = self.tabs.read(cx).selected_tab() {
+            let view = tab.view().clone().downcast::<FromShowfileTab>().unwrap();
+            view.update(cx, |tab, cx| {
+                tab.select_ft_id(&ft_id, window, cx);
+                tab.select_dmx_mode(dmx_mode.into(), cx)
+            })
+        }
+
+        self
     }
 }
 
@@ -79,14 +99,37 @@ impl FromShowfileTab {
         Self { picker, ft_table, dmx_mode_table: None }
     }
 
+    pub fn select_ft_id(
+        &mut self,
+        ft_id: &GdtfFixtureTypeId,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.ft_table.update(cx, |ft_table, cx| ft_table.select_row_id(&ft_id, cx));
+        self.open_dmx_mode_table(ft_id, window, cx);
+    }
+
+    pub fn select_dmx_mode(&mut self, dmx_mode: SharedString, cx: &mut Context<Self>) {
+        let Some(dmx_mode_table) = &self.dmx_mode_table else {
+            return;
+        };
+
+        dmx_mode_table.update(cx, |dmx_mode_table, cx| {
+            dmx_mode_table.select_row_id(&dmx_mode.into(), cx);
+        });
+    }
+
     fn open_dmx_mode_table(
         &mut self,
         ft_id: &GdtfFixtureTypeId,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        let table = cx.new(|cx| Table::new(DmxModeTable::new(ft_id, cx), window, cx));
-        self.dmx_mode_table = Some(table);
+        if self.dmx_mode_table.is_none() {
+            let table = cx.new(|cx| Table::new(DmxModeTable::new(ft_id, cx), window, cx));
+            self.dmx_mode_table = Some(table);
+        }
+
         cx.notify();
     }
 

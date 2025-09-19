@@ -161,6 +161,16 @@ impl<D: TableDelegate> Table<D> {
         }
     }
 
+    pub fn select_row_id(&mut self, row_id: &D::RowId, cx: &mut Context<Self>) {
+        let Some(row_ix) = self.row_ix(row_id, cx) else {
+            return;
+        };
+
+        let column_id = self.column(0, cx).id.clone();
+        self.start_selection(column_id, row_ix, cx);
+        self.end_selection(row_ix, cx);
+    }
+
     pub fn selection_contains(&self, row_ix: usize) -> bool {
         self.selection.as_ref().is_some_and(|selection| selection.contains(row_ix))
     }
@@ -202,6 +212,10 @@ impl<D: TableDelegate> Table<D> {
 
     fn row_id(&self, row_ix: usize, cx: &App) -> Option<D::RowId> {
         self.sorted_row_ids(cx).get(row_ix).cloned()
+    }
+
+    fn row_ix(&self, row_id: &D::RowId, cx: &App) -> Option<usize> {
+        self.sorted_row_ids(cx).iter().position(|id| id == row_id)
     }
 
     fn render_header(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
