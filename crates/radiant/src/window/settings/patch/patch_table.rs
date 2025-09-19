@@ -13,8 +13,11 @@ use uuid::Uuid;
 use std::num::NonZeroU32;
 
 use super::ft_picker::FixtureTypePicker;
+use crate::app::RadiantApp;
 use crate::engine::EngineManager;
 use crate::text_modal::TextModal;
+
+const FT_PICKER_OVERLAY_ID: &str = "patch_table_ft_picker";
 
 #[derive(Clone)]
 pub struct PatchTable {
@@ -222,11 +225,12 @@ impl PatchTable {
     }
 
     fn edit_fts(&mut self, row_ids: Vec<Uuid>, window: &mut Window, cx: &mut Context<Table<Self>>) {
-        let ft_picker = self.open_ft_picker(window, cx);
+        let ft_picker = self.open_ft_picker(row_ids[0], window, cx);
 
-        cx.subscribe(
+        cx.subscribe_in(
             &ft_picker,
-            move |_, _, event: &SubmitEvent<(GdtfFixtureTypeId, String)>, cx| {
+            window,
+            move |_, _, event: &SubmitEvent<(GdtfFixtureTypeId, String)>, window, cx| {
                 let (ft_id, dmx_mode) = &event.value;
 
                 for row_id in &row_ids {
@@ -248,7 +252,8 @@ impl PatchTable {
                     );
                 }
 
-                // TODO: this.main_window.update(cx, |mw, cx| mw.pop_overlay(cx));
+                RadiantApp::overlays(window, cx)
+                    .update(cx, |overlays, cx| overlays.close(FT_PICKER_OVERLAY_ID, cx));
             },
         )
         .detach();

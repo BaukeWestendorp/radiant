@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use clap::Parser;
+use radiant::app::RadiantApp;
 use radiant::error::Result;
 
 #[derive(Parser)]
@@ -15,7 +16,7 @@ fn main() -> Result<()> {
 
     let Args { showfile_path } = Args::parse();
 
-    radiant::app::run(showfile_path);
+    RadiantApp::new().run(showfile_path);
 
     Ok(())
 }
