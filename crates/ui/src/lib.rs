@@ -8,6 +8,7 @@ pub mod overlay;
 pub mod theme;
 pub mod typo;
 pub mod utils;
+pub mod window;
 
 use eyre::Context;
 
