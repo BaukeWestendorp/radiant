@@ -311,13 +311,7 @@ impl TableDelegate for PatchTable {
     }
 
     fn validate(&self, cx: &App) -> bool {
-        let ids = self.sorted_row_ids(cx).to_vec();
-
-        EngineManager::read_patch(cx, |patch| {
-            ids.iter().all(|uuid| {
-                patch.fixture(*uuid).is_some_and(|f| f.fid.is_some() && f.address.is_some())
-            })
-        })
+        EngineManager::read_patch(cx, |patch| patch.validate())
     }
 
     fn edit_selection(

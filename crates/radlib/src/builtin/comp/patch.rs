@@ -50,6 +50,10 @@ impl Patch {
         })
     }
 
+    pub fn validate(&self) -> bool {
+        self.fixtures().iter().all(|f| f.validate())
+    }
+
     pub(crate) fn fixture_mut(
         &mut self,
         fixture_ref: impl Into<FixtureReference>,
@@ -329,6 +333,10 @@ impl Fixture {
             .collect();
 
         Ok(channels)
+    }
+
+    pub fn validate(&self) -> bool {
+        self.fid.is_some() && self.address.is_some()
     }
 }
 
