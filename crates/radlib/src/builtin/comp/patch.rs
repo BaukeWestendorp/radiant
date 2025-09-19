@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fs::File;
 use std::num::NonZeroU32;
+use std::ops::Deref;
 use std::path::Path;
 use std::str::FromStr;
 use std::{fmt, str};
@@ -25,6 +26,123 @@ pub(crate) fn register(engine: &mut Engine) -> Result<()> {
 #[derive(Clone, Debug, Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Patch {
+    content: PatchContent,
+    editable_content: Option<PatchContent>,
+}
+
+impl Patch {
+    pub fn is_edited(&self) -> bool {
+        Some(&self.content) == self.editable_content.as_ref()
+    }
+
+    pub(crate) fn start_edit(&mut self) {
+        self.editable_content = Some(self.content.clone());
+    }
+
+    pub(crate) fn save_edit(&mut self) -> Result<()> {
+        let Some(editable_content) = &self.editable_content else { return Ok(()) };
+
+        if !editable_content.validate() {
+            eyre::bail!("patch content is not valid");
+        }
+
+        self.content = editable_content.clone();
+
+        self.editable_content = None;
+
+        Ok(())
+    }
+
+    pub(crate) fn discard_edit(&mut self) {
+        self.editable_content = None;
+    }
+
+    pub(crate) fn fixture_mut(
+        &mut self,
+        fixture_ref: impl Into<FixtureReference>,
+    ) -> Result<Option<&mut Fixture>> {
+        let Some(editable_content) = &mut self.editable_content else {
+            eyre::bail!("patch is not in edit mode");
+        };
+
+        let fixture_ref = fixture_ref.into();
+        let fixture = editable_content.fixtures.iter_mut().find(|f| match fixture_ref {
+            FixtureReference::FixtureId(fid) => f.fid == Some(fid),
+            FixtureReference::Uuid(uuid) => f.uuid() == uuid,
+            FixtureReference::Address(address) => f.address == Some(address),
+        });
+
+        Ok(fixture)
+    }
+
+    pub(crate) fn add_fixture(&mut self, fixture: Fixture) -> Result<()> {
+        if self.editable_content.is_none() {
+            eyre::bail!("patch is not in edit mode");
+        }
+
+        if let Some(fid) = fixture.fid {
+            if let Some(fixture) = self.fixture_mut(fid)? {
+                fixture.fid = None;
+            }
+        }
+
+        let Some(fixture_type) = self.fixture_types.get(&fixture.fixture_type_id) else {
+            eyre::bail!(
+                "fixture type with id '{}' not found",
+                fixture.fid.map_or("None".to_string(), |f| f.to_string())
+            );
+        };
+
+        if fixture_type.dmx_mode(&fixture.dmx_mode).is_none() {
+            eyre::bail!(
+                "DMX mode with name '{}' on fixture type '{}' not found",
+                fixture.dmx_mode,
+                fixture_type.long_name
+            );
+        }
+
+        let Some(editable_content) = &mut self.editable_content else {
+            eyre::bail!("patch is not in edit mode");
+        };
+
+        editable_content.fixtures.push(fixture);
+
+        Ok(())
+    }
+
+    pub(crate) fn remove_fixture(
+        &mut self,
+        fixture_ref: impl Into<FixtureReference>,
+    ) -> Result<()> {
+        let Some(editable_content) = &mut self.editable_content else {
+            eyre::bail!("patch is not in edit mode");
+        };
+
+        let fixture_ref = fixture_ref.into();
+        editable_content.fixtures.retain(|f| match fixture_ref {
+            FixtureReference::FixtureId(fid) => f.fid != Some(fid),
+            FixtureReference::Uuid(uuid) => f.uuid() != uuid,
+            FixtureReference::Address(address) => f.address != Some(address),
+        });
+
+        Ok(())
+    }
+}
+
+impl Deref for Patch {
+    type Target = PatchContent;
+
+    fn deref(&self) -> &Self::Target {
+        match &self.editable_content {
+            Some(editable_content) => editable_content,
+            None => &self.content,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Default)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct PatchContent {
     #[serde(skip, default)]
     fixture_types: HashMap<GdtfFixtureTypeId, FixtureType>,
 
@@ -32,7 +150,7 @@ pub struct Patch {
     fixtures: Vec<Fixture>,
 }
 
-impl Patch {
+impl PatchContent {
     pub fn fixture_type(&self, fixture_type_id: &GdtfFixtureTypeId) -> Option<&FixtureType> {
         self.fixture_types.get(fixture_type_id)
     }
@@ -54,18 +172,6 @@ impl Patch {
         self.fixtures().iter().all(|f| f.validate())
     }
 
-    pub(crate) fn fixture_mut(
-        &mut self,
-        fixture_ref: impl Into<FixtureReference>,
-    ) -> Option<&mut Fixture> {
-        let fixture_ref = fixture_ref.into();
-        self.fixtures.iter_mut().find(|f| match fixture_ref {
-            FixtureReference::FixtureId(fid) => f.fid == Some(fid),
-            FixtureReference::Uuid(uuid) => f.uuid() == uuid,
-            FixtureReference::Address(address) => f.address == Some(address),
-        })
-    }
-
     pub fn fixtures(&self) -> &[Fixture] {
         &self.fixtures
     }
@@ -81,42 +187,6 @@ impl Patch {
             FixtureReference::Uuid(uuid) => f.uuid() == uuid,
             FixtureReference::Address(address) => f.address == Some(address),
         })
-    }
-
-    pub(crate) fn add_fixture(&mut self, fixture: Fixture) -> Result<()> {
-        if let Some(fid) = fixture.fid {
-            if let Some(fixture) = self.fixture_mut(fid) {
-                fixture.fid = None;
-            }
-        }
-
-        let Some(fixture_type) = self.fixture_types.get(&fixture.fixture_type_id) else {
-            eyre::bail!(
-                "fixture type with id '{}' not found",
-                fixture.fid.map_or("None".to_string(), |f| f.to_string())
-            );
-        };
-
-        if fixture_type.dmx_mode(&fixture.dmx_mode).is_none() {
-            eyre::bail!(
-                "DMX mode with name '{}' on fixture type '{}' not found",
-                fixture.dmx_mode,
-                fixture_type.long_name
-            );
-        }
-
-        self.fixtures.push(fixture);
-
-        Ok(())
-    }
-
-    pub(crate) fn remove_fixture(&mut self, fixture_ref: impl Into<FixtureReference>) {
-        let fixture_ref = fixture_ref.into();
-        self.fixtures.retain(|f| match fixture_ref {
-            FixtureReference::FixtureId(fid) => f.fid != Some(fid),
-            FixtureReference::Uuid(uuid) => f.uuid() != uuid,
-            FixtureReference::Address(address) => f.address != Some(address),
-        });
     }
 }
 
@@ -155,16 +225,22 @@ impl Component for Patch {
             let gdtf_file = GdtfFile::new(file)
                 .wrap_err_with(|| format!("failed to read gdtf file {}", entry.path().display()))?;
 
+            self.start_edit();
             for fixture_type in gdtf_file.description.fixture_types {
-                self.fixture_types.insert(fixture_type.fixture_type_id, fixture_type);
+                self.editable_content
+                    .as_mut()
+                    .expect("patch should be in edit mode")
+                    .fixture_types
+                    .insert(fixture_type.fixture_type_id, fixture_type);
             }
+            self.save_edit()?;
         }
 
         Ok(())
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Fixture {
     #[serde(default = "Uuid::new_v4")]

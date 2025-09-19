@@ -26,6 +26,9 @@ pub enum Command {
 
 #[derive(Clone)]
 pub enum PatchCommand {
+    Edit,
+    Save,
+    Discard,
     AddFixture {
         fid: Option<FixtureId>,
         fixture_type_id: GdtfFixtureTypeId,
@@ -60,6 +63,15 @@ impl PatchCommand {
         engine.emit(EngineEvent::PatchChanged);
 
         match self {
+            PatchCommand::Edit => {
+                engine.patch().update(|patch| patch.start_edit());
+            }
+            PatchCommand::Save => {
+                engine.patch().update(|patch| patch.save_edit())?;
+            }
+            PatchCommand::Discard => {
+                engine.patch().update(|patch| patch.discard_edit());
+            }
             PatchCommand::AddFixture { fid, fixture_type_id, address, dmx_mode, name } => {
                 engine.patch().update(|patch| {
                     patch.add_fixture(Fixture::new(
@@ -72,11 +84,11 @@ impl PatchCommand {
                 })?;
             }
             PatchCommand::RemoveFixture { fixture_ref } => {
-                engine.patch().update(|patch| patch.remove_fixture(fixture_ref));
+                engine.patch().update(|patch| patch.remove_fixture(fixture_ref))?;
             }
             PatchCommand::SetName { fixture_ref, name } => {
                 engine.patch().update(|patch| {
-                    if let Some(fixture) = patch.fixture_mut(fixture_ref) {
+                    if let Some(fixture) = patch.fixture_mut(fixture_ref)? {
                         fixture.name = name;
                     } else {
                         eyre::bail!("fixture with reference {fixture_ref} not found");
@@ -88,12 +100,12 @@ impl PatchCommand {
             PatchCommand::SetFixtureId { fixture_ref, new_fid } => {
                 engine.patch().update(|patch| {
                     if let Some(new_fid) = new_fid {
-                        if let Some(conflicting_fixture) = patch.fixture_mut(new_fid) {
+                        if let Some(conflicting_fixture) = patch.fixture_mut(new_fid)? {
                             conflicting_fixture.fid = None;
                         }
                     }
 
-                    if let Some(fixture) = patch.fixture_mut(fixture_ref) {
+                    if let Some(fixture) = patch.fixture_mut(fixture_ref)? {
                         fixture.fid = new_fid;
                     } else {
                         eyre::bail!("fixture with reference {fixture_ref} not found");
@@ -105,12 +117,12 @@ impl PatchCommand {
             PatchCommand::SetAddress { fixture_ref, address } => {
                 engine.patch().update(|patch| {
                     if let Some(address) = address {
-                        if let Some(conflicting_fixture) = patch.fixture_mut(address) {
+                        if let Some(conflicting_fixture) = patch.fixture_mut(address)? {
                             conflicting_fixture.address = None;
                         }
                     }
 
-                    if let Some(fixture) = patch.fixture_mut(fixture_ref) {
+                    if let Some(fixture) = patch.fixture_mut(fixture_ref)? {
                         fixture.address = address;
                     } else {
                         eyre::bail!("fixture with reference {fixture_ref} not found");
@@ -121,7 +133,7 @@ impl PatchCommand {
             }
             PatchCommand::SetFixtureTypeId { fixture_ref, fixture_type_id, dmx_mode } => {
                 engine.patch().update(|patch| {
-                    if let Some(fixture) = patch.fixture_mut(fixture_ref) {
+                    if let Some(fixture) = patch.fixture_mut(fixture_ref)? {
                         fixture.fixture_type_id = fixture_type_id;
                         fixture.dmx_mode = dmx_mode;
                     } else {
@@ -228,6 +240,9 @@ impl fmt::Display for Command {
         let mut parts = Vec::new();
 
         match self {
+            Command::Patch(PatchCommand::Edit) => push_keyword(&mut parts, "patch_edit"),
+            Command::Patch(PatchCommand::Save) => push_keyword(&mut parts, "patch_save"),
+            Command::Patch(PatchCommand::Discard) => push_keyword(&mut parts, "patch_discard"),
             Command::Patch(PatchCommand::AddFixture {
                 fid,
                 fixture_type_id,
