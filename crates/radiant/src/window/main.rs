@@ -1,50 +1,23 @@
 use gpui::prelude::*;
-use gpui::{App, Entity, FocusHandle, Focusable, Window, WindowHandle, div};
+use gpui::{App, Entity, FocusHandle, Focusable, Window, div};
 use ui::interactive::button::button;
-use ui::overlay::OverlayContainer;
-use ui::utils::z_stack;
+use ui::window::{WindowDelegate, WindowManager, WindowWrapper};
 
 use crate::pane::Pane;
-use crate::state::AppState;
+use crate::window::settings::SettingsWindow;
 
 pub struct MainWindow {
     pane: Entity<Pane>,
-    overlays: Entity<OverlayContainer>,
 
     focus_handle: FocusHandle,
 }
 
 impl MainWindow {
-    pub fn open(cx: &mut App) -> WindowHandle<Self> {
-        cx.open_window(super::window_options("Radiant"), |window, cx| {
-            let main_window = cx.new(|cx| Self {
-                pane: cx.new(|_| Pane::new()),
-                overlays: cx.new(|_| OverlayContainer::new()),
-                focus_handle: cx.focus_handle(),
-            });
+    pub fn new(window: &mut Window, cx: &mut App) -> Self {
+        window.set_app_id("radiant");
+        window.set_window_title("Radiant");
 
-            window.focus(&main_window.focus_handle(cx));
-
-            window.on_window_should_close(cx, |_, cx| {
-                AppState::close_all_windows(cx);
-                true
-            });
-
-            main_window
-        })
-        .expect("should open main window")
-    }
-
-    pub fn overlays(&self) -> Entity<OverlayContainer> {
-        self.overlays.clone()
-    }
-
-    fn render_titlebar_content(&self, _cx: &mut Context<Self>) -> impl IntoElement {
-        let settings_button = button("settings", None, "=").on_click(|_, _, cx| {
-            AppState::open_settings(cx);
-        });
-
-        div().size_full().flex().justify_end().items_center().child(settings_button)
+        Self { pane: cx.new(|_| Pane::new()), focus_handle: cx.focus_handle() }
     }
 }
 
@@ -54,14 +27,24 @@ impl Focusable for MainWindow {
     }
 }
 
-impl Render for MainWindow {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        super::window_root().titlebar_child(self.render_titlebar_content(cx)).child(
-            z_stack([
-                self.pane.clone().into_any_element(),
-                self.overlays.clone().into_any_element(),
-            ])
-            .size_full(),
-        )
+impl WindowDelegate for MainWindow {
+    fn render_content(
+        &mut self,
+        _window: &mut Window,
+        _cx: &mut Context<WindowWrapper<Self>>,
+    ) -> impl IntoElement {
+        self.pane.clone()
+    }
+
+    fn render_titlebar_content(
+        &mut self,
+        _window: &mut Window,
+        _cx: &mut Context<WindowWrapper<Self>>,
+    ) -> impl IntoElement {
+        let settings_button = button("settings", None, "=").on_click(|_, _, cx| {
+            WindowManager::open_window(cx, |window, cx| SettingsWindow::new(window, cx));
+        });
+
+        div().size_full().flex().justify_end().items_center().child(settings_button)
     }
 }
