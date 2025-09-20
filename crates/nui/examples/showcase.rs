@@ -27,7 +27,9 @@ pub fn main() {
 pub struct MainWindow {}
 
 impl WindowDelegate for MainWindow {
-    fn create(_window: &mut Window, _cx: &mut App) -> Self {
+    fn create(window: &mut Window, _cx: &mut App) -> Self {
+        window.set_window_title("Showcase Application");
+
         Self {}
     }
 
@@ -48,7 +50,9 @@ impl WindowDelegate for MainWindow {
 pub struct SettingsWindow {}
 
 impl WindowDelegate for SettingsWindow {
-    fn create(_window: &mut Window, _cx: &mut App) -> Self {
+    fn create(window: &mut Window, _cx: &mut App) -> Self {
+        window.set_window_title("Settings");
+
         Self {}
     }
 
