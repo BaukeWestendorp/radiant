@@ -1,6 +1,7 @@
 use gpui::prelude::*;
 use gpui::{App, Application, KeyBinding, Window, div};
-use nui::{AppExt, WindowDelegate, WindowWrapper};
+use nui::AppExt;
+use nui::wm::{WindowDelegate, WindowWrapper};
 
 gpui::actions!(app, [OpenSettings]);
 
