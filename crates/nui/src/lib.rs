@@ -9,5 +9,6 @@ pub use wm::*;
 use gpui::App;
 
 pub fn init(cx: &mut App) {
-    cx.set_global(WindowManager::default());
+    let wm = WindowManager::new(cx);
+    cx.set_global(wm);
 }
