@@ -6,3 +6,4 @@ edition.workspace = true
 [dependencies]
 eyre.workspace = true
 gpui.workspace = true
+rust-embed = "8.7.2"

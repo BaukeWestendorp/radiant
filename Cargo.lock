@@ -3312,6 +3312,7 @@ version = "0.1.0"
 dependencies = [
  "eyre",
  "gpui",
+ "rust-embed",
 ]
 
 [[package]]
