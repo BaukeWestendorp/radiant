@@ -1,7 +1,9 @@
 use std::ops::{Deref, DerefMut};
 
 use gpui::prelude::*;
-use gpui::{App, Window, WindowHandle, WindowOptions, div};
+use gpui::{App, Window, WindowHandle, WindowOptions, div, px};
+
+use crate::theme::ActiveTheme;
 
 pub trait WindowDelegate: 'static {
     fn create(window: &mut Window, cx: &mut App) -> Self
@@ -50,7 +52,15 @@ impl<D: WindowDelegate> WindowWrapper<D> {
 
 impl<D: WindowDelegate> Render for WindowWrapper<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().child(self.render_content(window, cx))
+        div()
+            .size_full()
+            .flex()
+            .flex_col()
+            .text_color(cx.theme().foreground)
+            .font_family("Tamzen")
+            .line_height(px(14.0))
+            .bg(cx.theme().background)
+            .child(self.render_content(window, cx))
     }
 }
 
