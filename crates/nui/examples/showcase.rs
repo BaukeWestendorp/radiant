@@ -9,7 +9,7 @@ pub fn main() {
     Application::new().run(move |cx: &mut App| {
         cx.activate(true);
 
-        nui::init(cx);
+        nui::init(cx).expect("nui failed to init");
 
         cx.bind_keys([KeyBinding::new("secondary-,", OpenSettings, None)]);
 
