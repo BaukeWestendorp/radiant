@@ -3307,6 +3307,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "nui"
+version = "0.1.0"
+dependencies = [
+ "eyre",
+ "gpui",
+]
+
+[[package]]
 name = "num"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
