@@ -1,8 +1,7 @@
 use std::path::PathBuf;
 
-use gpui::{App, Application, Entity, Menu, MenuItem, Window};
-use ui::overlay::OverlayContainer;
-use ui::window::{WindowManager, WindowWrapper};
+use gpui::{App, Application, Menu, MenuItem};
+use nui::AppExt;
 
 use crate::engine::EngineManager;
 use crate::window::main::MainWindow;
@@ -27,10 +26,10 @@ impl RadiantApp {
     }
 
     pub fn run(self, showfile_path: Option<PathBuf>) {
-        Application::new().with_assets(ui::assets::Assets).run(move |cx: &mut App| {
+        Application::new().with_assets(nui::assets::Assets).run(move |cx: &mut App| {
             cx.activate(true);
 
-            ui::init(cx).expect("failed to initialize ui crate");
+            nui::init(cx).expect("failed to initialize ui crate");
 
             actions::init(cx);
             init_menus(cx);
@@ -38,8 +37,7 @@ impl RadiantApp {
 
             EngineManager::init(showfile_path, cx).expect("failed to initialize AppState");
 
-            WindowManager::init(cx);
-            WindowManager::open_window(cx, |window, cx| MainWindow::new(window, cx));
+            cx.update_wm(|wm, cx| wm.open_singleton_window::<MainWindow>(cx));
 
             cx.on_window_closed(|cx| {
                 if cx.windows().is_empty() {
@@ -48,18 +46,6 @@ impl RadiantApp {
             })
             .detach();
         });
-    }
-
-    pub fn overlays(window: &Window, cx: &App) -> Entity<OverlayContainer> {
-        if let Some(Some(main_window)) = window.root::<WindowWrapper<MainWindow>>() {
-            return main_window.read(cx).overlays();
-        }
-
-        if let Some(Some(settings_window)) = window.root::<WindowWrapper<SettingsWindow>>() {
-            return settings_window.read(cx).overlays();
-        }
-
-        panic!("could not find OverlayContainer for window");
     }
 }
 
@@ -77,7 +63,7 @@ fn init_menus(cx: &mut App) {
 fn init_actions(cx: &mut App) {
     cx.on_action::<actions::Quit>(|_, cx| quit(cx));
     cx.on_action::<actions::OpenSettings>(|_, cx| {
-        WindowManager::open_window(cx, |window, cx| SettingsWindow::new(window, cx));
+        cx.update_wm(|wm, cx| wm.open_singleton_window::<SettingsWindow>(cx));
     });
 }
 

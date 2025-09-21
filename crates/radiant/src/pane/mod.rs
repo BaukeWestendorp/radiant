@@ -11,6 +11,6 @@ impl Pane {
 
 impl Render for Pane {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().child(ui::utils::todo(cx))
+        div().size_full().child(nui::utils::todo(cx))
     }
 }

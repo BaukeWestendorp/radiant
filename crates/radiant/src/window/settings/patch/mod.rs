@@ -1,9 +1,8 @@
 use gpui::prelude::*;
 use gpui::{Entity, Window, div};
-use ui::Disableable;
-use ui::interactive::button::button;
-use ui::interactive::table::{Table, TableDelegate};
-use ui::theme::ActiveTheme;
+use nui::button::button;
+use nui::table::{Table, TableDelegate};
+use nui::theme::ActiveTheme;
 
 use patch_table::PatchTable;
 

@@ -1,22 +1,18 @@
 use gpui::prelude::*;
 use gpui::{App, Entity, IntoElement, Window, div, px};
+use nui::event::SubmitEvent;
+use nui::input::FieldEvent;
+use nui::table::{Column, Table, TableDelegate};
+use nui::theme::{ActiveTheme, InteractiveColor};
 use radlib::builtin::{FixtureId, GdtfFixtureTypeId};
 use radlib::cmd::{Command, PatchCommand};
 use radlib::engine::event::EngineEvent;
-use ui::interactive::event::SubmitEvent;
-use ui::interactive::input::FieldEvent;
-use ui::interactive::modal::ModalExt;
-use ui::interactive::table::{Column, Table, TableDelegate};
-use ui::overlay::Overlay;
-use ui::theme::{ActiveTheme, InteractiveColor};
 use uuid::Uuid;
 
 use std::num::NonZeroU32;
 
 use super::ft_picker::FixtureTypePicker;
-use crate::app::RadiantApp;
 use crate::engine::EngineManager;
-use crate::text_modal::TextModal;
 
 const FT_PICKER_OVERLAY_ID: &str = "patch_table_ft_picker";
 
@@ -56,50 +52,52 @@ impl PatchTable {
         let initial_fid =
             EngineManager::read_patch(cx, |patch| patch.fixture(row_ids[0]).unwrap().fid);
 
-        cx.open_modal("Set Fixture Id", window, |focus_handle, window, cx| {
-            let modal_value = initial_fid.map(|fid| fid.to_string()).unwrap_or_default().into();
-            let modal = TextModal::new(focus_handle, window, cx).with_value(modal_value, cx);
+        // TODO:
+        // cx.open_modal("Set Fixture Id", window, |focus_handle, window, cx| {
+        //     let modal_value = initial_fid.map(|fid| fid.to_string()).unwrap_or_default().into();
+        //     let modal = TextModal::new(focus_handle, window, cx).with_value(modal_value, cx);
 
-            cx.subscribe(modal.field(), move |_, field, event, cx| match event {
-                FieldEvent::Submit => {
-                    let value = field.read(cx).value(cx).trim();
+        //     cx.subscribe(modal.field(), move |_, field, event, cx| match event {
+        //         FieldEvent::Submit => {
+        //             let value = field.read(cx).value(cx).trim();
 
-                    if value.is_empty() {
-                        for &row_id in row_ids.iter() {
-                            EngineManager::exec_and_log_err(
-                                Command::Patch(PatchCommand::SetFixtureId {
-                                    fixture_ref: row_id.into(),
-                                    new_fid: None,
-                                }),
-                                cx,
-                            );
-                        }
+        //             if value.is_empty() {
+        //                 for &row_id in row_ids.iter() {
+        //                     EngineManager::exec_and_log_err(
+        //                         Command::Patch(PatchCommand::SetFixtureId {
+        //                             fixture_ref: row_id.into(),
+        //                             new_fid: None,
+        //                         }),
+        //                         cx,
+        //                     );
+        //                 }
 
-                        return;
-                    }
+        //                 return;
+        //             }
 
-                    let Some(start_fid) = value.parse().ok() else {
-                        return;
-                    };
+        //             let Some(start_fid) = value.parse().ok() else {
+        //                 return;
+        //             };
 
-                    let generated_fids = generate_fids(start_fid, row_ids.len());
+        //             let generated_fids = generate_fids(start_fid, row_ids.len());
 
-                    for (&row_id, new_fid) in row_ids.iter().zip(generated_fids) {
-                        EngineManager::exec_and_log_err(
-                            Command::Patch(PatchCommand::SetFixtureId {
-                                fixture_ref: row_id.into(),
-                                new_fid: Some(new_fid),
-                            }),
-                            cx,
-                        );
-                    }
-                }
-                _ => {}
-            })
-            .detach();
+        //             for (&row_id, new_fid) in row_ids.iter().zip(generated_fids) {
+        //                 EngineManager::exec_and_log_err(
+        //                     Command::Patch(PatchCommand::SetFixtureId {
+        //                         fixture_ref: row_id.into(),
+        //                         new_fid: Some(new_fid),
+        //                     }),
+        //                     cx,
+        //                 );
+        //             }
+        //         }
+        //         _ => {}
+        //     })
+        //     .detach();
 
-            modal
-        });
+        //     modal
+        // });
+        todo!();
     }
 
     fn edit_names(&self, row_ids: Vec<Uuid>, window: &mut Window, cx: &mut Context<Table<Self>>) {
@@ -122,32 +120,34 @@ impl PatchTable {
         let initial_name =
             EngineManager::read_patch(cx, |patch| patch.fixture(row_ids[0]).unwrap().name.clone());
 
-        cx.open_modal("Set Name", window, |focus_handle, window, cx| {
-            let modal =
-                TextModal::new(focus_handle, window, cx).with_value(initial_name.into(), cx);
+        // TODO:
+        // cx.open_modal("Set Name", window, |focus_handle, window, cx| {
+        //     let modal =
+        //         TextModal::new(focus_handle, window, cx).with_value(initial_name.into(), cx);
 
-            cx.subscribe(modal.field(), move |_, field, event, cx| match event {
-                FieldEvent::Submit => {
-                    let name = field.read(cx).value(cx).to_string();
+        //     cx.subscribe(modal.field(), move |_, field, event, cx| match event {
+        //         FieldEvent::Submit => {
+        //             let name = field.read(cx).value(cx).to_string();
 
-                    let generated_names = generate_names(&name, row_ids.len());
+        //             let generated_names = generate_names(&name, row_ids.len());
 
-                    for (&row_id, new_name) in row_ids.iter().zip(generated_names) {
-                        EngineManager::exec_and_log_err(
-                            Command::Patch(PatchCommand::SetName {
-                                fixture_ref: row_id.into(),
-                                name: new_name,
-                            }),
-                            cx,
-                        );
-                    }
-                }
-                _ => {}
-            })
-            .detach();
+        //             for (&row_id, new_name) in row_ids.iter().zip(generated_names) {
+        //                 EngineManager::exec_and_log_err(
+        //                     Command::Patch(PatchCommand::SetName {
+        //                         fixture_ref: row_id.into(),
+        //                         name: new_name,
+        //                     }),
+        //                     cx,
+        //                 );
+        //             }
+        //         }
+        //         _ => {}
+        //     })
+        //     .detach();
 
-            modal
-        });
+        //     modal
+        // });
+        todo!();
     }
 
     fn edit_addrs(&self, row_ids: Vec<Uuid>, window: &mut Window, cx: &mut Context<Table<Self>>) {
@@ -177,52 +177,54 @@ impl PatchTable {
             fixture.address.clone()
         });
 
-        cx.open_modal("Set Address", window, |focus_handle, window, cx| {
-            let modal = TextModal::new(focus_handle, window, cx).with_value(
-                initial_address.map(|addr| addr.to_string()).unwrap_or_default().into(),
-                cx,
-            );
+        // TODO:
+        // cx.open_modal("Set Address", window, |focus_handle, window, cx| {
+        //     let modal = TextModal::new(focus_handle, window, cx).with_value(
+        //         initial_address.map(|addr| addr.to_string()).unwrap_or_default().into(),
+        //         cx,
+        //     );
 
-            cx.subscribe(modal.field(), move |_, field, event, cx| match event {
-                FieldEvent::Submit => {
-                    let value = field.read(cx).value(cx).trim();
+        //     cx.subscribe(modal.field(), move |_, field, event, cx| match event {
+        //         FieldEvent::Submit => {
+        //             let value = field.read(cx).value(cx).trim();
 
-                    if value.is_empty() {
-                        for &row_id in row_ids.iter() {
-                            EngineManager::exec_and_log_err(
-                                Command::Patch(PatchCommand::SetAddress {
-                                    fixture_ref: row_id.into(),
-                                    address: None,
-                                }),
-                                cx,
-                            );
-                        }
+        //             if value.is_empty() {
+        //                 for &row_id in row_ids.iter() {
+        //                     EngineManager::exec_and_log_err(
+        //                         Command::Patch(PatchCommand::SetAddress {
+        //                             fixture_ref: row_id.into(),
+        //                             address: None,
+        //                         }),
+        //                         cx,
+        //                     );
+        //                 }
 
-                        return;
-                    }
+        //                 return;
+        //             }
 
-                    let Some(start_address) = value.parse().ok() else {
-                        return;
-                    };
+        //             let Some(start_address) = value.parse().ok() else {
+        //                 return;
+        //             };
 
-                    let generated_addresses = generate_addresses(start_address, &row_ids, cx);
+        //             let generated_addresses = generate_addresses(start_address, &row_ids, cx);
 
-                    for (&row_id, new_address) in row_ids.iter().zip(generated_addresses) {
-                        EngineManager::exec_and_log_err(
-                            Command::Patch(PatchCommand::SetAddress {
-                                fixture_ref: row_id.into(),
-                                address: Some(new_address),
-                            }),
-                            cx,
-                        );
-                    }
-                }
-                _ => {}
-            })
-            .detach();
+        //             for (&row_id, new_address) in row_ids.iter().zip(generated_addresses) {
+        //                 EngineManager::exec_and_log_err(
+        //                     Command::Patch(PatchCommand::SetAddress {
+        //                         fixture_ref: row_id.into(),
+        //                         address: Some(new_address),
+        //                     }),
+        //                     cx,
+        //                 );
+        //             }
+        //         }
+        //         _ => {}
+        //     })
+        //     .detach();
 
-            modal
-        });
+        //     modal
+        // });
+        todo!()
     }
 
     fn edit_fts(&mut self, row_ids: Vec<Uuid>, window: &mut Window, cx: &mut Context<Table<Self>>) {
@@ -253,8 +255,10 @@ impl PatchTable {
                     );
                 }
 
-                RadiantApp::overlays(window, cx)
-                    .update(cx, |overlays, cx| overlays.close(FT_PICKER_OVERLAY_ID, cx));
+                // TODO:
+                // RadiantApp::overlays(window, cx)
+                //     .update(cx, |overlays, cx| overlays.close(FT_PICKER_OVERLAY_ID, cx));
+                todo!();
             },
         )
         .detach();
@@ -275,13 +279,15 @@ impl PatchTable {
             FixtureTypePicker::new(window, cx).with_selected(ft_id, dmx_mode, window, cx)
         });
 
-        RadiantApp::overlays(window, cx).update(cx, |overlays, cx| {
-            overlays.open(
-                FT_PICKER_OVERLAY_ID,
-                Overlay::new("Select a Fixture Type", ft_picker.clone()),
-                cx,
-            )
-        });
+        // TODO:
+        // RadiantApp::overlays(window, cx).update(cx, |overlays, cx| {
+        //     overlays.open(
+        //         FT_PICKER_OVERLAY_ID,
+        //         Overlay::new("Select a Fixture Type", ft_picker.clone()),
+        //         cx,
+        //     )
+        // });
+        todo!();
 
         ft_picker
     }

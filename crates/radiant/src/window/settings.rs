@@ -1,7 +1,7 @@
 use gpui::prelude::*;
 use gpui::{App, Entity, Window};
-use ui::nav::tabs::{Orientation, Tab, Tabs};
-use ui::window::{WindowDelegate, WindowWrapper};
+use nui::tabs::{Orientation, Tab, Tabs};
+use nui::wm::{WindowDelegate, WindowWrapper};
 
 use crate::window::settings::patch::PatchSettings;
 
@@ -11,8 +11,8 @@ pub struct SettingsWindow {
     tabs: Entity<Tabs>,
 }
 
-impl SettingsWindow {
-    pub fn new(window: &mut Window, cx: &mut App) -> Self {
+impl WindowDelegate for SettingsWindow {
+    fn create(window: &mut Window, cx: &mut App) -> Self {
         window.set_app_id("radiant");
         window.set_window_title("Settings");
 
@@ -27,9 +27,7 @@ impl SettingsWindow {
             }),
         }
     }
-}
 
-impl WindowDelegate for SettingsWindow {
     fn render_content(
         &mut self,
         _window: &mut Window,
