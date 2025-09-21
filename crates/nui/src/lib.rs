@@ -1,6 +1,18 @@
 pub mod assets;
+pub mod button;
+pub mod container;
+pub mod divider;
 pub mod error;
+pub mod event;
+pub mod grid;
+pub mod infobar;
+pub mod input;
+pub mod section;
+pub mod table;
+pub mod tabs;
 pub mod theme;
+pub mod typo;
+pub mod utils;
 pub mod wm;
 
 mod app_ext;
@@ -21,6 +33,9 @@ pub fn init(cx: &mut App) -> Result<()> {
 
     let wm = WindowManager::new(cx);
     cx.set_global(wm);
+
+    input::init(cx);
+    table::init(cx);
 
     Ok(())
 }

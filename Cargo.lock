@@ -3313,6 +3313,7 @@ dependencies = [
  "eyre",
  "gpui",
  "rust-embed",
+ "smallvec",
 ]
 
 [[package]]
