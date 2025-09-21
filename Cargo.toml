@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/radiant", "crates/dmx", "crates/ui", "crates/nui", "crates/radlib"]
+members = ["crates/radiant", "crates/dmx", "crates/nui", "crates/radlib"]
 resolver = "3"
 
 [workspace.package]
@@ -19,5 +19,5 @@ serde = { version = "1.0.219", features = ["derive"] }
 simple_logger = "5.0.0"
 spin_sleep = "1.3.2"
 thiserror = "2.0.12"
-ui = { path = "./crates/ui" }
+nui = { path = "./crates/nui" }
 uuid = { version = "1.17.0", features = ["v4"] }

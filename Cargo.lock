@@ -4088,11 +4088,11 @@ dependencies = [
  "eyre",
  "gpui",
  "log",
+ "nui",
  "radlib",
  "regex",
  "serde",
  "simple_logger",
- "ui",
  "uuid",
 ]
 
@@ -5895,16 +5895,6 @@ dependencies = [
  "memoffset",
  "tempfile",
  "winapi",
-]
-
-[[package]]
-name = "ui"
-version = "0.1.0"
-dependencies = [
- "eyre",
- "gpui",
- "rust-embed",
- "smallvec",
 ]
 
 [[package]]
