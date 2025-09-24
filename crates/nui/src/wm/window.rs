@@ -6,7 +6,7 @@ use gpui::{
     WindowOptions, div, point, px,
 };
 
-use crate::theme::ActiveTheme;
+use crate::theme::{ActiveTheme, InteractiveColor};
 
 pub const TRAFFIC_LIGHT_WIDTH: Pixels = px(14.0);
 pub const TRAFFIC_LIGHT_SPACING: Pixels = px(9.0);
@@ -62,10 +62,9 @@ impl<D: WindowDelegate> Render for WindowWrapper<D> {
             .size_full()
             .flex()
             .flex_col()
+            .font_family("Inter 18pt")
             .text_color(cx.theme().foreground)
-            .text_size(px(16.0))
-            .font_family("Tamzen")
-            .line_height(px(14.0))
+            .text_sm()
             .bg(cx.theme().background)
             .child(render_titlebar(window, cx))
             .child(self.render_content(window, cx))
@@ -92,7 +91,6 @@ pub fn window_options() -> WindowOptions {
         titlebar: Some(TitlebarOptions {
             appears_transparent: true,
             traffic_light_position: Some(point(TRAFFIC_LIGHT_SPACING, TRAFFIC_LIGHT_SPACING)),
-
             ..Default::default()
         }),
         ..Default::default()
@@ -115,7 +113,12 @@ fn render_titlebar(window: &Window, cx: &App) -> impl IntoElement {
         .bg(cx.theme().title_bar)
         .flex()
         .items_center()
-        .child(div().font_weight(FontWeight::BOLD).pb(px(-2.0)).child(window.window_title()))
+        .child(
+            div()
+                .font_weight(FontWeight::BOLD)
+                .text_color(cx.theme().foreground.muted())
+                .child(window.window_title()),
+        )
         .on_click(|event, window, _| {
             if event.click_count() == 2 {
                 window.titlebar_double_click();

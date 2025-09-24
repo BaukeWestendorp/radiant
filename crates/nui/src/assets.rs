@@ -33,5 +33,6 @@ pub(crate) fn load_fonts(cx: &mut App) -> gpui::Result<()> {
             }
         }
     }
-    cx.text_system().add_fonts(embedded_fonts)
+    cx.text_system().add_fonts(embedded_fonts)?;
+    Ok(())
 }
