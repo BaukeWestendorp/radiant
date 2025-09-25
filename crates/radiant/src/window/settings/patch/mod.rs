@@ -4,18 +4,18 @@ use nui::button::button;
 use nui::table::{Table, TableDelegate};
 use nui::theme::ActiveTheme;
 
-use patch_table::PatchTable;
+use patch_table::FixtureTable;
 
 mod ft_picker;
 mod patch_table;
 
 pub struct PatchSettings {
-    table: Entity<Table<PatchTable>>,
+    table: Entity<Table<FixtureTable>>,
 }
 
 impl PatchSettings {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        Self { table: cx.new(|cx| Table::new(PatchTable::new(window, cx), window, cx)) }
+        Self { table: cx.new(|cx| Table::new(FixtureTable::new(window, cx), window, cx)) }
     }
 }
 

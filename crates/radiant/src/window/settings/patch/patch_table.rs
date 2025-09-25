@@ -1,7 +1,6 @@
 use gpui::prelude::*;
 use gpui::{App, Entity, IntoElement, Window, div, px};
 use nui::event::SubmitEvent;
-use nui::input::FieldEvent;
 use nui::table::{Column, Table, TableDelegate};
 use nui::theme::{ActiveTheme, InteractiveColor};
 use radlib::builtin::{FixtureId, GdtfFixtureTypeId};
@@ -14,14 +13,12 @@ use std::num::NonZeroU32;
 use super::ft_picker::FixtureTypePicker;
 use crate::engine::EngineManager;
 
-const FT_PICKER_OVERLAY_ID: &str = "patch_table_ft_picker";
-
 #[derive(Clone)]
-pub struct PatchTable {
+pub struct FixtureTable {
     columns: Vec<Column>,
 }
 
-impl PatchTable {
+impl FixtureTable {
     pub fn new(window: &mut Window, cx: &mut Context<Table<Self>>) -> Self {
         let event_handler = EngineManager::event_handler(cx);
         cx.subscribe_in(&event_handler, window, |table, _, event, window, cx| match event {
@@ -233,7 +230,7 @@ impl PatchTable {
         cx.subscribe_in(
             &ft_picker,
             window,
-            move |_, _, event: &SubmitEvent<(GdtfFixtureTypeId, String)>, window, cx| {
+            move |this, _, event: &SubmitEvent<(GdtfFixtureTypeId, String)>, window, cx| {
                 let (ft_id, dmx_mode) = &event.value;
 
                 for row_id in &row_ids {
@@ -255,10 +252,8 @@ impl PatchTable {
                     );
                 }
 
-                // TODO:
-                // RadiantApp::overlays(window, cx)
-                //     .update(cx, |overlays, cx| overlays.close(FT_PICKER_OVERLAY_ID, cx));
-                todo!();
+                // TODO: open ft_picker
+                todo!()
             },
         )
         .detach();
@@ -293,7 +288,7 @@ impl PatchTable {
     }
 }
 
-impl TableDelegate for PatchTable {
+impl TableDelegate for FixtureTable {
     type RowId = Uuid;
 
     fn column_count(&self, _cx: &App) -> usize {
