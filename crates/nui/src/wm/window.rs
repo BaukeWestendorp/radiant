@@ -2,11 +2,15 @@ use std::ops::{Deref, DerefMut};
 
 use gpui::prelude::*;
 use gpui::{
-    App, FontWeight, Pixels, TitlebarOptions, Window, WindowControlArea, WindowHandle,
+    App, ClickEvent, FontWeight, Pixels, TitlebarOptions, Window, WindowControlArea, WindowHandle,
     WindowOptions, div, point, px,
 };
 
+use crate::AppExt;
+use crate::button::button;
 use crate::theme::{ActiveTheme, InteractiveColor};
+use crate::utils::z_stack;
+use crate::wm::Overlay;
 
 pub const TRAFFIC_LIGHT_WIDTH: Pixels = px(14.0);
 pub const TRAFFIC_LIGHT_SPACING: Pixels = px(9.0);
@@ -58,6 +62,52 @@ impl<D: WindowDelegate> WindowWrapper<D> {
 
 impl<D: WindowDelegate> Render for WindowWrapper<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let render_overlay = |overlay: Overlay| {
+            div()
+                .flex()
+                .flex_col()
+                .size_full()
+                .p_4()
+                .bg(gpui::black().with_opacity(0.5))
+                .occlude()
+                .child(
+                    div()
+                        .min_h_8()
+                        .max_h_8()
+                        .w_full()
+                        .px_2()
+                        .flex()
+                        .justify_between()
+                        .items_center()
+                        .border_1()
+                        .border_color(cx.theme().header_border)
+                        .rounded_t(cx.theme().radius)
+                        .text_color(cx.theme().header_foreground)
+                        .bg(cx.theme().header)
+                        .child(div().font_weight(FontWeight::BOLD).child(overlay.title))
+                        .child(button("close", None, "X").size_6().on_click(cx.listener(
+                            move |this, _: &ClickEvent, _, cx| {
+                                let handle = this.window_handle();
+                                cx.update_wm(|wm, _| wm.close_overlay(&overlay.id, &handle))
+                            },
+                        ))),
+                )
+                .child(
+                    div()
+                        .size_full()
+                        .border_1()
+                        .border_t_0()
+                        .border_color(cx.theme().border)
+                        .rounded_b(cx.theme().radius)
+                        .when(cx.theme().shadow, |e| e.shadow_lg())
+                        .child(overlay.content),
+                )
+        };
+
+        let overlays = div().size_full().children(
+            cx.wm().window_overlays(&window.window_handle()).into_iter().map(render_overlay),
+        );
+
         div()
             .size_full()
             .flex()
@@ -67,7 +117,13 @@ impl<D: WindowDelegate> Render for WindowWrapper<D> {
             .text_sm()
             .bg(cx.theme().background)
             .child(render_titlebar(window, cx))
-            .child(self.render_content(window, cx))
+            .child(
+                z_stack([
+                    self.render_content(window, cx).into_any_element(),
+                    overlays.into_any_element(),
+                ])
+                .size_full(),
+            )
     }
 }
 

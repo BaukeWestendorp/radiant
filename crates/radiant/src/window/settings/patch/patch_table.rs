@@ -1,8 +1,10 @@
 use gpui::prelude::*;
 use gpui::{App, Entity, IntoElement, Window, div, px};
+use nui::AppExt;
 use nui::event::SubmitEvent;
 use nui::table::{Column, Table, TableDelegate};
 use nui::theme::{ActiveTheme, InteractiveColor};
+use nui::wm::Overlay;
 use radlib::builtin::{FixtureId, GdtfFixtureTypeId};
 use radlib::cmd::{Command, PatchCommand};
 use radlib::engine::event::EngineEvent;
@@ -12,6 +14,8 @@ use std::num::NonZeroU32;
 
 use super::ft_picker::FixtureTypePicker;
 use crate::engine::EngineManager;
+
+const FIXTURE_PICKER_OVERLAY_ID: &str = "ft_picker";
 
 #[derive(Clone)]
 pub struct FixtureTable {
@@ -230,7 +234,7 @@ impl FixtureTable {
         cx.subscribe_in(
             &ft_picker,
             window,
-            move |this, _, event: &SubmitEvent<(GdtfFixtureTypeId, String)>, window, cx| {
+            move |_, _, event: &SubmitEvent<(GdtfFixtureTypeId, String)>, window, cx| {
                 let (ft_id, dmx_mode) = &event.value;
 
                 for row_id in &row_ids {
@@ -252,8 +256,9 @@ impl FixtureTable {
                     );
                 }
 
-                // TODO: open ft_picker
-                todo!()
+                cx.update_wm(|wm, _| {
+                    wm.close_overlay(FIXTURE_PICKER_OVERLAY_ID, &window.window_handle())
+                });
             },
         )
         .detach();
@@ -274,15 +279,12 @@ impl FixtureTable {
             FixtureTypePicker::new(window, cx).with_selected(ft_id, dmx_mode, window, cx)
         });
 
-        // TODO:
-        // RadiantApp::overlays(window, cx).update(cx, |overlays, cx| {
-        //     overlays.open(
-        //         FT_PICKER_OVERLAY_ID,
-        //         Overlay::new("Select a Fixture Type", ft_picker.clone()),
-        //         cx,
-        //     )
-        // });
-        todo!();
+        cx.update_wm(|wm, _| {
+            wm.open_overlay(
+                Overlay::new(FIXTURE_PICKER_OVERLAY_ID, "Select a Fixture Type", ft_picker.clone()),
+                &window.window_handle(),
+            )
+        });
 
         ft_picker
     }

@@ -1,7 +1,7 @@
 use std::any::TypeId;
 use std::collections::{HashMap, HashSet};
 
-use gpui::{AnyWindowHandle, App, Entity, Global, PromptLevel, Window};
+use gpui::{AnyView, AnyWindowHandle, App, Entity, Global, PromptLevel, SharedString, Window};
 
 mod window;
 
@@ -13,6 +13,9 @@ pub struct WindowManager {
     singleton_windows: HashMap<TypeId, AnyWindowHandle>,
     edited_windows: HashSet<AnyWindowHandle>,
     unclosable_windows: HashSet<AnyWindowHandle>,
+
+    overlays: HashMap<AnyWindowHandle, Vec<Overlay>>,
+
     quit_when_all_windows_closed: bool,
 }
 
@@ -29,6 +32,9 @@ impl WindowManager {
             singleton_windows: HashMap::new(),
             edited_windows: HashSet::new(),
             unclosable_windows: HashSet::new(),
+
+            overlays: HashMap::new(),
+
             quit_when_all_windows_closed: false,
         }
     }
@@ -143,6 +149,43 @@ impl WindowManager {
     fn can_close_window(&self, handle: &AnyWindowHandle) -> bool {
         !self.unclosable_windows.contains(handle)
     }
+
+    pub fn close_overlay(&mut self, id: &str, handle: &AnyWindowHandle) {
+        let Some(overlays) = self.overlays.get_mut(&handle) else { return };
+        overlays.retain(|o| &o.id != id);
+    }
+
+    pub fn open_overlay(&mut self, overlay: Overlay, handle: &AnyWindowHandle) {
+        match self.overlays.get_mut(handle) {
+            Some(overlays) => {
+                overlays.push(overlay);
+            }
+            None => {
+                self.overlays.insert(*handle, vec![overlay]);
+            }
+        }
+    }
+
+    pub(crate) fn window_overlays(&self, handle: &AnyWindowHandle) -> Vec<Overlay> {
+        self.overlays.get(&handle).map(|overlays| overlays.to_vec()).unwrap_or_default()
+    }
 }
 
 impl Global for WindowManager {}
+
+#[derive(Debug, Clone)]
+pub struct Overlay {
+    id: String,
+    title: SharedString,
+    content: AnyView,
+}
+
+impl Overlay {
+    pub fn new(
+        id: impl Into<String>,
+        title: impl Into<SharedString>,
+        content: impl Into<AnyView>,
+    ) -> Self {
+        Self { id: id.into(), title: title.into(), content: content.into() }
+    }
+}
