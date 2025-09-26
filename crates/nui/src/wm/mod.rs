@@ -200,9 +200,7 @@ impl WindowManager {
             })
             .detach();
 
-        let mut overlay = Overlay::new(id, title, modal);
-        overlay.size_full = false;
-        self.open_overlay(overlay, &window.window_handle());
+        self.open_overlay(Overlay::new(id, title, modal).as_modal(), &window.window_handle());
     }
 }
 
@@ -213,7 +211,7 @@ pub struct Overlay {
     id: String,
     title: SharedString,
     content: AnyView,
-    pub size_full: bool,
+    is_modal: bool,
 }
 
 impl Overlay {
@@ -222,7 +220,12 @@ impl Overlay {
         title: impl Into<SharedString>,
         content: impl Into<AnyView>,
     ) -> Self {
-        Self { id: id.into(), title: title.into(), content: content.into(), size_full: true }
+        Self { id: id.into(), title: title.into(), content: content.into(), is_modal: false }
+    }
+
+    pub fn as_modal(mut self) -> Self {
+        self.is_modal = true;
+        self
     }
 }
 
