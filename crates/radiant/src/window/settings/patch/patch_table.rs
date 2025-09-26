@@ -329,6 +329,20 @@ impl TableDelegate for FixtureTable {
         }
     }
 
+    fn on_delete_selection(
+        &mut self,
+        row_ids: Vec<Self::RowId>,
+        _window: &mut Window,
+        cx: &mut Context<Table<Self>>,
+    ) {
+        for row_id in row_ids {
+            EngineManager::exec_and_log_err(
+                Command::Patch(PatchCommand::RemoveFixture { fixture_ref: row_id.into() }),
+                cx,
+            );
+        }
+    }
+
     fn render_cell(
         &self,
         row_id: &Self::RowId,
