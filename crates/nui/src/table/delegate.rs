@@ -24,7 +24,7 @@ pub trait TableDelegate: Sized + 'static {
         true
     }
 
-    fn edit_selection(
+    fn on_edit_selection(
         &mut self,
         _column_id: &str,
         _row_ids: Vec<Self::RowId>,

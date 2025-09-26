@@ -192,7 +192,7 @@ impl<D: TableDelegate> Table<D> {
         };
 
         let selected_row_ids = self.selected_row_ids(cx);
-        self.delegate_mut().edit_selection(&column_id, selected_row_ids, window, cx)
+        self.delegate_mut().on_edit_selection(&column_id, selected_row_ids, window, cx)
     }
 
     pub fn selected_row_ids(&self, cx: &App) -> Vec<D::RowId> {

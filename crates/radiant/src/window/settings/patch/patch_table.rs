@@ -309,7 +309,7 @@ impl TableDelegate for FixtureTable {
         EngineManager::read_patch(cx, |patch| patch.validate())
     }
 
-    fn edit_selection(
+    fn on_edit_selection(
         &mut self,
         column_id: &str,
         row_ids: Vec<Self::RowId>,
