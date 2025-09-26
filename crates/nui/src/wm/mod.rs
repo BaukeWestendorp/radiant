@@ -1,13 +1,15 @@
 use std::any::TypeId;
 use std::collections::{HashMap, HashSet};
 
-use gpui::{AnyView, AnyWindowHandle, App, Entity, Global, PromptLevel, SharedString, Window};
+use gpui::prelude::*;
+use gpui::{AnyView, AnyWindowHandle, App, Entity, Global, PromptLevel, SharedString, Window, div};
 
 mod window;
 
 pub use window::*;
 
 use crate::AppExt;
+use crate::input::{FieldEvent, TextField};
 
 pub struct WindowManager {
     singleton_windows: HashMap<TypeId, AnyWindowHandle>,
@@ -169,6 +171,39 @@ impl WindowManager {
     pub(crate) fn window_overlays(&self, handle: &AnyWindowHandle) -> Vec<Overlay> {
         self.overlays.get(&handle).map(|overlays| overlays.to_vec()).unwrap_or_default()
     }
+
+    pub fn open_text_modal<F: Fn(SharedString, &mut Window, &mut App) + 'static>(
+        &mut self,
+        id: impl Into<String>,
+        title: impl Into<SharedString>,
+        initial_value: SharedString,
+        window: &mut Window,
+        cx: &mut App,
+        on_submit: F,
+    ) {
+        let id = id.into();
+
+        let modal = cx.new(|cx| TextModal::new(initial_value, window, cx));
+        let field = modal.read(cx).field.clone();
+
+        window
+            .subscribe(&field, cx, {
+                let id = id.clone();
+                move |field: Entity<TextField>, event, window, cx| match event {
+                    FieldEvent::Submit => {
+                        let value = field.read(cx).value(cx).clone();
+                        on_submit(value, window, cx);
+                        cx.update_wm(|wm, _| wm.close_overlay(&id, &window.window_handle()));
+                    }
+                    _ => {}
+                }
+            })
+            .detach();
+
+        let mut overlay = Overlay::new(id, title, modal);
+        overlay.size_full = false;
+        self.open_overlay(overlay, &window.window_handle());
+    }
 }
 
 impl Global for WindowManager {}
@@ -178,6 +213,7 @@ pub struct Overlay {
     id: String,
     title: SharedString,
     content: AnyView,
+    pub size_full: bool,
 }
 
 impl Overlay {
@@ -186,6 +222,27 @@ impl Overlay {
         title: impl Into<SharedString>,
         content: impl Into<AnyView>,
     ) -> Self {
-        Self { id: id.into(), title: title.into(), content: content.into() }
+        Self { id: id.into(), title: title.into(), content: content.into(), size_full: true }
+    }
+}
+
+struct TextModal {
+    field: Entity<TextField>,
+}
+
+impl TextModal {
+    pub fn new(initial_value: SharedString, window: &mut Window, cx: &mut Context<Self>) -> Self {
+        Self {
+            field: cx.new(|cx| {
+                TextField::new("modal_text_field", cx.focus_handle(), window, cx)
+                    .with_value(initial_value, cx)
+            }),
+        }
+    }
+}
+
+impl Render for TextModal {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        div().w_96().flex().justify_center().items_center().p_2().child(self.field.clone())
     }
 }
