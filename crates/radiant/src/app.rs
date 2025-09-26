@@ -10,11 +10,12 @@ use crate::window::settings::SettingsWindow;
 pub mod actions {
     use gpui::{App, KeyBinding};
 
-    gpui::actions!(radiant, [Quit, OpenSettings]);
+    gpui::actions!(radiant, [Quit, OpenSettings, LogDebugInfo]);
 
     pub(crate) fn init(cx: &mut App) {
         cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
         cx.bind_keys([KeyBinding::new("secondary-,", OpenSettings, None)]);
+        cx.bind_keys([KeyBinding::new("f12", LogDebugInfo, None)]);
     }
 }
 
@@ -62,8 +63,21 @@ fn init_menus(cx: &mut App) {
 
 fn init_actions(cx: &mut App) {
     cx.on_action::<actions::Quit>(|_, cx| quit(cx));
+
     cx.on_action::<actions::OpenSettings>(|_, cx| {
         cx.update_wm(|wm, cx| wm.open_singleton_window::<SettingsWindow>(cx));
+    });
+
+    cx.on_action::<actions::LogDebugInfo>(|_, cx| {
+        cx.defer(|cx| {
+            if let Some(handle) = cx.active_window() {
+                handle
+                    .update(cx, |_, window, _| {
+                        dbg!(window.context_stack());
+                    })
+                    .unwrap();
+            }
+        });
     });
 }
 
