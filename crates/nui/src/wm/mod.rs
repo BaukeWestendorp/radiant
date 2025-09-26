@@ -2,7 +2,7 @@ use std::any::TypeId;
 use std::collections::{HashMap, HashSet};
 
 use gpui::prelude::*;
-use gpui::{AnyWindowHandle, App, Entity, Global, PromptLevel, SharedString, Window};
+use gpui::{AnyWindowHandle, App, Entity, Focusable, Global, PromptLevel, SharedString, Window};
 
 mod overlay;
 mod window;
@@ -22,7 +22,7 @@ pub struct WindowManager {
     edited_windows: HashSet<AnyWindowHandle>,
     unclosable_windows: HashSet<AnyWindowHandle>,
 
-    overlays: HashMap<AnyWindowHandle, Vec<Overlay>>,
+    overlays: HashMap<AnyWindowHandle, Vec<(String, Entity<Overlay>)>>,
 
     quit_when_all_windows_closed: bool,
 }
@@ -158,12 +158,24 @@ impl WindowManager {
         !self.unclosable_windows.contains(handle)
     }
 
-    pub fn close_overlay(&mut self, id: &str, handle: &AnyWindowHandle) {
+    pub fn close_overlay(&mut self, id: &str, handle: &AnyWindowHandle, window: &mut Window) {
         let Some(overlays) = self.overlays.get_mut(&handle) else { return };
-        overlays.retain(|o| o.id() != id);
+        overlays.retain(|o| &o.0 != id);
+        window.refresh();
     }
 
-    pub fn open_overlay(&mut self, overlay: Overlay, handle: &AnyWindowHandle) {
+    pub fn open_overlay(
+        &mut self,
+        overlay: Overlay,
+        handle: &AnyWindowHandle,
+        window: &mut Window,
+        cx: &mut App,
+    ) {
+        let overlay = (overlay.id().to_string(), cx.new(|_| overlay));
+
+        let focus_handle = overlay.1.focus_handle(cx);
+        window.defer(cx, move |window, _| window.focus(&focus_handle));
+
         match self.overlays.get_mut(handle) {
             Some(overlays) => {
                 overlays.push(overlay);
@@ -172,10 +184,15 @@ impl WindowManager {
                 self.overlays.insert(*handle, vec![overlay]);
             }
         }
+
+        window.refresh();
     }
 
-    pub(crate) fn window_overlays(&self, handle: &AnyWindowHandle) -> Vec<Overlay> {
-        self.overlays.get(&handle).map(|overlays| overlays.to_vec()).unwrap_or_default()
+    pub(crate) fn window_overlays(&self, handle: &AnyWindowHandle) -> Vec<Entity<Overlay>> {
+        self.overlays
+            .get(&handle)
+            .map(|overlays| overlays.iter().map(|(_, o)| o.clone()).collect())
+            .unwrap_or_default()
     }
 
     pub fn open_text_modal<F: Fn(SharedString, &mut Window, &mut App) + 'static>(
@@ -199,14 +216,21 @@ impl WindowManager {
                     FieldEvent::Submit => {
                         let value = field.read(cx).value(cx).clone();
                         on_submit(value, window, cx);
-                        cx.update_wm(|wm, _| wm.close_overlay(&id, &window.window_handle()));
+                        cx.update_wm(|wm, _| {
+                            wm.close_overlay(&id, &window.window_handle(), window)
+                        });
                     }
                     _ => {}
                 }
             })
             .detach();
 
-        self.open_overlay(Overlay::new(id, title, modal).as_modal(), &window.window_handle());
+        self.open_overlay(
+            Overlay::new(id, title, modal, cx).as_modal(),
+            &window.window_handle(),
+            window,
+            cx,
+        );
     }
 }
 

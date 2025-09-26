@@ -1,7 +1,13 @@
 use gpui::prelude::*;
-use gpui::{AnyView, App, Entity, KeyBinding, SharedString, Window, div};
+use gpui::{
+    AnyView, App, ElementId, Entity, FocusHandle, Focusable, FontWeight, KeyBinding, MouseButton,
+    SharedString, Window, div,
+};
 
+use crate::AppExt;
+use crate::button::button;
 use crate::input::TextField;
+use crate::theme::{ActiveTheme, InteractiveColor};
 
 mod actions {
     pub const KEY_CONTEXT: &str = "Overlay";
@@ -19,6 +25,8 @@ pub struct Overlay {
     title: SharedString,
     content: AnyView,
     is_modal: bool,
+
+    focus_handle: FocusHandle,
 }
 
 impl Overlay {
@@ -26,8 +34,15 @@ impl Overlay {
         id: impl Into<String>,
         title: impl Into<SharedString>,
         content: impl Into<AnyView>,
+        cx: &mut App,
     ) -> Self {
-        Self { id: id.into(), title: title.into(), content: content.into(), is_modal: false }
+        Self {
+            id: id.into(),
+            title: title.into(),
+            content: content.into(),
+            is_modal: false,
+            focus_handle: cx.focus_handle(),
+        }
     }
 
     pub fn as_modal(mut self) -> Self {
@@ -49,6 +64,74 @@ impl Overlay {
 
     pub fn is_modal(&self) -> bool {
         self.is_modal
+    }
+
+    fn handle_close(&mut self, _: &actions::Close, window: &mut Window, cx: &mut Context<Self>) {
+        let handle = window.window_handle();
+        cx.update_wm(|wm, _| wm.close_overlay(self.id(), &handle, window));
+    }
+}
+
+impl Render for Overlay {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let header = div()
+            .when(!self.is_modal(), |e| e.size_full())
+            .min_h_8()
+            .max_h_8()
+            .px_2()
+            .flex()
+            .justify_between()
+            .items_center()
+            .border_1()
+            .border_color(cx.theme().header_border)
+            .rounded_t(cx.theme().radius)
+            .text_color(cx.theme().header_foreground)
+            .bg(cx.theme().header)
+            .child(div().font_weight(FontWeight::BOLD).child(self.title().to_string()))
+            .child(button("close", None, "X").size_6().on_click(
+                cx.listener(|this, _, window, cx| this.handle_close(&actions::Close, window, cx)),
+            ));
+
+        let content = div()
+            .when(!self.is_modal(), |e| e.size_full())
+            .flex()
+            .bg(cx.theme().background)
+            .border_1()
+            .border_t_0()
+            .border_color(cx.theme().border)
+            .rounded_b(cx.theme().radius)
+            .when(cx.theme().shadow, |e| e.shadow_lg())
+            .child(self.content().clone());
+
+        let container = div()
+            .track_focus(&self.focus_handle)
+            .key_context(actions::KEY_CONTEXT)
+            .on_action(cx.listener(Self::handle_close))
+            .when(!self.is_modal(), |e| e.size_full())
+            .flex()
+            .flex_col()
+            .occlude()
+            .child(header)
+            .child(content);
+
+        div()
+            .size_full()
+            .p_4()
+            .flex()
+            .justify_center()
+            .items_center()
+            .bg(gpui::black().with_opacity(0.5))
+            .on_mouse_up(MouseButton::Left, {
+                cx.listener(|this, _, window, cx| this.handle_close(&actions::Close, window, cx))
+            })
+            .occlude()
+            .child(container)
+    }
+}
+
+impl Focusable for Overlay {
+    fn focus_handle(&self, _cx: &App) -> gpui::FocusHandle {
+        self.focus_handle.clone()
     }
 }
 

@@ -242,7 +242,7 @@ impl FixtureTable {
                 }
 
                 cx.update_wm(|wm, _| {
-                    wm.close_overlay(FIXTURE_PICKER_OVERLAY_ID, &window.window_handle())
+                    wm.close_overlay(FIXTURE_PICKER_OVERLAY_ID, &window.window_handle(), window)
                 });
             },
         )
@@ -264,10 +264,17 @@ impl FixtureTable {
             FixtureTypePicker::new(window, cx).with_selected(ft_id, dmx_mode, window, cx)
         });
 
-        cx.update_wm(|wm, _| {
+        cx.update_wm(|wm, cx| {
             wm.open_overlay(
-                Overlay::new(FIXTURE_PICKER_OVERLAY_ID, "Select a Fixture Type", ft_picker.clone()),
+                Overlay::new(
+                    FIXTURE_PICKER_OVERLAY_ID,
+                    "Select a Fixture Type",
+                    ft_picker.clone(),
+                    cx,
+                ),
                 &window.window_handle(),
+                window,
+                cx,
             )
         });
 

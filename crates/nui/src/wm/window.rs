@@ -2,15 +2,13 @@ use std::ops::{Deref, DerefMut};
 
 use gpui::prelude::*;
 use gpui::{
-    App, ClickEvent, FontWeight, MouseDownEvent, Pixels, TitlebarOptions, Window,
-    WindowControlArea, WindowHandle, WindowOptions, div, point, px,
+    App, FontWeight, Pixels, TitlebarOptions, Window, WindowControlArea, WindowHandle,
+    WindowOptions, div, point, px,
 };
 
 use crate::AppExt;
-use crate::button::button;
 use crate::theme::{ActiveTheme, InteractiveColor};
 use crate::utils::z_stack;
-use crate::wm::Overlay;
 
 pub const TRAFFIC_LIGHT_WIDTH: Pixels = px(14.0);
 pub const TRAFFIC_LIGHT_SPACING: Pixels = px(9.0);
@@ -67,69 +65,9 @@ impl<D: WindowDelegate> WindowWrapper<D> {
 
 impl<D: WindowDelegate> Render for WindowWrapper<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let render_overlay = |overlay: &Overlay| {
-            let header = div()
-                .when(!overlay.is_modal(), |e| e.size_full())
-                .min_h_8()
-                .max_h_8()
-                .px_2()
-                .flex()
-                .justify_between()
-                .items_center()
-                .border_1()
-                .border_color(cx.theme().header_border)
-                .rounded_t(cx.theme().radius)
-                .text_color(cx.theme().header_foreground)
-                .bg(cx.theme().header)
-                .child(div().font_weight(FontWeight::BOLD).child(overlay.title().to_string()))
-                .child(button("close", None, "X").size_6().on_click(cx.listener({
-                    let overlay_id = overlay.id().to_string();
-                    move |this, _: &ClickEvent, _, cx| {
-                        let handle = this.window_handle();
-                        cx.update_wm(|wm, _| wm.close_overlay(&overlay_id, &handle))
-                    }
-                })));
-
-            let content = div()
-                .when(!overlay.is_modal(), |e| e.size_full())
-                .flex()
-                .bg(cx.theme().background)
-                .border_1()
-                .border_t_0()
-                .border_color(cx.theme().border)
-                .rounded_b(cx.theme().radius)
-                .when(cx.theme().shadow, |e| e.shadow_lg())
-                .child(overlay.content().clone());
-
-            let container = div()
-                .when(!overlay.is_modal(), |e| e.size_full())
-                .flex()
-                .flex_col()
-                .occlude()
-                .child(header)
-                .child(content);
-
-            div()
-                .size_full()
-                .p_4()
-                .flex()
-                .justify_center()
-                .items_center()
-                .bg(gpui::black().with_opacity(0.5))
-                .on_any_mouse_down(cx.listener({
-                    let overlay_id = overlay.id().to_string();
-                    move |this, _: &MouseDownEvent, _, cx| {
-                        let handle = this.window_handle();
-                        cx.update_wm(|wm, _| wm.close_overlay(&overlay_id, &handle))
-                    }
-                }))
-                .occlude()
-                .child(container)
-        };
-
         let overlay = div()
             .size_full()
-            .children(cx.wm().window_overlays(&window.window_handle()).last().map(render_overlay));
+            .children(cx.wm().window_overlays(&window.window_handle()).last().cloned());
 
         div()
             .size_full()
