@@ -1,10 +1,8 @@
 use gpui::prelude::*;
-use gpui::{App, ClickEvent, Entity, EventEmitter, SharedString, Window, div, px};
-use nui::button::button;
+use gpui::{App, Entity, EventEmitter, SharedString, Window, div, px};
 use nui::event::SubmitEvent;
 use nui::section::section;
 use nui::table::{Column, Table, TableDelegate, TableEvent};
-use nui::tabs::{Tab, Tabs};
 use nui::theme::ActiveTheme;
 use radlib::builtin::GdtfFixtureTypeId;
 use radlib::gdtf::fixture_type::FixtureType;
@@ -12,70 +10,12 @@ use radlib::gdtf::fixture_type::FixtureType;
 use crate::engine::EngineManager;
 
 pub struct FixtureTypePicker {
-    tabs: Entity<Tabs>,
-}
-
-impl FixtureTypePicker {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let picker = cx.entity();
-        let from_showfile = cx.new(|cx| FromShowfileTab::new(picker, window, cx));
-        let from_library = cx.new(|_| FromLibraryTab {});
-
-        let tabs = cx.new(|cx| {
-            Tabs::new(
-                vec![
-                    Tab::new("from_showfile", "From Showfile", from_showfile),
-                    Tab::new("from_library", "From Library", from_library),
-                ],
-                window,
-                cx,
-            )
-        });
-
-        Self { tabs }
-    }
-
-    pub fn with_selected(
-        self,
-        ft_id: GdtfFixtureTypeId,
-        dmx_mode: impl Into<SharedString>,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> Self {
-        self.tabs.update(cx, |tabs, _| tabs.select_tab(Some("from_showfile".into())));
-
-        if let Some(tab) = self.tabs.read(cx).selected_tab() {
-            let view = tab.view().clone().downcast::<FromShowfileTab>().unwrap();
-            view.update(cx, |tab, cx| {
-                tab.select_ft_id(&ft_id, window, cx);
-                tab.select_dmx_mode(dmx_mode.into(), cx)
-            })
-        }
-
-        self
-    }
-}
-
-impl Render for FixtureTypePicker {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().bg(cx.theme().background).child(self.tabs.clone())
-    }
-}
-
-impl EventEmitter<SubmitEvent<(GdtfFixtureTypeId, String)>> for FixtureTypePicker {}
-
-struct FromShowfileTab {
-    picker: Entity<FixtureTypePicker>,
     ft_table: Entity<Table<FixtureTypeTable>>,
     dmx_mode_table: Option<Entity<Table<DmxModeTable>>>,
 }
 
-impl FromShowfileTab {
-    pub fn new(
-        picker: Entity<FixtureTypePicker>,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> Self {
+impl FixtureTypePicker {
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let ft_ids =
             EngineManager::read_patch(cx, |patch| patch.fixture_types().keys().cloned().collect());
         let ft_table = cx.new(|cx| Table::new(FixtureTypeTable::new(ft_ids), window, cx));
@@ -95,7 +35,23 @@ impl FromShowfileTab {
         )
         .detach();
 
-        Self { picker, ft_table, dmx_mode_table: None }
+        Self { ft_table, dmx_mode_table: None }
+    }
+
+    pub fn with_selected(
+        mut self,
+        ft_id: GdtfFixtureTypeId,
+        dmx_mode: impl Into<SharedString>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
+        self.select_ft_id(&ft_id, window, cx);
+        self.select_dmx_mode(dmx_mode.into(), cx);
+        self
+    }
+
+    pub fn selected_ft_id(&self, cx: &App) -> Option<GdtfFixtureTypeId> {
+        self.ft_table.read(cx).selected_row_ids(cx).get(0).copied()
     }
 
     pub fn select_ft_id(
@@ -106,6 +62,10 @@ impl FromShowfileTab {
     ) {
         self.ft_table.update(cx, |ft_table, cx| ft_table.select_row_id(&ft_id, cx));
         self.open_dmx_mode_table(ft_id, window, cx);
+    }
+
+    pub fn selected_dmx_mode(&self, cx: &App) -> Option<String> {
+        self.dmx_mode_table.as_ref()?.read(cx).selected_row_ids(cx).get(0).cloned()
     }
 
     pub fn select_dmx_mode(&mut self, dmx_mode: SharedString, cx: &mut Context<Self>) {
@@ -133,47 +93,10 @@ impl FromShowfileTab {
         self.dmx_mode_table = None;
         cx.notify();
     }
-
-    fn selected_ft_id(&self, cx: &App) -> Option<GdtfFixtureTypeId> {
-        self.ft_table.read(cx).selected_row_ids(cx).get(0).copied()
-    }
-
-    fn selected_dmx_mode(&self, cx: &App) -> Option<String> {
-        self.dmx_mode_table.as_ref()?.read(cx).selected_row_ids(cx).get(0).cloned()
-    }
-
-    fn handle_select_fixture_type(
-        &mut self,
-        _event: &ClickEvent,
-        _window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
-        let Some(ft_id) = self.selected_ft_id(cx) else { return };
-        let Some(dmx_mode) = self.selected_dmx_mode(cx) else { return };
-
-        self.picker.update(cx, |_, cx| cx.emit(SubmitEvent { value: (ft_id, dmx_mode) }))
-    }
 }
 
-impl Render for FromShowfileTab {
+impl Render for FixtureTypePicker {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let (has_selection, selected_ft_dmx_mode) =
-            match (self.selected_ft_id(cx), self.selected_dmx_mode(cx)) {
-                (Some(ft_id), Some(dmx_mode)) => {
-                    let ft_name = EngineManager::read_patch(cx, |patch| {
-                        patch.fixture_type(&ft_id).unwrap().long_name.clone()
-                    });
-                    (true, Some(format!("{} ({})", ft_name, dmx_mode.trim())))
-                }
-                (Some(ft_id), None) => {
-                    let ft_name = EngineManager::read_patch(cx, |patch| {
-                        patch.fixture_type(&ft_id).unwrap().long_name.clone()
-                    });
-                    (false, Some(format!("{} (---)", ft_name)))
-                }
-                _ => (false, None),
-            };
-
         let tables = div()
             .size_full()
             .child(
@@ -201,32 +124,14 @@ impl Render for FromShowfileTab {
                 ),
             );
 
-        div().size_full().flex().flex_col().child(tables).child(
-            div()
-                .h_10()
-                .flex()
-                .justify_between()
-                .items_center()
-                .px_2()
-                .border_t_1()
-                .border_color(cx.theme().border)
-                .child(selected_ft_dmx_mode.unwrap_or("---".to_string()))
-                .child(
-                    button("select_fixture_type", None, "Select Fixture Type")
-                        .disabled(!has_selection)
-                        .on_click(cx.listener(Self::handle_select_fixture_type)),
-                ),
-        )
+        div()
+            .size_full()
+            .bg(cx.theme().background)
+            .child(div().size_full().flex().flex_col().child(tables))
     }
 }
 
-struct FromLibraryTab {}
-
-impl Render for FromLibraryTab {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        nui::utils::todo(cx)
-    }
-}
+impl EventEmitter<SubmitEvent<(GdtfFixtureTypeId, String)>> for FixtureTypePicker {}
 
 struct FixtureTypeTable {
     columns: Vec<Column>,

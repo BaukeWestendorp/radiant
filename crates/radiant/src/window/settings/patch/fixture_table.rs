@@ -1,7 +1,9 @@
 use gpui::prelude::*;
-use gpui::{App, Entity, Focusable, IntoElement, Window, div, px};
+use gpui::{App, ClickEvent, Entity, Focusable, IntoElement, Window, div, px};
 use nui::AppExt;
+use nui::button::button;
 use nui::event::SubmitEvent;
+use nui::infobar::infobar;
 use nui::table::{Column, Table, TableDelegate};
 use nui::theme::{ActiveTheme, InteractiveColor};
 use nui::wm::Overlay;
@@ -218,6 +220,7 @@ impl FixtureTable {
 
     fn edit_fts(&mut self, row_ids: Vec<Uuid>, window: &mut Window, cx: &mut Context<Table<Self>>) {
         let ft_picker = self.open_ft_picker(row_ids[0], window, cx);
+        let ft_picker = ft_picker.read(cx).picker.clone();
 
         cx.subscribe_in(
             &ft_picker,
@@ -255,15 +258,13 @@ impl FixtureTable {
         fixture_uuid: Uuid,
         window: &mut Window,
         cx: &mut Context<Table<Self>>,
-    ) -> Entity<FixtureTypePicker> {
+    ) -> Entity<FixtureTypePickerOverlay> {
         let (ft_id, dmx_mode) = EngineManager::read_patch(cx, |patch| {
             let fixture = patch.fixture(fixture_uuid).unwrap();
             (fixture.fixture_type_id, fixture.dmx_mode.clone())
         });
 
-        let ft_picker = cx.new(|cx| {
-            FixtureTypePicker::new(window, cx).with_selected(ft_id, dmx_mode, window, cx)
-        });
+        let ft_picker = cx.new(|cx| FixtureTypePickerOverlay::new(ft_id, dmx_mode, window, cx));
 
         cx.update_wm(|wm, cx| {
             wm.open_overlay(
@@ -390,5 +391,67 @@ impl TableDelegate for FixtureTable {
             .bg(cx.theme().red.with_opacity(0.25))
             .border_1()
             .border_color(cx.theme().red)
+    }
+}
+
+struct FixtureTypePickerOverlay {
+    picker: Entity<FixtureTypePicker>,
+}
+
+impl FixtureTypePickerOverlay {
+    pub fn new(
+        ft_id: GdtfFixtureTypeId,
+        dmx_mode: String,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
+        Self {
+            picker: cx.new(|cx| {
+                FixtureTypePicker::new(window, cx).with_selected(ft_id, dmx_mode, window, cx)
+            }),
+        }
+    }
+
+    fn handle_select_fixture_type(
+        &mut self,
+        _event: &ClickEvent,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let Some(ft_id) = self.picker.read(cx).selected_ft_id(cx) else { return };
+        let Some(dmx_mode) = self.picker.read(cx).selected_dmx_mode(cx) else { return };
+
+        self.picker.update(cx, |_, cx| cx.emit(SubmitEvent { value: (ft_id, dmx_mode) }))
+    }
+}
+
+impl Render for FixtureTypePickerOverlay {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let (has_selection, selected_ft_dmx_mode) = match (
+            self.picker.read(cx).selected_ft_id(cx),
+            self.picker.read(cx).selected_dmx_mode(cx),
+        ) {
+            (Some(ft_id), Some(dmx_mode)) => {
+                let ft_name = EngineManager::read_patch(cx, |patch| {
+                    patch.fixture_type(&ft_id).unwrap().long_name.clone()
+                });
+                (true, Some(format!("{} ({})", ft_name, dmx_mode.trim())))
+            }
+            (Some(ft_id), None) => {
+                let ft_name = EngineManager::read_patch(cx, |patch| {
+                    patch.fixture_type(&ft_id).unwrap().long_name.clone()
+                });
+                (false, Some(format!("{} (---)", ft_name)))
+            }
+            _ => (false, None),
+        };
+
+        div().child(
+            infobar(cx).child(selected_ft_dmx_mode.unwrap_or("---".to_string())).child(
+                button("select_fixture_type", None, "Select Fixture Type")
+                    .disabled(!has_selection)
+                    .on_click(cx.listener(Self::handle_select_fixture_type)),
+            ),
+        )
     }
 }
