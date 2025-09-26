@@ -17,7 +17,7 @@ impl Focusable for MainWindow {
 }
 
 impl WindowDelegate for MainWindow {
-    fn create(window: &mut Window, cx: &mut App) -> Self {
+    fn create(window: &mut Window, cx: &mut Context<WindowWrapper<Self>>) -> Self {
         window.set_app_id("radiant");
         window.set_window_title("Radiant");
 

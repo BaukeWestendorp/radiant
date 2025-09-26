@@ -16,7 +16,7 @@ pub const TRAFFIC_LIGHT_WIDTH: Pixels = px(14.0);
 pub const TRAFFIC_LIGHT_SPACING: Pixels = px(9.0);
 
 pub trait WindowDelegate: 'static {
-    fn create(window: &mut Window, cx: &mut App) -> Self
+    fn create(window: &mut Window, cx: &mut Context<WindowWrapper<Self>>) -> Self
     where
         Self: Sized;
 
@@ -47,10 +47,15 @@ pub struct WindowWrapper<D: WindowDelegate> {
 }
 
 impl<D: WindowDelegate> WindowWrapper<D> {
-    pub fn open<F: FnOnce(&mut Window, &mut App) -> D>(cx: &mut App, f: F) -> WindowHandle<Self> {
+    pub fn open<F: FnOnce(&mut Window, &mut Context<WindowWrapper<D>>) -> D>(
+        cx: &mut App,
+        f: F,
+    ) -> WindowHandle<Self> {
         cx.open_window(window_options(), |window, cx| {
-            let delegate = f(window, cx);
-            cx.new(|_| Self { delegate, window_handle: window.window_handle().downcast().unwrap() })
+            cx.new(|cx| {
+                let delegate = f(window, cx);
+                Self { delegate, window_handle: window.window_handle().downcast().unwrap() }
+            })
         })
         .expect("should open window")
     }

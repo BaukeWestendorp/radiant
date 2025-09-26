@@ -1,8 +1,12 @@
 use gpui::prelude::*;
-use gpui::{App, Entity, Window};
+use gpui::{Entity, Window};
+use nui::AppExt;
 use nui::tabs::{Orientation, Tab, Tabs};
 use nui::wm::{WindowDelegate, WindowWrapper};
+use radlib::cmd::{Command, PatchCommand};
+use radlib::engine::event::EngineEvent;
 
+use crate::engine::EngineManager;
 use crate::window::settings::patch::PatchSettings;
 
 mod patch;
@@ -12,7 +16,7 @@ pub struct SettingsWindow {
 }
 
 impl WindowDelegate for SettingsWindow {
-    fn create(window: &mut Window, cx: &mut App) -> Self {
+    fn create(window: &mut Window, cx: &mut Context<WindowWrapper<Self>>) -> Self {
         window.set_app_id("radiant");
         window.set_window_title("Settings");
 
