@@ -69,7 +69,7 @@ impl<D: WindowDelegate> Render for WindowWrapper<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let render_overlay = |overlay: &Overlay| {
             let header = div()
-                .when(overlay.is_modal, |e| e.w_full())
+                .when(!overlay.is_modal, |e| e.size_full())
                 .min_h_8()
                 .max_h_8()
                 .px_2()
@@ -91,7 +91,7 @@ impl<D: WindowDelegate> Render for WindowWrapper<D> {
                 })));
 
             let content = div()
-                .when(overlay.is_modal, |e| e.size_full())
+                .when(!overlay.is_modal, |e| e.size_full())
                 .flex()
                 .bg(cx.theme().background)
                 .border_1()
@@ -102,7 +102,7 @@ impl<D: WindowDelegate> Render for WindowWrapper<D> {
                 .child(overlay.content.clone());
 
             let container = div()
-                .when(overlay.is_modal, |e| e.size_full())
+                .when(!overlay.is_modal, |e| e.size_full())
                 .flex()
                 .flex_col()
                 .occlude()
