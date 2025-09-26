@@ -270,7 +270,7 @@ impl FixtureTable {
                     FIXTURE_PICKER_OVERLAY_ID,
                     "Select a Fixture Type",
                     ft_picker.clone(),
-                    cx,
+                    cx.focus_handle(),
                 ),
                 &window.window_handle(),
                 window,

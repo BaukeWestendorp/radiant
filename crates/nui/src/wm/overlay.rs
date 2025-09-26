@@ -1,6 +1,6 @@
 use gpui::prelude::*;
 use gpui::{
-    AnyView, App, ElementId, Entity, FocusHandle, Focusable, FontWeight, KeyBinding, MouseButton,
+    AnyView, App, Entity, FocusHandle, Focusable, FontWeight, KeyBinding, MouseButton,
     SharedString, Window, div,
 };
 
@@ -34,14 +34,14 @@ impl Overlay {
         id: impl Into<String>,
         title: impl Into<SharedString>,
         content: impl Into<AnyView>,
-        cx: &mut App,
+        focus_handle: FocusHandle,
     ) -> Self {
         Self {
             id: id.into(),
             title: title.into(),
             content: content.into(),
             is_modal: false,
-            focus_handle: cx.focus_handle(),
+            focus_handle,
         }
     }
 
@@ -140,11 +140,14 @@ pub(super) struct TextModal {
 }
 
 impl TextModal {
-    pub fn new(initial_value: SharedString, window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(
+        initial_value: SharedString,
+        focus_handle: FocusHandle,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
         Self {
             field: cx.new(|cx| {
-                let focus_handle = cx.focus_handle();
-                focus_handle.focus(window);
                 TextField::new("modal_text_field", focus_handle, window, cx)
                     .with_value(initial_value, cx)
             }),

@@ -167,7 +167,7 @@ impl WindowManager {
     pub fn open_overlay(
         &mut self,
         overlay: Overlay,
-        handle: &AnyWindowHandle,
+        window_handle: &AnyWindowHandle,
         window: &mut Window,
         cx: &mut App,
     ) {
@@ -176,12 +176,12 @@ impl WindowManager {
         let focus_handle = overlay.1.focus_handle(cx);
         window.defer(cx, move |window, _| window.focus(&focus_handle));
 
-        match self.overlays.get_mut(handle) {
+        match self.overlays.get_mut(window_handle) {
             Some(overlays) => {
                 overlays.push(overlay);
             }
             None => {
-                self.overlays.insert(*handle, vec![overlay]);
+                self.overlays.insert(*window_handle, vec![overlay]);
             }
         }
 
@@ -206,7 +206,10 @@ impl WindowManager {
     ) {
         let id = id.into();
 
-        let modal = cx.new(|cx| TextModal::new(initial_value.into(), window, cx));
+        let focus_handle = cx.focus_handle();
+
+        let modal =
+            cx.new(|cx| TextModal::new(initial_value.into(), focus_handle.clone(), window, cx));
         let field = modal.read(cx).field.clone();
 
         window
@@ -226,7 +229,7 @@ impl WindowManager {
             .detach();
 
         self.open_overlay(
-            Overlay::new(id, title, modal, cx).as_modal(),
+            Overlay::new(id, title, modal, focus_handle.clone()).as_modal(),
             &window.window_handle(),
             window,
             cx,
