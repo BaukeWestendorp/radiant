@@ -1,5 +1,6 @@
 use gpui::prelude::*;
 use gpui::{Entity, Window, div};
+use nui::button::button;
 use nui::table::Table;
 use nui::theme::ActiveTheme;
 
@@ -38,7 +39,14 @@ impl Render for PatchSettings {
                 format!("Selected rows: {}", selected_rows)
             } else {
                 "".to_string()
-            });
+            })
+            .child(
+                button("delete", None, "Delete Fixtures").disabled(selected_rows == 0).on_click(
+                    cx.listener(|this, _, window, cx| {
+                        this.table.update(cx, |table, cx| table.delete_selection(window, cx))
+                    }),
+                ),
+            );
 
         div().flex().flex_col().size_full().overflow_hidden().child(table).child(info_bar)
     }
