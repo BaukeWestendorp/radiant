@@ -124,11 +124,8 @@ impl FromShowfileTab {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if self.dmx_mode_table.is_none() {
-            let table = cx.new(|cx| Table::new(DmxModeTable::new(ft_id, cx), window, cx));
-            self.dmx_mode_table = Some(table);
-        }
-
+        let table = cx.new(|cx| Table::new(DmxModeTable::new(ft_id, cx), window, cx));
+        self.dmx_mode_table = Some(table);
         cx.notify();
     }
 

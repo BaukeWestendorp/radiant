@@ -1,7 +1,6 @@
 use gpui::prelude::*;
 use gpui::{
-    AnyView, App, Entity, FocusHandle, Focusable, FontWeight, KeyBinding, MouseButton,
-    SharedString, Window, div,
+    AnyView, App, Entity, FocusHandle, Focusable, FontWeight, KeyBinding, SharedString, Window, div,
 };
 
 use crate::AppExt;
