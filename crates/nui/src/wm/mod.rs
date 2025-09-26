@@ -176,14 +176,14 @@ impl WindowManager {
         &mut self,
         id: impl Into<String>,
         title: impl Into<SharedString>,
-        initial_value: SharedString,
+        initial_value: impl Into<SharedString>,
         window: &mut Window,
         cx: &mut App,
         on_submit: F,
     ) {
         let id = id.into();
 
-        let modal = cx.new(|cx| TextModal::new(initial_value, window, cx));
+        let modal = cx.new(|cx| TextModal::new(initial_value.into(), window, cx));
         let field = modal.read(cx).field.clone();
 
         window

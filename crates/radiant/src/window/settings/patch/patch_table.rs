@@ -53,52 +53,49 @@ impl FixtureTable {
         let initial_fid =
             EngineManager::read_patch(cx, |patch| patch.fixture(row_ids[0]).unwrap().fid);
 
-        // TODO:
-        // cx.open_modal("Set Fixture Id", window, |focus_handle, window, cx| {
-        //     let modal_value = initial_fid.map(|fid| fid.to_string()).unwrap_or_default().into();
-        //     let modal = TextModal::new(focus_handle, window, cx).with_value(modal_value, cx);
+        cx.update_wm(|wm, cx| {
+            let value = initial_fid.map(|fid| fid.to_string()).unwrap_or_default();
+            wm.open_text_modal(
+                "fid_modal",
+                "Set Fixture Id",
+                value,
+                window,
+                cx,
+                move |value, _, cx| {
+                    let value = value.trim();
 
-        //     cx.subscribe(modal.field(), move |_, field, event, cx| match event {
-        //         FieldEvent::Submit => {
-        //             let value = field.read(cx).value(cx).trim();
+                    if value.is_empty() {
+                        for &row_id in row_ids.iter() {
+                            EngineManager::exec_and_log_err(
+                                Command::Patch(PatchCommand::SetFixtureId {
+                                    fixture_ref: row_id.into(),
+                                    new_fid: None,
+                                }),
+                                cx,
+                            );
+                        }
 
-        //             if value.is_empty() {
-        //                 for &row_id in row_ids.iter() {
-        //                     EngineManager::exec_and_log_err(
-        //                         Command::Patch(PatchCommand::SetFixtureId {
-        //                             fixture_ref: row_id.into(),
-        //                             new_fid: None,
-        //                         }),
-        //                         cx,
-        //                     );
-        //                 }
+                        return;
+                    }
 
-        //                 return;
-        //             }
+                    let Some(start_fid) = value.parse().ok() else {
+                        return;
+                    };
 
-        //             let Some(start_fid) = value.parse().ok() else {
-        //                 return;
-        //             };
+                    let generated_fids = generate_fids(start_fid, row_ids.len());
 
-        //             let generated_fids = generate_fids(start_fid, row_ids.len());
-
-        //             for (&row_id, new_fid) in row_ids.iter().zip(generated_fids) {
-        //                 EngineManager::exec_and_log_err(
-        //                     Command::Patch(PatchCommand::SetFixtureId {
-        //                         fixture_ref: row_id.into(),
-        //                         new_fid: Some(new_fid),
-        //                     }),
-        //                     cx,
-        //                 );
-        //             }
-        //         }
-        //         _ => {}
-        //     })
-        //     .detach();
-
-        //     modal
-        // });
-        todo!();
+                    for (&row_id, new_fid) in row_ids.iter().zip(generated_fids) {
+                        EngineManager::exec_and_log_err(
+                            Command::Patch(PatchCommand::SetFixtureId {
+                                fixture_ref: row_id.into(),
+                                new_fid: Some(new_fid),
+                            }),
+                            cx,
+                        );
+                    }
+                },
+            );
+        });
     }
 
     fn edit_names(&self, row_ids: Vec<Uuid>, window: &mut Window, cx: &mut Context<Table<Self>>) {
@@ -121,34 +118,28 @@ impl FixtureTable {
         let initial_name =
             EngineManager::read_patch(cx, |patch| patch.fixture(row_ids[0]).unwrap().name.clone());
 
-        // TODO:
-        // cx.open_modal("Set Name", window, |focus_handle, window, cx| {
-        //     let modal =
-        //         TextModal::new(focus_handle, window, cx).with_value(initial_name.into(), cx);
-
-        //     cx.subscribe(modal.field(), move |_, field, event, cx| match event {
-        //         FieldEvent::Submit => {
-        //             let name = field.read(cx).value(cx).to_string();
-
-        //             let generated_names = generate_names(&name, row_ids.len());
-
-        //             for (&row_id, new_name) in row_ids.iter().zip(generated_names) {
-        //                 EngineManager::exec_and_log_err(
-        //                     Command::Patch(PatchCommand::SetName {
-        //                         fixture_ref: row_id.into(),
-        //                         name: new_name,
-        //                     }),
-        //                     cx,
-        //                 );
-        //             }
-        //         }
-        //         _ => {}
-        //     })
-        //     .detach();
-
-        //     modal
-        // });
-        todo!();
+        cx.update_wm(|wm, cx| {
+            wm.open_text_modal(
+                "name_modal",
+                "Set Name",
+                initial_name,
+                window,
+                cx,
+                move |value, _, cx| {
+                    let name = value.trim();
+                    let generated_names = generate_names(&name, row_ids.len());
+                    for (&row_id, new_name) in row_ids.iter().zip(generated_names) {
+                        EngineManager::exec_and_log_err(
+                            Command::Patch(PatchCommand::SetName {
+                                fixture_ref: row_id.into(),
+                                name: new_name,
+                            }),
+                            cx,
+                        );
+                    }
+                },
+            );
+        });
     }
 
     fn edit_addrs(&self, row_ids: Vec<Uuid>, window: &mut Window, cx: &mut Context<Table<Self>>) {
@@ -178,54 +169,48 @@ impl FixtureTable {
             fixture.address.clone()
         });
 
-        // TODO:
-        // cx.open_modal("Set Address", window, |focus_handle, window, cx| {
-        //     let modal = TextModal::new(focus_handle, window, cx).with_value(
-        //         initial_address.map(|addr| addr.to_string()).unwrap_or_default().into(),
-        //         cx,
-        //     );
+        cx.update_wm(|wm, cx| {
+            wm.open_text_modal(
+                "addr_modal",
+                "Set Address",
+                initial_address.map(|a| a.to_string()).unwrap_or_default(),
+                window,
+                cx,
+                move |value, _, cx| {
+                    let value = value.trim();
 
-        //     cx.subscribe(modal.field(), move |_, field, event, cx| match event {
-        //         FieldEvent::Submit => {
-        //             let value = field.read(cx).value(cx).trim();
+                    if value.is_empty() {
+                        for &row_id in row_ids.iter() {
+                            EngineManager::exec_and_log_err(
+                                Command::Patch(PatchCommand::SetAddress {
+                                    fixture_ref: row_id.into(),
+                                    address: None,
+                                }),
+                                cx,
+                            );
+                        }
 
-        //             if value.is_empty() {
-        //                 for &row_id in row_ids.iter() {
-        //                     EngineManager::exec_and_log_err(
-        //                         Command::Patch(PatchCommand::SetAddress {
-        //                             fixture_ref: row_id.into(),
-        //                             address: None,
-        //                         }),
-        //                         cx,
-        //                     );
-        //                 }
+                        return;
+                    }
 
-        //                 return;
-        //             }
+                    let Some(start_address) = value.parse().ok() else {
+                        return;
+                    };
 
-        //             let Some(start_address) = value.parse().ok() else {
-        //                 return;
-        //             };
+                    let generated_addresses = generate_addresses(start_address, &row_ids, cx);
 
-        //             let generated_addresses = generate_addresses(start_address, &row_ids, cx);
-
-        //             for (&row_id, new_address) in row_ids.iter().zip(generated_addresses) {
-        //                 EngineManager::exec_and_log_err(
-        //                     Command::Patch(PatchCommand::SetAddress {
-        //                         fixture_ref: row_id.into(),
-        //                         address: Some(new_address),
-        //                     }),
-        //                     cx,
-        //                 );
-        //             }
-        //         }
-        //         _ => {}
-        //     })
-        //     .detach();
-
-        //     modal
-        // });
-        todo!()
+                    for (&row_id, new_address) in row_ids.iter().zip(generated_addresses) {
+                        EngineManager::exec_and_log_err(
+                            Command::Patch(PatchCommand::SetAddress {
+                                fixture_ref: row_id.into(),
+                                address: Some(new_address),
+                            }),
+                            cx,
+                        );
+                    }
+                },
+            );
+        });
     }
 
     fn edit_fts(&mut self, row_ids: Vec<Uuid>, window: &mut Window, cx: &mut Context<Table<Self>>) {
