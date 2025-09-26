@@ -33,6 +33,14 @@ pub trait TableDelegate: Sized + 'static {
     ) {
     }
 
+    fn on_delete_selection(
+        &mut self,
+        _row_ids: Vec<Self::RowId>,
+        _window: &mut Window,
+        _cx: &mut Context<Table<Self>>,
+    ) {
+    }
+
     fn render_empty(
         &self,
         _window: &mut Window,

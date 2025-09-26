@@ -24,6 +24,7 @@ mod actions {
         [
             ClearSelection,
             EditSelection,
+            DeleteSelection,
             NextColumn,
             PrevColumn,
             NextRow,
@@ -42,6 +43,8 @@ pub(crate) fn init(cx: &mut App) {
     cx.bind_keys([
         KeyBinding::new("escape", ClearSelection, Some(KEY_CONTEXT)),
         KeyBinding::new("enter", EditSelection, Some(KEY_CONTEXT)),
+        KeyBinding::new("delete", DeleteSelection, Some(KEY_CONTEXT)),
+        KeyBinding::new("backspace", DeleteSelection, Some(KEY_CONTEXT)),
         KeyBinding::new("right", NextColumn, Some(KEY_CONTEXT)),
         KeyBinding::new("left", PrevColumn, Some(KEY_CONTEXT)),
         KeyBinding::new("down", NextRow, Some(KEY_CONTEXT)),
@@ -192,7 +195,13 @@ impl<D: TableDelegate> Table<D> {
         };
 
         let selected_row_ids = self.selected_row_ids(cx);
-        self.delegate_mut().on_edit_selection(&column_id, selected_row_ids, window, cx)
+        self.delegate_mut().on_edit_selection(&column_id, selected_row_ids, window, cx);
+    }
+
+    pub fn delete_selection(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let selected_row_ids = self.selected_row_ids(cx);
+        self.delegate_mut().on_delete_selection(selected_row_ids, window, cx);
+        self.clear_selection(cx);
     }
 
     pub fn selected_row_ids(&self, cx: &App) -> Vec<D::RowId> {
@@ -473,6 +482,15 @@ impl<D: TableDelegate> Table<D> {
         self.edit_selection(window, cx);
     }
 
+    fn handle_delete_selection(
+        &mut self,
+        _: &actions::DeleteSelection,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.delete_selection(window, cx);
+    }
+
     fn handle_next_column(
         &mut self,
         _: &actions::NextColumn,
@@ -551,6 +569,7 @@ impl<D: TableDelegate + 'static> Render for Table<D> {
             .overflow_x_scroll()
             .on_action(cx.listener(Self::handle_clear_selection))
             .on_action(cx.listener(Self::handle_edit_selection))
+            .on_action(cx.listener(Self::handle_delete_selection))
             .on_action(cx.listener(Self::handle_prev_column))
             .on_action(cx.listener(Self::handle_next_column))
             .on_action(cx.listener(Self::handle_next_row))
