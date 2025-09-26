@@ -4,8 +4,8 @@ use gpui::{
     div,
 };
 
+use crate::container::interactive_container;
 use crate::input::{TextInput, TextInputEvent};
-use crate::theme::ActiveTheme;
 
 pub struct TextField {
     input: Entity<TextInput>,
@@ -109,13 +109,7 @@ impl Render for TextField {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let focus_handle = self.input.read(cx).focus_handle(cx);
 
-        div()
-            .id(ElementId::View(cx.entity_id()))
-            .track_focus(&focus_handle)
-            .bg(cx.theme().input)
-            .border_1()
-            .border_color(cx.theme().input_border)
-            .rounded(cx.theme().radius)
+        interactive_container(ElementId::View(cx.entity_id()), Some(focus_handle))
             .w_full()
             .child(div().size_full().p_0p5().child(self.input.clone()))
     }

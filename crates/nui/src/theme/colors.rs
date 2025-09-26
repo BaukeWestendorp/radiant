@@ -115,8 +115,8 @@ impl ThemeColors {
             modal: rgb(0x202020).into(),
             modal_border: rgb(0x282828).into(),
 
-            focus: rgb(0x59c2ff).into(),
-            focus_border: Hsla::from(rgb(0x59c2ff)).with_opacity(0.5),
+            focus: rgb(0x101010).into(),
+            focus_border: Hsla::from(rgb(0xee5622)).with_opacity(0.5),
 
             button: Hsla::from(rgb(0xee5622)).with_opacity(0.3),
             button_foreground: rgb(0xffffff).into(),

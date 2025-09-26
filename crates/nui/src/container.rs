@@ -105,7 +105,7 @@ impl ContainerStyle {
 
     pub fn focused(window: &Window, cx: &App) -> Self {
         Self {
-            background: cx.theme().focus_border,
+            background: cx.theme().focus,
             border: cx.theme().focus_border,
             text_color: window.text_style().color,
         }
