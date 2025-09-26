@@ -123,7 +123,7 @@ impl Tabs {
             .map(|tab| {
                 let selected = self.selected_tab_id() == Some(&tab.id);
                 div().w_full().child(
-                    button(tab.id.clone(), None, tab.label.clone())
+                    button(tab.id.clone(), None, div().w_full().child(tab.label.clone()))
                         .w_full()
                         .disabled(tab.disabled)
                         .selected(selected)
