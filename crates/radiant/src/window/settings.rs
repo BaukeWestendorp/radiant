@@ -20,6 +20,17 @@ impl WindowDelegate for SettingsWindow {
         window.set_app_id("radiant");
         window.set_window_title("Settings");
 
+        EngineManager::exec_and_log_err(Command::Patch(PatchCommand::Edit), cx);
+
+        cx.subscribe_in(&EngineManager::event_handler(cx), window, |_, _, event, window, cx| {
+            match event {
+                EngineEvent::PatchChanged => {
+                    cx.update_wm(|wm, _| wm.set_edited(window, true));
+                }
+            }
+        })
+        .detach();
+
         Self {
             tabs: cx.new(|cx| {
                 Tabs::new(
@@ -38,5 +49,13 @@ impl WindowDelegate for SettingsWindow {
         _cx: &mut Context<WindowWrapper<Self>>,
     ) -> impl IntoElement {
         self.tabs.clone()
+    }
+
+    fn handle_window_discard(&self, _window: &mut Window, cx: &mut Context<WindowWrapper<Self>>) {
+        EngineManager::exec_and_log_err(Command::Patch(PatchCommand::Discard), cx);
+    }
+
+    fn handle_window_save(&self, _window: &mut Window, cx: &mut Context<WindowWrapper<Self>>) {
+        EngineManager::exec_and_log_err(Command::Patch(PatchCommand::Save), cx);
     }
 }
