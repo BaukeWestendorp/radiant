@@ -121,9 +121,6 @@ impl Render for Overlay {
             .justify_center()
             .items_center()
             .bg(gpui::black().with_opacity(0.5))
-            .on_mouse_up(MouseButton::Left, {
-                cx.listener(|this, _, window, cx| this.handle_close(&actions::Close, window, cx))
-            })
             .occlude()
             .child(container)
     }
