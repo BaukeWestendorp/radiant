@@ -66,8 +66,7 @@ impl Overlay {
     }
 
     fn handle_close(&mut self, _: &actions::Close, window: &mut Window, cx: &mut Context<Self>) {
-        let handle = window.window_handle();
-        cx.update_wm(|wm, _| wm.close_overlay(self.id(), &handle, window));
+        cx.update_wm(|wm, _| wm.close_overlay(self.id(), window));
     }
 }
 

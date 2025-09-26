@@ -2,8 +2,8 @@ use std::ops::{Deref, DerefMut, Range};
 
 use gpui::prelude::*;
 use gpui::{
-    App, Context, EventEmitter, FocusHandle, FontWeight, IntoElement, KeyBinding, MouseButton,
-    Pixels, SharedString, Window, div, uniform_list,
+    App, Context, EventEmitter, FocusHandle, Focusable, FontWeight, IntoElement, KeyBinding,
+    MouseButton, Pixels, SharedString, Window, div, uniform_list,
 };
 
 pub use column::*;
@@ -515,6 +515,12 @@ impl<D: TableDelegate> Table<D> {
         cx: &mut Context<Self>,
     ) {
         self.extend_selection(-1, cx);
+    }
+}
+
+impl<D: TableDelegate> Focusable for Table<D> {
+    fn focus_handle(&self, _cx: &App) -> FocusHandle {
+        self.focus_handle.clone()
     }
 }
 

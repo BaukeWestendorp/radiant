@@ -2,7 +2,9 @@ use std::any::TypeId;
 use std::collections::{HashMap, HashSet};
 
 use gpui::prelude::*;
-use gpui::{AnyWindowHandle, App, Entity, Focusable, Global, PromptLevel, SharedString, Window};
+use gpui::{
+    AnyWindowHandle, App, Entity, FocusHandle, Focusable, Global, PromptLevel, SharedString, Window,
+};
 
 mod overlay;
 mod window;
@@ -22,7 +24,7 @@ pub struct WindowManager {
     edited_windows: HashSet<AnyWindowHandle>,
     unclosable_windows: HashSet<AnyWindowHandle>,
 
-    overlays: HashMap<AnyWindowHandle, Vec<(String, Entity<Overlay>)>>,
+    overlays: HashMap<AnyWindowHandle, Vec<WindowOverlay>>,
 
     quit_when_all_windows_closed: bool,
 }
@@ -158,40 +160,44 @@ impl WindowManager {
         !self.unclosable_windows.contains(handle)
     }
 
-    pub fn close_overlay(&mut self, id: &str, handle: &AnyWindowHandle, window: &mut Window) {
-        let Some(overlays) = self.overlays.get_mut(&handle) else { return };
-        overlays.retain(|o| &o.0 != id);
-        window.refresh();
+    pub fn close_overlay(&mut self, id: &str, window: &mut Window) {
+        let Some(overlays) = self.overlays.get_mut(&window.window_handle()) else {
+            return;
+        };
+
+        if let Some(return_focus_handle) =
+            overlays.iter().find(|o| &o.id == id).and_then(|o| o.return_focus_handle.clone())
+        {
+            window.focus(&return_focus_handle);
+        }
+
+        overlays.retain(|o| &o.id != id);
     }
 
-    pub fn open_overlay(
-        &mut self,
-        overlay: Overlay,
-        window_handle: &AnyWindowHandle,
-        window: &mut Window,
-        cx: &mut App,
-    ) {
-        let overlay = (overlay.id().to_string(), cx.new(|_| overlay));
+    pub fn open_overlay(&mut self, overlay: Overlay, window: &mut Window, cx: &mut App) {
+        let overlay = WindowOverlay {
+            id: overlay.id().to_string(),
+            return_focus_handle: window.focused(cx),
+            view: cx.new(|_| overlay),
+        };
 
-        let focus_handle = overlay.1.focus_handle(cx);
+        let focus_handle = overlay.view.focus_handle(cx);
         window.defer(cx, move |window, _| window.focus(&focus_handle));
 
-        match self.overlays.get_mut(window_handle) {
+        match self.overlays.get_mut(&window.window_handle()) {
             Some(overlays) => {
                 overlays.push(overlay);
             }
             None => {
-                self.overlays.insert(*window_handle, vec![overlay]);
+                self.overlays.insert(window.window_handle(), vec![overlay]);
             }
         }
-
-        window.refresh();
     }
 
     pub(crate) fn window_overlays(&self, handle: &AnyWindowHandle) -> Vec<Entity<Overlay>> {
         self.overlays
             .get(&handle)
-            .map(|overlays| overlays.iter().map(|(_, o)| o.clone()).collect())
+            .map(|overlays| overlays.iter().map(|o| o.view.clone()).collect())
             .unwrap_or_default()
     }
 
@@ -219,9 +225,7 @@ impl WindowManager {
                     FieldEvent::Submit => {
                         let value = field.read(cx).value(cx).clone();
                         on_submit(value, window, cx);
-                        cx.update_wm(|wm, _| {
-                            wm.close_overlay(&id, &window.window_handle(), window)
-                        });
+                        cx.update_wm(|wm, _| wm.close_overlay(&id, window));
                     }
                     _ => {}
                 }
@@ -230,7 +234,6 @@ impl WindowManager {
 
         self.open_overlay(
             Overlay::new(id, title, modal, focus_handle.clone()).as_modal(),
-            &window.window_handle(),
             window,
             cx,
         );
@@ -238,3 +241,9 @@ impl WindowManager {
 }
 
 impl Global for WindowManager {}
+
+struct WindowOverlay {
+    id: String,
+    return_focus_handle: Option<FocusHandle>,
+    view: Entity<Overlay>,
+}

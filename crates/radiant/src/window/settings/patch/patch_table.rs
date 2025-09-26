@@ -1,5 +1,5 @@
 use gpui::prelude::*;
-use gpui::{App, Entity, IntoElement, Window, div, px};
+use gpui::{App, Entity, Focusable, IntoElement, Window, div, px};
 use nui::AppExt;
 use nui::event::SubmitEvent;
 use nui::table::{Column, Table, TableDelegate};
@@ -26,7 +26,10 @@ impl FixtureTable {
     pub fn new(window: &mut Window, cx: &mut Context<Table<Self>>) -> Self {
         let event_handler = EngineManager::event_handler(cx);
         cx.subscribe_in(&event_handler, window, |table, _, event, window, cx| match event {
-            EngineEvent::PatchChanged => table.refresh(window, cx),
+            EngineEvent::PatchChanged => {
+                table.refresh(window, cx);
+                window.focus(&table.focus_handle(cx));
+            }
         })
         .detach();
 
@@ -241,9 +244,7 @@ impl FixtureTable {
                     );
                 }
 
-                cx.update_wm(|wm, _| {
-                    wm.close_overlay(FIXTURE_PICKER_OVERLAY_ID, &window.window_handle(), window)
-                });
+                cx.update_wm(|wm, _| wm.close_overlay(FIXTURE_PICKER_OVERLAY_ID, window));
             },
         )
         .detach();
@@ -272,7 +273,6 @@ impl FixtureTable {
                     ft_picker.clone(),
                     cx.focus_handle(),
                 ),
-                &window.window_handle(),
                 window,
                 cx,
             )
