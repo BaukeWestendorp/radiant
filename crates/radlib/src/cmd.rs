@@ -60,8 +60,6 @@ pub enum PatchCommand {
 
 impl PatchCommand {
     fn exec(self, engine: &mut Engine) -> Result<()> {
-        engine.emit(EngineEvent::PatchChanged);
-
         match self {
             PatchCommand::Edit => {
                 engine.patch().update(|patch| patch.start_edit());
@@ -82,6 +80,7 @@ impl PatchCommand {
                         name.unwrap_or("New Fixture".to_string()),
                     ))
                 })?;
+                engine.emit(EngineEvent::PatchChanged);
             }
             PatchCommand::RemoveFixture { fixture_ref } => {
                 engine.patch().update(|patch| patch.remove_fixture(fixture_ref))?;
@@ -96,6 +95,7 @@ impl PatchCommand {
 
                     Ok(())
                 })?;
+                engine.emit(EngineEvent::PatchChanged);
             }
             PatchCommand::SetFixtureId { fixture_ref, new_fid } => {
                 engine.patch().update(|patch| {
@@ -113,6 +113,7 @@ impl PatchCommand {
 
                     Ok(())
                 })?;
+                engine.emit(EngineEvent::PatchChanged);
             }
             PatchCommand::SetAddress { fixture_ref, address } => {
                 engine.patch().update(|patch| {
@@ -130,6 +131,7 @@ impl PatchCommand {
 
                     Ok(())
                 })?;
+                engine.emit(EngineEvent::PatchChanged);
             }
             PatchCommand::SetFixtureTypeId { fixture_ref, fixture_type_id, dmx_mode } => {
                 engine.patch().update(|patch| {
@@ -142,6 +144,7 @@ impl PatchCommand {
 
                     Ok(())
                 })?;
+                engine.emit(EngineEvent::PatchChanged);
             }
         }
 
