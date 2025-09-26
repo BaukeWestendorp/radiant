@@ -3,10 +3,10 @@ use gpui::{Entity, Window, div};
 use nui::table::Table;
 use nui::theme::ActiveTheme;
 
-use patch_table::FixtureTable;
+use fixture_table::FixtureTable;
 
+mod fixture_table;
 mod ft_picker;
-mod patch_table;
 
 pub struct PatchSettings {
     table: Entity<Table<FixtureTable>>,
