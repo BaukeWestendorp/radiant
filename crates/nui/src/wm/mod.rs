@@ -13,6 +13,10 @@ pub use window::*;
 use crate::AppExt;
 use crate::input::{FieldEvent, TextField};
 
+pub(crate) fn init(cx: &mut App) {
+    overlay::init(cx);
+}
+
 pub struct WindowManager {
     singleton_windows: HashMap<TypeId, AnyWindowHandle>,
     edited_windows: HashSet<AnyWindowHandle>,

@@ -36,6 +36,7 @@ pub fn init(cx: &mut App) -> Result<()> {
 
     input::init(cx);
     table::init(cx);
+    wm::init(cx);
 
     Ok(())
 }

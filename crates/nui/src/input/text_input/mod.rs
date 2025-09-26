@@ -11,7 +11,7 @@ use std::ops::Range;
 mod blink;
 mod element;
 
-pub mod actions {
+mod actions {
     pub const KEY_CONTEXT: &str = "TextInput";
 
     gpui::actions!(

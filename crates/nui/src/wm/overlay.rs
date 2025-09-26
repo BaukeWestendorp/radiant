@@ -1,7 +1,17 @@
 use gpui::prelude::*;
-use gpui::{AnyView, Entity, SharedString, Window, div};
+use gpui::{AnyView, App, Entity, KeyBinding, SharedString, Window, div};
 
 use crate::input::TextField;
+
+mod actions {
+    pub const KEY_CONTEXT: &str = "Overlay";
+
+    gpui::actions!(text_input, [Close]);
+}
+
+pub(super) fn init(cx: &mut App) {
+    cx.bind_keys([KeyBinding::new("escape", actions::Close, Some(actions::KEY_CONTEXT))]);
+}
 
 #[derive(Debug, Clone)]
 pub struct Overlay {

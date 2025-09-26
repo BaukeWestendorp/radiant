@@ -17,7 +17,7 @@ mod column;
 mod delegate;
 mod event;
 
-pub mod actions {
+mod actions {
 
     gpui::actions!(
         table,

@@ -7,7 +7,7 @@ use crate::engine::EngineManager;
 use crate::window::main::MainWindow;
 use crate::window::settings::SettingsWindow;
 
-pub mod actions {
+mod actions {
     use gpui::{App, KeyBinding};
 
     gpui::actions!(radiant, [Quit, OpenSettings, LogDebugInfo]);
