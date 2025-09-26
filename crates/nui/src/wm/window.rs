@@ -69,7 +69,7 @@ impl<D: WindowDelegate> Render for WindowWrapper<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let render_overlay = |overlay: &Overlay| {
             let header = div()
-                .when(!overlay.is_modal, |e| e.size_full())
+                .when(!overlay.is_modal(), |e| e.size_full())
                 .min_h_8()
                 .max_h_8()
                 .px_2()
@@ -81,9 +81,9 @@ impl<D: WindowDelegate> Render for WindowWrapper<D> {
                 .rounded_t(cx.theme().radius)
                 .text_color(cx.theme().header_foreground)
                 .bg(cx.theme().header)
-                .child(div().font_weight(FontWeight::BOLD).child(overlay.title.clone()))
+                .child(div().font_weight(FontWeight::BOLD).child(overlay.title().to_string()))
                 .child(button("close", None, "X").size_6().on_click(cx.listener({
-                    let overlay_id = overlay.id.clone();
+                    let overlay_id = overlay.id().to_string();
                     move |this, _: &ClickEvent, _, cx| {
                         let handle = this.window_handle();
                         cx.update_wm(|wm, _| wm.close_overlay(&overlay_id, &handle))
@@ -91,7 +91,7 @@ impl<D: WindowDelegate> Render for WindowWrapper<D> {
                 })));
 
             let content = div()
-                .when(!overlay.is_modal, |e| e.size_full())
+                .when(!overlay.is_modal(), |e| e.size_full())
                 .flex()
                 .bg(cx.theme().background)
                 .border_1()
@@ -99,10 +99,10 @@ impl<D: WindowDelegate> Render for WindowWrapper<D> {
                 .border_color(cx.theme().border)
                 .rounded_b(cx.theme().radius)
                 .when(cx.theme().shadow, |e| e.shadow_lg())
-                .child(overlay.content.clone());
+                .child(overlay.content().clone());
 
             let container = div()
-                .when(!overlay.is_modal, |e| e.size_full())
+                .when(!overlay.is_modal(), |e| e.size_full())
                 .flex()
                 .flex_col()
                 .occlude()
@@ -117,7 +117,7 @@ impl<D: WindowDelegate> Render for WindowWrapper<D> {
                 .items_center()
                 .bg(gpui::black().with_opacity(0.5))
                 .on_any_mouse_down(cx.listener({
-                    let overlay_id = overlay.id.clone();
+                    let overlay_id = overlay.id().to_string();
                     move |this, _: &MouseDownEvent, _, cx| {
                         let handle = this.window_handle();
                         cx.update_wm(|wm, _| wm.close_overlay(&overlay_id, &handle))

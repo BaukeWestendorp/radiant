@@ -2,10 +2,12 @@ use std::any::TypeId;
 use std::collections::{HashMap, HashSet};
 
 use gpui::prelude::*;
-use gpui::{AnyView, AnyWindowHandle, App, Entity, Global, PromptLevel, SharedString, Window, div};
+use gpui::{AnyWindowHandle, App, Entity, Global, PromptLevel, SharedString, Window};
 
+mod overlay;
 mod window;
 
+pub use overlay::*;
 pub use window::*;
 
 use crate::AppExt;
@@ -154,7 +156,7 @@ impl WindowManager {
 
     pub fn close_overlay(&mut self, id: &str, handle: &AnyWindowHandle) {
         let Some(overlays) = self.overlays.get_mut(&handle) else { return };
-        overlays.retain(|o| &o.id != id);
+        overlays.retain(|o| o.id() != id);
     }
 
     pub fn open_overlay(&mut self, overlay: Overlay, handle: &AnyWindowHandle) {
@@ -205,47 +207,3 @@ impl WindowManager {
 }
 
 impl Global for WindowManager {}
-
-#[derive(Debug, Clone)]
-pub struct Overlay {
-    id: String,
-    title: SharedString,
-    content: AnyView,
-    is_modal: bool,
-}
-
-impl Overlay {
-    pub fn new(
-        id: impl Into<String>,
-        title: impl Into<SharedString>,
-        content: impl Into<AnyView>,
-    ) -> Self {
-        Self { id: id.into(), title: title.into(), content: content.into(), is_modal: false }
-    }
-
-    pub fn as_modal(mut self) -> Self {
-        self.is_modal = true;
-        self
-    }
-}
-
-struct TextModal {
-    field: Entity<TextField>,
-}
-
-impl TextModal {
-    pub fn new(initial_value: SharedString, window: &mut Window, cx: &mut Context<Self>) -> Self {
-        Self {
-            field: cx.new(|cx| {
-                TextField::new("modal_text_field", cx.focus_handle(), window, cx)
-                    .with_value(initial_value, cx)
-            }),
-        }
-    }
-}
-
-impl Render for TextModal {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().w_96().flex().justify_center().items_center().p_2().child(self.field.clone())
-    }
-}
