@@ -215,7 +215,9 @@ impl<D: TableDelegate> Table<D> {
 
         let mut ids = Vec::new();
         for row_ix in row_ixs {
-            ids.push(self.row_id(row_ix, cx).unwrap());
+            if let Some(row_id) = self.row_id(row_ix, cx) {
+                ids.push(row_id);
+            }
         }
         ids
     }
