@@ -8,6 +8,7 @@ pub fn int_field(
     cx: &mut Context<NumberField>,
 ) -> NumberField {
     NumberField::new("int_field", cx.focus_handle(), window, cx)
+        .with_validator(cx, |text| text == "-" || text.parse::<i32>().is_ok())
         .with_value(value.map(|value| value.into()), cx)
         .with_step(Some(1.0), cx)
 }
@@ -18,6 +19,7 @@ pub fn uint_field(
     cx: &mut Context<NumberField>,
 ) -> NumberField {
     NumberField::new("uint_field", cx.focus_handle(), window, cx)
+        .with_validator(cx, |text| text.parse::<u32>().is_ok())
         .with_value(value.map(|value| value.into()), cx)
         .with_min(Some(0.0), cx)
         .with_step(Some(1.0), cx)
@@ -29,6 +31,7 @@ pub fn fid_field(
     cx: &mut Context<NumberField>,
 ) -> NumberField {
     NumberField::new("fid_field", cx.focus_handle(), window, cx)
+        .with_validator(cx, |text| text.parse::<FixtureId>().is_ok())
         .with_value(value.map(|value| u32::from(value).into()), cx)
         .with_step(Some(1.0), cx)
         .with_min(Some(1.0), cx)

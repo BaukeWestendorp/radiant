@@ -3,7 +3,8 @@ use std::f64;
 use gpui::prelude::*;
 use gpui::{
     App, Bounds, ClickEvent, DragMoveEvent, ElementId, EmptyView, Entity, EventEmitter,
-    FocusHandle, Focusable, MouseButton, MouseUpEvent, Pixels, Point, Window, div, relative, rems,
+    FocusHandle, Focusable, MouseButton, MouseUpEvent, Pixels, Point, SharedString, Window, div,
+    relative, rems,
 };
 
 use crate::container::interactive_container;
@@ -195,6 +196,40 @@ impl NumberField {
 
     pub fn with_value(mut self, value: Option<f64>, cx: &mut App) -> Self {
         self.set_value(value, cx);
+        self
+    }
+
+    pub fn set_validator<F: Fn(&SharedString) -> bool + 'static>(
+        &self,
+        cx: &mut App,
+        validator: F,
+    ) {
+        self.input.update(cx, |text_field, _cx| text_field.set_validator(validator));
+    }
+
+    pub fn with_validator<F: Fn(&SharedString) -> bool + 'static>(
+        self,
+        cx: &mut App,
+        validator: F,
+    ) -> Self {
+        self.set_validator(cx, validator);
+        self
+    }
+
+    pub fn set_submit_validator<F: Fn(&SharedString) -> bool + 'static>(
+        &self,
+        cx: &mut App,
+        validator: F,
+    ) {
+        self.input.update(cx, |text_field, _cx| text_field.set_submit_validator(validator));
+    }
+
+    pub fn with_submit_validator<F: Fn(&SharedString) -> bool + 'static>(
+        self,
+        cx: &mut App,
+        validator: F,
+    ) -> Self {
+        self.set_submit_validator(cx, validator);
         self
     }
 

@@ -248,9 +248,9 @@ impl WindowManager {
         let modal = cx.new(|_| Modal { content: field.clone().into() });
         let focus_handle = field.focus_handle(cx);
 
-        field.update(cx, |field, cx| {
-            field.set_interactive(true, cx);
-            field.input().update(cx, |input, cx| input.select_all(cx));
+        field.read(cx).input().clone().update(cx, |input, cx| {
+            input.set_interactive(true, cx);
+            input.select_all(cx);
         });
 
         window
