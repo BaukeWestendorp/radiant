@@ -212,7 +212,7 @@ impl TextInput {
 
     pub fn set_interactive(&mut self, interactive: bool, cx: &mut Context<Self>) {
         self.interactive = interactive;
-        self.move_to_end_of_line(cx);
+        self.blink_cursor.update(cx, |blink_cursor, cx| blink_cursor.stop(cx));
     }
 
     pub fn is_focused(&self, window: &Window) -> bool {
