@@ -97,6 +97,40 @@ impl TextField {
         self.set_masked(masked, cx);
         self
     }
+
+    pub fn set_validator<F: Fn(&SharedString) -> bool + 'static>(
+        &self,
+        validator: F,
+        cx: &mut App,
+    ) {
+        self.input.update(cx, |text_field, _cx| text_field.set_validator(validator));
+    }
+
+    pub fn with_validator<F: Fn(&SharedString) -> bool + 'static>(
+        self,
+        validator: F,
+        cx: &mut App,
+    ) -> Self {
+        self.set_validator(validator, cx);
+        self
+    }
+
+    pub fn set_submit_validator<F: Fn(&SharedString) -> bool + 'static>(
+        &self,
+        validator: F,
+        cx: &mut App,
+    ) {
+        self.input.update(cx, |text_field, _cx| text_field.set_submit_validator(validator));
+    }
+
+    pub fn with_submit_validator<F: Fn(&SharedString) -> bool + 'static>(
+        self,
+        validator: F,
+        cx: &mut App,
+    ) -> Self {
+        self.set_submit_validator(validator, cx);
+        self
+    }
 }
 
 impl Focusable for TextField {
@@ -111,6 +145,7 @@ impl Render for TextField {
 
         interactive_container(ElementId::View(cx.entity_id()), Some(focus_handle))
             .w_full()
+            .disabled(self.disabled(cx))
             .child(div().size_full().p_0p5().child(self.input.clone()))
     }
 }

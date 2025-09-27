@@ -3,7 +3,7 @@ use std::f64;
 use gpui::prelude::*;
 use gpui::{
     App, Bounds, ClickEvent, DragMoveEvent, ElementId, EmptyView, Entity, EventEmitter,
-    FocusHandle, Focusable, MouseButton, MouseUpEvent, Pixels, Point, Window, div, relative,
+    FocusHandle, Focusable, MouseButton, MouseUpEvent, Pixels, Point, Window, div, relative, rems,
 };
 
 use crate::container::interactive_container;
@@ -18,6 +18,7 @@ pub struct NumberField {
     min: Option<f64>,
     max: Option<f64>,
     step: Option<f64>,
+    submit_on_drag: bool,
 
     bounds: Bounds<Pixels>,
     prev_mouse_pos: Option<Point<Pixels>>,
@@ -33,9 +34,15 @@ impl NumberField {
         let id = id.into();
 
         let input = cx.new(|cx| {
-            let mut input =
-                TextInput::new(id.clone(), focus_handle, window, cx).px(window.rem_size() * 0.25);
+            let mut input = TextInput::new(id.clone(), focus_handle, window, cx)
+                .px(rems(0.125).to_pixels(window.rem_size()));
             input.interactive(false);
+            input.set_validator(|text| {
+                text.trim().is_empty()
+                    || regex::Regex::new(r"^[+-]?(\d+\.?\d*|\.\d+)?$")
+                        .unwrap()
+                        .is_match(text.trim())
+            });
             input
         });
 
@@ -61,6 +68,7 @@ impl NumberField {
             min: None,
             max: None,
             step: None,
+            submit_on_drag: true,
 
             bounds: Bounds::default(),
             prev_mouse_pos: None,
@@ -101,12 +109,24 @@ impl NumberField {
 
     pub fn set_step(&mut self, step: Option<f64>, cx: &mut Context<Self>) {
         self.step = step;
-
         self.commit_value(cx);
     }
 
     pub fn with_step(mut self, step: Option<f64>, cx: &mut Context<Self>) -> Self {
         self.set_step(step, cx);
+        self
+    }
+
+    pub fn submit_on_drag(&self) -> bool {
+        self.submit_on_drag
+    }
+
+    pub fn set_submit_on_drag(&mut self, submit_on_drag: bool) {
+        self.submit_on_drag = submit_on_drag;
+    }
+
+    pub fn with_submit_on_drag(mut self, submit_on_drag: bool) -> Self {
+        self.set_submit_on_drag(submit_on_drag);
         self
     }
 
@@ -136,12 +156,22 @@ impl NumberField {
         self
     }
 
-    pub fn value(&self, cx: &App) -> f64 {
+    pub fn value(&self, cx: &App) -> Option<f64> {
         let value_str = self.input.read(cx).text().to_string();
-        value_str.parse().unwrap_or_default()
+        if value_str.trim().is_empty() {
+            return None;
+        };
+        Some(value_str.parse().unwrap_or_default())
     }
 
-    pub fn set_value(&mut self, value: f64, cx: &mut App) {
+    pub fn set_value(&mut self, value: Option<f64>, cx: &mut App) {
+        let Some(value) = value else {
+            self.input.update(cx, |text_field, cx| {
+                text_field.set_text("".into(), cx);
+            });
+            return;
+        };
+
         // Clamp
         let mut value = value.clamp(self.min.unwrap_or(f64::MIN), self.max.unwrap_or(f64::MAX));
 
@@ -159,7 +189,7 @@ impl NumberField {
         })
     }
 
-    pub fn with_value(mut self, value: f64, cx: &mut App) -> Self {
+    pub fn with_value(mut self, value: Option<f64>, cx: &mut App) -> Self {
         self.set_value(value, cx);
         self
     }
@@ -184,7 +214,7 @@ impl NumberField {
 
         let min = self.min.unwrap_or(f64::MIN);
         let max = self.max.unwrap_or(f64::MAX);
-        let value = self.value(cx).clamp(min, max);
+        let value = self.value(cx)?.clamp(min, max);
         Some((value - min) / (max - min))
     }
 
@@ -217,7 +247,7 @@ impl NumberField {
 
     fn handle_drag_move(
         &mut self,
-        event: &DragMoveEvent<(ElementId, f64, Pixels)>,
+        event: &DragMoveEvent<(ElementId, Option<f64>, Pixels)>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -231,9 +261,13 @@ impl NumberField {
         let delta_x = mouse_position.x.0 - x_start.0;
 
         let factor = self.drag_factor();
-        let value = start_value + delta_x as f64 * factor;
-        self.set_value(value, cx);
-        self.commit_value(cx);
+        let value = start_value.unwrap_or_default() + delta_x as f64 * factor;
+        self.set_value(Some(value), cx);
+        if self.submit_on_drag {
+            self.commit_value(cx);
+        } else {
+            self.set_value(self.value(cx), cx);
+        }
 
         self.prev_mouse_pos = Some(mouse_position);
     }
@@ -255,7 +289,10 @@ impl Render for NumberField {
             None => div().size_full(),
         };
 
-        interactive_container(self.id.clone(), Some(focus_handle))
+        interactive_container(ElementId::View(cx.entity_id()), Some(focus_handle))
+            .flex()
+            .w_full()
+            .disabled(self.disabled(cx))
             .cursor_ew_resize()
             .when(!self.disabled(cx), |e| {
                 e.on_click(cx.listener(Self::handle_on_click)).when(is_interactive, |e| {
@@ -266,20 +303,17 @@ impl Render for NumberField {
                         .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
                 })
             })
-            .w_full()
-            .flex()
-            .disabled(self.disabled(cx))
             .child(
                 z_stack([
                     slider_bar.into_any_element(),
-                    self.input.clone().into_any_element(),
+                    div().py_0p5().child(self.input.clone()).into_any_element(),
                     bounds_updater(cx.entity(), |this, bounds, _cx| {
                         this.bounds = bounds;
                     })
                     .into_any_element(),
                 ])
                 .w_full()
-                .h(window.line_height()),
+                .h(window.line_height() + 2.0 * rems(0.125).to_pixels(window.rem_size())),
             )
     }
 }

@@ -2,7 +2,7 @@ use gpui::prelude::*;
 use gpui::{Entity, Window, div};
 use nui::button::button;
 use nui::container::container;
-use nui::input::TextField;
+use nui::input::{NumberField, TextField};
 use nui::section::section;
 use nui::table::Table;
 use nui::theme::ActiveTheme;
@@ -81,7 +81,7 @@ impl Render for PatchSettings {
 
 struct AddFixtureOverlay {
     ft_picker: Entity<FixtureTypePicker>,
-    fid_field: Entity<TextField>,
+    fid_field: Entity<NumberField>,
     name_field: Entity<TextField>,
     addr_field: Entity<TextField>,
     count_field: Entity<TextField>,
@@ -91,7 +91,11 @@ impl AddFixtureOverlay {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         Self {
             ft_picker: cx.new(|cx| FixtureTypePicker::new(window, cx)),
-            fid_field: cx.new(|cx| TextField::new("fid_field", cx.focus_handle(), window, cx)),
+            fid_field: cx.new(|cx| {
+                NumberField::new("fid_field", cx.focus_handle(), window, cx)
+                    .with_step(Some(1.0), cx)
+                    .with_min(Some(1.0), cx)
+            }),
             name_field: cx.new(|cx| TextField::new("name_field", cx.focus_handle(), window, cx)),
             addr_field: cx.new(|cx| TextField::new("addr_field", cx.focus_handle(), window, cx)),
             count_field: cx.new(|cx| TextField::new("count_field", cx.focus_handle(), window, cx)),
@@ -109,9 +113,9 @@ impl Render for AddFixtureOverlay {
             .gap_2()
             .p_2()
             .child(container(window, cx).size_full().p_2().child(self.ft_picker.clone()))
-            .child(section("Fixture Id").child(self.fid_field.clone()))
-            .child(section("Name").child(self.name_field.clone()))
-            .child(section("Address").child(self.addr_field.clone()))
-            .child(section("Count").child(self.count_field.clone()))
+            .child(section("Fixture Id").max_w_40().child(self.fid_field.clone()))
+            .child(section("Name").max_w_40().child(self.name_field.clone()))
+            .child(section("Address").max_w_40().child(self.addr_field.clone()))
+            .child(section("Count").max_w_40().child(self.count_field.clone()))
     }
 }
