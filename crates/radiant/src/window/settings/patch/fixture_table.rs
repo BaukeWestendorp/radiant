@@ -4,6 +4,7 @@ use nui::AppExt;
 use nui::button::button;
 use nui::event::SubmitEvent;
 use nui::infobar::infobar;
+use nui::input::TextField;
 use nui::table::{Column, Table, TableDelegate};
 use nui::theme::{ActiveTheme, InteractiveColor};
 use nui::wm::Overlay;
@@ -16,6 +17,7 @@ use std::num::NonZeroU32;
 
 use super::ft_picker::FixtureTypePicker;
 use crate::engine::EngineManager;
+use crate::ui::fields::{address_field, fid_field};
 
 const FIXTURE_PICKER_OVERLAY_ID: &str = "ft_picker";
 
@@ -59,17 +61,14 @@ impl FixtureTable {
             EngineManager::read_patch(cx, |patch| patch.fixture(row_ids[0]).unwrap().fid);
 
         cx.update_wm(|wm, cx| {
-            let value = initial_fid.map(|fid| fid.to_string()).unwrap_or_default();
-            wm.open_text_modal(
+            wm.open_number_modal(
                 "fid_modal",
                 "Set Fixture Id",
-                value,
+                cx.new(|cx| fid_field(initial_fid, window, cx).with_submit_on_drag(false)),
                 window,
                 cx,
                 move |value, _, cx| {
-                    let value = value.trim();
-
-                    if value.is_empty() {
+                    let Some(value) = value else {
                         for &row_id in row_ids.iter() {
                             EngineManager::exec_and_log_err(
                                 Command::Patch(PatchCommand::SetFixtureId {
@@ -81,13 +80,13 @@ impl FixtureTable {
                         }
 
                         return;
-                    }
+                    };
 
-                    let Some(start_fid) = value.parse().ok() else {
+                    let Some(start_fid) = NonZeroU32::new(value as u32) else {
                         return;
                     };
 
-                    let generated_fids = generate_fids(start_fid, row_ids.len());
+                    let generated_fids = generate_fids(FixtureId(start_fid), row_ids.len());
 
                     for (&row_id, new_fid) in row_ids.iter().zip(generated_fids) {
                         EngineManager::exec_and_log_err(
@@ -127,7 +126,10 @@ impl FixtureTable {
             wm.open_text_modal(
                 "name_modal",
                 "Set Name",
-                initial_name,
+                cx.new(|cx| {
+                    TextField::new("name_field", cx.focus_handle(), window, cx)
+                        .with_value(initial_name.into(), cx)
+                }),
                 window,
                 cx,
                 move |value, _, cx| {
@@ -178,7 +180,7 @@ impl FixtureTable {
             wm.open_text_modal(
                 "addr_modal",
                 "Set Address",
-                initial_address.map(|a| a.to_string()).unwrap_or_default(),
+                cx.new(|cx| address_field(initial_address, window, cx)),
                 window,
                 cx,
                 move |value, _, cx| {

@@ -1,6 +1,7 @@
 use gpui::prelude::*;
 use gpui::{
-    AnyView, App, FocusHandle, Focusable, FontWeight, KeyBinding, SharedString, Window, div,
+    AnyView, App, ElementId, FocusHandle, Focusable, FontWeight, KeyBinding, SharedString, Window,
+    div,
 };
 
 use crate::AppExt;
@@ -112,6 +113,10 @@ impl Render for Overlay {
             .child(content);
 
         div()
+            .id(ElementId::Name(self.id.clone().into()))
+            .on_click(
+                cx.listener(|this, _, window, cx| this.handle_close(&actions::Close, window, cx)),
+            )
             .size_full()
             .p_4()
             .flex()
