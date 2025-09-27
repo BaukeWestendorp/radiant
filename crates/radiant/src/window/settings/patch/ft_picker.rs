@@ -97,37 +97,28 @@ impl FixtureTypePicker {
 
 impl Render for FixtureTypePicker {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let tables = div()
+        div()
             .size_full()
+            .flex()
+            .gap_2()
             .child(
-                section("Fixture Type")
-                    .h_1_2()
-                    .p_2()
-                    .gap_2()
-                    .border_b_1()
-                    .border_color(cx.theme().border)
-                    .child(
-                        div()
-                            .size_full()
-                            .border_1()
-                            .border_color(cx.theme().border)
-                            .child(self.ft_table.clone()),
-                    ),
+                section("Fixture Type").w_1_2().h_full().child(
+                    div()
+                        .size_full()
+                        .border_1()
+                        .border_color(cx.theme().border)
+                        .child(self.ft_table.clone()),
+                ),
             )
             .child(
-                section("DMX Mode").h_1_2().p_2().gap_2().child(
+                section("DMX Mode").w_1_2().h_full().child(
                     div()
                         .size_full()
                         .border_1()
                         .border_color(cx.theme().border)
                         .children(self.dmx_mode_table.clone()),
                 ),
-            );
-
-        div()
-            .size_full()
-            .bg(cx.theme().background)
-            .child(div().size_full().flex().flex_col().child(tables))
+            )
     }
 }
 
@@ -144,7 +135,6 @@ impl FixtureTypeTable {
             columns: vec![
                 Column::new("manufacturer", "Manufacturer").with_width(px(300.0)),
                 Column::new("name", "Name").with_width(px(300.0)),
-                Column::new("ft_id", "Fixture Type Id").with_width(px(300.0)),
             ],
             ft_ids,
         }
@@ -193,7 +183,6 @@ impl TableDelegate for FixtureTypeTable {
         match column.id.as_str() {
             "manufacturer" => render_cell(ft.manufacturer.clone()).into_any_element(),
             "name" => render_cell(ft.long_name.clone()).into_any_element(),
-            "ft_id" => render_cell(row_id.to_string()).into_any_element(),
             _ => self.render_empty(window, cx).into_any_element(),
         }
     }
