@@ -104,35 +104,35 @@ impl TextField {
 
     pub fn set_validator<F: Fn(&SharedString) -> bool + 'static>(
         &self,
-        validator: F,
         cx: &mut App,
+        validator: F,
     ) {
         self.input.update(cx, |text_field, _cx| text_field.set_validator(validator));
     }
 
     pub fn with_validator<F: Fn(&SharedString) -> bool + 'static>(
         self,
-        validator: F,
         cx: &mut App,
+        validator: F,
     ) -> Self {
-        self.set_validator(validator, cx);
+        self.set_validator(cx, validator);
         self
     }
 
     pub fn set_submit_validator<F: Fn(&SharedString) -> bool + 'static>(
         &self,
-        validator: F,
         cx: &mut App,
+        validator: F,
     ) {
         self.input.update(cx, |text_field, _cx| text_field.set_submit_validator(validator));
     }
 
     pub fn with_submit_validator<F: Fn(&SharedString) -> bool + 'static>(
         self,
-        validator: F,
         cx: &mut App,
+        validator: F,
     ) -> Self {
-        self.set_submit_validator(validator, cx);
+        self.set_submit_validator(cx, validator);
         self
     }
 }

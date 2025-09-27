@@ -50,5 +50,5 @@ pub fn address_field(
 
     TextField::new("addr_field", cx.focus_handle(), window, cx)
         .with_value(string_value, cx)
-        .with_submit_validator(|text| text.parse::<dmx::Address>().is_ok(), cx)
+        .with_submit_validator(cx, |text| text.parse::<dmx::Address>().is_ok())
 }
