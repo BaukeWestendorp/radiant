@@ -13,7 +13,7 @@ pub use overlay::*;
 pub use window::*;
 
 use crate::AppExt;
-use crate::input::{FieldEvent, TextField};
+use crate::input::{FieldEvent, NumberField, TextField};
 
 pub(crate) fn init(cx: &mut App) {
     overlay::init(cx);
@@ -203,25 +203,55 @@ impl WindowManager {
 
     pub fn open_text_modal<F: Fn(SharedString, &mut Window, &mut App) + 'static>(
         &mut self,
-        id: impl Into<String>,
+        overlay_id: impl Into<String>,
         title: impl Into<SharedString>,
-        initial_value: impl Into<SharedString>,
+        field: Entity<TextField>,
         window: &mut Window,
         cx: &mut App,
         on_submit: F,
     ) {
-        let id = id.into();
-
+        let id = overlay_id.into();
         let focus_handle = cx.focus_handle();
-
-        let modal =
-            cx.new(|cx| TextModal::new(initial_value.into(), focus_handle.clone(), window, cx));
-        let field = modal.read(cx).field.clone();
+        let modal = cx.new(|_| Modal { content: field.clone().into() });
 
         window
             .subscribe(&field, cx, {
                 let id = id.clone();
                 move |field: Entity<TextField>, event, window, cx| match event {
+                    FieldEvent::Submit => {
+                        let value = field.read(cx).value(cx).clone();
+                        on_submit(value, window, cx);
+                        cx.update_wm(|wm, _| wm.close_overlay(&id, window));
+                    }
+                    _ => {}
+                }
+            })
+            .detach();
+
+        self.open_overlay(
+            Overlay::new(id, title, modal, focus_handle.clone()).as_modal(),
+            window,
+            cx,
+        );
+    }
+
+    pub fn open_number_modal<OnSubmit: Fn(Option<f64>, &mut Window, &mut App) + 'static>(
+        &mut self,
+        overlay_id: impl Into<String>,
+        title: impl Into<SharedString>,
+        field: Entity<NumberField>,
+        window: &mut Window,
+        cx: &mut App,
+        on_submit: OnSubmit,
+    ) {
+        let id = overlay_id.into();
+        let focus_handle = cx.focus_handle();
+        let modal = cx.new(|_| Modal { content: field.clone().into() });
+
+        window
+            .subscribe(&field, cx, {
+                let id = id.clone();
+                move |field: Entity<NumberField>, event, window, cx| match event {
                     FieldEvent::Submit => {
                         let value = field.read(cx).value(cx).clone();
                         on_submit(value, window, cx);

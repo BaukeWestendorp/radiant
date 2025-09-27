@@ -1,11 +1,10 @@
 use gpui::prelude::*;
 use gpui::{
-    AnyView, App, Entity, FocusHandle, Focusable, FontWeight, KeyBinding, SharedString, Window, div,
+    AnyView, App, FocusHandle, Focusable, FontWeight, KeyBinding, SharedString, Window, div,
 };
 
 use crate::AppExt;
 use crate::button::button;
-use crate::input::TextField;
 use crate::theme::{ActiveTheme, InteractiveColor};
 
 mod actions {
@@ -130,28 +129,12 @@ impl Focusable for Overlay {
     }
 }
 
-pub(super) struct TextModal {
-    pub field: Entity<TextField>,
+pub(super) struct Modal {
+    pub content: AnyView,
 }
 
-impl TextModal {
-    pub fn new(
-        initial_value: SharedString,
-        focus_handle: FocusHandle,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> Self {
-        Self {
-            field: cx.new(|cx| {
-                TextField::new("modal_text_field", focus_handle, window, cx)
-                    .with_value(initial_value, cx)
-            }),
-        }
-    }
-}
-
-impl Render for TextModal {
+impl Render for Modal {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().w_96().flex().justify_center().items_center().p_2().child(self.field.clone())
+        div().w_96().flex().justify_center().items_center().p_2().child(self.content.clone())
     }
 }
