@@ -188,6 +188,23 @@ impl PatchContent {
             FixtureReference::Address(address) => f.address == Some(address),
         })
     }
+
+    pub fn first_unbounded_address(&self) -> dmx::Address {
+        let mut fixtures = self.fixtures.clone();
+        fixtures.retain(|f| f.address.is_some());
+        fixtures.sort_by(|a, b| a.address.cmp(&b.address));
+
+        let Some(last_fixture) = fixtures.last() else {
+            return dmx::Address::default();
+        };
+
+        let channel_count = crate::gdtf::channel_count(last_fixture.dmx_mode(self));
+
+        last_fixture
+            .address
+            .expect("fixture should have an address as we just removed all fixtures without them")
+            .with_channel_offset(channel_count)
+    }
 }
 
 impl Component for Patch {
@@ -268,24 +285,24 @@ impl Fixture {
         self.uuid
     }
 
-    pub fn fixture_type<'a>(&self, patch: &'a Patch) -> &'a FixtureType {
+    pub fn fixture_type<'a>(&self, patch: &'a PatchContent) -> &'a FixtureType {
         patch
             .fixture_types
             .get(&self.fixture_type_id)
             .expect("every fixture should have a valid GDTF Fixture Type")
     }
 
-    pub fn feature_groups<'a>(&self, patch: &'a Patch) -> &'a [FeatureGroup] {
+    pub fn feature_groups<'a>(&self, patch: &'a PatchContent) -> &'a [FeatureGroup] {
         &self.fixture_type(patch).attribute_definitions.feature_groups
     }
 
-    pub fn dmx_mode<'a>(&self, patch: &'a Patch) -> &'a DmxMode {
+    pub fn dmx_mode<'a>(&self, patch: &'a PatchContent) -> &'a DmxMode {
         self.fixture_type(patch)
             .dmx_mode(&self.dmx_mode)
             .expect("fixture should always have a valid dmx mode index")
     }
 
-    pub fn has_attribute(&self, attribute: &Attribute, patch: &Patch) -> bool {
+    pub fn has_attribute(&self, attribute: &Attribute, patch: &PatchContent) -> bool {
         let fixture_type = self.fixture_type(patch);
         let dmx_mode = fixture_type.dmx_mode(&self.dmx_mode);
         if dmx_mode.is_none() {
@@ -319,7 +336,7 @@ impl Fixture {
         &self,
         attribute: &Attribute,
         value: &AttributeValue,
-        patch: &Patch,
+        patch: &PatchContent,
     ) -> Result<Vec<(dmx::Channel, dmx::Value)>> {
         let channels = self.channels_for_attribute(attribute, patch)?;
         let mut values = Vec::new();
@@ -335,7 +352,10 @@ impl Fixture {
     /// Returns attributes supported by this fixture along with
     /// their corresponding default [AttributeValue]s as
     /// defined in the fixture's GDTF definition.
-    pub fn get_default_attribute_values(&self, patch: &Patch) -> Vec<(Attribute, AttributeValue)> {
+    pub fn get_default_attribute_values(
+        &self,
+        patch: &PatchContent,
+    ) -> Vec<(Attribute, AttributeValue)> {
         let fixture_type = self.fixture_type(patch);
 
         let mut values = Vec::new();
@@ -364,7 +384,7 @@ impl Fixture {
     pub fn channels_for_attribute(
         &self,
         attribute: &Attribute,
-        patch: &Patch,
+        patch: &PatchContent,
     ) -> Result<Vec<dmx::Channel>> {
         let Some(address) = self.address else {
             eyre::bail!("fixture does not have an address");
