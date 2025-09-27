@@ -446,12 +446,17 @@ impl Render for FixtureTypePickerOverlay {
             _ => (false, None),
         };
 
-        div().child(
-            infobar(cx).child(selected_ft_dmx_mode.unwrap_or("---".to_string())).child(
-                button("select_fixture_type", None, "Select Fixture Type")
-                    .disabled(!has_selection)
-                    .on_click(cx.listener(Self::handle_select_fixture_type)),
-            ),
-        )
+        div()
+            .size_full()
+            .flex()
+            .flex_col()
+            .child(div().size_full().p_2().child(self.picker.clone()))
+            .child(
+                infobar(cx).child(selected_ft_dmx_mode.unwrap_or("---".to_string())).child(
+                    button("select_fixture_type", None, "Select Fixture Type")
+                        .disabled(!has_selection)
+                        .on_click(cx.listener(Self::handle_select_fixture_type)),
+                ),
+            )
     }
 }
