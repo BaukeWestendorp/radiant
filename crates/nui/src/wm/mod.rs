@@ -211,8 +211,12 @@ impl WindowManager {
         on_submit: F,
     ) {
         let id = overlay_id.into();
-        let focus_handle = cx.focus_handle();
         let modal = cx.new(|_| Modal { content: field.clone().into() });
+        let focus_handle = field.focus_handle(cx);
+
+        field.update(cx, |field, cx| {
+            field.input().update(cx, |input, cx| input.select_all(cx));
+        });
 
         window
             .subscribe(&field, cx, {
@@ -228,11 +232,7 @@ impl WindowManager {
             })
             .detach();
 
-        self.open_overlay(
-            Overlay::new(id, title, modal, focus_handle.clone()).as_modal(),
-            window,
-            cx,
-        );
+        self.open_overlay(Overlay::new(id, title, modal, focus_handle).as_modal(), window, cx);
     }
 
     pub fn open_number_modal<OnSubmit: Fn(Option<f64>, &mut Window, &mut App) + 'static>(
@@ -245,8 +245,13 @@ impl WindowManager {
         on_submit: OnSubmit,
     ) {
         let id = overlay_id.into();
-        let focus_handle = cx.focus_handle();
         let modal = cx.new(|_| Modal { content: field.clone().into() });
+        let focus_handle = field.focus_handle(cx);
+
+        field.update(cx, |field, cx| {
+            field.set_interactive(true, cx);
+            field.input().update(cx, |input, cx| input.select_all(cx));
+        });
 
         window
             .subscribe(&field, cx, {
@@ -262,11 +267,7 @@ impl WindowManager {
             })
             .detach();
 
-        self.open_overlay(
-            Overlay::new(id, title, modal, focus_handle.clone()).as_modal(),
-            window,
-            cx,
-        );
+        self.open_overlay(Overlay::new(id, title, modal, focus_handle).as_modal(), window, cx);
     }
 }
 
