@@ -9,5 +9,6 @@ pub fn button(
     content: impl IntoElement,
 ) -> InteractiveContainer {
     interactive_container(id, focus_handle)
+        .cursor_pointer()
         .child(div().flex().justify_center().items_center().px_2().child(content))
 }
