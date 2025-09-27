@@ -210,8 +210,9 @@ impl TextInput {
         self.interactive
     }
 
-    pub fn interactive(&mut self, interactive: bool) {
+    pub fn set_interactive(&mut self, interactive: bool, cx: &mut Context<Self>) {
         self.interactive = interactive;
+        self.move_to_end_of_line(cx);
     }
 
     pub fn is_focused(&self, window: &Window) -> bool {

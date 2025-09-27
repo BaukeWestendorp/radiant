@@ -36,7 +36,7 @@ impl NumberField {
         let input = cx.new(|cx| {
             let mut input = TextInput::new(id.clone(), focus_handle, window, cx)
                 .px(rems(0.125).to_pixels(window.rem_size()));
-            input.interactive(false);
+            input.set_interactive(false, cx);
             input.set_validator(|text| {
                 text.trim().is_empty()
                     || regex::Regex::new(r"^[+-]?(\d+\.?\d*|\.\d+)?$")
@@ -52,7 +52,7 @@ impl NumberField {
                 TextInputEvent::Focus => cx.emit(FieldEvent::Focus),
                 TextInputEvent::Blur => {
                     this.commit_value(cx);
-                    this.input.update(cx, |input, _cx| input.interactive(false));
+                    this.input.update(cx, |input, cx| input.set_interactive(false, cx));
                     cx.emit(FieldEvent::Blur);
                 }
                 TextInputEvent::Submit(_) => cx.emit(FieldEvent::Submit),
@@ -73,6 +73,10 @@ impl NumberField {
             bounds: Bounds::default(),
             prev_mouse_pos: None,
         }
+    }
+
+    pub fn input(&self) -> &Entity<TextInput> {
+        &self.input
     }
 
     pub fn min(&self) -> Option<f64> {
@@ -239,7 +243,7 @@ impl NumberField {
     ) {
         self.input.update(cx, |input, cx| {
             if !input.is_interactive() {
-                input.interactive(true);
+                input.set_interactive(true, cx);
                 input.select_all(cx);
             }
         });
@@ -315,6 +319,12 @@ impl Render for NumberField {
                 .w_full()
                 .h(window.line_height() + 2.0 * rems(0.125).to_pixels(window.rem_size())),
             )
+    }
+}
+
+impl Focusable for NumberField {
+    fn focus_handle(&self, cx: &App) -> FocusHandle {
+        self.input.focus_handle(cx)
     }
 }
 

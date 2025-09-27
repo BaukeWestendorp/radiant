@@ -37,6 +37,10 @@ impl TextField {
         Self { input }
     }
 
+    pub fn input(&self) -> &Entity<TextInput> {
+        &self.input
+    }
+
     pub fn value<'a>(&self, cx: &'a App) -> &'a SharedString {
         self.input.read(cx).text()
     }
