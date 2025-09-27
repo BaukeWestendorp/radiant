@@ -560,6 +560,8 @@ impl<D: TableDelegate> DerefMut for Table<D> {
 
 impl<D: TableDelegate + 'static> Render for Table<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let focused = self.focus_handle.is_focused(window);
+
         div()
             .id("table")
             .key_context(actions::KEY_CONTEXT)
@@ -569,6 +571,10 @@ impl<D: TableDelegate + 'static> Render for Table<D> {
             .size_full()
             .overflow_y_hidden()
             .overflow_x_scroll()
+            .bg(cx.theme().background)
+            .border_1()
+            .border_color(cx.theme().border)
+            .when(focused, |e| e.bg(cx.theme().focus).border_color(cx.theme().focus_border))
             .on_action(cx.listener(Self::handle_clear_selection))
             .on_action(cx.listener(Self::handle_edit_selection))
             .on_action(cx.listener(Self::handle_delete_selection))

@@ -96,29 +96,13 @@ impl FixtureTypePicker {
 }
 
 impl Render for FixtureTypePicker {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .size_full()
             .flex()
             .gap_2()
-            .child(
-                section("Fixture Type").w_1_2().h_full().child(
-                    div()
-                        .size_full()
-                        .border_1()
-                        .border_color(cx.theme().border)
-                        .child(self.ft_table.clone()),
-                ),
-            )
-            .child(
-                section("DMX Mode").w_1_2().h_full().child(
-                    div()
-                        .size_full()
-                        .border_1()
-                        .border_color(cx.theme().border)
-                        .children(self.dmx_mode_table.clone()),
-                ),
-            )
+            .child(section("Fixture Type").w_1_2().h_full().child(self.ft_table.clone()))
+            .child(section("DMX Mode").w_1_2().h_full().children(self.dmx_mode_table.clone()))
     }
 }
 
