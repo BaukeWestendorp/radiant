@@ -1,11 +1,13 @@
+use std::f64;
+
 use gpui::prelude::*;
 use gpui::{
     App, Bounds, ClickEvent, DragMoveEvent, ElementId, EmptyView, Entity, EventEmitter,
     FocusHandle, Focusable, MouseButton, MouseUpEvent, Pixels, Point, Window, div, relative,
 };
 
-use crate::Disableable;
-use crate::interactive::input::{FieldEvent, TextInput, TextInputEvent};
+use crate::container::interactive_container;
+use crate::input::{FieldEvent, TextInput, TextInputEvent};
 use crate::theme::ActiveTheme;
 use crate::utils::{bounds_updater, z_stack};
 
@@ -13,9 +15,9 @@ pub struct NumberField {
     id: ElementId,
     input: Entity<TextInput>,
 
-    min: Option<f32>,
-    max: Option<f32>,
-    step: Option<f32>,
+    min: Option<f64>,
+    max: Option<f64>,
+    step: Option<f64>,
 
     bounds: Bounds<Pixels>,
     prev_mouse_pos: Option<Point<Pixels>>,
@@ -46,13 +48,13 @@ impl NumberField {
                     this.input.update(cx, |input, _cx| input.interactive(false));
                     cx.emit(FieldEvent::Blur);
                 }
-                TextInputEvent::Submit(_) => cx.emit(FieldEvent::Submit(this.value(cx))),
-                TextInputEvent::Change(_) => cx.emit(FieldEvent::Change(this.value(cx))),
+                TextInputEvent::Submit(_) => cx.emit(FieldEvent::Submit),
+                TextInputEvent::Change(_) => cx.emit(FieldEvent::Change),
             }
         })
         .detach();
 
-        let mut this = Self {
+        Self {
             id,
             input,
 
@@ -62,74 +64,50 @@ impl NumberField {
 
             bounds: Bounds::default(),
             prev_mouse_pos: None,
-        };
-
-        this.set_min(I::MIN, cx);
-        this.set_max(I::MAX, cx);
-        this.set_step(I::STEP, cx);
-        this.set_value(I::from_f32(0.0), cx);
-
-        this
+        }
     }
 
-    pub fn min(&self) -> Option<I::Value> {
-        self.min.map(I::from_f32)
+    pub fn min(&self) -> Option<f64> {
+        self.min
     }
 
-    pub fn set_min(&mut self, min: Option<I::Value>, cx: &mut Context<Self>) {
-        if self.min.is_some() && min.is_none() {
-            return;
-        }
-
-        if self.min.is_some()
-            && min.is_some()
-            && I::as_f32(min.as_ref().unwrap()) < self.min_as_f32()
-        {
-            return;
-        }
-
-        self.min = min.as_ref().map(I::as_f32);
-
+    pub fn set_min(&mut self, min: Option<f64>, cx: &mut Context<Self>) {
+        self.min = min;
         self.commit_value(cx);
     }
 
-    fn min_as_f32(&self) -> f32 {
-        self.min.unwrap_or(f32::MIN)
+    pub fn with_min(mut self, min: Option<f64>, cx: &mut Context<Self>) -> Self {
+        self.set_min(min, cx);
+        self
     }
 
-    pub fn max(&self) -> Option<I::Value> {
-        self.max.map(I::from_f32)
+    pub fn max(&self) -> Option<f64> {
+        self.max
     }
 
-    pub fn set_max(&mut self, max: Option<I::Value>, cx: &mut Context<Self>) {
-        if self.max.is_some() && max.is_none() {
-            return;
-        }
-
-        if self.max.is_some()
-            && max.is_some()
-            && I::as_f32(max.as_ref().unwrap()) > self.max_as_f32()
-        {
-            return;
-        }
-
-        self.max = max.as_ref().map(I::as_f32);
-
+    pub fn set_max(&mut self, max: Option<f64>, cx: &mut Context<Self>) {
+        self.max = max;
         self.commit_value(cx);
     }
 
-    fn max_as_f32(&self) -> f32 {
-        self.max.unwrap_or(f32::MAX)
+    pub fn with_max(mut self, max: Option<f64>, cx: &mut Context<Self>) -> Self {
+        self.set_max(max, cx);
+        self
     }
 
-    pub fn step(&self) -> Option<I::Value> {
-        self.step.map(I::from_f32)
+    pub fn step(&self) -> Option<f64> {
+        self.step
     }
 
-    pub fn set_step(&mut self, step: Option<f32>, cx: &mut Context<Self>) {
+    pub fn set_step(&mut self, step: Option<f64>, cx: &mut Context<Self>) {
         self.step = step;
 
         self.commit_value(cx);
+    }
+
+    pub fn with_step(mut self, step: Option<f64>, cx: &mut Context<Self>) -> Self {
+        self.set_step(step, cx);
+        self
     }
 
     pub fn disabled(&self, cx: &App) -> bool {
@@ -140,6 +118,11 @@ impl NumberField {
         self.input.update(cx, |text_field, _cx| text_field.set_disabled(disabled));
     }
 
+    pub fn with_disabled(self, disabled: bool, cx: &mut App) -> Self {
+        self.set_disabled(disabled, cx);
+        self
+    }
+
     pub fn masked(&self, cx: &App) -> bool {
         self.input.read(cx).masked()
     }
@@ -148,24 +131,27 @@ impl NumberField {
         self.input.update(cx, |text_field, _cx| text_field.set_masked(masked));
     }
 
-    pub fn value(&self, cx: &App) -> I::Value {
-        let value_str = self.input.read(cx).text();
-        I::from_str_or_default(value_str)
+    pub fn with_masked(self, masked: bool, cx: &mut App) -> Self {
+        self.set_masked(masked, cx);
+        self
     }
 
-    pub fn set_value(&mut self, value: I::Value, cx: &mut App) {
+    pub fn value(&self, cx: &App) -> f64 {
+        let value_str = self.input.read(cx).text().to_string();
+        value_str.parse().unwrap_or_default()
+    }
+
+    pub fn set_value(&mut self, value: f64, cx: &mut App) {
         // Clamp
-        let min = self.min_as_f32();
-        let max = self.max_as_f32();
-        let mut value = I::as_f32(&value).clamp(min, max);
+        let mut value = value.clamp(self.min.unwrap_or(f64::MIN), self.max.unwrap_or(f64::MAX));
 
         // Step
-        if let Some(step) = self.step().map(|v| I::as_f32(&v)) {
+        if let Some(step) = self.step() {
             value = (value / step).round() * step;
         }
 
         // Round
-        value = (value * 10e3f32).round() / 10e3f32;
+        value = (value * 10e3f64).round() / 10e3f64;
 
         self.input.update(cx, |text_field, cx| {
             let value_str = value.to_string().into();
@@ -173,8 +159,13 @@ impl NumberField {
         })
     }
 
+    pub fn with_value(mut self, value: f64, cx: &mut App) -> Self {
+        self.set_value(value, cx);
+        self
+    }
+
     pub fn submit(&self, cx: &mut Context<Self>) {
-        cx.emit(FieldEvent::Submit(self.value(cx)));
+        cx.emit(FieldEvent::Submit);
     }
 
     fn commit_value(&mut self, cx: &mut Context<Self>) {
@@ -186,21 +177,23 @@ impl NumberField {
         self.min().is_some() && self.max().is_some()
     }
 
-    pub fn relative_value(&self, cx: &App) -> Option<f32> {
+    pub fn relative_value(&self, cx: &App) -> Option<f64> {
         if !self.is_slider() {
             return None;
         }
 
-        let min = self.min_as_f32();
-        let max = self.max_as_f32();
-        let value = I::as_f32(&self.value(cx)).clamp(min, max);
+        let min = self.min.unwrap_or(f64::MIN);
+        let max = self.max.unwrap_or(f64::MAX);
+        let value = self.value(cx).clamp(min, max);
         Some((value - min) / (max - min))
     }
 
-    fn drag_factor(&self) -> f32 {
+    fn drag_factor(&self) -> f64 {
         if self.is_slider() {
-            let delta = self.max_as_f32() - self.min_as_f32();
-            delta / self.bounds.size.width.0
+            let min = self.min.unwrap_or(f64::MIN);
+            let max = self.max.unwrap_or(f64::MAX);
+            let delta = max - min;
+            delta / self.bounds.size.width.0 as f64
         } else {
             0.5
         }
@@ -224,7 +217,7 @@ impl NumberField {
 
     fn handle_drag_move(
         &mut self,
-        event: &DragMoveEvent<(ElementId, f32, Pixels)>,
+        event: &DragMoveEvent<(ElementId, f64, Pixels)>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
@@ -238,8 +231,8 @@ impl NumberField {
         let delta_x = mouse_position.x.0 - x_start.0;
 
         let factor = self.drag_factor();
-        let f32_value = start_value + delta_x * factor;
-        self.set_value(I::from_f32(f32_value), cx);
+        let value = start_value + delta_x as f64 * factor;
+        self.set_value(value, cx);
         self.commit_value(cx);
 
         self.prev_mouse_pos = Some(mouse_position);
@@ -257,7 +250,7 @@ impl Render for NumberField {
 
         let slider_bar = match self.relative_value(cx) {
             Some(relative_value) => {
-                div().w(relative(relative_value)).h_full().bg(cx.theme().input_secondary)
+                div().w(relative(relative_value as f32)).h_full().bg(cx.theme().input_secondary)
             }
             None => div().size_full(),
         };
