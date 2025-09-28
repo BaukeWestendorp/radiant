@@ -30,7 +30,8 @@ mod actions {
             NextRow,
             PrevRow,
             ExtendSelectionNext,
-            ExtendSelectionPrev
+            ExtendSelectionPrev,
+            SelectAll,
         ]
     );
 
@@ -51,6 +52,7 @@ pub(crate) fn init(cx: &mut App) {
         KeyBinding::new("up", PrevRow, Some(KEY_CONTEXT)),
         KeyBinding::new("shift-down", ExtendSelectionNext, Some(KEY_CONTEXT)),
         KeyBinding::new("shift-up", ExtendSelectionPrev, Some(KEY_CONTEXT)),
+        KeyBinding::new("secondary-a", SelectAll, Some(KEY_CONTEXT)),
     ]);
 }
 
@@ -536,6 +538,25 @@ impl<D: TableDelegate> Table<D> {
     ) {
         self.extend_selection(-1, cx);
     }
+
+    fn handle_select_all(
+        &mut self,
+        _: &actions::SelectAll,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.column_count(cx) == 0 {
+            return;
+        };
+
+        let row_count = self.sorted_row_ids(cx).len();
+        if row_count == 0 {
+            return;
+        }
+
+        self.start_selection(self.column(0, cx).id.clone(), 0, cx);
+        self.end_selection(row_count - 1, cx);
+    }
 }
 
 impl<D: TableDelegate> Focusable for Table<D> {
@@ -584,6 +605,7 @@ impl<D: TableDelegate + 'static> Render for Table<D> {
             .on_action(cx.listener(Self::handle_prev_row))
             .on_action(cx.listener(Self::handle_extend_selection_next))
             .on_action(cx.listener(Self::handle_extend_selection_prev))
+            .on_action(cx.listener(Self::handle_select_all))
             .child(self.render_header(window, cx))
             .child(self.render_body(window, cx))
     }
