@@ -48,15 +48,6 @@ impl FixtureTable {
     }
 
     fn edit_fids(&self, row_ids: Vec<Uuid>, window: &mut Window, cx: &mut Context<Table<Self>>) {
-        fn generate_fids(start_fid: FixtureId, n: usize) -> Vec<FixtureId> {
-            let mut new_fids = Vec::new();
-            for i in 0..n as u32 {
-                let new_fid = FixtureId(NonZeroU32::new(u32::from(start_fid.0) + i).unwrap());
-                new_fids.push(new_fid);
-            }
-            new_fids
-        }
-
         let initial_fid =
             EngineManager::read_patch(cx, |patch| patch.fixture(row_ids[0]).unwrap().fid);
 
@@ -86,7 +77,7 @@ impl FixtureTable {
                         return;
                     };
 
-                    let generated_fids = generate_fids(FixtureId(start_fid), row_ids.len());
+                    let generated_fids = super::generate_fids(FixtureId(start_fid), row_ids.len());
 
                     for (&row_id, new_fid) in row_ids.iter().zip(generated_fids) {
                         EngineManager::exec_and_log_err(
@@ -103,22 +94,6 @@ impl FixtureTable {
     }
 
     fn edit_names(&self, row_ids: Vec<Uuid>, window: &mut Window, cx: &mut Context<Table<Self>>) {
-        fn generate_names(base_name: &str, n: usize) -> Vec<String> {
-            use regex::Regex;
-            let re = Regex::new(r"^(.*?)(\d+)$").unwrap();
-            if let Some(caps) = re.captures(base_name) {
-                let base = caps.get(1).map_or("", |m| m.as_str()).trim_end();
-                let num_str = caps.get(2).map_or("0", |m| m.as_str());
-                let start_num: usize = num_str.parse().unwrap_or(0);
-                let pad_len = num_str.len();
-                (0..n)
-                    .map(|offset| format!("{} {:0pad$}", base, start_num + offset, pad = pad_len))
-                    .collect()
-            } else {
-                (0..n).map(|_| base_name.to_string()).collect()
-            }
-        }
-
         let initial_name =
             EngineManager::read_patch(cx, |patch| patch.fixture(row_ids[0]).unwrap().name.clone());
 
@@ -134,7 +109,7 @@ impl FixtureTable {
                 cx,
                 move |value, _, cx| {
                     let name = value.trim();
-                    let generated_names = generate_names(&name, row_ids.len());
+                    let generated_names = super::generate_names(&name, row_ids.len());
                     for (&row_id, new_name) in row_ids.iter().zip(generated_names) {
                         EngineManager::exec_and_log_err(
                             Command::Patch(PatchCommand::SetName {
@@ -150,27 +125,6 @@ impl FixtureTable {
     }
 
     fn edit_addrs(&self, row_ids: Vec<Uuid>, window: &mut Window, cx: &mut Context<Table<Self>>) {
-        fn generate_addresses(
-            start_address: dmx::Address,
-            fixture_uuids: &[Uuid],
-            cx: &App,
-        ) -> Vec<dmx::Address> {
-            fixture_uuids
-                .iter()
-                .map(|uuid| {
-                    EngineManager::read_patch(cx, |patch| {
-                        radlib::gdtf::channel_count(patch.fixture(*uuid).unwrap().dmx_mode(patch))
-                    })
-                })
-                .scan(0, |state, channel_count| {
-                    let offset = *state;
-                    *state += channel_count;
-                    Some(offset)
-                })
-                .map(|offset| start_address.with_channel_offset(offset))
-                .collect()
-        }
-
         let initial_address = EngineManager::read_patch(cx, |patch| {
             let fixture = patch.fixture(row_ids[0]).unwrap();
             fixture.address.clone()
@@ -204,7 +158,8 @@ impl FixtureTable {
                         return;
                     };
 
-                    let generated_addresses = generate_addresses(start_address, &row_ids, cx);
+                    let generated_addresses =
+                        super::generate_addresses(start_address, &row_ids, cx);
 
                     for (&row_id, new_address) in row_ids.iter().zip(generated_addresses) {
                         EngineManager::exec_and_log_err(

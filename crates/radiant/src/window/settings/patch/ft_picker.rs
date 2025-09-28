@@ -3,7 +3,6 @@ use gpui::{App, Entity, EventEmitter, SharedString, Window, div, px};
 use nui::event::SubmitEvent;
 use nui::section::section;
 use nui::table::{Column, Table, TableDelegate, TableEvent};
-use nui::theme::ActiveTheme;
 use radlib::builtin::GdtfFixtureTypeId;
 use radlib::gdtf::fixture_type::FixtureType;
 

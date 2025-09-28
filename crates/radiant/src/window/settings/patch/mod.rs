@@ -9,7 +9,9 @@ use nui::section::section;
 use nui::table::Table;
 use nui::theme::ActiveTheme;
 use nui::wm::Overlay;
-use radlib::builtin::FixtureId;
+use radlib::builtin::{FixtureId, GdtfFixtureTypeId};
+use radlib::cmd::{Command, PatchCommand};
+use uuid::Uuid;
 
 use std::num::NonZeroU32;
 
@@ -106,6 +108,14 @@ impl AddFixtureOverlay {
         }
     }
 
+    fn ft_id(&self, cx: &App) -> Option<GdtfFixtureTypeId> {
+        self.ft_picker.read(cx).selected_ft_id(cx)
+    }
+
+    fn dmx_mode(&self, cx: &App) -> Option<String> {
+        self.ft_picker.read(cx).selected_dmx_mode(cx)
+    }
+
     fn fid(&self, cx: &App) -> Option<FixtureId> {
         let u32_value = self.fid_field.read(cx).value(cx)? as u32;
         Some(FixtureId(NonZeroU32::new(u32_value)?))
@@ -125,18 +135,58 @@ impl AddFixtureOverlay {
     }
 
     fn validate(&self, cx: &App) -> bool {
-        self.fid(cx).is_some()
+        self.ft_id(cx).is_some()
+            && self.dmx_mode(cx).is_some()
+            && self.fid(cx).is_some()
             && !self.name(cx).is_empty()
             && self.address(cx).is_some()
             && self.count(cx) > 0
     }
 
     fn add_fixtures(&mut self, _: &ClickEvent, window: &mut Window, cx: &mut Context<Self>) {
-        dbg!(self.fid(cx));
-        dbg!(self.name(cx));
-        dbg!(self.address(cx));
-        dbg!(self.count(cx));
-        todo!("ACTUALLY ADD FIXTURES TO PATCH");
+        if !self.validate(cx) {
+            return;
+        }
+
+        let fixture_type_id = self.ft_id(cx).unwrap();
+        let dmx_mode = self.dmx_mode(cx).unwrap();
+
+        let (fids, names) = (
+            generate_fids(self.fid(cx).unwrap(), self.count(cx) as usize),
+            generate_names(&self.name(cx), self.count(cx) as usize),
+        );
+
+        let mut fixture_uuids = Vec::new();
+        for (fid, name) in fids.iter().zip(names) {
+            EngineManager::exec_and_log_err(
+                Command::Patch(PatchCommand::AddFixture {
+                    fid: Some(*fid),
+                    fixture_type_id,
+                    address: None,
+                    dmx_mode: dmx_mode.clone(),
+                    name: Some(name.clone()),
+                }),
+                cx,
+            );
+
+            if let Some(uuid) =
+                EngineManager::read_patch(cx, |patch| patch.fixture(*fid).map(|f| f.uuid()))
+            {
+                fixture_uuids.push(uuid);
+            }
+        }
+
+        let addresses = generate_addresses(self.address(cx).unwrap(), &fixture_uuids, cx);
+        for (uuid, address) in fixture_uuids.into_iter().zip(addresses) {
+            EngineManager::exec_and_log_err(
+                Command::Patch(PatchCommand::SetAddress {
+                    fixture_ref: uuid.into(),
+                    address: Some(address),
+                }),
+                cx,
+            );
+        }
+
         cx.update_wm(|wm, _| wm.close_overlay(ADD_FIXTURES_OVERLAY_ID, window));
     }
 }
@@ -176,4 +226,50 @@ impl Render for AddFixtureOverlay {
                 ),
             )
     }
+}
+
+fn generate_fids(start_fid: FixtureId, n: usize) -> Vec<FixtureId> {
+    let mut new_fids = Vec::new();
+    for i in 0..n as u32 {
+        let new_fid = FixtureId(NonZeroU32::new(u32::from(start_fid.0) + i).unwrap());
+        new_fids.push(new_fid);
+    }
+    new_fids
+}
+
+fn generate_names(base_name: &str, n: usize) -> Vec<String> {
+    use regex::Regex;
+    let re = Regex::new(r"^(.*?)(\d+)$").unwrap();
+    if let Some(caps) = re.captures(base_name) {
+        let base = caps.get(1).map_or("", |m| m.as_str()).trim_end();
+        let num_str = caps.get(2).map_or("0", |m| m.as_str());
+        let start_num: usize = num_str.parse().unwrap_or(0);
+        let pad_len = num_str.len();
+        (0..n)
+            .map(|offset| format!("{} {:0pad$}", base, start_num + offset, pad = pad_len))
+            .collect()
+    } else {
+        (0..n).map(|_| base_name.to_string()).collect()
+    }
+}
+
+fn generate_addresses(
+    start_address: dmx::Address,
+    fixture_uuids: &[Uuid],
+    cx: &App,
+) -> Vec<dmx::Address> {
+    fixture_uuids
+        .iter()
+        .map(|uuid| {
+            EngineManager::read_patch(cx, |patch| {
+                radlib::gdtf::channel_count(patch.fixture(*uuid).unwrap().dmx_mode(patch))
+            })
+        })
+        .scan(0, |state, channel_count| {
+            let offset = *state;
+            *state += channel_count;
+            Some(offset)
+        })
+        .map(|offset| start_address.with_channel_offset(offset))
+        .collect()
 }
