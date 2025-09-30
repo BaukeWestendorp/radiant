@@ -836,9 +836,7 @@ impl EntityInputHandler for TextInput {
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) {
-        if self.disabled {
-            return;
-        }
+        if self.disabled {}
     }
 
     fn bounds_for_range(

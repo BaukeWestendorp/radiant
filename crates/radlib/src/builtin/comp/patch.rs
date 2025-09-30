@@ -80,11 +80,10 @@ impl Patch {
             eyre::bail!("patch is not in edit mode");
         }
 
-        if let Some(fid) = fixture.fid {
-            if let Some(fixture) = self.fixture_mut(fid)? {
+        if let Some(fid) = fixture.fid
+            && let Some(fixture) = self.fixture_mut(fid)? {
                 fixture.fid = None;
             }
-        }
 
         let Some(fixture_type) = self.fixture_types.get(&fixture.fixture_type_id) else {
             eyre::bail!(
@@ -311,21 +310,17 @@ impl Fixture {
         let dmx_mode = dmx_mode.unwrap();
         for dmx_channel in &dmx_mode.dmx_channels {
             for logical_channel in &dmx_channel.logical_channels {
-                if let Some(attr) = logical_channel.attribute(fixture_type) {
-                    if let Some(name) = attr.name.as_ref() {
-                        if **name == attribute.to_string() {
+                if let Some(attr) = logical_channel.attribute(fixture_type)
+                    && let Some(name) = attr.name.as_ref()
+                        && **name == attribute.to_string() {
                             return true;
                         }
-                    }
-                }
                 for channel_function in &logical_channel.channel_functions {
-                    if let Some(attr) = channel_function.attribute(fixture_type) {
-                        if let Some(name) = attr.name.as_ref() {
-                            if **name == attribute.to_string() {
+                    if let Some(attr) = channel_function.attribute(fixture_type)
+                        && let Some(name) = attr.name.as_ref()
+                            && **name == attribute.to_string() {
                                 return true;
                             }
-                        }
-                    }
                 }
             }
         }
@@ -373,7 +368,7 @@ impl Fixture {
             };
 
             let Some(attribute_name) = attribute.name.as_ref() else { continue };
-            let attribute = Attribute::from_str(&attribute_name).unwrap();
+            let attribute = Attribute::from_str(attribute_name).unwrap();
 
             values.push((attribute, channel_function.default.into()));
         }
@@ -400,16 +395,12 @@ impl Fixture {
                     if logical_channel.attribute(fixture_type).is_some_and(|attr| {
                         attr.name.as_ref().is_some_and(|name| **name == attribute.to_string())
                     }) {
-                        return true;
-                    } else if logical_channel.channel_functions.iter().any(|channel_function| {
+                        true
+                    } else { logical_channel.channel_functions.iter().any(|channel_function| {
                         channel_function.attribute(fixture_type).is_some_and(|attr| {
                             attr.name.as_ref().is_some_and(|name| **name == attribute.to_string())
                         })
-                    }) {
-                        return true;
-                    } else {
-                        return false;
-                    }
+                    }) }
                 })
             })
             .wrap_err_with(|| format!("channel not found for attribute {attribute}"))?;

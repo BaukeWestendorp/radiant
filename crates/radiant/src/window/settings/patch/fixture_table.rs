@@ -109,7 +109,7 @@ impl FixtureTable {
                 cx,
                 move |value, _, cx| {
                     let name = value.trim();
-                    let generated_names = super::generate_names(&name, row_ids.len());
+                    let generated_names = super::generate_names(name, row_ids.len());
                     for (&row_id, new_name) in row_ids.iter().zip(generated_names) {
                         EngineManager::exec_and_log_err(
                             Command::Patch(PatchCommand::SetName {
@@ -127,7 +127,7 @@ impl FixtureTable {
     fn edit_addrs(&self, row_ids: Vec<Uuid>, window: &mut Window, cx: &mut Context<Table<Self>>) {
         let initial_address = EngineManager::read_patch(cx, |patch| {
             let fixture = patch.fixture(row_ids[0]).unwrap();
-            fixture.address.clone()
+            fixture.address
         });
 
         cx.update_wm(|wm, cx| {
@@ -252,7 +252,7 @@ impl TableDelegate for FixtureTable {
     }
 
     fn column_ix(&self, column_id: &str, _cx: &App) -> usize {
-        self.columns.iter().position(|c| &c.id == column_id).unwrap()
+        self.columns.iter().position(|c| c.id == column_id).unwrap()
     }
 
     fn sorted_row_ids(&self, cx: &App) -> Vec<Self::RowId> {
@@ -398,7 +398,7 @@ impl Render for FixtureTypePickerOverlay {
                 let ft_name = EngineManager::read_patch(cx, |patch| {
                     patch.fixture_type(&ft_id).unwrap().long_name.clone()
                 });
-                (false, Some(format!("{} (---)", ft_name)))
+                (false, Some(format!("{ft_name} (---)")))
             }
             _ => (false, None),
         };

@@ -233,7 +233,7 @@ impl<D: TableDelegate> Table<D> {
     }
 
     fn render_header(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let cells = (0..self.column_count(cx)).into_iter().map(|col_ix| {
+        let cells = (0..self.column_count(cx)).map(|col_ix| {
             let column = self.column(col_ix, cx);
 
             div()
@@ -310,9 +310,7 @@ impl<D: TableDelegate> Table<D> {
 
         let bg_color = if selected {
             cx.theme().selected
-        } else {
-            if row_ix % 2 == 1 { cx.theme().table_even } else { cx.theme().table }
-        };
+        } else if row_ix % 2 == 1 { cx.theme().table_even } else { cx.theme().table };
 
         div()
             .flex()
@@ -323,7 +321,7 @@ impl<D: TableDelegate> Table<D> {
             .border_color(cx.theme().table_row_border)
             .border_b_1()
             .cursor_crosshair()
-            .children((0..self.column_count(cx)).into_iter().map(|col_ix| {
+            .children((0..self.column_count(cx)).map(|col_ix| {
                 self.render_cell(row_id, row_ix, col_ix, window, cx).into_any_element()
             }))
     }
@@ -375,7 +373,7 @@ impl<D: TableDelegate> Table<D> {
                 cx.listener({
                     let column_id = column.id.clone();
                     move |this, _, event, cx| {
-                        if event.modifiers().shift && this.is_selecting == false {
+                        if event.modifiers().shift && !this.is_selecting {
                             this.is_selecting = true;
                             this.end_selection(row_ix, cx);
                         } else {

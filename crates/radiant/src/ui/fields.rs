@@ -2,17 +2,6 @@ use gpui::{Context, Window};
 use nui::input::{NumberField, TextField};
 use radlib::builtin::FixtureId;
 
-pub fn int_field(
-    value: Option<i32>,
-    window: &mut Window,
-    cx: &mut Context<NumberField>,
-) -> NumberField {
-    NumberField::new("int_field", cx.focus_handle(), window, cx)
-        .with_validator(cx, |text| text == "-" || text.parse::<i32>().is_ok())
-        .with_value(value.map(|value| value.into()), cx)
-        .with_step(Some(1.0), cx)
-}
-
 pub fn uint_field(
     value: Option<u32>,
     window: &mut Window,
@@ -42,11 +31,7 @@ pub fn address_field(
     window: &mut Window,
     cx: &mut Context<TextField>,
 ) -> TextField {
-    let string_value = value
-        .and_then(|value| dmx::Address::try_from(value).ok())
-        .map(|addr| addr.to_string())
-        .unwrap_or_default()
-        .into();
+    let string_value = value.map(|addr| addr.to_string()).unwrap_or_default().into();
 
     TextField::new("addr_field", cx.focus_handle(), window, cx)
         .with_value(string_value, cx)

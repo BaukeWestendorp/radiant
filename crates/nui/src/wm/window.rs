@@ -59,7 +59,7 @@ impl<D: WindowDelegate> WindowWrapper<D> {
     }
 
     pub fn window_handle(&self) -> WindowHandle<Self> {
-        self.window_handle.clone()
+        self.window_handle
     }
 }
 

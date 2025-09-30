@@ -39,7 +39,7 @@ pub struct ComponentHandle<T: Component>(Arc<Mutex<dyn Any + Send + Sync>>, Phan
 
 impl<T: Component> ComponentHandle<T> {
     pub(crate) fn new(component: Arc<Mutex<dyn Any + Send + Sync>>) -> Self {
-        Self(component, PhantomData::default())
+        Self(component, PhantomData)
     }
 
     pub fn read<R, F: FnOnce(&T) -> R>(&self, f: F) -> R {

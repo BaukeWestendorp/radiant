@@ -166,12 +166,12 @@ impl WindowManager {
         };
 
         if let Some(return_focus_handle) =
-            overlays.iter().find(|o| &o.id == id).and_then(|o| o.return_focus_handle.clone())
+            overlays.iter().find(|o| o.id == id).and_then(|o| o.return_focus_handle.clone())
         {
             window.focus(&return_focus_handle);
         }
 
-        overlays.retain(|o| &o.id != id);
+        overlays.retain(|o| o.id != id);
     }
 
     pub fn open_overlay(&mut self, overlay: Overlay, window: &mut Window, cx: &mut App) {
@@ -196,7 +196,7 @@ impl WindowManager {
 
     pub(crate) fn window_overlays(&self, handle: &AnyWindowHandle) -> Vec<Entity<Overlay>> {
         self.overlays
-            .get(&handle)
+            .get(handle)
             .map(|overlays| overlays.iter().map(|o| o.view.clone()).collect())
             .unwrap_or_default()
     }
@@ -221,13 +221,10 @@ impl WindowManager {
         window
             .subscribe(&field, cx, {
                 let id = id.clone();
-                move |field: Entity<TextField>, event, window, cx| match event {
-                    FieldEvent::Submit => {
-                        let value = field.read(cx).value(cx).clone();
-                        on_submit(value, window, cx);
-                        cx.update_wm(|wm, _| wm.close_overlay(&id, window));
-                    }
-                    _ => {}
+                move |field: Entity<TextField>, event, window, cx| if let FieldEvent::Submit = event {
+                    let value = field.read(cx).value(cx).clone();
+                    on_submit(value, window, cx);
+                    cx.update_wm(|wm, _| wm.close_overlay(&id, window));
                 }
             })
             .detach();
@@ -256,13 +253,10 @@ impl WindowManager {
         window
             .subscribe(&field, cx, {
                 let id = id.clone();
-                move |field: Entity<NumberField>, event, window, cx| match event {
-                    FieldEvent::Submit => {
-                        let value = field.read(cx).value(cx).clone();
-                        on_submit(value, window, cx);
-                        cx.update_wm(|wm, _| wm.close_overlay(&id, window));
-                    }
-                    _ => {}
+                move |field: Entity<NumberField>, event, window, cx| if let FieldEvent::Submit = event {
+                    let value = field.read(cx).value(cx);
+                    on_submit(value, window, cx);
+                    cx.update_wm(|wm, _| wm.close_overlay(&id, window));
                 }
             })
             .detach();

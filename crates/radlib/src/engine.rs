@@ -128,12 +128,12 @@ fn create_temp_showfile() -> Result<PathBuf> {
     let mut temp_dir = env::temp_dir().join("radiant");
 
     let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
-    let folder_name = format!("showfile_{}", timestamp);
+    let folder_name = format!("showfile_{timestamp}");
 
     temp_dir.push(folder_name);
 
     fs::create_dir_all(&temp_dir)
-        .wrap_err_with(|| format!("failed to create temp showfile directory at {:?}", temp_dir))?;
+        .wrap_err_with(|| format!("failed to create temp showfile directory at {temp_dir:?}"))?;
 
     Ok(temp_dir)
 }

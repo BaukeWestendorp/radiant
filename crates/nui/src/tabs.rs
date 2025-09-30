@@ -59,10 +59,7 @@ pub struct Tabs {
 
 impl Tabs {
     pub fn new(tabs: Vec<Tab>, _window: &mut Window, _cx: &mut Context<Self>) -> Self {
-        let selected_tab = match tabs.first() {
-            Some(tab) => Some(tab.id.clone()),
-            None => None,
-        };
+        let selected_tab = tabs.first().map(|tab| tab.id.clone());
 
         Self { tabs, selected_tab, orientation: Orientation::default(), show_tabs: true }
     }

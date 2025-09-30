@@ -85,7 +85,7 @@ impl ProtocolsProcess {
                 spin_sleep::sleep(target_time - now);
             } else {
                 let overrun = now - target_time;
-                log::warn!("frame {} overrun by {:?}", frame_count, overrun);
+                log::warn!("frame {frame_count} overrun by {overrun:?}");
             }
 
             self.tx.send(()).expect("should send new frame notifier to protocols");
@@ -95,9 +95,9 @@ impl ProtocolsProcess {
             total_frame_time += frame_time;
             frame_count += 1;
 
-            if frame_count % 100 == 0 {
+            if frame_count.is_multiple_of(100) {
                 let avg_frame_time = total_frame_time / frame_count;
-                log::warn!("Average frame time over {} frames: {:?}", frame_count, avg_frame_time);
+                log::warn!("Average frame time over {frame_count} frames: {avg_frame_time:?}");
             }
         }
     }

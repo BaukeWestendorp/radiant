@@ -29,7 +29,7 @@ pub fn start(
                 });
 
                 // Resolve values.
-                patch.read(|patch| pipeline.lock().unwrap().resolve(&patch));
+                patch.read(|patch| pipeline.lock().unwrap().resolve(patch));
 
                 thread::sleep(Duration::from_secs(10));
             }

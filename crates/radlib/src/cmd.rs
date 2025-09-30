@@ -99,11 +99,10 @@ impl PatchCommand {
             }
             PatchCommand::SetFixtureId { fixture_ref, new_fid } => {
                 engine.patch().update(|patch| {
-                    if let Some(new_fid) = new_fid {
-                        if let Some(conflicting_fixture) = patch.fixture_mut(new_fid)? {
+                    if let Some(new_fid) = new_fid
+                        && let Some(conflicting_fixture) = patch.fixture_mut(new_fid)? {
                             conflicting_fixture.fid = None;
                         }
-                    }
 
                     if let Some(fixture) = patch.fixture_mut(fixture_ref)? {
                         fixture.fid = new_fid;
@@ -117,11 +116,10 @@ impl PatchCommand {
             }
             PatchCommand::SetAddress { fixture_ref, address } => {
                 engine.patch().update(|patch| {
-                    if let Some(address) = address {
-                        if let Some(conflicting_fixture) = patch.fixture_mut(address)? {
+                    if let Some(address) = address
+                        && let Some(conflicting_fixture) = patch.fixture_mut(address)? {
                             conflicting_fixture.address = None;
                         }
-                    }
 
                     if let Some(fixture) = patch.fixture_mut(fixture_ref)? {
                         fixture.address = address;

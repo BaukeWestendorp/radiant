@@ -21,6 +21,12 @@ mod actions {
 
 pub struct RadiantApp {}
 
+impl Default for RadiantApp {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RadiantApp {
     pub fn new() -> Self {
         Self {}

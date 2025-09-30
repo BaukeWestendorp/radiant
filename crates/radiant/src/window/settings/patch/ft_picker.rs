@@ -24,7 +24,7 @@ impl FixtureTypePicker {
             window,
             |this, table, event: &TableEvent, window, cx| match event {
                 TableEvent::SelectionChanged => {
-                    if let Some(ft_id) = table.read(cx).selected_row_ids(cx).get(0) {
+                    if let Some(ft_id) = table.read(cx).selected_row_ids(cx).first() {
                         this.open_dmx_mode_table(ft_id, window, cx);
                     } else {
                         this.close_dmx_mode_table(cx);
@@ -50,7 +50,7 @@ impl FixtureTypePicker {
     }
 
     pub fn selected_ft_id(&self, cx: &App) -> Option<GdtfFixtureTypeId> {
-        self.ft_table.read(cx).selected_row_ids(cx).get(0).copied()
+        self.ft_table.read(cx).selected_row_ids(cx).first().copied()
     }
 
     pub fn select_ft_id(
@@ -59,12 +59,12 @@ impl FixtureTypePicker {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.ft_table.update(cx, |ft_table, cx| ft_table.select_row_id(&ft_id, cx));
+        self.ft_table.update(cx, |ft_table, cx| ft_table.select_row_id(ft_id, cx));
         self.open_dmx_mode_table(ft_id, window, cx);
     }
 
     pub fn selected_dmx_mode(&self, cx: &App) -> Option<String> {
-        self.dmx_mode_table.as_ref()?.read(cx).selected_row_ids(cx).get(0).cloned()
+        self.dmx_mode_table.as_ref()?.read(cx).selected_row_ids(cx).first().cloned()
     }
 
     pub fn select_dmx_mode(&mut self, dmx_mode: SharedString, cx: &mut Context<Self>) {
@@ -217,7 +217,7 @@ impl TableDelegate for DmxModeTable {
                     .unwrap_or("<unknown>".to_string())
             })
             .collect::<Vec<_>>();
-        dmx_modes.sort_by(|a, b| a.cmp(&b));
+        dmx_modes.sort();
         dmx_modes
     }
 

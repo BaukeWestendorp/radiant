@@ -63,7 +63,7 @@ impl Render for PatchSettings {
             .border_color(cx.theme().border)
             .bg(cx.theme().background)
             .child(if selected_rows > 0 {
-                format!("Selected rows: {}", selected_rows)
+                format!("Selected rows: {selected_rows}")
             } else {
                 "".to_string()
             })
@@ -121,7 +121,7 @@ impl AddFixtureOverlay {
         Some(FixtureId(NonZeroU32::new(u32_value)?))
     }
 
-    fn name<'a>(&self, cx: &'a App) -> SharedString {
+    fn name(&self, cx: &App) -> SharedString {
         self.name_field.read(cx).value(cx).trim().to_string().into()
     }
 
