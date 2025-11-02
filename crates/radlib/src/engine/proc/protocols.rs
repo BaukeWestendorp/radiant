@@ -81,11 +81,13 @@ impl ProtocolsProcess {
             let target_time = start_time + DMX_OUTPUT_FRAME_TIME * frame_count;
             let now = Instant::now();
 
-            if now < target_time && frame_count != 0 {
-                spin_sleep::sleep(target_time - now);
-            } else {
-                let overrun = now - target_time;
-                log::warn!("frame {frame_count} overrun by {overrun:?}");
+            if frame_count != 0 {
+                if now < target_time {
+                    spin_sleep::sleep(target_time - now);
+                } else {
+                    let overrun = now - target_time;
+                    log::warn!("frame {frame_count} overrun by {overrun:?}");
+                }
             }
 
             self.tx.send(()).expect("should send new frame notifier to protocols");
@@ -94,11 +96,6 @@ impl ProtocolsProcess {
             let frame_time = frame_end - frame_start;
             total_frame_time += frame_time;
             frame_count += 1;
-
-            if frame_count.is_multiple_of(100) {
-                let avg_frame_time = total_frame_time / frame_count;
-                log::warn!("Average frame time over {frame_count} frames: {avg_frame_time:?}");
-            }
         }
     }
 

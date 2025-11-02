@@ -2,17 +2,13 @@
 //!
 //! Responsible for receiving and processing sACN packets.
 
-use super::{
-    DEFAULT_PORT, Universe,
-    packet::{DataFraming, DiscoveryFraming, Packet, PacketError, Pdu, SyncFraming},
-};
+use super::packet::{DataFraming, DiscoveryFraming, Packet, PacketError, Pdu, SyncFraming};
+use super::{DEFAULT_PORT, Universe};
 use socket2::{Domain, Socket, Type};
-use std::{
-    net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr},
-    sync::{Arc, Mutex, mpsc},
-    thread::{self, JoinHandle},
-    time::Duration,
-};
+use std::net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr};
+use std::sync::{Arc, Mutex, mpsc};
+use std::thread::{self, JoinHandle};
+use std::time::Duration;
 
 const _NETWORK_DATA_LOSS_TIMEOUT: Duration = Duration::from_millis(2500);
 
@@ -51,7 +47,7 @@ impl Receiver {
         socket.set_reuse_port(true)?;
         socket.bind(&addr.into())?;
 
-        log::info!("bound sACN Receiver on {}:{}", addr, config.port);
+        log::info!("bound sACN receiver on {}:{}", addr, config.port);
 
         let inner = Arc::new(Inner { config: Mutex::new(config), socket });
 
@@ -68,7 +64,7 @@ impl Receiver {
 
     /// Shut down this [Receiver].
     pub fn shutdown(&mut self) -> Result<(), ReceiverError> {
-        log::info!("shutting down sACN Receiver");
+        log::info!("shutting down sACN receiver");
         self.inner.socket.shutdown(Shutdown::Both)?;
         self.thread_handle.take().unwrap().join().ok();
         Ok(())
@@ -151,7 +147,7 @@ struct Inner {
 
 impl Inner {
     pub fn start(&self, tx: &mpsc::Sender<Universe>) -> Result<(), ReceiverError> {
-        log::debug!("starting sACN Receiver");
+        log::debug!("starting sACN receiver");
         loop {
             let packet = match self.recv_packet() {
                 Ok(packet) => {

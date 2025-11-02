@@ -65,7 +65,7 @@ impl Source {
 
     /// Shut down this [Source].
     pub fn shutdown(&self) -> Result<(), SourceError> {
-        log::info!("shutting down sACN Source");
+        log::info!("shutting down sACN source");
         self.socket.shutdown(Shutdown::Both)?;
         Ok(())
     }

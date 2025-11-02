@@ -87,12 +87,12 @@ impl Command {
             }
 
             Command::SaveShowfile => {
-                log::info!("saving showfile...");
+                log::info!("saving showfile");
                 let showfile_path = engine.showfile_path();
                 for component in engine.components() {
                     component.lock().unwrap().save_to_showfile(showfile_path)?;
                 }
-                log::info!("saved showfile!");
+                log::info!("saved showfile");
             }
         }
 
