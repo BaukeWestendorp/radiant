@@ -51,11 +51,13 @@ impl WindowDelegate for SettingsWindow {
         self.tabs.clone()
     }
 
-    fn handle_window_discard(&self, _window: &mut Window, cx: &mut Context<WindowWrapper<Self>>) {
+    fn handle_window_discard(&self, window: &mut Window, cx: &mut Context<WindowWrapper<Self>>) {
         EngineManager::exec_and_log_err(Command::Patch(PatchCommand::Discard), cx);
+        cx.update_wm(|wm, _| wm.set_edited(window, false));
     }
 
-    fn handle_window_save(&self, _window: &mut Window, cx: &mut Context<WindowWrapper<Self>>) {
+    fn handle_window_save(&self, window: &mut Window, cx: &mut Context<WindowWrapper<Self>>) {
         EngineManager::exec_and_log_err(Command::Patch(PatchCommand::Save), cx);
+        cx.update_wm(|wm, _| wm.set_edited(window, false));
     }
 }

@@ -221,10 +221,12 @@ impl WindowManager {
         window
             .subscribe(&field, cx, {
                 let id = id.clone();
-                move |field: Entity<TextField>, event, window, cx| if let FieldEvent::Submit = event {
-                    let value = field.read(cx).value(cx).clone();
-                    on_submit(value, window, cx);
-                    cx.update_wm(|wm, _| wm.close_overlay(&id, window));
+                move |field: Entity<TextField>, event, window, cx| {
+                    if let FieldEvent::Submit = event {
+                        let value = field.read(cx).value(cx).clone();
+                        on_submit(value, window, cx);
+                        cx.update_wm(|wm, _| wm.close_overlay(&id, window));
+                    }
                 }
             })
             .detach();
@@ -253,15 +255,49 @@ impl WindowManager {
         window
             .subscribe(&field, cx, {
                 let id = id.clone();
-                move |field: Entity<NumberField>, event, window, cx| if let FieldEvent::Submit = event {
-                    let value = field.read(cx).value(cx);
-                    on_submit(value, window, cx);
-                    cx.update_wm(|wm, _| wm.close_overlay(&id, window));
+                move |field: Entity<NumberField>, event, window, cx| {
+                    if let FieldEvent::Submit = event {
+                        let value = field.read(cx).value(cx);
+                        on_submit(value, window, cx);
+                        cx.update_wm(|wm, _| wm.close_overlay(&id, window));
+                    }
                 }
             })
             .detach();
 
         self.open_overlay(Overlay::new(id, title, modal, focus_handle).as_modal(), window, cx);
+    }
+
+    pub fn save_window<D: WindowDelegate>(&self, cx: &mut App) {
+        let type_id = TypeId::of::<D>();
+        let Some(&handle) = self.singleton_windows.get(&type_id) else { return };
+
+        cx.defer(move |cx| {
+            handle
+                .update(cx, move |view, window, cx| {
+                    let wrapper: Entity<WindowWrapper<D>> = view.downcast().unwrap();
+                    wrapper.update(cx, |wrapper, cx| {
+                        wrapper.handle_window_save(window, cx);
+                    });
+                })
+                .expect("should update window");
+        });
+    }
+
+    pub fn discard_window<D: WindowDelegate>(&self, cx: &mut App) {
+        let type_id = TypeId::of::<D>();
+        let Some(&handle) = self.singleton_windows.get(&type_id) else { return };
+
+        cx.defer(move |cx| {
+            handle
+                .update(cx, move |view, window, cx| {
+                    let wrapper: Entity<WindowWrapper<D>> = view.downcast().unwrap();
+                    wrapper.update(cx, |wrapper, cx| {
+                        wrapper.handle_window_discard(window, cx);
+                    });
+                })
+                .expect("should update window");
+        });
     }
 }
 

@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use gpui::{App, Application, Menu, MenuItem};
 use nui::AppExt;
-use radlib::cmd::Command;
+use radlib::cmd::{Command, PatchCommand};
 
 use crate::engine::EngineManager;
 use crate::window::main::MainWindow;
@@ -73,7 +73,11 @@ fn init_actions(cx: &mut App) {
     cx.on_action::<actions::Quit>(|_, cx| quit(cx));
 
     cx.on_action::<actions::Save>(|_, cx| {
-        EngineManager::exec_and_log_err(Command::SaveShowfile, cx);
+        cx.update_wm(|wm, cx| wm.save_window::<SettingsWindow>(cx));
+        cx.defer(|cx| {
+            EngineManager::exec_and_log_err(Command::SaveShowfile, cx);
+            EngineManager::exec_and_log_err(Command::Patch(PatchCommand::Edit), cx);
+        });
     });
 
     cx.on_action::<actions::OpenSettings>(|_, cx| {
