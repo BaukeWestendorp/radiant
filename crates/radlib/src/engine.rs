@@ -1,4 +1,4 @@
-use std::any::{Any, TypeId};
+use std::any::TypeId;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -18,7 +18,7 @@ mod proc;
 
 pub struct Engine {
     showfile_path: PathBuf,
-    components: HashMap<TypeId, Arc<Mutex<dyn Any + Send + Sync>>>,
+    components: HashMap<TypeId, Arc<Mutex<dyn Component>>>,
     pipeline: Arc<Mutex<Pipeline>>,
     event_tx: crossbeam_channel::Sender<EngineEvent>,
     event_rx: crossbeam_channel::Receiver<EngineEvent>,
@@ -42,9 +42,13 @@ impl Engine {
         }
     }
 
+    pub fn showfile_path(&self) -> &PathBuf {
+        &self.showfile_path
+    }
+
     pub fn register_component<T>(&mut self) -> Result<()>
     where
-        T: Component + serde::Serialize + for<'de> serde::Deserialize<'de> + Send + Sync + 'static,
+        T: Component + Default + serde::Serialize + for<'de> serde::Deserialize<'de>,
     {
         let type_id = TypeId::of::<T>();
         let component = T::load_from_showfile(&self.showfile_path)
@@ -57,6 +61,10 @@ impl Engine {
         let type_id = TypeId::of::<T>();
         let component = self.components.get(&type_id).expect("component not registered");
         ComponentHandle::new(component.clone())
+    }
+
+    pub fn components(&self) -> impl Iterator<Item = &Arc<Mutex<dyn Component>>> {
+        self.components.values()
     }
 
     pub fn start(&mut self) -> Result<()> {

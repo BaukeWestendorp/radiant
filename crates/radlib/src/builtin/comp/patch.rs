@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fs::File;
+use std::io::Write;
 use std::num::NonZeroU32;
 use std::ops::Deref;
 use std::path::Path;
@@ -81,9 +82,10 @@ impl Patch {
         }
 
         if let Some(fid) = fixture.fid
-            && let Some(fixture) = self.fixture_mut(fid)? {
-                fixture.fid = None;
-            }
+            && let Some(fixture) = self.fixture_mut(fid)?
+        {
+            fixture.fid = None;
+        }
 
         let Some(fixture_type) = self.fixture_types.get(&fixture.fixture_type_id) else {
             eyre::bail!(
@@ -254,6 +256,14 @@ impl Component for Patch {
 
         Ok(())
     }
+
+    fn save_to_showfile(&self, showfile_path: &Path) -> Result<()> {
+        let file_path = showfile_path.join(Self::relative_file_path());
+        let mut file = File::create(&file_path)?;
+        let yaml = serde_yaml::to_string(self)?;
+        file.write_all(yaml.as_bytes())?;
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -312,15 +322,17 @@ impl Fixture {
             for logical_channel in &dmx_channel.logical_channels {
                 if let Some(attr) = logical_channel.attribute(fixture_type)
                     && let Some(name) = attr.name.as_ref()
-                        && **name == attribute.to_string() {
-                            return true;
-                        }
+                    && **name == attribute.to_string()
+                {
+                    return true;
+                }
                 for channel_function in &logical_channel.channel_functions {
                     if let Some(attr) = channel_function.attribute(fixture_type)
                         && let Some(name) = attr.name.as_ref()
-                            && **name == attribute.to_string() {
-                                return true;
-                            }
+                        && **name == attribute.to_string()
+                    {
+                        return true;
+                    }
                 }
             }
         }
@@ -396,11 +408,15 @@ impl Fixture {
                         attr.name.as_ref().is_some_and(|name| **name == attribute.to_string())
                     }) {
                         true
-                    } else { logical_channel.channel_functions.iter().any(|channel_function| {
-                        channel_function.attribute(fixture_type).is_some_and(|attr| {
-                            attr.name.as_ref().is_some_and(|name| **name == attribute.to_string())
+                    } else {
+                        logical_channel.channel_functions.iter().any(|channel_function| {
+                            channel_function.attribute(fixture_type).is_some_and(|attr| {
+                                attr.name
+                                    .as_ref()
+                                    .is_some_and(|name| **name == attribute.to_string())
+                            })
                         })
-                    }) }
+                    }
                 })
             })
             .wrap_err_with(|| format!("channel not found for attribute {attribute}"))?;

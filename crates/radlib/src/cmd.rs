@@ -22,132 +22,8 @@ pub enum Command {
 
     Create { r#type: ObjectType, pool_id: PoolId, name: Option<String> },
     Remove { object_ref: ObjectReference },
-}
 
-#[derive(Clone)]
-pub enum PatchCommand {
-    Edit,
-    Save,
-    Discard,
-    AddFixture {
-        fid: Option<FixtureId>,
-        fixture_type_id: GdtfFixtureTypeId,
-        address: Option<dmx::Address>,
-        dmx_mode: String,
-        name: Option<String>,
-    },
-    RemoveFixture {
-        fixture_ref: FixtureReference,
-    },
-    SetName {
-        fixture_ref: FixtureReference,
-        name: String,
-    },
-    SetFixtureId {
-        fixture_ref: FixtureReference,
-        new_fid: Option<FixtureId>,
-    },
-    SetAddress {
-        fixture_ref: FixtureReference,
-        address: Option<dmx::Address>,
-    },
-    SetFixtureTypeId {
-        fixture_ref: FixtureReference,
-        fixture_type_id: GdtfFixtureTypeId,
-        dmx_mode: String,
-    },
-}
-
-impl PatchCommand {
-    fn exec(self, engine: &mut Engine) -> Result<()> {
-        match self {
-            PatchCommand::Edit => {
-                engine.patch().update(|patch| patch.start_edit());
-            }
-            PatchCommand::Save => {
-                engine.patch().update(|patch| patch.save_edit())?;
-            }
-            PatchCommand::Discard => {
-                engine.patch().update(|patch| patch.discard_edit());
-            }
-            PatchCommand::AddFixture { fid, fixture_type_id, address, dmx_mode, name } => {
-                engine.patch().update(|patch| {
-                    patch.add_fixture(Fixture::new(
-                        fid,
-                        fixture_type_id,
-                        address,
-                        dmx_mode,
-                        name.unwrap_or("New Fixture".to_string()),
-                    ))
-                })?;
-                engine.emit(EngineEvent::PatchChanged);
-            }
-            PatchCommand::RemoveFixture { fixture_ref } => {
-                engine.patch().update(|patch| patch.remove_fixture(fixture_ref))?;
-            }
-            PatchCommand::SetName { fixture_ref, name } => {
-                engine.patch().update(|patch| {
-                    if let Some(fixture) = patch.fixture_mut(fixture_ref)? {
-                        fixture.name = name;
-                    } else {
-                        eyre::bail!("fixture with reference {fixture_ref} not found");
-                    }
-
-                    Ok(())
-                })?;
-                engine.emit(EngineEvent::PatchChanged);
-            }
-            PatchCommand::SetFixtureId { fixture_ref, new_fid } => {
-                engine.patch().update(|patch| {
-                    if let Some(new_fid) = new_fid
-                        && let Some(conflicting_fixture) = patch.fixture_mut(new_fid)? {
-                            conflicting_fixture.fid = None;
-                        }
-
-                    if let Some(fixture) = patch.fixture_mut(fixture_ref)? {
-                        fixture.fid = new_fid;
-                    } else {
-                        eyre::bail!("fixture with reference {fixture_ref} not found");
-                    }
-
-                    Ok(())
-                })?;
-                engine.emit(EngineEvent::PatchChanged);
-            }
-            PatchCommand::SetAddress { fixture_ref, address } => {
-                engine.patch().update(|patch| {
-                    if let Some(address) = address
-                        && let Some(conflicting_fixture) = patch.fixture_mut(address)? {
-                            conflicting_fixture.address = None;
-                        }
-
-                    if let Some(fixture) = patch.fixture_mut(fixture_ref)? {
-                        fixture.address = address;
-                    } else {
-                        eyre::bail!("fixture with reference {fixture_ref} not found");
-                    }
-
-                    Ok(())
-                })?;
-                engine.emit(EngineEvent::PatchChanged);
-            }
-            PatchCommand::SetFixtureTypeId { fixture_ref, fixture_type_id, dmx_mode } => {
-                engine.patch().update(|patch| {
-                    if let Some(fixture) = patch.fixture_mut(fixture_ref)? {
-                        fixture.fixture_type_id = fixture_type_id;
-                        fixture.dmx_mode = dmx_mode;
-                    } else {
-                        eyre::bail!("fixture with reference {fixture_ref} not found");
-                    }
-
-                    Ok(())
-                })?;
-                engine.emit(EngineEvent::PatchChanged);
-            }
-        }
-
-        Ok(())
-    }
+    SaveShowfile,
 }
 
 impl Command {
@@ -208,6 +84,15 @@ impl Command {
                 let object_id = object_ref.object_id(engine)?;
 
                 engine.objects().update(|objects| objects.remove(object_id));
+            }
+
+            Command::SaveShowfile => {
+                log::info!("saving showfile...");
+                let showfile_path = engine.showfile_path();
+                for component in engine.components() {
+                    component.lock().unwrap().save_to_showfile(showfile_path)?;
+                }
+                log::info!("saved showfile!");
             }
         }
 
@@ -323,9 +208,141 @@ impl fmt::Display for Command {
                 push_keyword(&mut parts, "remove");
                 push_argument(&mut parts, object_ref);
             }
+            Command::SaveShowfile => {
+                push_keyword(&mut parts, "save_showfile");
+            }
         }
 
         write!(f, "{}", parts.join(" "))
+    }
+}
+
+#[derive(Clone)]
+pub enum PatchCommand {
+    Edit,
+    Save,
+    Discard,
+    AddFixture {
+        fid: Option<FixtureId>,
+        fixture_type_id: GdtfFixtureTypeId,
+        address: Option<dmx::Address>,
+        dmx_mode: String,
+        name: Option<String>,
+    },
+    RemoveFixture {
+        fixture_ref: FixtureReference,
+    },
+    SetName {
+        fixture_ref: FixtureReference,
+        name: String,
+    },
+    SetFixtureId {
+        fixture_ref: FixtureReference,
+        new_fid: Option<FixtureId>,
+    },
+    SetAddress {
+        fixture_ref: FixtureReference,
+        address: Option<dmx::Address>,
+    },
+    SetFixtureTypeId {
+        fixture_ref: FixtureReference,
+        fixture_type_id: GdtfFixtureTypeId,
+        dmx_mode: String,
+    },
+}
+
+impl PatchCommand {
+    fn exec(self, engine: &mut Engine) -> Result<()> {
+        match self {
+            PatchCommand::Edit => {
+                engine.patch().update(|patch| patch.start_edit());
+            }
+            PatchCommand::Save => {
+                engine.patch().update(|patch| patch.save_edit())?;
+            }
+            PatchCommand::Discard => {
+                engine.patch().update(|patch| patch.discard_edit());
+            }
+            PatchCommand::AddFixture { fid, fixture_type_id, address, dmx_mode, name } => {
+                engine.patch().update(|patch| {
+                    patch.add_fixture(Fixture::new(
+                        fid,
+                        fixture_type_id,
+                        address,
+                        dmx_mode,
+                        name.unwrap_or("New Fixture".to_string()),
+                    ))
+                })?;
+                engine.emit(EngineEvent::PatchChanged);
+            }
+            PatchCommand::RemoveFixture { fixture_ref } => {
+                engine.patch().update(|patch| patch.remove_fixture(fixture_ref))?;
+                engine.emit(EngineEvent::PatchChanged);
+            }
+            PatchCommand::SetName { fixture_ref, name } => {
+                engine.patch().update(|patch| {
+                    if let Some(fixture) = patch.fixture_mut(fixture_ref)? {
+                        fixture.name = name;
+                    } else {
+                        eyre::bail!("fixture with reference {fixture_ref} not found");
+                    }
+
+                    Ok(())
+                })?;
+                engine.emit(EngineEvent::PatchChanged);
+            }
+            PatchCommand::SetFixtureId { fixture_ref, new_fid } => {
+                engine.patch().update(|patch| {
+                    if let Some(new_fid) = new_fid
+                        && let Some(conflicting_fixture) = patch.fixture_mut(new_fid)?
+                    {
+                        conflicting_fixture.fid = None;
+                    }
+
+                    if let Some(fixture) = patch.fixture_mut(fixture_ref)? {
+                        fixture.fid = new_fid;
+                    } else {
+                        eyre::bail!("fixture with reference {fixture_ref} not found");
+                    }
+
+                    Ok(())
+                })?;
+                engine.emit(EngineEvent::PatchChanged);
+            }
+            PatchCommand::SetAddress { fixture_ref, address } => {
+                engine.patch().update(|patch| {
+                    if let Some(address) = address
+                        && let Some(conflicting_fixture) = patch.fixture_mut(address)?
+                    {
+                        conflicting_fixture.address = None;
+                    }
+
+                    if let Some(fixture) = patch.fixture_mut(fixture_ref)? {
+                        fixture.address = address;
+                    } else {
+                        eyre::bail!("fixture with reference {fixture_ref} not found");
+                    }
+
+                    Ok(())
+                })?;
+                engine.emit(EngineEvent::PatchChanged);
+            }
+            PatchCommand::SetFixtureTypeId { fixture_ref, fixture_type_id, dmx_mode } => {
+                engine.patch().update(|patch| {
+                    if let Some(fixture) = patch.fixture_mut(fixture_ref)? {
+                        fixture.fixture_type_id = fixture_type_id;
+                        fixture.dmx_mode = dmx_mode;
+                    } else {
+                        eyre::bail!("fixture with reference {fixture_ref} not found");
+                    }
+
+                    Ok(())
+                })?;
+                engine.emit(EngineEvent::PatchChanged);
+            }
+        }
+
+        Ok(())
     }
 }
 

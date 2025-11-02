@@ -1,5 +1,8 @@
 use std::collections::HashMap;
 use std::fmt;
+use std::fs::File;
+use std::io::Write;
+use std::path::Path;
 
 use crate::comp::Component;
 use crate::engine::Engine;
@@ -154,5 +157,13 @@ impl Component for Objects {
 
     fn relative_file_path() -> &'static str {
         "objects.yaml"
+    }
+
+    fn save_to_showfile(&self, showfile_path: &Path) -> Result<()> {
+        let file_path = showfile_path.join(Self::relative_file_path());
+        let mut file = File::create(&file_path)?;
+        let yaml = serde_yaml::to_string(self)?;
+        file.write_all(yaml.as_bytes())?;
+        Ok(())
     }
 }

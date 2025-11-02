@@ -1,4 +1,7 @@
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::Write;
+use std::path::Path;
 
 use crate::attr::{Attribute, AttributeValue};
 use crate::builtin::FixtureId;
@@ -72,5 +75,13 @@ impl Component for Programmer {
 
     fn relative_file_path() -> &'static str {
         "programmer.yaml"
+    }
+
+    fn save_to_showfile(&self, showfile_path: &Path) -> Result<()> {
+        let file_path = showfile_path.join(Self::relative_file_path());
+        let mut file = File::create(&file_path)?;
+        let yaml = serde_yaml::to_string(self)?;
+        file.write_all(yaml.as_bytes())?;
+        Ok(())
     }
 }
