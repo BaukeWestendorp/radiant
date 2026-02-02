@@ -1,4 +1,4 @@
-use gpui::{Div, Styled, div};
+use gpui::{Div, Refineable, StyleRefinement, Styled, div};
 
 /// Returns a `Div` as horizontal flex layout.
 #[inline(always)]
@@ -23,6 +23,12 @@ pub trait StyledExt: Styled + Sized {
     #[inline(always)]
     fn v_flex(self) -> Self {
         self.flex().flex_col()
+    }
+
+    /// Refine the style of this element, applying the given style refinement.
+    fn refine_style(mut self, style: &StyleRefinement) -> Self {
+        self.style().refine(style);
+        self
     }
 }
 
