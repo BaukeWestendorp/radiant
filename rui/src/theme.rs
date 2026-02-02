@@ -1,4 +1,4 @@
-use gpui::{App, Global, Hsla, Pixels, ReadGlobal, px, rgba};
+use gpui::{App, Global, Hsla, Pixels, ReadGlobal, px, rgb};
 
 pub(crate) fn init(cx: &mut App) {
     cx.set_global(Theme::default());
@@ -45,21 +45,21 @@ impl Theme {
             radius: px(6.0),
             shadow: true,
 
-            bg_primary: rgba(0x1d1f22ff).into(),
-            bg_secondary: rgba(0x23262bff).into(),
-            bg_tertiary: rgba(0x2a2e34ff).into(),
+            bg_primary: rgb(0x100f0f).into(),
+            bg_secondary: rgb(0x1c1b1a).into(),
+            bg_tertiary: rgb(0x23262b).into(),
 
-            fg_primary: rgba(0xebebebff).into(),
-            fg_secondary: rgba(0xb3b3b3ff).into(),
-            fg_tertiary: rgba(0x808080ff).into(),
+            fg_primary: rgb(0xebebeb).into(),
+            fg_secondary: rgb(0xb3b3b3).into(),
+            fg_tertiary: rgb(0x808080).into(),
 
-            accent: rgba(0x3bb2f6ff).into(),
-            warning: rgba(0xffc94dff).into(),
-            error: rgba(0xf25f5cff).into(),
-            success: rgba(0x3bb273ff).into(),
+            accent: rgb(0x3bb2f6).into(),
+            warning: rgb(0xffc94d).into(),
+            error: rgb(0xed2320).into(),
+            success: rgb(0x3bb273).into(),
 
-            title_bar: rgba(0x23262bff).into(),
-            title_bar_border: rgba(0x191b1fff).into(),
+            title_bar: rgb(0x1c1b1a).into(),
+            title_bar_border: rgb(0x222120).into(),
         }
     }
 }
