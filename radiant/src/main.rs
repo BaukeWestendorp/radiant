@@ -2,7 +2,6 @@ use gpui::{
     App, Application, Bounds, Context, TitlebarOptions, Window, WindowBounds, WindowOptions, div,
     prelude::*, px, size,
 };
-
 use rui::{Root, TitleBar, h_flex};
 
 struct RadiantApp {}
@@ -11,23 +10,26 @@ impl RadiantApp {
     pub fn new(_cx: &mut Context<Self>) -> Self {
         Self {}
     }
+
+    fn render_title_bar_content(
+        &mut self,
+        window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) -> impl IntoElement {
+        h_flex()
+            .size_full()
+            .justify_between()
+            .child(window.window_title())
+    }
 }
 
 impl Render for RadiantApp {
-    fn render(&mut self, window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .flex()
             .flex_col()
             .size_full()
-            .child(
-                TitleBar::new().child(
-                    h_flex()
-                        .size_full()
-                        .justify_between()
-                        .child(window.window_title())
-                        .child("Settings"),
-                ),
-            )
+            .child(TitleBar::new().child(self.render_title_bar_content(window, cx)))
             .child("Radiant App")
     }
 }
