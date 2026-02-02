@@ -1,60 +1,35 @@
-use gpui::{
-    App, Application, Bounds, Context, TitlebarOptions, Window, WindowBounds, WindowOptions, div,
-    prelude::*, px, size,
-};
-use rui::{Root, TitleBar, h_flex};
+use std::path::PathBuf;
 
-struct RadiantApp {}
+use anyhow::Result;
+use clap::Parser;
+use zeevonk::project::file::ProjectFile;
 
-impl RadiantApp {
-    pub fn new(_cx: &mut Context<Self>) -> Self {
-        Self {}
-    }
+const ZEEVONK_FOLDER_RELATIVE_PATH: &str = "zv/";
 
-    fn render_title_bar_content(
-        &mut self,
-        window: &mut Window,
-        _cx: &mut Context<Self>,
-    ) -> impl IntoElement {
-        h_flex()
-            .size_full()
-            .justify_between()
-            .child(window.window_title())
-    }
+mod app;
+
+#[derive(Parser)]
+#[command(name = "radiant", about = "The Radiant CLI")]
+struct Args {
+    project_path: PathBuf,
 }
 
-impl Render for RadiantApp {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .flex()
-            .flex_col()
-            .size_full()
-            .child(TitleBar::new().child(self.render_title_bar_content(window, cx)))
-            .child("Radiant App")
-    }
+fn init_logger() {
+    let is_debug_mode = cfg!(debug_assertions);
+    let default_level =
+        if is_debug_mode { log::LevelFilter::Debug } else { log::LevelFilter::Info };
+    pretty_env_logger::formatted_builder().filter_level(default_level).parse_env("RUST_LOG").init();
 }
 
-fn main() {
-    Application::new().run(|cx: &mut App| {
-        rui::init(cx);
+fn main() -> Result<()> {
+    init_logger();
 
-        cx.activate(true);
+    let args = Args::parse();
 
-        let bounds = Bounds::centered(None, size(px(1080.0), px(720.0)), cx);
-        let options = WindowOptions {
-            titlebar: Some(TitlebarOptions {
-                title: Some("Radiant".into()),
-                appears_transparent: true,
-                ..Default::default()
-            }),
-            window_bounds: Some(WindowBounds::Windowed(bounds)),
-            ..Default::default()
-        };
+    let zv_project_file_path = args.project_path.join(ZEEVONK_FOLDER_RELATIVE_PATH);
+    let zv_project_file = ProjectFile::load_from_folder(&zv_project_file_path)?;
 
-        cx.open_window(options, |window, cx| {
-            let view = cx.new(|cx| RadiantApp::new(cx));
-            cx.new(|cx| Root::new(view, window, cx))
-        })
-        .expect("should open main window");
-    });
+    app::run(zv_project_file)?;
+
+    Ok(())
 }

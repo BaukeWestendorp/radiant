@@ -10,5 +10,6 @@ edition = "2024"
 rui = { path = "rui" }
 
 gpui = { git = "https://github.com/zed-industries/zed.git" }
+core-text = "=21.0.0"
 
 log = "0.4.29"

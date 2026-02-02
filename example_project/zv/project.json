@@ -1,0 +1,24 @@
+{
+  "patch": {
+    "fixtures": [
+      {
+        "root_id": 101,
+        "name": "Pavotube Right",
+        "address": {
+          "universe": 1,
+          "channel": 1
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "45259890-5964-41BD-B519-25653C3E5C1B",
+          "gdtf_dmx_mode": "CCT+RGBW 16bit Pixel=1"
+        }
+      }
+    ]
+  },
+
+  "dmx_output": {
+    "instances": [
+      { "enttec_open_dmx": { "universe_id": 1, "serial_number": "BG00DNDB" } }
+    ]
+  }
+}
