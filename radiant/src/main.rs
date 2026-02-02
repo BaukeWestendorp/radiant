@@ -3,7 +3,7 @@ use gpui::{
     prelude::*, px, size,
 };
 
-use rui::{Root, TitleBar};
+use rui::{Root, TitleBar, h_flex};
 
 struct RadiantApp {}
 
@@ -21,11 +21,8 @@ impl Render for RadiantApp {
             .size_full()
             .child(
                 TitleBar::new().child(
-                    // FIXME: Add `h_flex` helper.
-                    div()
+                    h_flex()
                         .size_full()
-                        .flex()
-                        .items_center()
                         .justify_between()
                         .child(window.window_title())
                         .child("Settings"),

@@ -4,7 +4,7 @@ use gpui::{
 };
 use smallvec::SmallVec;
 
-use crate::ActiveTheme;
+use crate::{ActiveTheme, h_flex};
 
 pub const TITLE_BAR_HEIGHT: Pixels = px(34.);
 #[cfg(target_os = "macos")]
@@ -35,8 +35,7 @@ impl RenderOnce for TitleBar {
         let is_linux = cfg!(target_os = "linux");
         let is_macos = cfg!(target_os = "macos");
 
-        // FIXME: Add `h_flex` helper.
-        div().flex_shrink_0().child(
+        h_flex().child(
             div()
                 .id("title-bar")
                 .flex()
