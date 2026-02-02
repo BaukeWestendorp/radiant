@@ -3,6 +3,8 @@ use gpui::{
     size,
 };
 
+use rui::Root;
+
 struct RadiantApp {}
 
 impl RadiantApp {
@@ -19,6 +21,8 @@ impl Render for RadiantApp {
 
 fn main() {
     Application::new().run(|cx: &mut App| {
+        rui::init(cx);
+
         cx.activate(true);
 
         let bounds = Bounds::centered(None, size(px(1080.0), px(720.0)), cx);
@@ -27,7 +31,10 @@ fn main() {
             ..Default::default()
         };
 
-        cx.open_window(options, |_, cx| cx.new(|cx| RadiantApp::new(cx)))
-            .expect("should open main window");
+        cx.open_window(options, |window, cx| {
+            let view = cx.new(|cx| RadiantApp::new(cx));
+            cx.new(|cx| Root::new(view, window, cx))
+        })
+        .expect("should open main window");
     });
 }
