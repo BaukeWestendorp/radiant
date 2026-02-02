@@ -1,9 +1,9 @@
 use gpui::{
-    App, Application, Bounds, Context, Window, WindowBounds, WindowOptions, div, prelude::*, px,
-    size,
+    App, Application, Bounds, Context, TitlebarOptions, Window, WindowBounds, WindowOptions, div,
+    prelude::*, px, size,
 };
 
-use rui::Root;
+use rui::{Root, TitleBar};
 
 struct RadiantApp {}
 
@@ -14,8 +14,24 @@ impl RadiantApp {
 }
 
 impl Render for RadiantApp {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().child("Radiant App")
+    fn render(&mut self, window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        div()
+            .flex()
+            .flex_col()
+            .size_full()
+            .child(
+                TitleBar::new().child(
+                    // FIXME: Add `h_flex` helper.
+                    div()
+                        .size_full()
+                        .flex()
+                        .items_center()
+                        .justify_between()
+                        .child(window.window_title())
+                        .child("Settings"),
+                ),
+            )
+            .child("Radiant App")
     }
 }
 
@@ -27,6 +43,11 @@ fn main() {
 
         let bounds = Bounds::centered(None, size(px(1080.0), px(720.0)), cx);
         let options = WindowOptions {
+            titlebar: Some(TitlebarOptions {
+                title: Some("Radiant".into()),
+                appears_transparent: true,
+                ..Default::default()
+            }),
             window_bounds: Some(WindowBounds::Windowed(bounds)),
             ..Default::default()
         };

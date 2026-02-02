@@ -33,6 +33,9 @@ pub struct Theme {
     pub warning: Hsla,
     pub error: Hsla,
     pub success: Hsla,
+
+    pub title_bar: Hsla,
+    pub title_bar_border: Hsla,
 }
 
 impl Theme {
@@ -54,6 +57,9 @@ impl Theme {
             warning: rgba(0xffc94dff).into(),
             error: rgba(0xf25f5cff).into(),
             success: rgba(0x3bb273ff).into(),
+
+            title_bar: rgba(0x23262bff).into(),
+            title_bar_border: rgba(0x191b1fff).into(),
         }
     }
 }
