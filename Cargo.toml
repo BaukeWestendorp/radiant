@@ -7,6 +7,8 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace.dependencies]
+rui = { path = "rui" }
+
 gpui = { git = "https://github.com/zed-industries/zed.git" }
 
 log = "0.4.29"
