@@ -1,5 +1,7 @@
 use gpui::{AnyView, Window, div, prelude::*};
 
+use crate::ActiveTheme;
+
 pub(crate) mod action {
     use gpui::{App, KeyBinding, actions};
 
@@ -53,9 +55,8 @@ impl Render for Root {
             .on_action(cx.listener(Self::handle_action_tab_prev))
             .relative()
             .size_full()
-            .font_family(cx.theme().font_family.clone())
-            .bg(cx.theme().background)
-            .text_color(cx.theme().foreground)
+            .bg(cx.theme().bg_primary)
+            .text_color(cx.theme().fg_primary)
             .child(self.view.clone())
     }
 }
