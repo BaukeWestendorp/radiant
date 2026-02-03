@@ -52,7 +52,7 @@ impl Button {
 
 impl RenderOnce for Button {
     fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
-        let clickable = self.disabled;
+        let clickable = !self.disabled;
 
         let (bg, border_color, text_color) = if self.selected {
             (cx.theme().bg_selected, cx.theme().border_selected, cx.theme().fg_selected)
@@ -64,9 +64,12 @@ impl RenderOnce for Button {
             .flex()
             .items_center()
             .justify_center()
-            .min_size_2()
+            .px_2()
+            .min_size_4()
             .bg(bg)
             .border_color(border_color)
+            .border_1()
+            .rounded(cx.theme().radius)
             .text_color(text_color)
             .when(self.disabled, |e| {
                 e.bg(bg.disabled())
@@ -78,8 +81,6 @@ impl RenderOnce for Button {
                 e.hover(|e| e.bg(bg.hover()).border_color(border_color.hover()))
                     .active(|e| e.bg(bg.active()).border_color(border_color.active()))
             })
-            .border_1()
-            .rounded(cx.theme().radius)
             .when_some(self.on_click, |this, on_click| {
                 this.on_click(move |event, window, cx| {
                     if !clickable {

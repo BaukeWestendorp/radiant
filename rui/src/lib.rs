@@ -1,6 +1,7 @@
 mod button;
 mod root;
 mod settings;
+mod tabs;
 mod theme;
 mod title_bar;
 
@@ -9,6 +10,7 @@ mod styled_ext;
 
 pub use button::Button;
 pub use root::Root;
+pub use tabs::{Tab, Tabs, TabsState, TabsVariant};
 pub use theme::ActiveTheme;
 pub use title_bar::TitleBar;
 
