@@ -5,7 +5,7 @@ use crate::ActiveTheme;
 pub(crate) mod action {
     use gpui::{App, KeyBinding, actions};
 
-    actions!(root, [Tab, TabPrev]);
+    actions!(root, [Tab, TabPrev, OpenSettings]);
 
     pub const KEY_CONTEXT: &str = "Root";
 

@@ -4370,6 +4370,7 @@ version = "0.1.0"
 dependencies = [
  "core-text",
  "gpui",
+ "log",
  "smallvec",
 ]
 

@@ -7,6 +7,7 @@ use zeevonk::project::file::ProjectFile;
 const ZEEVONK_FOLDER_RELATIVE_PATH: &str = "zv/";
 
 mod app;
+mod settings;
 
 #[derive(Parser)]
 #[command(name = "radiant", about = "The Radiant CLI")]
