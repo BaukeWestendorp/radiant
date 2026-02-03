@@ -1,3 +1,4 @@
+mod button;
 mod root;
 mod settings;
 mod theme;
@@ -6,6 +7,7 @@ mod title_bar;
 mod app_ext;
 mod styled_ext;
 
+pub use button::Button;
 pub use root::Root;
 pub use theme::ActiveTheme;
 pub use title_bar::TitleBar;
