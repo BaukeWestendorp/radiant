@@ -3,14 +3,422 @@
     "fixtures": [
       {
         "root_id": 101,
-        "name": "Pavotube Right",
+        "name": "Sharpy 1",
         "address": {
           "universe": 1,
           "channel": 1
         },
         "kind": {
-          "gdtf_fixture_type_id": "45259890-5964-41BD-B519-25653C3E5C1B",
-          "gdtf_dmx_mode": "CCT+RGBW 16bit Pixel=1"
+          "gdtf_fixture_type_id": "fb81889f-1992-4a7b-9ccb-414be4a033b5",
+          "gdtf_dmx_mode": "Standard"
+        }
+      },
+      {
+        "root_id": 102,
+        "name": "Sharpy 2",
+        "address": {
+          "universe": 1,
+          "channel": 17
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "fb81889f-1992-4a7b-9ccb-414be4a033b5",
+          "gdtf_dmx_mode": "Standard"
+        }
+      },
+      {
+        "root_id": 103,
+        "name": "Sharpy 3",
+        "address": {
+          "universe": 1,
+          "channel": 33
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "fb81889f-1992-4a7b-9ccb-414be4a033b5",
+          "gdtf_dmx_mode": "Standard"
+        }
+      },
+      {
+        "root_id": 104,
+        "name": "Sharpy 4",
+        "address": {
+          "universe": 1,
+          "channel": 49
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "fb81889f-1992-4a7b-9ccb-414be4a033b5",
+          "gdtf_dmx_mode": "Standard"
+        }
+      },
+      {
+        "root_id": 201,
+        "name": "Robin 600 LEDWash 1",
+        "address": {
+          "universe": 1,
+          "channel": 65
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
+          "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+        }
+      },
+      {
+        "root_id": 202,
+        "name": "Robin 600 LEDWash 2",
+        "address": {
+          "universe": 1,
+          "channel": 80
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
+          "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+        }
+      },
+      {
+        "root_id": 203,
+        "name": "Robin 600 LEDWash 3",
+        "address": {
+          "universe": 1,
+          "channel": 95
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
+          "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+        }
+      },
+      {
+        "root_id": 204,
+        "name": "Robin 600 LEDWash 4",
+        "address": {
+          "universe": 1,
+          "channel": 110
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
+          "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+        }
+      },
+      {
+        "root_id": 205,
+        "name": "Robin 600 LEDWash 5",
+        "address": {
+          "universe": 1,
+          "channel": 125
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
+          "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+        }
+      },
+      {
+        "root_id": 206,
+        "name": "Robin 600 LEDWash 6",
+        "address": {
+          "universe": 1,
+          "channel": 140
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
+          "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+        }
+      },
+      {
+        "root_id": 207,
+        "name": "Robin 600 LEDWash 7",
+        "address": {
+          "universe": 1,
+          "channel": 155
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
+          "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+        }
+      },
+      {
+        "root_id": 208,
+        "name": "Robin 600 LEDWash 8",
+        "address": {
+          "universe": 1,
+          "channel": 170
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
+          "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+        }
+      },
+      {
+        "root_id": 301,
+        "name": "Dartz 360 1",
+        "address": {
+          "universe": 1,
+          "channel": 185
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "58f6904d-7e61-49b3-bf24-db70c25b7151",
+          "gdtf_dmx_mode": "Stand Pan540"
+        }
+      },
+      {
+        "root_id": 302,
+        "name": "Dartz 360 2",
+        "address": {
+          "universe": 1,
+          "channel": 207
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "58f6904d-7e61-49b3-bf24-db70c25b7151",
+          "gdtf_dmx_mode": "Stand Pan540"
+        }
+      },
+      {
+        "root_id": 303,
+        "name": "Dartz 360 3",
+        "address": {
+          "universe": 1,
+          "channel": 229
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "58f6904d-7e61-49b3-bf24-db70c25b7151",
+          "gdtf_dmx_mode": "Stand Pan540"
+        }
+      },
+      {
+        "root_id": 304,
+        "name": "Dartz 360 4",
+        "address": {
+          "universe": 1,
+          "channel": 251
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "58f6904d-7e61-49b3-bf24-db70c25b7151",
+          "gdtf_dmx_mode": "Stand Pan540"
+        }
+      },
+      {
+        "root_id": 305,
+        "name": "Dartz 360 5",
+        "address": {
+          "universe": 1,
+          "channel": 273
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "58f6904d-7e61-49b3-bf24-db70c25b7151",
+          "gdtf_dmx_mode": "Stand Pan540"
+        }
+      },
+      {
+        "root_id": 306,
+        "name": "Dartz 360 6",
+        "address": {
+          "universe": 1,
+          "channel": 295
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "58f6904d-7e61-49b3-bf24-db70c25b7151",
+          "gdtf_dmx_mode": "Stand Pan540"
+        }
+      },
+      {
+        "root_id": 307,
+        "name": "Dartz 360 7",
+        "address": {
+          "universe": 1,
+          "channel": 317
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "58f6904d-7e61-49b3-bf24-db70c25b7151",
+          "gdtf_dmx_mode": "Stand Pan540"
+        }
+      },
+      {
+        "root_id": 308,
+        "name": "Dartz 360 8",
+        "address": {
+          "universe": 1,
+          "channel": 339
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "58f6904d-7e61-49b3-bf24-db70c25b7151",
+          "gdtf_dmx_mode": "Stand Pan540"
+        }
+      },
+      {
+        "root_id": 309,
+        "name": "Dartz 360 9",
+        "address": {
+          "universe": 1,
+          "channel": 361
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "58f6904d-7e61-49b3-bf24-db70c25b7151",
+          "gdtf_dmx_mode": "Stand Pan540"
+        }
+      },
+      {
+        "root_id": 310,
+        "name": "Dartz 360 10",
+        "address": {
+          "universe": 1,
+          "channel": 383
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "58f6904d-7e61-49b3-bf24-db70c25b7151",
+          "gdtf_dmx_mode": "Stand Pan540"
+        }
+      },
+      {
+        "root_id": 311,
+        "name": "Dartz 360 11",
+        "address": {
+          "universe": 1,
+          "channel": 505
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "58f6904d-7e61-49b3-bf24-db70c25b7151",
+          "gdtf_dmx_mode": "Stand Pan540"
+        }
+      },
+      {
+        "root_id": 312,
+        "name": "Dartz 360 12",
+        "address": {
+          "universe": 1,
+          "channel": 427
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "58f6904d-7e61-49b3-bf24-db70c25b7151",
+          "gdtf_dmx_mode": "Stand Pan540"
+        }
+      },
+      {
+        "root_id": 501,
+        "name": "JDC-1 1",
+        "address": {
+          "universe": 1,
+          "channel": 449
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "9b181200-f6e3-4ee6-b385-fce095b46424",
+          "gdtf_dmx_mode": "Mode 1 Compressed Pro (14ch)"
+        }
+      },
+      {
+        "root_id": 502,
+        "name": "JDC-1 2",
+        "address": {
+          "universe": 1,
+          "channel": 463
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "9b181200-f6e3-4ee6-b385-fce095b46424",
+          "gdtf_dmx_mode": "Mode 1 Compressed Pro (14ch)"
+        }
+      },
+      {
+        "root_id": 503,
+        "name": "JDC-1 3",
+        "address": {
+          "universe": 1,
+          "channel": 477
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "9b181200-f6e3-4ee6-b385-fce095b46424",
+          "gdtf_dmx_mode": "Mode 1 Compressed Pro (14ch)"
+        }
+      },
+      {
+        "root_id": 504,
+        "name": "JDC-1 4",
+        "address": {
+          "universe": 1,
+          "channel": 491
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "9b181200-f6e3-4ee6-b385-fce095b46424",
+          "gdtf_dmx_mode": "Mode 1 Compressed Pro (14ch)"
+        }
+      },
+      {
+        "root_id": 601,
+        "name": "Front 1",
+        "address": {
+          "universe": 1,
+          "channel": 505
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "b4daff6b-3e52-451b-afdb-e6c94c64f85d",
+          "gdtf_dmx_mode": "Default"
+        }
+      },
+      {
+        "root_id": 602,
+        "name": "Front 2",
+        "address": {
+          "universe": 1,
+          "channel": 506
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "b4daff6b-3e52-451b-afdb-e6c94c64f85d",
+          "gdtf_dmx_mode": "Default"
+        }
+      },
+      {
+        "root_id": 603,
+        "name": "Front 3",
+        "address": {
+          "universe": 1,
+          "channel": 507
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "b4daff6b-3e52-451b-afdb-e6c94c64f85d",
+          "gdtf_dmx_mode": "Default"
+        }
+      },
+      {
+        "root_id": 604,
+        "name": "Front 4",
+        "address": {
+          "universe": 1,
+          "channel": 508
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "b4daff6b-3e52-451b-afdb-e6c94c64f85d",
+          "gdtf_dmx_mode": "Default"
+        }
+      },
+      {
+        "root_id": 605,
+        "name": "Front 5",
+        "address": {
+          "universe": 1,
+          "channel": 509
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "b4daff6b-3e52-451b-afdb-e6c94c64f85d",
+          "gdtf_dmx_mode": "Default"
+        }
+      },
+      {
+        "root_id": 606,
+        "name": "Front 6",
+        "address": {
+          "universe": 1,
+          "channel": 510
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "b4daff6b-3e52-451b-afdb-e6c94c64f85d",
+          "gdtf_dmx_mode": "Default"
+        }
+      },
+      {
+        "root_id": 701,
+        "name": "Cuepix Blinder WW2 (ALL)",
+        "address": {
+          "universe": 1,
+          "channel": 511
+        },
+        "kind": {
+          "gdtf_fixture_type_id": "24921e11-5786-4c84-b977-f3e0a514165f",
+          "gdtf_dmx_mode": "01 CH"
         }
       }
     ]
