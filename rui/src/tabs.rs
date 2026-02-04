@@ -87,7 +87,8 @@ impl RenderOnce for Tabs {
         };
 
         match self.variant {
-            TabsVariant::Sidebar => h_flex()
+            TabsVariant::Sidebar => div()
+                .flex()
                 .size_full()
                 .child(
                     v_flex()
@@ -102,7 +103,9 @@ impl RenderOnce for Tabs {
                         .children(tab_buttons),
                 )
                 .child(content),
-            TabsVariant::Top => v_flex()
+            TabsVariant::Top => div()
+                .flex()
+                .flex_col()
                 .size_full()
                 .child(
                     h_flex()
