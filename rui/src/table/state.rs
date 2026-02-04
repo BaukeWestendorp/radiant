@@ -60,6 +60,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
         }
     }
 
+    // FIXME: This function is so cursed. Oef.
     pub fn resize_col(&mut self, col_ix: usize, width: Pixels, cx: &mut Context<Self>) {
         if col_ix >= self.column_bounds.len() {
             return;
@@ -82,7 +83,6 @@ impl<D: TableDelegate + 'static> TableState<D> {
             return;
         }
 
-        // Max allowed so others can be at least at their min.
         let sum_min_others: Pixels = min_widths
             .iter()
             .enumerate()
@@ -144,35 +144,72 @@ impl<D: TableDelegate + 'static> TableState<D> {
             x = x + current_widths[i];
         }
 
-        // Clamp any tiny numerical drift by adjusting the last column.
-        if !self.column_bounds.is_empty() {
-            let last_ix = self.column_bounds.len() - 1;
-            let accumulated: Pixels =
-                self.column_bounds.iter().map(|b| b.size.width).fold(px(0.0), |a, b| a + b);
-            if accumulated != total_width {
-                let diff = total_width - accumulated;
-                let last_min = min_widths[last_ix];
-                let last_new = self.column_bounds[last_ix].size.width + diff;
-                let final_last_width = if last_new < last_min { last_min } else { last_new };
-                self.column_bounds[last_ix] = bounds(
-                    point(
-                        self.column_bounds[last_ix].origin.x,
-                        self.column_bounds[last_ix].origin.y,
-                    ),
-                    size(final_last_width, self.column_bounds[last_ix].size.height),
-                );
+        // Final adjustments and recompute origins/heights happen in update_column_widths.
+        self.update_column_widths(cx);
+    }
 
-                // Recompute origins after final adjustment.
-                let mut x = table_bounds.origin.x;
-                for i in 0..self.column_bounds.len() {
-                    let w = self.column_bounds[i].size.width;
-                    self.column_bounds[i] = bounds(
-                        point(x, table_bounds.origin.y),
-                        size(w, self.column_bounds[i].size.height),
-                    );
-                    x = x + w;
+    // FIXME: This function is so cursed. Oef.
+    pub(crate) fn update_column_widths(&mut self, cx: &mut Context<Self>) {
+        let Some(table_bounds) = self.table_bounds else {
+            return;
+        };
+
+        let col_count = self.delegate.columns_count(cx);
+        if col_count == 0 {
+            cx.notify();
+            return;
+        }
+
+        if self.column_bounds.len() < col_count {
+            let mut x = if self.column_bounds.is_empty() {
+                table_bounds.origin.x
+            } else {
+                let mut last_x = table_bounds.origin.x;
+                for b in &self.column_bounds {
+                    last_x = last_x + b.size.width;
                 }
+                last_x
+            };
+            for i in self.column_bounds.len()..col_count {
+                let min_w = self.delegate.column(i, cx).min_width();
+                let b =
+                    bounds(point(x, table_bounds.origin.y), size(min_w, table_bounds.size.height));
+                self.column_bounds.push(b);
+                x = x + min_w;
             }
+        } else if self.column_bounds.len() > col_count {
+            self.column_bounds.truncate(col_count);
+        }
+
+        for i in 0..self.column_bounds.len() {
+            let w = self.column_bounds[i].size.width;
+            self.column_bounds[i] = bounds(
+                point(self.column_bounds[i].origin.x, table_bounds.origin.y),
+                size(w, table_bounds.size.height),
+            );
+        }
+
+        let accumulated: Pixels =
+            self.column_bounds.iter().map(|b| b.size.width).fold(px(0.0), |a, b| a + b);
+
+        if accumulated != table_bounds.size.width {
+            let diff = table_bounds.size.width - accumulated;
+            let last_ix = self.column_bounds.len() - 1;
+            let last_min = self.delegate.column(last_ix, cx).min_width();
+            let last_new = self.column_bounds[last_ix].size.width + diff;
+            let final_last_width = if last_new < last_min { last_min } else { last_new };
+            self.column_bounds[last_ix] = bounds(
+                point(self.column_bounds[last_ix].origin.x, self.column_bounds[last_ix].origin.y),
+                size(final_last_width, self.column_bounds[last_ix].size.height),
+            );
+        }
+
+        let mut x = table_bounds.origin.x;
+        for i in 0..self.column_bounds.len() {
+            let w = self.column_bounds[i].size.width;
+            self.column_bounds[i] =
+                bounds(point(x, table_bounds.origin.y), size(w, self.column_bounds[i].size.height));
+            x = x + w;
         }
 
         cx.notify();

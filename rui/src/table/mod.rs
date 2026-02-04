@@ -156,7 +156,13 @@ impl<D: TableDelegate + 'static> RenderOnce for Table<D> {
             .child(self.render_data_rows(window, cx))
             .on_prepaint({
                 let state = self.state.clone();
-                move |bounds, _, cx| state.update(cx, |state, _| state.table_bounds = Some(bounds))
+                move |bounds, _, cx| {
+                    state.update(cx, |state, cx| {
+                        state.table_bounds = Some(bounds);
+                        state.update_column_widths(cx);
+                        cx.notify();
+                    })
+                }
             })
     }
 }
