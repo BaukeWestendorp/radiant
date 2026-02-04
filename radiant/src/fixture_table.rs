@@ -21,32 +21,18 @@ impl TableDelegate for FixtureTableDelegate {
         self.columns.len()
     }
 
-    fn row_count(&self, cx: &App) -> usize {
-        let stage = AppState::global(cx).zeevonk().project().stage();
-        stage.fixture_count()
-    }
-
     fn column(&self, col_ix: usize, _cx: &App) -> &Column {
         &self.columns[col_ix]
     }
 
-    fn row_id(&self, row_ix: usize, cx: &App) -> Self::RowId {
+    fn root_row_ids(&self, cx: &App) -> Vec<Self::RowId> {
         let stage = AppState::global(cx).zeevonk().project().stage();
-
-        // FIXME: Prevent sorting this each lookup.
-        let mut fixtures = stage.fixtures().values().collect::<Vec<_>>();
-        fixtures.sort_by_key(|f| f.id());
-        fixtures[row_ix].id()
+        stage.root_fixtures().map(|(id, _)| *id).collect()
     }
 
-    fn root_rows(&self, cx: &App) -> impl Iterator<Item = Self::RowId> {
+    fn row_children(&self, row_id: &Self::RowId, cx: &App) -> Vec<Self::RowId> {
         let stage = AppState::global(cx).zeevonk().project().stage();
-        stage.root_fixtures().map(|(id, _)| *id)
-    }
-
-    fn row_children(&self, row_id: Self::RowId, cx: &App) -> impl Iterator<Item = Self::RowId> {
-        let stage = AppState::global(cx).zeevonk().project().stage();
-        stage.sub_fixtures(&row_id).map(|(id, _)| *id).collect::<Vec<_>>().into_iter()
+        stage.sub_fixtures(&row_id).map(|(id, _)| *id).collect()
     }
 
     fn render_td(

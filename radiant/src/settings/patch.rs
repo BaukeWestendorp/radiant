@@ -1,6 +1,6 @@
 use gpui::{App, Entity, ReadGlobal, Window, div, prelude::*};
 use rui::{Column, Table, TableDelegate, TableState};
-use zeevonk::project::file::patch::FixtureDefinition;
+use zeevonk::project::{file::patch::FixtureDefinition, stage::FixtureIdPart};
 
 use crate::app::state::AppState;
 
@@ -45,22 +45,18 @@ impl PatchTableDelegate {
 }
 
 impl TableDelegate for PatchTableDelegate {
-    type RowId = usize;
+    type RowId = FixtureIdPart;
 
     fn column_count(&self, _cx: &App) -> usize {
         self.columns.len()
-    }
-
-    fn row_count(&self, cx: &App) -> usize {
-        self.data.read(cx).len()
     }
 
     fn column(&self, col_ix: usize, _cx: &App) -> &Column {
         &self.columns[col_ix]
     }
 
-    fn row_id(&self, row_ix: usize, _cx: &App) -> Self::RowId {
-        row_ix
+    fn root_row_ids(&self, cx: &App) -> Vec<Self::RowId> {
+        self.data.read(cx).iter().map(|f| f.root_id).collect()
     }
 
     fn render_td(
@@ -70,7 +66,7 @@ impl TableDelegate for PatchTableDelegate {
         _window: &mut Window,
         cx: &App,
     ) -> impl IntoElement {
-        let row = &self.data.read(cx)[*row_id];
+        let row = self.data.read(cx).iter().find(|f| &f.root_id == row_id).unwrap();
         let col = &self.columns[col_ix];
 
         let content = match col.id().as_ref() {

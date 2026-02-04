@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use gpui::{
     App, Bounds, Pixels, UniformListScrollHandle, Window, bounds, point, prelude::*, px, size,
 };
@@ -6,6 +8,9 @@ use crate::table::TableDelegate;
 
 pub struct TableState<D: TableDelegate> {
     delegate: D,
+
+    sorted_visible_row_ids: Vec<(D::RowId, usize)>,
+    max_tree_depth: usize,
 
     pub(crate) table_bounds: Option<Bounds<Pixels>>,
     pub(crate) column_bounds: Vec<Bounds<Pixels>>,
@@ -31,14 +36,21 @@ impl<D: TableDelegate + 'static> TableState<D> {
             x += initial_width;
         }
 
-        Self {
+        let mut this = Self {
             delegate,
+
+            sorted_visible_row_ids: Vec::new(),
+            max_tree_depth: 0,
 
             table_bounds: None,
             column_bounds,
 
             vertical_scroll_handle: UniformListScrollHandle::new(),
-        }
+        };
+
+        this.cache_row_id_tree(cx);
+
+        this
     }
 
     pub fn delegate(&self) -> &D {
@@ -47,6 +59,18 @@ impl<D: TableDelegate + 'static> TableState<D> {
 
     pub fn delegate_mut(&mut self) -> &mut D {
         &mut self.delegate
+    }
+
+    pub fn sorted_visible_row_ids(&self) -> &[(D::RowId, usize)] {
+        &self.sorted_visible_row_ids
+    }
+
+    pub fn max_tree_depth(&self) -> usize {
+        self.max_tree_depth
+    }
+
+    pub fn is_tree(&self) -> bool {
+        self.max_tree_depth > 0
     }
 
     pub fn divide_columns_equally(&mut self, cx: &App) {
@@ -225,31 +249,68 @@ impl<D: TableDelegate + 'static> TableState<D> {
         cx.notify();
     }
 
-    pub(crate) fn visible_row_ixs(&self, cx: &App) -> Vec<(usize, usize)> {
-        fn collect_rows<D: TableDelegate>(
+    fn cache_row_id_tree(&mut self, cx: &App) {
+        let sorted_root_row_ids = self.delegate.root_row_ids(cx);
+        let mut sorted_child_row_ids = HashMap::new();
+
+        fn collect_children<D: TableDelegate>(
             delegate: &D,
+            parent_id: &D::RowId,
             cx: &App,
-            row_id: D::RowId,
-            depth: usize,
-            row_ix: &mut usize,
-            out: &mut Vec<(usize, usize)>,
+            map: &mut HashMap<D::RowId, Vec<D::RowId>>,
         ) {
-            out.push((depth, *row_ix));
-            *row_ix += 1;
-            for child_id in delegate.row_children(row_id, cx) {
-                collect_rows(delegate, cx, child_id, depth + 1, row_ix, out);
+            let child_ids = delegate.row_children(parent_id, cx);
+            if !child_ids.is_empty() {
+                map.insert(parent_id.clone(), child_ids.clone());
+                for child_id in &child_ids {
+                    collect_children(delegate, child_id, cx, map);
+                }
             }
         }
 
-        if self.delegate().tree_mode_enabled(cx) {
-            let mut rows = Vec::new();
-            let mut idx = 0;
-            for root_id in self.delegate().root_rows(cx) {
-                collect_rows(self.delegate(), cx, root_id, 0, &mut idx, &mut rows);
-            }
-            rows
-        } else {
-            (0..self.delegate().row_count(cx)).map(|ix| (0, ix)).collect()
+        for root_id in &sorted_root_row_ids {
+            collect_children(&self.delegate, root_id, cx, &mut sorted_child_row_ids);
         }
+
+        let is_tree = !sorted_child_row_ids.is_empty();
+        let mut visible_row_ids = Vec::new();
+        let mut max_tree_depth = 0;
+        if is_tree {
+            fn visit<D: TableDelegate>(
+                row_id: &D::RowId,
+                depth: usize,
+                children_map: &HashMap<D::RowId, Vec<D::RowId>>,
+                out: &mut Vec<(D::RowId, usize)>,
+                max_tree_depth: &mut usize,
+            ) where
+                D::RowId: Clone,
+            {
+                if depth > *max_tree_depth {
+                    *max_tree_depth = depth;
+                }
+                out.push((row_id.clone(), depth));
+                if let Some(children) = children_map.get(row_id) {
+                    for child in children {
+                        visit::<D>(child, depth + 1, children_map, out, max_tree_depth);
+                    }
+                }
+            }
+
+            for root_id in &sorted_root_row_ids {
+                visit::<D>(
+                    root_id,
+                    0,
+                    &sorted_child_row_ids,
+                    &mut visible_row_ids,
+                    &mut max_tree_depth,
+                );
+            }
+        } else {
+            visible_row_ids = sorted_root_row_ids.iter().cloned().map(|id| (id, 0)).collect();
+            max_tree_depth = 0;
+        }
+
+        self.sorted_visible_row_ids = visible_row_ids;
+        self.max_tree_depth = max_tree_depth;
     }
 }

@@ -74,10 +74,6 @@ impl<D: TableDelegate + 'static> TableState<D> {
         window.line_height()
     }
 
-    fn max_child_depth(&self, _cx: &mut Context<Self>) -> usize {
-        4
-    }
-
     fn render_cell(&self, col_ix: usize, _window: &mut Window, _cx: &mut Context<Self>) -> Div {
         let column_width = self.column_bounds[col_ix].size.width;
         div().w(column_width).h_full().flex_shrink_0().overflow_hidden().whitespace_nowrap()
@@ -115,17 +111,27 @@ impl<D: TableDelegate + 'static> TableState<D> {
     fn render_tr(
         &self,
         depth: usize,
-        row_id: D::RowId,
+        row_id: &D::RowId,
         row_ix: usize,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
         let column_count = self.delegate().column_count(cx);
-        let row_count = self.delegate().row_count(cx);
+        let row_count = self.sorted_visible_row_ids().len();
 
         let mut tds = Vec::new();
         for col_ix in 0..column_count {
-            let td = self.delegate().render_td(&row_id, col_ix, window, cx).into_any_element();
+            let mut td = self.delegate().render_td(row_id, col_ix, window, cx).into_any_element();
+
+            if self.is_tree() {
+                td = h_flex()
+                    .child(div().w(self.row_height(window) * depth as f32).h_full())
+                    .child(td)
+                    .when(depth == 0, |e| e.font_weight(FontWeight::BOLD))
+                    .when(depth > 0, |e| e.text_color(cx.theme().fg_secondary))
+                    .into_any_element();
+            }
+
             tds.push(
                 self.render_cell(col_ix, window, cx)
                     .when(col_ix != column_count - 1, |e| {
@@ -136,16 +142,6 @@ impl<D: TableDelegate + 'static> TableState<D> {
         }
 
         let bg = if row_ix % 2 == 0 { cx.theme().bg_table } else { cx.theme().bg_table_odd };
-
-        let folds = h_flex()
-            .children((0..depth).map(|_| {
-                div()
-                    .w(self.row_height(window))
-                    .h_full()
-                    .border_1()
-                    .border_color(cx.theme().border_tertiary)
-            }))
-            .h_full();
 
         h_flex()
             .id(ElementId::named_usize("table-row", row_ix))
@@ -158,7 +154,6 @@ impl<D: TableDelegate + 'static> TableState<D> {
             })
             .hover(|e| e.bg(bg.hover()))
             .active(|e| e.bg(bg.active()))
-            .child(folds)
             .children(tds)
     }
 
@@ -181,18 +176,17 @@ impl<D: TableDelegate + 'static> TableState<D> {
     }
 
     fn render_body(&self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let row_depth_ixs = self.visible_row_ixs(cx);
-        let row_count = row_depth_ixs.len();
+        let row_depth_ids = self.sorted_visible_row_ids().to_vec();
+        let row_count = row_depth_ids.len();
 
         uniform_list(
             "table-list",
             row_count,
             cx.processor(move |this, visible_range: Range<usize>, window, cx| {
                 visible_range
-                    .map(|ix| {
-                        let (depth, row_ix) = row_depth_ixs[ix];
-                        let row_id = this.delegate().row_id(row_ix, cx);
-                        this.render_tr(depth, row_id, row_ix, window, cx).into_any_element()
+                    .map(|row_ix| {
+                        let (row_id, depth) = &row_depth_ids[row_ix];
+                        this.render_tr(*depth, row_id, row_ix, window, cx).into_any_element()
                     })
                     .collect()
             }),

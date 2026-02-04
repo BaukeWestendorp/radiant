@@ -1,4 +1,6 @@
 use gpui::{Pixels, SharedString, px};
+
+#[derive(Clone)]
 pub struct Column {
     id: SharedString,
     label: SharedString,
