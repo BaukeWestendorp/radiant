@@ -1,6 +1,7 @@
 mod button;
 mod root;
 mod settings;
+mod table;
 mod tabs;
 mod theme;
 mod title_bar;
@@ -11,6 +12,7 @@ mod styled_ext;
 
 pub use button::Button;
 pub use root::Root;
+pub use table::{Column, Table, TableDelegate, TableState};
 pub use tabs::{Tab, Tabs, TabsState, TabsVariant};
 pub use theme::ActiveTheme;
 pub use title_bar::TitleBar;
@@ -23,4 +25,5 @@ pub fn init(cx: &mut gpui::App) {
     root::action::init(cx);
     theme::init(cx);
     settings::init(cx);
+    table::action::init(cx);
 }

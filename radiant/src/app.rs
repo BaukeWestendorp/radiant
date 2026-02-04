@@ -1,10 +1,10 @@
 use anyhow::Result;
 use gpui::{
-    App, Application, Bounds, Context, Entity, FocusHandle, TitlebarOptions, Window, WindowBounds,
+    App, Application, Bounds, Context, FocusHandle, TitlebarOptions, Window, WindowBounds,
     WindowOptions, div, prelude::*, px, size,
 };
 use rui::{Root, TitleBar, h_flex};
-use zeevonk::{Zeevonk, project::file::ProjectFile};
+use zeevonk::project::file::ProjectFile;
 
 pub mod action {
     use gpui::{App, KeyBinding, TitlebarOptions, WindowOptions, prelude::*};
@@ -36,11 +36,43 @@ pub mod action {
     }
 }
 
+pub mod state {
+    use anyhow::Result;
+    use gpui::{App, Global};
+    use zeevonk::{Zeevonk, project::file::ProjectFile};
+
+    pub(crate) fn init(zv_project_file: ProjectFile, cx: &mut App) -> Result<()> {
+        cx.set_global(AppState::new(zv_project_file)?);
+        Ok(())
+    }
+
+    pub struct AppState {
+        zeevonk: Zeevonk,
+    }
+
+    impl AppState {
+        pub fn new(zv_project_file: ProjectFile) -> Result<Self> {
+            let zeevonk = Zeevonk::new(zv_project_file)?;
+            zeevonk.start();
+
+            Ok(Self { zeevonk })
+        }
+
+        pub fn zeevonk(&self) -> &Zeevonk {
+            &self.zeevonk
+        }
+    }
+
+    impl Global for AppState {}
+}
+
 pub fn run(zv_project_file: ProjectFile) -> Result<()> {
     Application::new().run(|cx: &mut App| {
         rui::init(cx);
 
         action::init(cx);
+
+        state::init(zv_project_file, cx).expect("should initialize app state");
 
         cx.activate(true);
 
@@ -56,8 +88,7 @@ pub fn run(zv_project_file: ProjectFile) -> Result<()> {
         };
 
         cx.open_window(options, |window, cx| {
-            let view = cx
-                .new(|cx| RadiantApp::new(zv_project_file, window, cx).expect("should create app"));
+            let view = cx.new(|cx| RadiantApp::new(window, cx).expect("should create app"));
             cx.new(|cx| Root::new(view, window, cx))
         })
         .expect("should open main window");
@@ -67,23 +98,14 @@ pub fn run(zv_project_file: ProjectFile) -> Result<()> {
 }
 
 struct RadiantApp {
-    _zeevonk: Entity<Zeevonk>,
-
     focus_handle: FocusHandle,
 }
 
 impl RadiantApp {
-    pub fn new(
-        zv_project_file: ProjectFile,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> Result<Self> {
-        let zeevonk = Zeevonk::new(zv_project_file)?;
-        zeevonk.start();
-
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Result<Self> {
         let focus_handle = cx.focus_handle();
         focus_handle.focus(window, cx);
-        Ok(Self { _zeevonk: cx.new(|_| zeevonk), focus_handle })
+        Ok(Self { focus_handle })
     }
 
     fn render_title_bar_content(

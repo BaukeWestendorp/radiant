@@ -1,13 +1,21 @@
 use gpui::{Entity, Window, div, prelude::*};
 use rui::{Tab, Tabs, TabsState, TabsVariant, TitleBar, h_flex, v_flex};
 
+use crate::settings::patch::PatchSettingsView;
+
+mod patch;
+
 pub struct SettingsView {
     tabs_state: Entity<TabsState>,
+    patch_settings_view: Entity<PatchSettingsView>,
 }
 
 impl SettingsView {
-    pub fn new(_window: &mut Window, cx: &mut Context<Self>) -> Self {
-        Self { tabs_state: cx.new(|_| TabsState::new().with_selected("patch")) }
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        Self {
+            tabs_state: cx.new(|_| TabsState::new().with_selected("patch")),
+            patch_settings_view: cx.new(|cx| PatchSettingsView::new(window, cx)),
+        }
     }
 
     fn render_title_bar_content(
@@ -23,8 +31,12 @@ impl SettingsView {
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) -> impl IntoElement {
-        Tabs::new(self.tabs_state.clone(), TabsVariant::Top).tabs([
-            Tab::new("patch", "Patch", div().child("PATCH PANEL").into_any_element()),
+        Tabs::new(self.tabs_state.clone(), TabsVariant::Sidebar).tabs([
+            Tab::new(
+                "patch",
+                "Patch",
+                div().size_full().child(self.patch_settings_view.clone()).into_any_element(),
+            ),
             Tab::new(
                 "dmx_output",
                 "DMX Output",
