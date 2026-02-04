@@ -186,4 +186,12 @@ where
         }
         self.recompute_visible();
     }
+
+    pub fn toggle_row_expanded(&mut self, row_id: D::RowId) {
+        if self.row_expanded(&row_id) {
+            self.set_row_expanded(row_id, false);
+        } else {
+            self.set_row_expanded(row_id, true);
+        }
+    }
 }
