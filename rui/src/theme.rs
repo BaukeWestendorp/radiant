@@ -57,6 +57,8 @@ pub struct Theme {
     pub bg_secondary: Hsla,
     pub bg_tertiary: Hsla,
     pub bg_selected: Hsla,
+    pub bg_table: Hsla,
+    pub bg_table_odd: Hsla,
 
     pub fg_primary: Hsla,
     pub fg_secondary: Hsla,
@@ -88,6 +90,8 @@ impl Theme {
             bg_secondary: rgb(0x1c1b1a).into(),
             bg_tertiary: rgb(0x302e2d).into(),
             bg_selected: rgb(0x232a36).into(),
+            bg_table: rgb(0x100f0f).into(),
+            bg_table_odd: rgb(0x151414).into(),
 
             fg_primary: rgb(0xebebeb).into(),
             fg_secondary: rgb(0xb3b3b3).into(),

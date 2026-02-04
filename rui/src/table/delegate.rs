@@ -1,20 +1,20 @@
 use gpui::{App, Window, prelude::*};
 
-use crate::{Column, TableState};
+use crate::Column;
 
 pub trait TableDelegate {
-    fn columns_count(&self, cx: &App) -> usize;
+    fn column_count(&self, cx: &App) -> usize;
 
-    fn rows_count(&self, cx: &App) -> usize;
+    fn row_count(&self, cx: &App) -> usize;
 
     fn column(&self, col_ix: usize, cx: &App) -> &Column;
 
     fn render_td(
-        &mut self,
+        &self,
         row_ix: usize,
         col_ix: usize,
         window: &mut Window,
-        cx: &mut Context<TableState<Self>>,
+        cx: &App,
     ) -> impl IntoElement
     where
         Self: Sized;

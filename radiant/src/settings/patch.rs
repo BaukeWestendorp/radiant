@@ -45,11 +45,11 @@ impl PatchTableDelegate {
 }
 
 impl TableDelegate for PatchTableDelegate {
-    fn columns_count(&self, _cx: &App) -> usize {
+    fn column_count(&self, _cx: &App) -> usize {
         self.columns.len()
     }
 
-    fn rows_count(&self, cx: &App) -> usize {
+    fn row_count(&self, cx: &App) -> usize {
         self.data.read(cx).len()
     }
 
@@ -58,21 +58,23 @@ impl TableDelegate for PatchTableDelegate {
     }
 
     fn render_td(
-        &mut self,
+        &self,
         row_ix: usize,
         col_ix: usize,
         _window: &mut Window,
-        cx: &mut Context<TableState<Self>>,
+        cx: &App,
     ) -> impl IntoElement {
         let row = &self.data.read(cx)[row_ix];
         let col = &self.columns[col_ix];
 
-        match col.id().as_ref() {
+        let content = match col.id().as_ref() {
             "root_id" => row.root_id.to_string(),
             "name" => row.name.clone(),
             "address" => row.address.to_string(),
             "kind" => format!("{} ({})", row.kind.gdtf_fixture_type_id, row.kind.gdtf_dmx_mode),
             _ => "".to_string(),
-        }
+        };
+
+        div().mx_1().child(content)
     }
 }

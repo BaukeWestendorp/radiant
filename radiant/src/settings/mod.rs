@@ -32,11 +32,7 @@ impl SettingsView {
         _cx: &mut Context<Self>,
     ) -> impl IntoElement {
         Tabs::new(self.tabs_state.clone(), TabsVariant::Sidebar).tabs([
-            Tab::new(
-                "patch",
-                "Patch",
-                div().size_full().child(self.patch_settings_view.clone()).into_any_element(),
-            ),
+            Tab::new("patch", "Patch", self.patch_settings_view.clone().into_any_element()),
             Tab::new(
                 "dmx_output",
                 "DMX Output",
@@ -51,6 +47,6 @@ impl Render for SettingsView {
         v_flex()
             .size_full()
             .child(TitleBar::new().child(self.render_title_bar_content(window, cx)))
-            .child(self.render_content(window, cx))
+            .child(div().overflow_hidden().child(self.render_content(window, cx)))
     }
 }
