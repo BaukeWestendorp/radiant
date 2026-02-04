@@ -1,7 +1,7 @@
 use anyhow::Result;
 use gpui::{
-    App, Application, Bounds, Context, Entity, FocusHandle, TitlebarOptions, Window, WindowBounds,
-    WindowOptions, div, prelude::*, px, size,
+    App, Application, Bounds, Context, Entity, FocusHandle, QuitMode, TitlebarOptions, Window,
+    WindowBounds, WindowOptions, div, prelude::*, px, size,
 };
 use rui::{Button, Icon, IconSize, IconVariant, Root, Table, TableState, TitleBar, h_flex};
 use zeevonk::project::file::ProjectFile;
@@ -69,30 +69,33 @@ pub mod state {
 }
 
 pub fn run(zv_project_file: ProjectFile) -> Result<()> {
-    Application::new().with_assets(rui::Assets::default()).run(|cx: &mut App| {
-        rui::init(cx);
-        action::init(cx);
-        state::init(zv_project_file, cx).expect("should initialize app state");
+    Application::new()
+        .with_assets(rui::Assets::default())
+        .with_quit_mode(QuitMode::LastWindowClosed)
+        .run(|cx: &mut App| {
+            rui::init(cx);
+            action::init(cx);
+            state::init(zv_project_file, cx).expect("should initialize app state");
 
-        cx.activate(true);
+            cx.activate(true);
 
-        let bounds = Bounds::centered(None, size(px(1080.0), px(720.0)), cx);
-        let options = WindowOptions {
-            titlebar: Some(TitlebarOptions {
-                title: Some("Radiant".into()),
-                appears_transparent: true,
+            let bounds = Bounds::centered(None, size(px(1080.0), px(720.0)), cx);
+            let options = WindowOptions {
+                titlebar: Some(TitlebarOptions {
+                    title: Some("Radiant".into()),
+                    appears_transparent: true,
+                    ..Default::default()
+                }),
+                window_bounds: Some(WindowBounds::Windowed(bounds)),
                 ..Default::default()
-            }),
-            window_bounds: Some(WindowBounds::Windowed(bounds)),
-            ..Default::default()
-        };
+            };
 
-        cx.open_window(options, |window, cx| {
-            let view = cx.new(|cx| RadiantApp::new(window, cx).expect("should create app"));
-            cx.new(|cx| Root::new(view, window, cx))
-        })
-        .expect("should open main window");
-    });
+            cx.open_window(options, |window, cx| {
+                let view = cx.new(|cx| RadiantApp::new(window, cx).expect("should create app"));
+                cx.new(|cx| Root::new(view, window, cx))
+            })
+            .expect("should open main window");
+        });
 
     Ok(())
 }
