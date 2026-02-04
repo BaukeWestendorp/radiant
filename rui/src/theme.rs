@@ -82,7 +82,7 @@ pub struct Theme {
 impl Theme {
     pub fn dark() -> Self {
         Self {
-            font_size: px(16.0),
+            font_size: px(14.0),
             radius: px(3.0),
             shadow: true,
 
