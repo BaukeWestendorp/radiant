@@ -225,9 +225,31 @@ impl<D: TableDelegate + 'static> TableState<D> {
         cx.notify();
     }
 
-    pub fn sorted_row_ixs(&self, cx: &App) -> Vec<usize> {
-        // FIXME: Implement sorting.
+    pub(crate) fn visible_row_ixs(&self, cx: &App) -> Vec<(usize, usize)> {
+        fn collect_rows<D: TableDelegate>(
+            delegate: &D,
+            cx: &App,
+            row_id: D::RowId,
+            depth: usize,
+            row_ix: &mut usize,
+            out: &mut Vec<(usize, usize)>,
+        ) {
+            out.push((depth, *row_ix));
+            *row_ix += 1;
+            for child_id in delegate.row_children(row_id, cx) {
+                collect_rows(delegate, cx, child_id, depth + 1, row_ix, out);
+            }
+        }
 
-        (0..self.delegate().row_count(cx)).collect()
+        if self.delegate().tree_mode_enabled(cx) {
+            let mut rows = Vec::new();
+            let mut idx = 0;
+            for root_id in self.delegate().root_rows(cx) {
+                collect_rows(self.delegate(), cx, root_id, 0, &mut idx, &mut rows);
+            }
+            rows
+        } else {
+            (0..self.delegate().row_count(cx)).map(|ix| (0, ix)).collect()
+        }
     }
 }

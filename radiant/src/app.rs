@@ -1,12 +1,12 @@
 use anyhow::Result;
 use gpui::{
-    App, Application, Bounds, Context, Entity, FocusHandle, ReadGlobal, TitlebarOptions, Window,
-    WindowBounds, WindowOptions, div, prelude::*, px, size,
+    App, Application, Bounds, Context, Entity, FocusHandle, TitlebarOptions, Window, WindowBounds,
+    WindowOptions, div, prelude::*, px, size,
 };
 use rui::{Root, Table, TableState, TitleBar, h_flex};
 use zeevonk::project::file::ProjectFile;
 
-use crate::{app::state::AppState, fixture_table::FixtureTableDelegate};
+use crate::fixture_table::FixtureTableDelegate;
 
 pub mod action {
     use gpui::{App, KeyBinding, TitlebarOptions, WindowOptions, prelude::*};
@@ -71,9 +71,7 @@ pub mod state {
 pub fn run(zv_project_file: ProjectFile) -> Result<()> {
     Application::new().run(|cx: &mut App| {
         rui::init(cx);
-
         action::init(cx);
-
         state::init(zv_project_file, cx).expect("should initialize app state");
 
         cx.activate(true);
@@ -110,11 +108,8 @@ impl RadiantApp {
         let focus_handle = cx.focus_handle();
         focus_handle.focus(window, cx);
 
-        let fixtures = cx.new(|cx| {
-            AppState::global(cx).zeevonk().project().stage().fixtures().values().cloned().collect()
-        });
         let fixture_table_state =
-            cx.new(|cx| TableState::new(FixtureTableDelegate::new(fixtures), window, cx));
+            cx.new(|cx| TableState::new(FixtureTableDelegate::new(), window, cx));
 
         Ok(Self { focus_handle, fixture_table_state })
     }

@@ -1,15 +1,16 @@
-use gpui::{App, Entity, Window, div, prelude::*};
+use gpui::{App, ReadGlobal, Window, div, prelude::*};
 use rui::{Column, TableDelegate};
-use zeevonk::project::stage::{Fixture, FixtureId};
+use zeevonk::project::stage::FixtureId;
+
+use crate::app::state::AppState;
 
 pub struct FixtureTableDelegate {
-    data: Entity<Vec<Fixture>>,
     columns: Vec<Column>,
 }
 
 impl FixtureTableDelegate {
-    pub fn new(fixtures: Entity<Vec<Fixture>>) -> Self {
-        Self { data: fixtures, columns: vec![Column::new("id", "Id"), Column::new("name", "Name")] }
+    pub fn new() -> Self {
+        Self { columns: vec![Column::new("id", "Id"), Column::new("name", "Name")] }
     }
 }
 
@@ -21,7 +22,8 @@ impl TableDelegate for FixtureTableDelegate {
     }
 
     fn row_count(&self, cx: &App) -> usize {
-        self.data.read(cx).len()
+        let stage = AppState::global(cx).zeevonk().project().stage();
+        stage.fixture_count()
     }
 
     fn column(&self, col_ix: usize, _cx: &App) -> &Column {
@@ -29,7 +31,22 @@ impl TableDelegate for FixtureTableDelegate {
     }
 
     fn row_id(&self, row_ix: usize, cx: &App) -> Self::RowId {
-        self.data.read(cx)[row_ix].id()
+        let stage = AppState::global(cx).zeevonk().project().stage();
+
+        // FIXME: Prevent sorting this each lookup.
+        let mut fixtures = stage.fixtures().values().collect::<Vec<_>>();
+        fixtures.sort_by_key(|f| f.id());
+        fixtures[row_ix].id()
+    }
+
+    fn root_rows(&self, cx: &App) -> impl Iterator<Item = Self::RowId> {
+        let stage = AppState::global(cx).zeevonk().project().stage();
+        stage.root_fixtures().map(|(id, _)| *id)
+    }
+
+    fn row_children(&self, row_id: Self::RowId, cx: &App) -> impl Iterator<Item = Self::RowId> {
+        let stage = AppState::global(cx).zeevonk().project().stage();
+        stage.sub_fixtures(&row_id).map(|(id, _)| *id).collect::<Vec<_>>().into_iter()
     }
 
     fn render_td(
@@ -39,7 +56,9 @@ impl TableDelegate for FixtureTableDelegate {
         _window: &mut Window,
         cx: &App,
     ) -> impl IntoElement {
-        let row = self.data.read(cx).iter().find(|f| f.id() == *row_id).unwrap();
+        let stage = AppState::global(cx).zeevonk().project().stage();
+
+        let row = stage.fixture(row_id).unwrap();
         let col = &self.columns[col_ix];
 
         let content = match col.id().as_ref() {

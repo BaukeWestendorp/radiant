@@ -13,8 +13,16 @@ pub trait TableDelegate {
 
     fn row_id(&self, row_ix: usize, cx: &App) -> Self::RowId;
 
+    fn root_rows(&self, _cx: &App) -> impl Iterator<Item = Self::RowId> {
+        std::iter::empty()
+    }
+
     fn row_children(&self, _row_id: Self::RowId, _cx: &App) -> impl Iterator<Item = Self::RowId> {
         std::iter::empty()
+    }
+
+    fn tree_mode_enabled(&self, cx: &App) -> bool {
+        self.root_rows(cx).nth(0).is_some()
     }
 
     fn render_td(
