@@ -13,7 +13,7 @@ pub use column::*;
 pub use delegate::*;
 pub use state::*;
 
-use crate::{ActiveTheme, h_flex, theme::HslaExt};
+use crate::{ActiveTheme, Icon, IconSize, IconVariant, h_flex, theme::HslaExt};
 
 pub(crate) mod action {
     use gpui::{App, actions};
@@ -120,7 +120,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
                                 .w(self.row_height(window))
                                 .h_full()
                                 .child(
-                                    div()
+                                    h_flex()
                                         .id("expand-button")
                                         .size_full()
                                         .on_click(cx.listener({
@@ -134,9 +134,15 @@ impl<D: TableDelegate + 'static> TableState<D> {
                                             }
                                         }))
                                         .child(if self.row_registry().row_expanded(row_id) {
-                                            "v"
+                                            Icon::new(
+                                                IconVariant::ChevronDown,
+                                                IconSize::ExtraSmall,
+                                            )
                                         } else {
-                                            ">"
+                                            Icon::new(
+                                                IconVariant::ChevronRight,
+                                                IconSize::ExtraSmall,
+                                            )
                                         }),
                                 )
                                 .into_any_element()
