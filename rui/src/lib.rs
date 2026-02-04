@@ -1,3 +1,4 @@
+mod assets;
 mod button;
 mod root;
 mod settings;
@@ -10,6 +11,7 @@ mod app_ext;
 mod element_ext;
 mod styled_ext;
 
+pub use assets::Assets;
 pub use button::Button;
 pub use root::Root;
 pub use table::{Column, Table, TableDelegate, TableState};

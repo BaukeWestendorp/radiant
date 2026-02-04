@@ -69,7 +69,7 @@ pub mod state {
 }
 
 pub fn run(zv_project_file: ProjectFile) -> Result<()> {
-    Application::new().run(|cx: &mut App| {
+    Application::new().with_assets(rui::Assets::default()).run(|cx: &mut App| {
         rui::init(cx);
         action::init(cx);
         state::init(zv_project_file, cx).expect("should initialize app state");
