@@ -1,3 +1,5 @@
+// From gpui-component:crates/ui/src/styled.rs
+
 use gpui::{Div, Refineable, StyleRefinement, Styled, div};
 
 /// Returns a `Div` as horizontal flex layout.

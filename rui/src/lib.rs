@@ -6,6 +6,7 @@ mod theme;
 mod title_bar;
 
 mod app_ext;
+mod element_ext;
 mod styled_ext;
 
 pub use button::Button;
@@ -15,6 +16,7 @@ pub use theme::ActiveTheme;
 pub use title_bar::TitleBar;
 
 pub use app_ext::AppExt;
+pub use element_ext::ElementExt;
 pub use styled_ext::{StyledExt, h_flex, v_flex};
 
 pub fn init(cx: &mut gpui::App) {
