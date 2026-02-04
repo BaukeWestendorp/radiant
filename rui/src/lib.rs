@@ -1,5 +1,6 @@
 mod assets;
 mod button;
+mod icon;
 mod root;
 mod settings;
 mod table;
@@ -13,6 +14,7 @@ mod styled_ext;
 
 pub use assets::Assets;
 pub use button::Button;
+pub use icon::{Icon, IconSize, IconVariant};
 pub use root::Root;
 pub use table::{Column, Table, TableDelegate, TableState};
 pub use tabs::{Tab, Tabs, TabsState, TabsVariant};
