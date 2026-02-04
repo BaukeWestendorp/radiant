@@ -110,6 +110,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
 
     fn render_tr(
         &self,
+        row_id: D::RowId,
         row_ix: usize,
         window: &mut Window,
         cx: &mut Context<Self>,
@@ -119,7 +120,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
 
         let mut tds = Vec::new();
         for col_ix in 0..column_count {
-            let td = self.delegate().render_td(row_ix, col_ix, window, cx).into_any_element();
+            let td = self.delegate().render_td(&row_id, col_ix, window, cx).into_any_element();
             tds.push(
                 self.render_cell(col_ix, window, cx)
                     .when(col_ix != column_count - 1, |e| {
@@ -172,7 +173,10 @@ impl<D: TableDelegate + 'static> TableState<D> {
             row_count,
             cx.processor(move |this, visible_range: Range<usize>, window, cx| {
                 visible_range
-                    .map(|row_ix| this.render_tr(row_ix, window, cx).into_any_element())
+                    .map(|row_ix| {
+                        let row_id = this.delegate().row_id(row_ix, cx);
+                        this.render_tr(row_id, row_ix, window, cx).into_any_element()
+                    })
                     .collect()
             }),
         )

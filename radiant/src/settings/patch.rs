@@ -31,7 +31,7 @@ struct PatchTableDelegate {
 }
 
 impl PatchTableDelegate {
-    fn new(fixtures: Entity<Vec<FixtureDefinition>>) -> Self {
+    pub fn new(fixtures: Entity<Vec<FixtureDefinition>>) -> Self {
         Self {
             data: fixtures,
             columns: vec![
@@ -45,6 +45,8 @@ impl PatchTableDelegate {
 }
 
 impl TableDelegate for PatchTableDelegate {
+    type RowId = usize;
+
     fn column_count(&self, _cx: &App) -> usize {
         self.columns.len()
     }
@@ -57,14 +59,18 @@ impl TableDelegate for PatchTableDelegate {
         &self.columns[col_ix]
     }
 
+    fn row_id(&self, row_ix: usize, _cx: &App) -> Self::RowId {
+        row_ix
+    }
+
     fn render_td(
         &self,
-        row_ix: usize,
+        row_id: &Self::RowId,
         col_ix: usize,
         _window: &mut Window,
         cx: &App,
     ) -> impl IntoElement {
-        let row = &self.data.read(cx)[row_ix];
+        let row = &self.data.read(cx)[*row_id];
         let col = &self.columns[col_ix];
 
         let content = match col.id().as_ref() {

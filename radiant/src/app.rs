@@ -1,10 +1,12 @@
 use anyhow::Result;
 use gpui::{
-    App, Application, Bounds, Context, FocusHandle, TitlebarOptions, Window, WindowBounds,
-    WindowOptions, div, prelude::*, px, size,
+    App, Application, Bounds, Context, Entity, FocusHandle, ReadGlobal, TitlebarOptions, Window,
+    WindowBounds, WindowOptions, div, prelude::*, px, size,
 };
-use rui::{Root, TitleBar, h_flex};
+use rui::{Root, Table, TableState, TitleBar, h_flex};
 use zeevonk::project::file::ProjectFile;
+
+use crate::{app::state::AppState, fixture_table::FixtureTableDelegate};
 
 pub mod action {
     use gpui::{App, KeyBinding, TitlebarOptions, WindowOptions, prelude::*};
@@ -99,13 +101,22 @@ pub fn run(zv_project_file: ProjectFile) -> Result<()> {
 
 struct RadiantApp {
     focus_handle: FocusHandle,
+
+    fixture_table_state: Entity<TableState<FixtureTableDelegate>>,
 }
 
 impl RadiantApp {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Result<Self> {
         let focus_handle = cx.focus_handle();
         focus_handle.focus(window, cx);
-        Ok(Self { focus_handle })
+
+        let fixtures = cx.new(|cx| {
+            AppState::global(cx).zeevonk().project().stage().fixtures().values().cloned().collect()
+        });
+        let fixture_table_state =
+            cx.new(|cx| TableState::new(FixtureTableDelegate::new(fixtures), window, cx));
+
+        Ok(Self { focus_handle, fixture_table_state })
     }
 
     fn render_title_bar_content(
@@ -125,6 +136,6 @@ impl Render for RadiantApp {
             .flex_col()
             .size_full()
             .child(TitleBar::new().child(self.render_title_bar_content(window, cx)))
-            .child("Radiant App")
+            .child(div().overflow_hidden().child(Table::new(self.fixture_table_state.clone())))
     }
 }
