@@ -117,21 +117,51 @@ impl<D: TableDelegate + 'static> TableState<D> {
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
         let column_count = self.delegate().column_count(cx);
-        let row_count = self.sorted_visible_row_ids().len();
+        let row_count = self.row_registry().sorted_visible_row_ids().len();
 
         let mut tds = Vec::new();
         for col_ix in 0..column_count {
             let mut td = self.delegate().render_td(row_id, col_ix, window, cx).into_any_element();
 
-            if self.is_tree() {
+            if self.row_registry().is_tree() {
                 td = h_flex()
-                    .child(div().w(self.row_height(window) * depth as f32).h_full())
-                    .child(td)
                     .when(depth == 0, |e| e.font_weight(FontWeight::BOLD))
                     .when(depth > 0, |e| e.text_color(cx.theme().fg_secondary))
+                    .children((0..=depth).map(|d| {
+                        if d == 0 && self.row_registry().is_row_collapsible(row_id) {
+                            h_flex()
+                                .justify_center()
+                                .w(self.row_height(window))
+                                .h_full()
+                                .child(
+                                    div()
+                                        .id("expand-button")
+                                        .size_full()
+                                        .on_click(cx.listener({
+                                            let row_id = row_id.clone();
+                                            move |this, _, _, cx| {
+                                                let state =
+                                                    this.row_registry().row_expanded(&row_id);
+                                                this.row_registry_mut()
+                                                    .set_row_expanded(row_id.clone(), !state);
+                                                cx.notify();
+                                            }
+                                        }))
+                                        .child(if self.row_registry().row_expanded(row_id) {
+                                            "v"
+                                        } else {
+                                            ">"
+                                        }),
+                                )
+                                .into_any_element()
+                        } else {
+                            div().w(self.row_height(window)).h_full().into_any_element()
+                        }
+                    }))
+                    .h_full()
+                    .child(td)
                     .into_any_element();
             }
-
             tds.push(
                 self.render_cell(col_ix, window, cx)
                     .when(col_ix != column_count - 1, |e| {
@@ -176,7 +206,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
     }
 
     fn render_body(&self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let row_depth_ids = self.sorted_visible_row_ids().to_vec();
+        let row_depth_ids = self.row_registry().sorted_visible_row_ids().to_vec();
         let row_count = row_depth_ids.len();
 
         uniform_list(
