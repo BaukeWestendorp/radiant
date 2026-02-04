@@ -3,7 +3,7 @@ use gpui::{
     App, Application, Bounds, Context, Entity, FocusHandle, TitlebarOptions, Window, WindowBounds,
     WindowOptions, div, prelude::*, px, size,
 };
-use rui::{Root, Table, TableState, TitleBar, h_flex};
+use rui::{Button, Icon, IconSize, IconVariant, Root, Table, TableState, TitleBar, h_flex};
 use zeevonk::project::file::ProjectFile;
 
 use crate::fixture_table::FixtureTableDelegate;
@@ -119,7 +119,13 @@ impl RadiantApp {
         window: &mut Window,
         _cx: &mut Context<Self>,
     ) -> impl IntoElement {
-        h_flex().size_full().justify_between().child(window.window_title())
+        h_flex().size_full().justify_between().child(window.window_title()).child(
+            Button::new("settings")
+                .icon(Icon::new(IconVariant::Settings, IconSize::ExtraSmall))
+                .on_click(|_, window, cx| {
+                    window.dispatch_action(Box::new(action::OpenSettings), cx);
+                }),
+        )
     }
 }
 

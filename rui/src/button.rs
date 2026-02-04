@@ -6,7 +6,7 @@ use gpui::{
 };
 use smallvec::SmallVec;
 
-use crate::{ActiveTheme, theme::HslaExt};
+use crate::{ActiveTheme, Icon, theme::HslaExt};
 
 #[derive(IntoElement)]
 pub struct Button {
@@ -16,6 +16,7 @@ pub struct Button {
     selected: bool,
     on_click: Option<Rc<dyn Fn(&ClickEvent, &mut Window, &mut App)>>,
     children: SmallVec<[AnyElement; 1]>,
+    icon: Option<Icon>,
 }
 
 impl Button {
@@ -28,6 +29,7 @@ impl Button {
             selected: false,
             on_click: None,
             children: SmallVec::new(),
+            icon: None,
         }
     }
 
@@ -46,6 +48,11 @@ impl Button {
         F: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
     {
         self.on_click = Some(Rc::new(handler));
+        self
+    }
+
+    pub fn icon(mut self, icon: impl Into<Icon>) -> Self {
+        self.icon = Some(icon.into());
         self
     }
 }
@@ -71,6 +78,7 @@ impl RenderOnce for Button {
             .border_1()
             .rounded(cx.theme().radius)
             .text_color(text_color)
+            .occlude()
             .when(self.disabled, |e| {
                 e.bg(bg.disabled())
                     .border_color(border_color.disabled())
@@ -92,6 +100,7 @@ impl RenderOnce for Button {
                 })
             })
             .when(cx.theme().shadow, |e| e.shadow_xs())
+            .children(self.icon)
             .children(self.children)
     }
 }
