@@ -1,12 +1,14 @@
 use anyhow::Result;
 use gpui::{
     App, Application, Bounds, Context, Entity, FocusHandle, QuitMode, TitlebarOptions, Window,
-    WindowBounds, WindowOptions, div, prelude::*, px, size,
+    WindowBounds, WindowOptions, bounds, div, point, prelude::*, px, size,
 };
-use rui::{Button, Icon, IconSize, IconVariant, Root, Table, TableState, TitleBar, h_flex};
+use rui::{Button, Icon, IconSize, IconVariant, Root, TileGrid, TileGridState, TitleBar, h_flex};
 use zeevonk::project::file::ProjectFile;
 
-use crate::fixture_table::FixtureTableDelegate;
+use crate::ui::tiles::{FixturesTile, GroupsTile};
+
+pub mod state;
 
 pub mod action {
     use gpui::{App, KeyBinding, TitlebarOptions, WindowOptions, prelude::*};
@@ -36,36 +38,6 @@ pub mod action {
             );
         });
     }
-}
-
-pub mod state {
-    use anyhow::Result;
-    use gpui::{App, Global};
-    use zeevonk::{Zeevonk, project::file::ProjectFile};
-
-    pub(crate) fn init(zv_project_file: ProjectFile, cx: &mut App) -> Result<()> {
-        cx.set_global(AppState::new(zv_project_file)?);
-        Ok(())
-    }
-
-    pub struct AppState {
-        zeevonk: Zeevonk,
-    }
-
-    impl AppState {
-        pub fn new(zv_project_file: ProjectFile) -> Result<Self> {
-            let zeevonk = Zeevonk::new(zv_project_file)?;
-            zeevonk.start();
-
-            Ok(Self { zeevonk })
-        }
-
-        pub fn zeevonk(&self) -> &Zeevonk {
-            &self.zeevonk
-        }
-    }
-
-    impl Global for AppState {}
 }
 
 pub fn run(zv_project_file: ProjectFile) -> Result<()> {
@@ -103,7 +75,7 @@ pub fn run(zv_project_file: ProjectFile) -> Result<()> {
 struct RadiantApp {
     focus_handle: FocusHandle,
 
-    fixture_table_state: Entity<TableState<FixtureTableDelegate>>,
+    tile_grid_state: Entity<TileGridState>,
 }
 
 impl RadiantApp {
@@ -111,10 +83,15 @@ impl RadiantApp {
         let focus_handle = cx.focus_handle();
         focus_handle.focus(window, cx);
 
-        let fixture_table_state =
-            cx.new(|cx| TableState::new(FixtureTableDelegate::new(), window, cx));
+        let tile_grid_state = cx.new(|cx| {
+            let mut tile_grid_state = TileGridState::new();
+            tile_grid_state
+                .add_tile(FixturesTile::new(window, cx), bounds(point(0, 0), size(6, 8)));
+            tile_grid_state.add_tile(GroupsTile::new(), bounds(point(7, 0), size(6, 8)));
+            tile_grid_state
+        });
 
-        Ok(Self { focus_handle, fixture_table_state })
+        Ok(Self { focus_handle, tile_grid_state })
     }
 
     fn render_title_bar_content(
@@ -130,6 +107,14 @@ impl RadiantApp {
                 }),
         )
     }
+
+    fn render_content(
+        &mut self,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) -> impl IntoElement {
+        div().size_full().child(TileGrid::new(self.tile_grid_state.clone()))
+    }
 }
 
 impl Render for RadiantApp {
@@ -140,6 +125,6 @@ impl Render for RadiantApp {
             .flex_col()
             .size_full()
             .child(TitleBar::new().child(self.render_title_bar_content(window, cx)))
-            .child(div().overflow_hidden().child(Table::new(self.fixture_table_state.clone())))
+            .child(div().size_full().overflow_hidden().child(self.render_content(window, cx)))
     }
 }

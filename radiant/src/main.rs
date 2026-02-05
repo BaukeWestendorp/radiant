@@ -7,8 +7,8 @@ use zeevonk::project::file::ProjectFile;
 const ZEEVONK_FOLDER_RELATIVE_PATH: &str = "zv/";
 
 mod app;
-mod fixture_table;
 mod settings;
+mod ui;
 
 #[derive(Parser)]
 #[command(name = "radiant", about = "The Radiant CLI")]

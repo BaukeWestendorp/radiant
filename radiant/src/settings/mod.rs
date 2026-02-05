@@ -47,6 +47,6 @@ impl Render for SettingsView {
         v_flex()
             .size_full()
             .child(TitleBar::new().child(self.render_title_bar_content(window, cx)))
-            .child(div().overflow_hidden().child(self.render_content(window, cx)))
+            .child(div().size_full().overflow_hidden().child(self.render_content(window, cx)))
     }
 }
