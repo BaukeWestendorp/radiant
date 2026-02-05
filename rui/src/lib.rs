@@ -7,6 +7,7 @@ mod settings;
 mod table;
 mod tabs;
 mod theme;
+mod tiles;
 mod title_bar;
 
 mod app_ext;
@@ -21,6 +22,7 @@ pub use root::Root;
 pub use table::{Column, Table, TableDelegate, TableState};
 pub use tabs::{Tab, Tabs, TabsState, TabsVariant};
 pub use theme::ActiveTheme;
+pub use tiles::{TileDelegate, TileGrid, TileGridState};
 pub use title_bar::TitleBar;
 
 pub use app_ext::AppExt;

@@ -60,16 +60,19 @@ pub struct Theme {
     pub bg_selected_extra: Hsla,
     pub bg_table: Hsla,
     pub bg_table_odd: Hsla,
+    pub bg_tile_header: Hsla,
 
     pub fg_primary: Hsla,
     pub fg_secondary: Hsla,
     pub fg_tertiary: Hsla,
     pub fg_selected: Hsla,
+    pub fg_tile_header: Hsla,
 
     pub border_primary: Hsla,
     pub border_secondary: Hsla,
     pub border_tertiary: Hsla,
     pub border_selected: Hsla,
+    pub border_tile_header: Hsla,
 
     pub accent: Hsla,
     pub warning: Hsla,
@@ -94,16 +97,19 @@ impl Theme {
             bg_selected_extra: rgb(0x556683).into(),
             bg_table: rgb(0x100f0f).into(),
             bg_table_odd: rgb(0x151414).into(),
+            bg_tile_header: rgb(0x1f3446).into(),
 
             fg_primary: rgb(0xebebeb).into(),
             fg_secondary: rgb(0xb3b3b3).into(),
             fg_tertiary: rgb(0x808080).into(),
             fg_selected: rgb(0xffffff).into(),
+            fg_tile_header: rgb(0xdceff8).into(),
 
             border_primary: rgb(0x292929).into(),
             border_secondary: rgb(0x353535).into(),
             border_tertiary: rgb(0x404040).into(),
             border_selected: rgb(0x3bb2f6).into(),
+            border_tile_header: rgb(0x2b4a61).into(),
 
             accent: rgb(0x3bb2f6).into(),
             warning: rgb(0xffc94d).into(),

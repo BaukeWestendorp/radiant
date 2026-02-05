@@ -17,6 +17,7 @@ pub struct TableState<D: TableDelegate> {
     pub(crate) bounds: Bounds<Pixels>,
     pub(crate) column_widths: Vec<Pixels>,
 }
+
 impl<D: TableDelegate + 'static> TableState<D> {
     pub fn new(delegate: D, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let rows = RowRegistry::from_delegate(&delegate, cx);
