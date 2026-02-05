@@ -1,5 +1,6 @@
 mod assets;
 mod button;
+mod grid;
 mod icon;
 mod root;
 mod settings;
@@ -14,6 +15,7 @@ mod styled_ext;
 
 pub use assets::Assets;
 pub use button::Button;
+pub use grid::{dot_grid, line_grid, scrollable_line_grid};
 pub use icon::{Icon, IconSize, IconVariant};
 pub use root::Root;
 pub use table::{Column, Table, TableDelegate, TableState};
