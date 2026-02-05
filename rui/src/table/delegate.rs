@@ -17,7 +17,11 @@ pub trait TableDelegate {
         vec![]
     }
 
-    fn render_td(
+    fn edit_rows(&self, _row_ids: &[Self::RowId], _cx: &App) {}
+
+    fn delete_rows(&self, _row_ids: &[Self::RowId], _cx: &App) {}
+
+    fn render_cell(
         &self,
         row_id: &Self::RowId,
         col_ix: usize,

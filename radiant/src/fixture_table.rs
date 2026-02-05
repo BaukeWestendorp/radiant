@@ -35,7 +35,7 @@ impl TableDelegate for FixtureTableDelegate {
         stage.sub_fixtures(&row_id).map(|(id, _)| *id).collect()
     }
 
-    fn render_td(
+    fn render_cell(
         &self,
         row_id: &Self::RowId,
         col_ix: usize,

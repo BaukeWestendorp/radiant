@@ -59,7 +59,15 @@ impl TableDelegate for PatchTableDelegate {
         self.data.read(cx).iter().map(|f| f.root_id).collect()
     }
 
-    fn render_td(
+    fn edit_rows(&self, _row_ids: &[Self::RowId], _cx: &App) {
+        eprintln!("edit: {_row_ids:?}");
+    }
+
+    fn delete_rows(&self, _row_ids: &[Self::RowId], _cx: &App) {
+        eprintln!("delete: {_row_ids:?}");
+    }
+
+    fn render_cell(
         &self,
         row_id: &Self::RowId,
         col_ix: usize,
