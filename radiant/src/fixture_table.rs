@@ -1,4 +1,4 @@
-use gpui::{App, ReadGlobal, Window, div, prelude::*};
+use gpui::{App, ReadGlobal, Window, div, prelude::*, px};
 use rui::{Column, TableDelegate};
 use zeevonk::project::stage::FixtureId;
 
@@ -10,7 +10,12 @@ pub struct FixtureTableDelegate {
 
 impl FixtureTableDelegate {
     pub fn new() -> Self {
-        Self { columns: vec![Column::new("id", "Id"), Column::new("name", "Name")] }
+        Self {
+            columns: vec![
+                Column::new("id", "Id").with_min_width(px(150.0)),
+                Column::new("name", "Name"),
+            ],
+        }
     }
 }
 

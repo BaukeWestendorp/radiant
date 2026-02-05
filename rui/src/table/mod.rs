@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use gpui::{
     AnyElement, App, Div, ElementId, Entity, FontWeight, ListSizingBehavior, MouseButton, Pixels,
-    Window, div, prelude::*, px, uniform_list,
+    Window, div, prelude::*, uniform_list,
 };
 
 mod column;
@@ -13,9 +13,7 @@ pub use column::*;
 pub use delegate::*;
 pub use state::*;
 
-use crate::{ActiveTheme, Icon, IconSize, IconVariant, h_flex, theme::HslaExt};
-
-const DEFAULT_COLUMN_WIDTH: Pixels = px(100.0);
+use crate::{ActiveTheme, ElementExt, Icon, IconSize, IconVariant, h_flex, theme::HslaExt};
 
 pub(crate) mod action {
     use gpui::{App, KeyBinding, actions};
@@ -199,6 +197,14 @@ impl<D: TableDelegate + 'static> RenderOnce for Table<D> {
                 let state = self.state.clone();
                 move |_, window, cx| Self::handle_select_all(&state, window, cx)
             })
+            .on_prepaint({
+                let state = self.state.clone();
+                move |bounds, _, cx| {
+                    state.update(cx, |state, _| {
+                        state.bounds = bounds;
+                    })
+                }
+            })
             .child(header)
             .child(body)
     }
@@ -209,8 +215,8 @@ impl<D: TableDelegate + 'static> TableState<D> {
         window.line_height()
     }
 
-    fn column_width(&self) -> Pixels {
-        DEFAULT_COLUMN_WIDTH
+    fn column_width(&self, col_ix: usize) -> Pixels {
+        self.column_widths[col_ix]
     }
 
     fn is_last_column(&self, col_ix: usize, cx: &Context<Self>) -> bool {
@@ -239,7 +245,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
 
         div()
             .id(ElementId::named_usize("table-header-cell", col_ix))
-            .w(self.column_width())
+            .w(self.column_width(col_ix))
             .h_full()
             .px_1()
             .flex_shrink_0()
@@ -341,7 +347,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
 
         let base = div()
             .relative()
-            .w(self.column_width())
+            .w(self.column_width(col_ix))
             .h_full()
             .flex_shrink_0()
             .overflow_hidden()

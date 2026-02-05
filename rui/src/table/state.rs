@@ -1,7 +1,9 @@
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
-use gpui::{App, Context, FocusHandle, Focusable, UniformListScrollHandle, Window};
+use gpui::{
+    App, Bounds, Context, FocusHandle, Focusable, Pixels, UniformListScrollHandle, Window, px,
+};
 
 use crate::table::TableDelegate;
 
@@ -12,11 +14,24 @@ pub struct TableState<D: TableDelegate> {
 
     pub(crate) focus_handle: FocusHandle,
     pub(crate) vertical_scroll_handle: UniformListScrollHandle,
+    pub(crate) bounds: Bounds<Pixels>,
+    pub(crate) column_widths: Vec<Pixels>,
 }
 impl<D: TableDelegate + 'static> TableState<D> {
-    pub fn new(delegate: D, _window: &mut Window, cx: &App) -> Self {
+    pub fn new(delegate: D, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let rows = RowRegistry::from_delegate(&delegate, cx);
         let selection = TableSelection::new();
+
+        let col_count = delegate.column_count(cx);
+        let mut column_widths = Vec::new();
+        for col_ix in 0..col_count {
+            let col = delegate.column(col_ix, cx);
+            column_widths.push(col.min_width());
+        }
+
+        cx.on_next_frame(window, |this, _, cx| {
+            this.reset_column_widths(cx);
+        });
 
         Self {
             delegate,
@@ -25,6 +40,8 @@ impl<D: TableDelegate + 'static> TableState<D> {
 
             focus_handle: cx.focus_handle(),
             vertical_scroll_handle: UniformListScrollHandle::new(),
+            bounds: Bounds::default(),
+            column_widths,
         }
     }
 
@@ -176,6 +193,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
 
         cx.notify();
     }
+
     pub fn select_all(&mut self, cx: &mut Context<Self>) {
         let total = self.rows().visible_rows().len();
         if total == 0 {
@@ -210,6 +228,18 @@ impl<D: TableDelegate + 'static> TableState<D> {
             self.rows_mut().recompute_visible();
             cx.notify();
         }
+    }
+
+    pub fn reset_column_widths(&mut self, cx: &mut Context<Self>) {
+        let col_count = self.delegate.column_count(cx);
+        self.column_widths.clear();
+        let mut taken_width = px(0.0);
+        for col_ix in 0..col_count - 1 {
+            let col = self.delegate.column(col_ix, cx);
+            self.column_widths.push(col.min_width());
+            taken_width += col.min_width();
+        }
+        self.column_widths.push(self.bounds.size.width - taken_width);
     }
 }
 

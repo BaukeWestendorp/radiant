@@ -1,4 +1,4 @@
-use gpui::{App, Entity, ReadGlobal, Window, div, prelude::*};
+use gpui::{App, Entity, ReadGlobal, Window, div, prelude::*, px};
 use rui::{Column, Table, TableDelegate, TableState};
 use zeevonk::project::{file::patch::FixtureDefinition, stage::FixtureIdPart};
 
@@ -35,9 +35,9 @@ impl PatchTableDelegate {
         Self {
             data: fixtures,
             columns: vec![
-                Column::new("root_id", "Root Id"),
-                Column::new("name", "Name"),
-                Column::new("address", "Address"),
+                Column::new("root_id", "Root Id").with_min_width(px(75.0)),
+                Column::new("name", "Name").with_min_width(px(250.0)),
+                Column::new("address", "Address").with_min_width(px(100.0)),
                 Column::new("kind", "Kind"),
             ],
         }
