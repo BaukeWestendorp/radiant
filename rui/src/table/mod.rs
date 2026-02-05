@@ -1,8 +1,8 @@
 use std::ops::Range;
 
 use gpui::{
-    AnyElement, App, Div, ElementId, Entity, FontWeight, ListSizingBehavior, MouseButton, Pixels,
-    Window, div, prelude::*, uniform_list,
+    AnyElement, App, Div, ElementId, Entity, FontWeight, ListSizingBehavior, MouseButton,
+    MouseDownEvent, Pixels, Window, div, prelude::*, uniform_list,
 };
 
 mod column;
@@ -46,8 +46,8 @@ pub(crate) mod action {
             KeyBinding::new("left", PrevColumn, Some(KEY_CONTEXT)),
             KeyBinding::new("down", NextRow, Some(KEY_CONTEXT)),
             KeyBinding::new("up", PrevRow, Some(KEY_CONTEXT)),
-            KeyBinding::new("shift-down", ExtendSelectionNext, Some(KEY_CONTEXT)),
-            KeyBinding::new("shift-up", ExtendSelectionPrev, Some(KEY_CONTEXT)),
+            KeyBinding::new("secondary-down", ExtendSelectionNext, Some(KEY_CONTEXT)),
+            KeyBinding::new("secondary-up", ExtendSelectionPrev, Some(KEY_CONTEXT)),
             KeyBinding::new("secondary-a", SelectAll, Some(KEY_CONTEXT)),
         ]);
     }
@@ -373,7 +373,11 @@ impl<D: TableDelegate + 'static> TableState<D> {
             )
             .on_mouse_down(
                 MouseButton::Left,
-                cx.listener(move |this, _, _, cx| {
+                cx.listener(move |this, event: &MouseDownEvent, _, cx| {
+                    if !event.modifiers.secondary() {
+                        this.clear_selection(cx);
+                    }
+
                     this.select_cell(col_ix, row_ix, cx);
                     this.selection_mut().start(col_ix, row_ix);
                     cx.notify();

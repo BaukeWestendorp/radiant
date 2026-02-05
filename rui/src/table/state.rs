@@ -105,6 +105,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
         };
         if total > 0 {
             let col = self.selection.selected_column_ix;
+            self.selection.clear();
             self.selection.select_single(col, new_ix);
         }
         cx.notify();
@@ -117,6 +118,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
             _ => 0,
         };
         let col = self.selection.selected_column_ix;
+        self.selection.clear();
         self.selection.select_single(col, new_ix);
         cx.notify();
     }
@@ -140,10 +142,12 @@ impl<D: TableDelegate + 'static> TableState<D> {
             return;
         }
 
+        let start = self.selection.current_head_or_last().unwrap_or(0).min(total.saturating_sub(1));
+
         if self.selection.head.is_none() {
-            self.selection.extend_to(0);
-            cx.notify();
-            return;
+            self.selection.anchor = Some(start);
+            self.selection.head = Some(start);
+            self.selection.is_selecting = true;
         }
 
         let old_head = self.selection.head.unwrap();
@@ -171,9 +175,12 @@ impl<D: TableDelegate + 'static> TableState<D> {
             return;
         }
 
+        let start = self.selection.current_head_or_last().unwrap_or(0).min(total.saturating_sub(1));
+
         if self.selection.head.is_none() {
-            cx.notify();
-            return;
+            self.selection.anchor = Some(start);
+            self.selection.head = Some(start);
+            self.selection.is_selecting = true;
         }
 
         let old_head = self.selection.head.unwrap();
@@ -207,22 +214,34 @@ impl<D: TableDelegate + 'static> TableState<D> {
     }
 
     pub fn edit_selection(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
-        if let Some((start, end)) = self.selection.range() {
-            let visible = self.rows().visible_rows();
-            let row_ids: Vec<_> =
-                (start..=end).filter_map(|i| visible.get(i).map(|(id, _)| id.clone())).collect();
+        let visible = self.rows().visible_rows();
+        let selected_ixs = self.selection.selected_indices();
+        if selected_ixs.is_empty() {
+            return;
+        }
+        let row_ids: Vec<_> = selected_ixs
+            .into_iter()
+            .filter_map(|i| visible.get(i).map(|(id, _)| id.clone()))
+            .collect();
 
+        if !row_ids.is_empty() {
             self.delegate_mut().edit_rows(&row_ids, cx);
             cx.notify();
         }
     }
 
     pub fn delete_selection(&mut self, cx: &mut Context<Self>) {
-        if let Some((start, end)) = self.selection.range() {
-            let visible = self.rows().visible_rows();
-            let row_ids: Vec<_> =
-                (start..=end).filter_map(|i| visible.get(i).map(|(id, _)| id.clone())).collect();
+        let visible = self.rows().visible_rows();
+        let selected_ixs = self.selection.selected_indices();
+        if selected_ixs.is_empty() {
+            return;
+        }
+        let row_ids: Vec<_> = selected_ixs
+            .into_iter()
+            .filter_map(|i| visible.get(i).map(|(id, _)| id.clone()))
+            .collect();
 
+        if !row_ids.is_empty() {
             self.delegate_mut().delete_rows(&row_ids, cx);
 
             self.selection.clear();
@@ -327,7 +346,6 @@ impl<D: TableDelegate> RowRegistry<D> {
         registry
     }
 
-    /// Return the flattened list of visible rows as `(row_id, depth)` in order.
     pub fn visible_rows(&self) -> &[(D::RowId, usize)] {
         &self.visible_depths_cache
     }
@@ -409,19 +427,32 @@ impl<D: TableDelegate> RowRegistry<D> {
 pub struct TableSelection {
     anchor: Option<usize>,
     head: Option<usize>,
+
+    groups: Vec<(usize, usize)>,
+
+    selected_lookup: HashSet<usize>,
+
     pub selected_column_ix: usize,
-    /// Mouse button is down and dragging a selection.
     pub is_selecting: bool,
 }
 
 impl TableSelection {
     pub fn new() -> Self {
-        Self { anchor: None, head: None, selected_column_ix: 0, is_selecting: false }
+        Self {
+            anchor: None,
+            head: None,
+            groups: Vec::new(),
+            selected_lookup: HashSet::new(),
+            selected_column_ix: 0,
+            is_selecting: false,
+        }
     }
 
     pub fn clear(&mut self) {
         self.anchor = None;
         self.head = None;
+        self.groups.clear();
+        self.selected_lookup.clear();
         self.selected_column_ix = 0;
         self.is_selecting = false;
     }
@@ -435,13 +466,21 @@ impl TableSelection {
 
     pub fn extend_to(&mut self, row_ix: usize) {
         if self.anchor.is_none() {
-            // If no anchor, treat this as a start selection (anchor=head=index).
             self.anchor = Some(row_ix);
         }
         self.head = Some(row_ix);
     }
 
     pub fn finish(&mut self) {
+        if let (Some(a), Some(h)) = (self.anchor, self.head) {
+            let (s, e) = if a <= h { (a, h) } else { (h, a) };
+            self.groups.push((s, e));
+            for i in s..=e {
+                self.selected_lookup.insert(i);
+            }
+        }
+        self.anchor = None;
+        self.head = None;
         self.is_selecting = false;
     }
 
@@ -454,17 +493,49 @@ impl TableSelection {
                     Some((h, a))
                 }
             }
-            (Some(a), None) => Some((a, a)),
-            _ => None,
+            _ => self.groups.last().cloned(),
         }
     }
 
     pub fn contains(&self, row_ix: usize) -> bool {
-        if let Some((s, e)) = self.range() { (s..=e).contains(&row_ix) } else { false }
+        if self.selected_lookup.contains(&row_ix) {
+            return true;
+        }
+        if let (Some(a), Some(h)) = (self.anchor, self.head) {
+            let (s, e) = if a <= h { (a, h) } else { (h, a) };
+            return (s..=e).contains(&row_ix);
+        }
+        false
     }
 
     pub fn size(&self) -> usize {
-        if let Some((s, e)) = self.range() { e.saturating_sub(s).saturating_add(1) } else { 0 }
+        let mut count = self.selected_lookup.len();
+        if let (Some(a), Some(h)) = (self.anchor, self.head) {
+            let (s, e) = if a <= h { (a, h) } else { (h, a) };
+            for i in s..=e {
+                if !self.selected_lookup.contains(&i) {
+                    count = count.saturating_add(1);
+                }
+            }
+        }
+        count
+    }
+
+    pub fn selected_indices(&self) -> Vec<usize> {
+        let mut vec: Vec<usize> = self.selected_lookup.iter().cloned().collect();
+        if let (Some(a), Some(h)) = (self.anchor, self.head) {
+            let (s, e) = if a <= h { (a, h) } else { (h, a) };
+            for i in s..=e {
+                vec.push(i);
+            }
+        }
+        vec.sort_unstable();
+        vec.dedup();
+        vec
+    }
+
+    pub fn current_head_or_last(&self) -> Option<usize> {
+        self.head.or_else(|| self.groups.last().map(|&(_, e)| e))
     }
 
     pub fn select_single(&mut self, col_ix: usize, ix: usize) {
