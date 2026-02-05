@@ -1,22 +1,22 @@
 use std::collections::{HashMap, HashSet};
+use std::hash::Hash;
 
-use gpui::{App, UniformListScrollHandle, Window, prelude::*};
+use gpui::{App, UniformListScrollHandle, Window};
 
 use crate::table::TableDelegate;
 
 pub struct TableState<D: TableDelegate> {
     delegate: D,
-
-    registry: RowRegistry<D>,
+    rows: RowRegistry<D>,
+    selection: Selection,
 
     pub(crate) vertical_scroll_handle: UniformListScrollHandle,
 }
 
 impl<D: TableDelegate + 'static> TableState<D> {
-    pub fn new(delegate: D, _window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let registry = RowRegistry::new(&delegate, cx);
-
-        Self { delegate, registry, vertical_scroll_handle: UniformListScrollHandle::new() }
+    pub fn new(delegate: D, _window: &mut Window, cx: &App) -> Self {
+        let rows = RowRegistry::from_delegate(&delegate, cx);
+        Self { delegate, rows, vertical_scroll_handle: UniformListScrollHandle::new() }
     }
 
     pub fn delegate(&self) -> &D {
@@ -27,24 +27,26 @@ impl<D: TableDelegate + 'static> TableState<D> {
         &mut self.delegate
     }
 
-    pub fn row_registry(&self) -> &RowRegistry<D> {
-        &self.registry
+    pub fn rows(&self) -> &RowRegistry<D> {
+        &self.rows
     }
 
-    pub fn row_registry_mut(&mut self) -> &mut RowRegistry<D> {
-        &mut self.registry
+    pub fn rows_mut(&mut self) -> &mut RowRegistry<D> {
+        &mut self.rows
     }
 }
 
+/// Registry that maintains a flattened view of the tree of rows along with
+/// expansion state and quick lookup from id -> index.
 pub struct RowRegistry<D: TableDelegate> {
     nodes: Vec<RowNode<D::RowId>>,
-    index_by_id: HashMap<D::RowId, usize>,
-    visible_cache: Vec<(D::RowId, usize)>,
-    expanded_rows: HashSet<D::RowId>,
-    max_tree_depth: usize,
+    indices: HashMap<D::RowId, usize>,
+    visible_depths_cache: Vec<(D::RowId, usize)>,
+    expanded: HashSet<D::RowId>,
+    max_depth: usize,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct RowNode<Id> {
     id: Id,
     parent: Option<usize>,
@@ -52,146 +54,148 @@ struct RowNode<Id> {
     depth: usize,
 }
 
-impl<D: TableDelegate> RowRegistry<D>
-where
-    D::RowId: Eq + std::hash::Hash + Clone,
-{
-    pub fn new(delegate: &D, cx: &App) -> Self {
-        let mut nodes: Vec<RowNode<D::RowId>> = Vec::new();
-        let mut index_by_id: HashMap<D::RowId, usize> = HashMap::new();
-        let mut max_tree_depth: usize = 0;
+impl<D: TableDelegate> RowRegistry<D> {
+    pub fn from_delegate(delegate: &D, cx: &App) -> Self {
+        let mut nodes = Vec::new();
+        let mut indices = HashMap::new();
+        let mut max_depth = 0usize;
 
+        // Recursive insertion keeps root/subtree order.
         fn add_subtree<D: TableDelegate>(
             delegate: &D,
             cx: &App,
             id: &D::RowId,
-            parent_idx: Option<usize>,
+            parent: Option<usize>,
             depth: usize,
             nodes: &mut Vec<RowNode<D::RowId>>,
-            index_by_id: &mut HashMap<D::RowId, usize>,
-            max_tree_depth: &mut usize,
-        ) where
-            D::RowId: Eq + std::hash::Hash + Clone,
-        {
-            if depth > *max_tree_depth {
-                *max_tree_depth = depth;
+            indices: &mut HashMap<D::RowId, usize>,
+            max_depth: &mut usize,
+        ) {
+            if depth > *max_depth {
+                *max_depth = depth;
             }
 
             let idx = nodes.len();
-            nodes.push(RowNode { id: id.clone(), parent: parent_idx, children: Vec::new(), depth });
-            index_by_id.insert(id.clone(), idx);
+            nodes.push(RowNode { id: id.clone(), parent, children: Vec::new(), depth });
+            indices.insert(id.clone(), idx);
 
-            let child_ids = delegate.row_children(id, cx);
-            for child_id in child_ids {
+            let children = delegate.row_children(id, cx);
+            for child in children {
                 add_subtree::<D>(
                     delegate,
                     cx,
-                    &child_id,
+                    &child,
                     Some(idx),
                     depth + 1,
                     nodes,
-                    index_by_id,
-                    max_tree_depth,
+                    indices,
+                    max_depth,
                 );
-                let child_idx = *index_by_id.get(&child_id).expect("child just inserted");
+                let child_idx = *indices.get(&child).expect("child just inserted");
                 nodes[idx].children.push(child_idx);
             }
         }
 
-        let root_ids = delegate.root_row_ids(cx);
-        for root_id in root_ids.iter() {
-            add_subtree::<D>(
-                delegate,
-                cx,
-                root_id,
-                None,
-                0,
-                &mut nodes,
-                &mut index_by_id,
-                &mut max_tree_depth,
-            );
+        let roots = delegate.root_row_ids(cx);
+        for root in roots.iter() {
+            add_subtree::<D>(delegate, cx, root, None, 0, &mut nodes, &mut indices, &mut max_depth);
         }
 
         let mut registry = Self {
             nodes,
-            index_by_id,
-            visible_cache: Vec::new(),
-            expanded_rows: HashSet::new(),
-            max_tree_depth,
+            indices,
+            visible_depths_cache: Vec::new(),
+            expanded: HashSet::new(),
+            max_depth,
         };
 
         registry.recompute_visible();
-
         registry
     }
 
-    /// Recompute the visible cache based on current expansion state.
-    fn recompute_visible(&mut self) {
-        self.visible_cache.clear();
-
-        fn visit<Id: Clone + Eq + std::hash::Hash>(
-            nodes: &Vec<RowNode<Id>>,
-            idx: usize,
-            expanded: &HashSet<Id>,
-            visible: &mut Vec<(Id, usize)>,
-        ) where
-            Id: Clone,
-        {
-            let node = &nodes[idx];
-            visible.push((node.id.clone(), node.depth));
-            // If node is expanded, visit children.
-            if expanded.contains(&node.id) {
-                for &child_idx in &node.children {
-                    visit(nodes, child_idx, expanded, visible);
-                }
-            }
-        }
-
-        // Find roots in original order (nodes were pushed in root-subtree order).
-        for (i, node) in self.nodes.iter().enumerate() {
-            if node.parent.is_none() {
-                visit(&self.nodes, i, &self.expanded_rows, &mut self.visible_cache);
-            }
-        }
+    /// Return the flattened list of visible rows as `(row_id, depth)` in order.
+    pub fn visible_rows(&self) -> &[(D::RowId, usize)] {
+        &self.visible_depths_cache
     }
 
-    pub fn sorted_visible_row_ids(&self) -> &[(D::RowId, usize)] {
-        &self.visible_cache
-    }
-
+    /// Maximum observed tree depth (0 if no children anywhere).
     pub fn max_tree_depth(&self) -> usize {
-        self.max_tree_depth
+        self.max_depth
     }
 
+    /// True if this table contains any nested rows.
     pub fn is_tree(&self) -> bool {
-        self.max_tree_depth > 0
+        self.max_depth > 0
     }
 
-    pub fn is_row_collapsible(&self, row_id: &D::RowId) -> bool {
-        match self.index_by_id.get(row_id) {
-            Some(&idx) => !self.nodes[idx].children.is_empty(),
-            None => false,
-        }
+    /// True if the given row has children.
+    pub fn is_collapsible(&self, row_id: &D::RowId) -> bool {
+        self.indices.get(row_id).map(|&idx| !self.nodes[idx].children.is_empty()).unwrap_or(false)
     }
 
-    pub fn row_expanded(&self, row_id: &D::RowId) -> bool {
-        self.expanded_rows.contains(row_id)
+    /// True if the row is currently expanded.
+    pub fn is_expanded(&self, row_id: &D::RowId) -> bool {
+        self.expanded.contains(row_id)
     }
 
-    pub fn set_row_expanded(&mut self, row_id: D::RowId, expanded: bool) {
+    /// Set expansion state for a row and update the visible cache.
+    pub fn set_expanded(&mut self, row_id: D::RowId, expanded: bool) {
         if expanded {
-            self.expanded_rows.insert(row_id);
+            self.expanded.insert(row_id);
         } else {
-            self.expanded_rows.remove(&row_id);
+            self.expanded.remove(&row_id);
         }
         self.recompute_visible();
     }
 
-    pub fn toggle_row_expanded(&mut self, row_id: D::RowId) {
-        if self.row_expanded(&row_id) {
-            self.set_row_expanded(row_id, false);
+    /// Toggle expansion for a row and update the visible cache.
+    pub fn toggle_expanded(&mut self, row_id: D::RowId) {
+        if self.is_expanded(&row_id) {
+            self.set_expanded(row_id, false);
         } else {
-            self.set_row_expanded(row_id, true);
+            self.set_expanded(row_id, true);
+        }
+    }
+
+    /// Expand all collapsible rows.
+    pub fn expand_all(&mut self) {
+        self.expanded = self
+            .nodes
+            .iter()
+            .filter_map(|n| if !n.children.is_empty() { Some(n.id.clone()) } else { None })
+            .collect();
+        self.recompute_visible();
+    }
+
+    /// Collapse all rows.
+    pub fn collapse_all(&mut self) {
+        self.expanded.clear();
+        self.recompute_visible();
+    }
+
+    /// Recompute visible cache.
+    fn recompute_visible(&mut self) {
+        self.visible_depths_cache.clear();
+
+        fn visit<Id: Clone + Eq + Hash>(
+            nodes: &Vec<RowNode<Id>>,
+            idx: usize,
+            expanded: &HashSet<Id>,
+            out: &mut Vec<(Id, usize)>,
+        ) {
+            let node = &nodes[idx];
+            out.push((node.id.clone(), node.depth));
+            if expanded.contains(&node.id) {
+                for &child_idx in &node.children {
+                    visit(nodes, child_idx, expanded, out);
+                }
+            }
+        }
+
+        for (i, node) in self.nodes.iter().enumerate() {
+            if node.parent.is_none() {
+                visit(&self.nodes, i, &self.expanded, &mut self.visible_depths_cache);
+            }
         }
     }
 }
