@@ -39,4 +39,8 @@ impl TileDelegate for GroupsTile {
     fn render_content(&self, _window: &mut Window, _cx: &App) -> AnyElement {
         h_flex().justify_center().size_full().child("GROUPS HERE").into_any_element()
     }
+
+    fn show_header(&self, _cx: &App) -> bool {
+        false
+    }
 }

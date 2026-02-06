@@ -47,20 +47,23 @@ impl RenderOnce for TileGrid {
 
             let origin = tile.bounds().origin;
             let size = tile.bounds().size;
+            let show_header = tile.delegate().show_header(cx);
             let content = tile.delegate().render_content(window, cx);
 
-            let header = h_flex()
-                .px_2()
-                .w_full()
-                .min_h(window.line_height() * 1.5)
-                .max_h(window.line_height() * 1.5)
-                .bg(cx.theme().bg_tile_header)
-                .border_1()
-                .border_color(cx.theme().border_tile_header)
-                .rounded_t(cx.theme().radius)
-                .text_color(cx.theme().fg_tile_header)
-                .font_weight(FontWeight::BOLD)
-                .child(title);
+            let header = show_header.then(|| {
+                h_flex()
+                    .px_2()
+                    .w_full()
+                    .min_h(window.line_height() * 1.5)
+                    .max_h(window.line_height() * 1.5)
+                    .bg(cx.theme().bg_tile_header)
+                    .border_1()
+                    .border_color(cx.theme().border_tile_header)
+                    .rounded_t(cx.theme().radius)
+                    .text_color(cx.theme().fg_tile_header)
+                    .font_weight(FontWeight::BOLD)
+                    .child(title)
+            });
 
             div()
                 .absolute()
@@ -72,11 +75,12 @@ impl RenderOnce for TileGrid {
                 .occlude()
                 .overflow_hidden()
                 .child(
-                    v_flex().size_full().child(header).child(
+                    v_flex().size_full().children(header).child(
                         div()
                             .size_full()
                             .border_1()
                             .border_color(cx.theme().border_primary)
+                            .when(!show_header, |e| e.rounded_t(cx.theme().radius))
                             .rounded_b(cx.theme().radius)
                             .overflow_hidden()
                             .child(content),
