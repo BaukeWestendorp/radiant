@@ -93,8 +93,8 @@ impl RadiantApp {
         let tile_grid_state = cx.new(|cx| {
             let mut tile_grid_state = TileGridState::new();
             tile_grid_state
-                .add_tile(FixturesTile::new(window, cx), bounds(point(0, 0), size(6, 8)));
-            tile_grid_state.add_tile(GroupsTile::new(), bounds(point(7, 0), size(6, 8)));
+                .add_tile(FixturesTile::new(window, cx), bounds(point(0, 0), size(8, 12)));
+            tile_grid_state.add_tile(GroupsTile::new(), bounds(point(8, 0), size(10, 12)));
             tile_grid_state
         });
 
