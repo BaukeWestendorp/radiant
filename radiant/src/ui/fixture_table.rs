@@ -14,10 +14,8 @@ impl FixtureTableDelegate {
         cx.observe(&selection, |state, selection, cx| {
             state.clear_selection(cx);
             for fixture_id in selection.read(cx).clone() {
-                state.rows_mut().expand_parents(&fixture_id);
-                // FIXME: Use D::RowId instead of indices.
-                let row_id = state.rows().visible_ix_from_id(&fixture_id).unwrap();
-                state.select_cell(0, row_id, cx);
+                state.expand_parents(&fixture_id, cx);
+                state.select_cell(0, &fixture_id, cx);
             }
         })
         .detach();

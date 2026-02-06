@@ -9,8 +9,9 @@ use crate::table::TableDelegate;
 
 pub struct TableState<D: TableDelegate> {
     delegate: D,
-    rows: RowRegistry<D>,
-    selection: TableSelection,
+
+    pub(crate) rows: RowRegistry<D>,
+    pub(crate) selection: TableSelection,
 
     pub(crate) focus_handle: FocusHandle,
     pub(crate) vertical_scroll_handle: UniformListScrollHandle,
@@ -54,124 +55,15 @@ impl<D: TableDelegate + 'static> TableState<D> {
         &mut self.delegate
     }
 
-    pub fn rows(&self) -> &RowRegistry<D> {
-        &self.rows
-    }
-
-    pub fn rows_mut(&mut self) -> &mut RowRegistry<D> {
-        &mut self.rows
-    }
-
-    pub fn selection(&self) -> &TableSelection {
-        &self.selection
-    }
-
-    pub fn selection_mut(&mut self) -> &mut TableSelection {
-        &mut self.selection
-    }
-
-    pub fn start_selection(&mut self, col_ix: usize, row_ix: usize, _cx: &Context<Self>) {
-        self.selection.start(col_ix, row_ix);
-    }
-
-    pub fn end_selection(&mut self, row_ix: usize, cx: &mut Context<Self>) {
-        self.selection.extend_to(row_ix);
-        self.selection.finish();
-        cx.notify();
-    }
-
-    pub fn clear_selection(&mut self, cx: &mut Context<Self>) {
-        self.selection.clear();
-        cx.notify();
-    }
-
-    pub fn selection_contains(&self, row_ix: usize) -> bool {
-        self.selection.contains(row_ix)
-    }
-    pub fn selected_column_ix(&self) -> usize {
-        self.selection.selected_column_ix
-    }
-
-    pub fn select_cell(&mut self, col_ix: usize, row_ix: usize, cx: &mut Context<Self>) {
-        self.selection.select_single(col_ix, row_ix);
-        cx.notify();
-    }
-
-    pub fn move_selection_next(&mut self, cx: &mut Context<Self>) {
-        let total = self.rows().visible_rows().len();
-        let new_ix = match self.selection.range() {
-            Some((_, end)) => (end + 1).min(total.saturating_sub(1)),
-            None => 0,
-        };
-        if total > 0 {
-            let col = self.selection.selected_column_ix;
-            self.selection.clear();
-            self.selection.select_single(col, new_ix);
+    pub fn select_cell(&mut self, col_ix: usize, row_id: &D::RowId, cx: &mut Context<Self>) {
+        self.expand_parents(row_id, cx);
+        if let Some(row_ix) = self.rows.visible_ix_from_id(row_id) {
+            self.selection.select_cell(col_ix, row_ix);
         }
-        cx.notify();
-    }
-
-    pub fn move_selection_prev(&mut self, cx: &mut Context<Self>) {
-        let new_ix = match self.selection.range() {
-            Some((start, _)) if start > 0 => start - 1,
-            Some((0, _)) | None => 0,
-            _ => 0,
-        };
-        let col = self.selection.selected_column_ix;
-        self.selection.clear();
-        self.selection.select_single(col, new_ix);
-        cx.notify();
-    }
-
-    pub fn move_selection_next_column(&mut self, cx: &mut Context<Self>) {
-        let total_columns = self.delegate().column_count(cx);
-        let ix = (self.selection.selected_column_ix + 1).min(total_columns.saturating_sub(1));
-        self.selection.select_column(ix);
-        cx.notify();
-    }
-
-    pub fn move_selection_prev_column(&mut self, cx: &mut Context<Self>) {
-        let ix = self.selection.selected_column_ix.saturating_sub(1);
-        self.selection.select_column(ix);
-        cx.notify();
-    }
-
-    pub fn extend_selection_next(&mut self, cx: &mut Context<Self>) {
-        let total = self.rows().visible_rows().len();
-        if total == 0 {
-            return;
-        }
-        cx.notify();
-        let Some(old_head) = self.selection.current_head_or_last() else {
-            self.selection.extend_to(0);
-            return;
-        };
-        if self.selection.anchor.is_none() {
-            self.selection.anchor = Some(old_head);
-        }
-        let new_head = (old_head + 1).min(total - 1);
-        self.selection.extend_to(new_head);
-    }
-
-    pub fn extend_selection_prev(&mut self, cx: &mut Context<Self>) {
-        let total = self.rows().visible_rows().len();
-        if total == 0 {
-            return;
-        }
-        cx.notify();
-        let Some(old_head) = self.selection.current_head_or_last() else {
-            self.selection.extend_to(total - 1);
-            return;
-        };
-        if self.selection.anchor.is_none() {
-            self.selection.anchor = Some(old_head);
-        }
-        let new_head = old_head.saturating_sub(1);
-        self.selection.extend_to(new_head);
     }
 
     pub fn select_all(&mut self, cx: &mut Context<Self>) {
-        let total = self.rows().visible_rows().len();
+        let total = self.rows.visible_rows().len();
         if total == 0 {
             return;
         }
@@ -181,8 +73,57 @@ impl<D: TableDelegate + 'static> TableState<D> {
         cx.notify();
     }
 
+    pub fn clear_selection(&mut self, cx: &mut Context<Self>) {
+        self.selection.clear();
+        cx.notify();
+    }
+
+    pub fn selected_column(&self) -> usize {
+        self.selection.selected_column_ix
+    }
+
+    pub fn selection_contains(&self, row_id: &D::RowId) -> bool {
+        match self.rows.visible_rows().iter().position(|(id, _)| id == row_id) {
+            Some(ix) => self.selection.contains(ix),
+            None => false,
+        }
+    }
+
+    pub fn is_collapsible(&self, row_id: &D::RowId) -> bool {
+        self.rows.is_collapsible(row_id)
+    }
+
+    pub fn is_expanded(&self, row_id: &D::RowId) -> bool {
+        self.rows.is_expanded(row_id)
+    }
+
+    pub fn set_expanded(&mut self, row_id: D::RowId, expanded: bool, cx: &mut Context<Self>) {
+        self.rows.set_expanded(row_id, expanded);
+        cx.notify();
+    }
+
+    pub fn toggle_expanded(&mut self, row_id: D::RowId, cx: &mut Context<Self>) {
+        self.rows.toggle_expanded(row_id);
+        cx.notify();
+    }
+
+    pub fn expand_parents(&mut self, row_id: &D::RowId, cx: &mut Context<Self>) {
+        self.rows.expand_parents(row_id);
+        cx.notify();
+    }
+
+    pub fn expand_all(&mut self, cx: &mut Context<Self>) {
+        self.rows.expand_all();
+        cx.notify();
+    }
+
+    pub fn collapse_all(&mut self, cx: &mut Context<Self>) {
+        self.rows.collapse_all();
+        cx.notify();
+    }
+
     pub fn edit_selection(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
-        let visible = self.rows().visible_rows();
+        let visible = self.rows.visible_rows();
         let selected_ixs = self.selection.selected_indices();
         if selected_ixs.is_empty() {
             return;
@@ -199,7 +140,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
     }
 
     pub fn delete_selection(&mut self, cx: &mut Context<Self>) {
-        let visible = self.rows().visible_rows();
+        let visible = self.rows.visible_rows();
         let selected_ixs = self.selection.selected_indices();
         if selected_ixs.is_empty() {
             return;
@@ -213,7 +154,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
             self.delegate_mut().delete_rows(&row_ids, cx);
 
             self.selection.clear();
-            self.rows_mut().recompute_visible();
+            self.rows.recompute_visible();
             cx.notify();
         }
     }
@@ -318,10 +259,6 @@ impl<D: TableDelegate> RowRegistry<D> {
         &self.visible_depths_cache
     }
 
-    pub fn max_tree_depth(&self) -> usize {
-        self.max_depth
-    }
-
     pub fn is_tree(&self) -> bool {
         self.max_depth > 0
     }
@@ -332,20 +269,6 @@ impl<D: TableDelegate> RowRegistry<D> {
 
     pub fn is_expanded(&self, row_id: &D::RowId) -> bool {
         self.expanded.contains(row_id)
-    }
-
-    pub fn visible_ix_from_id(&self, row_id: &D::RowId) -> Option<usize> {
-        self.indices.get(row_id).copied()
-    }
-
-    pub fn expand_parents(&mut self, row_id: &D::RowId) {
-        let Some(node) = self.node(row_id) else { return };
-        let Some(parent_ix) = node.parent.as_ref() else { return };
-        let Some(parent_id) = self.nodes.get(*parent_ix).map(|n| n.id.clone()) else {
-            return;
-        };
-        self.set_expanded(parent_id.clone(), true);
-        self.expand_parents(&parent_id);
     }
 
     pub fn set_expanded(&mut self, row_id: D::RowId, expanded: bool) {
@@ -365,6 +288,16 @@ impl<D: TableDelegate> RowRegistry<D> {
         }
     }
 
+    pub fn expand_parents(&mut self, row_id: &D::RowId) {
+        let Some(node) = self.node(row_id) else { return };
+        let Some(parent_ix) = node.parent.as_ref() else { return };
+        let Some(parent_id) = self.nodes.get(*parent_ix).map(|n| n.id.clone()) else {
+            return;
+        };
+        self.set_expanded(parent_id.clone(), true);
+        self.expand_parents(&parent_id);
+    }
+
     pub fn expand_all(&mut self) {
         self.expanded = self
             .nodes
@@ -382,6 +315,10 @@ impl<D: TableDelegate> RowRegistry<D> {
     fn node(&self, row_id: &D::RowId) -> Option<&RowNode<D::RowId>> {
         let ix = self.indices.get(row_id)?;
         self.nodes.get(*ix)
+    }
+
+    fn visible_ix_from_id(&self, row_id: &D::RowId) -> Option<usize> {
+        self.visible_depths_cache.iter().position(|(id, _)| id == row_id)
     }
 
     fn recompute_visible(&mut self) {
@@ -412,8 +349,8 @@ impl<D: TableDelegate> RowRegistry<D> {
 
 #[derive(Clone, Debug)]
 pub struct TableSelection {
-    anchor: Option<usize>,
-    head: Option<usize>,
+    pub(crate) anchor: Option<usize>,
+    pub(crate) head: Option<usize>,
 
     groups: Vec<(usize, usize)>,
 
@@ -495,19 +432,6 @@ impl TableSelection {
         false
     }
 
-    pub fn size(&self) -> usize {
-        let mut count = self.selected_lookup.len();
-        if let (Some(a), Some(h)) = (self.anchor, self.head) {
-            let (s, e) = if a <= h { (a, h) } else { (h, a) };
-            for i in s..=e {
-                if !self.selected_lookup.contains(&i) {
-                    count = count.saturating_add(1);
-                }
-            }
-        }
-        count
-    }
-
     pub fn selected_indices(&self) -> Vec<usize> {
         let mut vec: Vec<usize> = self.selected_lookup.iter().cloned().collect();
         if let (Some(a), Some(h)) = (self.anchor, self.head) {
@@ -525,13 +449,9 @@ impl TableSelection {
         self.head.or_else(|| self.groups.last().map(|&(_, e)| e))
     }
 
-    pub fn select_single(&mut self, col_ix: usize, ix: usize) {
-        self.start(col_ix, ix);
+    pub fn select_cell(&mut self, col_ix: usize, row_ix: usize) {
+        self.start(col_ix, row_ix);
         self.finish();
-    }
-
-    pub fn set_column(&mut self, col_ix: usize) {
-        self.selected_column_ix = col_ix;
     }
 
     pub fn select_column(&mut self, col_ix: usize) {
