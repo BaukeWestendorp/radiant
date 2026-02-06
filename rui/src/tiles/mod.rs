@@ -67,7 +67,7 @@ impl RenderOnce for TileGrid {
 
             div()
                 .absolute()
-                .bg(cx.theme().bg_secondary)
+                .bg(cx.theme().bg_primary)
                 .left(origin.x as f32 * self.cell_size())
                 .top(origin.y as f32 * self.cell_size())
                 .w(size.width as f32 * self.cell_size)
@@ -77,13 +77,18 @@ impl RenderOnce for TileGrid {
                 .child(
                     v_flex().size_full().children(header).child(
                         div()
+                            .relative()
                             .size_full()
-                            .border_1()
-                            .border_color(cx.theme().border_primary)
-                            .when(!show_header, |e| e.rounded_t(cx.theme().radius))
-                            .rounded_b(cx.theme().radius)
-                            .overflow_hidden()
-                            .child(content),
+                            .child(div().absolute().size_full().overflow_hidden().child(content))
+                            .child(
+                                div()
+                                    .absolute()
+                                    .size_full()
+                                    .border_1()
+                                    .border_color(cx.theme().border_primary)
+                                    .when(!show_header, |e| e.rounded_t(cx.theme().radius))
+                                    .rounded_b(cx.theme().radius),
+                            ),
                     ),
                 )
         });

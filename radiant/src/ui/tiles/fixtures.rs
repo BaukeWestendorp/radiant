@@ -1,5 +1,5 @@
 use gpui::{AnyElement, App, Entity, Window, prelude::*};
-use rui::{Table, TableState, TileDelegate, h_flex};
+use rui::{Table, TableState, TileDelegate};
 
 use crate::ui::fixture_table::FixtureTableDelegate;
 
@@ -20,27 +20,5 @@ impl TileDelegate for FixturesTile {
 
     fn render_content(&self, _window: &mut Window, _cx: &App) -> AnyElement {
         Table::new(self.table_state.clone()).into_any_element()
-    }
-}
-
-pub struct GroupsTile {}
-
-impl GroupsTile {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
-
-impl TileDelegate for GroupsTile {
-    fn title(&self) -> &str {
-        "Groups"
-    }
-
-    fn render_content(&self, _window: &mut Window, _cx: &App) -> AnyElement {
-        h_flex().justify_center().size_full().child("GROUPS HERE").into_any_element()
-    }
-
-    fn show_header(&self, _cx: &App) -> bool {
-        false
     }
 }
