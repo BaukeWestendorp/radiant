@@ -3,7 +3,10 @@ use gpui::{
     App, Application, Bounds, Context, Entity, FocusHandle, QuitMode, TitlebarOptions, Window,
     WindowBounds, WindowOptions, bounds, div, point, prelude::*, px, size,
 };
-use rui::{Button, Icon, IconSize, IconVariant, Root, TileGrid, TileGridState, TitleBar, h_flex};
+use rui::{
+    Button, Icon, IconSize, IconVariant, Root, TITLE_BAR_HEIGHT, TileGrid, TileGridState, TitleBar,
+    h_flex,
+};
 use zeevonk::project::file::ProjectFile;
 
 use crate::ui::tiles::{FixturesTile, GroupsTile};
@@ -51,7 +54,11 @@ pub fn run(zv_project_file: ProjectFile) -> Result<()> {
 
             cx.activate(true);
 
-            let bounds = Bounds::centered(None, size(px(1080.0), px(720.0)), cx);
+            let bounds = Bounds::centered(
+                None,
+                size(px(18.0 * 80.0), px(12.0 * 80.0) + TITLE_BAR_HEIGHT),
+                cx,
+            );
             let options = WindowOptions {
                 titlebar: Some(TitlebarOptions {
                     title: Some("Radiant".into()),

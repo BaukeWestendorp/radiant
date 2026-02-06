@@ -8,13 +8,13 @@ use crate::{ActiveTheme, StyledExt};
 
 pub const TITLE_BAR_HEIGHT: Pixels = px(34.);
 #[cfg(target_os = "macos")]
-const TITLE_BAR_LEFT_PADDING: Pixels = px(80.);
+pub const TITLE_BAR_LEFT_PADDING: Pixels = px(80.);
 #[cfg(not(target_os = "macos"))]
-const TITLE_BAR_LEFT_PADDING: Pixels = px(12.);
+pub const TITLE_BAR_LEFT_PADDING: Pixels = px(12.);
 #[cfg(target_os = "macos")]
-const TITLE_BAR_RIGHT_PADDING: Pixels = px(9.0);
+pub const TITLE_BAR_RIGHT_PADDING: Pixels = px(9.0);
 #[cfg(not(target_os = "macos"))]
-const TITLE_BAR_RIGHT_PADDING: Pixels = px(0.0);
+pub const TITLE_BAR_RIGHT_PADDING: Pixels = px(0.0);
 
 #[derive(IntoElement)]
 pub struct TitleBar {
@@ -24,10 +24,7 @@ pub struct TitleBar {
 
 impl TitleBar {
     pub fn new() -> Self {
-        Self {
-            style: StyleRefinement::default(),
-            children: SmallVec::new(),
-        }
+        Self { style: StyleRefinement::default(), children: SmallVec::new() }
     }
 }
 
