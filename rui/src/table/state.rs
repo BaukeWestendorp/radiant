@@ -141,32 +141,16 @@ impl<D: TableDelegate + 'static> TableState<D> {
         if total == 0 {
             return;
         }
-
-        let start = self.selection.current_head_or_last().unwrap_or(0).min(total.saturating_sub(1));
-
-        if self.selection.head.is_none() {
-            self.selection.anchor = Some(start);
-            self.selection.head = Some(start);
-            self.selection.is_selecting = true;
-        }
-
-        let old_head = self.selection.head.unwrap();
-        let new_head = (old_head + 1).min(total - 1);
-
-        if let Some(anchor) = self.selection.anchor {
-            // Crossing from above -> below the anchor?
-            if old_head < anchor && new_head > anchor {
-                // Invert: previous head becomes the new anchor, and head advances.
-                self.selection.extend_to(new_head);
-                self.selection.anchor = Some(old_head);
-            } else {
-                self.selection.extend_to(new_head);
-            }
-        } else {
-            self.selection.extend_to(new_head);
-        }
-
         cx.notify();
+        let Some(old_head) = self.selection.current_head_or_last() else {
+            self.selection.extend_to(0);
+            return;
+        };
+        if self.selection.anchor.is_none() {
+            self.selection.anchor = Some(old_head);
+        }
+        let new_head = (old_head + 1).min(total - 1);
+        self.selection.extend_to(new_head);
     }
 
     pub fn extend_selection_prev(&mut self, cx: &mut Context<Self>) {
@@ -174,32 +158,16 @@ impl<D: TableDelegate + 'static> TableState<D> {
         if total == 0 {
             return;
         }
-
-        let start = self.selection.current_head_or_last().unwrap_or(0).min(total.saturating_sub(1));
-
-        if self.selection.head.is_none() {
-            self.selection.anchor = Some(start);
-            self.selection.head = Some(start);
-            self.selection.is_selecting = true;
-        }
-
-        let old_head = self.selection.head.unwrap();
-        let new_head = old_head.saturating_sub(1);
-
-        if let Some(anchor) = self.selection.anchor {
-            // Crossing from below -> above the anchor?
-            if old_head > anchor && new_head < anchor {
-                // Invert: previous head becomes the new anchor, and head moves up.
-                self.selection.extend_to(new_head);
-                self.selection.anchor = Some(old_head);
-            } else {
-                self.selection.extend_to(new_head);
-            }
-        } else {
-            self.selection.extend_to(new_head);
-        }
-
         cx.notify();
+        let Some(old_head) = self.selection.current_head_or_last() else {
+            self.selection.extend_to(total - 1);
+            return;
+        };
+        if self.selection.anchor.is_none() {
+            self.selection.anchor = Some(old_head);
+        }
+        let new_head = old_head.saturating_sub(1);
+        self.selection.extend_to(new_head);
     }
 
     pub fn select_all(&mut self, cx: &mut Context<Self>) {
