@@ -11,6 +11,7 @@ use zeevonk::project::file::ProjectFile;
 
 use crate::ui::tiles::{FixturesTile, GroupsPoolTile};
 
+pub mod object;
 pub mod state;
 
 pub mod action {
