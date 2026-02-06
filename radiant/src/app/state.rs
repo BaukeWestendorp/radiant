@@ -34,12 +34,36 @@ impl AppState {
         groups.insert(
             2,
             Group {
-                name: "LEDs".to_string(),
+                name: "Spots".to_string(),
                 fixture_ids: vec![
                     "101.1".parse().unwrap(),
                     "102.1".parse().unwrap(),
                     "103.1".parse().unwrap(),
                     "104.1".parse().unwrap(),
+                ],
+            },
+        );
+        groups.insert(
+            3,
+            Group {
+                name: "LEDs".to_string(),
+                fixture_ids: vec![
+                    "501.1.2".parse().unwrap(),
+                    "502.1.2".parse().unwrap(),
+                    "503.1.2".parse().unwrap(),
+                    "504.1.2".parse().unwrap(),
+                ],
+            },
+        );
+        groups.insert(
+            4,
+            Group {
+                name: "Blinders".to_string(),
+                fixture_ids: vec![
+                    "501.1.1".parse().unwrap(),
+                    "502.1.1".parse().unwrap(),
+                    "503.1.1".parse().unwrap(),
+                    "504.1.1".parse().unwrap(),
                 ],
             },
         );
