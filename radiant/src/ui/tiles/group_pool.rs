@@ -1,27 +1,27 @@
 use std::collections::HashMap;
 
-use gpui::{AnyElement, App, Bounds, Pixels, Window, div, prelude::*};
-use rui::{ActiveTheme, TileDelegate};
-use zeevonk::project::stage::FixtureId;
+use gpui::{
+    AnyElement, App, Bounds, ElementId, Entity, Pixels, ReadGlobal, Window, div, prelude::*,
+};
+use rui::{ActiveTheme, TileDelegate, h_flex};
+
+use crate::app::{
+    object::{Group, GroupId},
+    state::AppState,
+};
 
 pub struct GroupsPoolTile {
     bounds: Bounds<u32>,
     cell_size: Pixels,
-
-    groups: HashMap<u32, (String, Vec<FixtureId>)>,
 }
 
 impl GroupsPoolTile {
     pub fn new(bounds: Bounds<u32>, cell_size: Pixels) -> Self {
-        Self {
-            bounds,
-            cell_size,
-            groups: {
-                let mut map = HashMap::new();
-                map.insert(2, ("LEDs".to_string(), vec!["101.1".parse().unwrap()]));
-                map
-            },
-        }
+        Self { bounds, cell_size }
+    }
+
+    pub fn groups<'a>(&self, cx: &'a App) -> &'a Entity<HashMap<GroupId, Group>> {
+        &AppState::global(cx).groups()
     }
 }
 
@@ -35,17 +35,33 @@ impl TileDelegate for GroupsPoolTile {
 
         let cells = (0..area).map(|ix| {
             let id = ix + 1;
-            let group = self.groups.get(&id);
+            let group = self.groups(cx).read(cx).get(&id);
 
             match group {
-                Some(group) => div()
+                Some(group) => h_flex()
+                    .id(ElementId::named_usize("group", id as usize))
+                    .justify_center()
                     .size(self.cell_size)
                     .bg(cx.theme().bg_secondary)
                     .border_1()
                     .border_color(cx.theme().border_secondary)
                     .rounded(cx.theme().radius)
-                    .child(group.0.to_owned()),
+                    .child(group.name.to_owned())
+                    // FIXME: generalize pool tiles and their interactions.
+                    .on_click({
+                        let fixture_ids = group.fixture_ids.clone();
+                        move |_, _, cx| {
+                            let fixture_ids = fixture_ids.clone();
+                            // FIMXE: Add helper to manage selection.
+                            let selection = AppState::global(cx).selection().clone();
+                            selection.update(cx, move |selection, cx| {
+                                *selection = fixture_ids;
+                                cx.notify();
+                            });
+                        }
+                    }),
                 None => div()
+                    .id(ElementId::named_usize("group", id as usize))
                     .size(self.cell_size)
                     .bg(cx.theme().bg_primary)
                     .border_1()

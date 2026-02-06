@@ -1,5 +1,5 @@
 use gpui::{App, ReadGlobal, Window, div, prelude::*, px};
-use rui::{Column, TableDelegate};
+use rui::{Column, TableDelegate, TableState};
 use zeevonk::project::stage::FixtureId;
 
 use crate::app::state::AppState;
@@ -9,7 +9,19 @@ pub struct FixtureTableDelegate {
 }
 
 impl FixtureTableDelegate {
-    pub fn new() -> Self {
+    pub fn new(cx: &mut Context<TableState<Self>>) -> Self {
+        let selection = AppState::global(cx).selection().clone();
+        cx.observe(&selection, |state, selection, cx| {
+            state.clear_selection(cx);
+            for fixture_id in selection.read(cx).clone() {
+                state.rows_mut().expand_parents(&fixture_id);
+                // FIXME: Use D::RowId instead of indices.
+                let row_id = state.rows().visible_ix_from_id(&fixture_id).unwrap();
+                state.select_cell(0, row_id, cx);
+            }
+        })
+        .detach();
+
         Self {
             columns: vec![
                 Column::new("id", "Id").with_min_width(px(150.0)),

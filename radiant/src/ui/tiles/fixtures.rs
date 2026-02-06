@@ -9,7 +9,9 @@ pub struct FixturesTile {
 
 impl FixturesTile {
     pub fn new(window: &mut Window, cx: &mut App) -> Self {
-        Self { table_state: cx.new(|cx| TableState::new(FixtureTableDelegate::new(), window, cx)) }
+        Self {
+            table_state: cx.new(|cx| TableState::new(FixtureTableDelegate::new(cx), window, cx)),
+        }
     }
 }
 

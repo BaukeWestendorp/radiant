@@ -334,6 +334,20 @@ impl<D: TableDelegate> RowRegistry<D> {
         self.expanded.contains(row_id)
     }
 
+    pub fn visible_ix_from_id(&self, row_id: &D::RowId) -> Option<usize> {
+        self.indices.get(row_id).copied()
+    }
+
+    pub fn expand_parents(&mut self, row_id: &D::RowId) {
+        let Some(node) = self.node(row_id) else { return };
+        let Some(parent_ix) = node.parent.as_ref() else { return };
+        let Some(parent_id) = self.nodes.get(*parent_ix).map(|n| n.id.clone()) else {
+            return;
+        };
+        self.set_expanded(parent_id.clone(), true);
+        self.expand_parents(&parent_id);
+    }
+
     pub fn set_expanded(&mut self, row_id: D::RowId, expanded: bool) {
         if expanded {
             self.expanded.insert(row_id);
@@ -363,6 +377,11 @@ impl<D: TableDelegate> RowRegistry<D> {
     pub fn collapse_all(&mut self) {
         self.expanded.clear();
         self.recompute_visible();
+    }
+
+    fn node(&self, row_id: &D::RowId) -> Option<&RowNode<D::RowId>> {
+        let ix = self.indices.get(row_id)?;
+        self.nodes.get(*ix)
     }
 
     fn recompute_visible(&mut self) {
