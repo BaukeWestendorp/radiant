@@ -213,6 +213,10 @@ impl<D: TableDelegate> RowRegistry<D> {
             indices: &mut HashMap<D::RowId, usize>,
             max_depth: &mut usize,
         ) {
+            if indices.contains_key(id) {
+                return;
+            }
+
             if depth > *max_depth {
                 *max_depth = depth;
             }
@@ -223,6 +227,10 @@ impl<D: TableDelegate> RowRegistry<D> {
 
             let children = delegate.row_children(id, cx);
             for child in children {
+                if indices.contains_key(&child) {
+                    continue;
+                }
+
                 add_subtree::<D>(
                     delegate,
                     cx,
