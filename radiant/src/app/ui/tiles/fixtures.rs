@@ -1,7 +1,7 @@
 use gpui::{AnyElement, App, Entity, Window, prelude::*};
 use rui::{Table, TableState, TileDelegate};
 
-use crate::ui::fixture_table::FixtureTableDelegate;
+use crate::app::ui::fixture_table::FixtureTableDelegate;
 
 pub struct FixturesTile {
     table_state: Entity<TableState<FixtureTableDelegate>>,

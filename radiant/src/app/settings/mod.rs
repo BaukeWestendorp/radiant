@@ -1,7 +1,7 @@
 use gpui::{Entity, Window, div, prelude::*};
 use rui::{Tab, Tabs, TabsState, TabsVariant, TitleBar, h_flex, v_flex};
 
-use crate::settings::patch::PatchSettingsView;
+use crate::app::settings::patch::PatchSettingsView;
 
 mod patch;
 

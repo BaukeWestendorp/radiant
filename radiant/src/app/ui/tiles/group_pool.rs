@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
 use gpui::{
-    AnyElement, App, Bounds, ElementId, Entity, Pixels, ReadGlobal, Window, div, prelude::*,
+    AnyElement, App, Bounds, ElementId, Entity, Pixels, ReadGlobal as _, Window, div, prelude::*,
 };
 use rui::{ActiveTheme, TileDelegate, h_flex};
 
-use crate::app::{
+use crate::{
+    app::state::AppState,
     object::{Group, GroupId},
-    state::AppState,
 };
 
 pub struct GroupsPoolTile {
@@ -20,8 +20,8 @@ impl GroupsPoolTile {
         Self { bounds, cell_size }
     }
 
-    pub fn groups<'a>(&self, _cx: &'a App) -> &'a Entity<HashMap<GroupId, Group>> {
-        todo!();
+    pub fn groups<'a>(&self, cx: &'a App) -> &'a Entity<HashMap<GroupId, Group>> {
+        AppState::global(cx).show().groups()
     }
 }
 
@@ -53,7 +53,7 @@ impl TileDelegate for GroupsPoolTile {
                         move |_, _, cx| {
                             let fixture_ids = fixture_ids.clone();
                             // FIMXE: Add helper to manage selection.
-                            let selection = AppState::global(cx).selection().clone();
+                            let selection = AppState::global(cx).show().selection().clone();
                             selection.update(cx, move |selection, cx| {
                                 *selection = fixture_ids;
                                 cx.notify();

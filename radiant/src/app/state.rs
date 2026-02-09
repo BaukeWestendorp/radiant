@@ -1,12 +1,11 @@
 use anyhow::Result;
-use gpui::{App, AppContext, Entity, Global};
-use zeevonk::{
-    Zeevonk,
-    project::{file::ProjectFile, stage::FixtureId},
-};
+use gpui::{App, Global};
+use zeevonk::Zeevonk;
 
-pub(crate) fn init(zv_project_file: ProjectFile, cx: &mut App) -> Result<()> {
-    let app_state = AppState::new(zv_project_file, cx)?;
+use crate::{show::Show, showfile::Showfile};
+
+pub(crate) fn init(showfile: Showfile, cx: &mut App) -> Result<()> {
+    let app_state = AppState::new(showfile, cx)?;
     cx.set_global(app_state);
     Ok(())
 }
@@ -14,23 +13,25 @@ pub(crate) fn init(zv_project_file: ProjectFile, cx: &mut App) -> Result<()> {
 pub struct AppState {
     zeevonk: Zeevonk,
 
-    selection: Entity<Vec<FixtureId>>,
+    show: Show,
 }
 
 impl AppState {
-    pub fn new(zv_project_file: ProjectFile, cx: &mut App) -> Result<Self> {
-        let zeevonk = Zeevonk::new(zv_project_file)?;
+    pub fn new(showfile: Showfile, cx: &mut App) -> Result<Self> {
+        let zeevonk = Zeevonk::new(showfile.zv_project_file().clone())?;
         zeevonk.start();
 
-        Ok(Self { zeevonk, selection: cx.new(|_| Vec::new()) })
+        let show = Show::from_showfile(&showfile, cx);
+
+        Ok(Self { zeevonk, show })
     }
 
     pub fn zeevonk(&self) -> &Zeevonk {
         &self.zeevonk
     }
 
-    pub fn selection(&self) -> &Entity<Vec<FixtureId>> {
-        &self.selection
+    pub fn show(&self) -> &Show {
+        &self.show
     }
 }
 

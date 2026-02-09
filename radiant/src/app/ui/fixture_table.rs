@@ -10,7 +10,7 @@ pub struct FixtureTableDelegate {
 
 impl FixtureTableDelegate {
     pub fn new(cx: &mut Context<TableState<Self>>) -> Self {
-        let selection = AppState::global(cx).selection().clone();
+        let selection = AppState::global(cx).show().selection().clone();
         cx.observe(&selection, |state, selection, cx| {
             state.clear_selection(cx);
             for fixture_id in selection.read(cx).clone() {

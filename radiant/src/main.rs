@@ -1,19 +1,21 @@
 use std::path::PathBuf;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
-use zeevonk::project::file::ProjectFile;
 
-const ZEEVONK_FOLDER_RELATIVE_PATH: &str = "zv/";
+use crate::showfile::Showfile;
 
 mod app;
-mod settings;
-mod ui;
+mod object;
+mod show;
+mod showfile;
 
+/// The Radiant CLI.
 #[derive(Parser)]
 #[command(name = "radiant", about = "The Radiant CLI")]
 struct Args {
-    project_path: PathBuf,
+    /// Path to the showfile.
+    showfile_path: PathBuf,
 }
 
 fn init_logger() {
@@ -28,10 +30,10 @@ fn main() -> Result<()> {
 
     let args = Args::parse();
 
-    let zv_project_file_path = args.project_path.join(ZEEVONK_FOLDER_RELATIVE_PATH);
-    let zv_project_file = ProjectFile::load_from_folder(&zv_project_file_path)?;
+    let showfile =
+        Showfile::load_from_folder(&args.showfile_path).context("failed to load showfile")?;
 
-    app::run(zv_project_file)?;
+    app::run(showfile)?;
 
     Ok(())
 }

@@ -7,18 +7,21 @@ use rui::{
     Button, Icon, IconSize, IconVariant, Root, TITLE_BAR_HEIGHT, TileGrid, TileGridState, TitleBar,
     h_flex,
 };
-use zeevonk::project::file::ProjectFile;
 
-use crate::ui::tiles::{FixturesTile, GroupsPoolTile};
+use crate::{
+    app::ui::tiles::{FixturesTile, GroupsPoolTile},
+    showfile::Showfile,
+};
 
-pub mod object;
-pub mod state;
+mod settings;
+mod state;
+mod ui;
 
 pub mod action {
     use gpui::{App, KeyBinding, TitlebarOptions, WindowOptions, prelude::*};
     use rui::{AppExt, Root};
 
-    use crate::settings::SettingsView;
+    use super::settings::SettingsView;
 
     gpui::actions!([OpenSettings]);
 
@@ -44,14 +47,14 @@ pub mod action {
     }
 }
 
-pub fn run(zv_project_file: ProjectFile) -> Result<()> {
+pub fn run(showfile: Showfile) -> Result<()> {
     Application::new()
         .with_assets(rui::Assets::default())
         .with_quit_mode(QuitMode::LastWindowClosed)
-        .run(|cx: &mut App| {
+        .run(move |cx: &mut App| {
             rui::init(cx);
             action::init(cx);
-            state::init(zv_project_file, cx).expect("should initialize app state");
+            state::init(showfile, cx).expect("should initialize app state");
 
             cx.activate(true);
 
