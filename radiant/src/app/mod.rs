@@ -9,7 +9,7 @@ use rui::{
 };
 use zeevonk::project::file::ProjectFile;
 
-use crate::ui::tiles::{FixturesTile, GroupsPoolTile, PresetsPoolTile};
+use crate::ui::tiles::{FixturesTile, GroupsPoolTile};
 
 pub mod object;
 pub mod state;
@@ -98,10 +98,6 @@ impl RadiantApp {
             tile_grid_state.add_tile(
                 GroupsPoolTile::new(bounds(point(8, 0), size(10, 6)), px(80.0)),
                 bounds(point(8, 0), size(10, 6)),
-            );
-            tile_grid_state.add_tile(
-                PresetsPoolTile::new(bounds(point(8, 6), size(10, 6)), px(80.0)),
-                bounds(point(8, 6), size(10, 6)),
             );
             tile_grid_state
         });

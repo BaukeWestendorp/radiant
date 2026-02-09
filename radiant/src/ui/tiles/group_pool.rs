@@ -20,8 +20,8 @@ impl GroupsPoolTile {
         Self { bounds, cell_size }
     }
 
-    pub fn groups<'a>(&self, cx: &'a App) -> &'a Entity<HashMap<GroupId, Group>> {
-        &AppState::global(cx).groups()
+    pub fn groups<'a>(&self, _cx: &'a App) -> &'a Entity<HashMap<GroupId, Group>> {
+        todo!();
     }
 }
 
