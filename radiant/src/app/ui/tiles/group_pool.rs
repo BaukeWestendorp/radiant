@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use gpui::{
     AnyElement, App, Bounds, ElementId, Entity, Pixels, ReadGlobal as _, Window, div, prelude::*,
+    relative,
 };
-use rui::{ActiveTheme, TileDelegate, h_flex};
+use rui::{ActiveTheme, HslaExt as _, TileDelegate, h_flex};
 
 use crate::{
     app::state::AppState,
@@ -37,17 +38,34 @@ impl TileDelegate for GroupsPoolTile {
             let id = ix + 1;
             let group = self.groups(cx).read(cx).get(&id);
 
+            let id_overlay = div()
+                .text_sm()
+                .p_1()
+                .line_height(relative(0.8))
+                .absolute()
+                .size_full()
+                .text_color(cx.theme().fg_tertiary)
+                .child(id.to_string());
+
             match group {
-                Some(group) => h_flex()
+                Some(group) => div()
                     .id(ElementId::named_usize("group", id as usize))
-                    .justify_center()
+                    .relative()
                     .size(self.cell_size)
                     .bg(cx.theme().bg_secondary)
                     .border_1()
                     .border_color(cx.theme().border_secondary)
                     .rounded(cx.theme().radius)
-                    .child(group.name.to_owned())
-                    // FIXME: generalize pool tiles and their interactions.
+                    .hover(|e| {
+                        e.bg(cx.theme().bg_secondary.hover())
+                            .border_color(cx.theme().border_secondary.hover())
+                    })
+                    .active(|e| {
+                        e.bg(cx.theme().bg_secondary.active())
+                            .border_color(cx.theme().border_secondary.active())
+                    })
+                    .child(id_overlay)
+                    .child(h_flex().justify_center().size_full().child(group.name.to_owned()))
                     .on_click({
                         let fixture_ids = group.fixture_ids.clone();
                         move |_, _, cx| {
@@ -62,11 +80,14 @@ impl TileDelegate for GroupsPoolTile {
                     }),
                 None => div()
                     .id(ElementId::named_usize("group", id as usize))
+                    .relative()
                     .size(self.cell_size)
                     .bg(cx.theme().bg_primary)
                     .border_1()
                     .border_color(cx.theme().border_primary)
-                    .rounded(cx.theme().radius),
+                    .rounded(cx.theme().radius)
+                    .child(id_overlay)
+                    .child(div().size(self.cell_size)),
             }
         });
 
