@@ -28,4 +28,11 @@ impl Show {
     pub fn selection(&self) -> &Entity<Vec<FixtureId>> {
         &self.selection
     }
+
+    pub fn set_selection(&self, selection: Vec<FixtureId>, cx: &mut App) {
+        self.selection.update(cx, move |s, cx| {
+            *s = selection;
+            cx.notify();
+        });
+    }
 }

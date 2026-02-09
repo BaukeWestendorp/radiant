@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use gpui::{
-    AnyElement, App, Bounds, ElementId, Entity, Pixels, ReadGlobal as _, Window, div, prelude::*,
-    relative,
+    AnyElement, App, Bounds, ElementId, Entity, Pixels, ReadGlobal as _, UpdateGlobal as _, Window,
+    div, prelude::*, relative,
 };
 use rui::{ActiveTheme, HslaExt as _, TileDelegate, h_flex};
 
@@ -69,12 +69,8 @@ impl TileDelegate for GroupsPoolTile {
                     .on_click({
                         let fixture_ids = group.fixture_ids.clone();
                         move |_, _, cx| {
-                            let fixture_ids = fixture_ids.clone();
-                            // FIMXE: Add helper to manage selection.
-                            let selection = AppState::global(cx).show().selection().clone();
-                            selection.update(cx, move |selection, cx| {
-                                *selection = fixture_ids;
-                                cx.notify();
+                            AppState::update_global(cx, |state, cx| {
+                                state.show().set_selection(fixture_ids.clone(), cx)
                             });
                         }
                     }),
