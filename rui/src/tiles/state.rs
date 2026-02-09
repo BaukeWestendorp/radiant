@@ -38,8 +38,8 @@ impl Tile {
         self.delegate.as_mut()
     }
 
-    pub fn bounds(&self) -> &Bounds<u32> {
-        &self.bounds
+    pub fn bounds(&self) -> Bounds<u32> {
+        self.bounds
     }
 
     pub fn bounds_mut(&mut self) -> &mut Bounds<u32> {

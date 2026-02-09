@@ -4,8 +4,8 @@ use gpui::{
     WindowBounds, WindowOptions, bounds, div, point, prelude::*, px, size,
 };
 use rui::{
-    Button, Icon, IconSize, IconVariant, Root, TITLE_BAR_HEIGHT, TileGrid, TileGridState, TitleBar,
-    h_flex,
+    Button, Icon, IconSize, IconVariant, PoolTile, Root, TITLE_BAR_HEIGHT, TileGrid, TileGridState,
+    TitleBar, h_flex,
 };
 
 use crate::{
@@ -96,11 +96,13 @@ impl RadiantApp {
 
         let tile_grid_state = cx.new(|cx| {
             let mut tile_grid_state = TileGridState::new();
+            let cell_size = px(80.0);
             tile_grid_state
                 .add_tile(FixturesTile::new(window, cx), bounds(point(0, 0), size(8, 12)));
+            let groups_pool_delegate = cx.new(|_cx| GroupsPoolTile::new());
             tile_grid_state.add_tile(
-                GroupsPoolTile::new(bounds(point(8, 0), size(10, 6)), px(80.0)),
-                bounds(point(8, 0), size(10, 6)),
+                PoolTile::new(groups_pool_delegate, cell_size),
+                bounds(point(8, 0), size(10, 8)),
             );
             tile_grid_state
         });

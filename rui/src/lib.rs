@@ -22,7 +22,7 @@ pub use root::Root;
 pub use table::{Column, Table, TableDelegate, TableState};
 pub use tabs::{Tab, Tabs, TabsState, TabsVariant};
 pub use theme::{ActiveTheme, HslaExt};
-pub use tiles::{TileDelegate, TileGrid, TileGridState};
+pub use tiles::{PoolTile, PoolTileDelegate, TileDelegate, TileGrid, TileGridState};
 pub use title_bar::{TITLE_BAR_HEIGHT, TITLE_BAR_LEFT_PADDING, TITLE_BAR_RIGHT_PADDING, TitleBar};
 
 pub use app_ext::AppExt;
