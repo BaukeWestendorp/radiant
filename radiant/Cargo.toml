@@ -12,7 +12,7 @@ log.workspace = true
 
 pretty_env_logger = "0.5.0"
 
-zeevonk = { git = "https://github.com/BaukeWestendorp/zeevonk.git", branch = "single-instance-experiment" }
+zeevonk = { git = "https://github.com/BaukeWestendorp/zeevonk.git", branch = "dev" }
 serde_json = "1.0.149"
 serde = { version = "1.0.228", features = ["derive"] }
 anyhow = "1.0.100"

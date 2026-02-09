@@ -5333,6 +5333,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "thread-priority"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2210811179577da3d54eb69ab0b50490ee40491a25d95b8c6011ba40771cb721"
+dependencies = [
+ "bitflags 2.10.0",
+ "cfg-if",
+ "libc",
+ "log",
+ "rustversion",
+ "windows 0.61.3",
+]
+
+[[package]]
 name = "thread_local"
 version = "1.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6928,7 +6942,7 @@ dependencies = [
 [[package]]
 name = "zeevonk"
 version = "0.2.0"
-source = "git+https://github.com/BaukeWestendorp/zeevonk.git?branch=single-instance-experiment#986dcc88f2254d4e1a51835a74bbe541f3d46a8b"
+source = "git+https://github.com/BaukeWestendorp/zeevonk.git?branch=dev#c8cc1d86500c0c68c40fa78ae6b1bcbe954c2a64"
 dependencies = [
  "arrayvec",
  "crossbeam-channel",
@@ -6942,6 +6956,7 @@ dependencies = [
  "spin_sleep",
  "theymx",
  "thiserror 2.0.18",
+ "thread-priority",
  "uuid",
 ]
 
