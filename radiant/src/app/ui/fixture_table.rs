@@ -42,14 +42,14 @@ impl TableDelegate for FixtureTableDelegate {
 
     fn root_row_ids(&self, cx: &App) -> Vec<Self::RowId> {
         let stage = AppState::global(cx).zeevonk().project().stage();
-        let mut row_ids = stage.root_fixtures().map(|(id, _)| *id).collect::<Vec<_>>();
+        let mut row_ids = stage.roots().map(|(id, _)| *id).collect::<Vec<_>>();
         row_ids.sort();
         row_ids
     }
 
     fn row_children(&self, row_id: &Self::RowId, cx: &App) -> Vec<Self::RowId> {
         let stage = AppState::global(cx).zeevonk().project().stage();
-        let mut sub_ids = stage.sub_fixtures(&row_id).map(|(id, _)| *id).collect::<Vec<_>>();
+        let mut sub_ids = stage.children(&row_id).map(|(id, _)| *id).collect::<Vec<_>>();
         sub_ids.sort();
         sub_ids
     }

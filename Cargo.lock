@@ -6941,7 +6941,7 @@ dependencies = [
 [[package]]
 name = "zeevonk"
 version = "0.2.0"
-source = "git+https://github.com/BaukeWestendorp/zeevonk.git?branch=dev#c8cc1d86500c0c68c40fa78ae6b1bcbe954c2a64"
+source = "git+https://github.com/BaukeWestendorp/zeevonk.git?branch=dev#4b493302b0226df88c2b1e48ecf595b3e0e9f0d3"
 dependencies = [
  "arrayvec",
  "crossbeam-channel",
