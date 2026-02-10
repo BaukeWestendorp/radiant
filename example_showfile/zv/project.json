@@ -426,7 +426,15 @@
 
   "dmx_output": {
     "instances": [
-      { "enttec_open_dmx": { "universe_id": 1, "serial_number": "BG00DNDB" } }
+      {
+        "sacn": {
+          "name": "Zeevonk U1",
+          "universe_ids": [1],
+          "preview_mode": false,
+          "priority": 100,
+          "target_address": "127.0.0.1:5568"
+        }
+      }
     ]
   }
 }
