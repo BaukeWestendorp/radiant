@@ -1,7 +1,7 @@
 use gpui::{AnyElement, App, Bounds, Entity, SharedString, Window, prelude::*};
 use rui::{Table, TableState, TileDelegate};
 
-use crate::app::ui::fixture_table::FixtureTableDelegate;
+use crate::app::{state::AppState, ui::fixture_table::FixtureTableDelegate};
 
 pub struct FixturesTile {
     table_state: Entity<TableState<FixtureTableDelegate>>,
@@ -10,7 +10,14 @@ pub struct FixturesTile {
 impl FixturesTile {
     pub fn new(window: &mut Window, cx: &mut App) -> Self {
         Self {
-            table_state: cx.new(|cx| TableState::new(FixtureTableDelegate::new(cx), window, cx)),
+            table_state: cx.new(|cx| {
+                TableState::new(
+                    FixtureTableDelegate::new(window, cx),
+                    AppState::show(cx).selection(),
+                    window,
+                    cx,
+                )
+            }),
         }
     }
 }

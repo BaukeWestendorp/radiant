@@ -1,4 +1,4 @@
-use gpui::{App, Entity, ReadGlobal, Window, div, prelude::*, px};
+use gpui::{App, Entity, Window, div, prelude::*, px};
 use rui::{Column, Table, TableDelegate, TableState};
 use zeevonk::project::{file::patch::FixtureDefinition, stage::FixtureIdPart};
 
@@ -11,9 +11,16 @@ pub struct PatchSettingsView {
 impl PatchSettingsView {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let fixtures = cx.new(|cx| AppState::zeevonk(cx).project().file().patch.fixtures.clone());
+
         Self {
-            table_state: cx
-                .new(|cx| TableState::new(PatchTableDelegate::new(fixtures), window, cx)),
+            table_state: cx.new(|cx| {
+                TableState::new(
+                    PatchTableDelegate::new(fixtures),
+                    cx.new(|_| Vec::new()),
+                    window,
+                    cx,
+                )
+            }),
         }
     }
 }

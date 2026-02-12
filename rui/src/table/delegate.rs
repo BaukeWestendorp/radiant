@@ -5,7 +5,7 @@ use gpui::{App, Window, prelude::*};
 use crate::Column;
 
 pub trait TableDelegate {
-    type RowId: Clone + Eq + Hash;
+    type RowId: Clone + Eq + Hash + std::fmt::Debug;
 
     fn column_count(&self, cx: &App) -> usize;
 
