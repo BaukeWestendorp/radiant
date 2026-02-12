@@ -102,11 +102,11 @@ impl RadiantApp {
             let mut tile_grid_state = TileGridState::new();
             let cell_size = px(80.0);
             tile_grid_state
-                .add_tile(FixturesTile::new(window, cx), bounds(point(0, 0), size(8, 12)));
+                .add_tile(FixturesTile::new(window, cx), bounds(point(0, 0), size(5, 12)));
             let groups_pool_delegate = cx.new(|_cx| GroupsPoolTile::new());
             tile_grid_state.add_tile(
                 PoolTile::new(groups_pool_delegate, cell_size),
-                bounds(point(8, 0), size(10, 8)),
+                bounds(point(5, 0), size(3, 8)),
             );
             tile_grid_state
         });
