@@ -1,8 +1,8 @@
 use anyhow::Result;
-use gpui::{App, Global, ReadGlobal as _};
+use gpui::{App, Entity, Global, ReadGlobal as _, prelude::*};
 use zeevonk::Zeevonk;
 
-use crate::{show::Show, showfile::Showfile};
+use crate::{effect_engine::EffectEngine, show::Show, showfile::Showfile};
 
 pub(crate) fn init(showfile: Showfile, cx: &mut App) -> Result<()> {
     let app_state = AppState::new(showfile, cx)?;
@@ -33,6 +33,7 @@ pub struct AppState {
     zeevonk: Zeevonk,
 
     show: Show,
+    effect_engine: Entity<EffectEngine>,
 }
 
 impl AppState {
@@ -41,7 +42,9 @@ impl AppState {
         zeevonk.start();
 
         let show = Show::from_showfile(showfile, cx);
+        let effect_engine = cx.new(|cx| EffectEngine::new(show.effects(), cx));
 
+        // Set highlighed values in Zeevonk if the selection changes.
         cx.observe(&show.selection(), |selection, cx| {
             let highlight = AppState::show(cx).modes().read(cx).highlight;
             if highlight {
@@ -53,6 +56,7 @@ impl AppState {
         })
         .detach();
 
+        // Update highlighted fixtures in Zeevonk when highlight mode changes.
         cx.observe(&show.modes(), |modes, cx| {
             if modes.read(cx).highlight {
                 let selection = AppState::show(cx).selection().read(cx);
@@ -63,7 +67,7 @@ impl AppState {
         })
         .detach();
 
-        Ok(Self { zeevonk, show })
+        Ok(Self { zeevonk, show, effect_engine })
     }
 
     pub fn zeevonk(cx: &App) -> &Zeevonk {
@@ -72,6 +76,10 @@ impl AppState {
 
     pub fn show(cx: &App) -> &Show {
         &Self::global(cx).show
+    }
+
+    pub fn effect_engine(cx: &App) -> Entity<EffectEngine> {
+        Self::global(cx).effect_engine.clone()
     }
 }
 

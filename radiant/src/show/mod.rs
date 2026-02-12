@@ -5,12 +5,13 @@ use zeevonk::project::stage::FixtureId;
 
 use crate::{
     layout::Layout,
-    object::{Group, GroupId},
+    object::{Effect, EffectId, Group, GroupId},
     showfile::Showfile,
 };
 
 pub struct Show {
     groups: Entity<HashMap<GroupId, Group>>,
+    effects: Entity<HashMap<EffectId, Effect>>,
 
     layout: Entity<Layout>,
 
@@ -21,10 +22,12 @@ pub struct Show {
 impl Show {
     pub fn from_showfile(showfile: Showfile, cx: &mut App) -> Self {
         let groups = cx.new(|_| showfile.groups().clone());
+        let effects = cx.new(|_| showfile.effects().clone());
         let layout = cx.new(|_| showfile.layout().clone());
 
         Self {
             groups,
+            effects,
             layout,
             selection: cx.new(|_| Vec::new()),
             modes: cx.new(|_| ShowModes::new()),
@@ -33,6 +36,10 @@ impl Show {
 
     pub fn groups(&self) -> Entity<HashMap<GroupId, Group>> {
         self.groups.clone()
+    }
+
+    pub fn effects(&self) -> Entity<HashMap<EffectId, Effect>> {
+        self.effects.clone()
     }
 
     pub fn layout(&self) -> Entity<Layout> {
