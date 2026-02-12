@@ -16,13 +16,43 @@ pub use state::*;
 use crate::{ActiveTheme, ElementExt, Icon, IconSize, IconVariant, h_flex, theme::HslaExt};
 
 pub(crate) mod action {
-    use gpui::{App, actions};
+    use gpui::{App, KeyBinding, actions};
 
-    actions!(root, []);
+    actions!(
+        root,
+        [
+            ClearSelection,
+            EditSelection,
+            DeleteSelection,
+            ToggleExpandSelection,
+            NextColumn,
+            PrevColumn,
+            NextRow,
+            PrevRow,
+            ExtendSelectionNext,
+            ExtendSelectionPrev,
+            SelectAll,
+        ]
+    );
 
     pub const KEY_CONTEXT: &str = "Table";
 
-    pub fn init(_cx: &mut App) {}
+    pub fn init(cx: &mut App) {
+        cx.bind_keys([
+            KeyBinding::new("escape", ClearSelection, Some(KEY_CONTEXT)),
+            KeyBinding::new("enter", EditSelection, Some(KEY_CONTEXT)),
+            KeyBinding::new("delete", DeleteSelection, Some(KEY_CONTEXT)),
+            KeyBinding::new("backspace", DeleteSelection, Some(KEY_CONTEXT)),
+            KeyBinding::new("tab", ToggleExpandSelection, Some(KEY_CONTEXT)),
+            KeyBinding::new("right", NextColumn, Some(KEY_CONTEXT)),
+            KeyBinding::new("left", PrevColumn, Some(KEY_CONTEXT)),
+            KeyBinding::new("down", NextRow, Some(KEY_CONTEXT)),
+            KeyBinding::new("up", PrevRow, Some(KEY_CONTEXT)),
+            KeyBinding::new("secondary-down", ExtendSelectionNext, Some(KEY_CONTEXT)),
+            KeyBinding::new("secondary-up", ExtendSelectionPrev, Some(KEY_CONTEXT)),
+            KeyBinding::new("secondary-a", SelectAll, Some(KEY_CONTEXT)),
+        ]);
+    }
 }
 
 #[derive(IntoElement)]
@@ -61,6 +91,80 @@ impl<D: TableDelegate + 'static> RenderOnce for Table<D> {
                     state.update(cx, |state, _| {
                         state.bounds = bounds;
                     })
+                }
+            })
+            .on_action::<action::ClearSelection>({
+                let state = self.state.clone();
+                move |_, _window, cx| {
+                    state.update(cx, |state, cx| state.clear_selection(cx));
+                }
+            })
+            .on_action::<action::ToggleExpandSelection>({
+                let state = self.state.clone();
+                move |_, _window, cx| {
+                    state.update(cx, |state, cx| state.toggle_expand_selected_rows(cx));
+                }
+            })
+            .on_action::<action::SelectAll>({
+                let state = self.state.clone();
+                move |_, _window, cx| {
+                    state.update(cx, |state, cx| {
+                        state.select_all(cx);
+                    });
+                }
+            })
+            .on_action::<action::NextColumn>({
+                let state = self.state.clone();
+                move |_, _window, cx| {
+                    state.update(cx, |state, cx| {
+                        let ix = state.selected_column_ix() + 1;
+                        state.set_selected_column_ix(ix, cx);
+                    });
+                }
+            })
+            .on_action::<action::PrevColumn>({
+                let state = self.state.clone();
+                move |_, _window, cx| {
+                    state.update(cx, |state, cx| {
+                        let ix = state.selected_column_ix().saturating_sub(1);
+                        state.set_selected_column_ix(ix, cx);
+                    });
+                }
+            })
+            .on_action::<action::NextRow>({
+                let state = self.state.clone();
+                move |_, _window, cx| {
+                    state.update(cx, |state, cx| state.move_selection_by(1, false, cx));
+                }
+            })
+            .on_action::<action::PrevRow>({
+                let state = self.state.clone();
+                move |_, _window, cx| {
+                    state.update(cx, |state, cx| state.move_selection_by(-1, false, cx));
+                }
+            })
+            .on_action::<action::ExtendSelectionNext>({
+                let state = self.state.clone();
+                move |_, _window, cx| {
+                    state.update(cx, |state, cx| state.move_selection_by(1, true, cx));
+                }
+            })
+            .on_action::<action::ExtendSelectionPrev>({
+                let state = self.state.clone();
+                move |_, _window, cx| {
+                    state.update(cx, |state, cx| state.move_selection_by(-1, true, cx));
+                }
+            })
+            .on_action::<action::EditSelection>({
+                let state = self.state.clone();
+                move |_, _window, cx| {
+                    state.update(cx, |state, cx| state.edit_selection(cx));
+                }
+            })
+            .on_action::<action::DeleteSelection>({
+                let state = self.state.clone();
+                move |_, _window, cx| {
+                    state.update(cx, |state, cx| state.delete_selection(cx));
                 }
             })
             .child(header)
@@ -116,6 +220,13 @@ impl<D: TableDelegate + 'static> TableState<D> {
             .font_weight(FontWeight::BOLD)
             .hover(|e| e.bg(cx.theme().bg_secondary.hover()))
             .active(|e| e.bg(cx.theme().bg_secondary.active()))
+            .on_mouse_down(
+                MouseButton::Left,
+                cx.listener(move |this, _, _, cx| {
+                    this.selected_column_ix = col_ix;
+                    this.select_all(cx);
+                }),
+            )
             .child(label)
     }
 
@@ -242,6 +353,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
                     this.on_cell_mouse_up_out(cx);
                 }),
             );
+
         let content = self.render_cell_content(row_id, col_ix, depth, window, cx);
 
         base.child(content)

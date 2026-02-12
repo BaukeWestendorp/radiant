@@ -112,6 +112,18 @@ impl<D: TableDelegate + 'static> TableState<D> {
         cx.notify();
     }
 
+    pub fn select_all(&mut self, cx: &mut Context<Self>) {
+        let all_visible_ids: Vec<D::RowId> =
+            self.rows.visible_rows().iter().map(|(id, _depth)| id.clone()).collect();
+
+        self.range_selection_anchor = all_visible_ids.first().cloned();
+        self.range_selection_head = all_visible_ids.last().cloned();
+        self.is_subtracting = false;
+
+        self.set_selection(all_visible_ids, cx);
+        cx.notify();
+    }
+
     pub fn clear_selection(&mut self, cx: &mut Context<Self>) {
         self.selection.update(cx, |selection, cx| {
             selection.clear();
@@ -122,14 +134,109 @@ impl<D: TableDelegate + 'static> TableState<D> {
 
     pub fn toggle_selected(&mut self, row_id: &D::RowId, cx: &mut Context<Self>) {
         let row_id = row_id.clone();
-        self.selection.update(cx, move |selection, cx| {
+        self.selection.update(cx, move |selection, _| {
             if let Some(ix) = selection.iter().position(|id| id == &row_id) {
                 selection.remove(ix);
             } else {
                 selection.push(row_id.clone());
             }
-            cx.notify();
         });
+        cx.notify();
+    }
+
+    pub(crate) fn move_selection_by(&mut self, delta: isize, extend: bool, cx: &mut Context<Self>) {
+        let visible = self.rows.visible_rows();
+        if visible.is_empty() {
+            return;
+        }
+
+        let current = if extend {
+            self.range_selection_head.clone().or(self.selection.read(cx).last().cloned())
+        } else {
+            self.selection.read(cx).last().cloned()
+        };
+
+        // Empty selection behavior:
+        // - Down selects the first row
+        // - Up selects the last row
+        let current_ix = current
+            .as_ref()
+            .and_then(|id| self.rows.visible_ix_from_id(id))
+            .map(|ix| ix as isize)
+            .unwrap_or(if delta < 0 { visible.len().saturating_sub(1) as isize + 1 } else { -1 });
+
+        let mut target_ix = current_ix + delta;
+        let max_ix = visible.len().saturating_sub(1) as isize;
+        if target_ix < 0 {
+            target_ix = 0;
+        }
+        if target_ix > max_ix {
+            target_ix = max_ix;
+        }
+
+        let target_id = visible[target_ix as usize].0.clone();
+
+        if !extend {
+            self.range_selection_anchor = Some(target_id.clone());
+            self.range_selection_head = Some(target_id.clone());
+            self.set_selection(vec![target_id], cx);
+            return;
+        }
+
+        if self.range_selection_anchor.is_none() {
+            if let Some(head) = self.range_selection_head.clone().or(current) {
+                self.range_selection_anchor = Some(head);
+            } else {
+                self.range_selection_anchor = Some(target_id.clone());
+            }
+        }
+
+        self.range_selection_head = Some(target_id);
+
+        self.is_subtracting = false;
+        self.recompute_range_selection(false, cx);
+    }
+
+    pub(crate) fn edit_selection(&mut self, cx: &mut Context<Self>) {
+        let row_ids = self.selection.read(cx).clone();
+        if row_ids.is_empty() {
+            return;
+        }
+
+        self.delegate.edit_rows(&row_ids, cx);
+        cx.notify();
+    }
+
+    pub(crate) fn delete_selection(&mut self, cx: &mut Context<Self>) {
+        let row_ids = self.selection.read(cx).clone();
+        if row_ids.is_empty() {
+            return;
+        }
+
+        self.delegate.delete_rows(&row_ids, cx);
+        self.clear_selection(cx);
+        cx.notify();
+    }
+
+    pub(crate) fn toggle_expand_selected_rows(&mut self, cx: &mut Context<Self>) {
+        let selected = self.selection.read(cx).clone();
+        if selected.is_empty() {
+            return;
+        }
+
+        let collapsible: Vec<D::RowId> =
+            selected.into_iter().filter(|row_id| self.is_collapsible(row_id)).collect();
+
+        if collapsible.is_empty() {
+            return;
+        }
+
+        let all_expanded = collapsible.iter().all(|row_id| self.is_expanded(row_id));
+
+        for row_id in collapsible {
+            self.rows.set_expanded(row_id, !all_expanded);
+        }
+
         cx.notify();
     }
 
