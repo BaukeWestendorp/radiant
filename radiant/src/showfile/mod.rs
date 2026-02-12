@@ -15,7 +15,7 @@ pub struct Showfile {
 impl Showfile {
     pub fn load_from_folder(showfile_path: &PathBuf) -> Result<Self> {
         const ZEEVONK_FOLDER_RELATIVE_PATH: &str = "zv/";
-        const GROUPS_RELATIVE_PATH: &str = "groups.json";
+        const GROUPS_RELATIVE_PATH: &str = "objects/groups.json";
 
         let zv_project_file =
             ProjectFile::load_from_folder(&showfile_path.join(ZEEVONK_FOLDER_RELATIVE_PATH))
