@@ -1,8 +1,8 @@
 use std::ops::Range;
 
 use gpui::{
-    AnyElement, App, Div, ElementId, Entity, FontWeight, ListSizingBehavior, Pixels, Window, div,
-    prelude::*, uniform_list,
+    AnyElement, App, Div, ElementId, Entity, FontWeight, ListSizingBehavior, MouseButton,
+    MouseDownEvent, MouseMoveEvent, Pixels, Window, div, prelude::*, uniform_list,
 };
 
 mod column;
@@ -209,8 +209,39 @@ impl<D: TableDelegate + 'static> TableState<D> {
                 e.bg(cx.theme().bg_selected_extra).child(
                     div().absolute().inset_0().border_1().border_color(cx.theme().border_selected),
                 )
-            });
-
+            })
+            .on_mouse_down(
+                MouseButton::Left,
+                cx.listener({
+                    let row_id = row_id.clone();
+                    move |this, event: &MouseDownEvent, _, cx| {
+                        this.on_cell_mouse_down(
+                            row_id.clone(),
+                            col_ix,
+                            event.modifiers.secondary(),
+                            cx,
+                        );
+                    }
+                }),
+            )
+            .on_mouse_move(cx.listener({
+                let row_id = row_id.clone();
+                move |this, event: &MouseMoveEvent, _, cx| {
+                    this.on_cell_mouse_move(row_id.clone(), event.modifiers.secondary(), cx);
+                }
+            }))
+            .on_mouse_up(
+                MouseButton::Left,
+                cx.listener(move |this, _event, _, cx| {
+                    this.on_cell_mouse_up(cx);
+                }),
+            )
+            .on_mouse_up_out(
+                MouseButton::Left,
+                cx.listener(move |this, _event, _, cx| {
+                    this.on_cell_mouse_up_out(cx);
+                }),
+            );
         let content = self.render_cell_content(row_id, col_ix, depth, window, cx);
 
         base.child(content)

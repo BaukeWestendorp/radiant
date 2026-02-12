@@ -14,7 +14,11 @@ pub struct TableState<D: TableDelegate> {
     pub(crate) rows: RowRegistry<D>,
 
     selection: Entity<Vec<D::RowId>>,
-    selected_column_ix: usize,
+    pub(crate) selected_column_ix: usize,
+    pub(crate) is_selecting: bool,
+    pub(crate) is_subtracting: bool,
+    pub(crate) range_selection_anchor: Option<D::RowId>,
+    pub(crate) range_selection_head: Option<D::RowId>,
 
     pub(crate) focus_handle: FocusHandle,
     pub(crate) vertical_scroll_handle: UniformListScrollHandle,
@@ -42,12 +46,27 @@ impl<D: TableDelegate + 'static> TableState<D> {
             this.reset_column_widths(cx);
         });
 
+        cx.observe(&selection, |this, selection, cx| {
+            // When selection changes externally, ensure any selected rows that are nested
+            // are visible by expanding their ancestor path(s).
+            let selected_ids = selection.read(cx).clone();
+            for row_id in selected_ids.iter() {
+                this.rows.expand_path_to(row_id);
+            }
+            cx.notify();
+        })
+        .detach();
+
         Self {
             delegate,
             rows,
 
             selection,
             selected_column_ix: 0,
+            is_selecting: false,
+            is_subtracting: false,
+            range_selection_anchor: None,
+            range_selection_head: None,
 
             focus_handle: cx.focus_handle(),
             vertical_scroll_handle: UniformListScrollHandle::new(),
@@ -86,25 +105,30 @@ impl<D: TableDelegate + 'static> TableState<D> {
     }
 
     pub fn set_selection(&mut self, row_ids: Vec<D::RowId>, cx: &mut Context<Self>) {
-        self.selection.update(cx, move |selection, _| {
+        self.selection.update(cx, move |selection, cx| {
             *selection = row_ids;
+            cx.notify();
         });
         cx.notify();
     }
 
     pub fn clear_selection(&mut self, cx: &mut Context<Self>) {
-        self.selection.update(cx, |selection, _| selection.clear());
+        self.selection.update(cx, |selection, cx| {
+            selection.clear();
+            cx.notify();
+        });
         cx.notify();
     }
 
     pub fn toggle_selected(&mut self, row_id: &D::RowId, cx: &mut Context<Self>) {
         let row_id = row_id.clone();
-        self.selection.update(cx, move |selection, _| {
+        self.selection.update(cx, move |selection, cx| {
             if let Some(ix) = selection.iter().position(|id| id == &row_id) {
                 selection.remove(ix);
             } else {
                 selection.push(row_id.clone());
             }
+            cx.notify();
         });
         cx.notify();
     }
@@ -157,6 +181,120 @@ impl<D: TableDelegate + 'static> TableState<D> {
             taken_width += col.min_width();
         }
         self.column_widths.push(self.bounds.size.width - taken_width);
+    }
+
+    pub(crate) fn range_selection(&mut self) -> Vec<D::RowId> {
+        let (Some(anchor), Some(head)) =
+            (self.range_selection_anchor.clone(), self.range_selection_head.clone())
+        else {
+            return Vec::new();
+        };
+
+        let (Some(anchor_ix), Some(head_ix)) =
+            (self.rows.visible_ix_from_id(&anchor), self.rows.visible_ix_from_id(&head))
+        else {
+            return Vec::new();
+        };
+
+        let (start, end) = (anchor_ix.min(head_ix), anchor_ix.max(head_ix));
+
+        self.rows
+            .visible_rows()
+            .iter()
+            .skip(start)
+            .take(end - start + 1)
+            .map(|(id, _)| id.clone())
+            .collect()
+    }
+
+    fn end_range_selection(&mut self, cx: &mut Context<Self>) {
+        self.is_selecting = false;
+        self.range_selection_anchor = None;
+        self.range_selection_head = None;
+        self.is_subtracting = false;
+        cx.notify();
+    }
+
+    fn recompute_range_selection(&mut self, expand_selection: bool, cx: &mut Context<Self>) {
+        let new_range = self.range_selection();
+
+        if !expand_selection {
+            self.set_selection(new_range, cx);
+            return;
+        }
+
+        let previous_selection = self.selection.read(cx).clone();
+
+        let next_selection = if self.is_subtracting {
+            let mut next = previous_selection;
+            next.retain(|id| !new_range.contains(id));
+            next
+        } else {
+            let mut merged = previous_selection;
+            for id in new_range {
+                if !merged.contains(&id) {
+                    merged.push(id);
+                }
+            }
+            merged
+        };
+
+        self.set_selection(next_selection, cx);
+    }
+
+    pub(crate) fn on_cell_mouse_down(
+        &mut self,
+        row_id: D::RowId,
+        col_ix: usize,
+        expand_selection: bool,
+        cx: &mut Context<Self>,
+    ) {
+        self.selected_column_ix = col_ix;
+
+        self.is_selecting = true;
+        self.range_selection_anchor = Some(row_id.clone());
+        self.range_selection_head = Some(row_id.clone());
+
+        // With secondary modifier dragging, if it starts on an already-selected cell,
+        // subtract the range from the existing selection instead of adding it.
+        self.is_subtracting = expand_selection && self.selection_contains(&row_id, cx);
+
+        self.recompute_range_selection(expand_selection, cx);
+        cx.notify();
+    }
+
+    pub(crate) fn on_cell_mouse_move(
+        &mut self,
+        row_id: D::RowId,
+        expand_selection: bool,
+        cx: &mut Context<Self>,
+    ) {
+        if !self.is_selecting {
+            return;
+        }
+
+        if self.range_selection_anchor.is_none() {
+            if let Some(head) = self.range_selection_head.clone() {
+                self.range_selection_anchor = Some(head);
+            } else {
+                self.range_selection_anchor = Some(row_id.clone());
+            }
+        }
+
+        if self.range_selection_head != Some(row_id.clone()) {
+            self.range_selection_head = Some(row_id);
+
+            self.recompute_range_selection(expand_selection, cx);
+            cx.notify();
+        }
+    }
+
+    pub(crate) fn on_cell_mouse_up(&mut self, cx: &mut Context<Self>) {
+        self.end_range_selection(cx);
+    }
+
+    pub(crate) fn on_cell_mouse_up_out(&mut self, cx: &mut Context<Self>) {
+        self.end_range_selection(cx);
     }
 }
 
@@ -257,13 +395,13 @@ impl<D: TableDelegate> RowRegistry<D> {
 
     pub fn expand_path_to(&mut self, row_id: &D::RowId) {
         let Some(mut ix) = self.indices.get(row_id).copied() else { return };
-
         while let Some(parent_ix) = self.nodes.get(ix).and_then(|n| n.parent) {
             if let Some(parent_id) = self.nodes.get(parent_ix).map(|n| n.id.clone()) {
                 self.expanded.insert(parent_id);
             }
             ix = parent_ix;
         }
+        self.recompute_visible();
     }
 
     pub fn is_tree(&self) -> bool {
