@@ -3,19 +3,25 @@ use std::{collections::HashMap, path::PathBuf};
 use anyhow::{Context, Result};
 use zeevonk::project::file::ProjectFile;
 
-use crate::object::{Group, GroupId};
+use crate::{
+    layout::Layout,
+    object::{Group, GroupId},
+};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Showfile {
     zv_project_file: ProjectFile,
 
     groups: HashMap<GroupId, Group>,
+
+    layout: Layout,
 }
 
 impl Showfile {
     pub fn load_from_folder(showfile_path: &PathBuf) -> Result<Self> {
         const ZEEVONK_FOLDER_RELATIVE_PATH: &str = "zv/";
         const GROUPS_RELATIVE_PATH: &str = "objects/groups.json";
+        const LAYOUT_RELATIVE_PATH: &str = "layout.json";
 
         let zv_project_file =
             ProjectFile::load_from_folder(&showfile_path.join(ZEEVONK_FOLDER_RELATIVE_PATH))
@@ -27,7 +33,13 @@ impl Showfile {
         )
         .context("failed to deserialize groups file")?;
 
-        Ok(Self { zv_project_file, groups })
+        let layout = serde_json::from_reader(
+            std::fs::File::open(showfile_path.join(LAYOUT_RELATIVE_PATH))
+                .context("failed to open layout file")?,
+        )
+        .context("failed to deserialize layout file")?;
+
+        Ok(Self { zv_project_file, groups, layout })
     }
 
     pub fn zv_project_file(&self) -> &ProjectFile {
@@ -36,5 +48,9 @@ impl Showfile {
 
     pub fn groups(&self) -> &HashMap<GroupId, Group> {
         &self.groups
+    }
+
+    pub fn layout(&self) -> &Layout {
+        &self.layout
     }
 }

@@ -1,24 +1,19 @@
 use anyhow::Result;
 use gpui::{
     App, Application, Bounds, Context, Entity, FocusHandle, QuitMode, TitlebarOptions, Window,
-    WindowBounds, WindowOptions, bounds, div, point, prelude::*, px, size,
+    WindowBounds, WindowOptions, div, prelude::*, px, size,
 };
 use rui::{
-    ActiveTheme, Button, Icon, IconSize, IconVariant, PoolTile, Root, TITLE_BAR_HEIGHT, TileGrid,
+    ActiveTheme, Button, Icon, IconSize, IconVariant, Root, TITLE_BAR_HEIGHT, TileGrid,
     TileGridState, TitleBar, h_flex,
 };
 
-use crate::{
-    app::{
-        state::AppState,
-        ui::tiles::{FixturesTile, GroupsPoolTile},
-    },
-    showfile::Showfile,
-};
+use crate::{app::state::AppState, showfile::Showfile};
+
+pub mod state;
+pub mod ui;
 
 mod settings;
-mod state;
-mod ui;
 
 pub mod action {
     use gpui::{App, KeyBinding, TitlebarOptions, WindowOptions, prelude::*};
@@ -26,7 +21,7 @@ pub mod action {
 
     use super::settings::SettingsView;
 
-    gpui::actions!([OpenSettings]);
+    gpui::actions!([OpenSettings, Debug]);
 
     pub(crate) fn init(cx: &mut App) {
         cx.bind_keys([KeyBinding::new("secondary-,", OpenSettings, None)]);
@@ -98,18 +93,16 @@ impl RadiantApp {
         let focus_handle = cx.focus_handle();
         focus_handle.focus(window, cx);
 
-        let tile_grid_state = cx.new(|cx| {
-            let mut tile_grid_state = TileGridState::new();
-            let cell_size = px(80.0);
-            tile_grid_state
-                .add_tile(FixturesTile::new(window, cx), bounds(point(0, 0), size(5, 12)));
-            let groups_pool_delegate = cx.new(|_cx| GroupsPoolTile::new());
-            tile_grid_state.add_tile(
-                PoolTile::new(groups_pool_delegate, cell_size),
-                bounds(point(5, 0), size(3, 8)),
-            );
-            tile_grid_state
-        });
+        let layout = AppState::show(cx).layout();
+        let tile_grid_state = cx.new(|cx| layout.read(cx).clone().to_tile_grid_state(window, cx));
+        cx.observe_in(&layout, window, |app, layout, window, cx| {
+            let next_state = layout.read(cx).clone().to_tile_grid_state(window, cx);
+            app.tile_grid_state.update(cx, |state, cx| {
+                *state = next_state;
+                cx.notify();
+            })
+        })
+        .detach();
 
         Ok(Self { focus_handle, tile_grid_state })
     }

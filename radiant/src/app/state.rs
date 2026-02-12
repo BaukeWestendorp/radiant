@@ -40,7 +40,7 @@ impl AppState {
         let zeevonk = Zeevonk::new(showfile.zv_project_file().clone())?;
         zeevonk.start();
 
-        let show = Show::from_showfile(&showfile, cx);
+        let show = Show::from_showfile(showfile, cx);
 
         cx.observe(&show.selection(), |selection, cx| {
             let highlight = AppState::show(cx).modes().read(cx).highlight;
