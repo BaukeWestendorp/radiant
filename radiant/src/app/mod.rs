@@ -4,12 +4,15 @@ use gpui::{
     WindowBounds, WindowOptions, bounds, div, point, prelude::*, px, size,
 };
 use rui::{
-    Button, Icon, IconSize, IconVariant, PoolTile, Root, TITLE_BAR_HEIGHT, TileGrid, TileGridState,
-    TitleBar, h_flex,
+    ActiveTheme, Button, Icon, IconSize, IconVariant, PoolTile, Root, TITLE_BAR_HEIGHT, TileGrid,
+    TileGridState, TitleBar, h_flex,
 };
 
 use crate::{
-    app::ui::tiles::{FixturesTile, GroupsPoolTile},
+    app::{
+        state::AppState,
+        ui::tiles::{FixturesTile, GroupsPoolTile},
+    },
     showfile::Showfile,
 };
 
@@ -55,6 +58,7 @@ pub fn run(showfile: Showfile) -> Result<()> {
             rui::init(cx);
             action::init(cx);
             state::init(showfile, cx).expect("should initialize app state");
+            state::action::init(cx);
 
             cx.activate(true);
 
@@ -113,14 +117,30 @@ impl RadiantApp {
     fn render_title_bar_content(
         &mut self,
         window: &mut Window,
-        _cx: &mut Context<Self>,
+        cx: &mut Context<Self>,
     ) -> impl IntoElement {
+        let highlight = AppState::show(cx).modes().read(cx).highlight;
+        let highlight_status = h_flex()
+            .justify_center()
+            .px_1()
+            .bg(cx.theme().bg_tertiary)
+            .rounded_md()
+            .border_1()
+            .border_color(cx.theme().border_tertiary)
+            .when(highlight, |e| {
+                e.border_color(cx.theme().accent).bg(cx.theme().accent.opacity(0.25))
+            })
+            .text_sm()
+            .child("Highlight");
+
         h_flex().size_full().justify_between().child(window.window_title()).child(
-            Button::new("settings")
-                .icon(Icon::new(IconVariant::Settings, IconSize::ExtraSmall))
-                .on_click(|_, window, cx| {
-                    window.dispatch_action(Box::new(action::OpenSettings), cx);
-                }),
+            h_flex().gap_2().child(highlight_status).child(
+                Button::new("settings")
+                    .icon(Icon::new(IconVariant::Settings, IconSize::ExtraSmall))
+                    .on_click(|_, window, cx| {
+                        window.dispatch_action(Box::new(action::OpenSettings), cx);
+                    }),
+            ),
         )
     }
 

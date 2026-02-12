@@ -10,8 +10,7 @@ pub struct PatchSettingsView {
 
 impl PatchSettingsView {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let fixtures =
-            cx.new(|cx| AppState::global(cx).zeevonk().project().file().patch.fixtures.clone());
+        let fixtures = cx.new(|cx| AppState::zeevonk(cx).project().file().patch.fixtures.clone());
         Self {
             table_state: cx
                 .new(|cx| TableState::new(PatchTableDelegate::new(fixtures), window, cx)),

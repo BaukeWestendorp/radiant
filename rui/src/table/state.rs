@@ -7,6 +7,8 @@ use gpui::{
 
 use crate::table::TableDelegate;
 
+use super::TableEvent;
+
 pub struct TableState<D: TableDelegate> {
     delegate: D,
 
@@ -58,7 +60,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
     pub fn select_cell(&mut self, col_ix: usize, row_id: &D::RowId, cx: &mut Context<Self>) {
         self.expand_parents(row_id, cx);
         if let Some(row_ix) = self.rows.visible_ix_from_id(row_id) {
-            self.selection.select_cell(col_ix, row_ix);
+            self.selection.select_cell(col_ix, row_ix, cx);
         }
     }
 
@@ -67,19 +69,25 @@ impl<D: TableDelegate + 'static> TableState<D> {
         if total == 0 {
             return;
         }
-        self.selection.start(self.selection.selected_column_ix, 0);
-        self.selection.extend_to(total - 1);
-        self.selection.finish();
+        self.selection.start(self.selection.selected_column_ix, 0, cx);
+        self.selection.extend_to(total - 1, cx);
+        self.selection.finish(cx);
         cx.notify();
     }
 
     pub fn clear_selection(&mut self, cx: &mut Context<Self>) {
-        self.selection.clear();
+        self.selection.clear(cx);
         cx.notify();
     }
 
     pub fn selected_column(&self) -> usize {
         self.selection.selected_column_ix
+    }
+
+    pub fn selected_rows(&self) -> Vec<D::RowId> {
+        let visible = self.rows.visible_rows();
+        let selected_ixs = self.selection.selected_indices();
+        selected_ixs.into_iter().filter_map(|i| visible.get(i).map(|(id, _)| id.clone())).collect()
     }
 
     pub fn selection_contains(&self, row_id: &D::RowId) -> bool {
@@ -153,7 +161,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
         if !row_ids.is_empty() {
             self.delegate_mut().delete_rows(&row_ids, cx);
 
-            self.selection.clear();
+            self.selection.clear(cx);
             self.rows.recompute_visible();
             cx.notify();
         }
@@ -380,30 +388,68 @@ impl TableSelection {
         }
     }
 
-    pub fn clear(&mut self) {
+    pub fn clear<D: TableDelegate + 'static>(&mut self, cx: &mut Context<TableState<D>>) {
+        let changed = self.anchor.is_some()
+            || self.head.is_some()
+            || !self.groups.is_empty()
+            || !self.selected_lookup.is_empty()
+            || self.selected_column_ix != 0
+            || self.is_selecting;
+
         self.anchor = None;
         self.head = None;
         self.groups.clear();
         self.selected_lookup.clear();
         self.selected_column_ix = 0;
         self.is_selecting = false;
+
+        if changed {
+            cx.emit(TableEvent::SelectionChanged);
+        }
     }
 
-    pub fn start(&mut self, col_ix: usize, row_ix: usize) {
+    pub fn start<D: TableDelegate + 'static>(
+        &mut self,
+        col_ix: usize,
+        row_ix: usize,
+        cx: &mut Context<TableState<D>>,
+    ) {
+        let changed = self.anchor != Some(row_ix)
+            || self.head != Some(row_ix)
+            || self.selected_column_ix != col_ix
+            || !self.is_selecting;
+
         self.anchor = Some(row_ix);
         self.head = Some(row_ix);
         self.selected_column_ix = col_ix;
         self.is_selecting = true;
+
+        if changed {
+            cx.emit(TableEvent::SelectionChanged);
+        }
     }
 
-    pub fn extend_to(&mut self, row_ix: usize) {
+    pub fn extend_to<D: TableDelegate + 'static>(
+        &mut self,
+        row_ix: usize,
+        cx: &mut Context<TableState<D>>,
+    ) {
+        let prev_anchor = self.anchor;
+        let prev_head = self.head;
+
         if self.anchor.is_none() {
             self.anchor = Some(row_ix);
         }
         self.head = Some(row_ix);
+
+        if self.anchor != prev_anchor || self.head != prev_head {
+            cx.emit(TableEvent::SelectionChanged);
+        }
     }
 
-    pub fn finish(&mut self) {
+    pub fn finish<D: TableDelegate + 'static>(&mut self, cx: &mut Context<TableState<D>>) {
+        let before = self.selected_indices();
+
         if let (Some(a), Some(h)) = (self.anchor, self.head) {
             let (s, e) = if a <= h { (a, h) } else { (h, a) };
             self.groups.push((s, e));
@@ -414,6 +460,11 @@ impl TableSelection {
         self.anchor = None;
         self.head = None;
         self.is_selecting = false;
+
+        let after = self.selected_indices();
+        if before != after {
+            cx.emit(TableEvent::SelectionChanged);
+        }
     }
 
     pub fn range(&self) -> Option<(usize, usize)> {
@@ -457,12 +508,39 @@ impl TableSelection {
         self.head.or_else(|| self.groups.last().map(|&(_, e)| e))
     }
 
-    pub fn select_cell(&mut self, col_ix: usize, row_ix: usize) {
-        self.start(col_ix, row_ix);
-        self.finish();
+    pub fn select_cell<D: TableDelegate + 'static>(
+        &mut self,
+        col_ix: usize,
+        row_ix: usize,
+        cx: &mut Context<TableState<D>>,
+    ) {
+        let before = self.selected_indices();
+        let before_col = self.selected_column_ix;
+
+        self.anchor = Some(row_ix);
+        self.head = Some(row_ix);
+        self.selected_column_ix = col_ix;
+        self.is_selecting = false;
+
+        self.groups.clear();
+        self.selected_lookup.clear();
+        self.groups.push((row_ix, row_ix));
+        self.selected_lookup.insert(row_ix);
+
+        let after = self.selected_indices();
+        if before != after || before_col != self.selected_column_ix {
+            cx.emit(TableEvent::SelectionChanged);
+        }
     }
 
-    pub fn select_column(&mut self, col_ix: usize) {
-        self.selected_column_ix = col_ix;
+    pub fn select_column<D: TableDelegate + 'static>(
+        &mut self,
+        col_ix: usize,
+        cx: &mut Context<TableState<D>>,
+    ) {
+        if self.selected_column_ix != col_ix {
+            self.selected_column_ix = col_ix;
+            cx.emit(TableEvent::SelectionChanged);
+        }
     }
 }

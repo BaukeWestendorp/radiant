@@ -1,8 +1,8 @@
 use std::ops::Range;
 
 use gpui::{
-    AnyElement, App, Div, ElementId, Entity, FontWeight, ListSizingBehavior, MouseButton,
-    MouseDownEvent, Pixels, Window, div, prelude::*, uniform_list,
+    AnyElement, App, Div, ElementId, Entity, EventEmitter, FontWeight, ListSizingBehavior,
+    MouseButton, MouseDownEvent, Pixels, Window, div, prelude::*, uniform_list,
 };
 
 mod column;
@@ -96,7 +96,7 @@ impl<D: TableDelegate + 'static> Table<D> {
         state.update(cx, |state, cx| {
             let total_columns = state.delegate().column_count(cx);
             let ix = (state.selection.selected_column_ix + 1).min(total_columns.saturating_sub(1));
-            state.selection.select_column(ix);
+            state.selection.select_column(ix, cx);
             cx.notify();
         });
     }
@@ -104,7 +104,7 @@ impl<D: TableDelegate + 'static> Table<D> {
     pub fn handle_prev_column(state: &Entity<TableState<D>>, _window: &mut Window, cx: &mut App) {
         state.update(cx, |state, cx| {
             let ix = state.selection.selected_column_ix.saturating_sub(1);
-            state.selection.select_column(ix);
+            state.selection.select_column(ix, cx);
             cx.notify();
         });
     }
@@ -118,8 +118,8 @@ impl<D: TableDelegate + 'static> Table<D> {
             };
             if total > 0 {
                 let col = state.selection.selected_column_ix;
-                state.selection.clear();
-                state.selection.select_cell(col, new_ix);
+                state.selection.clear(cx);
+                state.selection.select_cell(col, new_ix, cx);
             }
             cx.notify();
         });
@@ -133,8 +133,8 @@ impl<D: TableDelegate + 'static> Table<D> {
                 _ => 0,
             };
             let col = state.selection.selected_column_ix;
-            state.selection.clear();
-            state.selection.select_cell(col, new_ix);
+            state.selection.clear(cx);
+            state.selection.select_cell(col, new_ix, cx);
             cx.notify();
         });
     }
@@ -149,16 +149,17 @@ impl<D: TableDelegate + 'static> Table<D> {
             if total == 0 {
                 return;
             }
-            cx.notify();
             let Some(old_head) = state.selection.current_head_or_last() else {
-                state.selection.extend_to(0);
+                state.selection.extend_to(0, cx);
+                cx.notify();
                 return;
             };
             if state.selection.anchor.is_none() {
                 state.selection.anchor = Some(old_head);
             }
             let new_head = (old_head + 1).min(total - 1);
-            state.selection.extend_to(new_head);
+            state.selection.extend_to(new_head, cx);
+            cx.notify();
         });
     }
 
@@ -172,16 +173,16 @@ impl<D: TableDelegate + 'static> Table<D> {
             if total == 0 {
                 return;
             }
-            cx.notify();
             let Some(old_head) = state.selection.current_head_or_last() else {
-                state.selection.extend_to(total - 1);
+                state.selection.extend_to(total - 1, cx);
+                cx.notify();
                 return;
             };
             if state.selection.anchor.is_none() {
                 state.selection.anchor = Some(old_head);
             }
             let new_head = old_head.saturating_sub(1);
-            state.selection.extend_to(new_head);
+            state.selection.extend_to(new_head, cx);
             cx.notify();
         });
     }
@@ -317,7 +318,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
             .on_mouse_down(
                 MouseButton::Left,
                 cx.listener(move |this, _, _, cx| {
-                    this.selection.select_column(col_ix);
+                    this.selection.select_column(col_ix, cx);
                     this.select_all(cx);
                     cx.notify();
                 }),
@@ -421,7 +422,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
                 cx.listener({
                     move |this, _, window, cx| {
                         if !this.selection.contains(row_ix) {
-                            this.selection.select_cell(col_ix, row_ix);
+                            this.selection.select_cell(col_ix, row_ix, cx);
                         }
                         this.edit_selection(window, cx);
                     }
@@ -431,31 +432,31 @@ impl<D: TableDelegate + 'static> TableState<D> {
                 MouseButton::Left,
                 cx.listener(move |this, event: &MouseDownEvent, _, cx| {
                     if !event.modifiers.secondary() {
-                        this.selection.clear();
+                        this.selection.clear(cx);
                     }
 
-                    this.selection.select_cell(col_ix, row_ix);
-                    this.selection.start(col_ix, row_ix);
+                    this.selection.select_cell(col_ix, row_ix, cx);
+                    this.selection.start(col_ix, row_ix, cx);
                     cx.notify();
                 }),
             )
             .on_mouse_move(cx.listener(move |this, _, _, cx| {
                 if this.selection.is_selecting {
-                    this.selection.extend_to(row_ix);
+                    this.selection.extend_to(row_ix, cx);
                     cx.notify();
                 }
             }))
             .on_mouse_up(
                 MouseButton::Left,
                 cx.listener(move |this, _, _, cx| {
-                    this.selection.finish();
+                    this.selection.finish(cx);
                     cx.notify();
                 }),
             )
             .on_mouse_up_out(
                 MouseButton::Left,
                 cx.listener(move |this, _, _, cx| {
-                    this.selection.finish();
+                    this.selection.finish(cx);
                     cx.notify();
                 }),
             );
@@ -552,41 +553,15 @@ impl<D: TableDelegate + 'static> TableState<D> {
             .block_mouse_except_scroll()
             .on_click(cx.listener(move |this, _, _, cx| {
                 this.rows.toggle_expanded(row_id.clone());
-                this.selection.clear();
+                this.selection.clear(cx);
                 cx.notify();
             }))
             .child(icon)
     }
 }
 
-// pub fn start_selection(&mut self, col_ix: usize, row_id: &D::RowId) {
-//     if let Some(ix) = self.rows.visible_rows().iter().position(|(id, _)| id == row_id) {
-//         self.selection.start(col_ix, ix);
-//     }
-// }
+impl<D: TableDelegate + 'static> EventEmitter<TableEvent> for TableState<D> {}
 
-// pub fn end_selection(&mut self, row_id: &D::RowId, cx: &mut Context<Self>) {
-//     if let Some(ix) = self.rows.visible_rows().iter().position(|(id, _)| id == row_id) {
-//         self.selection.extend_to(ix);
-//         self.selection.finish();
-//         cx.notify();
-//     }
-// }
-
-// pub fn selection_contains(&self, row_id: &D::RowId) -> bool {
-//     if let Some(ix) = self.rows.visible_rows().iter().position(|(id, _)| id == row_id) {
-//         self.selection.contains(ix)
-//     } else {
-//         false
-//     }
-// }
-// pub fn selected_column_ix(&self) -> usize {
-//     self.selection.selected_column_ix
-// }
-
-// pub fn select_cell(&mut self, col_ix: usize, row_id: &D::RowId, cx: &mut Context<Self>) {
-//     if let Some(ix) = self.rows.visible_rows().iter().position(|(id, _)| id == row_id) {
-//         self.selection.select_single(col_ix, ix);
-//         cx.notify();
-//     }
-// }
+pub enum TableEvent {
+    SelectionChanged,
+}

@@ -1,5 +1,5 @@
-use gpui::{App, ReadGlobal, Window, div, prelude::*, px};
-use rui::{Column, TableDelegate, TableState};
+use gpui::{App, Window, div, prelude::*, px};
+use rui::{Column, TableDelegate, TableEvent, TableState};
 use zeevonk::project::stage::FixtureId;
 
 use crate::app::state::AppState;
@@ -10,12 +10,26 @@ pub struct FixtureTableDelegate {
 
 impl FixtureTableDelegate {
     pub fn new(cx: &mut Context<TableState<Self>>) -> Self {
-        let selection = AppState::global(cx).show().selection().clone();
-        cx.observe(&selection, |state, selection, cx| {
-            state.clear_selection(cx);
-            for fixture_id in selection.read(cx).clone() {
-                state.expand_parents(&fixture_id, cx);
-                state.select_cell(0, &fixture_id, cx);
+        cx.observe(&AppState::show(cx).selection(), |table_state, selection, cx| {
+            let selection = selection.read(cx).clone();
+            table_state.clear_selection(cx);
+            for fixture_id in selection {
+                table_state.expand_parents(&fixture_id, cx);
+                table_state.select_cell(table_state.selected_column(), &fixture_id, cx);
+            }
+        })
+        .detach();
+
+        cx.subscribe_self(|this, event, cx| match event {
+            TableEvent::SelectionChanged => {
+                let new_selection = this.selected_rows();
+
+                AppState::show(cx).selection().update(cx, |selection, cx| {
+                    if *selection != new_selection {
+                        *selection = new_selection;
+                        cx.notify();
+                    }
+                })
             }
         })
         .detach();
@@ -41,14 +55,14 @@ impl TableDelegate for FixtureTableDelegate {
     }
 
     fn root_row_ids(&self, cx: &App) -> Vec<Self::RowId> {
-        let stage = AppState::global(cx).zeevonk().project().stage();
+        let stage = AppState::zeevonk(cx).project().stage();
         let mut row_ids = stage.roots().map(|(id, _)| *id).collect::<Vec<_>>();
         row_ids.sort();
         row_ids
     }
 
     fn row_children(&self, row_id: &Self::RowId, cx: &App) -> Vec<Self::RowId> {
-        let stage = AppState::global(cx).zeevonk().project().stage();
+        let stage = AppState::zeevonk(cx).project().stage();
         let mut sub_ids = stage.children(&row_id).map(|(id, _)| *id).collect::<Vec<_>>();
         sub_ids.sort();
         sub_ids
@@ -61,7 +75,7 @@ impl TableDelegate for FixtureTableDelegate {
         _window: &mut Window,
         cx: &App,
     ) -> impl IntoElement {
-        let stage = AppState::global(cx).zeevonk().project().stage();
+        let stage = AppState::zeevonk(cx).project().stage();
 
         let row = stage.fixture(row_id).unwrap();
         let col = &self.columns[col_ix];

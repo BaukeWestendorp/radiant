@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use gpui::{App, Entity, ReadGlobal as _, SharedString, UpdateGlobal as _, Window};
+use gpui::{App, Entity, SharedString, Window};
 use rui::PoolTileDelegate;
 
 use crate::{
@@ -15,8 +15,8 @@ impl GroupsPoolTile {
         Self {}
     }
 
-    pub fn groups<'a>(&self, cx: &'a App) -> &'a Entity<HashMap<GroupId, Group>> {
-        AppState::global(cx).show().groups()
+    pub fn groups(&self, cx: &App) -> Entity<HashMap<GroupId, Group>> {
+        AppState::show(cx).groups()
     }
 
     pub fn group<'a>(&self, slot_id: u32, cx: &'a App) -> Option<&'a Group> {
@@ -42,8 +42,9 @@ impl PoolTileDelegate for GroupsPoolTile {
             return;
         };
 
-        AppState::update_global(cx, |state, cx| {
-            state.show().set_selection(fixture_ids, cx);
+        AppState::show(cx).selection().update(cx, |selection, cx| {
+            *selection = fixture_ids;
+            cx.notify();
         })
     }
 }
