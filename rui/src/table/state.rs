@@ -13,8 +13,8 @@ pub struct TableState<D: TableDelegate> {
 
     pub(crate) rows: RowRegistry<D>,
 
-    pub selected_rows: Entity<Vec<D::RowId>>,
-    pub(crate) selected_column: usize,
+    selection: Entity<Vec<D::RowId>>,
+    selected_column_ix: usize,
 
     pub(crate) focus_handle: FocusHandle,
     pub(crate) vertical_scroll_handle: UniformListScrollHandle,
@@ -42,17 +42,12 @@ impl<D: TableDelegate + 'static> TableState<D> {
             this.reset_column_widths(cx);
         });
 
-        cx.observe(&selection, |_, _, _| {
-            eprintln!("TODO: Handle changed selection");
-        })
-        .detach();
-
         Self {
             delegate,
             rows,
 
-            selected_rows: selection,
-            selected_column: 0,
+            selection,
+            selected_column_ix: 0,
 
             focus_handle: cx.focus_handle(),
             vertical_scroll_handle: UniformListScrollHandle::new(),
@@ -65,12 +60,62 @@ impl<D: TableDelegate + 'static> TableState<D> {
         &self.delegate
     }
 
-    pub fn delegate_mut(&mut self) -> &mut D {
-        &mut self.delegate
+    pub fn is_tree(&self) -> bool {
+        self.rows.is_tree()
+    }
+
+    pub fn visible_rows(&self, cx: &App) -> Vec<(D::RowId, usize)> {
+        let _ = cx;
+        self.rows.visible_rows().to_vec()
     }
 
     pub fn is_collapsible(&self, row_id: &D::RowId) -> bool {
         self.rows.is_collapsible(row_id)
+    }
+
+    pub fn selection(&self) -> Entity<Vec<D::RowId>> {
+        self.selection.clone()
+    }
+
+    pub fn selected_row_ids(&self, cx: &App) -> Vec<D::RowId> {
+        self.selection.read(cx).clone()
+    }
+
+    pub fn selection_contains(&self, row_id: &D::RowId, cx: &App) -> bool {
+        self.selection.read(cx).contains(row_id)
+    }
+
+    pub fn set_selection(&mut self, row_ids: Vec<D::RowId>, cx: &mut Context<Self>) {
+        self.selection.update(cx, move |selection, _| {
+            *selection = row_ids;
+        });
+        cx.notify();
+    }
+
+    pub fn clear_selection(&mut self, cx: &mut Context<Self>) {
+        self.selection.update(cx, |selection, _| selection.clear());
+        cx.notify();
+    }
+
+    pub fn toggle_selected(&mut self, row_id: &D::RowId, cx: &mut Context<Self>) {
+        let row_id = row_id.clone();
+        self.selection.update(cx, move |selection, _| {
+            if let Some(ix) = selection.iter().position(|id| id == &row_id) {
+                selection.remove(ix);
+            } else {
+                selection.push(row_id.clone());
+            }
+        });
+        cx.notify();
+    }
+
+    pub fn selected_column_ix(&self) -> usize {
+        self.selected_column_ix
+    }
+
+    pub fn set_selected_column_ix(&mut self, ix: usize, cx: &mut Context<Self>) {
+        self.selected_column_ix = ix;
+        cx.notify();
     }
 
     pub fn is_expanded(&self, row_id: &D::RowId) -> bool {
@@ -102,34 +147,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
         cx.notify();
     }
 
-    pub fn edit_selection(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
-        let row_ids = self.selected_rows.read(cx).clone();
-        if row_ids.is_empty() {
-            return;
-        }
-
-        self.delegate_mut().edit_rows(&row_ids, cx);
-        cx.notify();
-    }
-
-    pub fn delete_selection(&mut self, cx: &mut Context<Self>) {
-        let row_ids = self.selected_rows.read(cx).clone();
-        if row_ids.is_empty() {
-            return;
-        }
-
-        self.delegate_mut().delete_rows(&row_ids, cx);
-
-        self.selected_rows.update(cx, |rows, cx| {
-            rows.clear();
-            cx.notify();
-        });
-
-        self.rows.recompute_visible();
-        cx.notify();
-    }
-
-    pub fn reset_column_widths(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn reset_column_widths(&mut self, cx: &mut Context<Self>) {
         let col_count = self.delegate.column_count(cx);
         self.column_widths.clear();
         let mut taken_width = px(0.0);
@@ -150,7 +168,7 @@ impl<D: TableDelegate + 'static> Focusable for TableState<D> {
 
 /// Registry that maintains a flattened view of the tree of rows along with
 /// expansion state and quick lookup from id -> index.
-pub struct RowRegistry<D: TableDelegate> {
+pub(crate) struct RowRegistry<D: TableDelegate> {
     nodes: Vec<RowNode<D::RowId>>,
     indices: HashMap<D::RowId, usize>,
     visible_depths_cache: Vec<(D::RowId, usize)>,

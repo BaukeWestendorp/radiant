@@ -5,16 +5,15 @@ use gpui::{App, Window, prelude::*};
 use crate::Column;
 
 pub trait TableDelegate {
-    type RowId: Clone + Eq + Hash + std::fmt::Debug;
+    type RowId: Clone + Eq + Hash;
 
     fn column_count(&self, cx: &App) -> usize;
-
     fn column(&self, col_ix: usize, cx: &App) -> &Column;
 
-    fn root_row_ids(&self, _cx: &App) -> Vec<Self::RowId>;
+    fn root_row_ids(&self, cx: &App) -> Vec<Self::RowId>;
 
     fn row_children(&self, _row_id: &Self::RowId, _cx: &App) -> Vec<Self::RowId> {
-        vec![]
+        Vec::new()
     }
 
     fn edit_rows(&self, _row_ids: &[Self::RowId], _cx: &App) {}

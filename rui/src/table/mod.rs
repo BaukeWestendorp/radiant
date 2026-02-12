@@ -1,8 +1,8 @@
 use std::ops::Range;
 
 use gpui::{
-    AnyElement, App, Div, ElementId, Entity, EventEmitter, FontWeight, ListSizingBehavior, Pixels,
-    Window, div, prelude::*, uniform_list,
+    AnyElement, App, Div, ElementId, Entity, FontWeight, ListSizingBehavior, Pixels, Window, div,
+    prelude::*, uniform_list,
 };
 
 mod column;
@@ -120,7 +120,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
     }
 
     pub fn render_body(&self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let visible_rows = self.rows.visible_rows().to_vec();
+        let visible_rows = self.visible_rows(cx);
         let row_count = visible_rows.len();
 
         uniform_list(
@@ -130,7 +130,8 @@ impl<D: TableDelegate + 'static> TableState<D> {
                 range
                     .map(|row_ix| {
                         let (row_id, depth) = &visible_rows[row_ix];
-                        this.render_row(*depth, row_id, row_ix, window, cx).into_any_element()
+                        this.render_row(*depth, row_id, row_ix, row_count, window, cx)
+                            .into_any_element()
                     })
                     .collect()
             }),
@@ -147,14 +148,14 @@ impl<D: TableDelegate + 'static> TableState<D> {
         depth: usize,
         row_id: &D::RowId,
         row_ix: usize,
+        total_rows: usize,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
         let row_height = self.row_height(window);
         let column_count = self.delegate().column_count(cx);
-        let total_rows = self.rows.visible_rows().len();
 
-        let is_row_selected = self.selected_rows.read(cx).contains(row_id);
+        let is_row_selected = self.selection_contains(row_id, cx);
         let bg = if is_row_selected {
             cx.theme().bg_selected
         } else if row_ix % 2 == 0 {
@@ -190,8 +191,8 @@ impl<D: TableDelegate + 'static> TableState<D> {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Div {
-        let selected_col = self.selected_column;
-        let is_selected_row = self.selected_rows.read(cx).contains(row_id);
+        let selected_col = self.selected_column_ix();
+        let is_selected_row = self.selection_contains(row_id, cx);
         let is_selected_cell = is_selected_row && col_ix == selected_col;
 
         let base = div()
@@ -225,7 +226,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
     ) -> AnyElement {
         let base = self.delegate().render_cell(row_id, col_ix, window, cx).into_any_element();
 
-        if !self.rows.is_tree() || col_ix != 0 {
+        if !self.is_tree() || col_ix != 0 {
             return base;
         }
 
@@ -241,8 +242,8 @@ impl<D: TableDelegate + 'static> TableState<D> {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         let row_height = self.row_height(window);
-        let is_collapsible = self.rows.is_collapsible(row_id);
-        let is_expanded = self.rows.is_expanded(row_id);
+        let is_collapsible = self.is_collapsible(row_id);
+        let is_expanded = self.is_expanded(row_id);
 
         let prefix = self
             .render_tree_prefix(row_id, depth, row_height, is_collapsible, is_expanded, cx)
@@ -306,10 +307,4 @@ impl<D: TableDelegate + 'static> TableState<D> {
             }))
             .child(icon)
     }
-}
-
-impl<D: TableDelegate + 'static> EventEmitter<TableEvent> for TableState<D> {}
-
-pub enum TableEvent {
-    SelectionChanged,
 }

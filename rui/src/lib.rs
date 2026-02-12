@@ -19,7 +19,7 @@ pub use button::Button;
 pub use grid::{dot_grid, line_grid, scrollable_line_grid};
 pub use icon::{Icon, IconSize, IconVariant};
 pub use root::Root;
-pub use table::{Column, Table, TableDelegate, TableEvent, TableState};
+pub use table::{Column, Table, TableDelegate, TableState};
 pub use tabs::{Tab, Tabs, TabsState, TabsVariant};
 pub use theme::{ActiveTheme, HslaExt};
 pub use tiles::{PoolTile, PoolTileDelegate, TileDelegate, TileGrid, TileGridState};
