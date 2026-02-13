@@ -70,20 +70,18 @@ impl mlua::UserData for Fixture {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct FixtureId(pub(crate) zeevonk::project::stage::FixtureId);
+pub struct FixtureId(pub(crate) zeevonk::project::FixtureId);
 
 impl FixtureId {
     fn parse(s: impl AsRef<str>) -> mlua::Result<Self> {
-        let inner = s
-            .as_ref()
-            .parse::<zeevonk::project::stage::FixtureId>()
-            .map_err(mlua::Error::external)?;
+        let inner =
+            s.as_ref().parse::<zeevonk::project::FixtureId>().map_err(mlua::Error::external)?;
         Ok(Self(inner))
     }
 }
 
 impl ops::Deref for FixtureId {
-    type Target = zeevonk::project::stage::FixtureId;
+    type Target = zeevonk::project::FixtureId;
 
     fn deref(&self) -> &Self::Target {
         &self.0

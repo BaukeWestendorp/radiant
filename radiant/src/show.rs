@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use gpui::{App, AppContext as _, Entity};
-use zeevonk::project::stage::FixtureId;
+use zeevonk::project::FixtureId;
 
 use crate::{
     layout::Layout,

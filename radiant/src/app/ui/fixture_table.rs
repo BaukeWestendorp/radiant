@@ -1,6 +1,6 @@
 use gpui::{App, Window, div, prelude::*, px};
 use rui::{Column, TableDelegate, TableState};
-use zeevonk::project::stage::FixtureId;
+use zeevonk::project::FixtureId;
 
 use crate::app::state::AppState;
 

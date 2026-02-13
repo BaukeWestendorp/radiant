@@ -1,4 +1,4 @@
-use zeevonk::project::stage::FixtureId;
+use zeevonk::project::FixtureId;
 
 pub type GroupId = u32;
 

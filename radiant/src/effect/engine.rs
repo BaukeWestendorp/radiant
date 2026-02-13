@@ -8,7 +8,7 @@ use anyhow::{Context as _, Result};
 use gpui::{App, Context, Entity};
 use zeevonk::Zeevonk;
 use zeevonk::attr::Attribute;
-use zeevonk::project::stage::FixtureId;
+use zeevonk::project::FixtureId;
 use zeevonk::value::AttributeValues;
 
 use crate::{

@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fs::File, path::Path, path::PathBuf};
 
 use anyhow::{Context, Result};
-use zeevonk::project::file::ProjectFile;
+use zeevonk::project::ProjectFile;
 
 use crate::{
     layout::Layout,
