@@ -5,12 +5,12 @@ use clap::Parser;
 
 use crate::showfile::Showfile;
 
-mod app;
-mod effect;
-mod layout;
-mod object;
-mod show;
-mod showfile;
+pub mod app;
+pub mod effect;
+pub mod layout;
+pub mod object;
+pub mod show;
+pub mod showfile;
 
 /// The Radiant CLI.
 #[derive(Parser)]
