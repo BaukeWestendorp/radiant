@@ -1,7 +1,7 @@
 use gpui::{App, Bounds, Pixels, Window, prelude::*, px};
 use rui::{PoolTile, TileGridState};
 
-use crate::app::ui::tiles::{FixturesTile, GroupsPoolTile};
+use crate::app::ui::tiles::{EffectsPoolTile, FixturesTile, GroupsPoolTile};
 
 const CELL_SIZE: Pixels = px(80.0);
 
@@ -25,6 +25,7 @@ pub enum LayoutTileKind {
     Fixtures,
 
     GroupsPool,
+    EffectsPool,
 }
 
 impl Layout {
@@ -38,6 +39,10 @@ impl Layout {
                 }
                 LayoutTileKind::GroupsPool => {
                     let delegate = cx.new(|_cx| GroupsPoolTile::new());
+                    tile_grid_state.add_tile(PoolTile::new(delegate, CELL_SIZE), tile.bounds);
+                }
+                LayoutTileKind::EffectsPool => {
+                    let delegate = cx.new(|_cx| EffectsPoolTile::new());
                     tile_grid_state.add_tile(PoolTile::new(delegate, CELL_SIZE), tile.bounds);
                 }
             }

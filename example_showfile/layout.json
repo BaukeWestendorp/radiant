@@ -7,6 +7,10 @@
     {
       "bounds": { "origin": { "x": 5, "y": 0 }, "size": { "width": 3, "height": 8 } },
       "kind": "GroupsPool"
+    },
+    {
+      "bounds": { "origin": { "x": 5, "y": 8 }, "size": { "width": 13, "height": 4 } },
+      "kind": "EffectsPool"
     }
   ]
 }
