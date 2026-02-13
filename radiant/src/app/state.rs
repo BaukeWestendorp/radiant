@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::Result;
 use gpui::{App, Entity, Global, ReadGlobal as _, prelude::*};
 use zeevonk::Zeevonk;
@@ -30,7 +32,7 @@ pub mod action {
 }
 
 pub struct AppState {
-    zeevonk: Zeevonk,
+    zeevonk: Arc<Zeevonk>,
 
     show: Show,
 
@@ -39,11 +41,29 @@ pub struct AppState {
 
 impl AppState {
     pub fn new(showfile: Showfile, cx: &mut App) -> Result<Self> {
-        let zeevonk = Zeevonk::new(showfile.zv_project_file().clone())?;
+        let zeevonk = Arc::new(Zeevonk::new(showfile.zv_project_file().clone())?);
         zeevonk.start();
 
         let show = Show::from_showfile(showfile, cx);
-        let effect_engine = cx.new(|cx| EffectEngine::new(show.effects(), cx));
+        let effect_engine = cx.new({
+            let zeevonk = Arc::clone(&zeevonk);
+            let effects = show.effects().clone();
+            move |cx| EffectEngine::new(effects, zeevonk, cx)
+        });
+
+        // FIXME: This is just for testing. Get from recipe or something.
+        let effect_ids = show.effects().read(cx).keys().cloned().collect::<Vec<_>>();
+        cx.defer({
+            let effect_engine = effect_engine.clone();
+            move |cx| {
+                for effect_id in effect_ids {
+                    let group_id = 9;
+                    effect_engine.update(cx, |effect_engine, cx| {
+                        effect_engine.start_effect(effect_id, group_id, cx).unwrap();
+                    });
+                }
+            }
+        });
 
         // Set highlighed values in Zeevonk if the selection changes.
         cx.observe(&show.selection(), |selection, cx| {
@@ -71,7 +91,7 @@ impl AppState {
         Ok(Self { zeevonk, show, effect_engine })
     }
 
-    pub fn zeevonk(cx: &App) -> &Zeevonk {
+    pub fn zeevonk(cx: &App) -> &Arc<Zeevonk> {
         &Self::global(cx).zeevonk
     }
 

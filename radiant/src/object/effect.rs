@@ -1,7 +1,6 @@
 pub type EffectId = u32;
 
-#[derive(serde::Serialize, serde::Deserialize)]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Effect {
     name: String,
 

@@ -8,6 +8,7 @@ use crate::showfile::Showfile;
 pub mod app;
 pub mod effect;
 pub mod layout;
+pub mod lua;
 pub mod object;
 pub mod show;
 pub mod showfile;
