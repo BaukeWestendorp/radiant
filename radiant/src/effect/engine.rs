@@ -3,7 +3,10 @@ use std::collections::HashMap;
 use anyhow::Result;
 use gpui::{Context, Entity};
 
-use crate::object::{Effect, EffectId};
+use crate::{
+    effect::runner::EffectRunner,
+    object::{Effect, EffectId},
+};
 
 pub struct EffectEngine {
     runners: HashMap<EffectId, EffectRunner>,
@@ -58,26 +61,6 @@ impl EffectEngine {
         if let Some(runner) = self.runners.get_mut(&effect_id) {
             runner.stop()?;
         }
-        Ok(())
-    }
-}
-
-struct EffectRunner {
-    effect: Effect,
-}
-
-impl EffectRunner {
-    pub fn new(effect: Effect) -> Result<Self> {
-        Ok(Self { effect })
-    }
-
-    pub fn start(&mut self) -> Result<()> {
-        log::debug!("starting effect runner for effect '{}'", self.effect.name());
-        Ok(())
-    }
-
-    pub fn stop(&mut self) -> Result<()> {
-        log::debug!("stopping effect runner for effect '{}'", self.effect.name());
         Ok(())
     }
 }

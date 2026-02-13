@@ -6,7 +6,7 @@ use clap::Parser;
 use crate::showfile::Showfile;
 
 mod app;
-mod effect_engine;
+mod effect;
 mod layout;
 mod object;
 mod show;

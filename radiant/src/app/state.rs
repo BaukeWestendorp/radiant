@@ -2,7 +2,7 @@ use anyhow::Result;
 use gpui::{App, Entity, Global, ReadGlobal as _, prelude::*};
 use zeevonk::Zeevonk;
 
-use crate::{effect_engine::EffectEngine, show::Show, showfile::Showfile};
+use crate::{effect::engine::EffectEngine, show::Show, showfile::Showfile};
 
 pub(crate) fn init(showfile: Showfile, cx: &mut App) -> Result<()> {
     let app_state = AppState::new(showfile, cx)?;
@@ -33,6 +33,7 @@ pub struct AppState {
     zeevonk: Zeevonk,
 
     show: Show,
+
     effect_engine: Entity<EffectEngine>,
 }
 
