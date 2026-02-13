@@ -1,5 +1,13 @@
 use crate::lua::FixtureId;
 
+#[derive(Debug, Clone)]
 pub enum Command {
-    SetAttributeValue { fixture_id: FixtureId, attribute: String, value: f32 },
+    SetAttributeValue(SetAttributeValue),
+}
+
+#[derive(Debug, Clone)]
+pub struct SetAttributeValue {
+    pub fixture_id: FixtureId,
+    pub attribute: String,
+    pub value: f32,
 }

@@ -3,35 +3,47 @@ use std::{
     sync::{Arc, RwLock, mpsc},
 };
 
-use crate::lua::command::Command;
-
-pub mod effect;
-
 pub mod command;
+pub mod effect;
 
 #[derive(Debug, Clone)]
 pub struct Radiant {
-    pub fixtures: Arc<RwLock<Vec<Fixture>>>,
+    fixtures: Arc<RwLock<Vec<Fixture>>>,
+    command_tx: mpsc::Sender<command::Command>,
+}
 
-    pub command_tx: mpsc::Sender<Command>,
+impl Radiant {
+    pub fn new(
+        fixtures: Arc<RwLock<Vec<Fixture>>>,
+        command_tx: mpsc::Sender<command::Command>,
+    ) -> Self {
+        Self { fixtures, command_tx }
+    }
+
+    fn fixtures(&self) -> Vec<Fixture> {
+        self.fixtures.read().unwrap().clone()
+    }
+
+    fn set_attribute_value(&self, fixture_id: FixtureId, attribute: String, value: f32) {
+        let _ =
+            self.command_tx.send(command::Command::SetAttributeValue(command::SetAttributeValue {
+                fixture_id,
+                attribute,
+                value,
+            }));
+    }
 }
 
 impl mlua::UserData for Radiant {
     fn add_fields<F: mlua::UserDataFields<Self>>(fields: &mut F) {
-        fields
-            .add_field_method_get("fixtures", |_, this| Ok(this.fixtures.read().unwrap().clone()));
+        fields.add_field_method_get("fixtures", |_, this| Ok(this.fixtures()));
     }
 
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method(
             "set_attribute_value",
             |_lua, this, (fixture_id, attribute, value): (FixtureId, String, f32)| {
-                let _ = this.command_tx.send(Command::SetAttributeValue {
-                    fixture_id,
-                    attribute,
-                    value,
-                });
-
+                this.set_attribute_value(fixture_id, attribute, value);
                 Ok(())
             },
         );
@@ -44,6 +56,12 @@ pub struct Fixture {
     pub name: String,
 }
 
+impl Fixture {
+    pub fn new(id: FixtureId, name: impl Into<String>) -> Self {
+        Self { id, name: name.into() }
+    }
+}
+
 impl mlua::UserData for Fixture {
     fn add_fields<F: mlua::UserDataFields<Self>>(fields: &mut F) {
         fields.add_field_method_get("id", |_, this| Ok(this.id.to_string()));
@@ -53,6 +71,16 @@ impl mlua::UserData for Fixture {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FixtureId(pub(crate) zeevonk::project::stage::FixtureId);
+
+impl FixtureId {
+    fn parse(s: impl AsRef<str>) -> mlua::Result<Self> {
+        let inner = s
+            .as_ref()
+            .parse::<zeevonk::project::stage::FixtureId>()
+            .map_err(mlua::Error::external)?;
+        Ok(Self(inner))
+    }
+}
 
 impl ops::Deref for FixtureId {
     type Target = zeevonk::project::stage::FixtureId;
@@ -70,22 +98,15 @@ impl fmt::Display for FixtureId {
 
 impl mlua::FromLua for FixtureId {
     fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
-        match value {
-            mlua::Value::String(s) => {
-                let str_val = s.to_str()?;
-
-                let inner = str_val
-                    .parse::<zeevonk::project::stage::FixtureId>()
-                    .map_err(|e| mlua::Error::external(e))?;
-
-                Ok(FixtureId(inner))
-            }
-            _ => Err(mlua::Error::FromLuaConversionError {
+        let mlua::Value::String(s) = value else {
+            return Err(mlua::Error::FromLuaConversionError {
                 from: value.type_name(),
                 to: "FixtureId".to_string(),
                 message: Some("expected string".into()),
-            }),
-        }
+            });
+        };
+
+        Self::parse(s.to_str()?)
     }
 }
 
