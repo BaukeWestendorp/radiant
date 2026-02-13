@@ -34,10 +34,25 @@ impl PoolTileDelegate for EffectsPoolTile {
     }
 
     fn occupied_label(&self, slot_id: u32, cx: &App) -> String {
-        self.effect(slot_id, cx).map(|g| g.name()).unwrap_or("<unknown>").to_string()
+        let is_running = AppState::effect_engine(cx).read(cx).effect_running(slot_id);
+
+        let name = self.effect(slot_id, cx).map(|g| g.name()).unwrap_or("<unknown>").to_string();
+        if is_running { format!("{} (R)", name) } else { name }
     }
 
     fn on_activate_slot(&mut self, slot_id: u32, _window: &mut Window, cx: &mut App) {
-        todo!();
+        AppState::effect_engine(cx).update(cx, |effect_engine, cx| {
+            if !effect_engine.effect_running(slot_id) {
+                let fixture_ids = AppState::show(cx).selection().clone();
+
+                if let Err(err) = effect_engine.start_effect(slot_id, fixture_ids, cx) {
+                    log::error!("failed to start effect {}: {}", slot_id, err);
+                }
+            } else {
+                if let Err(err) = effect_engine.stop_effect(slot_id) {
+                    log::error!("failed to stop effect {}: {}", slot_id, err);
+                }
+            }
+        })
     }
 }

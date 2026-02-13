@@ -1,18 +1,19 @@
 use std::collections::HashMap;
 use std::str::FromStr as _;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, mpsc};
+use std::sync::{Arc, RwLock, mpsc};
 use std::thread::{self, JoinHandle};
 
 use anyhow::{Context as _, Result};
 use gpui::{App, Context, Entity};
+use zeevonk::project::stage::FixtureId;
 use zeevonk::{Zeevonk, attr::Attribute, value::AttributeValues};
 
 use crate::{
     app::state::AppState,
     effect::runner::EffectRunner,
     lua::{self, command::Command},
-    object::{Effect, EffectId, GroupId},
+    object::{Effect, EffectId},
 };
 
 struct RunnerThread {
@@ -98,7 +99,12 @@ impl EffectEngine {
         Ok(())
     }
 
-    pub fn start_effect(&mut self, effect_id: EffectId, group_id: GroupId, cx: &App) -> Result<()> {
+    pub fn start_effect(
+        &mut self,
+        effect_id: EffectId,
+        fixture_ids: Entity<Vec<FixtureId>>,
+        cx: &mut App,
+    ) -> Result<()> {
         if self.running.contains_key(&effect_id) {
             self.stop_effect(effect_id)?;
         }
@@ -109,11 +115,44 @@ impl EffectEngine {
             .cloned()
             .with_context(|| format!("effect {:?} not registered", effect_id))?;
 
-        let group = get_group(group_id, cx).context("group not found")?;
-
         let command_tx = self.command_tx.clone();
         let stop = Arc::new(AtomicBool::new(false));
         let stop_in_thread = Arc::clone(&stop);
+
+        let fixtures = Arc::new(RwLock::new(
+            fixture_ids
+                .read(cx)
+                .iter()
+                .filter_map(|fixture_id| {
+                    let fixture = AppState::zeevonk(cx).project().stage().fixture(fixture_id)?;
+                    Some(lua::Fixture {
+                        id: lua::FixtureId(*fixture_id),
+                        name: fixture.name().to_string(),
+                    })
+                })
+                .collect(),
+        ));
+
+        cx.observe(&fixture_ids, {
+            let fixtures = Arc::clone(&fixtures);
+            move |fixture_ids, cx| {
+                let new_fixtures = fixture_ids
+                    .read(cx)
+                    .iter()
+                    .filter_map(|fixture_id| {
+                        let fixture =
+                            AppState::zeevonk(cx).project().stage().fixture(fixture_id)?;
+                        Some(lua::Fixture {
+                            id: lua::FixtureId(*fixture_id),
+                            name: fixture.name().to_string(),
+                        })
+                    })
+                    .collect();
+
+                *fixtures.write().unwrap() = new_fixtures;
+            }
+        })
+        .detach();
 
         let handle = thread::Builder::new()
             .name(format!("effect_runner_{:?}", effect_id))
@@ -126,7 +165,7 @@ impl EffectEngine {
                     }
                 };
 
-                if let Err(err) = runner.start(group, command_tx, Arc::clone(&stop_in_thread)) {
+                if let Err(err) = runner.start(fixtures, command_tx, Arc::clone(&stop_in_thread)) {
                     log::error!("effect runner {:?} exited with error: {}", effect_id, err);
                 }
 
@@ -149,19 +188,8 @@ impl EffectEngine {
         let _ = running.handle.join();
         Ok(())
     }
-}
 
-fn get_group(group_id: GroupId, cx: &App) -> Option<lua::Group> {
-    let group = AppState::show(cx).groups().read(cx).get(&group_id)?;
-
-    let fixtures = group
-        .fixture_ids()
-        .iter()
-        .filter_map(|fixture_id| {
-            let fixture = AppState::zeevonk(cx).project().stage().fixture(fixture_id)?;
-            Some(lua::Fixture { id: lua::FixtureId(*fixture_id), name: fixture.name().to_string() })
-        })
-        .collect();
-
-    Some(lua::Group { id: group_id, name: group.name().to_string(), fixtures })
+    pub fn effect_running(&self, effect_id: EffectId) -> bool {
+        self.running.contains_key(&effect_id)
+    }
 }

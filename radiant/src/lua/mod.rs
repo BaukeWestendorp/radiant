@@ -1,4 +1,7 @@
-use std::{fmt, ops, sync::mpsc};
+use std::{
+    fmt, ops,
+    sync::{Arc, RwLock, mpsc},
+};
 
 use crate::lua::command::Command;
 
@@ -8,14 +11,15 @@ pub mod command;
 
 #[derive(Debug, Clone)]
 pub struct Radiant {
-    pub group: Group,
+    pub fixtures: Arc<RwLock<Vec<Fixture>>>,
 
     pub command_tx: mpsc::Sender<Command>,
 }
 
 impl mlua::UserData for Radiant {
     fn add_fields<F: mlua::UserDataFields<Self>>(fields: &mut F) {
-        fields.add_field_method_get("group", |_, this| Ok(this.group.clone()));
+        fields
+            .add_field_method_get("fixtures", |_, this| Ok(this.fixtures.read().unwrap().clone()));
     }
 
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
@@ -31,21 +35,6 @@ impl mlua::UserData for Radiant {
                 Ok(())
             },
         );
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Group {
-    pub id: u32,
-    pub name: String,
-    pub fixtures: Vec<Fixture>,
-}
-
-impl mlua::UserData for Group {
-    fn add_fields<F: mlua::UserDataFields<Self>>(fields: &mut F) {
-        fields.add_field_method_get("id", |_, this| Ok(this.id));
-        fields.add_field_method_get("name", |_, this| Ok(this.name.clone()));
-        fields.add_field_method_get("fixtures", |_, this| Ok(this.fixtures.clone()));
     }
 }
 

@@ -51,20 +51,6 @@ impl AppState {
             move |cx| EffectEngine::new(effects, zeevonk, cx)
         });
 
-        // FIXME: This is just for testing. Get from recipe or something.
-        let effect_ids = show.effects().read(cx).keys().cloned().collect::<Vec<_>>();
-        cx.defer({
-            let effect_engine = effect_engine.clone();
-            move |cx| {
-                for effect_id in effect_ids {
-                    let group_id = 9;
-                    effect_engine.update(cx, |effect_engine, cx| {
-                        effect_engine.start_effect(effect_id, group_id, cx).unwrap();
-                    });
-                }
-            }
-        });
-
         // Set highlighed values in Zeevonk if the selection changes.
         cx.observe(&show.selection(), |selection, cx| {
             let highlight = AppState::show(cx).modes().read(cx).highlight;

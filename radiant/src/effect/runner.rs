@@ -1,5 +1,5 @@
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, mpsc};
+use std::sync::{Arc, RwLock, mpsc};
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
@@ -35,7 +35,7 @@ impl EffectRunner {
 
     pub fn start(
         &mut self,
-        group: lua::Group,
+        fixtures: Arc<RwLock<Vec<lua::Fixture>>>,
         command_tx: mpsc::Sender<Command>,
         stop: Arc<AtomicBool>,
     ) -> Result<()> {
@@ -43,21 +43,21 @@ impl EffectRunner {
 
         self.stop = Some(stop);
 
-        self.start_lifecycle(group, command_tx)?;
+        self.start_lifecycle(fixtures, command_tx)?;
 
         Ok(())
     }
 
     fn start_lifecycle(
         &mut self,
-        group: lua::Group,
+        fixtures: Arc<RwLock<Vec<lua::Fixture>>>,
         command_tx: mpsc::Sender<Command>,
     ) -> Result<()> {
         let mut update_cx =
             lua::effect::UpdateContext { global_time: 0.0, delta_time: 0.0, global_frame: 0 };
 
         let globals = self.lua.globals();
-        globals.set("radiant", lua::Radiant { group, command_tx })?;
+        globals.set("radiant", lua::Radiant { fixtures, command_tx })?;
 
         self.lua.load(self.effect.script()).exec().context("error executing lua")?;
 
@@ -91,12 +91,5 @@ impl EffectRunner {
         context.delta_time = now.duration_since(self.last_frame_instant).as_secs_f64();
         context.global_frame += 1;
         self.last_frame_instant = now;
-    }
-
-    pub fn stop(&mut self) -> Result<()> {
-        if let Some(stop) = &self.stop {
-            stop.store(true, Ordering::SeqCst);
-        }
-        Ok(())
     }
 }
