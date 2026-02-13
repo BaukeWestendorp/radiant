@@ -2,6 +2,7 @@ use gpui::{
     AnyElement, App, Bounds, ElementId, Entity, Pixels, SharedString, Window, div, prelude::*,
     relative,
 };
+use uuid::Uuid;
 
 use crate::{ActiveTheme, HslaExt as _, h_flex};
 
@@ -42,11 +43,12 @@ pub trait PoolTileDelegate {
 pub struct PoolTile<D: PoolTileDelegate + 'static> {
     delegate: Entity<D>,
     cell_size: Pixels,
+    id: Uuid,
 }
 
 impl<D: PoolTileDelegate + 'static> PoolTile<D> {
     pub fn new(delegate: Entity<D>, cell_size: Pixels) -> Self {
-        Self { delegate, cell_size }
+        Self { delegate, cell_size, id: Uuid::new_v4() }
     }
 
     pub fn delegate(&self) -> Entity<D> {
@@ -158,6 +160,7 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
         });
 
         div()
+            .id(self.id)
             .flex()
             .flex_wrap()
             .size_full()
