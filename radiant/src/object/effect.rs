@@ -9,6 +9,10 @@ pub struct Effect {
 }
 
 impl Effect {
+    pub fn new(name: String, script: String) -> Self {
+        Self { name, script }
+    }
+
     pub fn name(&self) -> &str {
         &self.name
     }

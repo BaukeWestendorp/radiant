@@ -10,6 +10,10 @@ pub struct Group {
 }
 
 impl Group {
+    pub fn new(name: String, fixture_ids: Vec<FixtureId>) -> Self {
+        Self { name, fixture_ids }
+    }
+
     pub fn name(&self) -> &str {
         &self.name
     }
