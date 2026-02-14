@@ -1,16 +1,14 @@
-use crate::object::{ObjectId, Slot};
+use crate::object::{ObjectId, SlotId};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("slot {0:?} is already occupied")]
-    SlotOccupied(Slot),
-
+    #[error("slot id {0:?} is already occupied")]
+    SlotOccupied(SlotId),
     #[error("slot {0:?} is empty")]
-    SlotEmpty(Slot),
+    SlotEmpty(SlotId),
+    #[error("slot id is zero")]
+    ZeroSlotId,
 
     #[error("object {0:?} not found")]
     ObjectNotFound(ObjectId),
-
-    #[error("slot is zero")]
-    ZeroSlot,
 }

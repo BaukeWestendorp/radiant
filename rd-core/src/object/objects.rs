@@ -2,12 +2,13 @@ use std::collections::BTreeSet;
 
 use zeevonk::project::FixtureId;
 
-use crate::object::{Object, ObjectId};
+use crate::object::{Object, ObjectId, SlotId};
 
 #[derive(Debug, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Effect {
     id: ObjectId,
+    slot_id: SlotId,
     name: String,
 
     file_name: String,
@@ -24,6 +25,10 @@ impl Object for Effect {
         self.id
     }
 
+    fn slot_id(&self) -> SlotId {
+        self.slot_id
+    }
+
     fn name(&self) -> &str {
         &self.name
     }
@@ -33,6 +38,7 @@ impl Object for Effect {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Group {
     id: ObjectId,
+    slot_id: SlotId,
     name: String,
 
     fixture_ids: BTreeSet<FixtureId>,
@@ -47,6 +53,10 @@ impl Group {
 impl Object for Group {
     fn id(&self) -> ObjectId {
         self.id
+    }
+
+    fn slot_id(&self) -> SlotId {
+        self.slot_id
     }
 
     fn name(&self) -> &str {
