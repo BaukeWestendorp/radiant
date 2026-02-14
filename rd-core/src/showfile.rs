@@ -5,7 +5,7 @@ use std::{
 
 use zeevonk::project::ProjectFile as ZeevonkProjectFile;
 
-use crate::object::{Effect, Group, Object, ObjectRegistry};
+use crate::object::{CueList, Effect, Group, Object, ObjectRegistry};
 
 #[derive(Debug, Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -35,6 +35,7 @@ impl Showfile {
         // Load objects.
         load_collection_from_file::<Effect>(&mut registry, root.join("obj/effects.json"))?;
         load_collection_from_file::<Group>(&mut registry, root.join("obj/groups.json"))?;
+        load_collection_from_file::<CueList>(&mut registry, root.join("obj/cue_lists.json"))?;
 
         // Load zeevonk project file.
         let zv_project_file = ZeevonkProjectFile::load_from_folder(&root.join("zv/"))?;
@@ -56,6 +57,7 @@ impl Showfile {
 
         save_collection_to_file::<Effect>(registry, root.join("obj/effects.json"))?;
         save_collection_to_file::<Group>(registry, root.join("obj/groups.json"))?;
+        save_collection_to_file::<CueList>(registry, root.join("obj/cue_lists.json"))?;
 
         Ok(())
     }

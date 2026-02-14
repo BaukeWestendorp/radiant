@@ -1,6 +1,7 @@
 use zeevonk::{attr::Attribute, value::ClampedValue};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum Parameter {
     Dimmer(DimmerParameter),
     Position(PositionParameter),
@@ -80,6 +81,7 @@ impl Parameter {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum DimmerParameter {
     Dimmer(ClampedValue),
 }
@@ -93,6 +95,7 @@ impl DimmerParameter {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum PositionParameter {
     Pan(ClampedValue),
     Tilt(ClampedValue),
@@ -108,6 +111,7 @@ impl PositionParameter {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum ColorParameter {
     Rgb {
         r: ClampedValue,
@@ -261,16 +265,22 @@ impl ColorParameter {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum GoboParameter {}
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum BeamParameter {}
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum FocusParameter {}
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum ControlParameter {}
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum ShapersParameter {}
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum VideoParameter {}
 
 pub struct ColorWheelBuilder {
