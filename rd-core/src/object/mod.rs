@@ -107,6 +107,10 @@ impl ObjectRegistry {
             None => Vec::new(),
         }
     }
+
+    pub fn get_id<T: Object>(&self, obj: impl Into<ObjectReference>) -> Option<ObjectId> {
+        Some(self.get::<T>(obj)?.id())
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -232,12 +236,12 @@ pub enum ObjectReference {
 }
 
 impl ObjectReference {
-    pub fn object_id(object_id: ObjectId) -> Self {
-        Self::ObjectId(object_id)
+    pub fn object_id(object_id: impl Into<ObjectId>) -> Self {
+        Self::ObjectId(object_id.into())
     }
 
-    pub fn slot(kind: ObjectKind, slot_id: SlotId) -> Self {
-        Self::Slot(kind, slot_id)
+    pub fn slot(kind: ObjectKind, slot_id: impl Into<SlotId>) -> Self {
+        Self::Slot(kind, slot_id.into())
     }
 }
 

@@ -4,6 +4,8 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error("no showfile found")]
+    NoShowfile,
     #[error("could not find project.json in {0:?}")]
     ProjectJsonNotFound(PathBuf),
     #[error("failed to parse {0:?}: {1}")]
@@ -17,4 +19,6 @@ pub enum Error {
     SerdeJson(#[from] serde_json::Error),
     #[error("object error: {0}")]
     Object(#[from] crate::object::Error),
+    #[error("lua error: {0}")]
+    Lua(#[from] mlua::Error),
 }

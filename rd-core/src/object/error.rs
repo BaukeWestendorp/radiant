@@ -1,4 +1,4 @@
-use crate::object::{ObjectId, SlotId};
+use crate::object::{ObjectReference, SlotId};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -10,5 +10,5 @@ pub enum Error {
     ZeroSlotId,
 
     #[error("object {0:?} not found")]
-    ObjectNotFound(ObjectId),
+    ObjectNotFound(ObjectReference),
 }

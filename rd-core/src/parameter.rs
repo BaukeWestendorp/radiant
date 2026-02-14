@@ -64,6 +64,10 @@ impl Parameter {
         Self::Color(ColorParameter::Cto(value.into()))
     }
 
+    pub fn raw(attr: Attribute, value: impl Into<ClampedValue>) -> Self {
+        Self::Raw((attr, value.into()))
+    }
+
     pub fn to_attribute_values(&self) -> Vec<(Attribute, ClampedValue)> {
         match self {
             Parameter::Dimmer(p) => p.to_attributes(),
@@ -266,22 +270,22 @@ impl ColorParameter {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub enum GoboParameter {}
+pub struct GoboParameter;
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub enum BeamParameter {}
+pub struct BeamParameter;
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub enum FocusParameter {}
+pub struct FocusParameter;
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub enum ControlParameter {}
+pub struct ControlParameter;
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub enum ShapersParameter {}
+pub struct ShapersParameter;
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub enum VideoParameter {}
+pub struct VideoParameter;
 
 pub struct ColorWheelBuilder {
     wheel: u8,

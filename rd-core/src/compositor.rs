@@ -1,4 +1,7 @@
-use std::sync::Arc;
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 use zeevonk::{
     project::{FixtureId, IntoFixtureId, IntoFixtureIds},
@@ -6,6 +9,7 @@ use zeevonk::{
 };
 
 use crate::{
+    effect::EffectAgent,
     object::{Cue, CueList, ObjectRegistry, Recipe, RecipeContent},
     programmer::Programmer,
 };
@@ -15,11 +19,16 @@ pub struct Compositor {
 
     objects: Arc<ObjectRegistry>,
     programmer: Arc<Programmer>,
+    effect_agent: Arc<EffectAgent>,
 }
 
 impl Compositor {
-    pub fn new(programmer: Arc<Programmer>, objects: Arc<ObjectRegistry>) -> Self {
-        Self { highlighted_fixtures: Vec::new(), objects, programmer }
+    pub fn new(
+        objects: Arc<ObjectRegistry>,
+        programmer: Arc<Programmer>,
+        effect_agent: Arc<EffectAgent>,
+    ) -> Self {
+        Self { highlighted_fixtures: Vec::new(), objects, programmer, effect_agent }
     }
 
     /// Adds a fixture to the highlighted_fixtures list.
@@ -62,29 +71,52 @@ impl Compositor {
         &self.highlighted_fixtures
     }
 
-    pub fn compose<'a>(&'a self) -> Composition<'a> {
+    pub fn compose<'a>(&'a self) -> Result<Composition<'a>, crate::Error> {
         let mut attribute_values = self.programmer.programmed_values().clone();
 
         for cue_list in self.objects.get_all::<CueList>() {
             let Some(cue) = cue_list.cues().first() else { continue };
-            self.compose_cue(cue, &mut attribute_values);
+            self.compose_cue(cue, &mut attribute_values)?;
         }
 
-        Composition { attribute_values, highlighted_fixtures: &self.highlighted_fixtures }
+        Ok(Composition { attribute_values, highlighted_fixtures: &self.highlighted_fixtures })
     }
 
-    fn compose_cue(&self, cue: &Cue, attribute_values: &mut AttributeValues) {
+    fn compose_cue(
+        &self,
+        cue: &Cue,
+        attribute_values: &mut AttributeValues,
+    ) -> Result<(), crate::Error> {
         for recipe in cue.recipes() {
-            self.compose_recipe(recipe, attribute_values);
+            self.compose_recipe(recipe, attribute_values)?;
         }
+
+        Ok(())
     }
 
-    fn compose_recipe(&self, recipe: &Recipe, attribute_values: &mut AttributeValues) {
-        let fixture_ids = recipe.fixture_collection().to_fixture_ids(&self.objects);
-
+    fn compose_recipe(
+        &self,
+        recipe: &Recipe,
+        attribute_values: &mut AttributeValues,
+    ) -> Result<(), crate::Error> {
         match recipe.content() {
-            RecipeContent::Effect(_) => todo!(),
+            RecipeContent::Effect(effect_ref) => {
+                let runner = self
+                    .effect_agent
+                    .get_or_start_runner(*effect_ref, recipe.fixture_collection().clone())?;
+                let parameters = Arc::new(Mutex::new(HashMap::new()));
+                runner.call_on_update(parameters.clone());
+                let parameters = parameters.lock().unwrap();
+                for (fixture_id, params) in &*parameters {
+                    for param in params {
+                        for (attribute, value) in param.to_attribute_values() {
+                            attribute_values.set(*fixture_id, attribute, value);
+                        }
+                    }
+                }
+            }
             RecipeContent::Static(params) => {
+                let fixture_ids = recipe.fixture_collection().to_fixture_ids(&self.objects);
                 for fixture_id in fixture_ids {
                     for param in params {
                         for (attribute, value) in param.to_attribute_values() {
@@ -94,6 +126,8 @@ impl Compositor {
                 }
             }
         }
+
+        Ok(())
     }
 }
 

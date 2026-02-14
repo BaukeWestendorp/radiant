@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use zeevonk::project::FixtureId;
 
 use crate::{
@@ -104,6 +106,13 @@ pub struct Effect {
 impl Effect {
     pub fn file_name(&self) -> &str {
         &self.file_name
+    }
+
+    pub fn load_lua_source(&self, showfile_path: Option<&PathBuf>) -> Result<String, crate::Error> {
+        let showfile_path = showfile_path.ok_or(crate::Error::NoShowfile)?;
+        let effect_path = showfile_path.join("obj/effects/").join(&self.file_name);
+        let source = std::fs::read_to_string(&effect_path)?;
+        Ok(source)
     }
 }
 
