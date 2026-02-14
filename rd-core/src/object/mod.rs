@@ -12,8 +12,13 @@ mod objects;
 
 pub use error::*;
 pub use objects::*;
+use zeevonk::project::FixtureId;
 
 pub trait Object: 'static + Send + Sync {
+    fn kind() -> ObjectKind
+    where
+        Self: Sized;
+
     fn id(&self) -> ObjectId;
 
     fn slot_id(&self) -> SlotId;
@@ -45,9 +50,9 @@ impl<T: Object> ObjectContainer<T> {
         self.items.get(id)
     }
 
-    pub fn get_by_slot_id(&self, slot_id: impl TryInto<SlotId>) -> Option<&T> {
+    pub fn get_by_slot_id(&self, slot_id: &SlotId) -> Option<&T> {
         let slot_id = slot_id.try_into().ok()?;
-        self.slot_index.get(&slot_id.into()).and_then(|id| self.items.get(id))
+        self.slot_index.get(slot_id).and_then(|id| self.items.get(id))
     }
 
     pub fn values(&self) -> impl Iterator<Item = &T> {
@@ -77,16 +82,19 @@ impl ObjectRegistry {
         container.insert(item);
     }
 
-    pub fn get<T: Object + 'static>(&self, id: ObjectId) -> Option<&T> {
+    pub fn get<T: Object + 'static>(&self, obj: impl Into<ObjectReference>) -> Option<&T> {
         let container = self.maps.get(&TypeId::of::<T>())?.downcast_ref::<ObjectContainer<T>>()?;
 
-        container.get_by_object_id(&id)
-    }
-
-    pub fn get_by_slot_id<T: Object + 'static>(&self, slot_id: impl TryInto<SlotId>) -> Option<&T> {
-        let container = self.maps.get(&TypeId::of::<T>())?.downcast_ref::<ObjectContainer<T>>()?;
-
-        container.get_by_slot_id(slot_id)
+        match obj.into() {
+            ObjectReference::ObjectId(id) => container.get_by_object_id(&id),
+            ObjectReference::Slot(kind, slot_id) => {
+                if T::kind() == kind {
+                    container.get_by_slot_id(&slot_id)
+                } else {
+                    None
+                }
+            }
+        }
     }
 
     pub fn get_all<T: Object + 'static>(&self) -> Vec<&T> {
@@ -213,5 +221,58 @@ impl ops::DerefMut for SlotId {
 impl fmt::Display for SlotId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
+    }
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub enum ObjectReference {
+    ObjectId(ObjectId),
+    Slot(ObjectKind, SlotId),
+}
+
+impl ObjectReference {
+    pub fn object_id(object_id: ObjectId) -> Self {
+        Self::ObjectId(object_id)
+    }
+
+    pub fn slot(kind: ObjectKind, slot_id: SlotId) -> Self {
+        Self::Slot(kind, slot_id)
+    }
+}
+
+impl From<ObjectId> for ObjectReference {
+    fn from(id: ObjectId) -> Self {
+        ObjectReference::ObjectId(id)
+    }
+}
+
+impl From<(ObjectKind, SlotId)> for ObjectReference {
+    fn from((kind, slot): (ObjectKind, SlotId)) -> Self {
+        ObjectReference::Slot(kind, slot)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub enum FixtureCollection {
+    Group(ObjectReference),
+    Static(Vec<FixtureId>),
+}
+
+impl From<ObjectReference> for FixtureCollection {
+    fn from(reference: ObjectReference) -> Self {
+        FixtureCollection::Group(reference)
+    }
+}
+
+impl From<Vec<FixtureId>> for FixtureCollection {
+    fn from(ids: Vec<FixtureId>) -> Self {
+        FixtureCollection::Static(ids)
+    }
+}
+
+impl From<FixtureId> for FixtureCollection {
+    fn from(id: FixtureId) -> Self {
+        FixtureCollection::Static(vec![id])
     }
 }

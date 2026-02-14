@@ -2,7 +2,16 @@ use std::collections::BTreeSet;
 
 use zeevonk::project::FixtureId;
 
-use crate::object::{Object, ObjectId, SlotId};
+use crate::object::{FixtureCollection, Object, ObjectId, ObjectReference, SlotId};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub enum ObjectKind {
+    CueList,
+    Group,
+    Effect,
+}
+
 
 #[derive(Debug, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -21,6 +30,10 @@ impl Effect {
 }
 
 impl Object for Effect {
+    fn kind() -> ObjectKind {
+        ObjectKind::Effect
+    }
+
     fn id(&self) -> ObjectId {
         self.id
     }
@@ -51,6 +64,10 @@ impl Group {
 }
 
 impl Object for Group {
+    fn kind() -> ObjectKind {
+        ObjectKind::Group
+    }
+
     fn id(&self) -> ObjectId {
         self.id
     }
