@@ -4409,6 +4409,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "log",
+ "pretty_env_logger",
  "rd-core",
 ]
 
@@ -4416,6 +4418,8 @@ dependencies = [
 name = "rd-core"
 version = "0.1.0"
 dependencies = [
+ "log",
+ "mlua",
  "palette",
  "serde",
  "serde_json",
