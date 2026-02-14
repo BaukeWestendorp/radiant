@@ -17,6 +17,18 @@
                 "ObjectId": "4d021f9d-4b46-4ada-a4a0-ff905c79e7f5"
               }
             }
+          },
+          {
+            "fixture_collection": {
+              "Group": {
+                "ObjectId": "0a2e1694-0a23-4b71-8668-323fdd4fcd8b"
+              }
+            },
+            "content": {
+              "Effect": {
+                "ObjectId": "4d021f9d-4b46-4ada-a4a0-ff905c79e7f5"
+              }
+            }
           }
         ]
       }

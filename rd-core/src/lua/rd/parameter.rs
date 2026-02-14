@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use zeevonk::attr::Attribute;
 
-use crate::parameter::{ColorParameter, DimmerParameter, Parameter};
+use crate::parameter::Parameter;
 
 impl mlua::UserData for Parameter {}
 
@@ -40,6 +40,13 @@ impl mlua::FromLua for Parameter {
                         let g: f32 = table.get("g")?;
                         let b: f32 = table.get("b")?;
                         Ok(Parameter::rgb(r, g, b))
+                    }
+                    Some("rgbw") => {
+                        let r: f32 = table.get("r")?;
+                        let g: f32 = table.get("g")?;
+                        let b: f32 = table.get("b")?;
+                        let w: f32 = table.get("w")?;
+                        Ok(Parameter::rgbw(r, g, b, w))
                     }
                     Some("cmy") => {
                         let c: f32 = table.get("c")?;
@@ -98,11 +105,22 @@ pub struct ParameterFactory;
 
 impl mlua::UserData for ParameterFactory {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
-        methods.add_function("dimmer", |_, val: f32| {
-            Ok(Parameter::Dimmer(DimmerParameter::Dimmer(val.into())))
+        methods.add_function("dimmer", |_, val: f32| Ok(Parameter::dimmer(val)));
+        methods.add_function("pan", |_, val: f32| Ok(Parameter::pan(val)));
+        methods.add_function("tilt", |_, val: f32| Ok(Parameter::tilt(val)));
+        methods.add_function("rgb", |_, (r, g, b): (f32, f32, f32)| Ok(Parameter::rgb(r, g, b)));
+        methods.add_function("rgbw", |_, (r, g, b, w): (f32, f32, f32, f32)| {
+            Ok(Parameter::rgbw(r, g, b, w))
         });
-        methods.add_function("rgb", |_, (r, g, b): (f32, f32, f32)| {
-            Ok(Parameter::Color(ColorParameter::Rgb { r: r.into(), g: g.into(), b: b.into() }))
+        methods.add_function("cmy", |_, (c, m, y): (f32, f32, f32)| Ok(Parameter::cmy(c, m, y)));
+        methods.add_function("hsb", |_, (hue, saturation, brightness): (f32, f32, f32)| {
+            Ok(Parameter::hsb(hue, saturation, brightness))
+        });
+        methods.add_function("cto", |_, val: f32| Ok(Parameter::cto(val)));
+        methods.add_function("raw", |_, (attr_string, value): (String, f32)| {
+            let attr = zeevonk::attr::Attribute::from_str(&attr_string)
+                .map_err(|e| mlua::Error::external(format!("Invalid attribute: {:?}", e)))?;
+            Ok(Parameter::raw(attr, value))
         });
     }
 }

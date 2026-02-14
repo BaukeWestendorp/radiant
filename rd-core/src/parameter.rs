@@ -36,6 +36,15 @@ impl Parameter {
         Self::Color(ColorParameter::Rgb { r: r.into(), g: g.into(), b: b.into() })
     }
 
+    pub fn rgbw(
+        r: impl Into<ClampedValue>,
+        g: impl Into<ClampedValue>,
+        b: impl Into<ClampedValue>,
+        w: impl Into<ClampedValue>,
+    ) -> Self {
+        Self::Color(ColorParameter::Rgbw { r: r.into(), g: g.into(), b: b.into(), w: w.into() })
+    }
+
     pub fn cmy(
         c: impl Into<ClampedValue>,
         m: impl Into<ClampedValue>,
@@ -122,6 +131,12 @@ pub enum ColorParameter {
         g: ClampedValue,
         b: ClampedValue,
     },
+    Rgbw {
+        r: ClampedValue,
+        g: ClampedValue,
+        b: ClampedValue,
+        w: ClampedValue,
+    },
     Cmy {
         c: ClampedValue,
         m: ClampedValue,
@@ -174,6 +189,32 @@ impl ColorParameter {
                     (Attribute::ColorAddR, *r),
                     (Attribute::ColorAddG, *g),
                     (Attribute::ColorAddB, *b),
+                    (Attribute::ColorSubC, c),
+                    (Attribute::ColorSubM, m),
+                    (Attribute::ColorSubY, y),
+                    (Attribute::HsbHue, hue),
+                    (Attribute::HsbSaturation, saturation),
+                    (Attribute::HsbBrightness, brightness),
+                ]
+            }
+            ColorParameter::Rgbw { r, g, b, w } => {
+                use palette::{FromColor, Hsv, Srgb};
+                let rgb = Srgb::new(r.as_f32(), g.as_f32(), b.as_f32());
+
+                let c = ClampedValue::from(1.0 - r.as_f32());
+                let m = ClampedValue::from(1.0 - g.as_f32());
+                let y = ClampedValue::from(1.0 - b.as_f32());
+
+                let hsv: Hsv = Hsv::from_color(rgb);
+                let hue = ClampedValue::from(hsv.hue.into_positive_degrees() / 360.0);
+                let saturation = ClampedValue::from(hsv.saturation);
+                let brightness = ClampedValue::from(hsv.value);
+
+                vec![
+                    (Attribute::ColorAddR, *r),
+                    (Attribute::ColorAddG, *g),
+                    (Attribute::ColorAddB, *b),
+                    (Attribute::ColorAddW, *w),
                     (Attribute::ColorSubC, c),
                     (Attribute::ColorSubM, m),
                     (Attribute::ColorSubY, y),

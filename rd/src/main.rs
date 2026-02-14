@@ -2,7 +2,6 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::Parser;
-use rd_core::object::{Effect, FixtureCollection, Object, ObjectKind, ObjectReference, SlotId};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
