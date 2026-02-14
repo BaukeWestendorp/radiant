@@ -1,5 +1,5 @@
 [workspace]
-members = ["radiant", "rui"]
+members = ["radiant", "rd", "rd-core", "rui"]
 resolver = "3"
 
 [workspace.package]
@@ -8,6 +8,7 @@ edition = "2024"
 
 [workspace.dependencies]
 rui = { path = "rui" }
+rd-core = { path = "rd-core" }
 
 gpui = { git = "https://github.com/zed-industries/zed.git" }
 core-text = "=21.0.0"
