@@ -7,6 +7,7 @@
       {
         "recipes": [
           {
+            "id": "2ef18675-3fc0-46e3-9008-0bbf36521f77",
             "fixture_collection": {
               "Group": {
                 "ObjectId": "1abc60c6-df16-4ae1-a1e8-2727f76615d5"
@@ -19,6 +20,7 @@
             }
           },
           {
+            "id": "959feb81-f0cd-4fee-9013-b92cd3ca3987",
             "fixture_collection": {
               "Group": {
                 "ObjectId": "0a2e1694-0a23-4b71-8668-323fdd4fcd8b"

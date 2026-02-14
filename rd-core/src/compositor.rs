@@ -101,9 +101,15 @@ impl Compositor {
     ) -> Result<(), crate::Error> {
         match recipe.content() {
             RecipeContent::Effect(effect_ref) => {
-                let runner = self
-                    .effect_agent
-                    .get_or_start_runner(*effect_ref, recipe.fixture_collection().clone())?;
+                let fixture_collection = recipe.fixture_collection();
+
+                let running_effect_id = recipe.id();
+                let runner = self.effect_agent.start_or_get_runner(
+                    running_effect_id.into(),
+                    *effect_ref,
+                    fixture_collection.clone(),
+                )?;
+
                 let parameters = Arc::new(Mutex::new(HashMap::new()));
                 runner.call_on_update(parameters.clone());
                 let parameters = parameters.lock().unwrap();

@@ -4,9 +4,11 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use uuid::Uuid;
+
 use crate::{
     effect::runner::EffectRunner,
-    object::{Effect, FixtureCollection, Object, ObjectId, ObjectReference, ObjectRegistry},
+    object::{Effect, FixtureCollection, ObjectReference, ObjectRegistry, RecipeId},
 };
 
 pub mod runner;
@@ -14,7 +16,7 @@ pub mod runner;
 pub struct EffectAgent {
     objects: Arc<ObjectRegistry>,
 
-    running_effects: RwLock<HashMap<ObjectId, Arc<EffectRunner>>>,
+    running_effects: RwLock<HashMap<RunningEffectId, Arc<EffectRunner>>>,
 
     showfile_path: Option<PathBuf>,
 }
@@ -24,42 +26,21 @@ impl EffectAgent {
         Self { objects, running_effects: RwLock::new(HashMap::new()), showfile_path }
     }
 
-    pub fn runner(&self, effect_ref: impl Into<ObjectReference>) -> Option<Arc<EffectRunner>> {
-        let object_id = self.objects.get_id::<Effect>(effect_ref)?;
-        self.running_effects.write().unwrap().get(&object_id).cloned()
-    }
-
-    pub fn get_or_start_runner(
+    pub fn start_or_get_runner(
         &self,
+        id: RunningEffectId,
         effect_ref: impl Into<ObjectReference>,
         fixture_collection: impl Into<FixtureCollection>,
     ) -> Result<Arc<EffectRunner>, crate::Error> {
-        let effect_ref = effect_ref.into();
-        let fixture_collection = fixture_collection.into();
-
-        if let Some(object_id) = self.objects.get_id::<Effect>(effect_ref.clone()) {
-            if let Some(runner) = self.running_effects.write().unwrap().get(&object_id).cloned() {
-                return Ok(runner);
+        // Try to get the runner if it already exists.
+        {
+            let running_effects = self.running_effects.read().unwrap();
+            if let Some(runner) = running_effects.get(&id) {
+                return Ok(Arc::clone(runner));
             }
         }
 
-        self.start_runner(effect_ref.clone(), fixture_collection.clone())?;
-
-        if let Some(object_id) = self.objects.get_id::<Effect>(effect_ref) {
-            if let Some(runner) = self.running_effects.write().unwrap().get(&object_id).cloned() {
-                return Ok(runner);
-            }
-        }
-
-        log::warn!("effect runner could not be started or found: {:?}", effect_ref);
-        Err(crate::object::Error::ObjectNotFound(effect_ref).into())
-    }
-
-    fn start_runner(
-        &self,
-        effect_ref: impl Into<ObjectReference>,
-        fixture_collection: impl Into<FixtureCollection>,
-    ) -> Result<(), crate::Error> {
+        // Otherwise, start a new runner.
         let effect_ref = effect_ref.into();
         let fixture_collection = fixture_collection.into();
 
@@ -69,14 +50,57 @@ impl EffectAgent {
         };
 
         let runner = Arc::new(EffectRunner::new(
+            id,
             effect,
             fixture_collection.into(),
             Arc::clone(&self.objects),
             self.showfile_path.as_ref(),
         )?);
 
-        self.running_effects.write().unwrap().insert(effect.id(), runner);
+        self.running_effects.write().unwrap().insert(id, runner.clone());
 
-        Ok(())
+        Ok(runner)
+    }
+
+    pub fn start_runner(
+        &self,
+        id: RunningEffectId,
+        effect_ref: impl Into<ObjectReference>,
+        fixture_collection: impl Into<FixtureCollection>,
+    ) -> Result<Arc<EffectRunner>, crate::Error> {
+        let effect_ref = effect_ref.into();
+        let fixture_collection = fixture_collection.into();
+
+        let Some(effect) = self.objects.get::<Effect>(effect_ref) else {
+            log::warn!("effect not found in registry: {:?}", effect_ref);
+            return Err(crate::object::Error::ObjectNotFound(effect_ref).into());
+        };
+
+        let runner = Arc::new(EffectRunner::new(
+            id,
+            effect,
+            fixture_collection.into(),
+            Arc::clone(&self.objects),
+            self.showfile_path.as_ref(),
+        )?);
+
+        self.running_effects.write().unwrap().insert(id, runner.clone());
+
+        Ok(runner)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct RunningEffectId(Uuid);
+
+impl RunningEffectId {
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+impl From<RecipeId> for RunningEffectId {
+    fn from(recipe_id: RecipeId) -> Self {
+        Self(recipe_id.0)
     }
 }

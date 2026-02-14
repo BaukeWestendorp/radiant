@@ -1,5 +1,6 @@
-use std::path::PathBuf;
+use std::{ops, path::PathBuf};
 
+use uuid::Uuid;
 use zeevonk::project::FixtureId;
 
 use crate::{
@@ -68,13 +69,18 @@ impl Cue {
 #[derive(Debug, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Recipe {
+    id: RecipeId,
     fixture_collection: FixtureCollection,
     content: RecipeContent,
 }
 
 impl Recipe {
     pub fn new(fixture_collection: FixtureCollection, content: RecipeContent) -> Self {
-        Self { fixture_collection, content }
+        Self { id: RecipeId::new(), fixture_collection, content }
+    }
+
+    pub fn id(&self) -> RecipeId {
+        self.id
     }
 
     pub fn fixture_collection(&self) -> &FixtureCollection {
@@ -83,6 +89,39 @@ impl Recipe {
 
     pub fn content(&self) -> &RecipeContent {
         &self.content
+    }
+}
+
+/// Used to identify effect runners.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct RecipeId(pub Uuid);
+
+impl RecipeId {
+    pub fn new() -> Self {
+        RecipeId(Uuid::new_v4())
+    }
+
+    pub fn as_uuid(&self) -> &Uuid {
+        &self.0
+    }
+
+    pub fn into_inner(self) -> Uuid {
+        self.0
+    }
+}
+
+impl ops::Deref for RecipeId {
+    type Target = Uuid;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl ops::DerefMut for RecipeId {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 

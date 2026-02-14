@@ -2,6 +2,7 @@ use mlua::ObjectLike;
 use zeevonk::project::FixtureId;
 
 use crate::{
+    effect::RunningEffectId,
     lua::{self, effect::OnUpdateContext},
     object::{Effect, FixtureCollection, ObjectRegistry},
     parameter::Parameter,
@@ -18,6 +19,7 @@ use std::{
 };
 
 pub struct EffectRunner {
+    id: RunningEffectId,
     fixture_collection: FixtureCollection,
 
     lua: mlua::Lua,
@@ -31,6 +33,7 @@ pub struct EffectRunner {
 
 impl EffectRunner {
     pub fn new(
+        id: RunningEffectId,
         effect: &Effect,
         fixture_collection: FixtureCollection,
         objects: Arc<ObjectRegistry>,
@@ -45,6 +48,8 @@ impl EffectRunner {
 
         let now = Instant::now();
         Ok(EffectRunner {
+            id,
+
             fixture_collection,
 
             lua,
@@ -55,6 +60,10 @@ impl EffectRunner {
 
             objects,
         })
+    }
+
+    pub fn id(&self) -> RunningEffectId {
+        self.id
     }
 
     pub fn call_on_update(
