@@ -22,6 +22,51 @@
                       "b": 1.0
                     }
                   }
+                },
+                {
+                  "Position": {
+                    "Pan": 0.4
+                  }
+                },
+                {
+                  "Position": {
+                    "Tilt": 0.7
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "fixture_collection": {
+              "Group": {
+                "ObjectId": "1abc60c6-df16-4ae1-a1e8-2727f76615d5"
+              }
+            },
+            "content": {
+              "Static": [
+                {
+                  "Dimmer": {
+                    "Dimmer": 0.5
+                  }
+                },
+                {
+                  "Color": {
+                    "Rgb": {
+                      "r": 0.0,
+                      "g": 1.0,
+                      "b": 1.0
+                    }
+                  }
+                },
+                {
+                  "Position": {
+                    "Pan": 0.2
+                  }
+                },
+                {
+                  "Position": {
+                    "Tilt": 0.6
+                  }
                 }
               ]
             }

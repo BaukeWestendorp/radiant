@@ -41,9 +41,9 @@ impl OutputAgent {
                 loop {
                     let deadline = Instant::now() + frame_duration;
 
-                    let compositor = Compositor::new(programmer.clone());
+                    let compositor = Compositor::new(Arc::clone(&programmer), Arc::clone(&objects));
                     let Composition { attribute_values, highlighted_fixtures } =
-                        compositor.compose(&objects);
+                        compositor.compose();
                     zeevonk.clear_attribute_values();
                     zeevonk.set_attribute_values(attribute_values);
                     zeevonk.clear_highlighted_fixtures();

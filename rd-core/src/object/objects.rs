@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use zeevonk::project::FixtureId;
 
 use crate::{
@@ -134,11 +132,11 @@ pub struct Group {
     slot_id: SlotId,
     name: String,
 
-    fixture_ids: BTreeSet<FixtureId>,
+    fixture_ids: Vec<FixtureId>,
 }
 
 impl Group {
-    pub fn fixture_ids(&self) -> &BTreeSet<FixtureId> {
+    pub fn fixture_ids(&self) -> &[FixtureId] {
         &self.fixture_ids
     }
 }

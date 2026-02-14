@@ -5,17 +5,21 @@ use zeevonk::{
     value::AttributeValues,
 };
 
-use crate::{object::ObjectRegistry, programmer::Programmer};
+use crate::{
+    object::{Cue, CueList, ObjectRegistry, Recipe, RecipeContent},
+    programmer::Programmer,
+};
 
 pub struct Compositor {
     highlighted_fixtures: Vec<FixtureId>,
 
+    objects: Arc<ObjectRegistry>,
     programmer: Arc<Programmer>,
 }
 
 impl Compositor {
-    pub fn new(programmer: Arc<Programmer>) -> Self {
-        Self { highlighted_fixtures: Vec::new(), programmer }
+    pub fn new(programmer: Arc<Programmer>, objects: Arc<ObjectRegistry>) -> Self {
+        Self { highlighted_fixtures: Vec::new(), objects, programmer }
     }
 
     /// Adds a fixture to the highlighted_fixtures list.
@@ -58,10 +62,38 @@ impl Compositor {
         &self.highlighted_fixtures
     }
 
-    pub fn compose<'a>(&'a self, _objects: &Arc<ObjectRegistry>) -> Composition<'a> {
-        let attribute_values = self.programmer.programmed_values().clone();
+    pub fn compose<'a>(&'a self) -> Composition<'a> {
+        let mut attribute_values = self.programmer.programmed_values().clone();
+
+        for cue_list in self.objects.get_all::<CueList>() {
+            let Some(cue) = cue_list.cues().first() else { continue };
+            self.compose_cue(cue, &mut attribute_values);
+        }
 
         Composition { attribute_values, highlighted_fixtures: &self.highlighted_fixtures }
+    }
+
+    fn compose_cue(&self, cue: &Cue, attribute_values: &mut AttributeValues) {
+        for recipe in cue.recipes() {
+            self.compose_recipe(recipe, attribute_values);
+        }
+    }
+
+    fn compose_recipe(&self, recipe: &Recipe, attribute_values: &mut AttributeValues) {
+        let fixture_ids = recipe.fixture_collection().to_fixture_ids(&self.objects);
+
+        match recipe.content() {
+            RecipeContent::Effect(_) => todo!(),
+            RecipeContent::Static(params) => {
+                for fixture_id in fixture_ids {
+                    for param in params {
+                        for (attribute, value) in param.to_attribute_values() {
+                            attribute_values.set(*fixture_id, attribute, value);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

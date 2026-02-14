@@ -4,6 +4,7 @@ use std::{
     fmt,
     num::NonZeroU32,
     ops,
+    sync::Arc,
 };
 use uuid::Uuid;
 
@@ -257,6 +258,17 @@ impl From<(ObjectKind, SlotId)> for ObjectReference {
 pub enum FixtureCollection {
     Group(ObjectReference),
     Static(Vec<FixtureId>),
+}
+
+impl FixtureCollection {
+    pub fn to_fixture_ids<'a>(&'a self, objects: &'a Arc<ObjectRegistry>) -> &'a [FixtureId] {
+        match self {
+            FixtureCollection::Group(obj) => {
+                objects.get::<Group>(*obj).map(|g| g.fixture_ids()).unwrap_or_default()
+            }
+            FixtureCollection::Static(fixture_ids) => &fixture_ids,
+        }
+    }
 }
 
 impl From<ObjectReference> for FixtureCollection {
