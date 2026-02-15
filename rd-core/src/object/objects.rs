@@ -69,7 +69,9 @@ impl Cue {
 #[derive(Debug, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Recipe {
+    #[serde(skip, default = "RecipeId::new")]
     id: RecipeId,
+
     fixture_collection: FixtureCollection,
     content: RecipeContent,
 }

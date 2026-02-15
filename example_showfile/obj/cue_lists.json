@@ -7,7 +7,6 @@
       {
         "recipes": [
           {
-            "id": "b7f8e2c1-4a3d-4e6f-9b2a-8c1d2e3f4a5b",
             "fixture_collection": {
               "Group": {
                 "Slot": ["Group", 1]
@@ -28,7 +27,6 @@
             }
           },
           {
-            "id": "e3b5c2a7-9f4e-4c8d-8e2a-7f6b1c3d2e4f",
             "fixture_collection": {
               "Group": {
                 "Slot": ["Group", 11]
