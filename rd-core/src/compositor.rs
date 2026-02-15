@@ -111,7 +111,7 @@ impl Compositor {
                 )?;
 
                 let parameters = Arc::new(Mutex::new(HashMap::new()));
-                runner.call_on_update(options, parameters.clone());
+                runner.call_on_update(options.clone(), parameters.clone());
                 let parameters = parameters.lock().unwrap();
                 for (fixture_id, params) in &*parameters {
                     for param in params {

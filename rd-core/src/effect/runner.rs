@@ -68,7 +68,7 @@ impl EffectRunner {
 
     pub fn call_on_update(
         self: &Arc<Self>,
-        options: &HashMap<String, EffectOptionValue>,
+        options: HashMap<String, EffectOptionValue>,
         parameters: Arc<Mutex<HashMap<FixtureId, Vec<Parameter>>>>,
     ) {
         let now = Instant::now();
@@ -76,8 +76,6 @@ impl EffectRunner {
         let delta = now.duration_since(*last_update_time);
         *last_update_time = now;
         let frame_count = self.frame_count.fetch_add(1, Ordering::SeqCst) + 1;
-
-        dbg!(options);
 
         let fixture_ids = self
             .fixture_collection
@@ -93,6 +91,7 @@ impl EffectRunner {
             delta_time: delta.as_secs_f64(),
 
             fixture_ids,
+            options,
 
             parameters,
         };

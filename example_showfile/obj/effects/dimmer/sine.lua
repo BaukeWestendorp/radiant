@@ -1,8 +1,8 @@
 function on_update(cx)
-    local speed = 4.0
-    local amplitude = 1.0
-    local width = 1.0
-    local base = 0.0
+    local speed = cx.options.speed or 4.0
+    local amplitude = cx.options.amplitude or 1.0
+    local width = cx.options.width or 1.0
+    local base = cx.options.base or 0.0
 
     local fixture_ids = cx.fixture_ids
     local t = cx.time_seconds

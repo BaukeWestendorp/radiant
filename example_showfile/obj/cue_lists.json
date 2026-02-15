@@ -40,7 +40,7 @@
                   "Slot": ["Effect", 2]
                 },
                 "options": {
-                  "speed": 1.0,
+                  "speed": 2.0,
                   "duty_cycle": 0.1,
                   "width": 1.0,
                   "base": 0.01,
