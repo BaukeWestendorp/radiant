@@ -7,16 +7,10 @@
       {
         "recipes": [
           {
-            "fixture_collection": {
-              "Group": {
-                "Slot": ["Group", 1]
-              }
-            },
+            "fixture_collection": ["Group", 1],
             "content": {
               "Effect": {
-                "effect": {
-                  "Slot": ["Effect", 1]
-                },
+                "effect": ["Effect", 1],
                 "options": {
                   "speed": 4.0,
                   "amplitude": 1.0,
@@ -27,16 +21,10 @@
             }
           },
           {
-            "fixture_collection": {
-              "Group": {
-                "Slot": ["Group", 11]
-              }
-            },
+            "fixture_collection": ["Group", 11],
             "content": {
               "Effect": {
-                "effect": {
-                  "Slot": ["Effect", 2]
-                },
+                "effect": ["Effect", 2],
                 "options": {
                   "speed": 2.0,
                   "duty_cycle": 0.1,

@@ -115,6 +115,7 @@ impl ObjectRegistry {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[derive(serde::Serialize, serde::Deserialize)]
+#[serde(transparent)]
 pub struct ObjectId(Uuid);
 
 impl ObjectId {
@@ -230,6 +231,7 @@ impl fmt::Display for SlotId {
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[derive(serde::Serialize, serde::Deserialize)]
+#[serde(untagged)]
 pub enum ObjectReference {
     ObjectId(ObjectId),
     Slot(ObjectKind, SlotId),
@@ -259,6 +261,7 @@ impl From<(ObjectKind, SlotId)> for ObjectReference {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[derive(serde::Serialize, serde::Deserialize)]
+#[serde(untagged)]
 pub enum FixtureCollection {
     Group(ObjectReference),
     Static(Vec<FixtureId>),
