@@ -1,5 +1,5 @@
 [workspace]
-members = ["radiant", "rd", "rd-core", "rui"]
+members = ["rd", "rd-core"]
 resolver = "3"
 
 [workspace.package]
