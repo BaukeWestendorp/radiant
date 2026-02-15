@@ -15,7 +15,15 @@
             },
             "content": {
               "Effect": {
-                "Slot": ["Effect", 1]
+                "effect": {
+                  "Slot": ["Effect", 1]
+                },
+                "options": {
+                  "speed": 4.0,
+                  "amplitude": 1.0,
+                  "width": 1.0,
+                  "base": 0.0
+                }
               }
             }
           },
@@ -28,7 +36,16 @@
             },
             "content": {
               "Effect": {
-                "Slot": ["Effect", 2]
+                "effect": {
+                  "Slot": ["Effect", 2]
+                },
+                "options": {
+                  "speed": 1.0,
+                  "duty_cycle": 0.1,
+                  "width": 1.0,
+                  "base": 0.01,
+                  "amplitude": 1.0
+                }
               }
             }
           }
