@@ -7,28 +7,28 @@
       {
         "recipes": [
           {
-            "id": "2ef18675-3fc0-46e3-9008-0bbf36521f77",
+            "id": "b7f8e2c1-4a3d-4e6f-9b2a-8c1d2e3f4a5b",
             "fixture_collection": {
               "Group": {
-                "ObjectId": "1abc60c6-df16-4ae1-a1e8-2727f76615d5"
+                "Slot": ["Group", 1]
               }
             },
             "content": {
               "Effect": {
-                "ObjectId": "4d021f9d-4b46-4ada-a4a0-ff905c79e7f5"
+                "Slot": ["Effect", 1]
               }
             }
           },
           {
-            "id": "959feb81-f0cd-4fee-9013-b92cd3ca3987",
+            "id": "e3b5c2a7-9f4e-4c8d-8e2a-7f6b1c3d2e4f",
             "fixture_collection": {
               "Group": {
-                "ObjectId": "0a2e1694-0a23-4b71-8668-323fdd4fcd8b"
+                "Slot": ["Group", 11]
               }
             },
             "content": {
               "Effect": {
-                "ObjectId": "4d021f9d-4b46-4ada-a4a0-ff905c79e7f5"
+                "Slot": ["Effect", 2]
               }
             }
           }

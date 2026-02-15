@@ -1,0 +1,14 @@
+[
+  {
+    "id": "8d963ef7-75eb-419c-b5ab-a2398f42114d",
+    "slot_id": 1,
+    "name": "Dimmer/Sine",
+    "file_name": "dimmer/sine.lua"
+  },
+  {
+    "id": "e3a1b6c2-4f7a-4e2b-9c8d-2f5b7a9e1d3f",
+    "slot_id": 2,
+    "name": "Dimmer/PWM",
+    "file_name": "dimmer/pwm.lua"
+  }
+]
