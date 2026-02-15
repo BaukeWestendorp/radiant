@@ -100,18 +100,18 @@ impl Compositor {
         attribute_values: &mut AttributeValues,
     ) -> Result<(), crate::Error> {
         match recipe.content() {
-            RecipeContent::Effect(effect_ref) => {
+            RecipeContent::Effect { effect, options } => {
                 let fixture_collection = recipe.fixture_collection();
 
                 let running_effect_id = recipe.id();
                 let runner = self.effect_agent.start_or_get_runner(
                     running_effect_id.into(),
-                    *effect_ref,
+                    *effect,
                     fixture_collection.clone(),
                 )?;
 
                 let parameters = Arc::new(Mutex::new(HashMap::new()));
-                runner.call_on_update(parameters.clone());
+                runner.call_on_update(options, parameters.clone());
                 let parameters = parameters.lock().unwrap();
                 for (fixture_id, params) in &*parameters {
                     for param in params {

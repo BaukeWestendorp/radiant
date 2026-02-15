@@ -1,4 +1,4 @@
-use std::{ops, path::PathBuf};
+use std::{collections::HashMap, ops, path::PathBuf};
 
 use uuid::Uuid;
 use zeevonk::project::FixtureId;
@@ -128,8 +128,19 @@ impl ops::DerefMut for RecipeId {
 #[derive(Debug, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub enum RecipeContent {
-    Effect(ObjectReference),
+    Effect { effect: ObjectReference, options: HashMap<String, EffectOptionValue> },
     Static(Vec<Parameter>),
+}
+
+#[derive(Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(untagged)]
+pub enum EffectOptionValue {
+    Nil,
+    Boolean(bool),
+    Integer(i64),
+    Number(f64),
+    String(String),
 }
 
 #[derive(Debug, Clone)]
