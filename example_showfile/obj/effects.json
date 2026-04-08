@@ -10,5 +10,11 @@
     "slot_id": 2,
     "name": "Dimmer/PWM",
     "file_name": "dimmer/pwm.lua"
+  },
+  {
+    "id": "12868bfd-2244-46a7-a611-d85beff9fe6d",
+    "slot_id": 3,
+    "name": "Position/Test",
+    "file_name": "position/test.lua"
   }
 ]

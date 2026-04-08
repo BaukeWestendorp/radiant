@@ -1,39 +1,56 @@
-use zeevonk::{attr::Attribute, value::ClampedValue};
+use zeevonk::{
+    AttributeName,
+    value::{AttributeValue, ClampedValue},
+};
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub enum Parameter {
-    Dimmer(DimmerParameter),
-    Raw((Attribute, ClampedValue)),
+    Dimmer(ParameterValue),
+    Pan(ParameterValue),
+    Tilt(ParameterValue),
+    Raw((AttributeName, ParameterValue)),
 }
 
 impl Parameter {
-    pub fn dimmer(value: impl Into<ClampedValue>) -> Self {
-        Self::Dimmer(DimmerParameter::Dimmer(value.into()))
+    pub fn dimmer(value: impl Into<ParameterValue>) -> Self {
+        Self::Dimmer(value.into())
     }
 
-    pub fn raw(attr: Attribute, value: impl Into<ClampedValue>) -> Self {
+    pub fn pan(value: impl Into<ParameterValue>) -> Self {
+        Self::Pan(value.into())
+    }
+
+    pub fn tilt(value: impl Into<ParameterValue>) -> Self {
+        Self::Tilt(value.into())
+    }
+
+    pub fn raw(attr: AttributeName, value: impl Into<ParameterValue>) -> Self {
         Self::Raw((attr, value.into()))
     }
 
-    pub fn to_attribute_values(&self) -> Vec<(Attribute, ClampedValue)> {
+    pub fn to_attribute_values(&self) -> Vec<(AttributeName, AttributeValue)> {
         match self {
-            Parameter::Dimmer(p) => p.to_attributes(),
-            Parameter::Raw(p) => vec![*p],
+            Parameter::Dimmer(p) => vec![(AttributeName::Dimmer, (*p).into())],
+            Parameter::Pan(p) => vec![(AttributeName::Pan, (*p).into())],
+            Parameter::Tilt(p) => vec![(AttributeName::Tilt, (*p).into())],
+            Parameter::Raw((name, value)) => vec![(name.clone(), (*value).into())],
         }
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub enum DimmerParameter {
-    Dimmer(ClampedValue),
+pub enum ParameterValue {
+    Clamped(ClampedValue),
+    Physical(f32),
 }
 
-impl DimmerParameter {
-    fn to_attributes(&self) -> Vec<(Attribute, ClampedValue)> {
-        match self {
-            DimmerParameter::Dimmer(v) => vec![(Attribute::Dimmer, *v)],
+impl From<ParameterValue> for AttributeValue {
+    fn from(value: ParameterValue) -> Self {
+        match value {
+            ParameterValue::Clamped(v) => AttributeValue::Clamped(v),
+            ParameterValue::Physical(v) => AttributeValue::Physical(v),
         }
     }
 }
