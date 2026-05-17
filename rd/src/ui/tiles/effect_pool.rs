@@ -4,9 +4,9 @@ use rd_ui::PoolTileDelegate;
 
 use crate::state::AppState;
 
-pub struct EffectsPoolTile {}
+pub struct EffectPoolTile {}
 
-impl EffectsPoolTile {
+impl EffectPoolTile {
     pub fn new() -> Self {
         Self {}
     }
@@ -18,7 +18,7 @@ impl EffectsPoolTile {
     }
 }
 
-impl PoolTileDelegate for EffectsPoolTile {
+impl PoolTileDelegate for EffectPoolTile {
     fn title(&self, _cx: &App) -> SharedString {
         "Effects".into()
     }

@@ -24,7 +24,7 @@
           "height": 6
         }
       },
-      "kind": "GroupsPool"
+      "kind": "GroupPool"
     },
     {
       "bounds": {
@@ -37,7 +37,7 @@
           "height": 6
         }
       },
-      "kind": "EffectsPool"
+      "kind": "EffectPool"
     },
     {
       "bounds": {

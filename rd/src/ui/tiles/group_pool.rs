@@ -4,9 +4,9 @@ use rd_ui::PoolTileDelegate;
 
 use crate::state::AppState;
 
-pub struct GroupsPoolTile {}
+pub struct GroupPoolTile {}
 
-impl GroupsPoolTile {
+impl GroupPoolTile {
     pub fn new() -> Self {
         Self {}
     }
@@ -18,7 +18,7 @@ impl GroupsPoolTile {
     }
 }
 
-impl PoolTileDelegate for GroupsPoolTile {
+impl PoolTileDelegate for GroupPoolTile {
     fn title(&self, _cx: &App) -> SharedString {
         "Groups".into()
     }

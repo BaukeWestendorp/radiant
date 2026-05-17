@@ -4,7 +4,7 @@ use anyhow::Context;
 use gpui::{App, AppContext as _, Bounds, Pixels, Window, px};
 use rd_ui::{PoolTile, TileGridState};
 
-use crate::ui::tiles::{CueListsPoolTile, EffectsPoolTile, FixturesTile, GroupsPoolTile};
+use crate::ui::tiles::{CueListsPoolTile, EffectPoolTile, FixturesTile, GroupPoolTile};
 
 const LAYOUT_FILE_NAME: &str = "layout.json";
 
@@ -48,8 +48,8 @@ pub struct LayoutTile {
 pub enum LayoutTileKind {
     Fixtures,
 
-    GroupsPool,
-    EffectsPool,
+    GroupPool,
+    EffectPool,
     CueListPool,
 }
 
@@ -62,12 +62,12 @@ impl Layout {
                 LayoutTileKind::Fixtures => {
                     tile_grid_state.add_tile(FixturesTile::new(window, cx), tile.bounds);
                 }
-                LayoutTileKind::GroupsPool => {
-                    let delegate = cx.new(|_cx| GroupsPoolTile::new());
+                LayoutTileKind::GroupPool => {
+                    let delegate = cx.new(|_cx| GroupPoolTile::new());
                     tile_grid_state.add_tile(PoolTile::new(delegate, CELL_SIZE), tile.bounds);
                 }
-                LayoutTileKind::EffectsPool => {
-                    let delegate = cx.new(|_cx| EffectsPoolTile::new());
+                LayoutTileKind::EffectPool => {
+                    let delegate = cx.new(|_cx| EffectPoolTile::new());
                     tile_grid_state.add_tile(PoolTile::new(delegate, CELL_SIZE), tile.bounds);
                 }
                 LayoutTileKind::CueListPool => {
