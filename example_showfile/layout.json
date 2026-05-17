@@ -38,6 +38,19 @@
         }
       },
       "kind": "EffectsPool"
+    },
+    {
+      "bounds": {
+        "origin": {
+          "x": 6,
+          "y": 6
+        },
+        "size": {
+          "width": 6,
+          "height": 6
+        }
+      },
+      "kind": "CueListPool"
     }
   ]
 }

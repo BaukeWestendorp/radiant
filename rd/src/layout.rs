@@ -4,7 +4,7 @@ use anyhow::Context;
 use gpui::{App, AppContext as _, Bounds, Pixels, Window, px};
 use rd_ui::{PoolTile, TileGridState};
 
-use crate::ui::tiles::{EffectsPoolTile, FixturesTile, GroupsPoolTile};
+use crate::ui::tiles::{CueListsPoolTile, EffectsPoolTile, FixturesTile, GroupsPoolTile};
 
 const LAYOUT_FILE_NAME: &str = "layout.json";
 
@@ -50,6 +50,7 @@ pub enum LayoutTileKind {
 
     GroupsPool,
     EffectsPool,
+    CueListPool,
 }
 
 impl Layout {
@@ -67,6 +68,10 @@ impl Layout {
                 }
                 LayoutTileKind::EffectsPool => {
                     let delegate = cx.new(|_cx| EffectsPoolTile::new());
+                    tile_grid_state.add_tile(PoolTile::new(delegate, CELL_SIZE), tile.bounds);
+                }
+                LayoutTileKind::CueListPool => {
+                    let delegate = cx.new(|_cx| CueListsPoolTile::new());
                     tile_grid_state.add_tile(PoolTile::new(delegate, CELL_SIZE), tile.bounds);
                 }
             }
