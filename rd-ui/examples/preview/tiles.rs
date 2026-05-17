@@ -15,7 +15,7 @@ impl TilesPreview {
                 let mut grid = TileGridState::new();
                 grid.add_tile(AlphaTile {}, bounds(point(0, 0), size(4, 4)));
                 grid.add_tile(
-                    PoolTile::new(cx.new(|_| BetaTile {}), px(80.0)),
+                    PoolTile::new(cx.new(|_| BetaTile {}), size(px(80.0), px(80.0))),
                     bounds(point(5, 0), size(3, 5)),
                 );
                 grid
@@ -53,7 +53,7 @@ impl PoolTileDelegate for BetaTile {
         slot_id == 4
     }
 
-    fn occupied_label(&self, slot_id: u32, _cx: &App) -> String {
+    fn occupied_content(&self, slot_id: u32, _cx: &App) -> impl IntoElement {
         slot_id.to_string()
     }
 

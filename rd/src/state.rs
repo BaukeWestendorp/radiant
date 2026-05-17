@@ -32,7 +32,7 @@ pub struct AppState {
 impl AppState {
     pub fn new(engine: Engine, cx: &mut App) -> anyhow::Result<Self> {
         let layout = match engine.showfile_path() {
-            Some(path) => Layout::load_from_showfile_root(path)?,
+            Some(path) => Layout::load_from_showfile_dir(path)?,
             None => Layout::default(),
         };
 
@@ -60,7 +60,7 @@ impl AppState {
 
         Self::layout(cx)
             .read(cx)
-            .save_to_showfile_root(showfile_path)
+            .save_to_showfile_dir(showfile_path)
             .context("failed to save layout file")?;
 
         Ok(())

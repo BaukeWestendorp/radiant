@@ -20,7 +20,7 @@ impl Render for ScrollablePreview {
                     div()
                         .w(px(1000.0))
                         .h(px(1000.0))
-                        .child(line_grid(px(40.0), cx.theme().accent).size_full()),
+                        .child(line_grid(px(40.0), px(40.0), cx.theme().accent).size_full()),
                 ),
             ),
         )

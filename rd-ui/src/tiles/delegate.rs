@@ -1,7 +1,7 @@
-use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Bounds, ElementId, Entity, Pixels, SharedString, Window, div, relative,
 };
+use gpui::{Size, prelude::*};
 use uuid::Uuid;
 
 use crate::{ActiveTheme, HslaExt as _, h_flex};
@@ -21,7 +21,7 @@ pub trait PoolTileDelegate {
 
     fn is_occupied(&self, slot_id: u32, cx: &App) -> bool;
 
-    fn occupied_label(&self, slot_id: u32, cx: &App) -> String;
+    fn occupied_content(&self, slot_id: u32, cx: &App) -> impl IntoElement;
 
     fn on_activate_slot(&mut self, slot_id: u32, window: &mut Window, cx: &mut App);
 
@@ -42,25 +42,35 @@ pub trait PoolTileDelegate {
 
 pub struct PoolTile<D: PoolTileDelegate + 'static> {
     delegate: Entity<D>,
-    cell_size: Pixels,
+    cell_size: Size<Pixels>,
+    show_header_cell: bool,
     id: Uuid,
 }
 
 impl<D: PoolTileDelegate + 'static> PoolTile<D> {
-    pub fn new(delegate: Entity<D>, cell_size: Pixels) -> Self {
-        Self { delegate, cell_size, id: Uuid::new_v4() }
+    pub fn new(delegate: Entity<D>, cell_size: Size<Pixels>) -> Self {
+        Self { delegate, cell_size, show_header_cell: true, id: Uuid::new_v4() }
     }
 
     pub fn delegate(&self) -> Entity<D> {
         self.delegate.clone()
     }
 
-    pub fn cell_size(&self) -> Pixels {
+    pub fn cell_size(&self) -> Size<Pixels> {
         self.cell_size
     }
 
-    pub fn with_cell_size(mut self, cell_size: Pixels) -> Self {
+    pub fn with_cell_size(mut self, cell_size: Size<Pixels>) -> Self {
         self.cell_size = cell_size;
+        self
+    }
+
+    pub fn show_header_cell(&self) -> bool {
+        self.show_header_cell
+    }
+
+    pub fn with_show_header_cell(mut self, show_header_cell: bool) -> Self {
+        self.show_header_cell = show_header_cell;
         self
     }
 }
@@ -78,7 +88,8 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
         let slot_count = (bounds.size.width * bounds.size.height) as usize;
 
         let header_cell = div()
-            .size(self.cell_size)
+            .w(self.cell_size().width)
+            .h(self.cell_size().height)
             .bg(cx.theme().bg_tile_header)
             .border_1()
             .border_color(cx.theme().border_tile_header)
@@ -109,7 +120,8 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
                         slot_id as usize,
                     ))
                     .relative()
-                    .size(self.cell_size)
+                    .w(self.cell_size.width)
+                    .h(self.cell_size.height)
                     .bg(cx.theme().bg_secondary)
                     .border_1()
                     .border_color(cx.theme().border_secondary)
@@ -123,12 +135,7 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
                             .border_color(cx.theme().border_secondary.active())
                     })
                     .child(id_overlay)
-                    .child(
-                        h_flex()
-                            .justify_center()
-                            .size_full()
-                            .child(delegate.read(cx).occupied_label(slot_id, cx)),
-                    )
+                    .child(delegate.read(cx).occupied_content(slot_id, cx))
                     .on_click(move |_, window, cx| {
                         delegate.update(cx, |d, cx| d.on_activate_slot(slot_id, window, cx));
                     })
@@ -141,13 +148,14 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
                         slot_id as usize,
                     ))
                     .relative()
-                    .size(self.cell_size)
+                    .w(self.cell_size.width)
+                    .h(self.cell_size.height)
                     .bg(cx.theme().bg_primary)
                     .border_1()
                     .border_color(cx.theme().border_primary)
                     .rounded(cx.theme().radius)
                     .child(id_overlay)
-                    .child(div().size(self.cell_size));
+                    .child(div().w(self.cell_size.width).h(self.cell_size.height));
 
                 if delegate.read(cx).empty_slots_clickable(cx) {
                     base.on_click(move |_, window, cx| {
@@ -164,7 +172,7 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
             .flex()
             .flex_wrap()
             .size_full()
-            .child(header_cell)
+            .when(self.show_header_cell(), |e| e.child(header_cell))
             .children(slot_cells)
             .into_any_element()
     }

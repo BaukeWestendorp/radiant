@@ -1,6 +1,6 @@
-use gpui::{App, SharedString, Window};
+use gpui::{App, IntoElement, SharedString, Window, prelude::*};
 use rd_core::object::{CueList, Object, ObjectKind, ObjectReference, SlotId};
-use rd_ui::PoolTileDelegate;
+use rd_ui::{PoolTileDelegate, h_flex};
 
 use crate::state::AppState;
 
@@ -27,11 +27,13 @@ impl PoolTileDelegate for CueListsPoolTile {
         self.cue_list(slot_id, cx).is_some()
     }
 
-    fn occupied_label(&self, slot_id: u32, cx: &App) -> String {
-        self.cue_list(slot_id, cx)
+    fn occupied_content(&self, slot_id: u32, cx: &App) -> impl IntoElement {
+        let label = self
+            .cue_list(slot_id, cx)
             .map(|cue_list| cue_list.name())
             .unwrap_or("<unknown>")
-            .to_string()
+            .to_string();
+        h_flex().justify_center().size_full().child(label)
     }
 
     fn on_activate_slot(&mut self, _slot_id: u32, _window: &mut Window, _cx: &mut App) {}

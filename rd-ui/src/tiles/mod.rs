@@ -14,12 +14,12 @@ pub struct TileGrid {
     state: Entity<TileGridState>,
 
     grid_size: Size<u32>,
-    cell_size: Pixels,
+    cell_size: Size<Pixels>,
 }
 
 impl TileGrid {
     pub fn new(state: Entity<TileGridState>) -> Self {
-        Self { state, grid_size: size(18, 12), cell_size: px(80.0) }
+        Self { state, grid_size: size(18, 12), cell_size: size(px(80.0), px(80.0)) }
     }
 
     pub fn grid_size(&self) -> Size<u32> {
@@ -31,12 +31,12 @@ impl TileGrid {
         self
     }
 
-    pub fn with_cell_size(mut self, cell_size: Pixels) -> Self {
+    pub fn with_cell_size(mut self, cell_size: Size<Pixels>) -> Self {
         self.cell_size = cell_size;
         self
     }
 
-    pub fn cell_size(&self) -> Pixels {
+    pub fn cell_size(&self) -> Size<Pixels> {
         self.cell_size
     }
 }
@@ -73,10 +73,10 @@ impl RenderOnce for TileGrid {
                     div()
                         .absolute()
                         .bg(cx.theme().bg_primary)
-                        .left(origin.x as f32 * self.cell_size())
-                        .top(origin.y as f32 * self.cell_size())
-                        .w(size.width as f32 * self.cell_size)
-                        .h(size.height as f32 * self.cell_size)
+                        .left(origin.x as f32 * self.cell_size().width)
+                        .top(origin.y as f32 * self.cell_size().height)
+                        .w(size.width as f32 * self.cell_size().width)
+                        .h(size.height as f32 * self.cell_size().height)
                         .occlude()
                         .overflow_hidden()
                         .child(
@@ -112,10 +112,14 @@ impl RenderOnce for TileGrid {
             .size_full()
             .overflow_hidden()
             .bg(cx.theme().bg_primary)
-            .w(self.grid_size.width as f32 * self.cell_size)
-            .h(self.grid_size.height as f32 * self.cell_size)
+            .w(self.grid_size.width as f32 * self.cell_size().width)
+            .h(self.grid_size.height as f32 * self.cell_size().height)
             .relative()
-            .child(dot_grid(self.cell_size, cx.theme().accent).absolute().size_full())
+            .child(
+                dot_grid(self.cell_size().width, self.cell_size().height, cx.theme().accent)
+                    .absolute()
+                    .size_full(),
+            )
             .child(div().absolute().size_full().child(div().size_full().relative().children(tiles)))
     }
 }

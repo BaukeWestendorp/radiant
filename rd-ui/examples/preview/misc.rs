@@ -113,24 +113,21 @@ impl Render for GridPreview {
             .flex_col()
             .gap_2()
             .child(
-                section("Dot grid")
-                    .w_full()
-                    .h_48()
-                    .overflow_hidden()
-                    .child(dot_grid(px(12.0), cx.theme().accent.opacity(0.75)).size_full()),
+                section("Dot grid").w_full().h_48().overflow_hidden().child(
+                    dot_grid(px(12.0), px(12.0), cx.theme().accent.opacity(0.75)).size_full(),
+                ),
             )
             .child(
-                section("Line grid")
-                    .w_full()
-                    .h_48()
-                    .overflow_hidden()
-                    .child(line_grid(px(16.0), cx.theme().accent.opacity(0.75)).size_full()),
+                section("Line grid").w_full().h_48().overflow_hidden().child(
+                    line_grid(px(16.0), px(16.0), cx.theme().accent.opacity(0.75)).size_full(),
+                ),
             )
             .child(
                 section("Scrollable grid").w_full().h_48().child(
                     div().size_full().relative().overflow_hidden().child(
                         scrollable_line_grid(
                             &point(px(3.0), px(3.0)),
+                            px(16.0),
                             px(16.0),
                             cx.theme().accent.opacity(0.75),
                         )

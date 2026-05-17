@@ -3,11 +3,9 @@ use std::path::PathBuf;
 use anyhow::{Context as _, Result};
 use gpui::{Context, Entity, FocusHandle, Window, div, prelude::*, px, size};
 use rd_core::Engine;
-use rd_ui::{
-    Button, Icon, IconSize, IconVariant, TITLE_BAR_HEIGHT, TileGrid, TileGridState, h_flex,
-};
+use rd_ui::{Button, Icon, IconSize, IconVariant, TITLE_BAR_HEIGHT, h_flex};
 
-use crate::state::AppState;
+use crate::ui::layout_viewer::LayoutViewer;
 
 pub mod action {
     use gpui::{App, KeyBinding, prelude::*};
@@ -43,7 +41,7 @@ pub fn run(showfile_path: Option<PathBuf>) -> Result<()> {
 
     rd_ui::build_simple_app()
         .window_title("Radiant")
-        .window_size(size(px(18.0 * 80.0), px(12.0 * 80.0) + TITLE_BAR_HEIGHT))
+        .window_size(size(px((18.0 + 1.5) * 80.0), px(12.0 * 80.0) + TITLE_BAR_HEIGHT))
         .title_bar_content(|_, cx| cx.new(|_| TitleBarContent).into())
         .run(|window, cx| {
             crate::app::action::init(cx);
@@ -58,7 +56,7 @@ pub fn run(showfile_path: Option<PathBuf>) -> Result<()> {
 struct RadiantApp {
     focus_handle: FocusHandle,
 
-    tile_grid_state: Entity<TileGridState>,
+    layout_viewer: Entity<LayoutViewer>,
 }
 
 impl RadiantApp {
@@ -66,18 +64,9 @@ impl RadiantApp {
         let focus_handle = cx.focus_handle();
         focus_handle.focus(window, cx);
 
-        let layout = AppState::layout(cx).clone();
-        let tile_grid_state = cx.new(|cx| layout.read(cx).clone().to_tile_grid_state(window, cx));
-        cx.observe_in(&layout, window, |app, layout, window, cx| {
-            let next_state = layout.read(cx).clone().to_tile_grid_state(window, cx);
-            app.tile_grid_state.update(cx, |state, cx| {
-                *state = next_state;
-                cx.notify();
-            })
-        })
-        .detach();
+        let layout_viewer = cx.new(|cx| LayoutViewer::new(window, cx));
 
-        Ok(Self { focus_handle, tile_grid_state })
+        Ok(Self { focus_handle, layout_viewer })
     }
 
     fn render_content(
@@ -85,7 +74,7 @@ impl RadiantApp {
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) -> impl IntoElement {
-        div().size_full().child(TileGrid::new(self.tile_grid_state.clone()))
+        div().size_full().child(self.layout_viewer.clone())
     }
 }
 
@@ -100,6 +89,7 @@ impl Render for RadiantApp {
 }
 
 struct TitleBarContent;
+
 impl Render for TitleBarContent {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         h_flex().flex_row_reverse().size_full().gap_2().child(
