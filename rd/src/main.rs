@@ -1,7 +1,12 @@
 use std::path::PathBuf;
 
-use anyhow::Result;
 use clap::Parser;
+
+mod app;
+mod layout;
+mod settings;
+mod state;
+mod ui;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -17,16 +22,12 @@ fn init_logger() {
     pretty_env_logger::formatted_builder().filter_level(default_level).parse_env("RUST_LOG").init();
 }
 
-fn main() -> Result<()> {
+fn main() -> anyhow::Result<()> {
     init_logger();
 
     let args = Args::parse();
 
-    let engine = rd_core::Engine::new(args.showfile_path)?;
-
-    engine.start();
-
-    std::thread::sleep(std::time::Duration::MAX);
+    app::run(args.showfile_path)?;
 
     Ok(())
 }

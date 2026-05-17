@@ -3,11 +3,19 @@ name = "rd"
 version.workspace = true
 edition.workspace = true
 
+[[bin]]
+name = "radiant"
+path = "src/main.rs"
+
 [dependencies]
-rd-core.workspace = true
-
-log.workspace = true
-pretty_env_logger = "0.5.0"
-
-anyhow = "1.0.100"
+anyhow.workspace = true
 clap = { version = "4.5.56", features = ["derive"] }
+gpui.workspace = true
+log.workspace = true
+mlua = { version = "0.11.6", features = ["lua54", "anyhow", "macros", "send"] }
+pretty_env_logger = "0.5.0"
+rd-core.workspace = true
+rd-ui.workspace = true
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+spin_sleep = "1.3.3"

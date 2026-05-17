@@ -1,5 +1,5 @@
 [workspace]
-members = ["rd", "rd-core"]
+members = ["rd", "rd-core", "rd-ui"]
 resolver = "3"
 
 [workspace.package]
@@ -7,10 +7,16 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace.dependencies]
-rui = { path = "rui" }
+rd = { path = "rd" }
+rd-ui = { path = "rd-ui" }
 rd-core = { path = "rd-core" }
 
 gpui = { git = "https://github.com/zed-industries/zed.git" }
-core-text = "=21.0.0"
+gpui_platform = { git = "https://github.com/zed-industries/zed.git", features = ["font-kit"] }
+
+anyhow = "1.0.100"
 
 log = "0.4.29"
+
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"

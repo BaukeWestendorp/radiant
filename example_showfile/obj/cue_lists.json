@@ -7,53 +7,164 @@
       {
         "recipes": [
           {
-            "fixture_collection": ["101"],
-            "content": {
-              "Static": [{ "Pan": { "Physical": -152 } }, { "Tilt": { "Physical": 74 } }]
-            }
-          },
-          {
-            "fixture_collection": ["102"],
-            "content": {
-              "Static": [{ "Pan": { "Physical": -130 } }, { "Tilt": { "Physical": 42 } }]
-            }
-          },
-          {
-            "fixture_collection": ["103"],
-            "content": {
-              "Static": [{ "Pan": { "Physical": -235 } }, { "Tilt": { "Physical": 45 } }]
-            }
-          },
-          {
-            "fixture_collection": ["104"],
-            "content": {
-              "Static": [{ "Pan": { "Physical": -30 } }, { "Tilt": { "Physical": -74 } }]
-            }
-          },
-          {
-            "fixture_collection": ["Group", 1],
+            "fixture_collection": [
+              "101"
+            ],
             "content": {
               "Static": [
                 {
-                  "Dimmer": { "Clamped": 1.0 }
+                  "Pan": {
+                    "Physical": -152.0
+                  }
                 },
-                { "Raw": ["Color1WheelSpin", { "Clamped": 0.98 }] },
-                { "Raw": ["Gobo1WheelSpin", { "Clamped": 0.4 }] },
-                { "Raw": ["Prism1", { "Clamped": 1.0 }] }
+                {
+                  "Tilt": {
+                    "Physical": 74.0
+                  }
+                }
               ]
             }
           },
           {
-            "fixture_collection": ["Group", 21],
+            "fixture_collection": [
+              "102"
+            ],
             "content": {
               "Static": [
                 {
-                  "Dimmer": { "Clamped": 1.0 }
+                  "Pan": {
+                    "Physical": -130.0
+                  }
                 },
-                { "Raw": ["ColorAdd_R", { "Clamped": 1.0 }] },
-                { "Raw": ["ColorAdd_G", { "Clamped": 1.0 }] },
-                { "Raw": ["ColorAdd_B", { "Clamped": 1.0 }] },
-                { "Raw": ["Gobo1WheelSpin", { "Clamped": 0.4 }] }
+                {
+                  "Tilt": {
+                    "Physical": 42.0
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "fixture_collection": [
+              "103"
+            ],
+            "content": {
+              "Static": [
+                {
+                  "Pan": {
+                    "Physical": -235.0
+                  }
+                },
+                {
+                  "Tilt": {
+                    "Physical": 45.0
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "fixture_collection": [
+              "104"
+            ],
+            "content": {
+              "Static": [
+                {
+                  "Pan": {
+                    "Physical": -30.0
+                  }
+                },
+                {
+                  "Tilt": {
+                    "Physical": -74.0
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "fixture_collection": [
+              "Group",
+              1
+            ],
+            "content": {
+              "Static": [
+                {
+                  "Dimmer": {
+                    "Clamped": 1.0
+                  }
+                },
+                {
+                  "Raw": [
+                    "ColorWheel1Spin",
+                    {
+                      "Clamped": 0.98
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "Gobo1WheelSpin",
+                    {
+                      "Clamped": 0.4
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "Prism1",
+                    {
+                      "Clamped": 1.0
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "fixture_collection": [
+              "Group",
+              21
+            ],
+            "content": {
+              "Static": [
+                {
+                  "Dimmer": {
+                    "Clamped": 1.0
+                  }
+                },
+                {
+                  "Raw": [
+                    "ColorAdd_R",
+                    {
+                      "Clamped": 1.0
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "ColorAdd_G",
+                    {
+                      "Clamped": 1.0
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "ColorAdd_B",
+                    {
+                      "Clamped": 1.0
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "Gobo1WheelSpin",
+                    {
+                      "Clamped": 0.4
+                    }
+                  ]
+                }
               ]
             }
           }

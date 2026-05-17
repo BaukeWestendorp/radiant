@@ -1,5 +1,11 @@
 [
   {
+    "id": "12868bfd-2244-46a7-a611-d85beff9fe6d",
+    "slot_id": 3,
+    "name": "Position/Test",
+    "file_name": "position/test.lua"
+  },
+  {
     "id": "8d963ef7-75eb-419c-b5ab-a2398f42114d",
     "slot_id": 1,
     "name": "Dimmer/Sine",
@@ -10,11 +16,5 @@
     "slot_id": 2,
     "name": "Dimmer/PWM",
     "file_name": "dimmer/pwm.lua"
-  },
-  {
-    "id": "12868bfd-2244-46a7-a611-d85beff9fe6d",
-    "slot_id": 3,
-    "name": "Position/Test",
-    "file_name": "position/test.lua"
   }
 ]

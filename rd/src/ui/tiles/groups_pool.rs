@@ -1,0 +1,35 @@
+use gpui::{App, SharedString, Window};
+use rd_core::object::{Group, Object, ObjectKind, ObjectReference, SlotId};
+use rd_ui::PoolTileDelegate;
+
+use crate::state::AppState;
+
+pub struct GroupsPoolTile {}
+
+impl GroupsPoolTile {
+    pub fn new() -> Self {
+        Self {}
+    }
+
+    pub fn group<'a>(&self, slot_id: u32, cx: &'a App) -> Option<&'a Group> {
+        AppState::engine(cx)
+            .objects()
+            .get(ObjectReference::Slot(ObjectKind::Group, SlotId::new(slot_id).unwrap()))
+    }
+}
+
+impl PoolTileDelegate for GroupsPoolTile {
+    fn title(&self, _cx: &App) -> SharedString {
+        "Groups".into()
+    }
+
+    fn is_occupied(&self, slot_id: u32, cx: &App) -> bool {
+        self.group(slot_id, cx).is_some()
+    }
+
+    fn occupied_label(&self, slot_id: u32, cx: &App) -> String {
+        self.group(slot_id, cx).map(|group| group.name()).unwrap_or("<unknown>").to_string()
+    }
+
+    fn on_activate_slot(&mut self, _slot_id: u32, _window: &mut Window, _cx: &mut App) {}
+}

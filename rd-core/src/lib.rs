@@ -1,23 +1,29 @@
-use std::{path::PathBuf, sync::Arc, thread};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+    thread,
+};
 
 use crate::{
     effect::EffectAgent, object::ObjectRegistry, output::OutputAgent, programmer::Programmer,
     showfile::Showfile,
 };
 
+use zeevonk::{Zeevonk, project::ProjectFile};
+
 pub mod compositor;
 pub mod effect;
-pub mod lua;
+mod error;
+mod lua;
 pub mod object;
 pub mod output;
 pub mod parameter;
 pub mod programmer;
 pub mod showfile;
 
-mod error;
-
 pub use error::*;
-use zeevonk::{Zeevonk, project::ProjectFile};
+
+pub use ::zeevonk as zv;
 
 pub struct Engine {
     showfile: Arc<Showfile>,
@@ -86,5 +92,9 @@ impl Engine {
                 let _ = output_agent;
             }
         });
+    }
+
+    pub fn save(&self, showfile_path: &Path) -> Result<(), crate::Error> {
+        self.showfile().save_to_dir(self.objects(), showfile_path)
     }
 }

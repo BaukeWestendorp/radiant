@@ -1,0 +1,19 @@
+[package]
+name = "rd-ui"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+config = { version = "0.15.22", default-features = false, features = ["toml"] }
+gpui.workspace = true
+gpui_platform.workspace = true
+log.workspace = true
+serde.workspace = true
+smallvec = "1.15.1"
+toml = "1.1"
+uuid = { version = "1.20.0", features = ["v4"] }
+xdg = "3.0.0"
+
+[dev-dependencies]
+anyhow.workspace = true
+pretty_env_logger = "0.5.0"
