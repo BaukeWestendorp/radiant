@@ -1,18 +1,10 @@
-use std::{collections::HashMap, ops, path::PathBuf};
+use std::collections::HashMap;
 
-use anyhow::Context as _;
 use uuid::Uuid;
-use zeevonk::project::FixtureId;
 
-use crate::engine::{FixtureCollection, Object, ObjectId, ObjectReference, Parameter, SlotId};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(serde::Serialize, serde::Deserialize)]
-pub enum ObjectKind {
-    CueList,
-    Group,
-    Effect,
-}
+use crate::engine::{
+    FixtureCollection, Object, ObjectId, ObjectKind, ObjectReference, Parameter, SlotId,
+};
 
 #[derive(Debug, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -95,6 +87,7 @@ impl Recipe {
 /// Used to identify effect runners.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(serde::Serialize, serde::Deserialize)]
+#[derive(derive_more::Deref, derive_more::DerefMut)]
 pub struct RecipeId(pub Uuid);
 
 impl RecipeId {
@@ -108,20 +101,6 @@ impl RecipeId {
 
     pub fn into_inner(self) -> Uuid {
         self.0
-    }
-}
-
-impl ops::Deref for RecipeId {
-    type Target = Uuid;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl ops::DerefMut for RecipeId {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
     }
 }
 
@@ -141,79 +120,4 @@ pub enum EffectOptionValue {
     Integer(i64),
     Number(f64),
     String(String),
-}
-
-#[derive(Debug, Clone)]
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct Effect {
-    id: ObjectId,
-    slot_id: SlotId,
-    name: String,
-
-    file_name: String,
-}
-
-impl Effect {
-    pub fn file_name(&self) -> &str {
-        &self.file_name
-    }
-
-    pub fn load_lua_source(&self, showfile_path: Option<&PathBuf>) -> anyhow::Result<String> {
-        let showfile_path = showfile_path.context("no showfile to find lua files in")?;
-        let effect_path = showfile_path.join("obj/effects/").join(&self.file_name);
-        let source = std::fs::read_to_string(&effect_path)?;
-        Ok(source)
-    }
-}
-
-impl Object for Effect {
-    fn kind() -> ObjectKind {
-        ObjectKind::Effect
-    }
-
-    fn id(&self) -> ObjectId {
-        self.id
-    }
-
-    fn slot_id(&self) -> SlotId {
-        self.slot_id
-    }
-
-    fn name(&self) -> &str {
-        &self.name
-    }
-}
-
-#[derive(Debug, Clone)]
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct Group {
-    id: ObjectId,
-    slot_id: SlotId,
-    name: String,
-
-    fixture_ids: Vec<FixtureId>,
-}
-
-impl Group {
-    pub fn fixture_ids(&self) -> &[FixtureId] {
-        &self.fixture_ids
-    }
-}
-
-impl Object for Group {
-    fn kind() -> ObjectKind {
-        ObjectKind::Group
-    }
-
-    fn id(&self) -> ObjectId {
-        self.id
-    }
-
-    fn slot_id(&self) -> SlotId {
-        self.slot_id
-    }
-
-    fn name(&self) -> &str {
-        &self.name
-    }
 }

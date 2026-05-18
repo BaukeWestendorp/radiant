@@ -6,7 +6,7 @@ use rd_ui::{PoolTile, PoolTileDelegate, TileGrid, TileGridState, h_flex};
 
 use crate::{
     app::ui::tiles::{CueListsPoolTile, EffectPoolTile, FixturesTile, GroupPoolTile},
-    engine::{Engine, LayoutPage, LayoutTileKind},
+    engine::{Engine, LayoutPage, LayoutTileKind, Object, ObjectKind, SlotId},
 };
 
 const TILE_GRID_SIZE: Size<u32> = size(18, 12);
@@ -20,19 +20,21 @@ impl LayoutViewer {
     const CELL_SIZE: Size<Pixels> = size(px(80.0), px(80.0));
 
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let layout = Engine::global(cx).layout().clone();
+        let tile_grid = cx.new(|_| TileGridState::new());
 
-        let tile_grid = cx.new(|cx| match layout.read(cx).clone().current_page() {
-            Some(current_page) => {
-                page_to_tile_grid_state(current_page, Self::CELL_SIZE, window, cx)
-            }
-            None => TileGridState::new(),
-        });
+        let selected_page = cx.new(|_| None);
 
-        cx.observe_in(&layout, window, |this, layout, window, cx| {
-            let next_state = match layout.read(cx).clone().current_page() {
-                Some(current_page) => {
-                    page_to_tile_grid_state(current_page, Self::CELL_SIZE, window, cx)
+        let page_selector = cx.new(|cx| LayoutPageSelector::new(selected_page.clone(), window, cx));
+
+        cx.observe_in(&selected_page, window, |this, selected_page, window, cx| {
+            let next_state = match selected_page.read(cx) {
+                Some(selected_page) => {
+                    let selected_page = Engine::global(cx)
+                        .objects()
+                        .get::<LayoutPage>((ObjectKind::LayoutPage, *selected_page))
+                        .expect("selected page should exist")
+                        .clone();
+                    page_to_tile_grid_state(&selected_page, Self::CELL_SIZE, window, cx)
                 }
                 None => TileGridState::new(),
             };
@@ -43,8 +45,6 @@ impl LayoutViewer {
             })
         })
         .detach();
-
-        let page_selector = cx.new(|cx| LayoutPageSelector::new(window, cx));
 
         Self { tile_grid, page_selector }
     }
@@ -67,13 +67,20 @@ struct LayoutPageSelector {
 impl LayoutPageSelector {
     const CELL_SIZE: Size<Pixels> = size(px(120.0), px(80.0));
 
-    pub fn new(_window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(
+        selected_page: Entity<Option<SlotId>>,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
         Self {
             tile_grid: cx.new(|cx| {
                 let mut tile_grid = TileGridState::new();
                 tile_grid.add_tile(
-                    PoolTile::new(cx.new(|_| LayoutPageSelectorTile), Self::CELL_SIZE)
-                        .with_show_header_cell(false),
+                    PoolTile::new(
+                        cx.new(|_| LayoutPageSelectorTile::new(selected_page.clone())),
+                        Self::CELL_SIZE,
+                    )
+                    .with_show_header_cell(false),
                     bounds(point(0, 0), size(1, TILE_GRID_SIZE.height)),
                 );
                 tile_grid
@@ -95,26 +102,36 @@ impl Render for LayoutPageSelector {
     }
 }
 
-struct LayoutPageSelectorTile;
+struct LayoutPageSelectorTile {
+    selected_page: Entity<Option<SlotId>>,
+}
+
+impl LayoutPageSelectorTile {
+    fn new(selected_page: Entity<Option<SlotId>>) -> Self {
+        Self { selected_page }
+    }
+}
+
 impl PoolTileDelegate for LayoutPageSelectorTile {
     fn title(&self, _cx: &gpui::App) -> gpui::SharedString {
         "Layout Page Selector".into()
     }
 
     fn is_occupied(&self, slot_id: u32, cx: &gpui::App) -> bool {
-        let layout = Engine::global(cx).layout().read(cx);
-        layout.pages().get(slot_id.saturating_sub(1) as usize).is_some()
+        let Ok(slot_id) = SlotId::new(slot_id) else { return false };
+        Engine::global(cx).objects().get::<LayoutPage>((ObjectKind::LayoutPage, slot_id)).is_some()
     }
 
     fn occupied_content(&self, slot_id: u32, cx: &gpui::App) -> impl IntoElement {
-        let ix = slot_id.saturating_sub(1) as usize;
-        let layout = Engine::global(cx).layout().read(cx);
-
-        let label = match layout.pages().get(ix) {
-            Some(page) => page.label.to_string(),
-            None => "".to_string(),
+        let Ok(slot_id) = SlotId::new(slot_id) else { todo!() };
+        let Some(page) =
+            Engine::global(cx).objects().get::<LayoutPage>((ObjectKind::LayoutPage, slot_id))
+        else {
+            todo!();
         };
-        let is_selected = layout.current_page_ix() == ix;
+
+        let label = page.name().to_owned();
+        let is_selected = self.selected_page.read(cx).is_some_and(|sp| sp == slot_id);
 
         h_flex()
             .justify_center()
@@ -123,13 +140,15 @@ impl PoolTileDelegate for LayoutPageSelectorTile {
     }
 
     fn on_activate_slot(&mut self, slot_id: u32, _window: &mut Window, cx: &mut gpui::App) {
-        let layout = Engine::global(cx).layout().clone();
-        layout.update(cx, |layout, cx| {
-            if let Err(err) = layout.set_current_page(slot_id.saturating_sub(1) as usize) {
-                log::error!("Failed to set current layout page: {err}");
+        let slot_id = match SlotId::new(slot_id) {
+            Ok(id) => id,
+            Err(err) => {
+                log::error!("Failed to create SlotId from slot_id {slot_id}: {err}");
+                return;
             }
-            cx.notify();
-        });
+        };
+
+        self.selected_page.write(cx, Some(slot_id));
     }
 }
 
@@ -140,22 +159,22 @@ fn page_to_tile_grid_state(
     cx: &mut App,
 ) -> TileGridState {
     let mut tile_grid_state = TileGridState::new();
-    for tile in &page.tiles {
-        match tile.kind {
+    for tile in page.tiles() {
+        match tile.kind() {
             LayoutTileKind::Fixtures => {
-                tile_grid_state.add_tile(FixturesTile::new(window, cx), tile.bounds);
+                tile_grid_state.add_tile(FixturesTile::new(window, cx), tile.bounds());
             }
             LayoutTileKind::GroupPool => {
                 let delegate = cx.new(|_cx| GroupPoolTile::new());
-                tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), tile.bounds);
+                tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), tile.bounds());
             }
             LayoutTileKind::EffectPool => {
                 let delegate = cx.new(|_cx| EffectPoolTile::new());
-                tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), tile.bounds);
+                tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), tile.bounds());
             }
             LayoutTileKind::CueListPool => {
                 let delegate = cx.new(|_cx| CueListsPoolTile::new());
-                tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), tile.bounds);
+                tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), tile.bounds());
             }
         }
     }

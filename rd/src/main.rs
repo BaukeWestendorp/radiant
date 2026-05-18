@@ -2,8 +2,6 @@ use std::path::PathBuf;
 
 use clap::Parser;
 
-use crate::engine::Engine;
-
 mod app;
 mod engine;
 

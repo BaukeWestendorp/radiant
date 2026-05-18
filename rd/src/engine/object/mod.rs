@@ -9,9 +9,24 @@ use std::{
 use uuid::Uuid;
 use zeevonk::project::FixtureId;
 
-mod objects;
+mod cue_list;
+mod effect;
+mod group;
+mod layout_page;
 
-pub use objects::*;
+pub use cue_list::*;
+pub use effect::*;
+pub use group::*;
+pub use layout_page::*;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub enum ObjectKind {
+    CueList,
+    Group,
+    Effect,
+    LayoutPage,
+}
 
 pub trait Object: 'static + Send + Sync {
     fn kind() -> ObjectKind

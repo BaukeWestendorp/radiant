@@ -10,10 +10,13 @@ mod settings;
 mod ui;
 
 pub mod action {
-    use gpui::{App, KeyBinding, prelude::*};
+    use gpui::{App, KeyBinding, ReadGlobal, prelude::*};
     use rd_ui::{Root, SETTINGS_WINDOW_OPTIONS, SettingsAppExt as _};
 
-    use crate::app::settings::SettingsView;
+    use crate::{
+        app::settings::SettingsView,
+        engine::{Command, Engine},
+    };
 
     gpui::actions!([OpenSettings, Save]);
 
@@ -30,8 +33,13 @@ pub mod action {
             });
         });
 
-        cx.on_action::<Save>(|_, cx| {
-            todo!();
+        cx.on_action::<Save>(|_, cx| match Engine::global(cx).showfile_path() {
+            Some(path) => {
+                Engine::execute_on_global_and_log_err(Command::Save(path.to_path_buf()), cx);
+            }
+            None => {
+                log::error!("FIXME: implement saving new showfiles");
+            }
         });
     }
 }

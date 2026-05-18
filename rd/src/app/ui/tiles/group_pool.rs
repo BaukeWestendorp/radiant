@@ -1,7 +1,9 @@
-use gpui::{App, IntoElement, ReadGlobal, SharedString, Window, prelude::*};
+use gpui::{App, IntoElement, ReadGlobal, SharedString, UpdateGlobal, Window, prelude::*};
 use rd_ui::{PoolTileDelegate, h_flex};
 
-use crate::engine::{Engine, Group, Object as _, ObjectKind, ObjectReference, SlotId};
+use crate::engine::{
+    Engine, Group, Object as _, ObjectKind, ObjectReference, SelectionCommand, SlotId,
+};
 
 pub struct GroupPoolTile {}
 
@@ -39,10 +41,8 @@ impl PoolTileDelegate for GroupPoolTile {
         };
 
         let fixtures = group.fixture_ids().to_vec();
-        Engine::global(cx).selected_fixtures().clone().update(cx, |selection, cx| {
-            // FIXME: Make this a command.
-            *selection = fixtures;
-            cx.notify();
+        Engine::update_global(cx, |engine, cx| {
+            engine.execute(SelectionCommand::Add(fixtures.into()), cx).unwrap();
         });
     }
 }
