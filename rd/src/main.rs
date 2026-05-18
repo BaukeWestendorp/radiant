@@ -2,11 +2,10 @@ use std::path::PathBuf;
 
 use clap::Parser;
 
+use crate::engine::Engine;
+
 mod app;
-mod layout;
-mod settings;
-mod state;
-mod ui;
+mod engine;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
