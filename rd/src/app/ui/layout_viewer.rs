@@ -66,8 +66,8 @@ impl Render for LayoutViewer {
         div()
             .size_full()
             .flex()
-            .child(TileGrid::new(self.tile_grid.clone()))
             .child(self.page_selector.clone())
+            .child(TileGrid::new(self.tile_grid.clone()))
     }
 }
 

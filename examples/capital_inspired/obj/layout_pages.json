@@ -8,14 +8,14 @@
         "x": 0,
         "y": 0,
         "width": 8,
-        "height": 7,
+        "height": 11,
         "kind": "Fixtures"
       },
       {
-        "x": 8,
-        "y": 0,
-        "width": 10,
-        "height": 7,
+        "x": 0,
+        "y": 11,
+        "width": 8,
+        "height": 1,
         "kind": "GroupPool"
       }
     ]
