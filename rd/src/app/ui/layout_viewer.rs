@@ -23,7 +23,14 @@ impl LayoutViewer {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let tile_grid = cx.new(|_| TileGridState::new());
 
-        let selected_page = cx.new(|_| None);
+        let selected_page = cx.new(|cx| {
+            Engine::global(cx)
+                .engine()
+                .objects()
+                .get_all::<LayoutPage>()
+                .first()
+                .map(|lp| lp.slot_id())
+        });
 
         let page_selector = cx.new(|cx| LayoutPageSelector::new(selected_page.clone(), window, cx));
 
@@ -47,6 +54,8 @@ impl LayoutViewer {
             })
         })
         .detach();
+
+        selected_page.update(cx, |_, cx| cx.notify());
 
         Self { tile_grid, page_selector }
     }
