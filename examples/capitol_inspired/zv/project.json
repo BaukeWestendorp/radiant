@@ -79,58 +79,58 @@
         "address": { "universe": 1, "channel": 139 },
         "kind": {
           "gdtf_fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
-          "gdtf_dmx_mode": "Mode 4 Limited macro colors 8bit"
+          "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
         }
       },
       {
         "root_id": 202,
         "name": "Wash 2",
-        "address": { "universe": 1, "channel": 149 },
+        "address": { "universe": 1, "channel": 154 },
         "kind": {
           "gdtf_fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
-          "gdtf_dmx_mode": "Mode 4 Limited macro colors 8bit"
+          "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
         }
       },
       {
         "root_id": 203,
         "name": "Wash 3",
-        "address": { "universe": 1, "channel": 159 },
+        "address": { "universe": 1, "channel": 169 },
         "kind": {
           "gdtf_fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
-          "gdtf_dmx_mode": "Mode 4 Limited macro colors 8bit"
+          "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
         }
       },
       {
         "root_id": 204,
         "name": "Wash 4",
-        "address": { "universe": 1, "channel": 169 },
+        "address": { "universe": 1, "channel": 184 },
         "kind": {
           "gdtf_fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
-          "gdtf_dmx_mode": "Mode 4 Limited macro colors 8bit"
+          "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
         }
       },
       {
         "root_id": 205,
         "name": "Wash 5",
-        "address": { "universe": 1, "channel": 179 },
+        "address": { "universe": 1, "channel": 199 },
         "kind": {
           "gdtf_fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
-          "gdtf_dmx_mode": "Mode 4 Limited macro colors 8bit"
+          "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
         }
       },
       {
         "root_id": 206,
         "name": "Wash 6",
-        "address": { "universe": 1, "channel": 189 },
+        "address": { "universe": 1, "channel": 214 },
         "kind": {
           "gdtf_fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
-          "gdtf_dmx_mode": "Mode 4 Limited macro colors 8bit"
+          "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
         }
       },
       {
         "root_id": 301,
         "name": "LED1 1",
-        "address": { "universe": 1, "channel": 199 },
+        "address": { "universe": 1, "channel": 229 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -139,7 +139,7 @@
       {
         "root_id": 302,
         "name": "LED1 2",
-        "address": { "universe": 1, "channel": 203 },
+        "address": { "universe": 1, "channel": 233 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -148,7 +148,7 @@
       {
         "root_id": 303,
         "name": "LED1 3",
-        "address": { "universe": 1, "channel": 207 },
+        "address": { "universe": 1, "channel": 237 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -157,7 +157,7 @@
       {
         "root_id": 304,
         "name": "LED1 4",
-        "address": { "universe": 1, "channel": 211 },
+        "address": { "universe": 1, "channel": 241 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -166,7 +166,7 @@
       {
         "root_id": 305,
         "name": "LED1 5",
-        "address": { "universe": 1, "channel": 215 },
+        "address": { "universe": 1, "channel": 245 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -175,7 +175,7 @@
       {
         "root_id": 306,
         "name": "LED1 6",
-        "address": { "universe": 1, "channel": 219 },
+        "address": { "universe": 1, "channel": 249 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -184,7 +184,7 @@
       {
         "root_id": 307,
         "name": "LED1 7",
-        "address": { "universe": 1, "channel": 223 },
+        "address": { "universe": 1, "channel": 253 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -193,7 +193,7 @@
       {
         "root_id": 308,
         "name": "LED1 8",
-        "address": { "universe": 1, "channel": 227 },
+        "address": { "universe": 1, "channel": 257 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -202,7 +202,7 @@
       {
         "root_id": 309,
         "name": "LED1 9",
-        "address": { "universe": 1, "channel": 231 },
+        "address": { "universe": 1, "channel": 261 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -211,7 +211,7 @@
       {
         "root_id": 310,
         "name": "LED1 10",
-        "address": { "universe": 1, "channel": 235 },
+        "address": { "universe": 1, "channel": 265 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -220,7 +220,7 @@
       {
         "root_id": 311,
         "name": "LED1 11",
-        "address": { "universe": 1, "channel": 239 },
+        "address": { "universe": 1, "channel": 269 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -229,7 +229,7 @@
       {
         "root_id": 312,
         "name": "LED1 12",
-        "address": { "universe": 1, "channel": 243 },
+        "address": { "universe": 1, "channel": 273 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -238,7 +238,7 @@
       {
         "root_id": 313,
         "name": "LED1 13",
-        "address": { "universe": 1, "channel": 247 },
+        "address": { "universe": 1, "channel": 277 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -247,7 +247,7 @@
       {
         "root_id": 314,
         "name": "LED1 14",
-        "address": { "universe": 1, "channel": 251 },
+        "address": { "universe": 1, "channel": 281 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -256,7 +256,7 @@
       {
         "root_id": 315,
         "name": "LED1 15",
-        "address": { "universe": 1, "channel": 255 },
+        "address": { "universe": 1, "channel": 285 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -265,7 +265,7 @@
       {
         "root_id": 316,
         "name": "LED1 16",
-        "address": { "universe": 1, "channel": 259 },
+        "address": { "universe": 1, "channel": 289 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -274,7 +274,7 @@
       {
         "root_id": 317,
         "name": "LED1 17",
-        "address": { "universe": 1, "channel": 263 },
+        "address": { "universe": 1, "channel": 293 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -283,7 +283,7 @@
       {
         "root_id": 318,
         "name": "LED1 18",
-        "address": { "universe": 1, "channel": 267 },
+        "address": { "universe": 1, "channel": 297 },
         "kind": {
           "gdtf_fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
           "gdtf_dmx_mode": "Mode 1 RGBW"
@@ -292,7 +292,7 @@
       {
         "root_id": 401,
         "name": "LED2 1",
-        "address": { "universe": 1, "channel": 271 },
+        "address": { "universe": 1, "channel": 301 },
         "kind": {
           "gdtf_fixture_type_id": "6365583D-AEBF-46CE-9952-E1E9CAF26202",
           "gdtf_dmx_mode": "74: RGB RGB S"
@@ -301,7 +301,7 @@
       {
         "root_id": 402,
         "name": "LED2 2",
-        "address": { "universe": 1, "channel": 296 },
+        "address": { "universe": 1, "channel": 326 },
         "kind": {
           "gdtf_fixture_type_id": "6365583D-AEBF-46CE-9952-E1E9CAF26202",
           "gdtf_dmx_mode": "74: RGB RGB S"
@@ -310,7 +310,7 @@
       {
         "root_id": 403,
         "name": "LED2 3",
-        "address": { "universe": 1, "channel": 321 },
+        "address": { "universe": 1, "channel": 351 },
         "kind": {
           "gdtf_fixture_type_id": "1D3F5EC4-0208-4A99-A1F5-A07FC43CFFE8",
           "gdtf_dmx_mode": "26: RGB RGB S"
@@ -319,7 +319,7 @@
       {
         "root_id": 404,
         "name": "LED2 4",
-        "address": { "universe": 1, "channel": 346 },
+        "address": { "universe": 1, "channel": 376 },
         "kind": {
           "gdtf_fixture_type_id": "1D3F5EC4-0208-4A99-A1F5-A07FC43CFFE8",
           "gdtf_dmx_mode": "26: RGB RGB S"
@@ -328,7 +328,7 @@
       {
         "root_id": 501,
         "name": "Floor 1",
-        "address": { "universe": 1, "channel": 371 },
+        "address": { "universe": 1, "channel": 401 },
         "kind": {
           "gdtf_fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
           "gdtf_dmx_mode": "16 Bit Basic Mode"
@@ -337,7 +337,7 @@
       {
         "root_id": 502,
         "name": "Floor 2",
-        "address": { "universe": 1, "channel": 394 },
+        "address": { "universe": 1, "channel": 424 },
         "kind": {
           "gdtf_fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
           "gdtf_dmx_mode": "16 Bit Basic Mode"
@@ -346,7 +346,7 @@
       {
         "root_id": 503,
         "name": "Floor 3",
-        "address": { "universe": 1, "channel": 417 },
+        "address": { "universe": 1, "channel": 447 },
         "kind": {
           "gdtf_fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
           "gdtf_dmx_mode": "16 Bit Basic Mode"
@@ -355,25 +355,7 @@
       {
         "root_id": 504,
         "name": "Floor 4",
-        "address": { "universe": 1, "channel": 440 },
-        "kind": {
-          "gdtf_fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
-          "gdtf_dmx_mode": "16 Bit Basic Mode"
-        }
-      },
-      {
-        "root_id": 505,
-        "name": "Floor 5",
-        "address": { "universe": 1, "channel": 463 },
-        "kind": {
-          "gdtf_fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
-          "gdtf_dmx_mode": "16 Bit Basic Mode"
-        }
-      },
-      {
-        "root_id": 506,
-        "name": "Floor 6",
-        "address": { "universe": 1, "channel": 486 },
+        "address": { "universe": 1, "channel": 470 },
         "kind": {
           "gdtf_fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
           "gdtf_dmx_mode": "16 Bit Basic Mode"
