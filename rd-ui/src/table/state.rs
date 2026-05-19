@@ -3,7 +3,6 @@ use std::hash::Hash;
 
 use gpui::{
     App, Bounds, Context, Entity, FocusHandle, Focusable, Pixels, UniformListScrollHandle, Window,
-    px,
 };
 
 use crate::table::TableDelegate;
@@ -30,7 +29,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
     pub fn new(
         delegate: D,
         selection: Entity<Vec<D::RowId>>,
-        window: &mut Window,
+        _window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
         let rows = RowRegistry::from_delegate(&delegate, cx);
@@ -41,10 +40,6 @@ impl<D: TableDelegate + 'static> TableState<D> {
             let col = delegate.column(col_ix, cx);
             column_widths.push(col.min_width());
         }
-
-        cx.on_next_frame(window, |this, _, cx| {
-            this.reset_column_widths(cx);
-        });
 
         cx.observe(&selection, |this, selection, cx| {
             // When selection changes externally, ensure any selected rows that are nested
@@ -281,13 +276,17 @@ impl<D: TableDelegate + 'static> TableState<D> {
     pub(crate) fn reset_column_widths(&mut self, cx: &mut Context<Self>) {
         let col_count = self.delegate.column_count(cx);
         self.column_widths.clear();
-        let mut taken_width = px(0.0);
+        if col_count == 0 {
+            return;
+        }
+        let mut width_left_over = self.bounds.size.width;
         for col_ix in 0..col_count - 1 {
             let col = self.delegate.column(col_ix, cx);
             self.column_widths.push(col.min_width());
-            taken_width += col.min_width();
+            width_left_over -= col.min_width();
         }
-        self.column_widths.push(self.bounds.size.width - taken_width);
+        let last_col_min_width = self.delegate.column(col_count - 1, cx).min_width();
+        self.column_widths.push(last_col_min_width.max(width_left_over));
     }
 
     pub(crate) fn range_selection(&mut self) -> Vec<D::RowId> {

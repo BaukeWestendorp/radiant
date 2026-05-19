@@ -88,8 +88,11 @@ impl<D: TableDelegate + 'static> RenderOnce for Table<D> {
             .on_prepaint({
                 let state = self.state.clone();
                 move |bounds, _, cx| {
-                    state.update(cx, |state, _| {
-                        state.bounds = bounds;
+                    state.update(cx, |state, cx| {
+                        if state.bounds != bounds {
+                            state.bounds = bounds;
+                            state.reset_column_widths(cx)
+                        }
                     })
                 }
             })
