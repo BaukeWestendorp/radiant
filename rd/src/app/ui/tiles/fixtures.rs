@@ -1,4 +1,4 @@
-use gpui::{AnyElement, App, Bounds, Entity, ReadGlobal, SharedString, Window, prelude::*};
+use gpui::{AnyElement, App, Bounds, Entity, ReadGlobal, SharedString, Window, div, prelude::*};
 use rd_ui::{Table, TableState, TileDelegate};
 
 use crate::{app::ui::FixtureTableDelegate, engine::Engine};
@@ -28,6 +28,11 @@ impl TileDelegate for FixturesTile {
     }
 
     fn render_content(&self, _bounds: Bounds<u32>, _window: &mut Window, _cx: &App) -> AnyElement {
-        Table::new(self.table_state.clone()).into_any_element()
+        div()
+            .size_full()
+            .p_px()
+            .pt_0()
+            .child(Table::new(self.table_state.clone()))
+            .into_any_element()
     }
 }
