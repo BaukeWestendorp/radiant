@@ -4452,6 +4452,7 @@ dependencies = [
 [[package]]
 name = "rigger"
 version = "0.1.0"
+source = "git+https://github.com/BaukeWestendorp/rigger.git#f23e66e29d55e6c6009f0f5644002810cc55fca7"
 dependencies = [
  "glam",
  "quick-xml 0.39.4",
@@ -6999,6 +7000,7 @@ dependencies = [
 [[package]]
 name = "zeevonk"
 version = "0.3.0"
+source = "git+https://github.com/BaukeWestendorp/zeevonk.git#de1a80897effa994fe4c6d662d16e8065f2a5f7e"
 dependencies = [
  "arrayvec",
  "crossbeam-channel",
