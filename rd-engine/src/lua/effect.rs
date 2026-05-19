@@ -5,14 +5,14 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use crate::engine::{EffectOptionValue, Parameter, lua};
+use crate::{EffectOptionValue, Parameter, lua};
 
 pub struct OnUpdateContext {
     pub time_seconds: f64,
     pub frame_count: u64,
     pub delta_time: f64,
 
-    pub fixture_ids: Vec<lua::FixtureId>,
+    pub fixture_ids: Vec<lua::fixture_id::FixtureId>,
     pub options: HashMap<String, EffectOptionValue>,
 
     pub parameters: Arc<Mutex<HashMap<FixtureId, Vec<Parameter>>>>,
@@ -31,7 +31,7 @@ impl mlua::UserData for OnUpdateContext {
     fn add_methods<M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method_mut(
             "set_parameter",
-            |_, this, (fixture_id, parameter): (lua::FixtureId, Parameter)| {
+            |_, this, (fixture_id, parameter): (lua::fixture_id::FixtureId, Parameter)| {
                 this.parameters
                     .lock()
                     .unwrap()

@@ -1,7 +1,9 @@
 use gpui::{App, IntoElement, ReadGlobal, SharedString, Window, prelude::*};
 use rd_ui::{PoolTileDelegate, h_flex};
 
-use crate::engine::{CueList, Engine, Object, ObjectKind, ObjectReference, SlotId};
+use rd_engine::{CueList, Object, ObjectKind, ObjectReference, SlotId};
+
+use crate::engine::Engine;
 
 pub struct CueListsPoolTile {}
 
@@ -12,6 +14,7 @@ impl CueListsPoolTile {
 
     pub fn cue_list<'a>(&self, slot_id: u32, cx: &'a App) -> Option<&'a CueList> {
         Engine::global(cx)
+            .engine()
             .objects()
             .get(ObjectReference::Slot(ObjectKind::CueList, SlotId::new(slot_id).unwrap()))
     }

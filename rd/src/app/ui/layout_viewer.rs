@@ -2,11 +2,12 @@ pub use gpui::prelude::*;
 use gpui::{
     App, Entity, FontWeight, Pixels, ReadGlobal, Size, Window, bounds, div, point, px, size,
 };
+use rd_engine::{LayoutPage, LayoutTileKind, Object, ObjectKind, SlotId};
 use rd_ui::{PoolTile, PoolTileDelegate, TileGrid, TileGridState, h_flex};
 
 use crate::{
     app::ui::tiles::{CueListsPoolTile, EffectPoolTile, FixturesTile, GroupPoolTile},
-    engine::{Engine, LayoutPage, LayoutTileKind, Object, ObjectKind, SlotId},
+    engine::Engine,
 };
 
 const TILE_GRID_SIZE: Size<u32> = size(18, 12);
@@ -30,6 +31,7 @@ impl LayoutViewer {
             let next_state = match selected_page.read(cx) {
                 Some(selected_page) => {
                     let selected_page = Engine::global(cx)
+                        .engine()
                         .objects()
                         .get::<LayoutPage>((ObjectKind::LayoutPage, *selected_page))
                         .expect("selected page should exist")
@@ -119,13 +121,19 @@ impl PoolTileDelegate for LayoutPageSelectorTile {
 
     fn is_occupied(&self, slot_id: u32, cx: &gpui::App) -> bool {
         let Ok(slot_id) = SlotId::new(slot_id) else { return false };
-        Engine::global(cx).objects().get::<LayoutPage>((ObjectKind::LayoutPage, slot_id)).is_some()
+        Engine::global(cx)
+            .engine()
+            .objects()
+            .get::<LayoutPage>((ObjectKind::LayoutPage, slot_id))
+            .is_some()
     }
 
     fn occupied_content(&self, slot_id: u32, cx: &gpui::App) -> impl IntoElement {
         let Ok(slot_id) = SlotId::new(slot_id) else { todo!() };
-        let Some(page) =
-            Engine::global(cx).objects().get::<LayoutPage>((ObjectKind::LayoutPage, slot_id))
+        let Some(page) = Engine::global(cx)
+            .engine()
+            .objects()
+            .get::<LayoutPage>((ObjectKind::LayoutPage, slot_id))
         else {
             todo!();
         };
@@ -160,21 +168,22 @@ fn page_to_tile_grid_state(
 ) -> TileGridState {
     let mut tile_grid_state = TileGridState::new();
     for tile in page.tiles() {
+        let bounds = bounds(point(tile.x(), tile.y()), size(tile.width(), tile.height()));
         match tile.kind() {
             LayoutTileKind::Fixtures => {
-                tile_grid_state.add_tile(FixturesTile::new(window, cx), tile.bounds());
+                tile_grid_state.add_tile(FixturesTile::new(window, cx), bounds);
             }
             LayoutTileKind::GroupPool => {
                 let delegate = cx.new(|_cx| GroupPoolTile::new());
-                tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), tile.bounds());
+                tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), bounds);
             }
             LayoutTileKind::EffectPool => {
                 let delegate = cx.new(|_cx| EffectPoolTile::new());
-                tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), tile.bounds());
+                tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), bounds);
             }
             LayoutTileKind::CueListPool => {
                 let delegate = cx.new(|_cx| CueListsPoolTile::new());
-                tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), tile.bounds());
+                tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), bounds);
             }
         }
     }

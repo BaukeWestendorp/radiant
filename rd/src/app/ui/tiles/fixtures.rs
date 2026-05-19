@@ -13,7 +13,7 @@ impl FixturesTile {
             table_state: cx.new(|cx| {
                 TableState::new(
                     FixtureTableDelegate::new(window, cx),
-                    Engine::global(cx).selection(cx).fixtures().clone(),
+                    Engine::global(cx).selection().clone(),
                     window,
                     cx,
                 )

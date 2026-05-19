@@ -1,6 +1,6 @@
 use zeevonk::project::FixtureId;
 
-use crate::engine::{Object, ObjectId, ObjectKind, SlotId};
+use crate::{Object, ObjectId, ObjectKind, SlotId};
 
 #[derive(Debug, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]

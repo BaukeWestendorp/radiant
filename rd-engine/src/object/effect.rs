@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use anyhow::Context as _;
 
-use crate::engine::{Object, ObjectId, ObjectKind, SlotId};
+use crate::{Object, ObjectId, ObjectKind, SlotId};
 
 #[derive(Debug, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]

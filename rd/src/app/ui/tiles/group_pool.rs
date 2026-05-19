@@ -1,9 +1,9 @@
-use gpui::{App, IntoElement, ReadGlobal, SharedString, UpdateGlobal, Window, prelude::*};
+use gpui::{App, IntoElement, ReadGlobal, SharedString, Window, prelude::*};
 use rd_ui::{PoolTileDelegate, h_flex};
 
-use crate::engine::{
-    Engine, Group, Object as _, ObjectKind, ObjectReference, SelectionCommand, SlotId,
-};
+use rd_engine::{Group, Object as _, ObjectKind, ObjectReference, SelectionCommand, SlotId};
+
+use crate::engine::Engine;
 
 pub struct GroupPoolTile {}
 
@@ -14,6 +14,7 @@ impl GroupPoolTile {
 
     pub fn group<'a>(&self, slot_id: u32, cx: &'a App) -> Option<&'a Group> {
         Engine::global(cx)
+            .engine()
             .objects()
             .get(ObjectReference::Slot(ObjectKind::Group, SlotId::new(slot_id).unwrap()))
     }
@@ -41,8 +42,6 @@ impl PoolTileDelegate for GroupPoolTile {
         };
 
         let fixtures = group.fixture_ids().to_vec();
-        Engine::update_global(cx, |engine, cx| {
-            engine.execute(SelectionCommand::Add(fixtures.into()), cx).unwrap();
-        });
+        Engine::global(cx).engine().exec(SelectionCommand::Add(fixtures.into()));
     }
 }

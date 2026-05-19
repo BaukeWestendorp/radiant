@@ -1,13 +1,13 @@
 use std::{
-    sync::Arc,
+    sync::{Arc, RwLock},
     thread,
     time::{Duration, Instant},
 };
 
 use spin_sleep::SpinSleeper;
-use zeevonk::Zeevonk;
+use zeevonk::{Zeevonk, project::FixtureId};
 
-use crate::engine::{Composition, Compositor, EffectAgent, ObjectRegistry, Programmer};
+use crate::{Composition, Compositor, EffectAgent, ObjectRegistry, Programmer};
 
 const FRAME_TIME: f64 = 1.0 / 60.0;
 
@@ -16,6 +16,8 @@ pub struct OutputAgent {
     programmer: Arc<Programmer>,
     effect_agent: Arc<EffectAgent>,
     zeevonk: Arc<Zeevonk>,
+    selection: Arc<RwLock<Vec<FixtureId>>>,
+    highlight: Arc<RwLock<bool>>,
 }
 
 impl OutputAgent {
@@ -24,8 +26,10 @@ impl OutputAgent {
         programmer: Arc<Programmer>,
         effect_agent: Arc<EffectAgent>,
         zeevonk: Arc<Zeevonk>,
+        selection: Arc<RwLock<Vec<FixtureId>>>,
+        highlight: Arc<RwLock<bool>>,
     ) -> Self {
-        Self { objects, programmer, effect_agent, zeevonk }
+        Self { objects, programmer, effect_agent, zeevonk, selection, highlight }
     }
 
     pub fn start(&self) {
@@ -34,17 +38,24 @@ impl OutputAgent {
             let programmer = Arc::clone(&self.programmer);
             let effect_agent = Arc::clone(&self.effect_agent);
             let zeevonk = Arc::clone(&self.zeevonk);
+            let selection = Arc::clone(&self.selection);
+            let highlight = Arc::clone(&self.highlight);
             move || {
                 let sleeper = SpinSleeper::default();
                 let frame_duration = Duration::from_secs_f64(FRAME_TIME);
                 loop {
                     let deadline = Instant::now() + frame_duration;
 
-                    let compositor = Compositor::new(
+                    let mut compositor = Compositor::new(
                         Arc::clone(&objects),
                         Arc::clone(&programmer),
                         Arc::clone(&effect_agent),
                     );
+
+                    if *highlight.read().unwrap() {
+                        compositor.highlight_fixtures(selection.read().unwrap().clone());
+                    }
+
                     let Composition { attribute_values, highlighted_fixtures } =
                         match compositor.compose() {
                             Ok(comp) => comp,
@@ -53,10 +64,11 @@ impl OutputAgent {
                                 continue;
                             }
                         };
+
                     zeevonk.clear_attribute_values();
                     zeevonk.set_attribute_values(attribute_values);
                     zeevonk.clear_highlighted_fixtures();
-                    zeevonk.set_highlighted_fixtures(highlighted_fixtures.to_owned());
+                    zeevonk.set_highlighted_fixtures(highlighted_fixtures.to_vec());
 
                     sleeper.sleep_until(deadline);
                 }

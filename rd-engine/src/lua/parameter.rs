@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use zeevonk::{AttributeName, value::ClampedValue};
 
-use crate::engine::{Parameter, ParameterValue};
+use crate::{Parameter, ParameterValue};
 
 impl mlua::UserData for Parameter {}
 

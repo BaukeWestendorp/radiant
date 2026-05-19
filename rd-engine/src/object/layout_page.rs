@@ -1,6 +1,4 @@
-use gpui::Bounds;
-
-use crate::engine::{Object, ObjectId, ObjectKind, SlotId};
+use crate::{Object, ObjectId, ObjectKind, SlotId};
 
 #[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -39,17 +37,32 @@ impl Object for LayoutPage {
 #[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct LayoutTile {
-    bounds: Bounds<u32>,
     kind: LayoutTileKind,
+    width: u32,
+    height: u32,
+    x: u32,
+    y: u32,
 }
 
 impl LayoutTile {
-    pub fn bounds(&self) -> Bounds<u32> {
-        self.bounds
-    }
-
     pub fn kind(&self) -> &LayoutTileKind {
         &self.kind
+    }
+
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    pub fn x(&self) -> u32 {
+        self.x
+    }
+
+    pub fn y(&self) -> u32 {
+        self.y
     }
 }
 

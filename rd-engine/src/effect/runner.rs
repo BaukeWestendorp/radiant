@@ -1,7 +1,7 @@
 use mlua::ObjectLike;
 use zeevonk::project::FixtureId;
 
-use crate::engine::{
+use crate::{
     Effect, EffectOptionValue, FixtureCollection, ObjectRegistry, Parameter, RunningEffectId, lua,
 };
 

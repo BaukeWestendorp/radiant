@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use gpui::{Context, Entity, FocusHandle, Window, div, prelude::*, px, size};
+use rd_engine::RadiantEngine;
 use rd_ui::{Button, Icon, IconSize, IconVariant, TITLE_BAR_HEIGHT, h_flex};
 
 use crate::{app::ui::LayoutViewer, engine::Engine};
@@ -10,32 +11,35 @@ mod settings;
 mod ui;
 
 pub mod action {
-    use gpui::{App, KeyBinding, ReadGlobal, prelude::*};
+    use gpui::{App, KeyBinding, ReadGlobal as _, prelude::*};
+    use rd_engine::{Command, HighlightCommand};
     use rd_ui::{Root, SETTINGS_WINDOW_OPTIONS, SettingsAppExt as _};
 
-    use crate::{
-        app::settings::SettingsView,
-        engine::{Command, Engine},
-    };
+    use crate::{app::settings::SettingsView, engine::Engine};
 
-    gpui::actions!([OpenSettings, Save]);
+    gpui::actions!([SettingsOpen, Save, HighlightToggle]);
 
     pub(crate) fn init(cx: &mut App) {
         cx.bind_keys([
-            KeyBinding::new("secondary-,", OpenSettings, None),
+            KeyBinding::new("secondary-,", SettingsOpen, None),
             KeyBinding::new("secondary-s", Save, None),
+            KeyBinding::new("h", HighlightToggle, None),
         ]);
 
-        cx.on_action::<OpenSettings>(|_, cx| {
+        cx.on_action::<SettingsOpen>(|_, cx| {
             cx.open_settings(Some(SETTINGS_WINDOW_OPTIONS), |window, cx| {
                 cx.new(|cx| Root::new(cx.new(|cx| SettingsView::new(window, cx)), window, cx))
                     .into()
             });
         });
 
-        cx.on_action::<Save>(|_, cx| match Engine::global(cx).showfile_path() {
+        cx.on_action::<HighlightToggle>(|_, cx| {
+            Engine::global(cx).engine().exec(HighlightCommand::Toggle);
+        });
+
+        cx.on_action::<Save>(|_, cx| match Engine::global(cx).engine().showfile_path() {
             Some(path) => {
-                Engine::execute_on_global_and_log_err(Command::Save(path.to_path_buf()), cx);
+                Engine::global(cx).engine().exec(Command::Save(path.to_path_buf()));
             }
             None => {
                 log::error!("FIXME: implement saving new showfiles");
@@ -52,8 +56,9 @@ pub fn run(showfile_path: Option<PathBuf>) -> Result<()> {
         .run(|window, cx| {
             crate::app::action::init(cx);
 
-            let engine = Engine::new(showfile_path, cx).expect("should create engine");
-            engine.start();
+            let rd_engine = RadiantEngine::new(showfile_path).expect("should create engine");
+            rd_engine.start();
+            let engine = Engine::new(rd_engine, cx);
             cx.set_global(engine);
 
             cx.new(|cx| RadiantApp::new(window, cx).expect("should create app"))
@@ -105,7 +110,7 @@ impl Render for TitleBarContent {
             Button::new("settings")
                 .icon(Icon::new(IconVariant::Settings, IconSize::ExtraSmall))
                 .on_click(|_, window, cx| {
-                    window.dispatch_action(Box::new(action::OpenSettings), cx);
+                    window.dispatch_action(Box::new(action::SettingsOpen), cx);
                 }),
         )
     }

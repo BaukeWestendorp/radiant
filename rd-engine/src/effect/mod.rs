@@ -10,7 +10,7 @@ mod runner;
 
 pub use runner::*;
 
-use crate::engine::{Effect, FixtureCollection, ObjectReference, ObjectRegistry, RecipeId};
+use crate::{Effect, FixtureCollection, ObjectReference, ObjectRegistry, RecipeId};
 
 pub struct EffectAgent {
     objects: Arc<ObjectRegistry>,

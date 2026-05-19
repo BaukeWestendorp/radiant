@@ -1,7 +1,9 @@
 use gpui::{App, IntoElement, ReadGlobal, SharedString, Window, prelude::*};
 use rd_ui::{PoolTileDelegate, h_flex};
 
-use crate::engine::{Effect, Engine, Object as _, ObjectKind, ObjectReference, SlotId};
+use rd_engine::{Effect, Object as _, ObjectKind, ObjectReference, SlotId};
+
+use crate::engine::Engine;
 
 pub struct EffectPoolTile {}
 
@@ -12,6 +14,7 @@ impl EffectPoolTile {
 
     pub fn effect<'a>(&self, slot_id: u32, cx: &'a App) -> Option<&'a Effect> {
         Engine::global(cx)
+            .engine()
             .objects()
             .get(ObjectReference::Slot(ObjectKind::Effect, SlotId::new(slot_id).unwrap()))
     }

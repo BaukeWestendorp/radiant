@@ -2,9 +2,7 @@ use std::collections::HashMap;
 
 use uuid::Uuid;
 
-use crate::engine::{
-    FixtureCollection, Object, ObjectId, ObjectKind, ObjectReference, Parameter, SlotId,
-};
+use crate::{FixtureCollection, Object, ObjectId, ObjectKind, ObjectReference, Parameter, SlotId};
 
 #[derive(Debug, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]

@@ -5,29 +5,17 @@
     "name": "Groups",
     "tiles": [
       {
-        "bounds": {
-          "origin": {
-            "x": 0,
-            "y": 0
-          },
-          "size": {
-            "width": 8,
-            "height": 7
-          }
-        },
+        "x": 0,
+        "y": 0,
+        "width": 8,
+        "height": 7,
         "kind": "Fixtures"
       },
       {
-        "bounds": {
-          "origin": {
-            "x": 8,
-            "y": 0
-          },
-          "size": {
-            "width": 10,
-            "height": 7
-          }
-        },
+        "x": 8,
+        "y": 0,
+        "width": 10,
+        "height": 7,
         "kind": "GroupPool"
       }
     ]
@@ -38,29 +26,17 @@
     "name": "Effects",
     "tiles": [
       {
-        "bounds": {
-          "origin": {
-            "x": 0,
-            "y": 0
-          },
-          "size": {
-            "width": 8,
-            "height": 7
-          }
-        },
+        "x": 0,
+        "y": 0,
+        "width": 8,
+        "height": 7,
         "kind": "EffectPool"
       },
       {
-        "bounds": {
-          "origin": {
-            "x": 8,
-            "y": 0
-          },
-          "size": {
-            "width": 10,
-            "height": 7
-          }
-        },
+        "x": 8,
+        "y": 0,
+        "width": 10,
+        "height": 7,
         "kind": "CueListPool"
       }
     ]

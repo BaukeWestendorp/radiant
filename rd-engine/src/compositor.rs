@@ -8,7 +8,7 @@ use zeevonk::{
     value::AttributeValues,
 };
 
-use crate::engine::{Cue, CueList, EffectAgent, ObjectRegistry, Programmer, Recipe, RecipeContent};
+use crate::{Cue, CueList, EffectAgent, ObjectRegistry, Programmer, Recipe, RecipeContent};
 
 pub struct Compositor {
     highlighted_fixtures: Vec<FixtureId>,

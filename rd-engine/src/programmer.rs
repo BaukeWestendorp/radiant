@@ -6,7 +6,7 @@ use zeevonk::{
     value::AttributeValues,
 };
 
-use crate::engine::Parameter;
+use crate::Parameter;
 
 pub struct Programmer {
     // Stores the current values being programmed for each fixture.
