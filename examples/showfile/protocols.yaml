@@ -1,6 +1,0 @@
-sacn_sources:
-  - name: Radiant sACN Source
-    priority: 100
-    preview_data: false
-    type: !Unicast
-      destination_ip: 127.0.0.1
