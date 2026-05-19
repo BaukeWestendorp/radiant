@@ -8,9 +8,7 @@
         "recipes": [
           {
             "fixture_collection": ["Group", 1],
-            "content": {
-              "Effect": { "effect": ["Effect", 2] }
-            }
+            "content": {}
           }
         ]
       }

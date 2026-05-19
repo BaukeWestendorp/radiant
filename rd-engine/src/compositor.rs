@@ -85,7 +85,9 @@ impl Compositor {
         match recipe.content() {
             RecipeContent::Effect { effect } => {
                 let fixture_ids = recipe.fixture_collection().to_fixture_ids(&self.objects);
-                let effect = self.objects.get(*effect).unwrap();
+                let Some(effect) = self.objects.get(*effect) else {
+                    anyhow::bail!("Could not find effect '{:?}'", effect);
+                };
                 let mut parameters = HashMap::new();
                 self.effect_agent.tick(recipe.id(), effect, &fixture_ids, &mut parameters);
 
