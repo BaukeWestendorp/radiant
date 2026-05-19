@@ -46,6 +46,16 @@ pub enum ParameterValue {
     Physical(f32),
 }
 
+impl ParameterValue {
+    pub fn clamped(value: impl Into<ClampedValue>) -> Self {
+        Self::Clamped(value.into())
+    }
+
+    pub fn physical(value: impl Into<f32>) -> Self {
+        Self::Physical(value.into())
+    }
+}
+
 impl From<ParameterValue> for AttributeValue {
     fn from(value: ParameterValue) -> Self {
         match value {

@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, sync::Arc};
 
 use zeevonk::{
     project::{FixtureId, IntoFixtureId, IntoFixtureIds},
@@ -86,23 +83,16 @@ impl Compositor {
         attribute_values: &mut AttributeValues,
     ) -> anyhow::Result<()> {
         match recipe.content() {
-            RecipeContent::Effect { effect, options } => {
-                let fixture_collection = recipe.fixture_collection();
+            RecipeContent::Effect { effect } => {
+                let fixture_ids = recipe.fixture_collection().to_fixture_ids(&self.objects);
+                let effect = self.objects.get(*effect).unwrap();
+                let mut parameters = HashMap::new();
+                self.effect_agent.tick(recipe.id(), effect, &fixture_ids, &mut parameters);
 
-                let running_effect_id = recipe.id();
-                let runner = self.effect_agent.start_or_get_runner(
-                    running_effect_id.into(),
-                    *effect,
-                    fixture_collection.clone(),
-                )?;
-
-                let parameters = Arc::new(Mutex::new(HashMap::new()));
-                runner.call_on_update(options.clone(), parameters.clone());
-                let parameters = parameters.lock().unwrap();
-                for (fixture_id, params) in &*parameters {
+                for (fixture_id, params) in parameters {
                     for param in params {
                         for (attribute, value) in param.to_attribute_values() {
-                            attribute_values.set(*fixture_id, attribute, value);
+                            attribute_values.set(fixture_id, attribute, value);
                         }
                     }
                 }

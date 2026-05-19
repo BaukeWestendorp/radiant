@@ -1,0 +1,15 @@
+// Project tasks configuration. See https://zed.dev/docs/tasks for documentation.
+//
+// Example:
+[
+  {
+    "label": "example [capitol_inspired]",
+    "command": "cargo run -- examples/capitol_inspired",
+    "env": { "RUST_LOG": "info" },
+  },
+  {
+    "label": "example [single_universe]",
+    "command": "cargo run -- examples/single_universe",
+    "env": { "RUST_LOG": "info" },
+  },
+]

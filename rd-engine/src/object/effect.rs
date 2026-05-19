@@ -1,8 +1,4 @@
-use std::path::PathBuf;
-
-use anyhow::Context as _;
-
-use crate::{Object, ObjectId, ObjectKind, SlotId};
+use crate::{Object, ObjectId, ObjectKind, SlotId, builtin::BuiltinEffect};
 
 #[derive(Debug, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -11,19 +7,12 @@ pub struct Effect {
     slot_id: SlotId,
     name: String,
 
-    file_name: String,
+    kind: EffectKind,
 }
 
 impl Effect {
-    pub fn file_name(&self) -> &str {
-        &self.file_name
-    }
-
-    pub fn load_lua_source(&self, showfile_path: Option<&PathBuf>) -> anyhow::Result<String> {
-        let showfile_path = showfile_path.context("no showfile to find lua files in")?;
-        let effect_path = showfile_path.join("obj/effects/").join(&self.file_name);
-        let source = std::fs::read_to_string(&effect_path)?;
-        Ok(source)
+    pub fn kind(&self) -> &EffectKind {
+        &self.kind
     }
 }
 
@@ -43,4 +32,10 @@ impl Object for Effect {
     fn name(&self) -> &str {
         &self.name
     }
+}
+
+#[derive(Debug, Clone)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub enum EffectKind {
+    Builtin(BuiltinEffect),
 }

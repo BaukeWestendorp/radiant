@@ -4,6 +4,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use anyhow::Context as _;
 use zeevonk::{
     Zeevonk,
     project::{FixtureId, Patch, ProjectFile as ZeevonkProjectFile, Stage},
@@ -17,8 +18,6 @@ mod object;
 mod output;
 mod parameter;
 mod programmer;
-
-pub mod lua;
 
 pub use command::*;
 pub use compositor::*;
@@ -57,8 +56,11 @@ impl RadiantEngine {
                 return Ok(());
             }
 
-            let content = fs::read_to_string(&file)?;
-            let objects: Vec<T> = serde_json::from_str(&content)?;
+            let content = fs::read_to_string(&file)
+                .with_context(|| format!("Failed to read object file: {}", file.display()))?;
+            let objects: Vec<T> = serde_json::from_str(&content).with_context(|| {
+                format!("Failed to deserialize objects from: {}", file.display())
+            })?;
 
             for object in objects {
                 obj_registry.insert(object);
@@ -71,19 +73,30 @@ impl RadiantEngine {
 
         if let Some(path) = &showfile_path {
             // Load objects.
-            load_objects::<Effect>(&mut objects, path.join("obj/effects.json"))?;
-            load_objects::<Group>(&mut objects, path.join("obj/groups.json"))?;
-            load_objects::<CueList>(&mut objects, path.join("obj/cue_lists.json"))?;
-            load_objects::<LayoutPage>(&mut objects, path.join("obj/layout_pages.json"))?;
+            load_objects::<Effect>(&mut objects, path.join("obj/effects.json"))
+                .context("Failed to load effects object file")?;
+            load_objects::<Group>(&mut objects, path.join("obj/groups.json"))
+                .context("Failed to load groups object file")?;
+            load_objects::<CueList>(&mut objects, path.join("obj/cue_lists.json"))
+                .context("Failed to load cue lists object file")?;
+            load_objects::<LayoutPage>(&mut objects, path.join("obj/layout_pages.json"))
+                .context("Failed to load layout pages object file")?;
 
             // Load zeevonk project file.
-            zv_project_file = ZeevonkProjectFile::load_from_folder(&path.join("zv/"))?
+            zv_project_file = ZeevonkProjectFile::load_from_folder(&path.join("zv/"))
+                .with_context(|| {
+                    format!(
+                        "Failed to load Zeevonk project file from {}",
+                        path.join("zv/").display()
+                    )
+                })?;
         }
 
         let objects = Arc::new(objects);
-        let effect_agent = Arc::new(EffectAgent::new(Arc::clone(&objects), showfile_path.clone()));
+        let effect_agent = Arc::new(EffectAgent::new(Arc::clone(&objects)));
         let programmer = Arc::new(Programmer::new());
-        let zeevonk = Arc::new(Zeevonk::new(zv_project_file)?);
+        let zeevonk =
+            Arc::new(Zeevonk::new(zv_project_file).context("Failed to initialize Zeevonk engine")?);
         let selection = Arc::new(RwLock::new(Vec::new()));
         let highlight = Arc::new(RwLock::new(false));
         let output_agent = Arc::new(OutputAgent::new(

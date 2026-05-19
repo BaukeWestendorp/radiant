@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use uuid::Uuid;
 
 use crate::{FixtureCollection, Object, ObjectId, ObjectKind, ObjectReference, Parameter, SlotId};
@@ -105,17 +103,6 @@ impl RecipeId {
 #[derive(Debug, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub enum RecipeContent {
-    Effect { effect: ObjectReference, options: HashMap<String, EffectOptionValue> },
+    Effect { effect: ObjectReference },
     Static(Vec<Parameter>),
-}
-
-#[derive(Debug, Clone)]
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(untagged)]
-pub enum EffectOptionValue {
-    Nil,
-    Boolean(bool),
-    Integer(i64),
-    Number(f64),
-    String(String),
 }

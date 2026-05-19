@@ -1,7 +1,7 @@
 use std::time::Duration;
 
-use gpui::{App, Entity, Global, prelude::*};
-use rd_engine::{Event, RadiantEngine, zv::project::FixtureId};
+use gpui::{App, Entity, Global, ReadGlobal as _, prelude::*};
+use rd_engine::{Event, RadiantEngine, SelectionCommand, zv::project::FixtureId};
 
 pub struct Engine {
     engine: RadiantEngine,
@@ -31,6 +31,14 @@ impl Engine {
                     cx.background_executor().timer(Duration::from_secs_f32(1.0 / 60.0)).await;
                 }
             }
+        })
+        .detach();
+
+        cx.observe(&selection, |selection, cx| {
+            let selection = selection.read(cx).clone();
+            Engine::global(cx)
+                .engine()
+                .exec_without_emit(SelectionCommand::Overwrite(selection.into()));
         })
         .detach();
 

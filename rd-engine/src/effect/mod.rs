@@ -1,105 +1,119 @@
 use std::{
     collections::HashMap,
-    path::PathBuf,
-    sync::{Arc, RwLock},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicU64, Ordering},
+    },
+    time::Instant,
 };
 
-use uuid::Uuid;
+pub mod builtin;
 
-mod runner;
+use zeevonk::project::FixtureId;
 
-pub use runner::*;
-
-use crate::{Effect, FixtureCollection, ObjectReference, ObjectRegistry, RecipeId};
+use crate::{Effect, EffectKind, Object as _, ObjectId, ObjectRegistry, Parameter, RecipeId};
 
 pub struct EffectAgent {
     objects: Arc<ObjectRegistry>,
 
-    running_effects: RwLock<HashMap<RunningEffectId, Arc<EffectRunner>>>,
-
-    showfile_path: Option<PathBuf>,
+    running_effects: Mutex<HashMap<(RecipeId, ObjectId), EffectState>>,
 }
 
 impl EffectAgent {
-    pub fn new(objects: Arc<ObjectRegistry>, showfile_path: Option<PathBuf>) -> Self {
-        Self { objects, running_effects: RwLock::new(HashMap::new()), showfile_path }
+    pub fn new(objects: Arc<ObjectRegistry>) -> Self {
+        Self { objects, running_effects: Mutex::new(HashMap::new()) }
     }
 
-    pub fn start_or_get_runner(
+    pub fn tick(
         &self,
-        id: RunningEffectId,
-        effect_ref: impl Into<ObjectReference>,
-        fixture_collection: impl Into<FixtureCollection>,
-    ) -> anyhow::Result<Arc<EffectRunner>> {
-        // Try to get the runner if it already exists.
-        {
-            let running_effects = self.running_effects.read().unwrap();
-            if let Some(runner) = running_effects.get(&id) {
-                return Ok(Arc::clone(runner));
+        recipe_id: RecipeId,
+        effect: &Effect,
+        fixture_ids: &[FixtureId],
+        parameters: &mut HashMap<FixtureId, Vec<Parameter>>,
+    ) {
+        let mut running_effects_guard = self.running_effects.lock().unwrap();
+        let effect_state =
+            running_effects_guard.entry((recipe_id, effect.id())).or_insert_with(|| EffectState {
+                objects: Arc::clone(&self.objects),
+                effect_id: effect.id(),
+                start_time: Instant::now(),
+                last_update_time: Mutex::new(Instant::now()),
+                frame_count: AtomicU64::new(0),
+            });
+
+        effect_state.tick(fixture_ids, parameters)
+    }
+}
+
+struct EffectState {
+    objects: Arc<ObjectRegistry>,
+
+    effect_id: ObjectId,
+    start_time: Instant,
+    last_update_time: Mutex<Instant>,
+    frame_count: AtomicU64,
+}
+
+impl EffectState {
+    pub fn tick(
+        &self,
+        fixture_ids: &[FixtureId],
+        parameters: &mut HashMap<FixtureId, Vec<Parameter>>,
+    ) {
+        let now = Instant::now();
+        let mut last_update_time = self.last_update_time.lock().unwrap();
+        let delta = now.duration_since(*last_update_time);
+        *last_update_time = now;
+        let frame_count = self.frame_count.fetch_add(1, Ordering::SeqCst) + 1;
+
+        let context = OnUpdateContext {
+            time_seconds: now.duration_since(self.start_time).as_secs_f64(),
+            frame_count,
+            delta_time: delta.as_secs_f64(),
+
+            fixture_ids,
+
+            parameters,
+        };
+
+        if let Some(effect) = self.objects.get::<Effect>(self.effect_id) {
+            match effect.kind() {
+                EffectKind::Builtin(builtin) => {
+                    builtin.call_on_update(context);
+                }
             }
         }
-
-        // Otherwise, start a new runner.
-        let effect_ref = effect_ref.into();
-        let fixture_collection = fixture_collection.into();
-
-        let Some(effect) = self.objects.get::<Effect>(effect_ref) else {
-            log::warn!("effect not found in registry: {:?}", effect_ref);
-            anyhow::bail!("object not found: {effect_ref:?}");
-        };
-
-        let runner = Arc::new(EffectRunner::new(
-            id,
-            effect,
-            fixture_collection.into(),
-            Arc::clone(&self.objects),
-            self.showfile_path.as_ref(),
-        )?);
-
-        self.running_effects.write().unwrap().insert(id, runner.clone());
-
-        Ok(runner)
-    }
-
-    pub fn start_runner(
-        &self,
-        id: RunningEffectId,
-        effect_ref: impl Into<ObjectReference>,
-        fixture_collection: impl Into<FixtureCollection>,
-    ) -> anyhow::Result<Arc<EffectRunner>> {
-        let effect_ref = effect_ref.into();
-        let fixture_collection = fixture_collection.into();
-
-        let Some(effect) = self.objects.get::<Effect>(effect_ref) else {
-            log::warn!("effect not found in registry: {:?}", effect_ref);
-            anyhow::bail!("object not found: {effect_ref:?}");
-        };
-
-        let runner = Arc::new(EffectRunner::new(
-            id,
-            effect,
-            fixture_collection.into(),
-            Arc::clone(&self.objects),
-            self.showfile_path.as_ref(),
-        )?);
-
-        self.running_effects.write().unwrap().insert(id, runner.clone());
-
-        Ok(runner)
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct RunningEffectId(Uuid);
+pub struct OnUpdateContext<'a> {
+    time_seconds: f64,
+    frame_count: u64,
+    delta_time: f64,
 
-impl RunningEffectId {
-    pub fn new() -> Self {
-        Self(Uuid::new_v4())
-    }
+    fixture_ids: &'a [FixtureId],
+
+    parameters: &'a mut HashMap<FixtureId, Vec<Parameter>>,
 }
 
-impl From<RecipeId> for RunningEffectId {
-    fn from(recipe_id: RecipeId) -> Self {
-        Self(recipe_id.0)
+impl<'a> OnUpdateContext<'a> {
+    pub fn time_seconds(&self) -> f64 {
+        self.time_seconds
+    }
+
+    pub fn frame_count(&self) -> u64 {
+        self.frame_count
+    }
+
+    pub fn delta_time(&self) -> f64 {
+        self.delta_time
+    }
+
+    pub fn fixture_ids(&self) -> &'a [FixtureId] {
+        self.fixture_ids
+    }
+
+    pub fn set_parameter(&mut self, fixture_id: &FixtureId, parameter: impl Into<Parameter>) {
+        self.parameters.entry(*fixture_id).or_insert_with(Vec::new).push(parameter.into());
     }
 }
