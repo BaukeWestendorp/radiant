@@ -56,7 +56,13 @@ pub fn run(showfile_path: Option<PathBuf>) -> Result<()> {
         .run(|window, cx| {
             crate::app::action::init(cx);
 
-            let rd_engine = RadiantEngine::new(showfile_path).expect("should create engine");
+            let rd_engine = match RadiantEngine::new(showfile_path) {
+                Ok(rd_engine) => rd_engine,
+                Err(err) => {
+                    log::error!("Could not load showfile: {err}");
+                    RadiantEngine::new(None).expect("should create new showfile")
+                }
+            };
             rd_engine.start();
             let engine = Engine::new(rd_engine, cx);
             cx.set_global(engine);
