@@ -133,7 +133,9 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
                     .active(|e| {
                         e.bg(cx.theme().bg_secondary.active())
                             .border_color(cx.theme().border_secondary.active())
+                            .top(cx.theme().button_depression)
                     })
+                    .when(cx.theme().shadow, |e| e.shadow_md())
                     .child(id_overlay)
                     .child(delegate.read(cx).occupied_content(slot_id, cx))
                     .on_click(move |_, window, cx| {
@@ -154,6 +156,7 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
                     .border_1()
                     .border_color(cx.theme().border_primary)
                     .rounded(cx.theme().radius)
+                    .when(cx.theme().shadow, |e| e.shadow_md())
                     .child(id_overlay)
                     .child(div().w(self.cell_size.width).h(self.cell_size.height));
 
