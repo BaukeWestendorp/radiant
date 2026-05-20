@@ -1,0 +1,15 @@
+[
+  {
+    "id": "3322f864-0dc9-4136-a5fb-c126fe03087e",
+    "slot_id": 1,
+    "name": "Executor 1",
+    "content": {
+      "CueList": {
+        "cue_list": ["CueList", 1],
+        "cue_index": 0
+      }
+    },
+    "enabled": true,
+    "master": 1.0
+  }
+]

@@ -81,6 +81,8 @@ impl RadiantEngine {
                 .context("Failed to load cue lists object file")?;
             load_objects::<LayoutPage>(&mut objects, path.join("obj/layout_pages.json"))
                 .context("Failed to load layout pages object file")?;
+            load_objects::<Executor>(&mut objects, path.join("obj/executors.json"))
+                .context("Failed to load layout pages object file")?;
 
             // Load zeevonk project file.
             zv_project_file = ZeevonkProjectFile::load_from_folder(&path.join("zv/"))

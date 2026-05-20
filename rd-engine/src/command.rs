@@ -1,7 +1,7 @@
 use std::{fs, path::PathBuf};
 
 use crate::{
-    CueList, Effect, Event, FixtureCollection, Group, LayoutPage, Object, ObjectRegistry,
+    CueList, Effect, Event, Executor, FixtureCollection, Group, LayoutPage, Object, ObjectRegistry,
     RadiantEngine,
 };
 
@@ -100,6 +100,7 @@ pub fn execute(command: Command, engine: &RadiantEngine, should_emit: bool) -> a
             save_objects_to_file::<Group>(obj, path.join("obj/groups.json"))?;
             save_objects_to_file::<CueList>(obj, path.join("obj/cue_lists.json"))?;
             save_objects_to_file::<LayoutPage>(obj, path.join("obj/layout_pages.json"))?;
+            save_objects_to_file::<Executor>(obj, path.join("obj/executors.json"))?;
 
             // Save zeevonk project file.
             engine.zeevonk.project().file().save_to_folder(&path.join("zv/"))?;
