@@ -39,16 +39,22 @@ impl Object for CueList {
 #[derive(Debug, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cue {
+    name: String,
+
     recipes: Vec<Recipe>,
 }
 
 impl Cue {
     pub fn new() -> Self {
-        Self { recipes: Vec::new() }
+        Self { name: "Cue".to_string(), recipes: Vec::new() }
     }
 
     pub fn recipes(&self) -> &[Recipe] {
         &self.recipes
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
     }
 }
 

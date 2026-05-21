@@ -1,0 +1,104 @@
+[
+  {
+    "id": "8939b274-7f95-4c5b-a789-55a47c61ee2c",
+    "slot_id": 1,
+    "name": "Main Page",
+    "executors": [
+      {
+        "content": {
+          "CueList": {
+            "cue_list": ["CueList", 1],
+            "cue_index": 0
+          }
+        },
+        "enabled": true,
+        "master": 0.75
+      },
+      {
+        "content": null,
+        "enabled": true,
+        "master": 1.0
+      },
+      {
+        "content": null,
+        "enabled": true,
+        "master": 1.0
+      },
+      {
+        "content": null,
+        "enabled": true,
+        "master": 1.0
+      },
+      {
+        "content": null,
+        "enabled": true,
+        "master": 1.0
+      },
+      {
+        "content": null,
+        "enabled": true,
+        "master": 1.0
+      },
+      {
+        "content": null,
+        "enabled": true,
+        "master": 1.0
+      },
+      {
+        "content": null,
+        "enabled": true,
+        "master": 1.0
+      },
+      {
+        "content": null,
+        "enabled": true,
+        "master": 1.0
+      },
+      {
+        "content": null,
+        "enabled": true,
+        "master": 1.0
+      },
+      {
+        "content": null,
+        "enabled": true,
+        "master": 1.0
+      },
+      {
+        "content": null,
+        "enabled": true,
+        "master": 1.0
+      },
+      {
+        "content": null,
+        "enabled": true,
+        "master": 1.0
+      },
+      {
+        "content": null,
+        "enabled": true,
+        "master": 1.0
+      },
+      {
+        "content": null,
+        "enabled": true,
+        "master": 1.0
+      },
+      {
+        "content": null,
+        "enabled": true,
+        "master": 1.0
+      },
+      {
+        "content": null,
+        "enabled": true,
+        "master": 1.0
+      },
+      {
+        "content": null,
+        "enabled": true,
+        "master": 1.0
+      }
+    ]
+  }
+]

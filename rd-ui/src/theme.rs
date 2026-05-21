@@ -128,7 +128,7 @@ impl Theme {
             accent: rgb(0x3bb2f6).into(),
             warning: rgb(0xffc94d).into(),
             error: rgb(0xed2320).into(),
-            success: rgb(0x3bb273).into(),
+            success: rgb(0x9ce152).into(),
 
             contrast: rgb(0x000000).into(),
 
@@ -169,7 +169,7 @@ impl Theme {
             accent: rgb(0x3bb2f6).into(),
             warning: rgb(0xffc94d).into(),
             error: rgb(0xed2320).into(),
-            success: rgb(0x3bb273).into(),
+            success: rgb(0x9ce152).into(),
 
             contrast: rgb(0xffffff).into(),
 

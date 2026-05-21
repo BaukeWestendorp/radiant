@@ -11,13 +11,13 @@ use zeevonk::project::FixtureId;
 
 mod cue_list;
 mod effect;
-mod executor;
+mod executor_page;
 mod group;
 mod layout_page;
 
 pub use cue_list::*;
 pub use effect::*;
-pub use executor::*;
+pub use executor_page::*;
 pub use group::*;
 pub use layout_page::*;
 
@@ -28,7 +28,7 @@ pub enum ObjectKind {
     Group,
     Effect,
     LayoutPage,
-    Executor,
+    ExecutorPage,
 }
 
 pub trait Object: 'static + Send + Sync {

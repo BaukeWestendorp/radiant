@@ -70,6 +70,7 @@ impl LayoutTile {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub enum LayoutTileKind {
     Fixtures,
+    Executors,
 
     GroupPool,
     EffectPool,

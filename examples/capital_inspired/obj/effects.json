@@ -1,5 +1,29 @@
 [
   {
+    "id": "0e63be52-a4d0-4e00-9a80-720616c3d84b",
+    "slot_id": 4,
+    "name": "Dim/Sawtooth",
+    "kind": {
+      "Builtin": {
+        "Modulator": {
+          "options": {
+            "attributes": [
+              "Dimmer",
+              "Tilt",
+              "ColorAdd_R"
+            ],
+            "waveform": "Sawtooth",
+            "frequency_hz": 1.0,
+            "phase_spread_deg": 180.0,
+            "min_value": 0.0,
+            "max_value": 1.0,
+            "exponent": 3.0
+          }
+        }
+      }
+    }
+  },
+  {
     "id": "3657179f-e1cd-4439-bf73-695b9e52979e",
     "slot_id": 1,
     "name": "Dim/Sine",
@@ -7,10 +31,38 @@
       "Builtin": {
         "Modulator": {
           "options": {
-            "attributes": ["Dimmer", "Tilt", "ColorAdd_R"],
+            "attributes": [
+              "Dimmer",
+              "Tilt",
+              "ColorAdd_R"
+            ],
             "waveform": "Sine",
             "frequency_hz": 0.5,
             "phase_spread_deg": 0.0,
+            "min_value": 0.0,
+            "max_value": 1.0,
+            "exponent": 1.0
+          }
+        }
+      }
+    }
+  },
+  {
+    "id": "afa5f1d5-956e-404c-8e50-3abda86723b1",
+    "slot_id": 3,
+    "name": "Dim/Triangle",
+    "kind": {
+      "Builtin": {
+        "Modulator": {
+          "options": {
+            "attributes": [
+              "Dimmer",
+              "Tilt",
+              "ColorAdd_R"
+            ],
+            "waveform": "Triangle",
+            "frequency_hz": 0.5,
+            "phase_spread_deg": 180.0,
             "min_value": 0.0,
             "max_value": 1.0,
             "exponent": 1.0
@@ -27,53 +79,21 @@
       "Builtin": {
         "Modulator": {
           "options": {
-            "attributes": ["Dimmer", "Tilt", "ColorAdd_R"],
-            "waveform": { "Square": { "duty_cycle": 0.2 } },
+            "attributes": [
+              "Dimmer",
+              "Tilt",
+              "ColorAdd_R"
+            ],
+            "waveform": {
+              "Square": {
+                "duty_cycle": 0.2
+              }
+            },
             "frequency_hz": 2.0,
-            "phase_spread_deg": 360,
+            "phase_spread_deg": 360.0,
             "min_value": 0.0,
             "max_value": 1.0,
             "exponent": 0.0
-          }
-        }
-      }
-    }
-  },
-  {
-    "id": "afa5f1d5-956e-404c-8e50-3abda86723b1",
-    "slot_id": 3,
-    "name": "Dim/Triangle",
-    "kind": {
-      "Builtin": {
-        "Modulator": {
-          "options": {
-            "attributes": ["Dimmer", "Tilt", "ColorAdd_R"],
-            "waveform": "Triangle",
-            "frequency_hz": 0.5,
-            "phase_spread_deg": 180,
-            "min_value": 0.0,
-            "max_value": 1.0,
-            "exponent": 1.0
-          }
-        }
-      }
-    }
-  },
-  {
-    "id": "0e63be52-a4d0-4e00-9a80-720616c3d84b",
-    "slot_id": 4,
-    "name": "Dim/Sawtooth",
-    "kind": {
-      "Builtin": {
-        "Modulator": {
-          "options": {
-            "attributes": ["Dimmer", "Tilt", "ColorAdd_R"],
-            "waveform": "Sawtooth",
-            "frequency_hz": 1.0,
-            "phase_spread_deg": 180,
-            "min_value": 0.0,
-            "max_value": 1.0,
-            "exponent": 3.0
           }
         }
       }

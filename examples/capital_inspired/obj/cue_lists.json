@@ -5,6 +5,194 @@
     "name": "Spot Intensity",
     "cues": [
       {
+        "name": "Main Cue",
+        "recipes": [
+          {
+            "fixture_collection": ["Group", 1],
+            "content": {
+              "Static": [
+                {
+                  "Dimmer": {
+                    "Clamped": 1.0
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Main Cue",
+        "recipes": [
+          {
+            "fixture_collection": ["Group", 1],
+            "content": {
+              "Static": [
+                {
+                  "Dimmer": {
+                    "Clamped": 1.0
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Main Cue",
+        "recipes": [
+          {
+            "fixture_collection": ["Group", 1],
+            "content": {
+              "Static": [
+                {
+                  "Dimmer": {
+                    "Clamped": 1.0
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Main Cue",
+        "recipes": [
+          {
+            "fixture_collection": ["Group", 1],
+            "content": {
+              "Static": [
+                {
+                  "Dimmer": {
+                    "Clamped": 1.0
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Main Cue",
+        "recipes": [
+          {
+            "fixture_collection": ["Group", 1],
+            "content": {
+              "Static": [
+                {
+                  "Dimmer": {
+                    "Clamped": 1.0
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Main Cue",
+        "recipes": [
+          {
+            "fixture_collection": ["Group", 1],
+            "content": {
+              "Static": [
+                {
+                  "Dimmer": {
+                    "Clamped": 1.0
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Main Cue",
+        "recipes": [
+          {
+            "fixture_collection": ["Group", 1],
+            "content": {
+              "Static": [
+                {
+                  "Dimmer": {
+                    "Clamped": 1.0
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Main Cue",
+        "recipes": [
+          {
+            "fixture_collection": ["Group", 1],
+            "content": {
+              "Static": [
+                {
+                  "Dimmer": {
+                    "Clamped": 1.0
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Main Cue",
+        "recipes": [
+          {
+            "fixture_collection": ["Group", 1],
+            "content": {
+              "Static": [
+                {
+                  "Dimmer": {
+                    "Clamped": 1.0
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Main Cue",
+        "recipes": [
+          {
+            "fixture_collection": ["Group", 1],
+            "content": {
+              "Static": [
+                {
+                  "Dimmer": {
+                    "Clamped": 1.0
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Main Cue",
+        "recipes": [
+          {
+            "fixture_collection": ["Group", 1],
+            "content": {
+              "Static": [
+                {
+                  "Dimmer": {
+                    "Clamped": 1.0
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Main Cue",
         "recipes": [
           {
             "fixture_collection": ["Group", 1],
