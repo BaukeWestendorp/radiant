@@ -79,7 +79,7 @@ impl RenderOnce for TileGrid {
                         .h(size.height as f32 * self.cell_size().height)
                         .occlude()
                         .overflow_hidden()
-                        .when(cx.theme().shadow, |e| e.shadow_md())
+                        .when(cx.theme().shadow, |e| e.shadow_xs())
                         .child(
                             v_flex().size_full().children(header).child(
                                 div()
