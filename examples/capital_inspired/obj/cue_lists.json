@@ -2,7 +2,7 @@
   {
     "id": "3322f864-0dc9-4136-a5fb-c126fe03087e",
     "slot_id": 1,
-    "name": "Spot Intensity",
+    "name": "SPOT Intensity",
     "cues": [
       {
         "name": "Main Cue",
@@ -20,12 +20,19 @@
             }
           }
         ]
-      },
+      }
+    ]
+  },
+  {
+    "id": "77417ce6-2726-4f5a-8c48-d76db73bd2af",
+    "slot_id": 2,
+    "name": "WASH Intensity",
+    "cues": [
       {
         "name": "Main Cue",
         "recipes": [
           {
-            "fixture_collection": ["Group", 1],
+            "fixture_collection": ["Group", 2],
             "content": {
               "Static": [
                 {
@@ -37,12 +44,19 @@
             }
           }
         ]
-      },
+      }
+    ]
+  },
+  {
+    "id": "90dcbd52-8f75-4c14-b594-92ac70414aca",
+    "slot_id": 3,
+    "name": "LED1 Intensity",
+    "cues": [
       {
         "name": "Main Cue",
         "recipes": [
           {
-            "fixture_collection": ["Group", 1],
+            "fixture_collection": ["Group", 3],
             "content": {
               "Static": [
                 {
@@ -54,12 +68,19 @@
             }
           }
         ]
-      },
+      }
+    ]
+  },
+  {
+    "id": "96a8d27d-3d2e-42b1-8628-871eeb71ab17",
+    "slot_id": 4,
+    "name": "LED2 Intensity",
+    "cues": [
       {
         "name": "Main Cue",
         "recipes": [
           {
-            "fixture_collection": ["Group", 1],
+            "fixture_collection": ["Group", 4],
             "content": {
               "Static": [
                 {
@@ -71,12 +92,19 @@
             }
           }
         ]
-      },
+      }
+    ]
+  },
+  {
+    "id": "eb2dcf11-d3f6-41a1-927b-7a968c2da76b",
+    "slot_id": 5,
+    "name": "FLOOR Intensity",
+    "cues": [
       {
         "name": "Main Cue",
         "recipes": [
           {
-            "fixture_collection": ["Group", 1],
+            "fixture_collection": ["Group", 5],
             "content": {
               "Static": [
                 {
@@ -88,18 +116,44 @@
             }
           }
         ]
-      },
+      }
+    ]
+  },
+  {
+    "id": "28592f44-152a-4fc3-819d-0d399389ddcb",
+    "slot_id": 6,
+    "name": "WASH Color",
+    "cues": [
       {
-        "name": "Main Cue",
+        "name": "Red",
         "recipes": [
           {
-            "fixture_collection": ["Group", 1],
+            "fixture_collection": ["Group", 2],
             "content": {
               "Static": [
                 {
-                  "Dimmer": {
-                    "Clamped": 1.0
-                  }
+                  "Raw": [
+                    "ColorAdd_R",
+                    {
+                      "Clamped": 1.0
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "ColorAdd_G",
+                    {
+                      "Clamped": 0.0
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "ColorAdd_B",
+                    {
+                      "Clamped": 0.0
+                    }
+                  ]
                 }
               ]
             }
@@ -107,16 +161,35 @@
         ]
       },
       {
-        "name": "Main Cue",
+        "name": "Green",
         "recipes": [
           {
-            "fixture_collection": ["Group", 1],
+            "fixture_collection": ["Group", 2],
             "content": {
               "Static": [
                 {
-                  "Dimmer": {
-                    "Clamped": 1.0
-                  }
+                  "Raw": [
+                    "ColorAdd_R",
+                    {
+                      "Clamped": 0.0
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "ColorAdd_G",
+                    {
+                      "Clamped": 1.0
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "ColorAdd_B",
+                    {
+                      "Clamped": 0.0
+                    }
+                  ]
                 }
               ]
             }
@@ -124,16 +197,35 @@
         ]
       },
       {
-        "name": "Main Cue",
+        "name": "Blue",
         "recipes": [
           {
-            "fixture_collection": ["Group", 1],
+            "fixture_collection": ["Group", 2],
             "content": {
               "Static": [
                 {
-                  "Dimmer": {
-                    "Clamped": 1.0
-                  }
+                  "Raw": [
+                    "ColorAdd_R",
+                    {
+                      "Clamped": 0.0
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "ColorAdd_G",
+                    {
+                      "Clamped": 0.0
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "ColorAdd_B",
+                    {
+                      "Clamped": 1.0
+                    }
+                  ]
                 }
               ]
             }
@@ -141,16 +233,35 @@
         ]
       },
       {
-        "name": "Main Cue",
+        "name": "Yellow",
         "recipes": [
           {
-            "fixture_collection": ["Group", 1],
+            "fixture_collection": ["Group", 2],
             "content": {
               "Static": [
                 {
-                  "Dimmer": {
-                    "Clamped": 1.0
-                  }
+                  "Raw": [
+                    "ColorAdd_R",
+                    {
+                      "Clamped": 1.0
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "ColorAdd_G",
+                    {
+                      "Clamped": 1.0
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "ColorAdd_B",
+                    {
+                      "Clamped": 0.0
+                    }
+                  ]
                 }
               ]
             }
@@ -158,16 +269,35 @@
         ]
       },
       {
-        "name": "Main Cue",
+        "name": "Cyan",
         "recipes": [
           {
-            "fixture_collection": ["Group", 1],
+            "fixture_collection": ["Group", 2],
             "content": {
               "Static": [
                 {
-                  "Dimmer": {
-                    "Clamped": 1.0
-                  }
+                  "Raw": [
+                    "ColorAdd_R",
+                    {
+                      "Clamped": 0.0
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "ColorAdd_G",
+                    {
+                      "Clamped": 1.0
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "ColorAdd_B",
+                    {
+                      "Clamped": 1.0
+                    }
+                  ]
                 }
               ]
             }
@@ -175,16 +305,35 @@
         ]
       },
       {
-        "name": "Main Cue",
+        "name": "Magenta",
         "recipes": [
           {
-            "fixture_collection": ["Group", 1],
+            "fixture_collection": ["Group", 2],
             "content": {
               "Static": [
                 {
-                  "Dimmer": {
-                    "Clamped": 1.0
-                  }
+                  "Raw": [
+                    "ColorAdd_R",
+                    {
+                      "Clamped": 1.0
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "ColorAdd_G",
+                    {
+                      "Clamped": 0.0
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "ColorAdd_B",
+                    {
+                      "Clamped": 1.0
+                    }
+                  ]
                 }
               ]
             }
@@ -192,16 +341,35 @@
         ]
       },
       {
-        "name": "Main Cue",
+        "name": "White",
         "recipes": [
           {
-            "fixture_collection": ["Group", 1],
+            "fixture_collection": ["Group", 2],
             "content": {
               "Static": [
                 {
-                  "Dimmer": {
-                    "Clamped": 1.0
-                  }
+                  "Raw": [
+                    "ColorAdd_R",
+                    {
+                      "Clamped": 1.0
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "ColorAdd_G",
+                    {
+                      "Clamped": 1.0
+                    }
+                  ]
+                },
+                {
+                  "Raw": [
+                    "ColorAdd_B",
+                    {
+                      "Clamped": 1.0
+                    }
+                  ]
                 }
               ]
             }

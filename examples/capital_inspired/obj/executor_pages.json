@@ -15,88 +15,113 @@
         "master": 0.75
       },
       {
+        "content": {
+          "CueList": {
+            "cue_list": ["CueList", 2],
+            "cue_index": 0
+          }
+        },
+        "enabled": false,
+        "master": 0.75
+      },
+      {
+        "content": {
+          "CueList": {
+            "cue_list": ["CueList", 3],
+            "cue_index": 0
+          }
+        },
+        "enabled": false,
+        "master": 0.75
+      },
+      {
+        "content": {
+          "CueList": {
+            "cue_list": ["CueList", 4],
+            "cue_index": 0
+          }
+        },
+        "enabled": false,
+        "master": 0.75
+      },
+      {
+        "content": {
+          "CueList": {
+            "cue_list": ["CueList", 5],
+            "cue_index": 0
+          }
+        },
+        "enabled": false,
+        "master": 0.75
+      },
+      {
         "content": null,
-        "enabled": true,
+        "enabled": false,
         "master": 1.0
       },
       {
         "content": null,
-        "enabled": true,
+        "enabled": false,
+        "master": 1.0
+      },
+      {
+        "content": {
+          "CueList": {
+            "cue_list": ["CueList", 6],
+            "cue_index": 0
+          }
+        },
+        "enabled": false,
+        "master": 0.75
+      },
+      {
+        "content": null,
+        "enabled": false,
         "master": 1.0
       },
       {
         "content": null,
-        "enabled": true,
+        "enabled": false,
         "master": 1.0
       },
       {
         "content": null,
-        "enabled": true,
+        "enabled": false,
         "master": 1.0
       },
       {
         "content": null,
-        "enabled": true,
+        "enabled": false,
         "master": 1.0
       },
       {
         "content": null,
-        "enabled": true,
+        "enabled": false,
         "master": 1.0
       },
       {
         "content": null,
-        "enabled": true,
+        "enabled": false,
         "master": 1.0
       },
       {
         "content": null,
-        "enabled": true,
+        "enabled": false,
         "master": 1.0
       },
       {
         "content": null,
-        "enabled": true,
+        "enabled": false,
         "master": 1.0
       },
       {
         "content": null,
-        "enabled": true,
+        "enabled": false,
         "master": 1.0
       },
       {
         "content": null,
-        "enabled": true,
-        "master": 1.0
-      },
-      {
-        "content": null,
-        "enabled": true,
-        "master": 1.0
-      },
-      {
-        "content": null,
-        "enabled": true,
-        "master": 1.0
-      },
-      {
-        "content": null,
-        "enabled": true,
-        "master": 1.0
-      },
-      {
-        "content": null,
-        "enabled": true,
-        "master": 1.0
-      },
-      {
-        "content": null,
-        "enabled": true,
-        "master": 1.0
-      },
-      {
-        "content": null,
-        "enabled": true,
+        "enabled": false,
         "master": 1.0
       }
     ]
