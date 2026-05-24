@@ -1,5 +1,7 @@
 use std::{fs, path::PathBuf};
 
+use anyhow::Context as _;
+
 use crate::{
     CueList, Effect, Event, ExecutorPage, FixtureCollection, Group, LayoutPage, Object,
     ObjectRegistry, RadiantEngine,
@@ -93,6 +95,13 @@ pub fn execute(command: Command, engine: &RadiantEngine, should_emit: bool) -> a
             }
 
             fs::create_dir_all(&path)?;
+
+            // Save config
+            serde_json::to_writer_pretty(
+                fs::File::open("config.json").context("failed to open config file")?,
+                engine.config(),
+            )
+            .context("failed to save config file")?;
 
             // Save object files.
             let obj = engine.objects();

@@ -1,0 +1,22 @@
+{
+  "trigger_mapping": {
+    "midi": [
+      {
+        "midi_device": "Virtual MIDI Driver Bus 1",
+        "triggers": [
+          {
+            "target": {
+              "Executor": {
+                "page": ["ExecutorPage", 1],
+                "executor": 1
+              }
+            },
+            "event": {
+              "ControlChange": 1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

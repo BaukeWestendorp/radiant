@@ -12,6 +12,7 @@ use zeevonk::{
 
 mod command;
 mod compositor;
+mod config;
 mod effect;
 mod event;
 mod object;
@@ -21,6 +22,7 @@ mod programmer;
 
 pub use command::*;
 pub use compositor::*;
+pub use config::*;
 pub use effect::*;
 pub use event::*;
 pub use object::*;
@@ -33,6 +35,7 @@ pub use zeevonk as zv;
 pub struct RadiantEngine {
     showfile_path: Option<PathBuf>,
 
+    config: Arc<Config>,
     objects: Arc<ObjectRegistry>,
     programmer: Arc<Programmer>,
     output_agent: Arc<OutputAgent>,
@@ -68,10 +71,17 @@ impl RadiantEngine {
             Ok(())
         }
 
+        let mut config = Config::default();
         let mut objects = ObjectRegistry::default();
         let mut zv_project_file = ZeevonkProjectFile::default();
 
         if let Some(path) = &showfile_path {
+            // Load config
+            config = serde_json::from_reader(
+                fs::File::open(path.join("config.json")).context("failed to open config file")?,
+            )
+            .context("failed to load config file")?;
+
             // Load objects.
             load_objects::<Effect>(&mut objects, path.join("obj/effects.json"))
                 .context("Failed to load effects object file")?;
@@ -94,6 +104,7 @@ impl RadiantEngine {
                 })?;
         }
 
+        let config = Arc::new(config);
         let objects = Arc::new(objects);
         let effect_agent = Arc::new(EffectAgent::new(Arc::clone(&objects)));
         let programmer = Arc::new(Programmer::new());
@@ -114,6 +125,8 @@ impl RadiantEngine {
 
         Ok(Self {
             showfile_path,
+
+            config,
             objects,
             programmer,
             output_agent,
@@ -151,6 +164,10 @@ impl RadiantEngine {
 
     pub fn showfile_path(&self) -> Option<&Path> {
         self.showfile_path.as_deref()
+    }
+
+    pub fn config(&self) -> &Config {
+        &self.config
     }
 
     pub fn objects(&self) -> &ObjectRegistry {
