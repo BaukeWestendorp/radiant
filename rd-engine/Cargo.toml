@@ -5,12 +5,10 @@ edition.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-env_logger = "0.11.10"
 log.workspace = true
 midir = "0.10.0"
 midly = { version = "0.5.3", default-features = false, features = ["std"] }
 serde.workspace = true
 serde_json.workspace = true
-tokio = { version = "1.52.3", features = ["rt"] }
 uuid = { version = "1.23.1", features = ["serde"] }
 zeevonk = { git = "https://github.com/BaukeWestendorp/zeevonk.git" }
