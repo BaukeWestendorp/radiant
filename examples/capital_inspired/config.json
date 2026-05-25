@@ -1,21 +1,407 @@
 {
-  "trigger_mapping": {
-    "midi": [
+  "triggers": {
+    "midi_mappings": [
       {
-        "midi_device": "Virtual MIDI Driver Bus 1",
-        "triggers": [
-          {
-            "target": {
-              "Executor": {
-                "page": ["ExecutorPage", 1],
-                "executor": 1
-              }
-            },
-            "event": {
-              "ControlChange": 1
-            }
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 0,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorMaster",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 1
           }
-        ]
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 64,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 1
+          },
+          "button": "Button1"
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 48,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 1
+          },
+          "button": "Button2"
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 32,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 1
+          },
+          "button": "Button3"
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 1,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorMaster",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 2
+          }
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 65,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 2
+          },
+          "button": "Button1"
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 49,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 2
+          },
+          "button": "Button2"
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 33,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 2
+          },
+          "button": "Button3"
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 2,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorMaster",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 3
+          }
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 66,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 3
+          },
+          "button": "Button1"
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 50,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 3
+          },
+          "button": "Button2"
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 34,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 3
+          },
+          "button": "Button3"
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 3,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorMaster",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 4
+          }
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 67,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 4
+          },
+          "button": "Button1"
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 51,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 4
+          },
+          "button": "Button2"
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 35,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 4
+          },
+          "button": "Button3"
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 4,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorMaster",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 5
+          }
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 68,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 5
+          },
+          "button": "Button1"
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 52,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 5
+          },
+          "button": "Button2"
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 36,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 5
+          },
+          "button": "Button3"
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 7,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorMaster",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 8
+          }
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 71,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 8
+          },
+          "button": "Button1"
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 55,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 8
+          },
+          "button": "Button2"
+        }
+      },
+      {
+        "device_name": "nanoKONTROL2 SLIDER/KNOB",
+        "channel": 0,
+        "message": {
+          "type": "ControlChange",
+          "controller": 39,
+          "value": { "from": 0, "to": 127 }
+        },
+        "target": {
+          "type": "ExecutorButton",
+          "executor_id": {
+            "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+            "executor": 8
+          },
+          "button": "Button3"
+        }
       }
     ]
   }

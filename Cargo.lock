@@ -4411,22 +4411,6 @@ name = "rd-engine"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "crossbeam-channel",
- "derive_more",
- "log",
- "serde",
- "serde_json",
- "spin_sleep",
- "thread-priority",
- "uuid",
- "zeevonk 0.3.0 (git+https://github.com/BaukeWestendorp/zeevonk.git)",
-]
-
-[[package]]
-name = "rd-engine-2"
-version = "0.1.0"
-dependencies = [
- "anyhow",
  "env_logger 0.11.10",
  "log",
  "midir",
@@ -4435,7 +4419,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "uuid",
- "zeevonk 0.3.0",
+ "zeevonk",
 ]
 
 [[package]]
@@ -7195,27 +7179,6 @@ dependencies = [
 [[package]]
 name = "zeevonk"
 version = "0.3.0"
-dependencies = [
- "arrayvec",
- "crossbeam-channel",
- "lazy_static",
- "libftd2xx",
- "log",
- "rigger",
- "serde",
- "serde_json",
- "socket2",
- "spin_sleep",
- "theymx",
- "thiserror 2.0.18",
- "thread-priority",
- "uuid",
-]
-
-[[package]]
-name = "zeevonk"
-version = "0.3.0"
-source = "git+https://github.com/BaukeWestendorp/zeevonk.git#de1a80897effa994fe4c6d662d16e8065f2a5f7e"
 dependencies = [
  "arrayvec",
  "crossbeam-channel",

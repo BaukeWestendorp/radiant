@@ -1,184 +1,126 @@
-use std::{
-    any::{Any, TypeId},
-    collections::BTreeMap,
-    fmt,
-    num::NonZeroU32,
-    ops,
-};
+use std::{collections::HashMap, fmt, num::NonZeroU32};
 
 use uuid::Uuid;
-use zeevonk::project::FixtureId;
 
 mod cue_list;
-mod effect;
 mod executor_page;
 mod group;
-mod layout_page;
 
 pub use cue_list::*;
-pub use effect::*;
 pub use executor_page::*;
 pub use group::*;
-pub use layout_page::*;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(serde::Serialize, serde::Deserialize)]
-pub enum ObjectKind {
-    CueList,
-    Group,
-    Effect,
-    LayoutPage,
-    ExecutorPage,
-}
-
-pub trait Object: 'static + Send + Sync {
-    fn kind() -> ObjectKind
-    where
-        Self: Sized;
+pub trait Object: serde::Serialize + for<'de> serde::Deserialize<'de> {
+    fn slot(&self) -> Slot;
 
     fn id(&self) -> ObjectId;
-
-    fn slot_id(&self) -> SlotId;
 
     fn name(&self) -> &str;
 }
 
-/// A generic container for any object type.
-pub struct ObjectContainer<T> {
-    items: BTreeMap<ObjectId, T>,
-    slot_index: BTreeMap<SlotId, ObjectId>,
+#[derive(Debug)]
+pub struct ObjectCollection<T> {
+    objects: Vec<T>,
+    object_id_index: HashMap<ObjectId, usize>,
+    slot_index: HashMap<Slot, usize>,
 }
 
-impl<T: Object> Default for ObjectContainer<T> {
+impl<T> ObjectCollection<T> {
+    pub fn all(&self) -> &Vec<T> {
+        &self.objects
+    }
+
+    pub fn get_by_object_id(&self, object_id: &ObjectId) -> anyhow::Result<&T> {
+        self.object_id_index.get(object_id).map(|&ix| &self.objects[ix]).ok_or_else(|| {
+            anyhow::anyhow!("{} not found with id: {}", std::any::type_name::<T>(), object_id)
+        })
+    }
+
+    pub(crate) fn get_by_object_id_mut(&mut self, object_id: &ObjectId) -> anyhow::Result<&mut T> {
+        self.object_id_index.get(object_id).map(|&ix| &mut self.objects[ix]).ok_or_else(|| {
+            anyhow::anyhow!("{} not found with id: {}", std::any::type_name::<T>(), object_id)
+        })
+    }
+
+    pub fn get_by_slot(&self, slot: &Slot) -> anyhow::Result<&T> {
+        self.slot_index.get(slot).map(|&ix| &self.objects[ix]).ok_or_else(|| {
+            anyhow::anyhow!("{} not found with slot: {}", std::any::type_name::<T>(), slot)
+        })
+    }
+
+    pub fn len(&self) -> usize {
+        self.objects.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.objects.is_empty()
+    }
+}
+
+impl<T> Default for ObjectCollection<T> {
     fn default() -> Self {
-        Self { items: Default::default(), slot_index: Default::default() }
-    }
-}
-
-impl<T: Object> ObjectContainer<T> {
-    pub fn insert(&mut self, item: T) {
-        let id = item.id();
-        let slot_id = item.slot_id();
-        self.slot_index.insert(slot_id, id);
-        self.items.insert(id, item);
-    }
-
-    pub fn get_by_object_id(&self, id: &ObjectId) -> Option<&T> {
-        self.items.get(id)
-    }
-
-    pub fn get_by_slot_id(&self, slot_id: &SlotId) -> Option<&T> {
-        let slot_id = slot_id.try_into().ok()?;
-        self.slot_index.get(slot_id).and_then(|id| self.items.get(id))
-    }
-
-    pub fn values(&self) -> impl Iterator<Item = &T> {
-        self.items.values()
-    }
-}
-
-#[derive(Default)]
-pub struct ObjectRegistry {
-    maps: BTreeMap<TypeId, Box<dyn Any + Send + Sync>>,
-}
-
-impl ObjectRegistry {
-    pub fn new() -> Self {
-        Self { maps: BTreeMap::new() }
-    }
-
-    pub fn insert<T: Object + 'static>(&mut self, item: T) {
-        let type_id = TypeId::of::<T>();
-        let container = self
-            .maps
-            .entry(type_id)
-            .or_insert_with(|| Box::new(ObjectContainer::<T>::default()))
-            .downcast_mut::<ObjectContainer<T>>()
-            .unwrap();
-
-        container.insert(item);
-    }
-
-    pub fn get<T: Object + 'static>(&self, obj: impl Into<ObjectReference>) -> Option<&T> {
-        let container = self.maps.get(&TypeId::of::<T>())?.downcast_ref::<ObjectContainer<T>>()?;
-
-        match obj.into() {
-            ObjectReference::ObjectId(id) => container.get_by_object_id(&id),
-            ObjectReference::Slot(kind, slot_id) => {
-                if T::kind() == kind {
-                    container.get_by_slot_id(&slot_id)
-                } else {
-                    None
-                }
-            }
+        Self {
+            objects: Default::default(),
+            object_id_index: Default::default(),
+            slot_index: Default::default(),
         }
     }
+}
 
-    pub fn get_all<T: Object + 'static>(&self) -> Vec<&T> {
-        match self.maps.get(&TypeId::of::<T>()) {
-            Some(boxed) => {
-                let container = boxed.downcast_ref::<ObjectContainer<T>>().unwrap();
-                container.values().collect()
-            }
-            None => Vec::new(),
-        }
-    }
-
-    pub fn get_id<T: Object>(&self, obj: impl Into<ObjectReference>) -> Option<ObjectId> {
-        Some(self.get::<T>(obj)?.id())
+impl<T> serde::Serialize for ObjectCollection<T>
+where
+    T: serde::Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.objects.serialize(serializer)
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+impl<'de, T> serde::Deserialize<'de> for ObjectCollection<T>
+where
+    T: serde::de::DeserializeOwned + Object,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let objects = Vec::<T>::deserialize(deserializer)?;
+        let mut object_id_index = HashMap::new();
+        let mut slot_index = HashMap::new();
+        for (ix, obj) in objects.iter().enumerate() {
+            object_id_index.insert(obj.id(), ix);
+            slot_index.insert(obj.slot(), ix);
+        }
+        Ok(Self { objects, object_id_index, slot_index })
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[derive(serde::Serialize, serde::Deserialize)]
-#[serde(transparent)]
 pub struct ObjectId(Uuid);
 
 impl ObjectId {
-    pub fn new() -> Self {
-        Self(Uuid::new_v4())
-    }
-
-    pub fn as_uuid(&self) -> &Uuid {
-        &self.0
-    }
-
-    pub fn into_inner(self) -> Uuid {
-        self.0
-    }
-}
-
-impl ops::Deref for ObjectId {
-    type Target = Uuid;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl ops::DerefMut for ObjectId {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+    pub fn new(uuid: Uuid) -> Self {
+        Self(uuid)
     }
 }
 
 impl fmt::Display for ObjectId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+        write!(f, "{}", self.0)
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub struct SlotId(NonZeroU32);
+pub struct Slot(NonZeroU32);
 
-impl SlotId {
-    pub fn new(slot_id: u32) -> Result<Self, anyhow::Error> {
-        NonZeroU32::new(slot_id).map(Self).ok_or_else(|| anyhow::anyhow!("slot id is zero"))
-    }
-
-    pub fn new_unchecked(slot_id: u32) -> Self {
-        Self(NonZeroU32::new(slot_id).expect("slot id cannot be zero"))
+impl Slot {
+    pub fn new(nz: NonZeroU32) -> Self {
+        Self(nz)
     }
 
     pub fn as_u32(&self) -> u32 {
@@ -186,129 +128,28 @@ impl SlotId {
     }
 }
 
-impl From<NonZeroU32> for SlotId {
-    fn from(nz: NonZeroU32) -> Self {
-        SlotId(nz)
-    }
-}
-
-impl From<SlotId> for NonZeroU32 {
-    fn from(slot_id: SlotId) -> Self {
-        slot_id.0
-    }
-}
-
-impl From<SlotId> for u32 {
-    fn from(slot_id: SlotId) -> Self {
-        slot_id.0.get()
-    }
-}
-
-impl TryFrom<u32> for SlotId {
-    type Error = anyhow::Error;
-
-    fn try_from(value: u32) -> Result<Self, Self::Error> {
-        SlotId::new(value)
-    }
-}
-
-impl TryFrom<i32> for SlotId {
-    type Error = anyhow::Error;
-
-    fn try_from(value: i32) -> Result<Self, Self::Error> {
-        if value > 0 { SlotId::new(value as u32) } else { Err(anyhow::anyhow!("slot id is zero")) }
-    }
-}
-
-impl From<SlotId> for i32 {
-    fn from(slot_id: SlotId) -> Self {
-        slot_id.0.get() as i32
-    }
-}
-
-impl ops::Deref for SlotId {
-    type Target = NonZeroU32;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl ops::DerefMut for SlotId {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl fmt::Display for SlotId {
+impl fmt::Display for Slot {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
+        write!(f, "{}", self.0)
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
-#[serde(untagged)]
-pub enum ObjectReference {
-    ObjectId(ObjectId),
-    Slot(ObjectKind, SlotId),
+pub(crate) struct Objects {
+    pub groups: ObjectCollection<Group>,
+    pub executor_pages: ObjectCollection<ExecutorPage>,
+    pub cue_lists: ObjectCollection<CueList>,
 }
 
-impl ObjectReference {
-    pub fn object_id(object_id: impl Into<ObjectId>) -> Self {
-        Self::ObjectId(object_id.into())
-    }
-
-    pub fn slot(kind: ObjectKind, slot_id: impl Into<SlotId>) -> Self {
-        Self::Slot(kind, slot_id.into())
-    }
-}
-
-impl From<ObjectId> for ObjectReference {
-    fn from(id: ObjectId) -> Self {
-        ObjectReference::ObjectId(id)
-    }
-}
-
-impl From<(ObjectKind, SlotId)> for ObjectReference {
-    fn from((kind, slot): (ObjectKind, SlotId)) -> Self {
-        ObjectReference::Slot(kind, slot)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(untagged)]
-pub enum FixtureCollection {
-    Group(ObjectReference),
-    Static(Vec<FixtureId>),
-}
-
-impl FixtureCollection {
-    pub fn to_fixture_ids<'a>(&'a self, objects: &'a ObjectRegistry) -> &'a [FixtureId] {
-        match self {
-            FixtureCollection::Group(obj) => {
-                objects.get::<Group>(*obj).map(|g| g.fixture_ids()).unwrap_or_default()
-            }
-            FixtureCollection::Static(fixture_ids) => &fixture_ids,
-        }
-    }
-}
-
-impl From<ObjectReference> for FixtureCollection {
-    fn from(reference: ObjectReference) -> Self {
-        FixtureCollection::Group(reference)
-    }
-}
-
-impl From<Vec<FixtureId>> for FixtureCollection {
-    fn from(ids: Vec<FixtureId>) -> Self {
-        FixtureCollection::Static(ids)
-    }
-}
-
-impl From<FixtureId> for FixtureCollection {
-    fn from(id: FixtureId) -> Self {
-        FixtureCollection::Static(vec![id])
+impl Objects {
+    pub fn executors(&self) -> impl Iterator<Item = (ExecutorId, &Executor)> {
+        self.executor_pages.all().iter().flat_map(|page| {
+            page.executors().iter().enumerate().map(move |(ix, exec)| {
+                let slot = Slot::new(NonZeroU32::new(ix as u32 + 1).unwrap());
+                let exec_id = ExecutorId::new(page.id(), slot);
+                (exec_id, exec)
+            })
+        })
     }
 }
