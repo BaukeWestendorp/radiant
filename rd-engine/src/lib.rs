@@ -2,6 +2,9 @@ use std::{
     collections::VecDeque,
     fs,
     path::{Path, PathBuf},
+    sync::Arc,
+    thread,
+    time::{Duration, Instant},
 };
 
 use anyhow::Context as _;
@@ -39,6 +42,108 @@ pub struct Engine {
 
     event_tx: crossbeam_channel::Sender<Event>,
     event_listener: EventListener,
+}
+
+/// Immutable snapshot of engine state for read-heavy clients (e.g. UI).
+#[derive(Debug, Clone)]
+pub struct EngineSnapshot {
+    config: Arc<Config>,
+    objects: Arc<Objects>,
+    selection: Arc<Selection>,
+}
+
+impl EngineSnapshot {
+    pub fn config(&self) -> &Config {
+        &self.config
+    }
+
+    pub fn objects(&self) -> &Objects {
+        &self.objects
+    }
+
+    pub fn selection(&self) -> &Selection {
+        &self.selection
+    }
+}
+
+/// Listener for engine state snapshots.
+#[derive(Debug, Clone)]
+pub struct SnapshotListener {
+    rx: crossbeam_channel::Receiver<Arc<EngineSnapshot>>,
+}
+
+impl SnapshotListener {
+    pub(crate) fn new(rx: crossbeam_channel::Receiver<Arc<EngineSnapshot>>) -> Self {
+        Self { rx }
+    }
+
+    pub fn recv(&self) -> Option<Arc<EngineSnapshot>> {
+        self.rx.recv().ok()
+    }
+
+    pub fn try_recv(&self) -> Option<Arc<EngineSnapshot>> {
+        self.rx.try_recv().ok()
+    }
+}
+
+/// Handle for driving a running engine instance from other threads.
+#[derive(Debug, Clone)]
+pub struct EngineHandle {
+    tx: crossbeam_channel::Sender<EngineThreadCommand>,
+    events: EventListener,
+    snapshots: SnapshotListener,
+}
+
+impl EngineHandle {
+    pub fn send(&self, command: Command) {
+        let _ = self.tx.send(EngineThreadCommand::Command(command));
+    }
+
+    pub fn shutdown(&self) {
+        let _ = self.tx.send(EngineThreadCommand::Shutdown);
+    }
+
+    pub fn event_listener(&self) -> &EventListener {
+        &self.events
+    }
+
+    pub fn snapshot_listener(&self) -> &SnapshotListener {
+        &self.snapshots
+    }
+}
+
+/// A running engine instance plus its background thread.
+pub struct EngineRunner {
+    handle: EngineHandle,
+    join: thread::JoinHandle<()>,
+}
+
+impl EngineRunner {
+    pub fn handle(&self) -> &EngineHandle {
+        &self.handle
+    }
+
+    pub fn join(self) -> thread::Result<()> {
+        self.join.join()
+    }
+}
+
+/// Options for running the engine loop.
+#[derive(Debug, Clone, Copy)]
+pub struct EngineRunOptions {
+    pub fps: u32,
+}
+
+impl Default for EngineRunOptions {
+    fn default() -> Self {
+        Self { fps: 60 }
+    }
+}
+
+#[derive(Debug)]
+enum EngineThreadCommand {
+    Command(Command),
+    Shutdown,
 }
 
 impl Engine {
@@ -88,29 +193,134 @@ impl Engine {
         })
     }
 
-    pub fn start(&mut self) {
+    pub fn spawn(self, options: EngineRunOptions) -> EngineRunner {
+        let (tx, rx) = crossbeam_channel::unbounded::<EngineThreadCommand>();
+        let (snapshot_tx, snapshot_rx) = crossbeam_channel::unbounded::<Arc<EngineSnapshot>>();
+
+        let handle = EngineHandle {
+            tx,
+            events: self.event_listener.clone(),
+            snapshots: SnapshotListener::new(snapshot_rx),
+        };
+
+        let join = thread::spawn(move || {
+            let mut engine = self;
+            engine.run_threaded(options, rx, snapshot_tx);
+        });
+
+        EngineRunner { handle, join }
+    }
+
+    fn run_threaded(
+        &mut self,
+        options: EngineRunOptions,
+        rx: crossbeam_channel::Receiver<EngineThreadCommand>,
+        snapshot_tx: crossbeam_channel::Sender<Arc<EngineSnapshot>>,
+    ) {
         self.zeevonk.start();
 
+        let fps = options.fps.max(1);
+        let period = Duration::from_secs_f64(1.0 / fps as f64);
+        let mut next_tick = Instant::now() + period;
+
+        let config = Arc::new(self.config.clone());
+        let mut objects = Arc::new(self.objects.clone());
+        let mut selection = Arc::new(self.selection.clone());
+
+        let _ = snapshot_tx.send(Arc::new(EngineSnapshot {
+            config: Arc::clone(&config),
+            objects: Arc::clone(&objects),
+            selection: Arc::clone(&selection),
+        }));
+
         loop {
-            std::thread::sleep(std::time::Duration::from_secs_f32(1.0 / 60.0));
+            let now = Instant::now();
+
+            if now < next_tick {
+                match rx.recv_timeout(next_tick - now) {
+                    Ok(EngineThreadCommand::Command(cmd)) => {
+                        self.command_queue.push_back(cmd);
+
+                        while let Ok(msg) = rx.try_recv() {
+                            match msg {
+                                EngineThreadCommand::Command(cmd) => {
+                                    self.command_queue.push_back(cmd)
+                                }
+                                EngineThreadCommand::Shutdown => return,
+                            }
+                        }
+
+                        let mut mutated_state = false;
+                        while let Some(queued_command) = self.command_queue.pop_front() {
+                            mutated_state = true;
+                            if let Err(err) = self.exec_command(queued_command) {
+                                log::error!("failed to execute queued command: {err}");
+                            }
+                        }
+
+                        if mutated_state {
+                            objects = Arc::new(self.objects.clone());
+                            selection = Arc::new(self.selection.clone());
+
+                            let _ = snapshot_tx.send(Arc::new(EngineSnapshot {
+                                config: Arc::clone(&config),
+                                objects: Arc::clone(&objects),
+                                selection: Arc::clone(&selection),
+                            }));
+                        }
+
+                        continue;
+                    }
+                    Ok(EngineThreadCommand::Shutdown) => break,
+                    Err(crossbeam_channel::RecvTimeoutError::Timeout) => {}
+                    Err(crossbeam_channel::RecvTimeoutError::Disconnected) => break,
+                }
+            }
+
+            let mut mutated_state = false;
 
             let trigger_commands = match self.pipeline.resolve_triggers() {
                 Ok(commands) => commands,
                 Err(err) => {
                     log::error!("failed to resolve triggers: {err}");
+                    let after = Instant::now();
+                    while next_tick <= after {
+                        next_tick += period;
+                    }
                     continue;
                 }
             };
 
-            if let Err(err) = self.exec_commands(trigger_commands) {
-                log::error!("failed to execute command: {err}");
-            };
+            if !trigger_commands.is_empty() {
+                mutated_state = true;
+                if let Err(err) = self.exec_commands(trigger_commands) {
+                    log::error!("failed to execute command: {err}");
+                };
+            }
+
+            while let Ok(msg) = rx.try_recv() {
+                match msg {
+                    EngineThreadCommand::Command(cmd) => self.command_queue.push_back(cmd),
+                    EngineThreadCommand::Shutdown => return,
+                }
+            }
+
+            while let Some(queued_command) = self.command_queue.pop_front() {
+                mutated_state = true;
+                if let Err(err) = self.exec_command(queued_command) {
+                    log::error!("failed to execute queued command: {err}");
+                }
+            }
 
             let output = match self.pipeline.compose(&self.objects, self.zeevonk.project().stage())
             {
                 Ok(output) => output,
                 Err(err) => {
                     log::error!("failed to composite: {err}");
+                    let after = Instant::now();
+                    while next_tick <= after {
+                        next_tick += period;
+                    }
                     continue;
                 }
             };
@@ -118,10 +328,20 @@ impl Engine {
             self.zeevonk.clear_attribute_values();
             self.zeevonk.set_attribute_values(output);
 
-            while let Some(queued_command) = self.command_queue.pop_front() {
-                if let Err(err) = self.exec_command(queued_command) {
-                    log::error!("failed to execute queued command: {err}");
-                }
+            if mutated_state {
+                objects = Arc::new(self.objects.clone());
+                selection = Arc::new(self.selection.clone());
+
+                let _ = snapshot_tx.send(Arc::new(EngineSnapshot {
+                    config: Arc::clone(&config),
+                    objects: Arc::clone(&objects),
+                    selection: Arc::clone(&selection),
+                }));
+            }
+
+            let after = Instant::now();
+            while next_tick <= after {
+                next_tick += period;
             }
         }
     }

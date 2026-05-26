@@ -18,7 +18,7 @@ pub trait Object: serde::Serialize + for<'de> serde::Deserialize<'de> {
     fn name(&self) -> &str;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ObjectCollection<T> {
     objects: Vec<T>,
     object_id_index: HashMap<ObjectId, usize>,
@@ -134,9 +134,10 @@ impl fmt::Display for Slot {
     }
 }
 
-#[derive(Default)]
+/// Collection of show objects (groups, executors, cue lists, etc.).
+#[derive(Debug, Default, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
-pub(crate) struct Objects {
+pub struct Objects {
     pub groups: ObjectCollection<Group>,
     pub executor_pages: ObjectCollection<ExecutorPage>,
     pub cue_lists: ObjectCollection<CueList>,

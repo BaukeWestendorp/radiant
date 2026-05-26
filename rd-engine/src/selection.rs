@@ -1,5 +1,6 @@
 use zeevonk::project::FixtureId;
 
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Selection {
     pub(crate) fixtures: Vec<FixtureId>,
 }
