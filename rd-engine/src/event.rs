@@ -2,6 +2,7 @@ use crate::ExecutorId;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Event {
+    SelectionChanged,
     ExecutorChanged(ExecutorId),
 }
 

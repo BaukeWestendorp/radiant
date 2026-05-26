@@ -1,7 +1,15 @@
+use zeevonk::project::FixtureId;
+
 use crate::{ExecutorButton, ExecutorId};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Command {
+    SelectionAdd { fixture_ids: Vec<FixtureId> },
+    SelectionRemove { fixture_ids: Vec<FixtureId> },
+    SelectionSet { fixture_ids: Vec<FixtureId> },
+    SelectionClear,
+    SelectionAll,
+
     ExecutorSetMaster { executor_id: ExecutorId, value: f32 },
     ExecutorToggleEnabled { executor_id: ExecutorId },
     ExecutorSetEnabled { executor_id: ExecutorId, value: bool },

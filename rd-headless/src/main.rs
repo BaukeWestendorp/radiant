@@ -28,7 +28,7 @@ fn main() -> anyhow::Result<()> {
         engine.start();
     });
     while let Some(event) = event_listener.recv() {
-        log::info!("event: {event:?}");
+        log::debug!("event: {event:?}");
     }
 
     Ok(())

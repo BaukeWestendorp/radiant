@@ -5,7 +5,10 @@ use std::{
 };
 
 use anyhow::Context as _;
-use zeevonk::{Zeevonk, project::ProjectFile as ZeevonkProjectFile};
+use zeevonk::{
+    Zeevonk,
+    project::{ProjectFile as ZeevonkProjectFile, Stage},
+};
 
 use crate::pipeline::Pipeline;
 
@@ -14,11 +17,13 @@ mod config;
 mod event;
 mod object;
 mod pipeline;
+mod selection;
 
 pub use cmd::*;
 pub use config::*;
 pub use event::*;
 pub use object::*;
+pub use selection::*;
 
 pub struct Engine {
     showfile_path: Option<PathBuf>,
@@ -26,6 +31,7 @@ pub struct Engine {
     config: Config,
     objects: Objects,
     pipeline: Pipeline,
+    selection: Selection,
 
     command_queue: VecDeque<Command>,
 
@@ -68,8 +74,9 @@ impl Engine {
             showfile_path,
 
             pipeline: Pipeline::new(&config).context("failed to build pipeline")?,
-            objects,
+            selection: Selection::new(),
             config,
+            objects,
 
             command_queue: VecDeque::new(),
 
@@ -123,6 +130,10 @@ impl Engine {
         self.showfile_path.as_deref()
     }
 
+    pub fn stage(&self) -> &Stage {
+        self.zeevonk.project().stage()
+    }
+
     pub fn config(&self) -> &Config {
         &self.config
     }
@@ -131,6 +142,10 @@ impl Engine {
         self.pipeline = Pipeline::new(&config).context("failed to build pipeline")?;
         self.config = config;
         Ok(())
+    }
+
+    pub fn selection(&self) -> &Selection {
+        &self.selection
     }
 
     pub fn groups(&self) -> &ObjectCollection<Group> {
@@ -154,6 +169,47 @@ impl Engine {
 
     fn exec_command(&mut self, command: Command) -> anyhow::Result<()> {
         match command {
+            Command::SelectionAdd { fixture_ids } => {
+                for fixture_id in fixture_ids {
+                    if !self.selection.contains(&fixture_id) {
+                        self.selection.fixtures.push(fixture_id);
+                    }
+                }
+                self.emit_event(Event::SelectionChanged);
+            }
+            Command::SelectionRemove { fixture_ids } => {
+                for fixture_id in fixture_ids {
+                    if let Some(pos) =
+                        self.selection.fixtures().iter().position(|x| x == &fixture_id)
+                    {
+                        self.selection.fixtures.remove(pos);
+                    }
+                }
+                self.emit_event(Event::SelectionChanged);
+            }
+            Command::SelectionSet { fixture_ids } => {
+                self.selection.fixtures.clear();
+                for fixture_id in fixture_ids {
+                    if !self.selection.contains(&fixture_id) {
+                        self.selection.fixtures.push(fixture_id);
+                    }
+                }
+                self.emit_event(Event::SelectionChanged);
+            }
+            Command::SelectionClear => {
+                self.selection.fixtures.clear();
+                self.emit_event(Event::SelectionChanged);
+            }
+            Command::SelectionAll => {
+                self.selection.fixtures.clear();
+                let fixture_ids = self.stage().fixtures().keys().copied().collect::<Vec<_>>();
+                for fixture_id in fixture_ids {
+                    if !self.selection.contains(&fixture_id) {
+                        self.selection.fixtures.push(fixture_id);
+                    }
+                }
+                self.emit_event(Event::SelectionChanged);
+            }
             Command::ExecutorSetMaster { executor_id, value } => {
                 let page = self.objects.executor_pages.get_by_object_id_mut(&executor_id.page)?;
                 let executor = page.executor_mut(executor_id.executor)?;
