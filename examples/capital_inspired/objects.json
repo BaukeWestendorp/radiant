@@ -1,14 +1,67 @@
 {
   "groups": [
     {
-      "id": "e0a60b2a-6800-4137-b026-7380e176f7b5",
+      "id": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6c",
       "slot": 1,
-      "name": "Group 1"
+      "name": "SPOT",
+      "fixture_ids": ["101", "102", "103", "104", "105", "106"]
     },
     {
-      "id": "baa6d4cb-c628-4a70-953d-47cb87d94747",
+      "id": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6d",
       "slot": 2,
-      "name": "Group 2"
+      "name": "WASH",
+      "fixture_ids": ["201", "202", "203", "204", "205", "206"]
+    },
+    {
+      "id": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6e",
+      "slot": 3,
+      "name": "LED1",
+      "fixture_ids": ["301", "302", "303", "304", "305", "306", "307", "308", "309", "310", "311", "312", "313", "314", "315", "316", "317", "318"]
+    },
+    {
+      "id": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6f",
+      "slot": 4,
+      "name": "LED2",
+      "fixture_ids": [
+        "401.8",
+        "401.7",
+        "401.6",
+        "401.5",
+        "401.4",
+        "401.3",
+        "401.2",
+        "401.1",
+        "402.8",
+        "402.7",
+        "402.6",
+        "402.5",
+        "402.4",
+        "402.3",
+        "402.2",
+        "402.1",
+        "403.8",
+        "403.7",
+        "403.6",
+        "403.5",
+        "403.4",
+        "403.3",
+        "403.2",
+        "403.1",
+        "404.8",
+        "404.7",
+        "404.6",
+        "404.5",
+        "404.4",
+        "404.3",
+        "404.2",
+        "404.1"
+      ]
+    },
+    {
+      "id": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a70",
+      "slot": 5,
+      "name": "FLOOR",
+      "fixture_ids": ["501", "502", "503", "504"]
     }
   ],
   "cue_lists": [
@@ -18,6 +71,7 @@
       "name": "SPOT Intensity",
       "cues": [
         {
+          "name": "Main Cue",
           "fade_time": 0,
           "values": {
             "101": { "Dimmer": { "Clamped": 1.0 } },
@@ -36,6 +90,7 @@
       "name": "WASH Intensity",
       "cues": [
         {
+          "name": "Main Cue",
           "fade_time": 0,
           "values": {
             "201": { "Dimmer": { "Clamped": 1.0 } },
@@ -54,6 +109,7 @@
       "name": "LED1 Intensity",
       "cues": [
         {
+          "name": "Main Cue",
           "fade_time": 0,
           "values": {
             "301": { "Dimmer": { "Clamped": 1.0 } },
@@ -84,6 +140,7 @@
       "name": "LED2 Intensity",
       "cues": [
         {
+          "name": "Main Cue",
           "fade_time": 0,
           "values": {
             "401.8": { "Dimmer": { "Clamped": 1.0 } },
@@ -128,6 +185,7 @@
       "name": "FLOOR Intensity",
       "cues": [
         {
+          "name": "Main Cue",
           "fade_time": 0,
           "values": {
             "501": { "Dimmer": { "Clamped": 1.0 } },
@@ -144,6 +202,7 @@
       "name": "Colors",
       "cues": [
         {
+          "name": "White",
           "fade_time": 1.0,
           "values": {
             "301": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
@@ -167,6 +226,7 @@
           }
         },
         {
+          "name": "Red",
           "fade_time": 1.0,
           "values": {
             "301": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
@@ -190,6 +250,7 @@
           }
         },
         {
+          "name": "Green",
           "fade_time": 1.0,
           "values": {
             "301": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
@@ -213,6 +274,7 @@
           }
         },
         {
+          "name": "Blue",
           "fade_time": 1.0,
           "values": {
             "301": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
@@ -236,6 +298,7 @@
           }
         },
         {
+          "name": "Yellow",
           "fade_time": 1.0,
           "values": {
             "301": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
@@ -434,6 +497,36 @@
           "content": null,
           "enabled": false,
           "master": 0.0
+        }
+      ]
+    }
+  ],
+  "layout_pages": [
+    {
+      "id": "cf209df8-5b16-474c-b592-5ce5126d1d01",
+      "slot": 12,
+      "name": "SHOW",
+      "tiles": [
+        {
+          "kind": "Executors",
+          "width": 18,
+          "height": 3,
+          "x": 0,
+          "y": 9
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "width": 8,
+          "height": 7,
+          "kind": "Fixtures"
+        },
+        {
+          "x": 8,
+          "y": 0,
+          "width": 10,
+          "height": 7,
+          "kind": "GroupPool"
         }
       ]
     }

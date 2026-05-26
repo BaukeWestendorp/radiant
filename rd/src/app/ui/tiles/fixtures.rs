@@ -1,7 +1,7 @@
 use gpui::{AnyElement, App, Bounds, Entity, ReadGlobal, SharedString, Window, div, prelude::*};
 use rd_ui::{Table, TableState, TileDelegate};
 
-use crate::{app::ui::FixtureTableDelegate, engine::Engine};
+use crate::{app::ui::FixtureTableDelegate, engine::EngineManager};
 
 pub struct FixturesTile {
     table_state: Entity<TableState<FixtureTableDelegate>>,
@@ -13,7 +13,7 @@ impl FixturesTile {
             table_state: cx.new(|cx| {
                 TableState::new(
                     FixtureTableDelegate::new(window, cx),
-                    Engine::global(cx).selection().clone(),
+                    EngineManager::global(cx).selection().clone(),
                     window,
                     cx,
                 )

@@ -2,20 +2,19 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use gpui::{Context, Entity, FocusHandle, Window, div, prelude::*, px, size};
-use rd_engine::RadiantEngine;
+use rd_engine::Engine;
 use rd_ui::{Button, Icon, IconSize, IconVariant, TITLE_BAR_HEIGHT, h_flex};
 
-use crate::{app::ui::LayoutViewer, engine::Engine};
+use crate::{app::ui::LayoutViewer, engine::EngineManager};
 
 mod settings;
 mod ui;
 
 pub mod action {
-    use gpui::{App, KeyBinding, ReadGlobal as _, prelude::*};
-    use rd_engine::{Command, HighlightCommand};
+    use gpui::{App, KeyBinding, prelude::*};
     use rd_ui::{Root, SETTINGS_WINDOW_OPTIONS, SettingsAppExt as _};
 
-    use crate::{app::settings::SettingsView, engine::Engine};
+    use crate::{app::settings::SettingsView, engine::EngineManager};
 
     gpui::actions!([SettingsOpen, Save, HighlightToggle]);
 
@@ -33,13 +32,13 @@ pub mod action {
             });
         });
 
-        cx.on_action::<HighlightToggle>(|_, cx| {
-            Engine::global(cx).engine().exec(HighlightCommand::Toggle);
+        cx.on_action::<HighlightToggle>(|_, _cx| {
+            todo!();
         });
 
-        cx.on_action::<Save>(|_, cx| match Engine::global(cx).engine().showfile_path() {
-            Some(path) => {
-                Engine::global(cx).engine().exec(Command::Save(path.to_path_buf()));
+        cx.on_action::<Save>(|_, cx| match EngineManager::snapshot(cx).showfile_path() {
+            Some(_path) => {
+                todo!();
             }
             None => {
                 log::error!("FIXME: implement saving new showfiles");
@@ -56,16 +55,16 @@ pub fn run(showfile_path: Option<PathBuf>) -> Result<()> {
         .run(|window, cx| {
             crate::app::action::init(cx);
 
-            let rd_engine = match RadiantEngine::new(showfile_path) {
+            let rd_engine = match Engine::new(showfile_path) {
                 Ok(rd_engine) => rd_engine,
                 Err(err) => {
                     log::error!("Could not load showfile: {err}");
-                    RadiantEngine::new(None).expect("should create new showfile")
+                    Engine::new(None).expect("should create new showfile")
                 }
             };
-            rd_engine.start();
-            let engine = Engine::new(rd_engine, cx);
-            cx.set_global(engine);
+
+            let engine_handle = EngineManager::new(rd_engine, cx);
+            cx.set_global(engine_handle);
 
             cx.new(|cx| RadiantApp::new(window, cx).expect("should create app"))
         });

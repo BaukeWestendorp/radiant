@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use rd_engine::{Engine, EngineRunOptions};
+use rd_engine::Engine;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -23,8 +23,8 @@ fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     let engine = Engine::new(Some(PathBuf::from(args.showfile_path))).unwrap();
-    let runner = engine.spawn(EngineRunOptions::default());
-    runner.join().unwrap();
+    let running = engine.spawn();
+    running.join().unwrap();
 
     Ok(())
 }

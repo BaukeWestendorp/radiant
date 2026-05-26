@@ -45,12 +45,17 @@ impl Object for CueList {
 #[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cue {
+    name: String,
     #[serde(with = "duration_as_seconds")]
     fade_time: Duration,
     values: AttributeValues,
 }
 
 impl Cue {
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
     pub fn fade_time(&self) -> Duration {
         self.fade_time
     }

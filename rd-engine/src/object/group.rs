@@ -1,3 +1,5 @@
+use zeevonk::project::FixtureId;
+
 use crate::{Object, ObjectId, Slot};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -6,11 +8,16 @@ pub struct Group {
     id: ObjectId,
     slot: Slot,
     name: String,
+    fixture_ids: Vec<FixtureId>,
 }
 
 impl Group {
     pub fn new(id: ObjectId, slot: Slot, name: String) -> Self {
-        Self { id, slot, name }
+        Self { id, slot, name, fixture_ids: Vec::new() }
+    }
+
+    pub fn fixture_ids(&self) -> &[FixtureId] {
+        &self.fixture_ids
     }
 }
 

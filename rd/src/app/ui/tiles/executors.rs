@@ -1,39 +1,36 @@
+use std::num::NonZeroU32;
+
 use gpui::{
-    AnyElement, App, Bounds, FontWeight, Pixels, ReadGlobal, SharedString, Size, Window, div,
-    prelude::*, relative, uniform_list,
+    AnyElement, App, Bounds, FontWeight, Pixels, SharedString, Size, Window, div, prelude::*,
+    relative, uniform_list,
 };
-use rd_engine::{
-    CueList, Executor, ExecutorContent, ExecutorPage, Object as _, ObjectKind, ObjectReference,
-    SlotId,
-};
+use rd_engine::{CueList, Executor, ExecutorContent, Object as _, Slot};
 use rd_ui::{ActiveTheme, TileDelegate, h_flex, v_flex};
 
-use crate::engine::Engine;
+use crate::engine::EngineManager;
 
 pub struct ExecutorsTile {
     // FIXME: Keep this in some settings per tile?
-    page_slot_id: SlotId,
+    page_slot: Slot,
 
     cell_size: Size<Pixels>,
 }
 
 impl ExecutorsTile {
     pub fn new(cell_size: Size<Pixels>, _window: &mut Window, _cx: &mut App) -> Self {
-        Self { page_slot_id: SlotId::new(1).unwrap(), cell_size }
+        Self { page_slot: Slot::new(NonZeroU32::new(1).unwrap()), cell_size }
     }
 }
 
 impl TileDelegate for ExecutorsTile {
     fn title(&self, _cx: &App) -> SharedString {
-        format!("Executors Page {}", self.page_slot_id).into()
+        format!("Executors Page {}", self.page_slot).into()
     }
 
     // FIXME: Can we pass cell_size to render_content?
     fn render_content(&self, bounds: Bounds<u32>, window: &mut Window, cx: &App) -> AnyElement {
-        let Some(page) = Engine::global(cx)
-            .engine()
-            .objects()
-            .get::<ExecutorPage>((ObjectKind::ExecutorPage, self.page_slot_id))
+        let Ok(page) =
+            EngineManager::snapshot(cx).objects().executor_pages().get_by_slot(&self.page_slot)
         else {
             todo!();
         };
@@ -57,15 +54,30 @@ impl TileDelegate for ExecutorsTile {
                                     .font_weight(FontWeight::BOLD)
                                     .bg(cx.theme().success)
                             })
-                            .child(format!("{}.{}", self.page_slot_id, ix + 1)),
+                            .child(format!("{}.{}", self.page_slot, ix + 1)),
                     );
 
+                let empty_executor =
+                    div().size_full().bg(cx.theme().bg_secondary).into_any_element();
+
                 let executor_content = match executor.content() {
-                    Some(ExecutorContent::CueList { cue_list, cue_index }) => {
-                        render_cue_list_content(executor, *cue_list, *cue_index, window, cx)
-                            .into_any_element()
+                    Some(ExecutorContent::CueList { cue_list, cue_index, .. }) => {
+                        match EngineManager::snapshot(cx)
+                            .objects()
+                            .cue_lists()
+                            .get_by_object_id(&cue_list)
+                        {
+                            Ok(cue_list) => {
+                                render_cue_list_content(executor, cue_list, *cue_index, window, cx)
+                                    .into_any_element()
+                            }
+                            Err(err) => {
+                                log::error!("{err}");
+                                empty_executor
+                            }
+                        }
                     }
-                    None => div().size_full().bg(cx.theme().bg_secondary).into_any_element(),
+                    None => empty_executor,
                 };
 
                 v_flex()
@@ -87,16 +99,11 @@ impl TileDelegate for ExecutorsTile {
 
 fn render_cue_list_content(
     executor: &Executor,
-    cue_list: ObjectReference,
+    cue_list: &CueList,
     cue_index: usize,
     _window: &Window,
     cx: &App,
 ) -> impl IntoElement {
-    let Some(cue_list) = Engine::global(cx).engine().objects().get::<CueList>(cue_list) else {
-        log::error!("CueList not found");
-        return div();
-    };
-
     let header = h_flex()
         .justify_center()
         .w_full()
@@ -123,7 +130,7 @@ fn render_cue_list_content(
                 .border_color(cx.theme().border_primary)
                 .font_weight(FontWeight::BOLD)
                 .text_xs()
-                .child(cue_list.slot_id().to_string()),
+                .child(cue_list.slot().to_string()),
         );
 
     let cue_names = cue_list

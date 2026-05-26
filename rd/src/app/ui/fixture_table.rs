@@ -1,8 +1,8 @@
-use gpui::{App, ReadGlobal as _, Window, div, prelude::*, px};
+use gpui::{App, Window, div, prelude::*, px};
 use rd_engine::zv::project::FixtureId;
 use rd_ui::{Column, TableDelegate, TableState};
 
-use crate::engine::Engine;
+use crate::engine::EngineManager;
 
 pub struct FixtureTableDelegate {
     columns: Vec<Column>,
@@ -31,14 +31,14 @@ impl TableDelegate for FixtureTableDelegate {
     }
 
     fn root_row_ids(&self, cx: &App) -> Vec<Self::RowId> {
-        let stage = Engine::global(cx).engine().stage();
+        let stage = EngineManager::snapshot(cx).stage();
         let mut row_ids = stage.roots().map(|(id, _)| *id).collect::<Vec<_>>();
         row_ids.sort();
         row_ids
     }
 
     fn row_children(&self, row_id: &Self::RowId, cx: &App) -> Vec<Self::RowId> {
-        let stage = Engine::global(cx).engine().stage();
+        let stage = EngineManager::snapshot(cx).stage();
         let mut sub_ids = stage.children(&row_id).map(|(id, _)| *id).collect::<Vec<_>>();
         sub_ids.sort();
         sub_ids
@@ -51,17 +51,14 @@ impl TableDelegate for FixtureTableDelegate {
         _window: &mut Window,
         cx: &App,
     ) -> impl IntoElement {
-        let stage = Engine::global(cx).engine().stage();
-
+        let stage = EngineManager::snapshot(cx).stage();
         let row = stage.fixture(row_id).unwrap();
         let col = &self.columns[col_ix];
-
         let content = match col.id().as_ref() {
             "id" => row.id().to_string(),
             "name" => row.name().to_string(),
             _ => "".to_string(),
         };
-
         div().mx_1().child(content)
     }
 }

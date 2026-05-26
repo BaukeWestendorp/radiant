@@ -5,10 +5,12 @@ use uuid::Uuid;
 mod cue_list;
 mod executor_page;
 mod group;
+mod layout_page;
 
 pub use cue_list::*;
 pub use executor_page::*;
 pub use group::*;
+pub use layout_page::*;
 
 pub trait Object: serde::Serialize + for<'de> serde::Deserialize<'de> {
     fn slot(&self) -> Slot;
@@ -134,13 +136,13 @@ impl fmt::Display for Slot {
     }
 }
 
-/// Collection of show objects (groups, executors, cue lists, etc.).
 #[derive(Debug, Default, Clone)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Objects {
-    pub groups: ObjectCollection<Group>,
-    pub executor_pages: ObjectCollection<ExecutorPage>,
-    pub cue_lists: ObjectCollection<CueList>,
+    pub(crate) groups: ObjectCollection<Group>,
+    pub(crate) executor_pages: ObjectCollection<ExecutorPage>,
+    pub(crate) cue_lists: ObjectCollection<CueList>,
+    pub(crate) layout_pages: ObjectCollection<LayoutPage>,
 }
 
 impl Objects {
@@ -152,5 +154,21 @@ impl Objects {
                 (exec_id, exec)
             })
         })
+    }
+
+    pub fn groups(&self) -> &ObjectCollection<Group> {
+        &self.groups
+    }
+
+    pub fn executor_pages(&self) -> &ObjectCollection<ExecutorPage> {
+        &self.executor_pages
+    }
+
+    pub fn cue_lists(&self) -> &ObjectCollection<CueList> {
+        &self.cue_lists
+    }
+
+    pub fn layout_pages(&self) -> &ObjectCollection<LayoutPage> {
+        &self.layout_pages
     }
 }

@@ -1,9 +1,11 @@
-use gpui::{App, IntoElement, ReadGlobal, SharedString, Window, prelude::*};
+use std::num::NonZeroU32;
+
+use gpui::{App, IntoElement, SharedString, Window, prelude::*};
 use rd_ui::{PoolTileDelegate, h_flex};
 
-use rd_engine::{Group, Object as _, ObjectKind, ObjectReference, SelectionCommand, SlotId};
+use rd_engine::{Command, Group, Object as _, Slot};
 
-use crate::engine::Engine;
+use crate::engine::EngineManager;
 
 pub struct GroupPoolTile {}
 
@@ -12,11 +14,11 @@ impl GroupPoolTile {
         Self {}
     }
 
-    pub fn group<'a>(&self, slot_id: u32, cx: &'a App) -> Option<&'a Group> {
-        Engine::global(cx)
-            .engine()
+    pub fn group<'a>(&self, slot: u32, cx: &'a App) -> anyhow::Result<&'a Group> {
+        EngineManager::snapshot(cx)
             .objects()
-            .get(ObjectReference::Slot(ObjectKind::Group, SlotId::new(slot_id).unwrap()))
+            .groups()
+            .get_by_slot(&Slot::new(NonZeroU32::new(slot).unwrap()))
     }
 }
 
@@ -25,23 +27,31 @@ impl PoolTileDelegate for GroupPoolTile {
         "Groups".into()
     }
 
-    fn is_occupied(&self, slot_id: u32, cx: &App) -> bool {
-        self.group(slot_id, cx).is_some()
+    fn is_occupied(&self, slot: u32, cx: &App) -> bool {
+        self.group(slot, cx).is_ok()
     }
 
-    fn occupied_content(&self, slot_id: u32, cx: &App) -> impl IntoElement {
-        let label =
-            self.group(slot_id, cx).map(|group| group.name()).unwrap_or("<unknown>").to_string();
-        h_flex().justify_center().size_full().child(label)
+    fn occupied_content(&self, slot: u32, cx: &App) -> impl IntoElement {
+        let name = match self.group(slot, cx) {
+            Ok(group) => group.name().to_string(),
+            Err(_) => "<unknown>".to_string(),
+        };
+
+        h_flex().justify_center().size_full().child(name)
     }
 
-    fn on_activate_slot(&mut self, slot_id: u32, _window: &mut Window, cx: &mut App) {
-        let Some(group) = self.group(slot_id, cx) else {
-            log::error!("Tried to select group in slot {slot_id}, but it was not found");
+    fn on_activate_slot(&mut self, slot: u32, window: &mut Window, cx: &mut App) {
+        let slot = Slot::new(NonZeroU32::new(slot).unwrap());
+
+        let Ok(group) = EngineManager::snapshot(cx).objects().groups().get_by_slot(&slot) else {
+            log::error!("Tried to select group in slot {slot}, but it was not found");
             return;
         };
 
-        let fixtures = group.fixture_ids().to_vec();
-        Engine::global(cx).engine().exec(SelectionCommand::Add(fixtures.into()));
+        let fixture_ids = group.fixture_ids().to_vec();
+        match window.modifiers().shift {
+            true => EngineManager::execute(cx, Command::SelectionAdd { fixture_ids }),
+            false => EngineManager::execute(cx, Command::SelectionSet { fixture_ids }),
+        }
     }
 }

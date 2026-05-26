@@ -49,15 +49,15 @@ impl PoolTileDelegate for BetaTile {
         "Beta Tile".into()
     }
 
-    fn is_occupied(&self, slot_id: u32, _cx: &App) -> bool {
-        slot_id == 4
+    fn is_occupied(&self, slot: u32, _cx: &App) -> bool {
+        slot == 4
     }
 
-    fn occupied_content(&self, slot_id: u32, _cx: &App) -> impl IntoElement {
-        slot_id.to_string()
+    fn occupied_content(&self, slot: u32, _cx: &App) -> impl IntoElement {
+        slot.to_string()
     }
 
-    fn on_activate_slot(&mut self, slot_id: u32, _window: &mut Window, _cx: &mut App) {
-        log::info!("slot '{slot_id}' activated");
+    fn on_activate_slot(&mut self, slot: u32, _window: &mut Window, _cx: &mut App) {
+        log::info!("slot '{slot}' activated");
     }
 }
