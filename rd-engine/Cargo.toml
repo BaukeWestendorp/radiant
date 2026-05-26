@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+crossbeam-channel = "0.5.15"
 log.workspace = true
 midir = "0.10.0"
 midly = { version = "0.5.3", default-features = false, features = ["std"] }

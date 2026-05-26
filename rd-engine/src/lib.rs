@@ -11,11 +11,13 @@ use crate::pipeline::Pipeline;
 
 mod cmd;
 mod config;
+mod event;
 mod object;
 mod pipeline;
 
 pub use cmd::*;
 pub use config::*;
+pub use event::*;
 pub use object::*;
 
 pub struct Engine {
@@ -28,6 +30,9 @@ pub struct Engine {
     command_queue: VecDeque<Command>,
 
     zeevonk: Zeevonk,
+
+    event_tx: crossbeam_channel::Sender<Event>,
+    event_listener: EventListener,
 }
 
 impl Engine {
@@ -56,6 +61,9 @@ impl Engine {
             None => {}
         }
 
+        let (event_tx, event_rx) = crossbeam_channel::unbounded();
+        let event_listener = EventListener::new(event_rx);
+
         Ok(Self {
             showfile_path,
 
@@ -67,6 +75,9 @@ impl Engine {
 
             zeevonk: Zeevonk::new(zv_project_file)
                 .context("failed to initialize zeevonk engine")?,
+
+            event_tx,
+            event_listener,
         })
     }
 
@@ -165,6 +176,7 @@ impl Engine {
                 }
 
                 reset_cue_list_to_start_if_disabled(executor);
+                self.emit_event(Event::ExecutorChanged(executor_id));
             }
             Command::ExecutorToggleEnabled { executor_id } => {
                 let page = self.objects.executor_pages.get_by_object_id_mut(&executor_id.page)?;
@@ -172,12 +184,14 @@ impl Engine {
 
                 executor.set_enabled(!executor.enabled());
                 reset_cue_list_to_start_if_disabled(executor);
+                self.emit_event(Event::ExecutorChanged(executor_id));
             }
             Command::ExecutorSetEnabled { executor_id, value } => {
                 let page = self.objects.executor_pages.get_by_object_id_mut(&executor_id.page)?;
                 let executor = page.executor_mut(executor_id.executor)?;
                 executor.set_enabled(value);
                 reset_cue_list_to_start_if_disabled(executor);
+                self.emit_event(Event::ExecutorChanged(executor_id));
             }
             Command::ExecutorButton { executor_id, button, pressed } => {
                 let page = self.objects.executor_pages.get_by_object_id_mut(&executor_id.page)?;
@@ -237,9 +251,18 @@ impl Engine {
                         }
                     }
                 }
+                self.emit_event(Event::ExecutorChanged(executor_id));
             }
         }
         Ok(())
+    }
+
+    pub fn event_listener(&self) -> &EventListener {
+        &self.event_listener
+    }
+
+    pub(crate) fn emit_event(&self, event: Event) {
+        let _ = self.event_tx.send(event);
     }
 }
 

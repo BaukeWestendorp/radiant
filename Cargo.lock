@@ -4347,23 +4347,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "rd"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "gpui",
- "log",
- "pretty_env_logger",
- "rd-engine",
- "rd-ui",
-]
-
-[[package]]
 name = "rd-engine"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "crossbeam-channel",
  "log",
  "midir",
  "midly",

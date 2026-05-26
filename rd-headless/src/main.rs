@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, thread};
 
 use clap::Parser;
 use rd_engine::Engine;
@@ -23,7 +23,13 @@ fn main() -> anyhow::Result<()> {
     let args = Args::parse();
 
     let mut engine = Engine::new(Some(PathBuf::from(args.showfile_path))).unwrap();
-    engine.start();
+    let event_listener = engine.event_listener().clone();
+    thread::spawn(move || {
+        engine.start();
+    });
+    while let Some(event) = event_listener.recv() {
+        log::info!("event: {event:?}");
+    }
 
     Ok(())
 }
