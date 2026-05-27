@@ -11,7 +11,7 @@ With GPUI, the UI framework used for Radiant, still being linked to the [Zed Edi
 ## Try it out!
 
 For the time being, the only way to try out Radiant is by building it from source.
-You can use `cargo run --release -- examples/capital_inspired` in the project root to build and run.
+You can use `cargo run --release -p rd -- examples/capital_inspired` in the project root to build and run.
 
 With exception for some settings, most of the configuraton of a showfile can only be done by manually editing the showfile itself. This is because I want to make sure the functionality is correct before implementing the UI.
 
