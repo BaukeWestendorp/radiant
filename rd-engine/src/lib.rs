@@ -147,6 +147,7 @@ impl Engine {
             config: Arc::clone(&config),
             objects: Arc::clone(&objects),
             selection: Arc::clone(&selection),
+            highlight: self.highlight,
         }));
 
         loop {
@@ -184,6 +185,7 @@ impl Engine {
                                 config: Arc::clone(&config),
                                 objects: Arc::clone(&objects),
                                 selection: Arc::clone(&selection),
+                                highlight: self.highlight,
                             }));
                         }
 
@@ -264,6 +266,7 @@ impl Engine {
                     config: Arc::clone(&config),
                     objects: Arc::clone(&objects),
                     selection: Arc::clone(&selection),
+                    highlight: self.highlight,
                 }));
             }
 

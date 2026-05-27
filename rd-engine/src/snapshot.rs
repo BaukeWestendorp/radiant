@@ -15,6 +15,7 @@ pub struct EngineSnapshot {
     pub(crate) config: Arc<Config>,
     pub(crate) objects: Arc<Objects>,
     pub(crate) selection: Arc<Selection>,
+    pub(crate) highlight: bool,
 }
 
 impl EngineSnapshot {
@@ -36,6 +37,10 @@ impl EngineSnapshot {
 
     pub fn selection(&self) -> &Selection {
         &self.selection
+    }
+
+    pub fn highlight(&self) -> bool {
+        self.highlight
     }
 }
 

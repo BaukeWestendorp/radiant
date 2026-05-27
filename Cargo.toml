@@ -7,7 +7,6 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace.dependencies]
-rd = { path = "rd" }
 rd-ui = { path = "rd-ui" }
 rd-engine = { path = "rd-engine" }
 

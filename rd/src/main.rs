@@ -28,3 +28,7 @@ fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+fn version_string() -> String {
+    format!("v{} ({})", env!("CARGO_PKG_VERSION"), env!("GIT_HASH"))
+}
