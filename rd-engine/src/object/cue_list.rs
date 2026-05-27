@@ -1,9 +1,9 @@
-use std::time::Duration;
+use std::{collections::HashMap, time::Duration};
 
 use anyhow::Context;
-use zeevonk::value::AttributeValues;
+use zeevonk::{AttributeName, value::AttributeValue};
 
-use crate::{Object, ObjectId, Slot};
+use crate::{FixtureCollection, Object, ObjectId, Slot};
 
 #[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -48,7 +48,7 @@ pub struct Cue {
     name: String,
     #[serde(with = "duration_as_seconds")]
     fade_time: Duration,
-    values: AttributeValues,
+    recipes: Vec<Recipe>,
 }
 
 impl Cue {
@@ -60,8 +60,40 @@ impl Cue {
         self.fade_time
     }
 
-    pub fn values(&self) -> &AttributeValues {
-        &self.values
+    pub fn recipes(&self) -> &[Recipe] {
+        &self.recipes
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct Recipe {
+    #[serde(default)]
+    fixtures: FixtureCollection,
+    #[serde(default)]
+    content: RecipeContent,
+}
+
+impl Recipe {
+    pub fn fixtures(&self) -> &FixtureCollection {
+        &self.fixtures
+    }
+
+    pub fn content(&self) -> &RecipeContent {
+        &self.content
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(tag = "type", content = "value")]
+pub enum RecipeContent {
+    Static(HashMap<AttributeName, AttributeValue>),
+}
+
+impl Default for RecipeContent {
+    fn default() -> Self {
+        Self::Static(HashMap::default())
     }
 }
 

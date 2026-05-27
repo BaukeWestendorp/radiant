@@ -9,7 +9,7 @@ use zeevonk::{
     value::{AttributeValues, ClampedValue},
 };
 
-use crate::{Executor, ExecutorContent, ExecutorId, MergeMode, Objects};
+use crate::{Cue, Executor, ExecutorContent, ExecutorId, MergeMode, Objects, RecipeContent};
 
 pub struct Compositor {
     cue_list_executor_meta: HashMap<ExecutorId, CueListExecutorMeta>,
@@ -87,11 +87,10 @@ impl Compositor {
 
                 if meta.last_activation.cue_index != *cue_index {
                     if *start_from_previous_cue && !meta.ever_composed && *cue_index > 0 {
-                        meta.last_activation.values_snapshot = cue_list
-                            .cue(cue_index - 1)
-                            .ok()
-                            .map(|cue| cue.values().clone())
-                            .unwrap_or_else(|| AttributeValues::new());
+                        meta.last_activation.values_snapshot = match cue_list.cue(cue_index - 1) {
+                            Ok(prev_cue) => values_from_cue(prev_cue, objects, stage)?.clone(),
+                            Err(_) => AttributeValues::new(),
+                        };
                     } else {
                         meta.last_activation.values_snapshot = meta.values.clone();
                     }
@@ -110,14 +109,16 @@ impl Compositor {
                 }
 
                 let mut executor_values = AttributeValues::new();
-                for (fixture_id, attribute, target_value) in current_cue.values().values() {
-                    let channel_function = stage
+                for (fixture_id, attribute, target_value) in
+                    values_from_cue(current_cue, objects, stage)?.values()
+                {
+                    let Some(channel_function) = stage
                         .fixture(fixture_id)
                         .with_context(|| format!("fixture {} not found on stage", fixture_id))?
                         .channel_function(attribute)
-                        .with_context(|| {
-                            format!("attribute {} not found for fixture {}", attribute, fixture_id)
-                        })?;
+                    else {
+                        continue;
+                    };
 
                     let start_value = meta
                         .last_activation
@@ -165,6 +166,22 @@ impl Compositor {
 
         Ok(())
     }
+}
+
+fn values_from_cue(cue: &Cue, objects: &Objects, stage: &Stage) -> anyhow::Result<AttributeValues> {
+    let mut values = AttributeValues::new();
+    for recipe in cue.recipes() {
+        for fixture_id in recipe.fixtures().fixture_ids(objects, stage)? {
+            match recipe.content() {
+                RecipeContent::Static(recipe_values) => {
+                    for (attribute, value) in recipe_values {
+                        values.set(*fixture_id, attribute.clone(), *value);
+                    }
+                }
+            }
+        }
+    }
+    Ok(values)
 }
 
 struct CueListExecutorMeta {

@@ -73,14 +73,12 @@
         {
           "name": "Main Cue",
           "fade_time": 0,
-          "values": {
-            "101": { "Dimmer": { "Clamped": 1.0 } },
-            "102": { "Dimmer": { "Clamped": 1.0 } },
-            "103": { "Dimmer": { "Clamped": 1.0 } },
-            "104": { "Dimmer": { "Clamped": 1.0 } },
-            "105": { "Dimmer": { "Clamped": 1.0 } },
-            "106": { "Dimmer": { "Clamped": 1.0 } }
-          }
+          "recipes": [
+            {
+              "fixtures": { "type": "Group", "value": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6c" },
+              "content": { "type": "Static", "value": { "Dimmer": { "Clamped": 1.0 } } }
+            }
+          ]
         }
       ]
     },
@@ -92,14 +90,12 @@
         {
           "name": "Main Cue",
           "fade_time": 0,
-          "values": {
-            "201": { "Dimmer": { "Clamped": 1.0 } },
-            "202": { "Dimmer": { "Clamped": 1.0 } },
-            "203": { "Dimmer": { "Clamped": 1.0 } },
-            "204": { "Dimmer": { "Clamped": 1.0 } },
-            "205": { "Dimmer": { "Clamped": 1.0 } },
-            "206": { "Dimmer": { "Clamped": 1.0 } }
-          }
+          "recipes": [
+            {
+              "fixtures": { "type": "Group", "value": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6d" },
+              "content": { "type": "Static", "value": { "Dimmer": { "Clamped": 1.0 } } }
+            }
+          ]
         }
       ]
     },
@@ -111,26 +107,12 @@
         {
           "name": "Main Cue",
           "fade_time": 0,
-          "values": {
-            "301": { "Dimmer": { "Clamped": 1.0 } },
-            "302": { "Dimmer": { "Clamped": 1.0 } },
-            "303": { "Dimmer": { "Clamped": 1.0 } },
-            "304": { "Dimmer": { "Clamped": 1.0 } },
-            "305": { "Dimmer": { "Clamped": 1.0 } },
-            "306": { "Dimmer": { "Clamped": 1.0 } },
-            "307": { "Dimmer": { "Clamped": 1.0 } },
-            "308": { "Dimmer": { "Clamped": 1.0 } },
-            "309": { "Dimmer": { "Clamped": 1.0 } },
-            "310": { "Dimmer": { "Clamped": 1.0 } },
-            "311": { "Dimmer": { "Clamped": 1.0 } },
-            "312": { "Dimmer": { "Clamped": 1.0 } },
-            "313": { "Dimmer": { "Clamped": 1.0 } },
-            "314": { "Dimmer": { "Clamped": 1.0 } },
-            "315": { "Dimmer": { "Clamped": 1.0 } },
-            "316": { "Dimmer": { "Clamped": 1.0 } },
-            "317": { "Dimmer": { "Clamped": 1.0 } },
-            "318": { "Dimmer": { "Clamped": 1.0 } }
-          }
+          "recipes": [
+            {
+              "fixtures": { "type": "Group", "value": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6e" },
+              "content": { "type": "Static", "value": { "Dimmer": { "Clamped": 1.0 } } }
+            }
+          ]
         }
       ]
     },
@@ -142,40 +124,12 @@
         {
           "name": "Main Cue",
           "fade_time": 0,
-          "values": {
-            "401.8": { "Dimmer": { "Clamped": 1.0 } },
-            "401.7": { "Dimmer": { "Clamped": 1.0 } },
-            "401.6": { "Dimmer": { "Clamped": 1.0 } },
-            "401.5": { "Dimmer": { "Clamped": 1.0 } },
-            "401.4": { "Dimmer": { "Clamped": 1.0 } },
-            "401.3": { "Dimmer": { "Clamped": 1.0 } },
-            "401.2": { "Dimmer": { "Clamped": 1.0 } },
-            "401.1": { "Dimmer": { "Clamped": 1.0 } },
-            "402.8": { "Dimmer": { "Clamped": 1.0 } },
-            "402.7": { "Dimmer": { "Clamped": 1.0 } },
-            "402.6": { "Dimmer": { "Clamped": 1.0 } },
-            "402.5": { "Dimmer": { "Clamped": 1.0 } },
-            "402.4": { "Dimmer": { "Clamped": 1.0 } },
-            "402.3": { "Dimmer": { "Clamped": 1.0 } },
-            "402.2": { "Dimmer": { "Clamped": 1.0 } },
-            "402.1": { "Dimmer": { "Clamped": 1.0 } },
-            "403.8": { "Dimmer": { "Clamped": 1.0 } },
-            "403.7": { "Dimmer": { "Clamped": 1.0 } },
-            "403.6": { "Dimmer": { "Clamped": 1.0 } },
-            "403.5": { "Dimmer": { "Clamped": 1.0 } },
-            "403.4": { "Dimmer": { "Clamped": 1.0 } },
-            "403.3": { "Dimmer": { "Clamped": 1.0 } },
-            "403.2": { "Dimmer": { "Clamped": 1.0 } },
-            "403.1": { "Dimmer": { "Clamped": 1.0 } },
-            "404.8": { "Dimmer": { "Clamped": 1.0 } },
-            "404.7": { "Dimmer": { "Clamped": 1.0 } },
-            "404.6": { "Dimmer": { "Clamped": 1.0 } },
-            "404.5": { "Dimmer": { "Clamped": 1.0 } },
-            "404.4": { "Dimmer": { "Clamped": 1.0 } },
-            "404.3": { "Dimmer": { "Clamped": 1.0 } },
-            "404.2": { "Dimmer": { "Clamped": 1.0 } },
-            "404.1": { "Dimmer": { "Clamped": 1.0 } }
-          }
+          "recipes": [
+            {
+              "fixtures": { "type": "Group", "value": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6f" },
+              "content": { "type": "Static", "value": { "Dimmer": { "Clamped": 1.0 } } }
+            }
+          ]
         }
       ]
     },
@@ -187,12 +141,12 @@
         {
           "name": "Main Cue",
           "fade_time": 0,
-          "values": {
-            "501": { "Dimmer": { "Clamped": 1.0 } },
-            "502": { "Dimmer": { "Clamped": 1.0 } },
-            "503": { "Dimmer": { "Clamped": 1.0 } },
-            "504": { "Dimmer": { "Clamped": 1.0 } }
-          }
+          "recipes": [
+            {
+              "fixtures": { "type": "Group", "value": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a70" },
+              "content": { "type": "Static", "value": { "Dimmer": { "Clamped": 1.0 } } }
+            }
+          ]
         }
       ]
     },
@@ -204,122 +158,92 @@
         {
           "name": "White",
           "fade_time": 1.0,
-          "values": {
-            "301": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "302": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "303": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "304": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "305": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "306": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "307": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "308": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "309": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "310": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "311": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "312": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "313": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "314": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "315": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "316": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "317": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "318": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } }
-          }
+          "recipes": [
+            {
+              "fixtures": { "type": "All" },
+              "content": {
+                "type": "Static",
+                "value": {
+                  "ColorAdd_R": { "Clamped": 1.0 },
+                  "ColorAdd_G": { "Clamped": 1.0 },
+                  "ColorAdd_B": { "Clamped": 1.0 },
+                  "ColorAdd_W": { "Clamped": 0.0 }
+                }
+              }
+            }
+          ]
         },
         {
           "name": "Red",
           "fade_time": 1.0,
-          "values": {
-            "301": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "302": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "303": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "304": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "305": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "306": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "307": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "308": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "309": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "310": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "311": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "312": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "313": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "314": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "315": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "316": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "317": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "318": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } }
-          }
+          "recipes": [
+            {
+              "fixtures": { "type": "All" },
+              "content": {
+                "type": "Static",
+                "value": {
+                  "ColorAdd_R": { "Clamped": 1.0 },
+                  "ColorAdd_G": { "Clamped": 0.0 },
+                  "ColorAdd_B": { "Clamped": 0.0 },
+                  "ColorAdd_W": { "Clamped": 0.0 }
+                }
+              }
+            }
+          ]
         },
         {
           "name": "Green",
           "fade_time": 1.0,
-          "values": {
-            "301": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "302": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "303": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "304": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "305": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "306": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "307": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "308": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "309": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "310": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "311": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "312": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "313": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "314": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "315": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "316": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "317": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "318": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } }
-          }
+          "recipes": [
+            {
+              "fixtures": { "type": "All" },
+              "content": {
+                "type": "Static",
+                "value": {
+                  "ColorAdd_R": { "Clamped": 0.0 },
+                  "ColorAdd_G": { "Clamped": 1.0 },
+                  "ColorAdd_B": { "Clamped": 0.0 },
+                  "ColorAdd_W": { "Clamped": 0.0 }
+                }
+              }
+            }
+          ]
         },
         {
           "name": "Blue",
           "fade_time": 1.0,
-          "values": {
-            "301": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "302": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "303": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "304": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "305": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "306": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "307": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "308": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "309": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "310": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "311": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "312": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "313": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "314": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "315": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "316": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "317": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "318": { "ColorAdd_R": { "Clamped": 0.0 }, "ColorAdd_G": { "Clamped": 0.0 }, "ColorAdd_B": { "Clamped": 1.0 }, "ColorAdd_W": { "Clamped": 0.0 } }
-          }
+          "recipes": [
+            {
+              "fixtures": { "type": "All" },
+              "content": {
+                "type": "Static",
+                "value": {
+                  "ColorAdd_R": { "Clamped": 0.0 },
+                  "ColorAdd_G": { "Clamped": 0.0 },
+                  "ColorAdd_B": { "Clamped": 1.0 },
+                  "ColorAdd_W": { "Clamped": 0.0 }
+                }
+              }
+            }
+          ]
         },
         {
           "name": "Yellow",
           "fade_time": 1.0,
-          "values": {
-            "301": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "302": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "303": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "304": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "305": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "306": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "307": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "308": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "309": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "310": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "311": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "312": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "313": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "314": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "315": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "316": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "317": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } },
-            "318": { "ColorAdd_R": { "Clamped": 1.0 }, "ColorAdd_G": { "Clamped": 1.0 }, "ColorAdd_B": { "Clamped": 0.0 }, "ColorAdd_W": { "Clamped": 0.0 } }
-          }
+          "recipes": [
+            {
+              "fixtures": { "type": "All" },
+              "content": {
+                "type": "Static",
+                "value": {
+                  "ColorAdd_R": { "Clamped": 1.0 },
+                  "ColorAdd_G": { "Clamped": 1.0 },
+                  "ColorAdd_B": { "Clamped": 0.0 },
+                  "ColorAdd_W": { "Clamped": 0.0 }
+                }
+              }
+            }
+          ]
         }
       ]
     }
@@ -507,27 +431,9 @@
       "slot": 12,
       "name": "SHOW",
       "tiles": [
-        {
-          "kind": "Executors",
-          "width": 18,
-          "height": 3,
-          "x": 0,
-          "y": 9
-        },
-        {
-          "x": 0,
-          "y": 0,
-          "width": 8,
-          "height": 7,
-          "kind": "Fixtures"
-        },
-        {
-          "x": 8,
-          "y": 0,
-          "width": 10,
-          "height": 7,
-          "kind": "GroupPool"
-        }
+        { "kind": "Executors", "width": 18, "height": 3, "x": 0, "y": 9 },
+        { "x": 0, "y": 0, "width": 8, "height": 7, "kind": "Fixtures" },
+        { "x": 8, "y": 0, "width": 10, "height": 7, "kind": "GroupPool" }
       ]
     }
   ]
