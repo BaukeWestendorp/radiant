@@ -38,6 +38,7 @@ pub struct Engine {
     config: Config,
     objects: Objects,
     selection: Selection,
+    highlight: bool,
 
     command_queue: VecDeque<Command>,
     event_tx: crossbeam_channel::Sender<Event>,
@@ -84,6 +85,7 @@ impl Engine {
                 .context("failed to initialize zeevonk engine")?,
 
             selection: Selection::new(),
+            highlight: false,
             config,
             objects,
 
@@ -244,7 +246,13 @@ impl Engine {
             };
 
             self.zeevonk.clear_attribute_values();
-            self.zeevonk.set_attribute_values(output);
+            self.zeevonk.clear_highlighted_fixtures();
+
+            if self.highlight {
+                self.zeevonk.set_highlighted_fixtures(self.selection().fixtures().to_owned());
+            } else {
+                self.zeevonk.set_attribute_values(output);
+            }
 
             if mutated_state {
                 objects = Arc::new(self.objects.clone());

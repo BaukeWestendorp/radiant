@@ -12,6 +12,7 @@ mod ui;
 
 pub mod action {
     use gpui::{App, KeyBinding, prelude::*};
+    use rd_engine::Command;
     use rd_ui::{Root, SETTINGS_WINDOW_OPTIONS, SettingsAppExt as _};
 
     use crate::{app::settings::SettingsView, engine::EngineManager};
@@ -32,8 +33,8 @@ pub mod action {
             });
         });
 
-        cx.on_action::<HighlightToggle>(|_, _cx| {
-            todo!();
+        cx.on_action::<HighlightToggle>(|_, cx| {
+            EngineManager::execute(cx, Command::HighlightToggle);
         });
 
         cx.on_action::<Save>(|_, cx| match EngineManager::snapshot(cx).showfile_path() {

@@ -12,6 +12,9 @@ pub enum Command {
     SelectionClear,
     SelectionAll,
 
+    HighlightToggle,
+    Highlight { enabled: bool },
+
     ExecutorSetMaster { executor_id: ExecutorId, value: f32 },
     ExecutorToggleEnabled { executor_id: ExecutorId },
     ExecutorSetEnabled { executor_id: ExecutorId, value: bool },
@@ -61,6 +64,14 @@ impl Command {
                     }
                 }
                 engine.emit_event(Event::SelectionChanged);
+            }
+            Command::HighlightToggle => {
+                engine.highlight = !engine.highlight;
+                engine.emit_event(Event::HighlightChanged);
+            }
+            Command::Highlight { enabled } => {
+                engine.highlight = enabled;
+                engine.emit_event(Event::HighlightChanged);
             }
             Command::ExecutorSetMaster { executor_id, value } => {
                 let page = engine.objects.executor_pages.get_by_object_id_mut(&executor_id.page)?;
