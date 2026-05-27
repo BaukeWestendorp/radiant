@@ -1,9 +1,11 @@
-use gpui::{App, Entity, ReadGlobal, Window, div, prelude::*, px};
+use std::collections::BTreeMap;
+
+use gpui::{App, Entity, Window, div, prelude::*, px};
 use rd_ui::{Column, Table, TableDelegate, TableState};
 
-use rd_engine::zv::project::{FixtureDefinition, FixtureIdPart};
+use rd_engine::zv::project::{Fixture, FixtureId, FixtureIdPart};
 
-use crate::engine::Engine;
+use crate::engine::EngineManager;
 
 pub struct PatchSettingsView {
     table_state: Entity<TableState<PatchTableDelegate>>,
@@ -11,10 +13,7 @@ pub struct PatchSettingsView {
 
 impl PatchSettingsView {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let fixtures = cx.new(|cx| {
-            let patch = Engine::global(cx).engine().patch();
-            patch.fixtures.clone()
-        });
+        let fixtures = cx.new(|cx| EngineManager::snapshot(cx).stage().fixtures().clone());
 
         Self {
             table_state: cx.new(|cx| {
@@ -36,12 +35,12 @@ impl Render for PatchSettingsView {
 }
 
 struct PatchTableDelegate {
-    data: Entity<Vec<FixtureDefinition>>,
+    data: Entity<BTreeMap<FixtureId, Fixture>>,
     columns: Vec<Column>,
 }
 
 impl PatchTableDelegate {
-    pub fn new(fixtures: Entity<Vec<FixtureDefinition>>) -> Self {
+    pub fn new(fixtures: Entity<BTreeMap<FixtureId, Fixture>>) -> Self {
         Self {
             data: fixtures,
             columns: vec![
@@ -66,7 +65,7 @@ impl TableDelegate for PatchTableDelegate {
     }
 
     fn root_row_ids(&self, cx: &App) -> Vec<Self::RowId> {
-        self.data.read(cx).iter().map(|f| f.root_id).collect()
+        self.data.read(cx).keys().filter(|fid| fid.is_root()).map(|fid| fid.root()).collect()
     }
 
     fn edit_rows(&self, _row_ids: &[Self::RowId], _cx: &App) {
@@ -84,14 +83,21 @@ impl TableDelegate for PatchTableDelegate {
         _window: &mut Window,
         cx: &App,
     ) -> impl IntoElement {
-        let row = self.data.read(cx).iter().find(|f| &f.root_id == row_id).unwrap();
+        let row = self.data.read(cx).iter().find(|(fid, _)| fid.root() == *row_id).unwrap();
         let col = &self.columns[col_ix];
+        let fixture = row.1;
 
         let content = match col.id().as_ref() {
-            "root_id" => row.root_id.to_string(),
-            "name" => row.name.clone(),
-            "address" => row.address.to_string(),
-            "kind" => format!("{} ({})", row.kind.gdtf_fixture_type_id, row.kind.gdtf_dmx_mode),
+            "root_id" => row.0.to_string(),
+            "name" => fixture.name().to_string(),
+            "address" => fixture.base_address().to_string(),
+            "kind" => {
+                format!(
+                    "{} ({})",
+                    fixture.gdtf_fixture_type_id().as_uuid(),
+                    fixture.gdtf_dmx_mode()
+                )
+            }
             _ => "".to_string(),
         };
 

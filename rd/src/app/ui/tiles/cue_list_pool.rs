@@ -1,9 +1,11 @@
-use gpui::{App, IntoElement, ReadGlobal, SharedString, Window, prelude::*};
+use std::num::NonZeroU32;
+
+use gpui::{App, IntoElement, SharedString, Window, prelude::*};
 use rd_ui::{PoolTileDelegate, h_flex};
 
-use rd_engine::{CueList, Object, ObjectKind, ObjectReference, SlotId};
+use rd_engine::{CueList, Object, Slot};
 
-use crate::engine::Engine;
+use crate::engine::EngineManager;
 
 pub struct CueListsPoolTile {}
 
@@ -12,11 +14,11 @@ impl CueListsPoolTile {
         Self {}
     }
 
-    pub fn cue_list<'a>(&self, slot_id: u32, cx: &'a App) -> Option<&'a CueList> {
-        Engine::global(cx)
-            .engine()
+    pub fn cue_list<'a>(&self, slot: u32, cx: &'a App) -> anyhow::Result<&'a CueList> {
+        EngineManager::snapshot(cx)
             .objects()
-            .get(ObjectReference::Slot(ObjectKind::CueList, SlotId::new(slot_id).unwrap()))
+            .cue_lists()
+            .get_by_slot(&Slot::new(NonZeroU32::new(slot).unwrap()))
     }
 }
 
@@ -25,18 +27,18 @@ impl PoolTileDelegate for CueListsPoolTile {
         "Cue Lists".into()
     }
 
-    fn is_occupied(&self, slot_id: u32, cx: &App) -> bool {
-        self.cue_list(slot_id, cx).is_some()
+    fn is_occupied(&self, slot: u32, cx: &App) -> bool {
+        self.cue_list(slot, cx).is_ok()
     }
 
-    fn occupied_content(&self, slot_id: u32, cx: &App) -> impl IntoElement {
+    fn occupied_content(&self, slot: u32, cx: &App) -> impl IntoElement {
         let label = self
-            .cue_list(slot_id, cx)
+            .cue_list(slot, cx)
             .map(|cue_list| cue_list.name())
             .unwrap_or("<unknown>")
             .to_string();
         h_flex().justify_center().size_full().child(label)
     }
 
-    fn on_activate_slot(&mut self, _slot_id: u32, _window: &mut Window, _cx: &mut App) {}
+    fn on_activate_slot(&mut self, _slot: u32, _window: &mut Window, _cx: &mut App) {}
 }

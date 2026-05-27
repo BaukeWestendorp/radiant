@@ -1,34 +1,40 @@
-use uuid::Uuid;
+use std::{collections::HashMap, time::Duration};
 
-use crate::{FixtureCollection, Object, ObjectId, ObjectKind, ObjectReference, Parameter, SlotId};
+use anyhow::Context;
+use zeevonk::{AttributeName, value::AttributeValue};
 
-#[derive(Debug, Clone)]
+use crate::{FixtureCollection, Object, ObjectId, Slot};
+
+#[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct CueList {
     id: ObjectId,
-    slot_id: SlotId,
+    slot: Slot,
     name: String,
-
     cues: Vec<Cue>,
 }
 
 impl CueList {
+    pub fn new(id: ObjectId, slot: Slot, name: String) -> Self {
+        Self { id, slot, name, cues: Vec::new() }
+    }
+
     pub fn cues(&self) -> &[Cue] {
         &self.cues
+    }
+
+    pub fn cue(&self, index: usize) -> anyhow::Result<&Cue> {
+        self.cues.get(index).with_context(|| format!("no cue at index {}", index))
     }
 }
 
 impl Object for CueList {
-    fn kind() -> ObjectKind {
-        ObjectKind::CueList
+    fn slot(&self) -> Slot {
+        self.slot
     }
 
     fn id(&self) -> ObjectId {
         self.id
-    }
-
-    fn slot_id(&self) -> SlotId {
-        self.slot_id
     }
 
     fn name(&self) -> &str {
@@ -36,49 +42,41 @@ impl Object for CueList {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Cue {
     name: String,
-
+    #[serde(with = "duration_as_seconds")]
+    fade_time: Duration,
     recipes: Vec<Recipe>,
 }
 
 impl Cue {
-    pub fn new() -> Self {
-        Self { name: "Cue".to_string(), recipes: Vec::new() }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn fade_time(&self) -> Duration {
+        self.fade_time
     }
 
     pub fn recipes(&self) -> &[Recipe] {
         &self.recipes
     }
-
-    pub fn name(&self) -> &str {
-        &self.name
-    }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Recipe {
-    #[serde(skip, default = "RecipeId::new")]
-    id: RecipeId,
-
-    fixture_collection: FixtureCollection,
+    #[serde(default)]
+    fixtures: FixtureCollection,
+    #[serde(default)]
     content: RecipeContent,
 }
 
 impl Recipe {
-    pub fn new(fixture_collection: FixtureCollection, content: RecipeContent) -> Self {
-        Self { id: RecipeId::new(), fixture_collection, content }
-    }
-
-    pub fn id(&self) -> RecipeId {
-        self.id
-    }
-
-    pub fn fixture_collection(&self) -> &FixtureCollection {
-        &self.fixture_collection
+    pub fn fixtures(&self) -> &FixtureCollection {
+        &self.fixtures
     }
 
     pub fn content(&self) -> &RecipeContent {
@@ -86,29 +84,35 @@ impl Recipe {
     }
 }
 
-/// Used to identify effect runners.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
-#[derive(derive_more::Deref, derive_more::DerefMut)]
-pub struct RecipeId(pub Uuid);
+#[serde(tag = "type", content = "value")]
+pub enum RecipeContent {
+    Static(HashMap<AttributeName, AttributeValue>),
+}
 
-impl RecipeId {
-    pub fn new() -> Self {
-        RecipeId(Uuid::new_v4())
-    }
-
-    pub fn as_uuid(&self) -> &Uuid {
-        &self.0
-    }
-
-    pub fn into_inner(self) -> Uuid {
-        self.0
+impl Default for RecipeContent {
+    fn default() -> Self {
+        Self::Static(HashMap::default())
     }
 }
 
-#[derive(Debug, Clone)]
-#[derive(serde::Serialize, serde::Deserialize)]
-pub enum RecipeContent {
-    Effect { effect: ObjectReference },
-    Static(Vec<Parameter>),
+mod duration_as_seconds {
+    use serde::{self, Deserialize, Deserializer, Serializer};
+    use std::time::Duration;
+
+    pub fn serialize<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_f64(duration.as_secs_f64())
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Duration, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let secs = f64::deserialize(deserializer)?;
+        Ok(Duration::from_secs_f64(secs))
+    }
 }

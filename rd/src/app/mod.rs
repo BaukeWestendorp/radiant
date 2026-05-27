@@ -2,20 +2,23 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use gpui::{Context, Entity, FocusHandle, Window, div, prelude::*, px, size};
-use rd_engine::RadiantEngine;
-use rd_ui::{Button, Icon, IconSize, IconVariant, TITLE_BAR_HEIGHT, h_flex};
+use rd_engine::{Command, Engine};
+use rd_ui::{
+    ActiveTheme, Button, Icon, IconSize, IconVariant, TITLE_BAR_HEIGHT, TITLE_BAR_RIGHT_PADDING,
+    h_flex,
+};
 
-use crate::{app::ui::LayoutViewer, engine::Engine};
+use crate::{app::ui::LayoutViewer, engine::EngineManager};
 
 mod settings;
 mod ui;
 
 pub mod action {
-    use gpui::{App, KeyBinding, ReadGlobal as _, prelude::*};
-    use rd_engine::{Command, HighlightCommand};
+    use gpui::{App, KeyBinding, prelude::*};
+    use rd_engine::Command;
     use rd_ui::{Root, SETTINGS_WINDOW_OPTIONS, SettingsAppExt as _};
 
-    use crate::{app::settings::SettingsView, engine::Engine};
+    use crate::{app::settings::SettingsView, engine::EngineManager};
 
     gpui::actions!([SettingsOpen, Save, HighlightToggle]);
 
@@ -34,12 +37,12 @@ pub mod action {
         });
 
         cx.on_action::<HighlightToggle>(|_, cx| {
-            Engine::global(cx).engine().exec(HighlightCommand::Toggle);
+            EngineManager::execute(cx, Command::HighlightToggle);
         });
 
-        cx.on_action::<Save>(|_, cx| match Engine::global(cx).engine().showfile_path() {
-            Some(path) => {
-                Engine::global(cx).engine().exec(Command::Save(path.to_path_buf()));
+        cx.on_action::<Save>(|_, cx| match EngineManager::snapshot(cx).showfile_path() {
+            Some(_path) => {
+                todo!();
             }
             None => {
                 log::error!("FIXME: implement saving new showfiles");
@@ -50,22 +53,22 @@ pub mod action {
 
 pub fn run(showfile_path: Option<PathBuf>) -> Result<()> {
     rd_ui::build_simple_app()
-        .window_title("Radiant")
-        .window_size(size(px((18.0 + 1.5) * 80.0), px(12.0 * 80.0) + TITLE_BAR_HEIGHT))
+        .window_title(if cfg!(debug_assertions) { "Radiant [debug-mode]" } else { "Radiant" })
+        .window_size(size(px((18.0 + 1.5) * 80.0), px(12.0 * 80.0) + TITLE_BAR_HEIGHT * 2.0))
         .title_bar_content(|_, cx| cx.new(|_| TitleBarContent).into())
         .run(|window, cx| {
             crate::app::action::init(cx);
 
-            let rd_engine = match RadiantEngine::new(showfile_path) {
+            let rd_engine = match Engine::new(showfile_path) {
                 Ok(rd_engine) => rd_engine,
                 Err(err) => {
                     log::error!("Could not load showfile: {err}");
-                    RadiantEngine::new(None).expect("should create new showfile")
+                    Engine::new(None).expect("should create new showfile")
                 }
             };
-            rd_engine.start();
-            let engine = Engine::new(rd_engine, cx);
-            cx.set_global(engine);
+
+            let engine_handle = EngineManager::new(rd_engine, cx);
+            cx.set_global(engine_handle);
 
             cx.new(|cx| RadiantApp::new(window, cx).expect("should create app"))
         });
@@ -89,22 +92,60 @@ impl RadiantApp {
         Ok(Self { focus_handle, layout_viewer })
     }
 
-    fn render_content(
+    fn render_content(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        div()
+            .size_full()
+            .child(self.layout_viewer.clone())
+            .child(self.render_status_bar(window, cx))
+    }
+
+    fn render_status_bar(
         &mut self,
         _window: &mut Window,
-        _cx: &mut Context<Self>,
+        cx: &mut Context<Self>,
     ) -> impl IntoElement {
-        div().size_full().child(self.layout_viewer.clone())
+        let render_indicator = |label: &str, on: bool| {
+            let color = if on { cx.theme().accent } else { cx.theme().fg_primary };
+
+            h_flex()
+                .text_xs()
+                .border_1()
+                .border_color(color.opacity(0.5))
+                .rounded(cx.theme().radius)
+                .text_color(color)
+                .bg(color.opacity(0.1))
+                .px_2()
+                .child(label.to_owned())
+        };
+
+        let version =
+            div().text_sm().text_color(cx.theme().fg_tertiary).child(crate::version_string());
+
+        let indicators = h_flex().gap_2().child(
+            render_indicator("highlight", EngineManager::snapshot(cx).highlight())
+                .cursor_pointer()
+                .on_any_mouse_down(|_, _, cx| {
+                    EngineManager::execute(cx, Command::HighlightToggle);
+                }),
+        );
+
+        h_flex()
+            .bg(cx.theme().title_bar)
+            .border_t_1()
+            .border_color(cx.theme().title_bar_border)
+            .justify_between()
+            .w_full()
+            .h(TITLE_BAR_HEIGHT)
+            .pr(TITLE_BAR_RIGHT_PADDING)
+            .pl(TITLE_BAR_RIGHT_PADDING)
+            .child(indicators)
+            .child(version)
     }
 }
 
 impl Render for RadiantApp {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .track_focus(&self.focus_handle)
-            .size_full()
-            .overflow_hidden()
-            .child(self.render_content(window, cx))
+        div().track_focus(&self.focus_handle).child(self.render_content(window, cx))
     }
 }
 

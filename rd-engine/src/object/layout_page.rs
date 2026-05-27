@@ -1,10 +1,10 @@
-use crate::{Object, ObjectId, ObjectKind, SlotId};
+use crate::{Object, ObjectId, Slot};
 
 #[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct LayoutPage {
     id: ObjectId,
-    slot_id: SlotId,
+    slot: Slot,
     name: String,
 
     tiles: Vec<LayoutTile>,
@@ -17,16 +17,12 @@ impl LayoutPage {
 }
 
 impl Object for LayoutPage {
-    fn kind() -> ObjectKind {
-        ObjectKind::LayoutPage
-    }
-
     fn id(&self) -> ObjectId {
         self.id
     }
 
-    fn slot_id(&self) -> SlotId {
-        self.slot_id
+    fn slot(&self) -> Slot {
+        self.slot
     }
 
     fn name(&self) -> &str {
@@ -73,6 +69,5 @@ pub enum LayoutTileKind {
     Executors,
 
     GroupPool,
-    EffectPool,
     CueListPool,
 }

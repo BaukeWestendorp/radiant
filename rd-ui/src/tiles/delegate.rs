@@ -19,16 +19,16 @@ pub trait TileDelegate {
 pub trait PoolTileDelegate {
     fn title(&self, cx: &App) -> SharedString;
 
-    fn is_occupied(&self, slot_id: u32, cx: &App) -> bool;
+    fn is_occupied(&self, slot: u32, cx: &App) -> bool;
 
-    fn occupied_content(&self, slot_id: u32, cx: &App) -> impl IntoElement;
+    fn occupied_content(&self, slot: u32, cx: &App) -> impl IntoElement;
 
-    fn on_activate_slot(&mut self, slot_id: u32, window: &mut Window, cx: &mut App);
+    fn on_activate_slot(&mut self, slot: u32, window: &mut Window, cx: &mut App);
 
-    fn on_activate_empty_slot(&mut self, _slot_id: u32, _window: &mut Window, _cx: &mut App) {}
+    fn on_activate_empty_slot(&mut self, _slot: u32, _window: &mut Window, _cx: &mut App) {}
 
-    fn slot_overlay_label(&self, slot_id: u32, _cx: &App) -> String {
-        slot_id.to_string()
+    fn slot_overlay_label(&self, slot: u32, _cx: &App) -> String {
+        slot.to_string()
     }
 
     fn empty_slots_clickable(&self, _cx: &App) -> bool {
@@ -98,9 +98,9 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
             .child(h_flex().justify_center().size_full().child(self.delegate.read(cx).title(cx)));
 
         let slot_cells = (0..slot_count).map(|ix| {
-            let slot_id = (ix as u32) + 1;
+            let slot = (ix as u32) + 1;
 
-            let occupied = self.delegate.read(cx).is_occupied(slot_id, cx);
+            let occupied = self.delegate.read(cx).is_occupied(slot, cx);
 
             let id_overlay = div()
                 .text_sm()
@@ -109,7 +109,7 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
                 .absolute()
                 .size_full()
                 .text_color(cx.theme().fg_tertiary)
-                .child(self.delegate.read(cx).slot_overlay_label(slot_id, cx));
+                .child(self.delegate.read(cx).slot_overlay_label(slot, cx));
 
             if occupied {
                 let delegate = self.delegate.clone();
@@ -117,7 +117,7 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
                 div()
                     .id(ElementId::named_usize(
                         delegate.read(cx).element_id_prefix(cx),
-                        slot_id as usize,
+                        slot as usize,
                     ))
                     .relative()
                     .w(self.cell_size.width)
@@ -137,9 +137,9 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
                     })
                     .when(cx.theme().shadow, |e| e.shadow_md())
                     .child(id_overlay)
-                    .child(delegate.read(cx).occupied_content(slot_id, cx))
+                    .child(delegate.read(cx).occupied_content(slot, cx))
                     .on_click(move |_, window, cx| {
-                        delegate.update(cx, |d, cx| d.on_activate_slot(slot_id, window, cx));
+                        delegate.update(cx, |d, cx| d.on_activate_slot(slot, window, cx));
                     })
             } else {
                 let delegate = self.delegate.clone();
@@ -147,7 +147,7 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
                 let base = div()
                     .id(ElementId::named_usize(
                         delegate.read(cx).element_id_prefix(cx),
-                        slot_id as usize,
+                        slot as usize,
                     ))
                     .relative()
                     .w(self.cell_size.width)
@@ -162,7 +162,7 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
 
                 if delegate.read(cx).empty_slots_clickable(cx) {
                     base.on_click(move |_, window, cx| {
-                        delegate.update(cx, |d, cx| d.on_activate_empty_slot(slot_id, window, cx));
+                        delegate.update(cx, |d, cx| d.on_activate_empty_slot(slot, window, cx));
                     })
                 } else {
                     base
