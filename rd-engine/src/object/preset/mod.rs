@@ -3,7 +3,7 @@ mod dimmer;
 use std::collections::HashMap;
 
 pub use dimmer::*;
-use zeevonk::{AttributeName, value::AttributeValue};
+use zeevonk::{AttributeName, FixtureTypeId, project::FixtureId, value::AttributeValue};
 
 use crate::ObjectId;
 
@@ -35,5 +35,9 @@ pub enum PresetKind {
 }
 
 pub trait Preset {
-    fn values(&self) -> &HashMap<AttributeName, AttributeValue>;
+    fn universal(&self) -> &HashMap<AttributeName, AttributeValue>;
+
+    fn global(&self) -> &HashMap<FixtureTypeId, HashMap<AttributeName, AttributeValue>>;
+
+    fn selective(&self) -> &HashMap<FixtureId, HashMap<AttributeName, AttributeValue>>;
 }

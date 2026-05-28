@@ -189,8 +189,28 @@ fn values_from_cue(cue: &Cue, objects: &Objects, stage: &Stage) -> anyhow::Resul
                         }
                     };
 
-                    for (attribute, value) in preset.values() {
+                    // Universal values.
+                    for (attribute, value) in preset.universal() {
                         values.set(*fixture_id, attribute.clone(), *value);
+                    }
+
+                    // Global values.
+                    if let Some(fixture_type_id) =
+                        stage.fixture(fixture_id).map(|f| f.gdtf_fixture_type_id())
+                        && !preset.global().is_empty()
+                    {
+                        if let Some(global_values) = preset.global().get(&fixture_type_id) {
+                            for (attribute, value) in global_values {
+                                values.set(*fixture_id, attribute.clone(), *value);
+                            }
+                        }
+                    }
+
+                    // Selective values.
+                    if let Some(selective_values) = preset.selective().get(fixture_id) {
+                        for (attribute, value) in selective_values {
+                            values.set(*fixture_id, attribute.clone(), *value);
+                        }
                     }
                 }
             }
