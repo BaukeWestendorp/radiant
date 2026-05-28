@@ -22,6 +22,16 @@ pub trait Object: serde::Serialize + for<'de> serde::Deserialize<'de> {
     fn name(&self) -> &str;
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub enum ObjectKind {
+    Group,
+    CueList,
+    ExecutorPage,
+    LayoutPage,
+    Preset(PresetKind),
+}
+
 #[derive(Debug, Clone)]
 pub struct ObjectCollection<T> {
     objects: Vec<T>,

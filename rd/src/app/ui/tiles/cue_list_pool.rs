@@ -3,7 +3,7 @@ use std::num::NonZeroU32;
 use gpui::{App, IntoElement, SharedString, Window, prelude::*};
 use rd_ui::{PoolTileDelegate, h_flex};
 
-use rd_engine::{CueList, Object, Slot};
+use rd_engine::{Command, CueList, Object, ObjectKind, Slot};
 
 use crate::engine::EngineManager;
 
@@ -40,5 +40,15 @@ impl PoolTileDelegate for CueListsPoolTile {
         h_flex().justify_center().size_full().child(label)
     }
 
-    fn on_activate_slot(&mut self, _slot: u32, _window: &mut Window, _cx: &mut App) {}
+    fn on_activate_slot(&mut self, slot: u32, _window: &mut Window, cx: &mut App) {
+        let slot = Slot::new(NonZeroU32::new(slot).unwrap());
+        let Ok(cue_list) = EngineManager::snapshot(cx).objects().cue_lists().get_by_slot(&slot)
+        else {
+            return;
+        };
+        EngineManager::execute(
+            cx,
+            Command::Activate { object_kind: ObjectKind::CueList, object_id: cue_list.id() },
+        )
+    }
 }

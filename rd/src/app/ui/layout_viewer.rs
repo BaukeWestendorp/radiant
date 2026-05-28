@@ -152,6 +152,7 @@ impl PoolTileDelegate for LayoutPageSelectorTile {
     }
 
     fn on_activate_slot(&mut self, slot: u32, _window: &mut Window, cx: &mut gpui::App) {
+        // FIXME: Use Activate command here instead. (That means also implement Activate for LayoutPage.
         let slot = Slot::new(NonZeroU32::new(slot).unwrap());
         self.selected_page.write(cx, Some(slot));
     }

@@ -2,10 +2,12 @@ use zeevonk::project::FixtureId;
 
 use crate::{
     Engine, Event, Executor, ExecutorButton, ExecutorButtonAction, ExecutorContent, ExecutorId,
+    ObjectId, ObjectKind,
 };
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Command {
+    Activate { object_kind: ObjectKind, object_id: ObjectId },
     SelectionAdd { fixture_ids: Vec<FixtureId> },
     SelectionRemove { fixture_ids: Vec<FixtureId> },
     SelectionSet { fixture_ids: Vec<FixtureId> },
@@ -24,6 +26,17 @@ pub enum Command {
 impl Command {
     pub fn execute(self, engine: &mut Engine) -> anyhow::Result<()> {
         match self {
+            Command::Activate { object_kind, object_id } => match object_kind {
+                ObjectKind::Group => {
+                    let group = engine.objects().groups().get_by_object_id(&object_id)?;
+                    let fixture_ids = group.fixture_ids().to_vec();
+                    Command::SelectionAdd { fixture_ids }.execute(engine)?;
+                }
+                ObjectKind::CueList => {}
+                ObjectKind::ExecutorPage => {}
+                ObjectKind::LayoutPage => {}
+                ObjectKind::Preset(_) => {}
+            },
             Command::SelectionAdd { fixture_ids } => {
                 for fixture_id in fixture_ids {
                     if !engine.selection.contains(&fixture_id) {

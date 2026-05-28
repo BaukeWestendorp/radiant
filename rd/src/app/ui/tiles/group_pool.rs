@@ -3,7 +3,7 @@ use std::num::NonZeroU32;
 use gpui::{App, IntoElement, SharedString, Window, prelude::*};
 use rd_ui::{PoolTileDelegate, h_flex};
 
-use rd_engine::{Command, Group, Object as _, Slot};
+use rd_engine::{Command, Group, Object as _, ObjectKind, Slot};
 
 use crate::engine::EngineManager;
 
@@ -40,18 +40,14 @@ impl PoolTileDelegate for GroupPoolTile {
         h_flex().justify_center().size_full().child(name)
     }
 
-    fn on_activate_slot(&mut self, slot: u32, window: &mut Window, cx: &mut App) {
+    fn on_activate_slot(&mut self, slot: u32, _window: &mut Window, cx: &mut App) {
         let slot = Slot::new(NonZeroU32::new(slot).unwrap());
-
         let Ok(group) = EngineManager::snapshot(cx).objects().groups().get_by_slot(&slot) else {
-            log::error!("Tried to select group in slot {slot}, but it was not found");
             return;
         };
-
-        let fixture_ids = group.fixture_ids().to_vec();
-        match window.modifiers().shift {
-            true => EngineManager::execute(cx, Command::SelectionAdd { fixture_ids }),
-            false => EngineManager::execute(cx, Command::SelectionSet { fixture_ids }),
-        }
+        EngineManager::execute(
+            cx,
+            Command::Activate { object_kind: ObjectKind::Group, object_id: group.id() },
+        )
     }
 }

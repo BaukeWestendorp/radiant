@@ -3,7 +3,7 @@ use std::num::NonZeroU32;
 use gpui::{App, IntoElement, SharedString, Window, prelude::*};
 use rd_ui::{PoolTileDelegate, h_flex};
 
-use rd_engine::{Object as _, Preset, PresetKind, Slot};
+use rd_engine::{Command, Object as _, ObjectKind, Preset, PresetKind, Slot};
 
 use crate::engine::EngineManager;
 
@@ -44,13 +44,17 @@ impl PoolTileDelegate for PresetPoolTile {
     fn on_activate_slot(&mut self, slot: u32, _window: &mut Window, cx: &mut App) {
         let slot = Slot::new(NonZeroU32::new(slot).unwrap());
 
-        let Ok(dimmer_preset) =
-            EngineManager::snapshot(cx).objects().dimmer_presets().get_by_slot(&slot)
+        let Ok(preset) = EngineManager::snapshot(cx).objects().preset_by_slot(&slot, &self.kind)
         else {
-            log::error!("Tried to select preset in slot {slot}, but it was not found");
             return;
         };
 
-        log::warn!("programmer not implemented yet. tried to select '{}'", dimmer_preset.name());
+        EngineManager::execute(
+            cx,
+            Command::Activate {
+                object_kind: ObjectKind::Preset(self.kind),
+                object_id: preset.id(),
+            },
+        )
     }
 }
