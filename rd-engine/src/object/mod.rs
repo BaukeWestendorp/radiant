@@ -146,7 +146,15 @@ pub struct Objects {
     pub(crate) cue_lists: ObjectCollection<CueList>,
     pub(crate) layout_pages: ObjectCollection<LayoutPage>,
 
-    pub(crate) dimmer_presets: ObjectCollection<DimmerPreset>,
+    pub(crate) dimmer_presets: ObjectCollection<Preset>,
+    pub(crate) position_presets: ObjectCollection<Preset>,
+    pub(crate) gobo_presets: ObjectCollection<Preset>,
+    pub(crate) color_presets: ObjectCollection<Preset>,
+    pub(crate) beam_presets: ObjectCollection<Preset>,
+    pub(crate) focus_presets: ObjectCollection<Preset>,
+    pub(crate) control_presets: ObjectCollection<Preset>,
+    pub(crate) shapers_presets: ObjectCollection<Preset>,
+    pub(crate) video_presets: ObjectCollection<Preset>,
 }
 
 impl Objects {
@@ -176,13 +184,67 @@ impl Objects {
         &self.layout_pages
     }
 
-    pub fn dimmer_presets(&self) -> &ObjectCollection<DimmerPreset> {
+    pub fn dimmer_presets(&self) -> &ObjectCollection<Preset> {
         &self.dimmer_presets
     }
 
-    pub fn preset(&self, id: &PresetId) -> anyhow::Result<&impl Preset> {
+    pub fn position_presets(&self) -> &ObjectCollection<Preset> {
+        &self.position_presets
+    }
+
+    pub fn gobo_presets(&self) -> &ObjectCollection<Preset> {
+        &self.gobo_presets
+    }
+
+    pub fn color_presets(&self) -> &ObjectCollection<Preset> {
+        &self.color_presets
+    }
+
+    pub fn beam_presets(&self) -> &ObjectCollection<Preset> {
+        &self.beam_presets
+    }
+
+    pub fn focus_presets(&self) -> &ObjectCollection<Preset> {
+        &self.focus_presets
+    }
+
+    pub fn control_presets(&self) -> &ObjectCollection<Preset> {
+        &self.control_presets
+    }
+
+    pub fn shapers_presets(&self) -> &ObjectCollection<Preset> {
+        &self.shapers_presets
+    }
+
+    pub fn video_presets(&self) -> &ObjectCollection<Preset> {
+        &self.video_presets
+    }
+
+    pub fn preset_by_object_id(&self, id: &PresetId) -> anyhow::Result<&Preset> {
         match id.kind() {
-            PresetKind::Dimmer => self.dimmer_presets().get_by_object_id(&id.object_id()),
+            PresetKind::Dimmer => self.dimmer_presets.get_by_object_id(&id.object_id()),
+            PresetKind::Position => self.position_presets.get_by_object_id(&id.object_id()),
+            PresetKind::Gobo => self.gobo_presets.get_by_object_id(&id.object_id()),
+            PresetKind::Color => self.color_presets.get_by_object_id(&id.object_id()),
+            PresetKind::Beam => self.beam_presets.get_by_object_id(&id.object_id()),
+            PresetKind::Focus => self.focus_presets.get_by_object_id(&id.object_id()),
+            PresetKind::Control => self.control_presets.get_by_object_id(&id.object_id()),
+            PresetKind::Shapers => self.shapers_presets.get_by_object_id(&id.object_id()),
+            PresetKind::Video => self.video_presets.get_by_object_id(&id.object_id()),
+        }
+    }
+
+    pub fn preset_by_slot(&self, slot: &Slot, kind: &PresetKind) -> anyhow::Result<&Preset> {
+        match kind {
+            PresetKind::Dimmer => self.dimmer_presets.get_by_slot(&slot),
+            PresetKind::Position => self.position_presets.get_by_slot(&slot),
+            PresetKind::Gobo => self.gobo_presets.get_by_slot(&slot),
+            PresetKind::Color => self.color_presets.get_by_slot(&slot),
+            PresetKind::Beam => self.beam_presets.get_by_slot(&slot),
+            PresetKind::Focus => self.focus_presets.get_by_slot(&slot),
+            PresetKind::Control => self.control_presets.get_by_slot(&slot),
+            PresetKind::Shapers => self.shapers_presets.get_by_slot(&slot),
+            PresetKind::Video => self.video_presets.get_by_slot(&slot),
         }
     }
 }

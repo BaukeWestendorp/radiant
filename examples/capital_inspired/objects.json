@@ -114,6 +114,14 @@
       "selective": {}
     }
   ],
+  "position_presets": [],
+  "gobo_presets": [],
+  "color_presets": [],
+  "beam_presets": [],
+  "focus_presets": [],
+  "control_presets": [],
+  "shapers_presets": [],
+  "video_presets": [],
   "cue_lists": [
     {
       "id": "dc40867b-7e21-4b70-81cb-01d25d37c439",
@@ -483,7 +491,15 @@
       "tiles": [
         { "x": 0, "y": 0, "width": 9, "height": 8, "kind": "Fixtures" },
         { "x": 0, "y": 8, "width": 9, "height": 1, "kind": "GroupPool" },
-        { "x": 9, "y": 0, "width": 9, "height": 1, "kind": "DimmerPresetPool" },
+        { "x": 9, "y": 0, "width": 9, "height": 1, "kind": { "PresetPool": "Dimmer" } },
+        { "x": 9, "y": 1, "width": 9, "height": 1, "kind": { "PresetPool": "Position" } },
+        { "x": 9, "y": 2, "width": 9, "height": 1, "kind": { "PresetPool": "Gobo" } },
+        { "x": 9, "y": 3, "width": 9, "height": 1, "kind": { "PresetPool": "Color" } },
+        { "x": 9, "y": 4, "width": 9, "height": 1, "kind": { "PresetPool": "Beam" } },
+        { "x": 9, "y": 5, "width": 9, "height": 1, "kind": { "PresetPool": "Focus" } },
+        { "x": 9, "y": 6, "width": 9, "height": 1, "kind": { "PresetPool": "Control" } },
+        { "x": 9, "y": 7, "width": 9, "height": 1, "kind": { "PresetPool": "Shapers" } },
+        { "x": 9, "y": 8, "width": 9, "height": 1, "kind": { "PresetPool": "Video" } },
         { "kind": "Executors", "width": 18, "height": 3, "x": 0, "y": 9 }
       ]
     }

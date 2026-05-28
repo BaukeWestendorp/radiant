@@ -3,37 +3,38 @@ use std::num::NonZeroU32;
 use gpui::{App, IntoElement, SharedString, Window, prelude::*};
 use rd_ui::{PoolTileDelegate, h_flex};
 
-use rd_engine::{DimmerPreset, Object as _, Slot};
+use rd_engine::{Object as _, Preset, PresetKind, Slot};
 
 use crate::engine::EngineManager;
 
-pub struct DimmerPresetPoolTile {}
+pub struct PresetPoolTile {
+    kind: PresetKind,
+}
 
-impl DimmerPresetPoolTile {
-    pub fn new() -> Self {
-        Self {}
+impl PresetPoolTile {
+    pub fn new(kind: PresetKind) -> Self {
+        Self { kind }
     }
 
-    pub fn dimmer_preset<'a>(&self, slot: u32, cx: &'a App) -> anyhow::Result<&'a DimmerPreset> {
+    pub fn preset<'a>(&self, slot: u32, cx: &'a App) -> anyhow::Result<&'a Preset> {
         EngineManager::snapshot(cx)
             .objects()
-            .dimmer_presets()
-            .get_by_slot(&Slot::new(NonZeroU32::new(slot).unwrap()))
+            .preset_by_slot(&Slot::new(NonZeroU32::new(slot).unwrap()), &self.kind)
     }
 }
 
-impl PoolTileDelegate for DimmerPresetPoolTile {
+impl PoolTileDelegate for PresetPoolTile {
     fn title(&self, _cx: &App) -> SharedString {
-        "Dimmer Presets".into()
+        format!("{} Presets", self.kind).into()
     }
 
     fn is_occupied(&self, slot: u32, cx: &App) -> bool {
-        self.dimmer_preset(slot, cx).is_ok()
+        self.preset(slot, cx).is_ok()
     }
 
     fn occupied_content(&self, slot: u32, cx: &App) -> impl IntoElement {
-        let name = match self.dimmer_preset(slot, cx) {
-            Ok(dimmer_preset) => dimmer_preset.name().to_string(),
+        let name = match self.preset(slot, cx) {
+            Ok(preset) => preset.name().to_string(),
             Err(_) => "<unknown>".to_string(),
         };
 
@@ -46,7 +47,7 @@ impl PoolTileDelegate for DimmerPresetPoolTile {
         let Ok(dimmer_preset) =
             EngineManager::snapshot(cx).objects().dimmer_presets().get_by_slot(&slot)
         else {
-            log::error!("Tried to select dimmer_preset in slot {slot}, but it was not found");
+            log::error!("Tried to select preset in slot {slot}, but it was not found");
             return;
         };
 

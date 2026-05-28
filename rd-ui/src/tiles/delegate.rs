@@ -1,5 +1,6 @@
 use gpui::{
-    AnyElement, App, Bounds, ElementId, Entity, Pixels, SharedString, Window, div, relative,
+    AnyElement, App, Bounds, ElementId, Entity, FontWeight, Pixels, SharedString, Window, div,
+    relative,
 };
 use gpui::{Size, prelude::*};
 use uuid::Uuid;
@@ -95,7 +96,13 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
             .border_color(cx.theme().border_tile_header)
             .rounded(cx.theme().radius)
             .text_color(cx.theme().fg_tile_header)
-            .child(h_flex().justify_center().size_full().child(self.delegate.read(cx).title(cx)));
+            .font_weight(FontWeight::BOLD)
+            .child(
+                h_flex()
+                    .justify_center()
+                    .h_full()
+                    .child(div().w_full().text_center().child(self.delegate.read(cx).title(cx))),
+            );
 
         let slot_cells = (0..slot_count).map(|ix| {
             let slot = (ix as u32) + 1;
@@ -135,7 +142,6 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
                             .border_color(cx.theme().border_secondary.active())
                             .top(cx.theme().button_depression)
                     })
-                    .when(cx.theme().shadow, |e| e.shadow_md())
                     .child(id_overlay)
                     .child(delegate.read(cx).occupied_content(slot, cx))
                     .on_click(move |_, window, cx| {
@@ -156,7 +162,6 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
                     .border_1()
                     .border_color(cx.theme().border_primary)
                     .rounded(cx.theme().radius)
-                    .when(cx.theme().shadow, |e| e.shadow_md())
                     .child(id_overlay)
                     .child(div().w(self.cell_size.width).h(self.cell_size.height));
 

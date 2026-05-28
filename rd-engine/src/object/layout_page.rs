@@ -1,4 +1,4 @@
-use crate::{Object, ObjectId, Slot};
+use crate::{Object, ObjectId, PresetKind, Slot};
 
 #[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -71,5 +71,5 @@ pub enum LayoutTileKind {
     GroupPool,
     CueListPool,
 
-    DimmerPresetPool,
+    PresetPool(PresetKind),
 }

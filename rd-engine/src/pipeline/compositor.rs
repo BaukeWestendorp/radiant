@@ -9,9 +9,7 @@ use zeevonk::{
     value::{AttributeValues, ClampedValue},
 };
 
-use crate::{
-    Cue, Executor, ExecutorContent, ExecutorId, MergeMode, Objects, Preset as _, RecipeContent,
-};
+use crate::{Cue, Executor, ExecutorContent, ExecutorId, MergeMode, Objects, RecipeContent};
 
 pub struct Compositor {
     cue_list_executor_meta: HashMap<ExecutorId, CueListExecutorMeta>,
@@ -181,7 +179,7 @@ fn values_from_cue(cue: &Cue, objects: &Objects, stage: &Stage) -> anyhow::Resul
                     }
                 }
                 RecipeContent::Preset(preset_id) => {
-                    let preset = match objects.preset(preset_id) {
+                    let preset = match objects.preset_by_object_id(preset_id) {
                         Ok(preset) => preset,
                         Err(err) => {
                             log::error!("{err}");
