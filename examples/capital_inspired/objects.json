@@ -64,6 +64,44 @@
       "fixture_ids": ["501", "502", "503", "504"]
     }
   ],
+  "dimmer_presets": [
+    {
+      "id": "cac2b5fd-6bc8-4031-a00b-7fb08fc30fd8",
+      "slot": 1,
+      "name": "0%",
+      "values": { "Dimmer": { "Clamped": 0.0 } }
+    },
+    {
+      "id": "212da0fb-4055-4aca-b7a4-94f4470ed9c7",
+      "slot": 2,
+      "name": "10%",
+      "values": { "Dimmer": { "Clamped": 0.1 } }
+    },
+    {
+      "id": "ac7a42b1-0c80-49a0-935e-bc9902d939c8",
+      "slot": 3,
+      "name": "25%",
+      "values": { "Dimmer": { "Clamped": 0.25 } }
+    },
+    {
+      "id": "921dd4d6-1a43-473a-9084-be4acc04326c",
+      "slot": 4,
+      "name": "50%",
+      "values": { "Dimmer": { "Clamped": 0.5 } }
+    },
+    {
+      "id": "ed9d178f-d6fa-49fc-84fc-a037acaa9d1d",
+      "slot": 5,
+      "name": "75%",
+      "values": { "Dimmer": { "Clamped": 0.75 } }
+    },
+    {
+      "id": "d530ec9c-1f42-4226-aed5-627707714479",
+      "slot": 6,
+      "name": "100%",
+      "values": { "Dimmer": { "Clamped": 1.0 } }
+    }
+  ],
   "cue_lists": [
     {
       "id": "dc40867b-7e21-4b70-81cb-01d25d37c439",

@@ -3,11 +3,13 @@ use std::{collections::HashMap, fmt, num::NonZeroU32};
 use uuid::Uuid;
 
 mod cue_list;
+mod dimmer_preset;
 mod executor_page;
 mod group;
 mod layout_page;
 
 pub use cue_list::*;
+pub use dimmer_preset::*;
 pub use executor_page::*;
 pub use group::*;
 pub use layout_page::*;
@@ -143,6 +145,8 @@ pub struct Objects {
     pub(crate) executor_pages: ObjectCollection<ExecutorPage>,
     pub(crate) cue_lists: ObjectCollection<CueList>,
     pub(crate) layout_pages: ObjectCollection<LayoutPage>,
+
+    pub(crate) dimmer_presets: ObjectCollection<DimmerPreset>,
 }
 
 impl Objects {
@@ -170,5 +174,9 @@ impl Objects {
 
     pub fn layout_pages(&self) -> &ObjectCollection<LayoutPage> {
         &self.layout_pages
+    }
+
+    pub fn dimmer_presets(&self) -> &ObjectCollection<DimmerPreset> {
+        &self.dimmer_presets
     }
 }
