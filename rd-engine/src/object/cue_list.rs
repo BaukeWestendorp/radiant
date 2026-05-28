@@ -3,7 +3,7 @@ use std::{collections::HashMap, time::Duration};
 use anyhow::Context;
 use zeevonk::{AttributeName, value::AttributeValue};
 
-use crate::{FixtureCollection, Object, ObjectId, Slot};
+use crate::{FixtureCollection, Object, ObjectId, PresetId, Slot};
 
 #[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -89,6 +89,7 @@ impl Recipe {
 #[serde(tag = "type", content = "value")]
 pub enum RecipeContent {
     Static(HashMap<AttributeName, AttributeValue>),
+    Preset(PresetId),
 }
 
 impl Default for RecipeContent {

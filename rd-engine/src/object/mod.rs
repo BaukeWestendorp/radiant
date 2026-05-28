@@ -3,16 +3,16 @@ use std::{collections::HashMap, fmt, num::NonZeroU32};
 use uuid::Uuid;
 
 mod cue_list;
-mod dimmer_preset;
 mod executor_page;
 mod group;
 mod layout_page;
+mod preset;
 
 pub use cue_list::*;
-pub use dimmer_preset::*;
 pub use executor_page::*;
 pub use group::*;
 pub use layout_page::*;
+pub use preset::*;
 
 pub trait Object: serde::Serialize + for<'de> serde::Deserialize<'de> {
     fn slot(&self) -> Slot;
@@ -178,5 +178,11 @@ impl Objects {
 
     pub fn dimmer_presets(&self) -> &ObjectCollection<DimmerPreset> {
         &self.dimmer_presets
+    }
+
+    pub fn preset(&self, id: &PresetId) -> anyhow::Result<&impl Preset> {
+        match id.kind() {
+            PresetKind::Dimmer => self.dimmer_presets().get_by_object_id(&id.object_id()),
+        }
     }
 }

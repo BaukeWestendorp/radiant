@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use zeevonk::{AttributeName, value::AttributeValue};
 
-use crate::{Object, ObjectId, Slot};
+use crate::{Object, ObjectId, Preset, Slot};
 
 #[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -17,10 +17,6 @@ impl DimmerPreset {
     pub fn new(id: ObjectId, slot: Slot, name: String) -> Self {
         Self { id, slot, name, values: HashMap::new() }
     }
-
-    pub fn values(&self) -> &HashMap<AttributeName, AttributeValue> {
-        &self.values
-    }
 }
 
 impl Object for DimmerPreset {
@@ -34,5 +30,11 @@ impl Object for DimmerPreset {
 
     fn name(&self) -> &str {
         &self.name
+    }
+}
+
+impl Preset for DimmerPreset {
+    fn values(&self) -> &HashMap<AttributeName, AttributeValue> {
+        &self.values
     }
 }

@@ -114,7 +114,7 @@
           "recipes": [
             {
               "fixtures": { "type": "Group", "value": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6c" },
-              "content": { "type": "Static", "value": { "Dimmer": { "Clamped": 1.0 } } }
+              "content": { "type": "Preset", "value": { "kind": "Dimmer", "object_id": "d530ec9c-1f42-4226-aed5-627707714479" } }
             }
           ]
         }
@@ -131,7 +131,7 @@
           "recipes": [
             {
               "fixtures": { "type": "Group", "value": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6d" },
-              "content": { "type": "Static", "value": { "Dimmer": { "Clamped": 1.0 } } }
+              "content": { "type": "Preset", "value": { "kind": "Dimmer", "object_id": "d530ec9c-1f42-4226-aed5-627707714479" } }
             }
           ]
         }
@@ -148,7 +148,7 @@
           "recipes": [
             {
               "fixtures": { "type": "Group", "value": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6e" },
-              "content": { "type": "Static", "value": { "Dimmer": { "Clamped": 1.0 } } }
+              "content": { "type": "Preset", "value": { "kind": "Dimmer", "object_id": "d530ec9c-1f42-4226-aed5-627707714479" } }
             }
           ]
         }
@@ -165,7 +165,7 @@
           "recipes": [
             {
               "fixtures": { "type": "Group", "value": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6f" },
-              "content": { "type": "Static", "value": { "Dimmer": { "Clamped": 1.0 } } }
+              "content": { "type": "Preset", "value": { "kind": "Dimmer", "object_id": "d530ec9c-1f42-4226-aed5-627707714479" } }
             }
           ]
         }
@@ -182,7 +182,7 @@
           "recipes": [
             {
               "fixtures": { "type": "Group", "value": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a70" },
-              "content": { "type": "Static", "value": { "Dimmer": { "Clamped": 1.0 } } }
+              "content": { "type": "Preset", "value": { "kind": "Dimmer", "object_id": "d530ec9c-1f42-4226-aed5-627707714479" } }
             }
           ]
         }
