@@ -70,4 +70,6 @@ pub enum LayoutTileKind {
 
     GroupPool,
     CueListPool,
+
+    DimmerPresetPool,
 }

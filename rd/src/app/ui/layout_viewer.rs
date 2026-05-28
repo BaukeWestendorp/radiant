@@ -6,7 +6,9 @@ use rd_engine::{LayoutPage, LayoutTileKind, Object, Slot};
 use rd_ui::{PoolTile, PoolTileDelegate, TileGrid, TileGridState, h_flex};
 
 use crate::{
-    app::ui::tiles::{CueListsPoolTile, ExecutorsTile, FixturesTile, GroupPoolTile},
+    app::ui::tiles::{
+        CueListsPoolTile, DimmerPresetPoolTile, ExecutorsTile, FixturesTile, GroupPoolTile,
+    },
     engine::EngineManager,
 };
 
@@ -177,6 +179,10 @@ fn page_to_tile_grid_state(
             }
             LayoutTileKind::CueListPool => {
                 let delegate = cx.new(|_cx| CueListsPoolTile::new());
+                tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), bounds);
+            }
+            LayoutTileKind::DimmerPresetPool => {
+                let delegate = cx.new(|_cx| DimmerPresetPoolTile::new());
                 tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), bounds);
             }
         }
