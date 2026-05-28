@@ -35,30 +35,50 @@ impl TriggerResolver {
                 .cloned()
                 .collect::<Vec<_>>();
 
-            let midi_in = midir::MidiInput::new("Radiant")?;
-            let port = midi_in
+            let midi_in = match midir::MidiInput::new("Radiant") {
+                Ok(midi_in) => midi_in,
+                Err(err) => {
+                    log::error!("Failed to create a MIDI input: {err}");
+                    continue;
+                }
+            };
+
+            let port = match midi_in
                 .ports()
                 .into_iter()
                 .find(|port| midi_in.port_name(port).as_deref().ok() == Some(device_name))
-                .ok_or_else(|| {
+            {
+                Some(port) => port,
+                None => {
                     let available_ports = midi_in
                         .ports()
                         .into_iter()
                         .filter_map(|port| midi_in.port_name(&port).ok())
                         .collect::<Vec<_>>();
 
-                    anyhow::anyhow!(
+                    log::error!(
                         "midi port not found: {}. available ports: {:?}",
                         device_name,
                         available_ports
-                    )
-                })?;
-            let midi_connection = midi_in.connect(
+                    );
+
+                    continue;
+                }
+            };
+
+            let midi_connection = match midi_in.connect(
                 &port,
                 "Radiant",
                 Self::handle_midi_event,
                 (midi_mappings, trigger_tx.clone()),
-            )?;
+            ) {
+                Ok(midi_connection) => midi_connection,
+                Err(err) => {
+                    log::error!("failed to connect to midi port: {err}");
+                    continue;
+                }
+            };
+
             midi_connections.push(midi_connection);
         }
 
