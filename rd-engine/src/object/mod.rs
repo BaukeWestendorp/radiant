@@ -2,17 +2,17 @@ use std::{collections::HashMap, fmt, num::NonZeroU32};
 
 use uuid::Uuid;
 
-mod cue_list;
 mod executor_page;
 mod group;
 mod layout_page;
 mod preset;
+mod sequence;
 
-pub use cue_list::*;
 pub use executor_page::*;
 pub use group::*;
 pub use layout_page::*;
 pub use preset::*;
+pub use sequence::*;
 
 pub trait Object: serde::Serialize + for<'de> serde::Deserialize<'de> {
     fn slot(&self) -> Slot;
@@ -26,7 +26,7 @@ pub trait Object: serde::Serialize + for<'de> serde::Deserialize<'de> {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub enum ObjectKind {
     Group,
-    CueList,
+    Sequence,
     ExecutorPage,
     LayoutPage,
     Preset(PresetKind),
@@ -153,7 +153,7 @@ impl fmt::Display for Slot {
 pub struct Objects {
     pub(crate) groups: ObjectCollection<Group>,
     pub(crate) executor_pages: ObjectCollection<ExecutorPage>,
-    pub(crate) cue_lists: ObjectCollection<CueList>,
+    pub(crate) sequences: ObjectCollection<Sequence>,
     pub(crate) layout_pages: ObjectCollection<LayoutPage>,
 
     pub(crate) dimmer_presets: ObjectCollection<Preset>,
@@ -186,8 +186,8 @@ impl Objects {
         &self.executor_pages
     }
 
-    pub fn cue_lists(&self) -> &ObjectCollection<CueList> {
-        &self.cue_lists
+    pub fn sequences(&self) -> &ObjectCollection<Sequence> {
+        &self.sequences
     }
 
     pub fn layout_pages(&self) -> &ObjectCollection<LayoutPage> {

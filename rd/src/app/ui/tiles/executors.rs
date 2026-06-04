@@ -4,7 +4,8 @@ use gpui::{
     AnyElement, App, Bounds, FontWeight, Pixels, SharedString, Size, Window, div, prelude::*,
     relative, uniform_list,
 };
-use rd_engine::{CueList, Executor, ExecutorContent, Object as _, Slot};
+
+use rd_engine::object::{Executor, ExecutorContent, Object as _, Sequence, Slot};
 use rd_ui::{ActiveTheme, TileDelegate, h_flex, v_flex};
 
 use crate::engine::EngineManager;
@@ -61,16 +62,20 @@ impl TileDelegate for ExecutorsTile {
                     div().size_full().bg(cx.theme().bg_secondary).into_any_element();
 
                 let executor_content = match executor.content() {
-                    Some(ExecutorContent::CueList { cue_list, cue_index, .. }) => {
+                    Some(ExecutorContent::Sequence(sc)) => {
                         match EngineManager::snapshot(cx)
                             .objects()
-                            .cue_lists()
-                            .get_by_object_id(&cue_list)
+                            .sequences()
+                            .get_by_object_id(&sc.sequence())
                         {
-                            Ok(cue_list) => {
-                                render_cue_list_content(executor, cue_list, *cue_index, window, cx)
-                                    .into_any_element()
-                            }
+                            Ok(sequence) => render_sequence_content(
+                                executor,
+                                sequence,
+                                sc.cue_index(),
+                                window,
+                                cx,
+                            )
+                            .into_any_element(),
                             Err(err) => {
                                 log::error!("{err}");
                                 empty_executor
@@ -97,9 +102,9 @@ impl TileDelegate for ExecutorsTile {
     }
 }
 
-fn render_cue_list_content(
+fn render_sequence_content(
     executor: &Executor,
-    cue_list: &CueList,
+    sequence: &Sequence,
     cue_index: usize,
     _window: &Window,
     cx: &App,
@@ -118,7 +123,7 @@ fn render_cue_list_content(
                 .px_1()
                 .overflow_hidden()
                 .text_ellipsis()
-                .child(cue_list.name().to_string()),
+                .child(sequence.name().to_string()),
         )
         .child(
             h_flex()
@@ -130,10 +135,10 @@ fn render_cue_list_content(
                 .border_color(cx.theme().border_primary)
                 .font_weight(FontWeight::BOLD)
                 .text_xs()
-                .child(cue_list.slot().to_string()),
+                .child(sequence.slot().to_string()),
         );
 
-    let cue_names = cue_list
+    let cue_names = sequence
         .cues()
         .iter()
         .enumerate()

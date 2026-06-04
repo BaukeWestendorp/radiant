@@ -1,6 +1,6 @@
-use std::fmt;
+use std::{fmt, time::Instant};
 
-use crate::{Object, ObjectId, Slot};
+use crate::object::{Object, ObjectId, Slot};
 
 #[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -75,21 +75,16 @@ impl Object for ExecutorPage {
 #[derive(Debug, Clone, PartialEq, Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Executor {
-    content: Option<ExecutorContent>,
-    enabled: bool,
-    master: f32,
+    pub(crate) content: Option<ExecutorContent>,
+    pub(crate) enabled: bool,
+    pub(crate) master: f32,
 
-    #[serde(skip)]
-    flash_restore_master: Option<f32>,
+    pub(crate) flash_restore_master: Option<f32>,
 }
 
 impl Executor {
     pub fn content(&self) -> Option<&ExecutorContent> {
         self.content.as_ref()
-    }
-
-    pub fn content_mut(&mut self) -> &mut Option<ExecutorContent> {
-        &mut self.content
     }
 
     pub fn enabled(&self) -> bool {
@@ -104,21 +99,8 @@ impl Executor {
         self.master.clamp(0.0, 1.0)
     }
 
-    pub(crate) fn set_master(&mut self, master: f32) {
-        self.master = master.clamp(0.0, 1.0)
-    }
-
-    pub(crate) fn flash_master_press(&mut self) {
-        if self.flash_restore_master.is_none() {
-            self.flash_restore_master = Some(self.master());
-        }
-        self.set_master(1.0);
-    }
-
-    pub(crate) fn flash_master_release(&mut self) {
-        if let Some(prev) = self.flash_restore_master.take() {
-            self.set_master(prev);
-        }
+    pub fn is_sequence_executor(&self) -> bool {
+        matches!(self.content, Some(ExecutorContent::Sequence { .. }))
     }
 }
 
@@ -143,28 +125,74 @@ pub enum ExecutorButtonAction {
 #[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub enum ExecutorContent {
-    CueList {
-        cue_list: ObjectId,
-        cue_index: usize,
-        priority: u32,
-        merge_mode: MergeMode,
-        start_from_previous_cue: bool,
-        master_controls_enabled: bool,
-        reset_to_start_on_disable: bool,
-        button1: ExecutorButtonAction,
-        button2: ExecutorButtonAction,
-        button3: ExecutorButtonAction,
-    },
+    Sequence(SequenceExecutorContent),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct SequenceExecutorContent {
+    pub(crate) sequence: ObjectId,
+    pub(crate) cue_index: usize,
+    pub(crate) priority: u32,
+    pub(crate) merge_mode: MergeMode,
+    pub(crate) master_controls_enabled: bool,
+    pub(crate) reset_to_start_on_disable: bool,
+    pub(crate) button1: ExecutorButtonAction,
+    pub(crate) button2: ExecutorButtonAction,
+    pub(crate) button3: ExecutorButtonAction,
+
+    #[serde(skip, default = "Instant::now")]
+    pub(crate) last_activation_time: Instant,
+}
+
+impl SequenceExecutorContent {
+    pub fn sequence(&self) -> ObjectId {
+        self.sequence
+    }
+
+    pub fn cue_index(&self) -> usize {
+        self.cue_index
+    }
+
+    pub fn priority(&self) -> u32 {
+        self.priority
+    }
+
+    pub fn merge_mode(&self) -> MergeMode {
+        self.merge_mode
+    }
+
+    pub fn master_controls_enabled(&self) -> bool {
+        self.master_controls_enabled
+    }
+
+    pub fn reset_to_start_on_disable(&self) -> bool {
+        self.reset_to_start_on_disable
+    }
+
+    pub fn button1(&self) -> ExecutorButtonAction {
+        self.button1
+    }
+
+    pub fn button2(&self) -> ExecutorButtonAction {
+        self.button2
+    }
+
+    pub fn button3(&self) -> ExecutorButtonAction {
+        self.button3
+    }
+
+    pub(crate) fn last_activation_time(&self) -> Instant {
+        self.last_activation_time
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub enum MergeMode {
     /// Highest Takes Precedence
-    #[serde(rename = "HTP")]
     Htp,
     /// Latest Takes Precedence
-    #[serde(rename = "LTP")]
     Ltp,
 }
 
@@ -172,17 +200,17 @@ pub enum MergeMode {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct ExecutorId {
     pub page: ObjectId,
-    pub executor: Slot,
+    pub slot: Slot,
 }
 
 impl ExecutorId {
-    pub fn new(page: ObjectId, executor: Slot) -> Self {
-        Self { page, executor }
+    pub fn new(page: ObjectId, slot: Slot) -> Self {
+        Self { page, slot }
     }
 }
 
 impl fmt::Display for ExecutorId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}.{}", self.page, self.executor)
+        write!(f, "{}.{}", self.page, self.slot)
     }
 }

@@ -1,9 +1,7 @@
-use std::collections::BTreeMap;
-
 use gpui::{App, Entity, Window, div, prelude::*, px};
 use rd_ui::{Column, Table, TableDelegate, TableState};
 
-use rd_engine::zv::project::{Fixture, FixtureId, FixtureIdPart};
+use rd_engine::patch::{FixtureDefinition, FixtureIdPart};
 
 use crate::engine::EngineManager;
 
@@ -13,7 +11,8 @@ pub struct PatchSettingsView {
 
 impl PatchSettingsView {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let fixtures = cx.new(|cx| EngineManager::snapshot(cx).stage().fixtures().clone());
+        let fixtures =
+            cx.new(|cx| EngineManager::snapshot(cx).patch().fixture_definitions().to_vec());
 
         Self {
             table_state: cx.new(|cx| {
@@ -35,12 +34,12 @@ impl Render for PatchSettingsView {
 }
 
 struct PatchTableDelegate {
-    data: Entity<BTreeMap<FixtureId, Fixture>>,
+    data: Entity<Vec<FixtureDefinition>>,
     columns: Vec<Column>,
 }
 
 impl PatchTableDelegate {
-    pub fn new(fixtures: Entity<BTreeMap<FixtureId, Fixture>>) -> Self {
+    pub fn new(fixtures: Entity<Vec<FixtureDefinition>>) -> Self {
         Self {
             data: fixtures,
             columns: vec![
@@ -65,7 +64,7 @@ impl TableDelegate for PatchTableDelegate {
     }
 
     fn root_row_ids(&self, cx: &App) -> Vec<Self::RowId> {
-        self.data.read(cx).keys().filter(|fid| fid.is_root()).map(|fid| fid.root()).collect()
+        self.data.read(cx).iter().map(|f| f.id()).collect()
     }
 
     fn edit_rows(&self, _row_ids: &[Self::RowId], _cx: &App) {
@@ -83,20 +82,15 @@ impl TableDelegate for PatchTableDelegate {
         _window: &mut Window,
         cx: &App,
     ) -> impl IntoElement {
-        let row = self.data.read(cx).iter().find(|(fid, _)| fid.root() == *row_id).unwrap();
+        let fixture = self.data.read(cx).iter().find(|f| f.id() == *row_id).unwrap();
         let col = &self.columns[col_ix];
-        let fixture = row.1;
 
         let content = match col.id().as_ref() {
-            "root_id" => row.0.to_string(),
+            "root_id" => fixture.id().to_string(),
             "name" => fixture.name().to_string(),
-            "address" => fixture.base_address().to_string(),
+            "address" => fixture.dmx_address().to_string(),
             "kind" => {
-                format!(
-                    "{} ({})",
-                    fixture.gdtf_fixture_type_id().as_uuid(),
-                    fixture.gdtf_dmx_mode()
-                )
+                format!("{} ({})", fixture.gdtf_file_name(), fixture.gdtf_dmx_mode())
             }
             _ => "".to_string(),
         };

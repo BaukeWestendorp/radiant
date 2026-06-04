@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use gpui::{Context, Entity, FocusHandle, Window, div, prelude::*, px, size};
-use rd_engine::{Command, Engine};
+use rd_engine::{Engine, EngineHandle, Project, cmd::Command};
 use rd_ui::{
     ActiveTheme, Button, Icon, IconSize, IconVariant, TITLE_BAR_HEIGHT, TITLE_BAR_RIGHT_PADDING,
     h_flex,
@@ -15,7 +15,7 @@ mod ui;
 
 pub mod action {
     use gpui::{App, KeyBinding, prelude::*};
-    use rd_engine::Command;
+    use rd_engine::cmd::Command;
     use rd_ui::{Root, SETTINGS_WINDOW_OPTIONS, SettingsAppExt as _};
 
     use crate::{app::settings::SettingsView, engine::EngineManager};
@@ -59,15 +59,28 @@ pub fn run(showfile_path: Option<PathBuf>) -> Result<()> {
         .run(|window, cx| {
             crate::app::action::init(cx);
 
-            let rd_engine = match Engine::new(showfile_path) {
+            let project = match showfile_path {
+                Some(showfile_path) => match Project::load_from_folder(showfile_path) {
+                    Ok(project) => project,
+                    Err(err) => {
+                        log::error!("Could not load showfile: {err}");
+                        Project::new()
+                    }
+                },
+                None => Project::new(),
+            };
+
+            let rd_engine = match Engine::new(project) {
                 Ok(rd_engine) => rd_engine,
                 Err(err) => {
-                    log::error!("Could not load showfile: {err}");
-                    Engine::new(None).expect("should create new showfile")
+                    log::error!("Could not load engine: {err}");
+                    Engine::new(Project::new()).expect("should create new showfile")
                 }
             };
 
-            let engine_handle = EngineManager::new(rd_engine, cx);
+            let rd_engine_handle = EngineHandle::new(rd_engine);
+
+            let engine_handle = EngineManager::new(rd_engine_handle, cx);
             cx.set_global(engine_handle);
 
             cx.new(|cx| RadiantApp::new(window, cx).expect("should create app"))

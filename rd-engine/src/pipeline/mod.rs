@@ -1,30 +1,80 @@
-use anyhow::Context as _;
-use zeevonk::{project::Stage, value::AttributeValues};
+mod cache;
+mod compositor;
+mod mapper;
 
-use crate::{Command, Config, Objects};
+use crate::{
+    cmd::Command,
+    dmx::Multiverse,
+    object::Objects,
+    patch::{FixtureId, Patch},
+    trigger::{Trigger, Triggers},
+    value::AttributeValues,
+};
 
-pub mod compositor;
-pub mod trigger;
-
-pub(crate) struct Pipeline {
-    trigger_resolver: trigger::TriggerResolver,
+#[derive(Default)]
+pub struct Pipeline {
     compositor: compositor::Compositor,
+    mapper: mapper::Mapper,
+
+    cache: cache::PipelineCache,
 }
 
 impl Pipeline {
-    pub fn new(config: &Config) -> anyhow::Result<Self> {
-        Ok(Self {
-            trigger_resolver: trigger::TriggerResolver::new(config.triggers())
-                .context("failed to build trigger resolver")?,
+    pub fn new(patch: &Patch) -> Self {
+        Self {
             compositor: compositor::Compositor::new(),
-        })
+            mapper: mapper::Mapper::new(),
+            cache: cache::PipelineCache::new(patch),
+        }
     }
 
-    pub fn resolve_triggers(&mut self) -> anyhow::Result<Vec<Command>> {
-        self.trigger_resolver.resolve()
+    pub fn resolve_triggers(&self, triggers: &Triggers) -> Vec<Command> {
+        let mut commands = Vec::new();
+        for trigger in triggers.drain() {
+            match trigger {
+                Trigger::ExecutorMaster { executor_id, value } => {
+                    commands.push(Command::ExecutorSetMaster { executor_id, value });
+                }
+                Trigger::ExecutorButton { executor_id, button, pressed } => {
+                    commands.push(Command::ExecutorButton { executor_id, button, pressed });
+                }
+            }
+        }
+        commands
     }
 
-    pub fn compose(&mut self, objects: &Objects, stage: &Stage) -> anyhow::Result<AttributeValues> {
-        self.compositor.compose(objects, stage)
+    pub fn resolve_attributes(
+        &mut self,
+        objects: &Objects,
+        patch: &Patch,
+    ) -> anyhow::Result<AttributeValues> {
+        self.compositor.compose(objects, patch, &self.cache)
+    }
+
+    pub fn resolve_dmx(
+        &self,
+        attributes: &AttributeValues,
+        highlighted_fixtures: Option<&[FixtureId]>,
+    ) -> Multiverse {
+        let mut multiverse = self.mapper.map(attributes, &self.cache);
+
+        // Resolve highlighted fixture DMX values.
+        if let Some(highlighted_fixtures) = highlighted_fixtures {
+            for fixture_id in highlighted_fixtures {
+                let Some(values) = self.cache.highlights().get(fixture_id) else {
+                    log::error!(
+                        "Could not get cached highlight values for fixture with id '{}'",
+                        fixture_id
+                    );
+                    continue;
+                };
+
+                for (address, value) in values {
+                    multiverse.set_value(address, *value);
+                }
+            }
+        }
+
+        multiverse
     }
 }

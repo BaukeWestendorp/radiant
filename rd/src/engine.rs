@@ -1,57 +1,50 @@
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
 use gpui::{App, Entity, Global, ReadGlobal as _, prelude::*};
 use rd_engine::{
-    Command, Engine, EngineHandle, EngineSnapshot, Event, EventListener, RunningEngine,
-    zv::project::FixtureId,
+    EngineHandle, EngineSnapshot,
+    cmd::Command,
+    event::{Event, EventListener},
+    patch::FixtureId,
 };
 
 const SYNC_INTERVAL: Duration = Duration::from_nanos(16_666_667);
 
 pub struct EngineManager {
-    _running: RunningEngine,
-    engine: EngineHandle,
+    handle: EngineHandle,
 
-    snapshot: Entity<Arc<EngineSnapshot>>,
+    snapshot: Entity<EngineSnapshot>,
     selection: Entity<Vec<FixtureId>>,
 }
 
 impl EngineManager {
-    pub fn new(engine: Engine, cx: &mut App) -> Self {
-        let running = engine.spawn();
-        let engine = running.handle().clone();
+    pub fn new(handle: EngineHandle, cx: &mut App) -> Self {
+        let initial_snapshot = handle.snapshot();
 
-        let initial_snapshot = engine.snapshot();
-
-        let snapshot = cx.new(|_| Arc::clone(&initial_snapshot));
         let selection = cx.new(|_| initial_snapshot.selection().fixtures().to_vec());
-        let pending_selection = cx.new(|_| None::<Vec<FixtureId>>);
+        let snapshot = cx.new(|_| initial_snapshot);
 
         spawn_engine(
-            engine.clone(),
-            engine.event_listener().clone(),
+            handle.clone(),
+            handle.event_listener().clone(),
             snapshot.clone(),
             selection.clone(),
-            pending_selection.clone(),
             cx,
         );
 
-        observe_ui_selection_to_engine(
-            engine.clone(),
-            selection.clone(),
-            pending_selection.clone(),
-            cx,
-        );
+        observe_ui_selection_to_engine(handle.clone(), selection.clone(), cx);
 
-        Self { _running: running, engine, snapshot, selection }
+        Self { handle, snapshot, selection }
     }
 
     pub fn snapshot<'a>(cx: &'a App) -> &'a EngineSnapshot {
-        Self::global(cx).snapshot.read(cx).as_ref()
+        Self::global(cx).snapshot.read(cx)
     }
 
     pub fn execute(cx: &App, command: Command) {
-        Self::global(cx).engine.execute(command);
+        if let Err(err) = Self::global(cx).handle.execute(command) {
+            log::error!("Failed to execute command: {err}");
+        }
     }
 
     pub fn selection(&self) -> &Entity<Vec<FixtureId>> {
@@ -81,9 +74,8 @@ fn drain_events(listener: &EventListener) -> DrainedEvents {
 fn spawn_engine(
     engine: EngineHandle,
     event_listener: EventListener,
-    snapshot: Entity<Arc<EngineSnapshot>>,
+    snapshot: Entity<EngineSnapshot>,
     selection: Entity<Vec<FixtureId>>,
-    pending_selection: Entity<Option<Vec<FixtureId>>>,
     cx: &mut App,
 ) {
     cx.spawn(async move |cx| {
@@ -95,11 +87,12 @@ fn spawn_engine(
                 }
 
                 let latest = engine.snapshot();
-                snapshot.write(cx, Arc::clone(&latest));
 
                 if drained.saw_selection_changed {
-                    apply_engine_selection(&latest, &selection, &pending_selection, cx);
+                    apply_engine_selection(&latest, &selection, cx);
                 }
+
+                snapshot.write(cx, latest);
             });
 
             cx.background_executor().timer(SYNC_INTERVAL).await;
@@ -109,21 +102,11 @@ fn spawn_engine(
 }
 
 fn apply_engine_selection(
-    latest: &Arc<EngineSnapshot>,
+    latest: &EngineSnapshot,
     selection: &Entity<Vec<FixtureId>>,
-    pending_selection: &Entity<Option<Vec<FixtureId>>>,
     cx: &mut App,
 ) {
     let new_selection = latest.selection().fixtures().to_vec();
-
-    if let Some(pending) = pending_selection.read(cx).as_ref() {
-        if pending.as_slice() == new_selection.as_slice() {
-            pending_selection.write(cx, None);
-        } else {
-            return;
-        }
-    }
-
     if selection.read(cx).as_slice() != new_selection.as_slice() {
         selection.write(cx, new_selection);
     }
@@ -132,7 +115,6 @@ fn apply_engine_selection(
 fn observe_ui_selection_to_engine(
     engine: EngineHandle,
     selection: Entity<Vec<FixtureId>>,
-    pending_selection: Entity<Option<Vec<FixtureId>>>,
     cx: &mut App,
 ) {
     cx.observe(&selection, move |selection, cx| {
@@ -141,8 +123,9 @@ fn observe_ui_selection_to_engine(
         let current_fixture_ids = snapshot.selection().fixtures();
 
         if fixture_ids.as_slice() != current_fixture_ids {
-            pending_selection.write(cx, Some(fixture_ids.clone()));
-            engine.execute(Command::SelectionSet { fixture_ids });
+            if let Err(err) = engine.execute(Command::SelectionSet { fixture_ids }) {
+                log::error!("Failed to execute command: {err}");
+            }
         }
     })
     .detach();
