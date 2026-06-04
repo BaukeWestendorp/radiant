@@ -10,8 +10,8 @@ edition = "2024"
 rd-ui = { path = "rd-ui" }
 rd-engine = { path = "rd-engine" }
 
-gpui = { git = "https://github.com/zed-industries/zed.git" }
-gpui_platform = { git = "https://github.com/zed-industries/zed.git", features = ["font-kit"] }
+gpui = { git = "https://github.com/zed-industries/zed.git", rev = "d5fc4b7" }
+gpui_platform = { git = "https://github.com/zed-industries/zed.git", features = ["font-kit"], rev = "d5fc4b7" }
 
 anyhow = "1.0.100"
 
