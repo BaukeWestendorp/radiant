@@ -1,6 +1,7 @@
 use std::time::Instant;
 
 use crate::{
+    mvr_gdtf::gdtf::attr::AttributeName,
     object::{
         Cue, Executor, ExecutorContent, MergeMode, Objects, RecipeContent, SequenceExecutorContent,
     },
@@ -13,11 +14,10 @@ pub fn compose(
     objects: &Objects,
     patch: &Patch,
     cache: &PipelineCache,
-    output: &mut AttributeValues,
-) -> anyhow::Result<()> {
-    compose_sequence_executors(objects, patch, cache, output);
-
-    Ok(())
+) -> anyhow::Result<AttributeValues> {
+    let mut output = AttributeValues::new();
+    compose_sequence_executors(objects, patch, cache, &mut output);
+    Ok(output)
 }
 
 fn compose_sequence_executors(
@@ -94,11 +94,17 @@ fn compose_cue(
             MergeMode::Htp => {
                 let existing_value = output
                     .get(fixture_id, attribute)
-                    .map(|v| v.to_clamped_value(info.min, info.max))
+                    .map(|v| {
+                        if attribute == &AttributeName::ColorAddG
+                            && *fixture_id == "401.1".parse().unwrap()
+                        {
+                            dbg!(v.to_clamped_value(info.min, info.max));
+                        }
+                        v.to_clamped_value(info.min, info.max)
+                    })
                     .unwrap_or_else(|| ClampedValue::new(0.0));
 
                 let merged = if new_value > existing_value { new_value } else { existing_value };
-                dbg!((new_value, existing_value, attribute, merged));
 
                 output.set(*fixture_id, attribute.clone(), merged);
             }

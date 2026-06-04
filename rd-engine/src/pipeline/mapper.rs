@@ -107,7 +107,7 @@ fn set_value(
 
                         let master_factor = value.to_clamped_value(info.min, info.max).as_f32();
                         let follower_factor = attributes
-                            .get(fixture_id, attribute)
+                            .get(fixture_id, &relation.attribute)
                             .unwrap_or(follower_info.default)
                             .as_f32();
 

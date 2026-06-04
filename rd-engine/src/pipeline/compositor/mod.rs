@@ -18,8 +18,12 @@ impl Compositor {
         patch: &Patch,
         cache: &PipelineCache,
     ) -> anyhow::Result<AttributeValues> {
-        let mut output = cache.initial_defaults().clone();
-        executor::compose(objects, patch, cache, &mut output)?;
+        let defaults = cache.initial_defaults().clone();
+        let executor_values = executor::compose(objects, patch, cache)?;
+
+        let mut output = defaults;
+        output.extend(executor_values);
+
         Ok(output)
     }
 }
