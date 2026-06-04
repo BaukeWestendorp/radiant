@@ -7,7 +7,8 @@ use rd_ui::{PoolTile, PoolTileDelegate, TileGrid, TileGridState, h_flex};
 
 use crate::{
     app::ui::tiles::{
-        ExecutorsTile, FixturesTile, GroupPoolTile, PresetPoolTile, SequencesPoolTile,
+        AttributeEditorTile, ExecutorsTile, FixturesTile, GroupPoolTile, PresetPoolTile,
+        SequencesPoolTile,
     },
     engine::EngineManager,
 };
@@ -168,11 +169,14 @@ fn page_to_tile_grid_state(
     for tile in page.tiles() {
         let bounds = bounds(point(tile.x(), tile.y()), size(tile.width(), tile.height()));
         match tile.kind() {
-            LayoutTileKind::Fixtures => {
-                tile_grid_state.add_tile(FixturesTile::new(window, cx), bounds);
+            LayoutTileKind::AttributeEditor => {
+                tile_grid_state.add_tile(AttributeEditorTile::new(window, cx), bounds);
             }
             LayoutTileKind::Executors => {
                 tile_grid_state.add_tile(ExecutorsTile::new(cell_size, window, cx), bounds);
+            }
+            LayoutTileKind::Fixtures => {
+                tile_grid_state.add_tile(FixturesTile::new(window, cx), bounds);
             }
             LayoutTileKind::GroupPool => {
                 let delegate = cx.new(|_cx| GroupPoolTile::new());

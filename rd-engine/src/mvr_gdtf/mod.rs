@@ -1,5 +1,5 @@
 pub mod gdtf;
-// pub mod mvr;
+pub mod mvr;
 mod util;
 
 use std::str;
