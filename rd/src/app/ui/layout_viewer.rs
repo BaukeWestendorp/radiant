@@ -2,12 +2,12 @@ use std::num::NonZeroU32;
 
 pub use gpui::prelude::*;
 use gpui::{App, Entity, FontWeight, Pixels, Size, Window, bounds, div, point, px, size};
-use rd_engine::{LayoutPage, LayoutTileKind, Object, Slot};
+use rd_engine::object::{LayoutPage, LayoutTileKind, Object as _, Slot};
 use rd_ui::{PoolTile, PoolTileDelegate, TileGrid, TileGridState, h_flex};
 
 use crate::{
     app::ui::tiles::{
-        CueListsPoolTile, ExecutorsTile, FixturesTile, GroupPoolTile, PresetPoolTile,
+        ExecutorsTile, FixturesTile, GroupPoolTile, PresetPoolTile, SequencesPoolTile,
     },
     engine::EngineManager,
 };
@@ -178,8 +178,8 @@ fn page_to_tile_grid_state(
                 let delegate = cx.new(|_cx| GroupPoolTile::new());
                 tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), bounds);
             }
-            LayoutTileKind::CueListPool => {
-                let delegate = cx.new(|_cx| CueListsPoolTile::new());
+            LayoutTileKind::SequencePool => {
+                let delegate = cx.new(|_cx| SequencesPoolTile::new());
                 tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), bounds);
             }
             LayoutTileKind::PresetPool(kind) => {

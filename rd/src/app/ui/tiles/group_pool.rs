@@ -3,7 +3,10 @@ use std::num::NonZeroU32;
 use gpui::{App, IntoElement, SharedString, Window, prelude::*};
 use rd_ui::{PoolTileDelegate, h_flex};
 
-use rd_engine::{Command, Group, Object as _, ObjectKind, Slot};
+use rd_engine::{
+    cmd::Command,
+    object::{Group, Object as _, ObjectKind, Slot},
+};
 
 use crate::engine::EngineManager;
 

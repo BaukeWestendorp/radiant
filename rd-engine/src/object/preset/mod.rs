@@ -1,8 +1,11 @@
 use std::{collections::HashMap, fmt};
 
-use zeevonk::{AttributeName, FixtureTypeId, project::FixtureId, value::AttributeValue};
-
-use crate::{Object, ObjectId, Slot};
+use crate::{
+    mvr_gdtf::gdtf::{FixtureTypeId, attr::AttributeName},
+    object::{Object, ObjectId, Slot},
+    patch::FixtureId,
+    value::AttributeValue,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]

@@ -1,6 +1,7 @@
-use zeevonk::project::FixtureId;
-
-use crate::{Object, ObjectId, Slot};
+use crate::{
+    object::{Object, ObjectId, Slot},
+    patch::FixtureId,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]

@@ -1,4 +1,4 @@
-use crate::ExecutorId;
+use crate::object::ExecutorId;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Event {

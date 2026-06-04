@@ -1,4 +1,4 @@
-use zeevonk::project::FixtureId;
+use crate::patch::FixtureId;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Selection {

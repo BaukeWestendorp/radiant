@@ -1,11 +1,15 @@
-use zeevonk::project::FixtureId;
+use std::time::Instant;
 
 use crate::{
-    Engine, Event, Executor, ExecutorButton, ExecutorButtonAction, ExecutorContent, ExecutorId,
-    ObjectId, ObjectKind,
+    Engine,
+    event::Event,
+    object::{
+        Executor, ExecutorButton, ExecutorButtonAction, ExecutorContent, ExecutorId, ObjectId,
+        ObjectKind,
+    },
+    patch::FixtureId,
 };
 
-#[derive(Debug, Clone, PartialEq)]
 pub enum Command {
     Activate { object_kind: ObjectKind, object_id: ObjectId },
     SelectionAdd { fixture_ids: Vec<FixtureId> },
@@ -32,7 +36,7 @@ impl Command {
                     let fixture_ids = group.fixture_ids().to_vec();
                     Command::SelectionAdd { fixture_ids }.execute(engine)?;
                 }
-                ObjectKind::CueList => {}
+                ObjectKind::Sequence => {}
                 ObjectKind::ExecutorPage => {}
                 ObjectKind::LayoutPage => {}
                 ObjectKind::Preset(_) => {}
@@ -43,7 +47,7 @@ impl Command {
                         engine.selection.fixtures.push(fixture_id);
                     }
                 }
-                engine.emit_event(Event::SelectionChanged);
+                engine.emit(Event::SelectionChanged);
             }
             Command::SelectionRemove { fixture_ids } => {
                 for fixture_id in fixture_ids {
@@ -53,7 +57,7 @@ impl Command {
                         engine.selection.fixtures.remove(pos);
                     }
                 }
-                engine.emit_event(Event::SelectionChanged);
+                engine.emit(Event::SelectionChanged);
             }
             Command::SelectionSet { fixture_ids } => {
                 engine.selection.fixtures.clear();
@@ -62,42 +66,41 @@ impl Command {
                         engine.selection.fixtures.push(fixture_id);
                     }
                 }
-                engine.emit_event(Event::SelectionChanged);
+                engine.emit(Event::SelectionChanged);
             }
             Command::SelectionClear => {
                 engine.selection.fixtures.clear();
-                engine.emit_event(Event::SelectionChanged);
+                engine.emit(Event::SelectionChanged);
             }
             Command::SelectionAll => {
                 engine.selection.fixtures.clear();
-                let fixture_ids = engine.stage().fixtures().keys().copied().collect::<Vec<_>>();
+                let fixture_ids = engine.patch().fixture_ids().cloned().collect::<Vec<_>>();
                 for fixture_id in fixture_ids {
                     if !engine.selection.contains(&fixture_id) {
                         engine.selection.fixtures.push(fixture_id);
                     }
                 }
-                engine.emit_event(Event::SelectionChanged);
+                engine.emit(Event::SelectionChanged);
             }
             Command::HighlightToggle => {
                 engine.highlight = !engine.highlight;
-                engine.emit_event(Event::HighlightChanged);
+                engine.emit(Event::HighlightChanged);
             }
             Command::Highlight { enabled } => {
                 engine.highlight = enabled;
-                engine.emit_event(Event::HighlightChanged);
+                engine.emit(Event::HighlightChanged);
             }
             Command::ExecutorSetMaster { executor_id, value } => {
                 let page = engine.objects.executor_pages.get_by_object_id_mut(&executor_id.page)?;
-                let executor = page.executor_mut(executor_id.executor)?;
+
+                let executor = page.executor_mut(executor_id.slot)?;
 
                 let prev_master = executor.master();
-                executor.set_master(value);
+                executor.master = value;
                 let new_master = executor.master();
 
-                if let Some(ExecutorContent::CueList { master_controls_enabled, .. }) =
-                    executor.content()
-                {
-                    if *master_controls_enabled {
+                if let Some(ExecutorContent::Sequence(sc)) = executor.content() {
+                    if sc.master_controls_enabled() {
                         if prev_master == 0.0 && new_master > 0.0 {
                             executor.set_enabled(true);
                         }
@@ -107,36 +110,34 @@ impl Command {
                     }
                 }
 
-                reset_cue_list_to_start_if_disabled(executor);
-                engine.emit_event(Event::ExecutorChanged(executor_id));
+                reset_sequence_to_start_if_disabled(executor);
+                engine.emit(Event::ExecutorChanged(executor_id));
             }
             Command::ExecutorToggleEnabled { executor_id } => {
                 let page = engine.objects.executor_pages.get_by_object_id_mut(&executor_id.page)?;
-                let executor = page.executor_mut(executor_id.executor)?;
+                let executor = page.executor_mut(executor_id.slot)?;
 
                 executor.set_enabled(!executor.enabled());
-                reset_cue_list_to_start_if_disabled(executor);
-                engine.emit_event(Event::ExecutorChanged(executor_id));
+                reset_sequence_to_start_if_disabled(executor);
+                engine.emit(Event::ExecutorChanged(executor_id));
             }
             Command::ExecutorSetEnabled { executor_id, value } => {
                 let page = engine.objects.executor_pages.get_by_object_id_mut(&executor_id.page)?;
-                let executor = page.executor_mut(executor_id.executor)?;
+                let executor = page.executor_mut(executor_id.slot)?;
                 executor.set_enabled(value);
-                reset_cue_list_to_start_if_disabled(executor);
-                engine.emit_event(Event::ExecutorChanged(executor_id));
+                reset_sequence_to_start_if_disabled(executor);
+                engine.emit(Event::ExecutorChanged(executor_id));
             }
             Command::ExecutorButton { executor_id, button, pressed } => {
                 let page = engine.objects.executor_pages.get_by_object_id_mut(&executor_id.page)?;
-                let executor = page.executor_mut(executor_id.executor)?;
+                let executor = page.executor_mut(executor_id.slot)?;
 
                 let action = match executor.content() {
-                    Some(ExecutorContent::CueList { button1, button2, button3, .. }) => {
-                        match button {
-                            ExecutorButton::Button1 => *button1,
-                            ExecutorButton::Button2 => *button2,
-                            ExecutorButton::Button3 => *button3,
-                        }
-                    }
+                    Some(ExecutorContent::Sequence(sc)) => match button {
+                        ExecutorButton::Button1 => sc.button1(),
+                        ExecutorButton::Button2 => sc.button2(),
+                        ExecutorButton::Button3 => sc.button3(),
+                    },
                     None => return Ok(()),
                 };
 
@@ -144,46 +145,57 @@ impl Command {
                     ExecutorButtonAction::ToggleEnabled => {
                         if pressed {
                             executor.set_enabled(!executor.enabled());
-                            reset_cue_list_to_start_if_disabled(executor);
+                            reset_sequence_to_start_if_disabled(executor);
                         }
                     }
                     ExecutorButtonAction::SetEnabled { value } => {
                         if pressed {
                             executor.set_enabled(value);
-                            reset_cue_list_to_start_if_disabled(executor);
+                            reset_sequence_to_start_if_disabled(executor);
                         }
                     }
                     ExecutorButtonAction::FlashMaster => {
                         if pressed {
-                            executor.flash_master_press();
+                            if executor.flash_restore_master.is_none() {
+                                executor.flash_restore_master = Some(executor.master());
+                            }
+                            executor.master = 1.0;
                         } else {
-                            executor.flash_master_release();
+                            if let Some(prev) = executor.flash_restore_master.take() {
+                                executor.master = prev;
+                            }
                         }
                     }
                     ExecutorButtonAction::CueGoNext => {
+                        let Some(ExecutorContent::Sequence(sc)) = &mut executor.content else {
+                            return Ok(());
+                        };
+
                         if pressed {
-                            if let Some(ExecutorContent::CueList { cue_list, cue_index, .. }) =
-                                executor.content_mut().as_mut()
-                            {
-                                let cue_list_obj =
-                                    engine.objects.cue_lists.get_by_object_id(cue_list)?;
-                                if *cue_index + 1 < cue_list_obj.cues().len() {
-                                    *cue_index += 1;
-                                }
+                            let sequence_obj =
+                                engine.objects.sequences.get_by_object_id(&sc.sequence())?;
+                            if sc.cue_index() + 1 < sequence_obj.cues().len() {
+                                sc.cue_index += 1;
                             }
                         }
                     }
                     ExecutorButtonAction::CueGoPrevious => {
+                        let Some(ExecutorContent::Sequence(sc)) = &mut executor.content else {
+                            return Ok(());
+                        };
+
                         if pressed {
-                            if let Some(ExecutorContent::CueList { cue_index, .. }) =
-                                executor.content_mut().as_mut()
-                            {
-                                *cue_index = cue_index.saturating_sub(1);
-                            }
+                            sc.cue_index = sc.cue_index().saturating_sub(1);
                         }
                     }
                 }
-                engine.emit_event(Event::ExecutorChanged(executor_id));
+
+                match &mut executor.content {
+                    Some(ExecutorContent::Sequence(sc)) => sc.last_activation_time = Instant::now(),
+                    None => {}
+                }
+
+                engine.emit(Event::ExecutorChanged(executor_id));
             }
         }
 
@@ -191,18 +203,16 @@ impl Command {
     }
 }
 
-fn reset_cue_list_to_start_if_disabled(executor: &mut Executor) {
+fn reset_sequence_to_start_if_disabled(executor: &mut Executor) {
     if executor.enabled() {
         return;
     }
 
-    let Some(ExecutorContent::CueList { cue_index, reset_to_start_on_disable, .. }) =
-        executor.content_mut().as_mut()
-    else {
+    let Some(ExecutorContent::Sequence(sc)) = &mut executor.content else {
         return;
     };
 
-    if *reset_to_start_on_disable {
-        *cue_index = 0;
+    if sc.reset_to_start_on_disable() {
+        sc.cue_index = 0;
     }
 }
