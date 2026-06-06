@@ -8,6 +8,7 @@ use crate::{
         ObjectKind,
     },
     patch::FixtureId,
+    selection::AttributeTree,
 };
 
 pub enum Command {
@@ -44,42 +45,61 @@ impl Command {
             Command::SelectionAdd { fixture_ids } => {
                 for fixture_id in fixture_ids {
                     if !engine.selection.contains(&fixture_id) {
-                        engine.selection.fixtures.push(fixture_id);
+                        engine.selection.fixture_ids.push(fixture_id);
                     }
                 }
+
+                engine.selection.attribute_tree =
+                    AttributeTree::new(engine.selection.unique_gdtds(engine.patch()));
+
                 engine.emit(Event::SelectionChanged);
             }
             Command::SelectionRemove { fixture_ids } => {
                 for fixture_id in fixture_ids {
                     if let Some(pos) =
-                        engine.selection.fixtures().iter().position(|x| x == &fixture_id)
+                        engine.selection.fixture_ids().iter().position(|x| x == &fixture_id)
                     {
-                        engine.selection.fixtures.remove(pos);
+                        engine.selection.fixture_ids.remove(pos);
                     }
                 }
+
+                engine.selection.attribute_tree =
+                    AttributeTree::new(engine.selection.unique_gdtds(engine.patch()));
+
                 engine.emit(Event::SelectionChanged);
             }
             Command::SelectionSet { fixture_ids } => {
-                engine.selection.fixtures.clear();
+                engine.selection.fixture_ids.clear();
                 for fixture_id in fixture_ids {
                     if !engine.selection.contains(&fixture_id) {
-                        engine.selection.fixtures.push(fixture_id);
+                        engine.selection.fixture_ids.push(fixture_id);
                     }
                 }
+                engine.selection.attribute_tree =
+                    AttributeTree::new(engine.selection.unique_gdtds(engine.patch()));
+
                 engine.emit(Event::SelectionChanged);
             }
             Command::SelectionClear => {
-                engine.selection.fixtures.clear();
+                engine.selection.fixture_ids.clear();
+
+                engine.selection.attribute_tree =
+                    AttributeTree::new(engine.selection.unique_gdtds(engine.patch()));
+
                 engine.emit(Event::SelectionChanged);
             }
             Command::SelectionAll => {
-                engine.selection.fixtures.clear();
+                engine.selection.fixture_ids.clear();
                 let fixture_ids = engine.patch().fixture_ids().cloned().collect::<Vec<_>>();
                 for fixture_id in fixture_ids {
                     if !engine.selection.contains(&fixture_id) {
-                        engine.selection.fixtures.push(fixture_id);
+                        engine.selection.fixture_ids.push(fixture_id);
                     }
                 }
+
+                engine.selection.attribute_tree =
+                    AttributeTree::new(engine.selection.unique_gdtds(engine.patch()));
+
                 engine.emit(Event::SelectionChanged);
             }
             Command::HighlightToggle => {

@@ -218,7 +218,7 @@ impl Engine {
             }
         };
 
-        let highlighted_fixtures = self.highlight.then(|| self.selection.fixtures());
+        let highlighted_fixtures = self.highlight.then(|| self.selection.fixture_ids());
 
         let multiverse = self.pipeline.resolve_dmx(&attributes, highlighted_fixtures);
 

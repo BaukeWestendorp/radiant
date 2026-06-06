@@ -4,13 +4,17 @@ use std::{
     str::{self, FromStr as _},
 };
 
+use anyhow::Context as _;
 use uuid::Uuid;
 
-use crate::mvr_gdtf::gdtf::{
-    attr::AttributeName,
-    bundle::FromBundle as _,
-    proto::Protocols,
-    resource::{ModelResource, ResourceKey, Resources, ThumbnailResource, WheelResource},
+use crate::{
+    gdtf::dmx::{ChannelFunction, DmxChannel, DmxMode, LogicalChannel},
+    mvr_gdtf::gdtf::{
+        attr::AttributeName,
+        bundle::FromBundle as _,
+        proto::Protocols,
+        resource::{ModelResource, ResourceKey, Resources, ThumbnailResource, WheelResource},
+    },
 };
 
 mod bundle;
@@ -576,6 +580,21 @@ impl NodePath {
     pub fn to_dotted_string(&self) -> String {
         self.0.iter().map(|p| p.to_string()).collect::<Vec<_>>().join(".")
     }
+
+    pub fn resolve<'a>(
+        &self,
+        dmx_mode: &'a DmxMode,
+    ) -> anyhow::Result<(&'a DmxChannel, &'a LogicalChannel, &'a ChannelFunction)> {
+        let mut parts = self.parts().iter();
+        let dc_name = parts.next().context("NodePath did not contain DMX channel name")?;
+        let lc_name = parts.next().context("NodePath did not contain logical channel name")?;
+        let lc_attr = AttributeName::from_str(lc_name.as_str()).unwrap();
+        let cf_name = parts.next().context("NodePath did not contain channel function name")?;
+        let dc = dmx_mode.dmx_channel(dc_name).context("Could not find DMX channel")?;
+        let lc = dc.logical_channel(&lc_attr).context("Could not find logical channel")?;
+        let cf = lc.channel_function(cf_name).context("Could not find channel function")?;
+        Ok((dc, lc, cf))
+    }
 }
 
 impl std::fmt::Display for NodePath {
@@ -597,7 +616,7 @@ impl str::FromStr for NodePath {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Name(String);
 

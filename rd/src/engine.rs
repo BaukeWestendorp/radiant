@@ -21,7 +21,7 @@ impl EngineManager {
     pub fn new(handle: EngineHandle, cx: &mut App) -> Self {
         let initial_snapshot = handle.snapshot();
 
-        let selection = cx.new(|_| initial_snapshot.selection().fixtures().to_vec());
+        let selection = cx.new(|_| initial_snapshot.selection().fixture_ids().to_vec());
         let snapshot = cx.new(|_| initial_snapshot);
 
         spawn_engine(
@@ -47,8 +47,8 @@ impl EngineManager {
         }
     }
 
-    pub fn selection(&self) -> &Entity<Vec<FixtureId>> {
-        &self.selection
+    pub fn selection(cx: &App) -> &Entity<Vec<FixtureId>> {
+        &Self::global(cx).selection
     }
 }
 
@@ -106,7 +106,7 @@ fn apply_engine_selection(
     selection: &Entity<Vec<FixtureId>>,
     cx: &mut App,
 ) {
-    let new_selection = latest.selection().fixtures().to_vec();
+    let new_selection = latest.selection().fixture_ids().to_vec();
     if selection.read(cx).as_slice() != new_selection.as_slice() {
         selection.write(cx, new_selection);
     }
@@ -120,7 +120,7 @@ fn observe_ui_selection_to_engine(
     cx.observe(&selection, move |selection, cx| {
         let fixture_ids = selection.read(cx).clone();
         let snapshot = engine.snapshot();
-        let current_fixture_ids = snapshot.selection().fixtures();
+        let current_fixture_ids = snapshot.selection().fixture_ids();
 
         if fixture_ids.as_slice() != current_fixture_ids {
             if let Err(err) = engine.execute(Command::SelectionSet { fixture_ids }) {

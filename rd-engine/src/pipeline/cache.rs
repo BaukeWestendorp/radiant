@@ -1,4 +1,4 @@
-use std::{collections::HashMap, str::FromStr as _};
+use std::collections::HashMap;
 
 use anyhow::Context;
 
@@ -7,7 +7,7 @@ use crate::{
     mvr_gdtf::gdtf::{
         NodePath,
         attr::{AttributeName, PhysicalUnit},
-        dmx::{ChannelFunction, DmxChannel, DmxOffset, LogicalChannel, RelationKind},
+        dmx::{DmxChannel, DmxOffset, RelationKind},
     },
     patch::{Fixture, FixtureId, Patch},
     value::{AttributeValue, AttributeValues, ClampedValue},
@@ -77,7 +77,7 @@ impl PipelineCache {
         fixture: &'a Fixture,
         deferred: &mut Vec<(&'a Fixture, NodePath)>,
     ) -> anyhow::Result<()> {
-        let (dc, lc, cf) = resolve_channel_function_path(fixture, cf_path)?;
+        let (dc, lc, cf) = cf_path.resolve(fixture.dmx_mode())?;
         let attr = cf.attribute(fixture.gdtf()).context("Could not find attribute")?;
 
         let is_unitless = matches!(attr.physical_unit(), PhysicalUnit::None);
@@ -162,7 +162,7 @@ impl PipelineCache {
 
     fn resolve_deferred(&mut self, deferred: Vec<(&Fixture, NodePath)>) -> anyhow::Result<()> {
         for (fixture, cf_path) in deferred {
-            let (dc, _lc, cf) = resolve_channel_function_path(fixture, &cf_path)?;
+            let (dc, _lc, cf) = cf_path.resolve(fixture.dmx_mode())?;
             let attr = cf.attribute(fixture.gdtf()).context("Could not find attribute")?;
 
             let relations = relations_for_dmx_channel(fixture, dc);
@@ -176,21 +176,6 @@ impl PipelineCache {
 
         Ok(())
     }
-}
-
-fn resolve_channel_function_path<'a>(
-    fixture: &'a Fixture,
-    path: &NodePath,
-) -> anyhow::Result<(&'a DmxChannel, &'a LogicalChannel, &'a ChannelFunction)> {
-    let mut parts = path.parts().iter();
-    let dc_name = parts.next().context("NodePath did not contain DMX channel name")?;
-    let lc_name = parts.next().context("NodePath did not contain logical channel name")?;
-    let lc_attr = AttributeName::from_str(lc_name.as_str()).unwrap();
-    let cf_name = parts.next().context("NodePath did not contain channel function name")?;
-    let dc = fixture.dmx_mode().dmx_channel(dc_name).context("Could not find DMX channel")?;
-    let lc = dc.logical_channel(&lc_attr).context("Could not find logical channel")?;
-    let cf = lc.channel_function(cf_name).context("Could not find channel function")?;
-    Ok((dc, lc, cf))
 }
 
 fn relations_for_dmx_channel(

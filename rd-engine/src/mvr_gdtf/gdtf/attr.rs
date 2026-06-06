@@ -148,6 +148,11 @@ impl Attribute {
         self.feature.as_ref()
     }
 
+    pub fn feature_group<'a>(&self, gdtf: &'a Gdtf) -> Option<&'a FeatureGroup> {
+        let feature_group = self.feature_node()?.parts().get(0)?;
+        gdtf.feature_group(feature_group)
+    }
+
     pub fn feature<'a>(&self, gdtf: &'a Gdtf) -> Option<&'a Feature> {
         let feature_group = self.feature_node()?.parts().get(0)?;
         let feature = self.feature_node()?.parts().get(1)?;

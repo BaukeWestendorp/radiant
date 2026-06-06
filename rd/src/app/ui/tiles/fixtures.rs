@@ -1,4 +1,4 @@
-use gpui::{AnyElement, App, Bounds, Entity, ReadGlobal, SharedString, Window, div, prelude::*};
+use gpui::{AnyElement, App, Bounds, Entity, SharedString, Window, div, prelude::*};
 use rd_ui::{Table, TableState, TileDelegate};
 
 use crate::{app::ui::FixtureTableDelegate, engine::EngineManager};
@@ -13,7 +13,7 @@ impl FixturesTile {
             table_state: cx.new(|cx| {
                 TableState::new(
                     FixtureTableDelegate::new(window, cx),
-                    EngineManager::global(cx).selection().clone(),
+                    EngineManager::selection(cx).clone(),
                     window,
                     cx,
                 )

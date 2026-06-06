@@ -14,6 +14,7 @@ mod pipeline;
 mod project;
 
 pub use engine::*;
+pub use mvr_gdtf::*;
 pub use project::*;
 
 use std::str;
