@@ -49,9 +49,6 @@ impl Command {
                     }
                 }
 
-                engine.selection.attribute_tree =
-                    AttributeTree::new(engine.selection.unique_gdtds(engine.patch()));
-
                 engine.emit(Event::SelectionChanged);
             }
             Command::SelectionRemove { fixture_ids } => {
@@ -63,9 +60,6 @@ impl Command {
                     }
                 }
 
-                engine.selection.attribute_tree =
-                    AttributeTree::new(engine.selection.unique_gdtds(engine.patch()));
-
                 engine.emit(Event::SelectionChanged);
             }
             Command::SelectionSet { fixture_ids } => {
@@ -75,8 +69,6 @@ impl Command {
                         engine.selection.fixture_ids.push(fixture_id);
                     }
                 }
-                engine.selection.attribute_tree =
-                    AttributeTree::new(engine.selection.unique_gdtds(engine.patch()));
 
                 engine.emit(Event::SelectionChanged);
             }
@@ -84,7 +76,10 @@ impl Command {
                 engine.selection.fixture_ids.clear();
 
                 engine.selection.attribute_tree =
-                    AttributeTree::new(engine.selection.unique_gdtds(engine.patch()));
+                    AttributeTree::new(engine.selection.fixtures(engine.patch()));
+
+                engine.selection.attribute_tree =
+                    AttributeTree::new(engine.selection.fixtures(engine.patch()));
 
                 engine.emit(Event::SelectionChanged);
             }
@@ -96,9 +91,6 @@ impl Command {
                         engine.selection.fixture_ids.push(fixture_id);
                     }
                 }
-
-                engine.selection.attribute_tree =
-                    AttributeTree::new(engine.selection.unique_gdtds(engine.patch()));
 
                 engine.emit(Event::SelectionChanged);
             }

@@ -4,7 +4,8 @@ use anyhow::Context;
 
 use crate::{
     dmx::Address,
-    mvr_gdtf::gdtf::{self, Gdtf, Name, NodePath, attr::AttributeName, resource::ResourceKey},
+    gdtf::dmx::ChannelFunctionPath,
+    mvr_gdtf::gdtf::{self, Gdtf, Name, attr::AttributeName, resource::ResourceKey},
     patch::{Fixture, FixtureDefinition, FixtureId, FixtureIdPart},
 };
 
@@ -199,7 +200,7 @@ impl<'a> FixtureBuilder<'a> {
             .collect()
     }
 
-    fn find_channel_functions(&self, referenced_geometry: &Name) -> Vec<NodePath> {
+    fn find_channel_functions(&self, referenced_geometry: &Name) -> Vec<ChannelFunctionPath> {
         let dmx_channels_with_geometry = self
             .dmx_mode
             .dmx_channels()
@@ -215,7 +216,7 @@ impl<'a> FixtureBuilder<'a> {
                         .attribute(self.gdtf)
                         .is_some_and(|a| a.name() != &AttributeName::NoFeature)
                     {
-                        let path = channel_function.node_path(dmx_channel, logical_channel);
+                        let path = channel_function.path(dmx_channel, logical_channel);
                         channel_functions.push(path.clone());
                     }
                 }

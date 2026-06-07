@@ -4,8 +4,8 @@ use anyhow::Context;
 
 use crate::{
     dmx,
+    gdtf::dmx::ChannelFunctionPath,
     mvr_gdtf::gdtf::{
-        NodePath,
         attr::{AttributeName, PhysicalUnit},
         dmx::{DmxChannel, DmxOffset, RelationKind},
     },
@@ -73,9 +73,9 @@ impl PipelineCache {
 
     fn generate_channel_function<'a>(
         &mut self,
-        cf_path: &NodePath,
+        cf_path: &ChannelFunctionPath,
         fixture: &'a Fixture,
-        deferred: &mut Vec<(&'a Fixture, NodePath)>,
+        deferred: &mut Vec<(&'a Fixture, ChannelFunctionPath)>,
     ) -> anyhow::Result<()> {
         let (dc, lc, cf) = cf_path.resolve(fixture.dmx_mode())?;
         let attr = cf.attribute(fixture.gdtf()).context("Could not find attribute")?;
@@ -122,7 +122,7 @@ impl PipelineCache {
         };
 
         if let Some((initial_lc, initial_cf)) = dc.initial_function() {
-            if initial_cf.node_path(dc, initial_lc) == cf.node_path(dc, lc) {
+            if initial_cf.path(dc, initial_lc) == cf.path(dc, lc) {
                 let initial_default_clamped = ClampedValue::from(initial_cf.default());
                 if is_unitless {
                     self.initial_defaults.set(
@@ -160,7 +160,10 @@ impl PipelineCache {
         Ok(())
     }
 
-    fn resolve_deferred(&mut self, deferred: Vec<(&Fixture, NodePath)>) -> anyhow::Result<()> {
+    fn resolve_deferred(
+        &mut self,
+        deferred: Vec<(&Fixture, ChannelFunctionPath)>,
+    ) -> anyhow::Result<()> {
         for (fixture, cf_path) in deferred {
             let (dc, _lc, cf) = cf_path.resolve(fixture.dmx_mode())?;
             let attr = cf.attribute(fixture.gdtf()).context("Could not find attribute")?;

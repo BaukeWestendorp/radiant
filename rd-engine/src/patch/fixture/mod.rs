@@ -7,7 +7,8 @@ pub use id::*;
 
 use crate::{
     dmx,
-    mvr_gdtf::gdtf::{Gdtf, Name, NodePath, dmx::DmxMode},
+    gdtf::dmx::ChannelFunctionPath,
+    mvr_gdtf::gdtf::{Gdtf, Name, dmx::DmxMode},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -18,7 +19,7 @@ pub struct Fixture {
 
     gdtf: Arc<Gdtf>,
     dmx_mode: Name,
-    channel_functions: Vec<NodePath>,
+    channel_functions: Vec<ChannelFunctionPath>,
     geometry_dmx_offset: u32,
 
     child_ids: Vec<FixtureId>,
@@ -47,7 +48,7 @@ impl Fixture {
         &self.gdtf
     }
 
-    pub fn channel_functions(&self) -> &[NodePath] {
+    pub fn channel_functions(&self) -> &[ChannelFunctionPath] {
         &self.channel_functions
     }
 
