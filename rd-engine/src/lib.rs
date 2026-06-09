@@ -4,6 +4,7 @@ pub mod event;
 pub mod object;
 pub mod output;
 pub mod patch;
+pub mod programmer;
 pub mod selection;
 pub mod trigger;
 pub mod value;

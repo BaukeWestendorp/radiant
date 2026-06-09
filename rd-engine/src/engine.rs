@@ -17,6 +17,7 @@ use crate::{
     output::{Output, OutputDefinition},
     patch::Patch,
     pipeline::Pipeline,
+    programmer::Programmer,
     selection::Selection,
     trigger::{Triggers, TriggersDefinition},
 };
@@ -28,6 +29,7 @@ pub struct Engine {
     pub(crate) output: Output,
     pub(crate) triggers: Triggers,
     pub(crate) objects: Objects,
+    pub(crate) programmer: Programmer,
     pub(crate) selection: Selection,
     pub(crate) highlight: bool,
 
@@ -69,6 +71,7 @@ impl Engine {
             event_listener,
 
             selection: Selection::new(),
+            programmer: Programmer::new(),
             highlight: false,
 
             pipeline,
@@ -95,6 +98,18 @@ impl Engine {
         &self.objects
     }
 
+    pub fn programmer(&self) -> &Programmer {
+        &self.programmer
+    }
+
+    pub fn selection(&self) -> &Selection {
+        &self.selection
+    }
+
+    pub fn highlight(&self) -> bool {
+        self.highlight
+    }
+
     pub fn event_listener(&self) -> EventListener {
         self.event_listener.clone()
     }
@@ -116,6 +131,7 @@ impl Engine {
             output: Arc::new(self.output.definition().clone()),
             triggers: Arc::new(self.triggers.definition().clone()),
             objects: Arc::new(self.objects.clone()),
+            programmer: Arc::new(self.programmer.clone()),
             selection: Arc::new(self.selection.clone()),
             highlight: self.highlight,
         };
@@ -210,13 +226,14 @@ impl Engine {
             snapshot_store.store(Arc::new(self.snapshot()));
         }
 
-        let attributes = match self.pipeline.resolve_attributes(&self.objects, &self.patch) {
-            Ok(attributes) => attributes,
-            Err(err) => {
-                log::error!("Failed to resolve attribute values: {err}");
-                return;
-            }
-        };
+        let attributes =
+            match self.pipeline.resolve_attributes(&self.objects, &self.patch, &self.programmer) {
+                Ok(attributes) => attributes,
+                Err(err) => {
+                    log::error!("Failed to resolve attribute values: {err}");
+                    return;
+                }
+            };
 
         let highlighted_fixtures = self.highlight.then(|| self.selection.fixture_ids());
 
@@ -312,6 +329,7 @@ pub struct EngineSnapshot {
     output: Arc<OutputDefinition>,
     triggers: Arc<TriggersDefinition>,
     objects: Arc<Objects>,
+    programmer: Arc<Programmer>,
     selection: Arc<Selection>,
     highlight: bool,
 }
@@ -354,6 +372,7 @@ impl Clone for EngineSnapshot {
             output: Arc::clone(&self.output),
             triggers: Arc::clone(&self.triggers),
             objects: Arc::clone(&self.objects),
+            programmer: Arc::clone(&self.programmer),
             selection: Arc::clone(&self.selection),
             highlight: self.highlight,
         }

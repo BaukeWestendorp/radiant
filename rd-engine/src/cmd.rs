@@ -1,18 +1,20 @@
 use std::time::Instant;
 
 use crate::{
-    Engine,
+    Engine, FixtureCollection,
     event::Event,
+    gdtf::attr::AttributeName,
     object::{
         Executor, ExecutorButton, ExecutorButtonAction, ExecutorContent, ExecutorId, ObjectId,
         ObjectKind,
     },
     patch::FixtureId,
-    selection::AttributeTree,
+    value::AttributeValue,
 };
 
 pub enum Command {
     Activate { object_kind: ObjectKind, object_id: ObjectId },
+    // FIXME: Convert these to FixtureCollections.
     SelectionAdd { fixture_ids: Vec<FixtureId> },
     SelectionRemove { fixture_ids: Vec<FixtureId> },
     SelectionSet { fixture_ids: Vec<FixtureId> },
@@ -26,6 +28,8 @@ pub enum Command {
     ExecutorToggleEnabled { executor_id: ExecutorId },
     ExecutorSetEnabled { executor_id: ExecutorId, value: bool },
     ExecutorButton { executor_id: ExecutorId, button: ExecutorButton, pressed: bool },
+
+    ProgrammerSet { fixtures: FixtureCollection, attribute: AttributeName, value: AttributeValue },
 }
 
 impl Command {
@@ -74,12 +78,6 @@ impl Command {
             }
             Command::SelectionClear => {
                 engine.selection.fixture_ids.clear();
-
-                engine.selection.attribute_tree =
-                    AttributeTree::new(engine.selection.fixtures(engine.patch()));
-
-                engine.selection.attribute_tree =
-                    AttributeTree::new(engine.selection.fixtures(engine.patch()));
 
                 engine.emit(Event::SelectionChanged);
             }
@@ -208,6 +206,16 @@ impl Command {
                 }
 
                 engine.emit(Event::ExecutorChanged(executor_id));
+            }
+            Command::ProgrammerSet { fixtures, attribute, value } => {
+                let fixture_ids = fixtures
+                    .fixture_ids(engine.objects(), engine.patch())?
+                    .cloned()
+                    .collect::<Vec<_>>();
+
+                for fixture_id in fixture_ids {
+                    engine.programmer.set(fixture_id, attribute.clone(), value);
+                }
             }
         }
 

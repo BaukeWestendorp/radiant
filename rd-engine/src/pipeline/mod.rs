@@ -7,6 +7,7 @@ use crate::{
     dmx::Multiverse,
     object::Objects,
     patch::{FixtureId, Patch},
+    programmer::Programmer,
     trigger::{Trigger, Triggers},
     value::AttributeValues,
 };
@@ -47,8 +48,9 @@ impl Pipeline {
         &mut self,
         objects: &Objects,
         patch: &Patch,
+        programmer: &Programmer,
     ) -> anyhow::Result<AttributeValues> {
-        self.compositor.compose(objects, patch, &self.cache)
+        self.compositor.compose(objects, patch, programmer, &self.cache)
     }
 
     pub fn resolve_dmx(

@@ -1,5 +1,6 @@
 use crate::{
-    object::Objects, patch::Patch, pipeline::cache::PipelineCache, value::AttributeValues,
+    object::Objects, patch::Patch, pipeline::cache::PipelineCache, programmer::Programmer,
+    value::AttributeValues,
 };
 
 mod executor;
@@ -16,13 +17,16 @@ impl Compositor {
         &mut self,
         objects: &Objects,
         patch: &Patch,
+        programmer: &Programmer,
         cache: &PipelineCache,
     ) -> anyhow::Result<AttributeValues> {
         let defaults = cache.initial_defaults().clone();
         let executor_values = executor::compose(objects, patch, cache)?;
+        let programmer_values = programmer.values().clone();
 
         let mut output = defaults;
         output.extend(executor_values);
+        output.extend(programmer_values);
 
         Ok(output)
     }

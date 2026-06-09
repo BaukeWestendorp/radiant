@@ -5,14 +5,14 @@ use gpui::{
     prelude::*, px,
 };
 use rd_engine::{
-    Engine, FixtureCollection,
+    FixtureCollection,
     cmd::Command,
     gdtf::{
         Gdtf, Name,
         attr::AttributeName,
         dmx::{DmxMode, LogicalChannel},
     },
-    value::AttributeValue,
+    value::{AttributeValue, ClampedValue},
 };
 use rd_ui::{
     ActiveTheme as _, Button, HslaExt, Scrollable, ScrollableState, TileDelegate, h_flex, todo,
@@ -223,20 +223,27 @@ impl AttributeEditorTile {
                         .filter(|cs| cs.name().is_some_and(|name| !name.as_str().is_empty()))
                         .map(|cs| {
                             let cs_name = cs.name().unwrap().to_string();
-                            Button::new(cs_name.clone()).child(cs_name).on_click(|_, _, cx| {
-                                let fixtures = FixtureCollection::Multiple(
-                                    EngineManager::snapshot(cx).selection().fixture_ids().to_vec(),
-                                );
+                            let value = ClampedValue::from(cs.dmx_from());
+                            let attribute_name = attribute_name.clone();
+                            Button::new(cs_name.clone()).child(cs_name.clone()).on_click(
+                                move |_, _, cx| {
+                                    let fixtures = FixtureCollection::Multiple(
+                                        EngineManager::snapshot(cx)
+                                            .selection()
+                                            .fixture_ids()
+                                            .to_vec(),
+                                    );
 
-                                EngineManager::execute(
-                                    cx,
-                                    Command::ProgrammerSet {
-                                        fixtures,
-                                        attribute: attribute_name,
-                                        value: AttributeValue::Physical(cs.physical_from()),
-                                    },
-                                );
-                            });
+                                    EngineManager::execute(
+                                        cx,
+                                        Command::ProgrammerSet {
+                                            fixtures,
+                                            attribute: attribute_name.clone(),
+                                            value: AttributeValue::Clamped(value),
+                                        },
+                                    );
+                                },
+                            )
                         }),
                 )
             });
