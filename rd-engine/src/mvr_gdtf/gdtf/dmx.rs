@@ -381,6 +381,27 @@ impl LogicalChannel {
         let ix = self.channel_functions_by_name.get(name)?;
         Some(&self.channel_functions[*ix])
     }
+
+    pub fn channel_set_for_value(&self, value: DmxValue) -> Option<&ChannelSet> {
+        let value = value.to_u16();
+
+        let mut channel_sets =
+            self.channel_functions().iter().flat_map(|cf| cf.channel_sets().iter()).peekable();
+        while let Some(current) = channel_sets.next() {
+            let matches = match channel_sets.peek() {
+                Some(next) => {
+                    current.dmx_from().to_u16() <= value && value < next.dmx_from().to_u16()
+                }
+                None => current.dmx_from().to_u16() <= value,
+            };
+
+            if matches {
+                return Some(current);
+            }
+        }
+
+        None
+    }
 }
 
 impl bundle::FromBundle for LogicalChannel {
@@ -1124,6 +1145,30 @@ impl DmxValue {
 
     pub fn from_u32(value: u32, shifting: bool) -> Self {
         DmxValue { value, bytes: 4, shifting }
+    }
+
+    pub fn to_u8(&self) -> u8 {
+        match self.bytes {
+            1 => self.value as u8,
+            2 => (self.value / 256) as u8,
+            3 => (self.value / 65536) as u8,
+            4 => (self.value / 16777216) as u8,
+            _ => todo!(),
+        }
+    }
+
+    pub fn to_u16(&self) -> u16 {
+        match self.bytes {
+            1 => self.value as u16,
+            2 => self.value as u16,
+            3 => (self.value / 256) as u16,
+            4 => (self.value / 65536) as u16,
+            _ => todo!(),
+        }
+    }
+
+    pub fn to_u32(&self) -> u32 {
+        self.value
     }
 
     pub fn value(&self) -> u32 {

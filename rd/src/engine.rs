@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use gpui::{App, Entity, Global, ReadGlobal as _, prelude::*};
 use rd_engine::{
@@ -13,7 +13,7 @@ const SYNC_INTERVAL: Duration = Duration::from_nanos(16_666_667);
 pub struct EngineManager {
     handle: EngineHandle,
 
-    snapshot: Entity<EngineSnapshot>,
+    snapshot: Entity<Arc<EngineSnapshot>>,
     selection: Entity<Vec<FixtureId>>,
 }
 
@@ -57,7 +57,7 @@ impl Global for EngineManager {}
 fn spawn_engine(
     engine: EngineHandle,
     event_listener: EventListener,
-    snapshot: Entity<EngineSnapshot>,
+    snapshot: Entity<Arc<EngineSnapshot>>,
     selection: Entity<Vec<FixtureId>>,
     cx: &mut App,
 ) {

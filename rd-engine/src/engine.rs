@@ -30,15 +30,12 @@ pub struct Engine {
     pub(crate) triggers: Triggers,
     pub(crate) objects: Objects,
     pub(crate) programmer: Programmer,
+    pub(crate) pipeline: Pipeline,
     pub(crate) selection: Selection,
     pub(crate) highlight: bool,
 
-    snapshot: EngineSnapshot,
-
     event_tx: crossbeam_channel::Sender<Event>,
     event_listener: EventListener,
-
-    pipeline: Pipeline,
 }
 
 impl Engine {
@@ -51,20 +48,17 @@ impl Engine {
         let triggers = Triggers::new(project.triggers().clone())?;
         let objects = project.objects().clone();
 
-        let snapshot = EngineSnapshot::default();
-
         let (event_tx, event_rx) = crossbeam_channel::unbounded();
         let event_listener = EventListener::new(event_rx);
 
         let pipeline = Pipeline::new(&patch);
 
-        let mut engine = Self {
+        let engine = Self {
             showfile_path: project.file().map(|p| p.path().clone()),
 
             patch,
             output,
             triggers,
-            snapshot,
             objects,
 
             event_tx,
@@ -76,8 +70,6 @@ impl Engine {
 
             pipeline,
         };
-
-        engine.update_snapshot();
 
         Ok(engine)
     }
@@ -102,6 +94,10 @@ impl Engine {
         &self.programmer
     }
 
+    pub fn pipeline(&self) -> &Pipeline {
+        &self.pipeline
+    }
+
     pub fn selection(&self) -> &Selection {
         &self.selection
     }
@@ -115,26 +111,21 @@ impl Engine {
     }
 
     pub fn execute(&mut self, command: Command) -> anyhow::Result<()> {
-        let res = command.execute(self);
-        self.update_snapshot();
-        res
+        command.execute(self)
     }
 
-    pub fn snapshot(&self) -> EngineSnapshot {
-        self.snapshot.clone()
-    }
-
-    fn update_snapshot(&mut self) {
-        self.snapshot = EngineSnapshot {
+    pub fn generate_snapshot(&self) -> EngineSnapshot {
+        EngineSnapshot {
             showfile_path: self.showfile_path.clone(),
-            patch: Arc::new(self.patch.clone()),
-            output: Arc::new(self.output.definition().clone()),
-            triggers: Arc::new(self.triggers.definition().clone()),
-            objects: Arc::new(self.objects.clone()),
-            programmer: Arc::new(self.programmer.clone()),
-            selection: Arc::new(self.selection.clone()),
+            patch: self.patch.clone(),
+            output: self.output.definition().clone(),
+            triggers: self.triggers.definition().clone(),
+            objects: self.objects.clone(),
+            programmer: self.programmer.clone(),
+            pipeline: self.pipeline.clone(),
+            selection: self.selection.clone(),
             highlight: self.highlight,
-        };
+        }
     }
 
     pub(crate) fn emit(&self, event: Event) {
@@ -163,15 +154,14 @@ impl Engine {
 
             let now = Instant::now();
             if now < next_tick {
-                crossbeam_channel::select! {
-                    recv(rx) -> msg => {
-                        if let Ok(msg) = msg {
-                            running = self.handle_message(msg, &snapshot_store);
-                        } else {
-                            running = false;
-                        }
+                match rx.recv_timeout(next_tick - now) {
+                    Ok(msg) => {
+                        running = self.handle_message(msg, &snapshot_store);
                     }
-                    recv(crossbeam_channel::after(next_tick - now)) -> _ => {}
+                    Err(crossbeam_channel::RecvTimeoutError::Timeout) => {}
+                    Err(crossbeam_channel::RecvTimeoutError::Disconnected) => {
+                        running = false;
+                    }
                 }
                 continue;
             }
@@ -198,7 +188,8 @@ impl Engine {
         match msg {
             EngineMessage::Command { command, resp } => {
                 let res = self.execute(command);
-                snapshot_store.store(Arc::new(self.snapshot()));
+                self.resolve_pipeline();
+                snapshot_store.store(Arc::new(self.generate_snapshot()));
                 if let Some(resp) = resp {
                     let _ = resp.send(res);
                 }
@@ -215,31 +206,37 @@ impl Engine {
 
     fn tick(&mut self, snapshot_store: &Arc<ArcSwap<EngineSnapshot>>) {
         let commands = self.pipeline.resolve_triggers(&self.triggers);
-        let mut snapshot_dirty = !commands.is_empty();
+        let snapshot_dirty = !commands.is_empty();
+
         for command in commands {
             if let Err(err) = self.execute(command) {
-                snapshot_dirty = true;
                 log::error!("Failed to execute command: {err}");
             }
         }
+
+        self.resolve_pipeline();
+
         if snapshot_dirty {
-            snapshot_store.store(Arc::new(self.snapshot()));
+            snapshot_store.store(Arc::new(self.generate_snapshot()));
         }
 
-        let attributes =
-            match self.pipeline.resolve_attributes(&self.objects, &self.patch, &self.programmer) {
-                Ok(attributes) => attributes,
-                Err(err) => {
-                    log::error!("Failed to resolve attribute values: {err}");
-                    return;
-                }
-            };
+        self.output.update(self.pipeline.multiverse().clone());
+    }
 
-        let highlighted_fixtures = self.highlight.then(|| self.selection.fixture_ids());
+    fn resolve_pipeline(&mut self) {
+        let highlighted_fixtures =
+            self.highlight.then(|| self.selection.fixture_ids().to_vec()).unwrap_or_default();
+        if let Err(err) = self.pipeline.resolve_attributes(
+            &self.objects,
+            &self.patch,
+            &self.programmer,
+            highlighted_fixtures,
+        ) {
+            log::error!("Failed to resolve attribute values: {err}");
+            return;
+        };
 
-        let multiverse = self.pipeline.resolve_dmx(&attributes, highlighted_fixtures);
-
-        self.output.update(multiverse);
+        self.pipeline.resolve_dmx();
     }
 }
 
@@ -262,7 +259,7 @@ impl EngineHandle {
     pub fn new(engine: Engine) -> Self {
         let (tx, rx) = crossbeam_channel::unbounded();
 
-        let snapshot = Arc::new(ArcSwap::from_pointee(engine.snapshot()));
+        let snapshot = Arc::new(ArcSwap::from_pointee(engine.generate_snapshot()));
 
         let event_listener = engine.event_listener();
 
@@ -298,8 +295,8 @@ impl EngineHandle {
             .map_err(|_| anyhow::anyhow!("Engine thread stopped"))
     }
 
-    pub fn snapshot(&self) -> EngineSnapshot {
-        self.inner.snapshot.load().as_ref().clone()
+    pub fn snapshot(&self) -> Arc<EngineSnapshot> {
+        self.inner.snapshot.load_full()
     }
 
     pub fn event_listener(&self) -> EventListener {
@@ -322,15 +319,16 @@ impl Clone for EngineHandle {
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct EngineSnapshot {
     showfile_path: Option<PathBuf>,
-    patch: Arc<Patch>,
-    output: Arc<OutputDefinition>,
-    triggers: Arc<TriggersDefinition>,
-    objects: Arc<Objects>,
-    programmer: Arc<Programmer>,
-    selection: Arc<Selection>,
+    patch: Patch,
+    output: OutputDefinition,
+    triggers: TriggersDefinition,
+    objects: Objects,
+    programmer: Programmer,
+    pipeline: Pipeline,
+    selection: Selection,
     highlight: bool,
 }
 
@@ -355,26 +353,19 @@ impl EngineSnapshot {
         &self.objects
     }
 
+    pub fn programmer(&self) -> &Programmer {
+        &self.programmer
+    }
+
+    pub fn pipeline(&self) -> &Pipeline {
+        &self.pipeline
+    }
+
     pub fn selection(&self) -> &Selection {
         &self.selection
     }
 
     pub fn highlight(&self) -> bool {
         self.highlight
-    }
-}
-
-impl Clone for EngineSnapshot {
-    fn clone(&self) -> Self {
-        Self {
-            showfile_path: self.showfile_path.clone(),
-            patch: Arc::clone(&self.patch),
-            output: Arc::clone(&self.output),
-            triggers: Arc::clone(&self.triggers),
-            objects: Arc::clone(&self.objects),
-            programmer: Arc::clone(&self.programmer),
-            selection: Arc::clone(&self.selection),
-            highlight: self.highlight,
-        }
     }
 }

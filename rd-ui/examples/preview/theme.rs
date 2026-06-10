@@ -98,9 +98,9 @@ impl Render for ThemePreview {
                                     cx,
                                 )),
                         )
-                        .child(row("warning", t.warning, t.fg_primary, cx))
-                        .child(row("error", t.error, t.fg_primary, cx))
-                        .child(row("success", t.success, t.fg_primary, cx)),
+                        .child(row("warning", t.indicate.warning, t.fg_primary, cx))
+                        .child(row("error", t.indicate.error, t.fg_primary, cx))
+                        .child(row("success", t.indicate.success, t.fg_primary, cx)),
                 ),
             )
             .child(

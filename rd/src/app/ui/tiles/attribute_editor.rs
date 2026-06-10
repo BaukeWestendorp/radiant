@@ -6,8 +6,10 @@ use rd_engine::{
     gdtf::{
         Name,
         attr::{Attribute, AttributeName, Feature},
+        dmx::DmxValue,
     },
     patch::Fixture,
+    pipeline::{AttributeInfo, AttributeSource},
 };
 use rd_ui::{ActiveTheme as _, HslaExt as _, TileDelegate, h_flex, v_flex};
 
@@ -210,30 +212,7 @@ impl AttributeEditorTile {
             .child(label.into())
     }
 
-    fn render_encoder(
-        &self,
-        _fixture: &Fixture,
-        attribute: &Attribute,
-        _window: &Window,
-        cx: &App,
-    ) -> impl IntoElement {
-        let header = h_flex()
-            .px_2()
-            .bg(cx.theme().bg_tertiary)
-            .border_b_1()
-            .border_color(cx.theme().border_primary)
-            .font_weight(FontWeight::BOLD)
-            .child(attribute.pretty_name().to_string());
-
-        div()
-            .size_full()
-            .bg(cx.theme().bg_secondary)
-            .border_1()
-            .border_color(cx.theme().border_primary)
-            .child(header)
-    }
-
-    fn render_channel_editor(
+    fn render_feature_contents(
         &self,
         fixture: &Fixture,
         window: &Window,
@@ -259,6 +238,126 @@ impl AttributeEditorTile {
 
         div().size_full().child(encoders).into_any_element()
     }
+
+    fn render_encoder(
+        &self,
+        fixture: &Fixture,
+        attribute: &Attribute,
+        window: &Window,
+        cx: &App,
+    ) -> impl IntoElement {
+        let header = h_flex()
+            .px_2()
+            .bg(cx.theme().bg_tertiary)
+            .border_b_1()
+            .border_color(cx.theme().border_primary)
+            .font_weight(FontWeight::BOLD)
+            .child(attribute.pretty_name().to_string());
+
+        div()
+            .size_full()
+            .bg(cx.theme().bg_secondary)
+            .border_1()
+            .border_color(cx.theme().border_primary)
+            .child(header)
+            .child(self.render_encoder_content(fixture, attribute, window, cx))
+    }
+
+    fn render_encoder_content(
+        &self,
+        fixture: &Fixture,
+        attribute: &Attribute,
+        window: &Window,
+        cx: &App,
+    ) -> impl IntoElement {
+        let snapshot = EngineManager::snapshot(cx);
+        let values = snapshot
+            .selection()
+            .fixture_ids()
+            .iter()
+            .filter_map(|fixture_id| {
+                Some((
+                    fixture_id,
+                    snapshot.pipeline().attribute_info(
+                        fixture_id,
+                        attribute.name(),
+                        snapshot.programmer(),
+                    )?,
+                ))
+            })
+            .collect::<Vec<_>>();
+
+        let value_indicator = self.render_value_indicator(
+            if values.len() > 0 && values.iter().all(|(_, v)| values[0].1.value == v.value) {
+                Some(values[0].1)
+            } else {
+                None
+            },
+            fixture,
+            attribute,
+            window,
+            cx,
+        );
+
+        v_flex().p_1().size_full().child(value_indicator)
+    }
+
+    fn render_value_indicator(
+        &self,
+        value: Option<AttributeInfo>,
+        fixture: &Fixture,
+        attribute: &Attribute,
+        window: &Window,
+        cx: &App,
+    ) -> impl IntoElement {
+        let value_indicator_base =
+            h_flex().justify_between().w_full().h(window.line_height()).px_1();
+        match value {
+            Some(AttributeInfo { value, source }) => {
+                let (border, bg) = match source {
+                    AttributeSource::Default => (cx.theme().border_primary, cx.theme().bg_primary),
+                    AttributeSource::Playback => {
+                        (cx.theme().indicate.playback, cx.theme().indicate.playback.opacity(0.2))
+                    }
+                    AttributeSource::Programmer => (
+                        cx.theme().indicate.programmer,
+                        cx.theme().indicate.programmer.opacity(0.2),
+                    ),
+                    AttributeSource::Highlight => {
+                        (cx.theme().indicate.highlight, cx.theme().indicate.highlight.opacity(0.2))
+                    }
+                };
+
+                let current_cs =
+                    fixture.dmx_mode().logical_channel(attribute.name()).and_then(|lc| {
+                        lc.channel_set_for_value(DmxValue::from_u32(
+                            (value.as_f32() * u32::MAX as f32) as u32,
+                            false,
+                        ))
+                    });
+
+                let value_text = attribute.physical_unit().format_value(value.as_f32());
+                let channel_set_label = current_cs.and_then(|cs| {
+                    cs.name().map(|name| {
+                        div().text_color(cx.theme().fg_secondary).child(name.to_string())
+                    })
+                });
+
+                // FIXME: This does not update when the pipeline changes output. This also means that
+                // if you're unlucky with the framedraw, it might not update properly when moving a fader for example.
+                value_indicator_base
+                    .border_1()
+                    .border_color(border)
+                    .bg(bg)
+                    .child(value_text)
+                    .children(channel_set_label)
+            }
+            None => value_indicator_base
+                .border_1()
+                .border_color(cx.theme().border_tertiary)
+                .bg(cx.theme().bg_tertiary),
+        }
+    }
 }
 
 impl TileDelegate for AttributeEditorTile {
@@ -277,14 +376,15 @@ impl TileDelegate for AttributeEditorTile {
             }),
         );
 
-        let channel_editor = self.render_channel_editor(fixture, window, cx);
+        let feature_contents = self.render_feature_contents(fixture, window, cx);
 
         div()
             .flex()
             .flex_col()
             .size_full()
+            .text_sm()
             .child(feature_selector)
-            .child(channel_editor)
+            .child(feature_contents)
             .into_any_element()
     }
 }

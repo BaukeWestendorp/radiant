@@ -76,9 +76,7 @@ pub struct Theme {
     pub border_tile_header: Hsla,
 
     pub accent: Hsla,
-    pub warning: Hsla,
-    pub error: Hsla,
-    pub success: Hsla,
+    pub indicate: IndicationColors,
 
     pub contrast: Hsla,
 
@@ -126,9 +124,7 @@ impl Theme {
             border_tile_header: hsla(0.571, 0.386, 0.725, 1.).into(),
 
             accent: rgb(0x3bb2f6).into(),
-            warning: rgb(0xffc94d).into(),
-            error: rgb(0xed2320).into(),
-            success: rgb(0x9ce152).into(),
+            indicate: IndicationColors::light(),
 
             contrast: rgb(0x000000).into(),
 
@@ -167,9 +163,7 @@ impl Theme {
             border_tile_header: rgb(0x2b4a61).into(),
 
             accent: rgb(0x3bb2f6).into(),
-            warning: rgb(0xffc94d).into(),
-            error: rgb(0xed2320).into(),
-            success: rgb(0x9ce152).into(),
+            indicate: IndicationColors::dark(),
 
             contrast: rgb(0xffffff).into(),
 
@@ -188,3 +182,46 @@ impl Default for Theme {
 }
 
 impl Global for Theme {}
+
+#[derive(Debug, Clone)]
+pub struct IndicationColors {
+    pub warning: Hsla,
+    pub error: Hsla,
+    pub success: Hsla,
+
+    pub programmer: Hsla,
+    pub highlight: Hsla,
+    pub playback: Hsla,
+}
+
+impl IndicationColors {
+    pub fn light() -> Self {
+        Self {
+            warning: rgb(0xffc94d).into(),
+            error: rgb(0xed2320).into(),
+            success: rgb(0x9ce152).into(),
+
+            programmer: rgb(0xed2320).into(),
+            highlight: rgb(0xffc94d).into(),
+            playback: rgb(0x9ce152).into(),
+        }
+    }
+
+    pub fn dark() -> Self {
+        Self {
+            warning: rgb(0xffc94d).into(),
+            error: rgb(0xed2320).into(),
+            success: rgb(0x9ce152).into(),
+
+            programmer: rgb(0xed2320).into(),
+            highlight: rgb(0xffc94d).into(),
+            playback: rgb(0x9ce152).into(),
+        }
+    }
+}
+
+impl Default for IndicationColors {
+    fn default() -> Self {
+        Self::light()
+    }
+}
