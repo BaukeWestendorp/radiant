@@ -6,7 +6,6 @@ use rd_engine::{
     gdtf::{
         Name,
         attr::{Attribute, AttributeName, Feature},
-        dmx::LogicalChannel,
     },
     patch::Fixture,
 };
@@ -246,10 +245,6 @@ impl AttributeEditorTile {
 
         let gdtf = fixture.gdtf();
         let dmx_mode = fixture.dmx_mode();
-
-        let Some(feature) = gdtf.feature_group(fg_name).and_then(|f| f.feature(f_name)) else {
-            return gpui::Empty.into_any_element();
-        };
 
         let attributes = dmx_mode.attributes(gdtf).filter(|attr| {
             attr.feature_group(gdtf).is_some_and(|fg| fg.name() == fg_name)
