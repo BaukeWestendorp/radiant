@@ -54,23 +54,6 @@ impl EngineManager {
 
 impl Global for EngineManager {}
 
-#[derive(Default, Debug, Clone, Copy)]
-struct DrainedEvents {
-    saw_any: bool,
-    saw_selection_changed: bool,
-}
-
-fn drain_events(listener: &EventListener) -> DrainedEvents {
-    let mut drained = DrainedEvents::default();
-    while let Some(event) = listener.try_recv() {
-        drained.saw_any = true;
-        if matches!(event, Event::SelectionChanged) {
-            drained.saw_selection_changed = true;
-        }
-    }
-    drained
-}
-
 fn spawn_engine(
     engine: EngineHandle,
     event_listener: EventListener,
@@ -81,20 +64,29 @@ fn spawn_engine(
     cx.spawn(async move |cx| {
         loop {
             cx.update(|cx| {
-                let drained = drain_events(&event_listener);
-                if !drained.saw_any {
+                let mut handled_event = false;
+                let mut selection_changed = false;
+                while let Some(event) = event_listener.try_recv() {
+                    match event {
+                        Event::SelectionChanged => selection_changed = true,
+                        Event::HighlightChanged => {}
+                        Event::ExecutorChanged(_) => {}
+                    }
+                    handled_event = true;
+                }
+
+                if !handled_event {
                     return;
                 }
 
                 let latest = engine.snapshot();
 
-                if drained.saw_selection_changed {
+                if selection_changed {
                     apply_engine_selection(&latest, &selection, cx);
                 }
 
                 snapshot.write(cx, latest);
             });
-
             cx.background_executor().timer(SYNC_INTERVAL).await;
         }
     })
@@ -107,9 +99,7 @@ fn apply_engine_selection(
     cx: &mut App,
 ) {
     let new_selection = latest.selection().fixture_ids().to_vec();
-    if selection.read(cx).as_slice() != new_selection.as_slice() {
-        selection.write(cx, new_selection);
-    }
+    selection.write(cx, new_selection);
 }
 
 fn observe_ui_selection_to_engine(
