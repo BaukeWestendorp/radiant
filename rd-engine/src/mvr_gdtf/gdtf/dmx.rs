@@ -5,6 +5,8 @@ use std::{
     time::Duration,
 };
 
+use anyhow::Context as _;
+
 use crate::mvr_gdtf::{
     gdtf::{
         Gdtf, Name, NodePath,
@@ -80,6 +82,38 @@ impl DmxMode {
     pub fn ft_macro(&self, name: &Name) -> Option<&FtMacro> {
         let ix = self.ft_macros_by_name.get(name)?;
         self.ft_macros.get(*ix)
+    }
+
+    pub fn attributes<'a>(&self, gdtf: &'a Gdtf) -> impl Iterator<Item = &'a Attribute> {
+        self.logical_channels().filter_map(move |lc| lc.attribute(gdtf))
+    }
+
+    pub fn logical_channels(&self) -> impl Iterator<Item = &LogicalChannel> {
+        self.dmx_channels().iter().flat_map(|dc| dc.logical_channels())
+    }
+
+    pub fn logical_channel(&self, attribute_name: &AttributeName) -> Option<&LogicalChannel> {
+        self.dmx_channels().iter().flat_map(|dc| dc.logical_channels()).find(|lc| {
+            lc.attribute_node().parts().get(0).map_or(false, |name| {
+                AttributeName::from_str(name.as_str()).unwrap() == *attribute_name
+            })
+        })
+    }
+
+    pub fn channel_functions(
+        &self,
+        cf_path: &ChannelFunctionPath,
+    ) -> impl Iterator<Item = &ChannelFunction> {
+        self.dmx_channel(cf_path.dmx_channel_name())
+            .into_iter()
+            .flat_map(|dc| dc.logical_channel(&cf_path.attribute_name()))
+            .flat_map(|lc| lc.channel_functions())
+    }
+
+    pub fn channel_function(&self, cf_path: &ChannelFunctionPath) -> Option<&ChannelFunction> {
+        self.dmx_channel(cf_path.dmx_channel_name())?
+            .logical_channel(&cf_path.attribute_name())?
+            .channel_function(cf_path.channel_function_name())
     }
 }
 
@@ -347,6 +381,27 @@ impl LogicalChannel {
         let ix = self.channel_functions_by_name.get(name)?;
         Some(&self.channel_functions[*ix])
     }
+
+    pub fn channel_set_for_value(&self, value: DmxValue) -> Option<&ChannelSet> {
+        let value = value.to_u16();
+
+        let mut channel_sets =
+            self.channel_functions().iter().flat_map(|cf| cf.channel_sets().iter()).peekable();
+        while let Some(current) = channel_sets.next() {
+            let matches = match channel_sets.peek() {
+                Some(next) => {
+                    current.dmx_from().to_u16() <= value && value < next.dmx_from().to_u16()
+                }
+                None => current.dmx_from().to_u16() <= value,
+            };
+
+            if matches {
+                return Some(current);
+            }
+        }
+
+        None
+    }
 }
 
 impl bundle::FromBundle for LogicalChannel {
@@ -580,14 +635,54 @@ impl ChannelFunction {
         Some(&self.sub_channel_sets[*ix])
     }
 
-    pub fn node_path(
+    pub fn path(
         &self,
         dmx_channel: &DmxChannel,
         logical_channel: &LogicalChannel,
-    ) -> NodePath {
-        NodePath::new(dmx_channel.name().clone())
+    ) -> ChannelFunctionPath {
+        let node_path = NodePath::new(dmx_channel.name().clone())
             .join_path(logical_channel.attribute_node().clone())
-            .join(self.name().clone())
+            .join(self.name().clone());
+        ChannelFunctionPath::new(node_path).expect("Should have just created 3 parts")
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct ChannelFunctionPath(NodePath);
+
+impl ChannelFunctionPath {
+    pub fn new(node_path: NodePath) -> anyhow::Result<Self> {
+        anyhow::ensure!(node_path.parts().len() == 3, "ChannelFunctionPath should have 3 parts");
+        Ok(Self(node_path))
+    }
+
+    pub fn dmx_channel_name(&self) -> &Name {
+        self.0.parts().get(0).expect("ChannelFunctionPath should have 3 parts")
+    }
+
+    pub fn attribute_name(&self) -> AttributeName {
+        let name = self.0.parts().get(1).expect("ChannelFunctionPath should have 3 parts");
+        AttributeName::from_str(name.as_str()).unwrap()
+    }
+
+    pub fn channel_function_name(&self) -> &Name {
+        self.0.parts().get(2).expect("ChannelFunctionPath should have 3 parts")
+    }
+
+    pub fn resolve<'a>(
+        &self,
+        dmx_mode: &'a DmxMode,
+    ) -> anyhow::Result<(&'a DmxChannel, &'a LogicalChannel, &'a ChannelFunction)> {
+        let mut parts = self.0.parts().iter();
+        let dc_name = parts.next().context("NodePath did not contain DMX channel name")?;
+        let lc_name = parts.next().context("NodePath did not contain logical channel name")?;
+        let lc_attr = AttributeName::from_str(lc_name.as_str()).unwrap();
+        let cf_name = parts.next().context("NodePath did not contain channel function name")?;
+        let dc = dmx_mode.dmx_channel(dc_name).context("Could not find DMX channel")?;
+        let lc = dc.logical_channel(&lc_attr).context("Could not find logical channel")?;
+        let cf = lc.channel_function(cf_name).context("Could not find channel function")?;
+        Ok((dc, lc, cf))
     }
 }
 
@@ -708,7 +803,11 @@ pub struct ChannelSet {
 
 impl ChannelSet {
     pub fn name(&self) -> Option<&Name> {
-        self.name.as_ref()
+        match &self.name {
+            Some(name) if name.as_str().trim().is_empty() => None,
+            Some(name) => Some(name),
+            None => None,
+        }
     }
 
     pub fn dmx_from(&self) -> DmxValue {
@@ -1046,6 +1145,30 @@ impl DmxValue {
 
     pub fn from_u32(value: u32, shifting: bool) -> Self {
         DmxValue { value, bytes: 4, shifting }
+    }
+
+    pub fn to_u8(&self) -> u8 {
+        match self.bytes {
+            1 => self.value as u8,
+            2 => (self.value / 256) as u8,
+            3 => (self.value / 65536) as u8,
+            4 => (self.value / 16777216) as u8,
+            _ => todo!(),
+        }
+    }
+
+    pub fn to_u16(&self) -> u16 {
+        match self.bytes {
+            1 => self.value as u16,
+            2 => self.value as u16,
+            3 => (self.value / 256) as u16,
+            4 => (self.value / 65536) as u16,
+            _ => todo!(),
+        }
+    }
+
+    pub fn to_u32(&self) -> u32 {
+        self.value
     }
 
     pub fn value(&self) -> u32 {

@@ -4,16 +4,18 @@ pub mod event;
 pub mod object;
 pub mod output;
 pub mod patch;
+pub mod pipeline;
+pub mod programmer;
 pub mod selection;
 pub mod trigger;
 pub mod value;
 
 mod engine;
 mod mvr_gdtf;
-mod pipeline;
 mod project;
 
 pub use engine::*;
+pub use mvr_gdtf::*;
 pub use project::*;
 
 use std::str;

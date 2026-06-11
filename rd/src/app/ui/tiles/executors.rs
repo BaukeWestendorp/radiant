@@ -53,7 +53,7 @@ impl TileDelegate for ExecutorsTile {
                             .when(executor.enabled(), |e| {
                                 e.border_color(cx.theme().contrast.opacity(0.25))
                                     .font_weight(FontWeight::BOLD)
-                                    .bg(cx.theme().success)
+                                    .bg(cx.theme().indicate.playback)
                             })
                             .child(format!("{}.{}", self.page_slot, ix + 1)),
                     );
@@ -183,6 +183,8 @@ fn render_sequence_content(
     .size_full();
 
     let state = {
+        // FIXME: This does not update when the executor master changes value. This also means that
+        // if you're unlucky with the framedraw, it might not update properly when moving a fader for example.
         let master = v_flex()
             .flex_col_reverse()
             .min_w_5()

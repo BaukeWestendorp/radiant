@@ -1,17 +1,20 @@
 use std::time::Instant;
 
 use crate::{
-    Engine,
+    Engine, FixtureCollection,
     event::Event,
+    gdtf::attr::AttributeName,
     object::{
         Executor, ExecutorButton, ExecutorButtonAction, ExecutorContent, ExecutorId, ObjectId,
         ObjectKind,
     },
     patch::FixtureId,
+    value::AttributeValue,
 };
 
 pub enum Command {
     Activate { object_kind: ObjectKind, object_id: ObjectId },
+    // FIXME: Convert these to FixtureCollections.
     SelectionAdd { fixture_ids: Vec<FixtureId> },
     SelectionRemove { fixture_ids: Vec<FixtureId> },
     SelectionSet { fixture_ids: Vec<FixtureId> },
@@ -25,6 +28,8 @@ pub enum Command {
     ExecutorToggleEnabled { executor_id: ExecutorId },
     ExecutorSetEnabled { executor_id: ExecutorId, value: bool },
     ExecutorButton { executor_id: ExecutorId, button: ExecutorButton, pressed: bool },
+
+    ProgrammerSet { fixtures: FixtureCollection, attribute: AttributeName, value: AttributeValue },
 }
 
 impl Command {
@@ -44,42 +49,47 @@ impl Command {
             Command::SelectionAdd { fixture_ids } => {
                 for fixture_id in fixture_ids {
                     if !engine.selection.contains(&fixture_id) {
-                        engine.selection.fixtures.push(fixture_id);
+                        engine.selection.fixture_ids.push(fixture_id);
                     }
                 }
+
                 engine.emit(Event::SelectionChanged);
             }
             Command::SelectionRemove { fixture_ids } => {
                 for fixture_id in fixture_ids {
                     if let Some(pos) =
-                        engine.selection.fixtures().iter().position(|x| x == &fixture_id)
+                        engine.selection.fixture_ids().iter().position(|x| x == &fixture_id)
                     {
-                        engine.selection.fixtures.remove(pos);
+                        engine.selection.fixture_ids.remove(pos);
                     }
                 }
+
                 engine.emit(Event::SelectionChanged);
             }
             Command::SelectionSet { fixture_ids } => {
-                engine.selection.fixtures.clear();
+                engine.selection.fixture_ids.clear();
                 for fixture_id in fixture_ids {
                     if !engine.selection.contains(&fixture_id) {
-                        engine.selection.fixtures.push(fixture_id);
+                        engine.selection.fixture_ids.push(fixture_id);
                     }
                 }
+
                 engine.emit(Event::SelectionChanged);
             }
             Command::SelectionClear => {
-                engine.selection.fixtures.clear();
+                engine.selection.fixture_ids.clear();
+
                 engine.emit(Event::SelectionChanged);
             }
             Command::SelectionAll => {
-                engine.selection.fixtures.clear();
+                engine.selection.fixture_ids.clear();
                 let fixture_ids = engine.patch().fixture_ids().cloned().collect::<Vec<_>>();
                 for fixture_id in fixture_ids {
                     if !engine.selection.contains(&fixture_id) {
-                        engine.selection.fixtures.push(fixture_id);
+                        engine.selection.fixture_ids.push(fixture_id);
                     }
                 }
+
                 engine.emit(Event::SelectionChanged);
             }
             Command::HighlightToggle => {
@@ -196,6 +206,16 @@ impl Command {
                 }
 
                 engine.emit(Event::ExecutorChanged(executor_id));
+            }
+            Command::ProgrammerSet { fixtures, attribute, value } => {
+                let fixture_ids = fixtures
+                    .fixture_ids(engine.objects(), engine.patch())?
+                    .cloned()
+                    .collect::<Vec<_>>();
+
+                for fixture_id in fixture_ids {
+                    engine.programmer.set(fixture_id, attribute.clone(), value);
+                }
             }
         }
 

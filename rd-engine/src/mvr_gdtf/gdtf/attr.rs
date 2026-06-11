@@ -148,6 +148,11 @@ impl Attribute {
         self.feature.as_ref()
     }
 
+    pub fn feature_group<'a>(&self, gdtf: &'a Gdtf) -> Option<&'a FeatureGroup> {
+        let feature_group = self.feature_node()?.parts().get(0)?;
+        gdtf.feature_group(feature_group)
+    }
+
     pub fn feature<'a>(&self, gdtf: &'a Gdtf) -> Option<&'a Feature> {
         let feature_group = self.feature_node()?.parts().get(0)?;
         let feature = self.feature_node()?.parts().get(1)?;
@@ -1669,6 +1674,50 @@ impl PhysicalUnit {
             PhysicalUnit::WaveLength => "nm",
             PhysicalUnit::ColorComponent => "",
         }
+    }
+
+    pub fn format_value(&self, value: f32) -> String {
+        let formatted = match self {
+            PhysicalUnit::Percent => {
+                format!("{:.0}", value)
+            }
+
+            PhysicalUnit::Length | PhysicalUnit::Area | PhysicalUnit::Volume => {
+                format!("{:.2}", value)
+            }
+
+            PhysicalUnit::WaveLength => {
+                format!("{:.1}", value)
+            }
+
+            PhysicalUnit::Angle
+            | PhysicalUnit::AngularSpeed
+            | PhysicalUnit::AngularAcceleration => {
+                format!("{:.1}", value)
+            }
+
+            PhysicalUnit::Mass
+            | PhysicalUnit::Time
+            | PhysicalUnit::Temperature
+            | PhysicalUnit::Force
+            | PhysicalUnit::Frequency
+            | PhysicalUnit::Current
+            | PhysicalUnit::Voltage
+            | PhysicalUnit::Power
+            | PhysicalUnit::Energy
+            | PhysicalUnit::Speed
+            | PhysicalUnit::Acceleration
+            | PhysicalUnit::LuminousIntensity
+            | PhysicalUnit::ColorComponent => {
+                format!("{:.2}", value)
+            }
+
+            PhysicalUnit::None => {
+                format!("{:.2}", value)
+            }
+        };
+
+        format!("{}{}", formatted, self.suffix())
     }
 }
 

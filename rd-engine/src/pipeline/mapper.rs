@@ -8,19 +8,38 @@ use crate::{
     value::{AttributeValue, AttributeValues, ClampedValue},
 };
 
-#[derive(Default)]
-pub struct Mapper {}
+pub fn map(attributes: &AttributeValues, cache: &PipelineCache) -> Multiverse {
+    let mut multiverse = Multiverse::new();
+    let mut deferred_relations = Vec::new();
 
-impl Mapper {
-    pub fn new() -> Self {
-        Self {}
+    for (fixture_id, attribute, value) in attributes.values() {
+        set_value(
+            fixture_id,
+            attribute,
+            value,
+            cache,
+            attributes,
+            &mut multiverse,
+            &mut deferred_relations,
+        );
     }
 
-    pub fn map(&self, attributes: &AttributeValues, cache: &PipelineCache) -> Multiverse {
-        let mut multiverse = Multiverse::new();
-        let mut deferred_relations = Vec::new();
+    let mut visited = HashSet::new();
 
-        for (fixture_id, attribute, value) in attributes.values() {
+    loop {
+        let batch = std::mem::take(&mut deferred_relations);
+        if batch.is_empty() {
+            break;
+        }
+        for (fixture_id, attribute, value) in &batch {
+            if !visited.insert((fixture_id.clone(), attribute.clone())) {
+                log::warn!(
+                    "Cycle detected in relations for attribute '{}' of fixture '{}', skipping",
+                    attribute,
+                    fixture_id
+                );
+                continue;
+            }
             set_value(
                 fixture_id,
                 attribute,
@@ -31,37 +50,9 @@ impl Mapper {
                 &mut deferred_relations,
             );
         }
-
-        let mut visited = HashSet::new();
-
-        loop {
-            let batch = std::mem::take(&mut deferred_relations);
-            if batch.is_empty() {
-                break;
-            }
-            for (fixture_id, attribute, value) in &batch {
-                if !visited.insert((fixture_id.clone(), attribute.clone())) {
-                    log::warn!(
-                        "Cycle detected in relations for attribute '{}' of fixture '{}', skipping",
-                        attribute,
-                        fixture_id
-                    );
-                    continue;
-                }
-                set_value(
-                    fixture_id,
-                    attribute,
-                    value,
-                    cache,
-                    attributes,
-                    &mut multiverse,
-                    &mut deferred_relations,
-                );
-            }
-        }
-
-        multiverse
     }
+
+    multiverse
 }
 
 fn set_value(

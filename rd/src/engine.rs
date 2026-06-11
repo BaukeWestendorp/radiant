@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use gpui::{App, Entity, Global, ReadGlobal as _, prelude::*};
 use rd_engine::{
@@ -13,7 +13,7 @@ const SYNC_INTERVAL: Duration = Duration::from_nanos(16_666_667);
 pub struct EngineManager {
     handle: EngineHandle,
 
-    snapshot: Entity<EngineSnapshot>,
+    snapshot: Entity<Arc<EngineSnapshot>>,
     selection: Entity<Vec<FixtureId>>,
 }
 
@@ -21,7 +21,7 @@ impl EngineManager {
     pub fn new(handle: EngineHandle, cx: &mut App) -> Self {
         let initial_snapshot = handle.snapshot();
 
-        let selection = cx.new(|_| initial_snapshot.selection().fixtures().to_vec());
+        let selection = cx.new(|_| initial_snapshot.selection().fixture_ids().to_vec());
         let snapshot = cx.new(|_| initial_snapshot);
 
         spawn_engine(
@@ -47,54 +47,46 @@ impl EngineManager {
         }
     }
 
-    pub fn selection(&self) -> &Entity<Vec<FixtureId>> {
-        &self.selection
+    pub fn selection(cx: &App) -> &Entity<Vec<FixtureId>> {
+        &Self::global(cx).selection
     }
 }
 
 impl Global for EngineManager {}
 
-#[derive(Default, Debug, Clone, Copy)]
-struct DrainedEvents {
-    saw_any: bool,
-    saw_selection_changed: bool,
-}
-
-fn drain_events(listener: &EventListener) -> DrainedEvents {
-    let mut drained = DrainedEvents::default();
-    while let Some(event) = listener.try_recv() {
-        drained.saw_any = true;
-        if matches!(event, Event::SelectionChanged) {
-            drained.saw_selection_changed = true;
-        }
-    }
-    drained
-}
-
 fn spawn_engine(
     engine: EngineHandle,
     event_listener: EventListener,
-    snapshot: Entity<EngineSnapshot>,
+    snapshot: Entity<Arc<EngineSnapshot>>,
     selection: Entity<Vec<FixtureId>>,
     cx: &mut App,
 ) {
     cx.spawn(async move |cx| {
         loop {
             cx.update(|cx| {
-                let drained = drain_events(&event_listener);
-                if !drained.saw_any {
+                let mut handled_event = false;
+                let mut selection_changed = false;
+                while let Some(event) = event_listener.try_recv() {
+                    match event {
+                        Event::SelectionChanged => selection_changed = true,
+                        Event::HighlightChanged => {}
+                        Event::ExecutorChanged(_) => {}
+                    }
+                    handled_event = true;
+                }
+
+                if !handled_event {
                     return;
                 }
 
                 let latest = engine.snapshot();
 
-                if drained.saw_selection_changed {
+                if selection_changed {
                     apply_engine_selection(&latest, &selection, cx);
                 }
 
                 snapshot.write(cx, latest);
             });
-
             cx.background_executor().timer(SYNC_INTERVAL).await;
         }
     })
@@ -106,10 +98,8 @@ fn apply_engine_selection(
     selection: &Entity<Vec<FixtureId>>,
     cx: &mut App,
 ) {
-    let new_selection = latest.selection().fixtures().to_vec();
-    if selection.read(cx).as_slice() != new_selection.as_slice() {
-        selection.write(cx, new_selection);
-    }
+    let new_selection = latest.selection().fixture_ids().to_vec();
+    selection.write(cx, new_selection);
 }
 
 fn observe_ui_selection_to_engine(
@@ -120,7 +110,7 @@ fn observe_ui_selection_to_engine(
     cx.observe(&selection, move |selection, cx| {
         let fixture_ids = selection.read(cx).clone();
         let snapshot = engine.snapshot();
-        let current_fixture_ids = snapshot.selection().fixtures();
+        let current_fixture_ids = snapshot.selection().fixture_ids();
 
         if fixture_ids.as_slice() != current_fixture_ids {
             if let Err(err) = engine.execute(Command::SelectionSet { fixture_ids }) {

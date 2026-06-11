@@ -93,6 +93,7 @@ impl RenderOnce for Tabs {
                 .id(self.id.clone())
                 .flex()
                 .size_full()
+                .bg(cx.theme().bg_primary)
                 .child(
                     v_flex()
                         .min_w_48()
@@ -110,6 +111,7 @@ impl RenderOnce for Tabs {
                 .id(self.id.clone())
                 .flex()
                 .flex_col()
+                .bg(cx.theme().bg_primary)
                 .size_full()
                 .child(
                     h_flex()

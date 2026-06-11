@@ -114,6 +114,10 @@ impl AttributeValues {
             .copied()
     }
 
+    pub fn contains(&self, id: &FixtureId, attribute: &AttributeName) -> bool {
+        self.values.get(id).map(|attrs| attrs.contains_key(attribute)).unwrap_or(false)
+    }
+
     pub fn extend(&mut self, other: AttributeValues) {
         for (fixture_id, attrs) in other.values {
             self.values.entry(fixture_id).or_default().extend(attrs);

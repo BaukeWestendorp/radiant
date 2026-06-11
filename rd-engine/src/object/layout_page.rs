@@ -65,8 +65,9 @@ impl LayoutTile {
 #[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub enum LayoutTileKind {
-    Fixtures,
+    AttributeEditor,
     Executors,
+    Fixtures,
 
     GroupPool,
     SequencePool,

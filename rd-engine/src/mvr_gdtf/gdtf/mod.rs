@@ -597,7 +597,7 @@ impl str::FromStr for NodePath {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Name(String);
 

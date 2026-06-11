@@ -1,7 +1,6 @@
 use std::time::Instant;
 
 use crate::{
-    mvr_gdtf::gdtf::attr::AttributeName,
     object::{
         Cue, Executor, ExecutorContent, MergeMode, Objects, RecipeContent, SequenceExecutorContent,
     },
@@ -94,14 +93,7 @@ fn compose_cue(
             MergeMode::Htp => {
                 let existing_value = output
                     .get(fixture_id, attribute)
-                    .map(|v| {
-                        if attribute == &AttributeName::ColorAddG
-                            && *fixture_id == "401.1".parse().unwrap()
-                        {
-                            dbg!(v.to_clamped_value(info.min, info.max));
-                        }
-                        v.to_clamped_value(info.min, info.max)
-                    })
+                    .map(|v| v.to_clamped_value(info.min, info.max))
                     .unwrap_or_else(|| ClampedValue::new(0.0));
 
                 let merged = if new_value > existing_value { new_value } else { existing_value };

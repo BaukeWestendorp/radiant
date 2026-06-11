@@ -1,32 +1,28 @@
-use std::{collections::HashMap, str::FromStr as _};
+use std::collections::HashMap;
 
 use anyhow::Context;
 
 use crate::{
     dmx,
+    gdtf::dmx::ChannelFunctionPath,
     mvr_gdtf::gdtf::{
-        NodePath,
         attr::{AttributeName, PhysicalUnit},
-        dmx::{ChannelFunction, DmxChannel, DmxOffset, LogicalChannel, RelationKind},
+        dmx::{DmxChannel, DmxOffset, RelationKind},
     },
     patch::{Fixture, FixtureId, Patch},
     value::{AttributeValue, AttributeValues, ClampedValue},
 };
 
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct PipelineCache {
     channel_functions: HashMap<FixtureId, HashMap<AttributeName, ChannelFunctionInfo>>,
     initial_defaults: AttributeValues,
-    highlights: HashMap<FixtureId, HashMap<dmx::Address, dmx::Value>>,
 }
 
 impl PipelineCache {
     pub fn new(patch: &Patch) -> Self {
-        let mut this = Self {
-            channel_functions: HashMap::new(),
-            initial_defaults: AttributeValues::new(),
-            highlights: HashMap::new(),
-        };
+        let mut this =
+            Self { channel_functions: HashMap::new(), initial_defaults: AttributeValues::new() };
         this.regenerate(patch);
         this
     }
@@ -35,8 +31,17 @@ impl PipelineCache {
         &self.initial_defaults
     }
 
-    pub fn highlights(&self) -> &HashMap<FixtureId, HashMap<dmx::Address, dmx::Value>> {
-        &self.highlights
+    pub fn highlight_values(
+        &self,
+        fixture_id: &FixtureId,
+    ) -> impl Iterator<Item = (&AttributeName, &AttributeValue)> {
+        self.channel_functions
+            .get(fixture_id)
+            .into_iter()
+            .flat_map(|attrs| attrs.iter())
+            .filter_map(|(attr_name, info)| {
+                info.highlight.as_ref().map(|highlight| (attr_name, highlight))
+            })
     }
 
     pub fn get(
@@ -73,11 +78,11 @@ impl PipelineCache {
 
     fn generate_channel_function<'a>(
         &mut self,
-        cf_path: &NodePath,
+        cf_path: &ChannelFunctionPath,
         fixture: &'a Fixture,
-        deferred: &mut Vec<(&'a Fixture, NodePath)>,
+        deferred: &mut Vec<(&'a Fixture, ChannelFunctionPath)>,
     ) -> anyhow::Result<()> {
-        let (dc, lc, cf) = resolve_channel_function_path(fixture, cf_path)?;
+        let (dc, lc, cf) = cf_path.resolve(fixture.dmx_mode())?;
         let attr = cf.attribute(fixture.gdtf()).context("Could not find attribute")?;
 
         let is_unitless = matches!(attr.physical_unit(), PhysicalUnit::None);
@@ -121,8 +126,9 @@ impl PipelineCache {
             }
         };
 
+        let mut highlight = None;
         if let Some((initial_lc, initial_cf)) = dc.initial_function() {
-            if initial_cf.node_path(dc, initial_lc) == cf.node_path(dc, lc) {
+            if initial_cf.path(dc, initial_lc) == cf.path(dc, lc) {
                 let initial_default_clamped = ClampedValue::from(initial_cf.default());
                 if is_unitless {
                     self.initial_defaults.set(
@@ -130,6 +136,14 @@ impl PipelineCache {
                         attr.name().clone(),
                         AttributeValue::Clamped(initial_default_clamped),
                     );
+
+                    if highlight.is_none() {
+                        if let Some(channel_highlight) = dc.highlight() {
+                            highlight = Some(AttributeValue::Clamped(ClampedValue::from(
+                                channel_highlight,
+                            )));
+                        }
+                    }
                 } else {
                     let from = cf.physical_from();
                     let to = cf.physical_to();
@@ -139,30 +153,32 @@ impl PipelineCache {
                         attr.name().clone(),
                         AttributeValue::Physical(initial_default),
                     );
-                }
 
-                if let ChannelFunctionKind::Physical { addresses } = &kind {
-                    if let Some(highlight) = dc.highlight() {
-                        let values = ClampedValue::from(highlight).to_address_values(addresses);
-                        for (address, value) in values {
-                            self.highlights.entry(fixture.id()).or_default().insert(address, value);
+                    if highlight.is_none() {
+                        if let Some(channel_highlight) = dc.highlight() {
+                            let physical_highlight =
+                                channel_highlight.to_normalized() as f32 * (to - from) + from;
+                            highlight = Some(AttributeValue::Physical(physical_highlight));
                         }
                     }
                 }
             }
         }
 
-        self.channel_functions
-            .entry(fixture.id())
-            .or_default()
-            .insert(attr.name().clone(), ChannelFunctionInfo { default, min, max, kind });
+        self.channel_functions.entry(fixture.id()).or_default().insert(
+            attr.name().clone(),
+            ChannelFunctionInfo { default, highlight, min, max, kind },
+        );
 
         Ok(())
     }
 
-    fn resolve_deferred(&mut self, deferred: Vec<(&Fixture, NodePath)>) -> anyhow::Result<()> {
+    fn resolve_deferred(
+        &mut self,
+        deferred: Vec<(&Fixture, ChannelFunctionPath)>,
+    ) -> anyhow::Result<()> {
         for (fixture, cf_path) in deferred {
-            let (dc, _lc, cf) = resolve_channel_function_path(fixture, &cf_path)?;
+            let (dc, _lc, cf) = cf_path.resolve(fixture.dmx_mode())?;
             let attr = cf.attribute(fixture.gdtf()).context("Could not find attribute")?;
 
             let relations = relations_for_dmx_channel(fixture, dc);
@@ -176,21 +192,6 @@ impl PipelineCache {
 
         Ok(())
     }
-}
-
-fn resolve_channel_function_path<'a>(
-    fixture: &'a Fixture,
-    path: &NodePath,
-) -> anyhow::Result<(&'a DmxChannel, &'a LogicalChannel, &'a ChannelFunction)> {
-    let mut parts = path.parts().iter();
-    let dc_name = parts.next().context("NodePath did not contain DMX channel name")?;
-    let lc_name = parts.next().context("NodePath did not contain logical channel name")?;
-    let lc_attr = AttributeName::from_str(lc_name.as_str()).unwrap();
-    let cf_name = parts.next().context("NodePath did not contain channel function name")?;
-    let dc = fixture.dmx_mode().dmx_channel(dc_name).context("Could not find DMX channel")?;
-    let lc = dc.logical_channel(&lc_attr).context("Could not find logical channel")?;
-    let cf = lc.channel_function(cf_name).context("Could not find channel function")?;
-    Ok((dc, lc, cf))
 }
 
 fn relations_for_dmx_channel(
@@ -225,21 +226,22 @@ fn relations_for_dmx_channel(
     channel_relations
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ChannelFunctionInfo {
     pub default: AttributeValue,
+    pub highlight: Option<AttributeValue>,
     pub min: AttributeValue,
     pub max: AttributeValue,
     pub kind: ChannelFunctionKind,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ChannelFunctionKind {
     Physical { addresses: Vec<dmx::Address> },
     Virtual { relations: Vec<ChannelFunctionRelation> },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ChannelFunctionRelation {
     pub fixture_id: FixtureId,
     pub attribute: AttributeName,
