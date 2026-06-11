@@ -1966,6 +1966,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ftdi-mpsse"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5dd2c246fb727197d284bf7273718ed6b1c9a94a128bb618b97f13daec658a12"
+dependencies = [
+ "static_assertions",
+]
+
+[[package]]
 name = "futf"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3162,6 +3171,28 @@ name = "libc"
 version = "0.2.186"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
+
+[[package]]
+name = "libftd2xx"
+version = "0.33.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e09fe202b49276fc72160c27c8af5ff34e6ee3db78625bbfe3bd9c2b2e595af6"
+dependencies = [
+ "ftdi-mpsse",
+ "libftd2xx-ffi",
+ "log",
+ "paste",
+ "static_assertions",
+]
+
+[[package]]
+name = "libftd2xx-ffi"
+version = "0.8.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ebd82d23ae0cbbf0fb65ad0310b474e45ddfdece8aa03a34130c59c04333c701"
+dependencies = [
+ "cfg-if",
+]
 
 [[package]]
 name = "libfuzzer-sys"
@@ -4618,6 +4649,7 @@ dependencies = [
  "arrayvec",
  "crossbeam-channel",
  "glam",
+ "libftd2xx",
  "log",
  "midir",
  "midly",
