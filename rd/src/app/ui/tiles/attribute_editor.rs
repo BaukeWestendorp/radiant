@@ -1,8 +1,10 @@
 use gpui::{
-    AnyElement, App, Bounds, Div, ElementId, Entity, FontWeight, SharedString, Stateful, Window,
-    div, prelude::*, px,
+    AnyElement, App, Bounds, Div, ElementId, Entity, FontWeight, MouseButton, SharedString,
+    Stateful, Window, div, prelude::*, px,
 };
 use rd_engine::{
+    FixtureCollection,
+    cmd::Command,
     gdtf::{
         Name,
         attr::{Attribute, AttributeName, Feature},
@@ -10,26 +12,50 @@ use rd_engine::{
     },
     patch::Fixture,
     pipeline::{AttributeInfo, AttributeSource},
+    value::{AttributeValue, ClampedValue},
 };
-use rd_ui::{ActiveTheme as _, HslaExt as _, TileDelegate, h_flex, v_flex};
+use rd_ui::{ActiveTheme as _, Button, HslaExt as _, TileDelegate, h_flex, v_flex};
 
 use crate::engine::EngineManager;
 
+#[derive(Default)]
+struct Selection {
+    feature: Option<(Name, Name)>,
+    attribute: Option<AttributeName>,
+}
+
+impl Selection {
+    fn select_feature(&mut self, fg_name: Name, f_name: Name, fixture: &Fixture) {
+        self.feature = Some((fg_name.clone(), f_name.clone()));
+
+        let gdtf = fixture.gdtf();
+        let dmx_mode = fixture.dmx_mode();
+        self.attribute = dmx_mode
+            .attributes(gdtf)
+            .filter(|attr| {
+                attr.feature_group(gdtf).is_some_and(|fg| fg.name() == &fg_name)
+                    && attr.feature(gdtf).is_some_and(|f| f.name() == &f_name)
+            })
+            .map(|attr| attr.name().clone())
+            .next();
+    }
+}
+
 pub struct AttributeEditorTile {
     fixture: Entity<Option<Fixture>>,
-    selected_feature: Entity<Option<(Name, Name)>>,
+    selection: Entity<Selection>,
     fg_buckets: Entity<Vec<(Name, Vec<Feature>)>>,
 }
 
 impl AttributeEditorTile {
     pub fn new(_window: &mut Window, cx: &mut App) -> Self {
         let fixture = cx.new(|_| None);
-        let selected_feature = cx.new(|_| None);
+        let selection = cx.new(|_| Selection::default());
         let fg_buckets = cx.new(|_| Vec::new());
 
         cx.observe(&EngineManager::selection(cx).clone(), {
             let fixture = fixture.clone();
-            let selected_feature = selected_feature.clone();
+            let selection = selection.clone();
             let fg_buckets = fg_buckets.clone();
             move |_, cx| {
                 let snapshot = EngineManager::snapshot(cx);
@@ -37,7 +63,7 @@ impl AttributeEditorTile {
                 match unique.len() {
                     0 => {
                         fixture.write(cx, None);
-                        selected_feature.write(cx, None);
+                        selection.write(cx, Selection::default());
                         fg_buckets.write(cx, Vec::new());
                     }
                     1 => {
@@ -45,7 +71,7 @@ impl AttributeEditorTile {
                             snapshot.selection().fixtures(snapshot.patch()).next().cloned()
                         else {
                             fixture.write(cx, None);
-                            selected_feature.write(cx, None);
+                            selection.write(cx, Selection::default());
                             fg_buckets.write(cx, Vec::new());
                             return;
                         };
@@ -99,7 +125,16 @@ impl AttributeEditorTile {
                                     .first()
                                     .map(|feature| (fg_name.clone(), feature.name().clone()))
                             });
-                        selected_feature.write(cx, first_feature);
+
+                        selection.update(cx, |selection, cx| {
+                            if let Some((fg_name, f_name)) = first_feature {
+                                selection.select_feature(fg_name, f_name, &new_fixture);
+                            } else {
+                                selection.feature = None;
+                                selection.attribute = None;
+                            }
+                            cx.notify();
+                        });
 
                         fixture.write(cx, Some(new_fixture));
                         fg_buckets.write(cx, new_fg_buckets);
@@ -109,7 +144,7 @@ impl AttributeEditorTile {
                             "Editing multiple GDTF DMX modes simultaneously is not yet supported"
                         );
                         fixture.write(cx, None);
-                        selected_feature.write(cx, None);
+                        selection.write(cx, Selection::default());
                         fg_buckets.write(cx, Vec::new());
                     }
                 }
@@ -117,21 +152,24 @@ impl AttributeEditorTile {
         })
         .detach();
 
-        Self { fixture, selected_feature, fg_buckets }
+        Self { fixture, selection, fg_buckets }
     }
 
     fn render_tab_group(
         &self,
         fg_name: &Name,
         features: &[Feature],
-        selected_feature: Entity<Option<(Name, Name)>>,
+        selection: Entity<Selection>,
         window: &Window,
         cx: &App,
     ) -> impl IntoElement {
-        let is_selected = selected_feature
+        let is_selected = selection
             .read(cx)
+            .feature
             .as_ref()
             .is_some_and(|(sel_fg_name, _)| sel_fg_name == fg_name);
+
+        let active_fixture = self.fixture.read(cx).clone();
 
         v_flex()
             .w_full()
@@ -145,23 +183,29 @@ impl AttributeEditorTile {
                     cx,
                 )
                 .on_click({
-                    let selected_feature = selected_feature.clone();
+                    let selection = selection.clone();
                     let fg_name = fg_name.clone();
                     let first_feature_name = features.first().map(|f| f.name().clone());
+                    let active_fixture = active_fixture.clone();
                     move |_, _, cx| {
-                        if let Some(first_feature_name) = &first_feature_name {
-                            selected_feature
-                                .write(cx, Some((fg_name.clone(), first_feature_name.clone())));
+                        if let (Some(first_f), Some(fixture)) =
+                            (first_feature_name.clone(), active_fixture.clone())
+                        {
+                            selection.update(cx, |selection, cx| {
+                                selection.select_feature(fg_name.clone(), first_f, &fixture);
+                                cx.notify();
+                            });
                         }
                     }
                 }),
             )
             .child(div().flex().gap_px().w_full().children(features.iter().map(|feature| {
                 let is_selected =
-                    selected_feature.read(cx).as_ref().is_some_and(|(sel_fg_name, sel_f_name)| {
+                    selection.read(cx).feature.as_ref().is_some_and(|(sel_fg_name, sel_f_name)| {
                         sel_fg_name == fg_name && sel_f_name == feature.name()
                     });
 
+                let active_fixture = active_fixture.clone();
                 self.render_tab_item(
                     format!("{}-{}", fg_name, feature.name()),
                     feature.name().to_string(),
@@ -171,11 +215,16 @@ impl AttributeEditorTile {
                     cx,
                 )
                 .on_click({
-                    let selected_feature = selected_feature.clone();
+                    let selection = selection.clone();
                     let fg_name = fg_name.clone();
                     let f_name = feature.name().clone();
                     move |_, _, cx| {
-                        selected_feature.write(cx, Some((fg_name.clone(), f_name.clone())));
+                        if let Some(fixture) = active_fixture.clone() {
+                            selection.update(cx, |selection, cx| {
+                                selection.select_feature(fg_name.clone(), f_name.clone(), &fixture);
+                                cx.notify();
+                            })
+                        }
                     }
                 })
             })))
@@ -218,7 +267,7 @@ impl AttributeEditorTile {
         window: &Window,
         cx: &App,
     ) -> impl IntoElement {
-        let Some((fg_name, f_name)) = self.selected_feature.read(cx) else {
+        let Some((fg_name, f_name)) = &self.selection.read(cx).feature else {
             return gpui::Empty.into_any_element();
         };
 
@@ -236,7 +285,9 @@ impl AttributeEditorTile {
             )
         }));
 
-        div().size_full().child(encoders).into_any_element()
+        let channel_functions = self.render_channel_sets(fixture, window, cx);
+
+        div().flex().size_full().child(encoders).child(channel_functions).into_any_element()
     }
 
     fn render_encoder(
@@ -246,11 +297,16 @@ impl AttributeEditorTile {
         window: &Window,
         cx: &App,
     ) -> impl IntoElement {
+        let border = match self.selection.read(cx).attribute.as_ref() {
+            Some(an) if an == attribute.name() => cx.theme().border_selected,
+            _ => cx.theme().border_primary,
+        };
+
         let header = h_flex()
             .px_2()
             .bg(cx.theme().bg_tertiary)
             .border_b_1()
-            .border_color(cx.theme().border_primary)
+            .border_color(border)
             .font_weight(FontWeight::BOLD)
             .child(attribute.pretty_name().to_string());
 
@@ -258,9 +314,19 @@ impl AttributeEditorTile {
             .size_full()
             .bg(cx.theme().bg_secondary)
             .border_1()
-            .border_color(cx.theme().border_primary)
+            .border_color(border)
             .child(header)
             .child(self.render_encoder_content(fixture, attribute, window, cx))
+            .on_mouse_down(MouseButton::Left, {
+                let selection = self.selection.clone();
+                let attribute_name = attribute.name().clone();
+                move |_, _, cx| {
+                    selection.update(cx, |selection, cx| {
+                        selection.attribute = Some(attribute_name.clone());
+                        cx.notify();
+                    });
+                }
+            })
     }
 
     fn render_encoder_content(
@@ -287,17 +353,13 @@ impl AttributeEditorTile {
             })
             .collect::<Vec<_>>();
 
-        let value_indicator = self.render_value_indicator(
-            if values.len() > 0 && values.iter().all(|(_, v)| values[0].1.value == v.value) {
-                Some(values[0].1)
-            } else {
-                None
-            },
-            fixture,
-            attribute,
-            window,
-            cx,
-        );
+        let value = if values.len() > 0 && values.iter().all(|(_, v)| values[0].1.value == v.value)
+        {
+            Some(values[0].1)
+        } else {
+            None
+        };
+        let value_indicator = self.render_value_indicator(value, fixture, attribute, window, cx);
 
         v_flex().p_1().size_full().child(value_indicator)
     }
@@ -358,6 +420,55 @@ impl AttributeEditorTile {
                 .bg(cx.theme().bg_tertiary),
         }
     }
+
+    fn render_channel_sets(
+        &self,
+        fixture: &Fixture,
+        _window: &Window,
+        cx: &App,
+    ) -> impl IntoElement {
+        let mut channel_sets = Vec::new();
+
+        if let Some(attribute_name) = &self.selection.read(cx).attribute {
+            if let Some(lc) = fixture.dmx_mode().logical_channel(attribute_name) {
+                channel_sets.extend(
+                    lc.channel_functions()
+                        .iter()
+                        .flat_map(|cf| cf.channel_sets())
+                        .enumerate()
+                        .filter_map(|(ix, cs)| cs.name().map(|name| (ix, name.clone(), cs)))
+                        .map(|(ix, name, cs)| {
+                            Button::new(("cs", ix)).child(name.to_string()).on_click({
+                                let attribute_name = attribute_name.clone();
+                                let value =
+                                    AttributeValue::Clamped(ClampedValue::from(cs.dmx_from()));
+                                move |_, _, cx| {
+                                    let fixtures = EngineManager::snapshot(cx)
+                                        .selection()
+                                        .fixture_ids()
+                                        .to_vec();
+
+                                    EngineManager::execute(
+                                        cx,
+                                        Command::ProgrammerSet {
+                                            fixtures: FixtureCollection::Multiple(fixtures),
+                                            attribute: attribute_name.clone(),
+                                            value,
+                                        },
+                                    );
+                                }
+                            })
+                        }),
+                );
+            }
+        }
+
+        div()
+            .size_full()
+            .border_l_1()
+            .border_color(cx.theme().border_primary)
+            .child(h_flex().flex_wrap().gap_1().w_full().p_1().children(channel_sets))
+    }
 }
 
 impl TileDelegate for AttributeEditorTile {
@@ -372,7 +483,7 @@ impl TileDelegate for AttributeEditorTile {
 
         let feature_selector = div().flex().gap_px().w_full().children(
             self.fg_buckets.read(cx).iter().map(|(fg_name, features)| {
-                self.render_tab_group(fg_name, features, self.selected_feature.clone(), window, cx)
+                self.render_tab_group(fg_name, features, self.selection.clone(), window, cx)
             }),
         );
 

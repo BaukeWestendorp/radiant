@@ -1678,7 +1678,7 @@ impl PhysicalUnit {
 
     pub fn format_value(&self, value: f32) -> String {
         let formatted = match self {
-            PhysicalUnit::Percent | PhysicalUnit::ColorComponent => {
+            PhysicalUnit::Percent => {
                 format!("{:.0}", value)
             }
 
@@ -1707,7 +1707,8 @@ impl PhysicalUnit {
             | PhysicalUnit::Energy
             | PhysicalUnit::Speed
             | PhysicalUnit::Acceleration
-            | PhysicalUnit::LuminousIntensity => {
+            | PhysicalUnit::LuminousIntensity
+            | PhysicalUnit::ColorComponent => {
                 format!("{:.2}", value)
             }
 
