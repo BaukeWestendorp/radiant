@@ -10,4 +10,7 @@ OutputDefinition(
             )
         ],
     ),
+    enttec: (
+        instances: []
+    ),
 )

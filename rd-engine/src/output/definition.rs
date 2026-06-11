@@ -6,11 +6,16 @@ use crate::dmx::UniverseId;
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct OutputDefinition {
     pub(crate) sacn: SacnDmxOutputDefinition,
+    pub(crate) enttec: EnttecDmxOutputDefinition,
 }
 
 impl OutputDefinition {
     pub fn sacn(&self) -> &SacnDmxOutputDefinition {
         &self.sacn
+    }
+
+    pub fn enttec(&self) -> &EnttecDmxOutputDefinition {
+        &self.enttec
     }
 }
 
@@ -56,4 +61,23 @@ impl SacnDmxOutputInstanceDefinition {
     pub fn target_address(&self) -> SocketAddr {
         self.target_address
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct EnttecDmxOutputDefinition {
+    pub(crate) instances: Vec<EnttecDmxOutputInstanceDefinition>,
+}
+
+impl EnttecDmxOutputDefinition {
+    pub fn instances(&self) -> &[EnttecDmxOutputInstanceDefinition] {
+        &self.instances
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct EnttecDmxOutputInstanceDefinition {
+    pub(crate) universe_id: UniverseId,
+    pub(crate) serial_number: String,
 }

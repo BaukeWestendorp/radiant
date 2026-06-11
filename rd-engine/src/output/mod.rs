@@ -29,6 +29,7 @@ pub struct Output {
     multiverse: Arc<RwLock<Multiverse>>,
 
     sacn_instances: Vec<instance::sacn::SacnInstance>,
+    enttec_instances: Vec<instance::enttec::EnttecInstance>,
 }
 
 impl Default for Output {
@@ -49,6 +50,13 @@ impl Output {
             .map(|instance| instance::sacn::SacnInstance::new(instance.clone()))
             .collect::<anyhow::Result<Vec<_>>>()?;
 
+        let enttec_instances = definition
+            .enttec
+            .instances()
+            .iter()
+            .map(|instance| instance::enttec::EnttecInstance::new(instance.clone()))
+            .collect::<anyhow::Result<Vec<_>>>()?;
+
         Ok(Self {
             definition,
 
@@ -60,6 +68,7 @@ impl Output {
             multiverse,
 
             sacn_instances,
+            enttec_instances,
         })
     }
 
@@ -74,6 +83,12 @@ impl Output {
             }
         }
 
+        for instance in &mut self.enttec_instances {
+            if let Err(err) = instance.start(self.notify_rx.clone(), self.multiverse.clone()) {
+                log::error!("Failed to start Enttec output instance: {err}");
+            }
+        }
+
         self.start_scheduler();
     }
 
@@ -81,6 +96,10 @@ impl Output {
         self.stop_scheduler();
 
         for instance in &mut self.sacn_instances {
+            instance.stop();
+        }
+
+        for instance in &mut self.enttec_instances {
             instance.stop();
         }
     }
