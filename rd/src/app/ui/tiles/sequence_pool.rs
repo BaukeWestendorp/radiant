@@ -17,7 +17,7 @@ impl SequencesPoolTile {
     }
 
     pub fn sequence<'a>(&self, slot: u32, cx: &'a App) -> anyhow::Result<&'a Sequence> {
-        EngineManager::snapshot(cx)
+        EngineManager::read_snapshot(cx)
             .objects()
             .sequences()
             .get_by_slot(&Slot::new(NonZeroU32::new(slot).unwrap()))
@@ -44,7 +44,7 @@ impl PoolTileDelegate for SequencesPoolTile {
 
     fn on_activate_slot(&mut self, slot: u32, _window: &mut Window, cx: &mut App) {
         let slot = Slot::new(NonZeroU32::new(slot).unwrap());
-        let Ok(sequence) = EngineManager::snapshot(cx).objects().sequences().get_by_slot(&slot)
+        let Ok(sequence) = EngineManager::read_snapshot(cx).objects().sequences().get_by_slot(&slot)
         else {
             return;
         };

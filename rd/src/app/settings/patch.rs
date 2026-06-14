@@ -12,7 +12,7 @@ pub struct PatchSettingsView {
 impl PatchSettingsView {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let fixtures =
-            cx.new(|cx| EngineManager::snapshot(cx).patch().fixture_definitions().to_vec());
+            cx.new(|cx| EngineManager::read_snapshot(cx).patch().fixture_definitions().to_vec());
 
         Self {
             table_state: cx.new(|cx| {

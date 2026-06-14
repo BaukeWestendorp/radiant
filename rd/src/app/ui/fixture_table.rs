@@ -31,7 +31,7 @@ impl TableDelegate for FixtureTableDelegate {
     }
 
     fn root_row_ids(&self, cx: &App) -> Vec<Self::RowId> {
-        let patch = EngineManager::snapshot(cx).patch();
+        let patch = EngineManager::read_snapshot(cx).patch();
         let mut row_ids =
             patch.fixture_ids().filter(|fid| fid.is_root()).copied().collect::<Vec<_>>();
         row_ids.sort();
@@ -39,7 +39,7 @@ impl TableDelegate for FixtureTableDelegate {
     }
 
     fn row_children(&self, row_id: &Self::RowId, cx: &App) -> Vec<Self::RowId> {
-        let patch = EngineManager::snapshot(cx).patch();
+        let patch = EngineManager::read_snapshot(cx).patch();
         let mut sub_ids = patch
             .fixture(&row_id)
             .into_iter()
@@ -56,7 +56,7 @@ impl TableDelegate for FixtureTableDelegate {
         _window: &mut Window,
         cx: &App,
     ) -> impl IntoElement {
-        let patch = EngineManager::snapshot(cx).patch();
+        let patch = EngineManager::read_snapshot(cx).patch();
         let row = patch.fixture(row_id).unwrap();
         let col = &self.columns[col_ix];
         let content = match col.id().as_ref() {

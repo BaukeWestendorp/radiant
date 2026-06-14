@@ -58,7 +58,7 @@ impl AttributeEditorTile {
             let selection = selection.clone();
             let fg_buckets = fg_buckets.clone();
             move |_, cx| {
-                let snapshot = EngineManager::snapshot(cx);
+                let snapshot = EngineManager::read_snapshot(cx);
                 let unique = snapshot.selection().unique_dmx_modes(snapshot.patch());
                 match unique.len() {
                     0 => {
@@ -336,7 +336,7 @@ impl AttributeEditorTile {
         window: &Window,
         cx: &App,
     ) -> impl IntoElement {
-        let snapshot = EngineManager::snapshot(cx);
+        let snapshot = EngineManager::read_snapshot(cx);
         let values = snapshot
             .selection()
             .fixture_ids()
@@ -443,7 +443,7 @@ impl AttributeEditorTile {
                                 let value =
                                     AttributeValue::Clamped(ClampedValue::from(cs.dmx_from()));
                                 move |_, _, cx| {
-                                    let fixtures = EngineManager::snapshot(cx)
+                                    let fixtures = EngineManager::read_snapshot(cx)
                                         .selection()
                                         .fixture_ids()
                                         .to_vec();

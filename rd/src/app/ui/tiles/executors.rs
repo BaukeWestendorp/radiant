@@ -31,7 +31,7 @@ impl TileDelegate for ExecutorsTile {
     // FIXME: Can we pass cell_size to render_content?
     fn render_content(&self, bounds: Bounds<u32>, window: &mut Window, cx: &App) -> AnyElement {
         let Ok(page) =
-            EngineManager::snapshot(cx).objects().executor_pages().get_by_slot(&self.page_slot)
+            EngineManager::read_snapshot(cx).objects().executor_pages().get_by_slot(&self.page_slot)
         else {
             todo!();
         };
@@ -63,7 +63,7 @@ impl TileDelegate for ExecutorsTile {
 
                 let executor_content = match executor.content() {
                     Some(ExecutorContent::Sequence(sc)) => {
-                        match EngineManager::snapshot(cx)
+                        match EngineManager::read_snapshot(cx)
                             .objects()
                             .sequences()
                             .get_by_object_id(&sc.sequence())

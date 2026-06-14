@@ -27,7 +27,12 @@ impl LayoutViewer {
         let tile_grid = cx.new(|_| TileGridState::new());
 
         let selected_page = cx.new(|cx| {
-            EngineManager::snapshot(cx).objects().layout_pages().all().first().map(|lp| lp.slot())
+            EngineManager::read_snapshot(cx)
+                .objects()
+                .layout_pages()
+                .all()
+                .first()
+                .map(|lp| lp.slot())
         });
 
         let page_selector = cx.new(|cx| LayoutPageSelector::new(selected_page.clone(), window, cx));
@@ -35,7 +40,7 @@ impl LayoutViewer {
         cx.observe_in(&selected_page, window, |this, selected_page, window, cx| {
             let next_state = match selected_page.read(cx) {
                 Some(selected_page) => {
-                    let selected_page = EngineManager::snapshot(cx)
+                    let selected_page = EngineManager::read_snapshot(cx)
                         .objects()
                         .layout_pages()
                         .get_by_slot(selected_page)
@@ -121,7 +126,7 @@ impl LayoutPageSelectorTile {
     }
 
     pub fn layout_page<'a>(&self, slot: u32, cx: &'a App) -> anyhow::Result<&'a LayoutPage> {
-        EngineManager::snapshot(cx)
+        EngineManager::read_snapshot(cx)
             .objects()
             .layout_pages()
             .get_by_slot(&Slot::new(NonZeroU32::new(slot).unwrap()))

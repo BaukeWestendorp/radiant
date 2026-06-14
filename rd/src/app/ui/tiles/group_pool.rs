@@ -18,7 +18,7 @@ impl GroupPoolTile {
     }
 
     pub fn group<'a>(&self, slot: u32, cx: &'a App) -> anyhow::Result<&'a Group> {
-        EngineManager::snapshot(cx)
+        EngineManager::read_snapshot(cx)
             .objects()
             .groups()
             .get_by_slot(&Slot::new(NonZeroU32::new(slot).unwrap()))
@@ -45,7 +45,7 @@ impl PoolTileDelegate for GroupPoolTile {
 
     fn on_activate_slot(&mut self, slot: u32, _window: &mut Window, cx: &mut App) {
         let slot = Slot::new(NonZeroU32::new(slot).unwrap());
-        let Ok(group) = EngineManager::snapshot(cx).objects().groups().get_by_slot(&slot) else {
+        let Ok(group) = EngineManager::read_snapshot(cx).objects().groups().get_by_slot(&slot) else {
             return;
         };
         EngineManager::execute(

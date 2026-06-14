@@ -40,7 +40,7 @@ pub mod action {
             EngineManager::execute(cx, Command::HighlightToggle);
         });
 
-        cx.on_action::<Save>(|_, cx| match EngineManager::snapshot(cx).showfile_path() {
+        cx.on_action::<Save>(|_, cx| match EngineManager::read_snapshot(cx).showfile_path() {
             Some(_path) => {
                 todo!();
             }
@@ -135,7 +135,7 @@ impl RadiantApp {
             div().text_sm().text_color(cx.theme().fg_tertiary).child(crate::version_string());
 
         let indicators = h_flex().gap_2().child(
-            render_indicator("highlight", EngineManager::snapshot(cx).highlight())
+            render_indicator("highlight", EngineManager::read_snapshot(cx).highlight())
                 .cursor_pointer()
                 .on_any_mouse_down(|_, _, cx| {
                     EngineManager::execute(cx, Command::HighlightToggle);

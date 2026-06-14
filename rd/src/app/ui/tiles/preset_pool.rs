@@ -19,7 +19,7 @@ impl PresetPoolTile {
     }
 
     pub fn preset<'a>(&self, slot: u32, cx: &'a App) -> anyhow::Result<&'a Preset> {
-        EngineManager::snapshot(cx)
+        EngineManager::read_snapshot(cx)
             .objects()
             .preset_by_slot(&Slot::new(NonZeroU32::new(slot).unwrap()), &self.kind)
     }
@@ -46,7 +46,7 @@ impl PoolTileDelegate for PresetPoolTile {
     fn on_activate_slot(&mut self, slot: u32, _window: &mut Window, cx: &mut App) {
         let slot = Slot::new(NonZeroU32::new(slot).unwrap());
 
-        let Ok(preset) = EngineManager::snapshot(cx).objects().preset_by_slot(&slot, &self.kind)
+        let Ok(preset) = EngineManager::read_snapshot(cx).objects().preset_by_slot(&slot, &self.kind)
         else {
             return;
         };

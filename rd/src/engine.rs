@@ -37,7 +37,11 @@ impl EngineManager {
         Self { handle, snapshot, selection }
     }
 
-    pub fn snapshot<'a>(cx: &'a App) -> &'a EngineSnapshot {
+    pub fn snapshot(cx: &App) -> &Entity<Arc<EngineSnapshot>> {
+        &Self::global(cx).snapshot
+    }
+
+    pub fn read_snapshot<'a>(cx: &'a App) -> &'a EngineSnapshot {
         Self::global(cx).snapshot.read(cx)
     }
 
