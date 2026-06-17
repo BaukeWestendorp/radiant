@@ -30,6 +30,7 @@ pub enum Command {
     ExecutorButton { executor_id: ExecutorId, button: ExecutorButton, pressed: bool },
 
     ProgrammerSet { fixtures: FixtureCollection, attribute: AttributeName, value: AttributeValue },
+    ProgrammerActivate { fixtures: FixtureCollection, attribute: AttributeName },
 
     EncoderSetValue { encoder_ix: usize, value: f32 },
 }
@@ -225,6 +226,7 @@ impl Command {
                 let object_id = page.id();
                 engine.emit(Event::ObjectChanged { kind: ObjectKind::ExecutorPage, object_id });
             }
+
             Command::ProgrammerSet { fixtures, attribute, value } => {
                 let fixture_ids = fixtures
                     .fixture_ids(engine.objects(), engine.patch())?
@@ -233,6 +235,23 @@ impl Command {
 
                 let programmer = Arc::make_mut(&mut engine.programmer);
                 for fixture_id in fixture_ids {
+                    programmer.set(fixture_id, attribute.clone(), value);
+                }
+            }
+            Command::ProgrammerActivate { fixtures, attribute } => {
+                let fixture_ids = fixtures
+                    .fixture_ids(engine.objects(), engine.patch())?
+                    .cloned()
+                    .collect::<Vec<_>>();
+
+                for fixture_id in fixture_ids {
+                    let Some(value) =
+                        engine.pipeline().attribute_values().get(&fixture_id, &attribute)
+                    else {
+                        continue;
+                    };
+
+                    let programmer = Arc::make_mut(&mut engine.programmer);
                     programmer.set(fixture_id, attribute.clone(), value);
                 }
             }

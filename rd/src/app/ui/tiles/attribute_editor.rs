@@ -185,9 +185,21 @@ impl AttributeEditorTile {
                     }
                     Event::EncoderChanged { encoder_ix, value } => {
                        if  let Some(attribute) = attr_selection.read(cx).encoder_attributes.get(*encoder_ix) {
+
                            let fixture_ids = cx.engine_snapshot().selection().fixture_ids().to_vec();
                            let value = AttributeValue::Clamped(ClampedValue::new(*value));
-                           cx.try_execute_engine_cmd(Command::ProgrammerSet { fixtures: FixtureCollection::Multiple(fixture_ids), attribute: attribute.name().clone(), value });
+                           cx.try_execute_engine_cmd(Command::ProgrammerSet { fixtures: FixtureCollection::Multiple(fixture_ids.clone()), attribute: attribute.name().clone(), value });
+
+                           if let Some(fixture) =
+                           selection_state.fixtures(&patch).next() {
+                               if let Some(ag) = attribute.activation_group(fixture.gdtf()) {
+                                   let activated_attributes = fixture.gdtf().attributes().iter().filter(|attr| attr.activation_group(fixture.gdtf()) == Some(ag));
+                                   for attr in activated_attributes {
+                                       cx.try_execute_engine_cmd(Command::ProgrammerActivate { fixtures: FixtureCollection::Multiple(fixture_ids.clone()), attribute: attr.name().clone() });
+                                   }
+                               }
+                           }
+
                         }
                     }
                     _ => (),
