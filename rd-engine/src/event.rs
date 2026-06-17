@@ -1,27 +1,28 @@
-use crate::object::ExecutorId;
+use crate::object::{ObjectId, ObjectKind};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Event {
     SelectionChanged,
-    HighlightChanged,
-    ExecutorChanged(ExecutorId),
+    PipelineResolved,
+    HighlightChanged { enabled: bool },
+    ObjectChanged { kind: ObjectKind, object_id: ObjectId },
 }
 
 #[derive(Debug, Clone)]
 pub struct EventListener {
-    rx: crossbeam_channel::Receiver<Event>,
+    rx: flume::Receiver<Event>,
+}
+
+impl std::ops::Deref for EventListener {
+    type Target = flume::Receiver<Event>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.rx
+    }
 }
 
 impl EventListener {
-    pub(crate) fn new(rx: crossbeam_channel::Receiver<Event>) -> Self {
+    pub(crate) fn new(rx: flume::Receiver<Event>) -> Self {
         Self { rx }
-    }
-
-    pub fn recv(&self) -> Option<Event> {
-        self.rx.recv().ok()
-    }
-
-    pub fn try_recv(&self) -> Option<Event> {
-        self.rx.try_recv().ok()
     }
 }

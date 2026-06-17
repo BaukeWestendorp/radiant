@@ -1,102 +1,172 @@
 use std::num::NonZeroU32;
 
 use gpui::{
-    AnyElement, App, Bounds, FontWeight, Pixels, SharedString, Size, Window, div, prelude::*,
-    relative, uniform_list,
+    AnyElement, App, Bounds, Entity, FontWeight, Pixels, SharedString, Size, Window, div,
+    prelude::*, relative, uniform_list,
 };
 
-use rd_engine::object::{Executor, ExecutorContent, Object as _, Sequence, Slot};
+use rd_engine::{
+    event::Event,
+    object::{Executor, ExecutorContent, ExecutorPage, Object as _, ObjectKind, Sequence, Slot},
+};
 use rd_ui::{ActiveTheme, TileDelegate, h_flex, v_flex};
 
-use crate::engine::EngineManager;
+use crate::engine::EngineAppExt;
 
 pub struct ExecutorsTile {
     // FIXME: Keep this in some settings per tile?
-    page_slot: Slot,
+    selected_executor_page_slot: Slot,
 
-    cell_size: Size<Pixels>,
+    executor_page_view: Entity<ExecutorPageView>,
 }
 
 impl ExecutorsTile {
-    pub fn new(cell_size: Size<Pixels>, _window: &mut Window, _cx: &mut App) -> Self {
-        Self { page_slot: Slot::new(NonZeroU32::new(1).unwrap()), cell_size }
+    pub fn new(
+        bounds: Bounds<u32>,
+        cell_size: Size<Pixels>,
+        _window: &mut Window,
+        cx: &mut App,
+    ) -> Self {
+        let selected_executor_page_slot = Slot::new(NonZeroU32::new(1).unwrap());
+
+        let executor_page_view = cx.new(|cx| {
+            let executor_page = cx
+                .engine_snapshot()
+                .objects()
+                .executor_pages()
+                .get_by_slot(&selected_executor_page_slot)
+                .ok()
+                .expect("TODO: Implement executors tile without selected page")
+                .clone();
+            ExecutorPageView::new(executor_page, bounds.size.width, cell_size, cx)
+        });
+
+        cx.on_engine_event({
+            let executor_page_view = executor_page_view.clone();
+            move |event, cx| match event {
+                Event::ObjectChanged { kind: ObjectKind::ExecutorPage, .. } => {
+                    let Ok(new_executor_page) = cx
+                        .engine_snapshot()
+                        .objects()
+                        .executor_pages()
+                        .get_by_slot(&selected_executor_page_slot)
+                        .cloned()
+                    else {
+                        return;
+                    };
+
+                    executor_page_view.update(cx, |executor_page, cx| {
+                        *executor_page = ExecutorPageView::new(
+                            new_executor_page,
+                            bounds.size.width,
+                            cell_size,
+                            cx,
+                        );
+                        cx.notify();
+                    });
+                }
+                _ => {}
+            }
+        })
+        .detach();
+
+        Self { selected_executor_page_slot, executor_page_view }
     }
 }
 
 impl TileDelegate for ExecutorsTile {
     fn title(&self, _cx: &App) -> SharedString {
-        format!("Executors Page {}", self.page_slot).into()
+        format!("Executors Page {}", self.selected_executor_page_slot).into()
     }
 
     // FIXME: Can we pass cell_size to render_content?
-    fn render_content(&self, bounds: Bounds<u32>, window: &mut Window, cx: &App) -> AnyElement {
-        let Ok(page) =
-            EngineManager::read_snapshot(cx).objects().executor_pages().get_by_slot(&self.page_slot)
-        else {
-            todo!();
-        };
+    fn render_content(&self, _bounds: Bounds<u32>, _window: &mut Window, _cx: &App) -> AnyElement {
+        self.executor_page_view.clone().into_any_element()
+    }
+}
 
-        let executors = page.executors().iter().enumerate().take(bounds.size.width as usize).map(
-            |(ix, executor)| {
-                let executor_header = h_flex()
-                    .h_6()
-                    .justify_center()
-                    .border_b_1()
-                    .border_color(cx.theme().border_primary)
-                    .p_px()
-                    .child(
-                        h_flex()
-                            .justify_center()
-                            .size_full()
-                            .border_1()
-                            .bg(cx.theme().bg_primary)
-                            .when(executor.enabled(), |e| {
-                                e.border_color(cx.theme().contrast.opacity(0.25))
-                                    .font_weight(FontWeight::BOLD)
-                                    .bg(cx.theme().indicate.playback)
-                            })
-                            .child(format!("{}.{}", self.page_slot, ix + 1)),
-                    );
+struct ExecutorPageView {
+    executor_page: ExecutorPage,
+    width: u32,
+    cell_size: Size<Pixels>,
+}
 
-                let empty_executor =
-                    div().size_full().bg(cx.theme().bg_secondary).into_any_element();
+impl ExecutorPageView {
+    fn new(
+        executor_page: ExecutorPage,
+        width: u32,
+        cell_size: Size<Pixels>,
+        _cx: &mut Context<Self>,
+    ) -> Self {
+        Self { executor_page, width, cell_size }
+    }
+}
 
-                let executor_content = match executor.content() {
-                    Some(ExecutorContent::Sequence(sc)) => {
-                        match EngineManager::read_snapshot(cx)
-                            .objects()
-                            .sequences()
-                            .get_by_object_id(&sc.sequence())
-                        {
-                            Ok(sequence) => render_sequence_content(
-                                executor,
-                                sequence,
-                                sc.cue_index(),
-                                window,
-                                cx,
-                            )
-                            .into_any_element(),
-                            Err(err) => {
-                                log::error!("{err}");
-                                empty_executor
+impl Render for ExecutorPageView {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let executors =
+            self.executor_page.executors().iter().enumerate().take(self.width as usize).map(
+                |(ix, executor)| {
+                    let executor_header = h_flex()
+                        .h_6()
+                        .justify_center()
+                        .border_b_1()
+                        .border_color(cx.theme().border_primary)
+                        .p_px()
+                        .child(
+                            h_flex()
+                                .justify_center()
+                                .size_full()
+                                .border_1()
+                                .bg(cx.theme().bg_primary)
+                                .when(executor.enabled(), |e| {
+                                    e.border_color(cx.theme().contrast.opacity(0.25))
+                                        .font_weight(FontWeight::BOLD)
+                                        .bg(cx.theme().indicate.playback)
+                                })
+                                .child(format!("{}.{}", self.executor_page.slot(), ix + 1)),
+                        );
+
+                    let empty_executor =
+                        div().size_full().bg(cx.theme().bg_secondary).into_any_element();
+
+                    let executor_content = match executor.content() {
+                        Some(ExecutorContent::Sequence(sc)) => {
+                            match cx
+                                .engine_snapshot()
+                                .objects()
+                                .sequences()
+                                .get_by_object_id(&sc.sequence())
+                            {
+                                Ok(sequence) => render_sequence_content(
+                                    executor,
+                                    sequence,
+                                    sc.cue_index(),
+                                    window,
+                                    cx,
+                                )
+                                .into_any_element(),
+                                Err(err) => {
+                                    log::error!("{err}");
+                                    empty_executor
+                                }
                             }
                         }
-                    }
-                    None => empty_executor,
-                };
+                        None => empty_executor,
+                    };
 
-                v_flex()
-                    .w(self.cell_size.width)
-                    .h_full()
-                    .bg(cx.theme().bg_primary)
-                    .border_1()
-                    .border_color(cx.theme().border_primary)
-                    .rounded(cx.theme().radius)
-                    .text_color(cx.theme().fg_primary)
-                    .child(executor_header)
-                    .child(executor_content)
-            },
-        );
+                    v_flex()
+                        .w(self.cell_size.width)
+                        .h_full()
+                        .bg(cx.theme().bg_primary)
+                        .border_1()
+                        .border_color(cx.theme().border_primary)
+                        .rounded(cx.theme().radius)
+                        .text_color(cx.theme().fg_primary)
+                        .child(executor_header)
+                        .child(executor_content)
+                },
+            );
 
         div().size_full().flex().text_sm().children(executors).into_any_element()
     }
@@ -183,8 +253,6 @@ fn render_sequence_content(
     .size_full();
 
     let state = {
-        // FIXME: This does not update when the executor master changes value. This also means that
-        // if you're unlucky with the framedraw, it might not update properly when moving a fader for example.
         let master = v_flex()
             .flex_col_reverse()
             .min_w_5()

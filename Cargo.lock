@@ -1397,15 +1397,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "crossbeam-channel"
-version = "0.5.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82b8f8f868b36967f9606790d1903570de9ceaf870a7bf9fbbd3016d636a2cb2"
-dependencies = [
- "crossbeam-utils",
-]
-
-[[package]]
 name = "crossbeam-deque"
 version = "0.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1795,6 +1786,9 @@ name = "fastrand"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f1f227452a390804cdb637b74a86990f2a7d7ba4b7d5693aac9b4dd6defd8d6"
+dependencies = [
+ "getrandom 0.3.4",
+]
 
 [[package]]
 name = "fax"
@@ -1871,6 +1865,18 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "nanorand",
+ "spin 0.9.8",
+]
+
+[[package]]
+name = "flume"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5e139bc46ca777eb5efaf62df0ab8cc5fd400866427e56c68b22e414e53bd3be"
+dependencies = [
+ "fastrand 2.4.1",
+ "futures-core",
+ "futures-sink",
  "spin 0.9.8",
 ]
 
@@ -4633,6 +4639,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "flume 0.12.0",
  "gpui",
  "log",
  "pretty_env_logger",
@@ -4647,7 +4654,7 @@ dependencies = [
  "anyhow",
  "arc-swap",
  "arrayvec",
- "crossbeam-channel",
+ "flume 0.12.0",
  "glam",
  "libftd2xx",
  "log",
@@ -4968,7 +4975,7 @@ dependencies = [
  "async-task",
  "backtrace",
  "chrono",
- "flume",
+ "flume 0.11.1",
  "futures",
  "parking_lot",
  "rand 0.9.4",

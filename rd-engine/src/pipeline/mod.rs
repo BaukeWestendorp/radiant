@@ -3,13 +3,11 @@ mod compositor;
 mod mapper;
 
 use crate::{
-    cmd::Command,
     dmx::Multiverse,
     mvr_gdtf::gdtf::attr::AttributeName,
     object::Objects,
     patch::{FixtureId, Patch},
     programmer::Programmer,
-    trigger::{Trigger, Triggers},
     value::{AttributeValue, AttributeValues},
 };
 
@@ -31,21 +29,6 @@ impl Pipeline {
             multiverse: Multiverse::new(),
             highlighted_fixtures: Vec::new(),
         }
-    }
-
-    pub(crate) fn resolve_triggers(&self, triggers: &Triggers) -> Vec<Command> {
-        let mut commands = Vec::new();
-        for trigger in triggers.drain() {
-            match trigger {
-                Trigger::ExecutorMaster { executor_id, value } => {
-                    commands.push(Command::ExecutorSetMaster { executor_id, value });
-                }
-                Trigger::ExecutorButton { executor_id, button, pressed } => {
-                    commands.push(Command::ExecutorButton { executor_id, button, pressed });
-                }
-            }
-        }
-        commands
     }
 
     pub(crate) fn resolve_attributes(

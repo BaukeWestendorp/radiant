@@ -2,15 +2,18 @@ use std::num::NonZeroU32;
 
 pub use gpui::prelude::*;
 use gpui::{App, Entity, FontWeight, Pixels, Size, Window, bounds, div, point, px, size};
-use rd_engine::object::{LayoutPage, LayoutTileKind, Object as _, Slot};
+use rd_engine::{
+    event::Event,
+    object::{LayoutPage, LayoutTileKind, Object as _, ObjectCollection, ObjectKind, Slot},
+};
 use rd_ui::{PoolTile, PoolTileDelegate, TileGrid, TileGridState, h_flex};
 
 use crate::{
     app::ui::tiles::{
         AttributeEditorTile, ExecutorsTile, FixturesTile, GroupPoolTile, PresetPoolTile,
-        SequencesPoolTile,
+        SequencePoolTile,
     },
-    engine::EngineManager,
+    engine::EngineAppExt,
 };
 
 const TILE_GRID_SIZE: Size<u32> = size(18, 12);
@@ -27,12 +30,7 @@ impl LayoutViewer {
         let tile_grid = cx.new(|_| TileGridState::new());
 
         let selected_page = cx.new(|cx| {
-            EngineManager::read_snapshot(cx)
-                .objects()
-                .layout_pages()
-                .all()
-                .first()
-                .map(|lp| lp.slot())
+            cx.engine_snapshot().objects().layout_pages().all().first().map(|lp| lp.slot())
         });
 
         let page_selector = cx.new(|cx| LayoutPageSelector::new(selected_page.clone(), window, cx));
@@ -40,7 +38,8 @@ impl LayoutViewer {
         cx.observe_in(&selected_page, window, |this, selected_page, window, cx| {
             let next_state = match selected_page.read(cx) {
                 Some(selected_page) => {
-                    let selected_page = EngineManager::read_snapshot(cx)
+                    let selected_page = cx
+                        .engine_snapshot()
                         .objects()
                         .layout_pages()
                         .get_by_slot(selected_page)
@@ -91,7 +90,7 @@ impl LayoutPageSelector {
                 let mut tile_grid = TileGridState::new();
                 tile_grid.add_tile(
                     PoolTile::new(
-                        cx.new(|_| LayoutPageSelectorTile::new(selected_page.clone())),
+                        cx.new(|cx| LayoutPageSelectorTile::new(selected_page.clone(), cx)),
                         Self::CELL_SIZE,
                     )
                     .with_show_header_cell(false),
@@ -118,23 +117,36 @@ impl Render for LayoutPageSelector {
 
 struct LayoutPageSelectorTile {
     selected_page: Entity<Option<Slot>>,
+
+    layout_pages: Entity<ObjectCollection<LayoutPage>>,
 }
 
 impl LayoutPageSelectorTile {
-    fn new(selected_page: Entity<Option<Slot>>) -> Self {
-        Self { selected_page }
+    fn new(selected_page: Entity<Option<Slot>>, cx: &mut Context<Self>) -> Self {
+        let layout_pages = cx.new(|cx| cx.engine_snapshot().objects().layout_pages().clone());
+        cx.on_engine_event({
+            let layout_pages = layout_pages.clone();
+            move |event, cx| match event {
+                Event::ObjectChanged { kind: ObjectKind::LayoutPage, .. } => {
+                    let new_layout_pages = cx.engine_snapshot().objects().layout_pages().clone();
+                    layout_pages.write(cx, new_layout_pages);
+                }
+                _ => {}
+            }
+        })
+        .detach();
+
+        Self { selected_page, layout_pages }
     }
 
     pub fn layout_page<'a>(&self, slot: u32, cx: &'a App) -> anyhow::Result<&'a LayoutPage> {
-        EngineManager::read_snapshot(cx)
-            .objects()
-            .layout_pages()
-            .get_by_slot(&Slot::new(NonZeroU32::new(slot).unwrap()))
+        let slot = Slot::new(NonZeroU32::new(slot).unwrap());
+        self.layout_pages.read(cx).get_by_slot(&slot)
     }
 }
 
 impl PoolTileDelegate for LayoutPageSelectorTile {
-    fn title(&self, _cx: &gpui::App) -> gpui::SharedString {
+    fn title(&self, _cx: &App) -> gpui::SharedString {
         "Layout Page Selector".into()
     }
 
@@ -142,7 +154,7 @@ impl PoolTileDelegate for LayoutPageSelectorTile {
         self.layout_page(slot, cx).is_ok()
     }
 
-    fn occupied_content(&self, slot: u32, cx: &gpui::App) -> impl IntoElement {
+    fn occupied_content(&self, slot: u32, cx: &App) -> impl IntoElement {
         let name = match self.layout_page(slot, cx) {
             Ok(group) => group.name().to_string(),
             Err(_) => "<unknown>".to_string(),
@@ -157,8 +169,8 @@ impl PoolTileDelegate for LayoutPageSelectorTile {
             .child(div().when(is_selected, |e| e.font_weight(FontWeight::BOLD)).child(name))
     }
 
-    fn on_activate_slot(&mut self, slot: u32, _window: &mut Window, cx: &mut gpui::App) {
-        // FIXME: Use Activate command here instead. (That means also implement Activate for LayoutPage.
+    fn on_activate_slot(&mut self, slot: u32, _window: &mut Window, cx: &mut App) {
+        // FIXME: Use Activate command here instead. That means also implement Activate for LayoutPage.
         let slot = Slot::new(NonZeroU32::new(slot).unwrap());
         self.selected_page.write(cx, Some(slot));
     }
@@ -178,21 +190,21 @@ fn page_to_tile_grid_state(
                 tile_grid_state.add_tile(AttributeEditorTile::new(window, cx), bounds);
             }
             LayoutTileKind::Executors => {
-                tile_grid_state.add_tile(ExecutorsTile::new(cell_size, window, cx), bounds);
+                tile_grid_state.add_tile(ExecutorsTile::new(bounds, cell_size, window, cx), bounds);
             }
             LayoutTileKind::Fixtures => {
                 tile_grid_state.add_tile(FixturesTile::new(window, cx), bounds);
             }
             LayoutTileKind::GroupPool => {
-                let delegate = cx.new(|_cx| GroupPoolTile::new());
+                let delegate = cx.new(|cx| GroupPoolTile::new(cx));
                 tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), bounds);
             }
             LayoutTileKind::SequencePool => {
-                let delegate = cx.new(|_cx| SequencesPoolTile::new());
+                let delegate = cx.new(|cx| SequencePoolTile::new(cx));
                 tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), bounds);
             }
             LayoutTileKind::PresetPool(kind) => {
-                let delegate = cx.new(|_cx| PresetPoolTile::new(*kind));
+                let delegate = cx.new(|cx| PresetPoolTile::new(*kind, cx));
                 tile_grid_state.add_tile(PoolTile::new(delegate, cell_size), bounds);
             }
         }

@@ -1,126 +1,89 @@
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
-use gpui::{App, Entity, Global, ReadGlobal as _, prelude::*};
-use rd_engine::{
-    EngineHandle, EngineSnapshot,
-    cmd::Command,
-    event::{Event, EventListener},
-    patch::FixtureId,
-};
+use gpui::{App, AppContext, Entity, EventEmitter, Global, ReadGlobal, Subscription};
+use rd_engine::{EngineHandle, EngineSnapshot, cmd::Command, event::Event};
 
-const SYNC_INTERVAL: Duration = Duration::from_nanos(16_666_667);
-
-pub struct EngineManager {
-    handle: EngineHandle,
-
-    snapshot: Entity<Arc<EngineSnapshot>>,
-    selection: Entity<Vec<FixtureId>>,
+pub(crate) fn init(handle: EngineHandle, cx: &mut App) {
+    let engine_global = EngineGlobal::new(handle, cx);
+    cx.set_global(engine_global);
 }
 
-impl EngineManager {
-    pub fn new(handle: EngineHandle, cx: &mut App) -> Self {
-        let initial_snapshot = handle.snapshot();
+pub trait EngineAppExt {
+    fn engine(&self) -> &EngineHandle;
 
-        let selection = cx.new(|_| initial_snapshot.selection().fixture_ids().to_vec());
-        let snapshot = cx.new(|_| initial_snapshot);
+    fn engine_snapshot(&self) -> Arc<EngineSnapshot>;
 
-        spawn_engine(
-            handle.clone(),
-            handle.event_listener().clone(),
-            snapshot.clone(),
-            selection.clone(),
-            cx,
-        );
+    fn execute_engine_cmd(&self, command: Command);
 
-        observe_ui_selection_to_engine(handle.clone(), selection.clone(), cx);
+    fn on_engine_event(&mut self, handler: impl FnMut(&Event, &mut App) + 'static) -> Subscription;
+}
 
-        Self { handle, snapshot, selection }
+impl EngineAppExt for App {
+    fn engine(&self) -> &EngineHandle {
+        &EngineGlobal::global(self).handle
     }
 
-    pub fn snapshot(cx: &App) -> &Entity<Arc<EngineSnapshot>> {
-        &Self::global(cx).snapshot
+    fn engine_snapshot(&self) -> Arc<EngineSnapshot> {
+        self.engine().snapshot()
     }
 
-    pub fn read_snapshot<'a>(cx: &'a App) -> &'a EngineSnapshot {
-        Self::global(cx).snapshot.read(cx)
-    }
-
-    pub fn execute(cx: &App, command: Command) {
-        if let Err(err) = Self::global(cx).handle.execute(command) {
+    fn execute_engine_cmd(&self, command: Command) {
+        if let Err(err) = self.engine().execute(command) {
             log::error!("Failed to execute command: {err}");
         }
     }
 
-    pub fn selection(cx: &App) -> &Entity<Vec<FixtureId>> {
-        &Self::global(cx).selection
+    fn on_engine_event(
+        &mut self,
+        mut handler: impl FnMut(&Event, &mut App) + 'static,
+    ) -> Subscription {
+        let event_buffer = EngineGlobal::global(self).event_buffer.clone();
+        self.subscribe(&event_buffer, move |_, event, cx| handler(event, cx))
     }
 }
 
-impl Global for EngineManager {}
-
-fn spawn_engine(
-    engine: EngineHandle,
-    event_listener: EventListener,
-    snapshot: Entity<Arc<EngineSnapshot>>,
-    selection: Entity<Vec<FixtureId>>,
-    cx: &mut App,
-) {
-    cx.spawn(async move |cx| {
-        loop {
-            cx.update(|cx| {
-                let mut handled_event = false;
-                let mut selection_changed = false;
-                while let Some(event) = event_listener.try_recv() {
-                    match event {
-                        Event::SelectionChanged => selection_changed = true,
-                        Event::HighlightChanged => {}
-                        Event::ExecutorChanged(_) => {}
-                    }
-                    handled_event = true;
-                }
-
-                if !handled_event {
-                    return;
-                }
-
-                let latest = engine.snapshot();
-
-                if selection_changed {
-                    apply_engine_selection(&latest, &selection, cx);
-                }
-
-                snapshot.write(cx, latest);
-            });
-            cx.background_executor().timer(SYNC_INTERVAL).await;
-        }
-    })
-    .detach();
+trait EngineAppExtPrivate {
+    fn emit_engine_event(&mut self, event: Event);
 }
 
-fn apply_engine_selection(
-    latest: &EngineSnapshot,
-    selection: &Entity<Vec<FixtureId>>,
-    cx: &mut App,
-) {
-    let new_selection = latest.selection().fixture_ids().to_vec();
-    selection.write(cx, new_selection);
+impl EngineAppExtPrivate for App {
+    fn emit_engine_event(&mut self, event: Event) {
+        let event_buffer = EngineGlobal::global(self).event_buffer.clone();
+        event_buffer.update(self, |_, cx| cx.emit(event));
+    }
 }
 
-fn observe_ui_selection_to_engine(
-    engine: EngineHandle,
-    selection: Entity<Vec<FixtureId>>,
-    cx: &mut App,
-) {
-    cx.observe(&selection, move |selection, cx| {
-        let fixture_ids = selection.read(cx).clone();
-        let snapshot = engine.snapshot();
-        let current_fixture_ids = snapshot.selection().fixture_ids();
+struct EngineEventBus;
 
-        if fixture_ids.as_slice() != current_fixture_ids {
-            if let Err(err) = engine.execute(Command::SelectionSet { fixture_ids }) {
-                log::error!("Failed to execute command: {err}");
+impl EventEmitter<Event> for EngineEventBus {}
+
+struct EngineGlobal {
+    handle: EngineHandle,
+    event_buffer: Entity<EngineEventBus>,
+}
+
+impl EngineGlobal {
+    pub fn new(handle: EngineHandle, cx: &mut App) -> Self {
+        let event_buffer = cx.new(|_| EngineEventBus);
+
+        cx.spawn({
+            let handle = handle.clone();
+            async move |cx| {
+                let event_listener = handle.event_listener();
+                while let Ok(first_event) = event_listener.recv_async().await {
+                    let _ = cx.update(|cx| {
+                        cx.emit_engine_event(first_event);
+                        while let Ok(event) = event_listener.try_recv() {
+                            cx.emit_engine_event(event);
+                        }
+                    });
+                }
             }
-        }
-    })
-    .detach();
+        })
+        .detach();
+
+        Self { handle, event_buffer }
+    }
 }
+
+impl Global for EngineGlobal {}
