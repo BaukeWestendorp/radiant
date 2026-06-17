@@ -38,6 +38,29 @@ impl AttributeValue {
         }
     }
 
+    pub fn to_physical_value(&self, min: AttributeValue, max: AttributeValue) -> f32 {
+        match self {
+            AttributeValue::Clamped(v) => {
+                let (mut min, mut max) = match (min, max) {
+                    (AttributeValue::Physical(min), AttributeValue::Physical(max)) => (min, max),
+                    _ => (0.0, 1.0),
+                };
+
+                if min > max {
+                    std::mem::swap(&mut min, &mut max);
+                }
+
+                let range = max - min;
+                if range == 0.0 {
+                    return 0.0;
+                }
+
+                min + (range * v.as_f32())
+            }
+            AttributeValue::Physical(v) => *v,
+        }
+    }
+
     pub fn as_f32(&self) -> f32 {
         match self {
             AttributeValue::Clamped(v) => v.as_f32(),

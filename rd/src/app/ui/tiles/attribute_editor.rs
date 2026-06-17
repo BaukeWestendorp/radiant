@@ -8,7 +8,7 @@ use rd_engine::{
     event::Event,
     gdtf::{
         Name,
-        attr::{Attribute, AttributeName, Feature},
+        attr::{Attribute, AttributeName, Feature, PhysicalUnit},
         dmx::DmxValue,
     },
     patch::Fixture,
@@ -470,13 +470,28 @@ impl AttributeEditorTile {
                         ))
                     });
 
-                let value_text = attribute.physical_unit().format_value(value.as_f32());
+                let value = cx
+                    .engine_snapshot()
+                    .pipeline()
+                    .cache()
+                    .get(&fixture.id(), attribute.name())
+                    .map(|cf| value.to_physical_value(cf.min, cf.max))
+                    .unwrap_or(value.as_f32());
+
+                let value_text = match attribute.physical_unit() {
+                    PhysicalUnit::None | PhysicalUnit::ColorComponent => {
+                        format!("{:.0}%", value * 100.0)
+                    }
+                    unit => unit.format_value(value),
+                };
                 let channel_set_label = current_cs.and_then(|cs| {
                     cs.name().map(|name| {
                         div().text_color(cx.theme().fg_secondary).child(name.to_string())
                     })
                 });
 
+                // FIXME: Something still is a bit sluggish when updating the value with an encoder,
+                //        especially when sending many programmer changes.
                 value_indicator_base
                     .border_1()
                     .border_color(border)
