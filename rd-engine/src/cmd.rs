@@ -30,6 +30,8 @@ pub enum Command {
     ExecutorButton { executor_id: ExecutorId, button: ExecutorButton, pressed: bool },
 
     ProgrammerSet { fixtures: FixtureCollection, attribute: AttributeName, value: AttributeValue },
+
+    EncoderSetValue { encoder_ix: usize, value: f32 },
 }
 
 impl Command {
@@ -233,6 +235,10 @@ impl Command {
                 for fixture_id in fixture_ids {
                     programmer.set(fixture_id, attribute.clone(), value);
                 }
+            }
+
+            Command::EncoderSetValue { encoder_ix, value } => {
+                engine.emit(Event::EncoderChanged { encoder_ix, value });
             }
         }
 

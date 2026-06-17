@@ -15,6 +15,8 @@ pub trait EngineAppExt {
 
     fn execute_engine_cmd(&self, command: Command);
 
+    fn try_execute_engine_cmd(&self, command: Command);
+
     fn on_engine_event(&mut self, handler: impl FnMut(&Event, &mut App) + 'static) -> Subscription;
 }
 
@@ -29,6 +31,12 @@ impl EngineAppExt for App {
 
     fn execute_engine_cmd(&self, command: Command) {
         if let Err(err) = self.engine().execute(command) {
+            log::error!("Failed to execute command: {err}");
+        }
+    }
+
+    fn try_execute_engine_cmd(&self, command: Command) {
+        if let Err(err) = self.engine().try_execute(command) {
             log::error!("Failed to execute command: {err}");
         }
     }

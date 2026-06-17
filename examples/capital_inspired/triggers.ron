@@ -402,5 +402,57 @@ TriggersDefinition(
                 button: "Button3",
             ),
         ),
+        (
+            device_name: "nanoKONTROL2 SLIDER/KNOB",
+            channel: 0,
+            message: (
+                type: "ControlChange",
+                controller: 16,
+                value: (from: 0, to: 127),
+            ),
+            target: (
+                type: "Encoder",
+                encoder_ix: 0,
+            ),
+        ),
+        (
+            device_name: "nanoKONTROL2 SLIDER/KNOB",
+            channel: 0,
+            message: (
+                type: "ControlChange",
+                controller: 17,
+                value: (from: 0, to: 127),
+            ),
+            target: (
+                type: "Encoder",
+                encoder_ix: 1,
+            ),
+        ),
+        (
+            device_name: "nanoKONTROL2 SLIDER/KNOB",
+            channel: 0,
+            message: (
+                type: "ControlChange",
+                controller: 18,
+                value: (from: 0, to: 127),
+            ),
+            target: (
+                type: "Encoder",
+                encoder_ix: 2,
+            ),
+        ),
+        (
+            device_name: "nanoKONTROL2 SLIDER/KNOB",
+            channel: 0,
+            message: (
+                type: "ControlChange",
+                controller: 19,
+                value: (from: 0, to: 127),
+            ),
+            target: (
+                type: "Encoder",
+                encoder_ix: 3,
+            ),
+        ),
     ],
 )

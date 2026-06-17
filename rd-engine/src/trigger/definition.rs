@@ -58,6 +58,7 @@ pub enum MidiMessage {
 pub enum TriggerTarget {
     ExecutorMaster { executor_id: ExecutorId },
     ExecutorButton { executor_id: ExecutorId, button: ExecutorButton },
+    Encoder { encoder_ix: usize },
 }
 
 #[derive(Debug, Clone, PartialEq)]

@@ -160,6 +160,16 @@ impl TriggersAgent {
                             pressed,
                         })
                     }
+                    TriggerTarget::Encoder { encoder_ix } => {
+                        let Some(value) = midi_value_as_f32(&message) else {
+                            log::warn!(
+                                "mapped midi message did not carry a value usable as f32: {:?}",
+                                message
+                            );
+                            return None;
+                        };
+                        Some(Trigger::EncoderSetValue { encoder_ix: *encoder_ix, value })
+                    }
                 }
             })
             .collect::<Vec<_>>();
