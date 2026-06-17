@@ -3,9 +3,10 @@ use crate::object::{ObjectId, ObjectKind};
 #[derive(Debug, Clone, PartialEq)]
 pub enum Event {
     SelectionChanged,
-    PipelineResolved,
     HighlightChanged { enabled: bool },
     ObjectChanged { kind: ObjectKind, object_id: ObjectId },
+    EncoderChanged { encoder_ix: usize, value: f32 },
+    PipelineResolved,
 }
 
 #[derive(Debug, Clone)]

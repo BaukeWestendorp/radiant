@@ -222,6 +222,11 @@ impl Engine {
                         .ok();
                     snapshot_dirty = true;
                 }
+                Trigger::EncoderSetValue { encoder_ix, value } => {
+                    self.execute(Command::EncoderSetValue { encoder_ix, value })
+                        .map_err(|err| log::error!("{err}"))
+                        .ok();
+                }
             }
         }
 
