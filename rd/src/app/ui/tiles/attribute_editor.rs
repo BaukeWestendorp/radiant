@@ -23,23 +23,41 @@ use crate::engine::EngineAppExt;
 #[derive(Default)]
 struct Selection {
     feature: Option<(Name, Name)>,
-    attribute: Option<AttributeName>,
+    encoder_attributes: Vec<Attribute>,
+    selected_attribute: Option<usize>,
 }
 
 impl Selection {
-    fn select_feature(&mut self, fg_name: Name, f_name: Name, fixture: &Fixture) {
+    pub fn select_feature(&mut self, fg_name: Name, f_name: Name, fixture: &Fixture) {
         self.feature = Some((fg_name.clone(), f_name.clone()));
 
         let gdtf = fixture.gdtf();
         let dmx_mode = fixture.dmx_mode();
-        self.attribute = dmx_mode
+
+        self.encoder_attributes = dmx_mode
             .attributes(gdtf)
             .filter(|attr| {
                 attr.feature_group(gdtf).is_some_and(|fg| fg.name() == &fg_name)
                     && attr.feature(gdtf).is_some_and(|f| f.name() == &f_name)
             })
-            .map(|attr| attr.name().clone())
-            .next();
+            .cloned()
+            .collect();
+
+        self.selected_attribute = if self.encoder_attributes.is_empty() { None } else { Some(0) };
+    }
+
+    pub fn clear_selection(&mut self) {
+        self.feature = None;
+        self.encoder_attributes.clear();
+        self.selected_attribute = None;
+    }
+
+    pub fn select_attribute(&mut self, ix: usize) {
+        self.selected_attribute = Some(ix);
+    }
+
+    pub fn selected_attribute(&self) -> Option<&Attribute> {
+        self.selected_attribute.and_then(|ix| self.encoder_attributes.get(ix))
     }
 }
 
@@ -68,93 +86,111 @@ impl AttributeEditorTile {
                 let patch = snapshot.patch();
                 let selection_state = snapshot.selection();
 
-                if let Event::SelectionChanged = event {
-                    let unique = selection_state.unique_dmx_modes(&patch);
-                    match unique.len() {
-                        0 => {
-                            fixture.write(cx, None);
-                            attr_selection.write(cx, Selection::default());
-                            fg_buckets.write(cx, Vec::new());
-                        }
-                        1 => {
-                            if let Some(new_fixture) = selection_state.fixtures(&patch).next().cloned() {
-                                let mut new_fg_buckets: Vec<(Name, Vec<Feature>)> = vec![
-                                    (Name::new("Dimmer"), Vec::new()),
-                                    (Name::new("Position"), Vec::new()),
-                                    (Name::new("Gobo"), Vec::new()),
-                                    (Name::new("Color"), Vec::new()),
-                                    (Name::new("Beam"), Vec::new()),
-                                    (Name::new("Focus"), Vec::new()),
-                                    (Name::new("Control"), Vec::new()),
-                                    (Name::new("Shapers"), Vec::new()),
-                                    (Name::new("Video"), Vec::new()),
-                                ];
+                match event {
+                    Event::SelectionChanged => {
+                        let unique = selection_state.unique_dmx_modes(&patch);
+                        match unique.len() {
+                            0 => {
+                                fixture.write(cx, None);
+                                attr_selection.update(cx, |sel, cx| {
+                                    sel.clear_selection();
+                                    cx.notify()
+                                });
+                                fg_buckets.write(cx, Vec::new());
+                            }
+                            1 => {
+                                if let Some(new_fixture) = selection_state.fixtures(&patch).next().cloned() {
+                                    let mut new_fg_buckets: Vec<(Name, Vec<Feature>)> = vec![
+                                        (Name::new("Dimmer"), Vec::new()),
+                                        (Name::new("Position"), Vec::new()),
+                                        (Name::new("Gobo"), Vec::new()),
+                                        (Name::new("Color"), Vec::new()),
+                                        (Name::new("Beam"), Vec::new()),
+                                        (Name::new("Focus"), Vec::new()),
+                                        (Name::new("Control"), Vec::new()),
+                                        (Name::new("Shapers"), Vec::new()),
+                                        (Name::new("Video"), Vec::new()),
+                                    ];
 
-                                let gdtf = new_fixture.gdtf();
-                                let dmx_mode = new_fixture.dmx_mode();
-                                for attribute in dmx_mode.attributes(gdtf) {
-                                    if attribute.name() == &AttributeName::NoFeature {
-                                        continue;
-                                    };
+                                    let gdtf = new_fixture.gdtf();
+                                    let dmx_mode = new_fixture.dmx_mode();
+                                    for attribute in dmx_mode.attributes(gdtf) {
+                                        if attribute.name() == &AttributeName::NoFeature {
+                                            continue;
+                                        };
 
-                                    let Some(feature) = attribute.feature(gdtf) else { continue };
-                                    let Some(feature_group) = attribute.feature_group(gdtf) else {
-                                        continue;
-                                    };
+                                        let Some(feature) = attribute.feature(gdtf) else { continue };
+                                        let Some(feature_group) = attribute.feature_group(gdtf) else {
+                                            continue;
+                                        };
 
-                                    let bucket_ix = match feature_group.name().as_str() {
-                                        "Dimmer" => 0,
-                                        "Position" => 1,
-                                        "Gobo" => 2,
-                                        "Color" => 3,
-                                        "Beam" => 4,
-                                        "Focus" => 5,
-                                        "Control" => 6,
-                                        "Shapers" => 7,
-                                        "Video" => 8,
-                                        _ => continue,
-                                    };
+                                        let bucket_ix = match feature_group.name().as_str() {
+                                            "Dimmer" => 0,
+                                            "Position" => 1,
+                                            "Gobo" => 2,
+                                            "Color" => 3,
+                                            "Beam" => 4,
+                                            "Focus" => 5,
+                                            "Control" => 6,
+                                            "Shapers" => 7,
+                                            "Video" => 8,
+                                            _ => continue,
+                                        };
 
-                                    let (_, features) = &mut new_fg_buckets[bucket_ix];
-                                    if !features.iter().any(|f| f.name() == feature.name()) {
-                                        features.push(feature.clone());
+                                        let (_, features) = &mut new_fg_buckets[bucket_ix];
+                                        if !features.iter().any(|f| f.name() == feature.name()) {
+                                            features.push(feature.clone());
+                                        }
                                     }
-                                }
 
-                                let first_feature =
-                                    new_fg_buckets.iter().find_map(|(fg_name, features)| {
-                                        features
-                                            .first()
-                                            .map(|feature| (fg_name.clone(), feature.name().clone()))
+                                    let first_feature =
+                                        new_fg_buckets.iter().find_map(|(fg_name, features)| {
+                                            features
+                                                .first()
+                                                .map(|feature| (fg_name.clone(), feature.name().clone()))
+                                        });
+
+                                    attr_selection.update(cx, |selection, cx| {
+                                        if let Some((fg_name, f_name)) = first_feature {
+                                            selection.select_feature(fg_name, f_name, &new_fixture);
+                                        } else {
+                                            selection.clear_selection();
+                                        }
+                                        cx.notify();
                                     });
 
-                                attr_selection.update(cx, |selection, cx| {
-                                    if let Some((fg_name, f_name)) = first_feature {
-                                        selection.select_feature(fg_name, f_name, &new_fixture);
-                                    } else {
-                                        selection.feature = None;
-                                        selection.attribute = None;
-                                    }
-                                    cx.notify();
-                                });
-
-                                fixture.write(cx, Some(new_fixture));
-                                fg_buckets.write(cx, new_fg_buckets);
-                            } else {
+                                    fixture.write(cx, Some(new_fixture));
+                                    fg_buckets.write(cx, new_fg_buckets);
+                                } else {
+                                    fixture.write(cx, None);
+                                    attr_selection.update(cx, |sel, cx| {
+                                        sel.clear_selection();
+                                        cx.notify()
+                                    });
+                                    fg_buckets.write(cx, Vec::new());
+                                }
+                            }
+                            _ => {
+                                log::warn!(
+                                    "Editing multiple GDTF DMX modes simultaneously is not yet supported"
+                                );
                                 fixture.write(cx, None);
-                                attr_selection.write(cx, Selection::default());
+                                attr_selection.update(cx, |sel, cx| {
+                                    sel.clear_selection();
+                                    cx.notify()
+                                });
                                 fg_buckets.write(cx, Vec::new());
                             }
                         }
-                        _ => {
-                            log::warn!(
-                                "Editing multiple GDTF DMX modes simultaneously is not yet supported"
-                            );
-                            fixture.write(cx, None);
-                            attr_selection.write(cx, Selection::default());
-                            fg_buckets.write(cx, Vec::new());
+                    }
+                    Event::EncoderChanged { encoder_ix, value } => {
+                       if  let Some(attribute) = attr_selection.read(cx).encoder_attributes.get(*encoder_ix) {
+                           let fixture_ids = cx.engine_snapshot().selection().fixture_ids().to_vec();
+                           let value = AttributeValue::Clamped(ClampedValue::new(*value));
+                           cx.try_execute_engine_cmd(Command::ProgrammerSet { fixtures: FixtureCollection::Multiple(fixture_ids), attribute: attribute.name().clone(), value });
                         }
                     }
+                    _ => (),
                 }
 
                 let programmer = snapshot.programmer();
@@ -327,30 +363,20 @@ impl AttributeEditorTile {
         window: &Window,
         cx: &App,
     ) -> impl IntoElement {
-        let Some((fg_name, f_name)) = &self.selection.read(cx).feature else {
-            return gpui::Empty.into_any_element();
-        };
-
-        let gdtf = fixture.gdtf();
-        let dmx_mode = fixture.dmx_mode();
-
-        let attributes = dmx_mode.attributes(gdtf).filter(|attr| {
-            attr.feature_group(gdtf).is_some_and(|fg| fg.name() == fg_name)
-                && attr.feature(gdtf).is_some_and(|f| f.name() == f_name)
-        });
-
         let current_attribute_values = self.attribute_values.read(cx).clone();
 
-        let encoders = div().size_full().flex().children(attributes.map(|attribute| {
-            let value = current_attribute_values.get(attribute.name()).cloned().flatten();
+        let encoders = div().size_full().flex().children(
+            self.selection.read(cx).encoder_attributes.iter().enumerate().map(|(ix, attribute)| {
+                let value = current_attribute_values.get(attribute.name()).cloned().flatten();
 
-            div().w(px(80.0) * 2).h_full().child(
-                div()
-                    .size_full()
-                    .p_1()
-                    .child(self.render_encoder(fixture, attribute, value, window, cx)),
-            )
-        }));
+                div().w(px(80.0) * 2).h_full().child(
+                    div()
+                        .size_full()
+                        .p_1()
+                        .child(self.render_encoder(fixture, attribute, value, ix, window, cx)),
+                )
+            }),
+        );
 
         let channel_functions = self.render_channel_sets(fixture, window, cx);
 
@@ -362,11 +388,12 @@ impl AttributeEditorTile {
         fixture: &Fixture,
         attribute: &Attribute,
         value: Option<AttributeInfo>,
+        ix: usize,
         window: &Window,
         cx: &App,
     ) -> impl IntoElement {
-        let border = match self.selection.read(cx).attribute.as_ref() {
-            Some(an) if an == attribute.name() => cx.theme().border_selected,
+        let border = match self.selection.read(cx).selected_attribute().as_ref() {
+            Some(sel_attr) if sel_attr.name() == attribute.name() => cx.theme().border_selected,
             _ => cx.theme().border_primary,
         };
 
@@ -387,10 +414,9 @@ impl AttributeEditorTile {
             .child(self.render_encoder_content(fixture, attribute, value, window, cx))
             .on_mouse_down(MouseButton::Left, {
                 let selection = self.selection.clone();
-                let attribute_name = attribute.name().clone();
                 move |_, _, cx| {
                     selection.update(cx, |selection, cx| {
-                        selection.attribute = Some(attribute_name.clone());
+                        selection.select_attribute(ix);
                         cx.notify();
                     });
                 }
@@ -473,8 +499,8 @@ impl AttributeEditorTile {
     ) -> impl IntoElement {
         let mut channel_sets = Vec::new();
 
-        if let Some(attribute_name) = &self.selection.read(cx).attribute {
-            if let Some(lc) = fixture.dmx_mode().logical_channel(attribute_name) {
+        if let Some(attribute) = &self.selection.read(cx).selected_attribute() {
+            if let Some(lc) = fixture.dmx_mode().logical_channel(attribute.name()) {
                 channel_sets.extend(
                     lc.channel_functions()
                         .iter()
@@ -483,7 +509,7 @@ impl AttributeEditorTile {
                         .filter_map(|(ix, cs)| cs.name().map(|name| (ix, name.clone(), cs)))
                         .map(|(ix, name, cs)| {
                             Button::new(("cs", ix)).child(name.to_string()).on_click({
-                                let attribute_name = attribute_name.clone();
+                                let attribute_name = attribute.name().clone();
                                 let value =
                                     AttributeValue::Clamped(ClampedValue::from(cs.dmx_from()));
                                 move |_, _, cx| {
