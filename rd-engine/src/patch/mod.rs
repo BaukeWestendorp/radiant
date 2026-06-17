@@ -10,8 +10,6 @@ pub use fixture::*;
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Patch {
-    fixture_definitions: Vec<FixtureDefinition>,
-
     fixtures: Vec<Fixture>,
     fixtures_by_id: HashMap<FixtureId, usize>,
 }
@@ -21,13 +19,9 @@ impl Patch {
         definition: PatchDefinition,
         gdtfs: &HashMap<ResourceKey, Arc<Gdtf>>,
     ) -> anyhow::Result<Self> {
-        let mut patch = Self {
-            fixture_definitions: definition.fixtures,
-            fixtures: Vec::new(),
-            fixtures_by_id: HashMap::new(),
-        };
+        let mut patch = Self { fixtures: Vec::new(), fixtures_by_id: HashMap::new() };
 
-        for def in patch.fixture_definitions.clone() {
+        for def in definition.fixtures {
             let built = fixture::builder::FixtureBuilder::new(def, gdtfs)?.build()?;
             for fixture in built {
                 let fixture_id = fixture.id();
@@ -45,10 +39,6 @@ impl Patch {
 
     pub fn fixtures(&self) -> &[Fixture] {
         &self.fixtures
-    }
-
-    pub fn fixture_definitions(&self) -> &[FixtureDefinition] {
-        &self.fixture_definitions
     }
 
     pub fn fixture_ids(&self) -> impl Iterator<Item = &FixtureId> {

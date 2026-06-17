@@ -13,9 +13,10 @@ rd-engine = { path = "rd-engine" }
 gpui = { git = "https://github.com/zed-industries/zed.git", rev = "d5fc4b7" }
 gpui_platform = { git = "https://github.com/zed-industries/zed.git", features = ["font-kit"], rev = "d5fc4b7" }
 
+flume = "0.12.0"
+
 anyhow = "1.0.100"
 
 log = "0.4.29"
 
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.149"

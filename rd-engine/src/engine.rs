@@ -7,35 +7,37 @@ use std::{
 };
 
 use arc_swap::ArcSwap;
-use crossbeam_channel::{Receiver, Sender};
+use flume::{Receiver, Sender};
 
 use crate::{
     Project,
     cmd::Command,
     event::{Event, EventListener},
     object::Objects,
-    output::{Output, OutputDefinition},
+    output::OutputAgent,
     patch::Patch,
     pipeline::Pipeline,
     programmer::Programmer,
     selection::Selection,
-    trigger::{Triggers, TriggersDefinition},
+    trigger::{Trigger, TriggersAgent},
 };
 
 pub struct Engine {
     showfile_path: Option<PathBuf>,
 
-    pub(crate) patch: Patch,
-    pub(crate) output: Output,
-    pub(crate) triggers: Triggers,
-    pub(crate) objects: Objects,
-    pub(crate) programmer: Programmer,
-    pub(crate) pipeline: Pipeline,
-    pub(crate) selection: Selection,
+    pub(crate) patch: Arc<Patch>,
+    pub(crate) objects: Arc<Objects>,
+    pub(crate) programmer: Arc<Programmer>,
+    pub(crate) pipeline: Arc<Pipeline>,
+    pub(crate) selection: Arc<Selection>,
     pub(crate) highlight: bool,
 
-    event_tx: crossbeam_channel::Sender<Event>,
+    pub(crate) triggers_agent: TriggersAgent,
+    pub(crate) output_agent: OutputAgent,
+
+    event_tx: flume::Sender<Event>,
     event_listener: EventListener,
+    event_buffer: Vec<Event>,
 }
 
 impl Engine {
@@ -44,31 +46,31 @@ impl Engine {
             project.patch().clone(),
             project.file().map(|f| f.gdtfs()).unwrap_or(&HashMap::new()),
         )?;
-        let output = Output::new(project.output().clone())?;
-        let triggers = Triggers::new(project.triggers().clone())?;
         let objects = project.objects().clone();
+        let pipeline = Pipeline::new(&patch);
 
-        let (event_tx, event_rx) = crossbeam_channel::unbounded();
+        let (event_tx, event_rx) = flume::unbounded();
         let event_listener = EventListener::new(event_rx);
 
-        let pipeline = Pipeline::new(&patch);
+        let output_agent = OutputAgent::new(project.output().clone())?;
+        let triggers_agent = TriggersAgent::new(project.triggers().clone())?;
 
         let engine = Self {
             showfile_path: project.file().map(|p| p.path().clone()),
 
-            patch,
-            output,
-            triggers,
-            objects,
+            patch: Arc::new(patch),
+            objects: Arc::new(objects),
+            selection: Arc::new(Selection::new()),
+            programmer: Arc::new(Programmer::new()),
+            pipeline: Arc::new(pipeline),
+            highlight: false,
 
             event_tx,
             event_listener,
+            event_buffer: Vec::new(),
 
-            selection: Selection::new(),
-            programmer: Programmer::new(),
-            highlight: false,
-
-            pipeline,
+            output_agent,
+            triggers_agent,
         };
 
         Ok(engine)
@@ -82,8 +84,8 @@ impl Engine {
         &self.patch
     }
 
-    pub fn output(&self) -> &Output {
-        &self.output
+    pub fn output(&self) -> &OutputAgent {
+        &self.output_agent
     }
 
     pub fn objects(&self) -> &Objects {
@@ -117,25 +119,23 @@ impl Engine {
     pub fn generate_snapshot(&self) -> EngineSnapshot {
         EngineSnapshot {
             showfile_path: self.showfile_path.clone(),
-            patch: self.patch.clone(),
-            output: self.output.definition().clone(),
-            triggers: self.triggers.definition().clone(),
-            objects: self.objects.clone(),
-            programmer: self.programmer.clone(),
-            pipeline: self.pipeline.clone(),
-            selection: self.selection.clone(),
+            patch: Arc::clone(&self.patch),
+            objects: Arc::clone(&self.objects),
+            programmer: Arc::clone(&self.programmer),
+            pipeline: Arc::clone(&self.pipeline),
+            selection: Arc::clone(&self.selection),
             highlight: self.highlight,
         }
     }
 
-    pub(crate) fn emit(&self, event: Event) {
-        let _ = self.event_tx.send(event);
+    pub(crate) fn emit(&mut self, event: Event) {
+        self.event_buffer.push(event);
     }
 
     fn run(mut self, rx: Receiver<EngineMessage>, snapshot_store: Arc<ArcSwap<EngineSnapshot>>) {
         const INTERVAL: Duration = Duration::new(0, ((1_000_000_000_f64 / 60.0).round()) as u32);
 
-        self.output.start();
+        self.output_agent.start();
 
         let mut next_tick = Instant::now() + INTERVAL;
         let mut running = true;
@@ -158,8 +158,8 @@ impl Engine {
                     Ok(msg) => {
                         running = self.handle_message(msg, &snapshot_store);
                     }
-                    Err(crossbeam_channel::RecvTimeoutError::Timeout) => {}
-                    Err(crossbeam_channel::RecvTimeoutError::Disconnected) => {
+                    Err(flume::RecvTimeoutError::Timeout) => {}
+                    Err(flume::RecvTimeoutError::Disconnected) => {
                         running = false;
                     }
                 }
@@ -177,7 +177,7 @@ impl Engine {
             next_tick += INTERVAL;
         }
 
-        self.output.stop();
+        self.output_agent.stop();
     }
 
     fn handle_message(
@@ -188,8 +188,10 @@ impl Engine {
         match msg {
             EngineMessage::Command { command, resp } => {
                 let res = self.execute(command);
+
                 self.resolve_pipeline();
                 snapshot_store.store(Arc::new(self.generate_snapshot()));
+
                 if let Some(resp) = resp {
                     let _ = resp.send(res);
                 }
@@ -205,12 +207,21 @@ impl Engine {
     }
 
     fn tick(&mut self, snapshot_store: &Arc<ArcSwap<EngineSnapshot>>) {
-        let commands = self.pipeline.resolve_triggers(&self.triggers);
-        let snapshot_dirty = !commands.is_empty();
-
-        for command in commands {
-            if let Err(err) = self.execute(command) {
-                log::error!("Failed to execute command: {err}");
+        let mut snapshot_dirty = false;
+        for trigger in self.triggers_agent.drain() {
+            match trigger {
+                Trigger::ExecutorMaster { executor_id, value } => {
+                    self.execute(Command::ExecutorSetMaster { executor_id, value })
+                        .map_err(|err| log::error!("{err}"))
+                        .ok();
+                    snapshot_dirty = true;
+                }
+                Trigger::ExecutorButton { executor_id, button, pressed } => {
+                    self.execute(Command::ExecutorButton { executor_id, button, pressed })
+                        .map_err(|err| log::error!("{err}"))
+                        .ok();
+                    snapshot_dirty = true;
+                }
             }
         }
 
@@ -220,13 +231,19 @@ impl Engine {
             snapshot_store.store(Arc::new(self.generate_snapshot()));
         }
 
-        self.output.update(self.pipeline.multiverse().clone());
+        for event in self.event_buffer.drain(..) {
+            let _ = self.event_tx.send(event);
+        }
+
+        self.output_agent.update(self.pipeline.multiverse().clone());
     }
 
     fn resolve_pipeline(&mut self) {
+        let pipeline = Arc::make_mut(&mut self.pipeline);
+
         let highlighted_fixtures =
             self.highlight.then(|| self.selection.fixture_ids().to_vec()).unwrap_or_default();
-        if let Err(err) = self.pipeline.resolve_attributes(
+        if let Err(err) = pipeline.resolve_attributes(
             &self.objects,
             &self.patch,
             &self.programmer,
@@ -236,7 +253,9 @@ impl Engine {
             return;
         };
 
-        self.pipeline.resolve_dmx();
+        pipeline.resolve_dmx();
+
+        self.emit(Event::PipelineResolved);
     }
 }
 
@@ -257,7 +276,7 @@ pub struct EngineHandle {
 
 impl EngineHandle {
     pub fn new(engine: Engine) -> Self {
-        let (tx, rx) = crossbeam_channel::unbounded();
+        let (tx, rx) = flume::unbounded();
 
         let snapshot = Arc::new(ArcSwap::from_pointee(engine.generate_snapshot()));
 
@@ -275,17 +294,12 @@ impl EngineHandle {
     }
 
     pub fn execute(&self, command: Command) -> anyhow::Result<()> {
-        let rx = self.execute_async(command)?;
-        rx.recv().map_err(|_| anyhow::anyhow!("Engine thread stopped"))?
-    }
-
-    pub fn execute_async(&self, command: Command) -> anyhow::Result<Receiver<anyhow::Result<()>>> {
-        let (resp_tx, resp_rx) = crossbeam_channel::bounded(1);
+        let (resp_tx, resp_rx) = flume::bounded(1);
         self.inner
             .tx
             .send(EngineMessage::Command { command, resp: Some(resp_tx) })
             .map_err(|_| anyhow::anyhow!("Engine thread stopped"))?;
-        Ok(resp_rx)
+        resp_rx.recv().map_err(|_| anyhow::anyhow!("Engine thread stopped"))?
     }
 
     pub fn try_execute(&self, command: Command) -> anyhow::Result<()> {
@@ -303,13 +317,14 @@ impl EngineHandle {
         self.inner.event_listener.clone()
     }
 
-    pub fn shutdown_async(&self) -> anyhow::Result<Receiver<()>> {
-        let (resp_tx, resp_rx) = crossbeam_channel::bounded(1);
+    pub fn shutdown(&self) -> anyhow::Result<()> {
+        let (resp_tx, resp_rx) = flume::bounded(1);
         self.inner
             .tx
             .send(EngineMessage::Shutdown { resp: Some(resp_tx) })
             .map_err(|_| anyhow::anyhow!("Engine thread stopped"))?;
-        Ok(resp_rx)
+        resp_rx.recv().map_err(|_| anyhow::anyhow!("Engine thread stopped"))?;
+        Ok(())
     }
 }
 
@@ -322,13 +337,11 @@ impl Clone for EngineHandle {
 #[derive(Clone, Default)]
 pub struct EngineSnapshot {
     showfile_path: Option<PathBuf>,
-    patch: Patch,
-    output: OutputDefinition,
-    triggers: TriggersDefinition,
-    objects: Objects,
-    programmer: Programmer,
-    pipeline: Pipeline,
-    selection: Selection,
+    patch: Arc<Patch>,
+    objects: Arc<Objects>,
+    programmer: Arc<Programmer>,
+    pipeline: Arc<Pipeline>,
+    selection: Arc<Selection>,
     highlight: bool,
 }
 
@@ -337,32 +350,24 @@ impl EngineSnapshot {
         self.showfile_path.as_deref()
     }
 
-    pub fn patch(&self) -> &Patch {
-        &self.patch
+    pub fn patch(&self) -> Arc<Patch> {
+        Arc::clone(&self.patch)
     }
 
-    pub fn output(&self) -> &OutputDefinition {
-        &self.output
+    pub fn objects(&self) -> Arc<Objects> {
+        Arc::clone(&self.objects)
     }
 
-    pub fn triggers(&self) -> &TriggersDefinition {
-        &self.triggers
+    pub fn programmer(&self) -> Arc<Programmer> {
+        Arc::clone(&self.programmer)
     }
 
-    pub fn objects(&self) -> &Objects {
-        &self.objects
+    pub fn pipeline(&self) -> Arc<Pipeline> {
+        Arc::clone(&self.pipeline)
     }
 
-    pub fn programmer(&self) -> &Programmer {
-        &self.programmer
-    }
-
-    pub fn pipeline(&self) -> &Pipeline {
-        &self.pipeline
-    }
-
-    pub fn selection(&self) -> &Selection {
-        &self.selection
+    pub fn selection(&self) -> Arc<Selection> {
+        Arc::clone(&self.selection)
     }
 
     pub fn highlight(&self) -> bool {

@@ -1,21 +1,13 @@
 use gpui::{Entity, FontWeight, Window, div, prelude::*};
-use rd_ui::{ActiveTheme as _, Tab, Tabs, TabsState, TabsVariant, TitleBar, h_flex, v_flex};
-
-use crate::app::settings::patch::PatchSettingsView;
-
-mod patch;
+use rd_ui::{ActiveTheme as _, Tab, Tabs, TabsState, TabsVariant, TitleBar, h_flex, todo, v_flex};
 
 pub struct SettingsView {
     tabs_state: Entity<TabsState>,
-    patch_settings_view: Entity<PatchSettingsView>,
 }
 
 impl SettingsView {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        Self {
-            tabs_state: cx.new(|_| TabsState::new().with_selected("patch")),
-            patch_settings_view: cx.new(|cx| PatchSettingsView::new(window, cx)),
-        }
+    pub fn new(_window: &mut Window, cx: &mut Context<Self>) -> Self {
+        Self { tabs_state: cx.new(|_| TabsState::new().with_selected("patch")) }
     }
 
     fn render_title_bar_content(
@@ -31,18 +23,10 @@ impl SettingsView {
         )
     }
 
-    fn render_content(
-        &mut self,
-        _window: &mut Window,
-        _cx: &mut Context<Self>,
-    ) -> impl IntoElement {
+    fn render_content(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         Tabs::new("tabs", self.tabs_state.clone(), TabsVariant::Sidebar).tabs([
-            Tab::new("patch", "Patch", self.patch_settings_view.clone().into_any_element()),
-            Tab::new(
-                "dmx_output",
-                "DMX Output",
-                div().child("DMX OUTPUT PANEL").into_any_element(),
-            ),
+            Tab::new("patch", "Patch", todo(cx).into_any_element()),
+            Tab::new("dmx_output", "DMX Output", todo(cx).into_any_element()),
         ])
     }
 }

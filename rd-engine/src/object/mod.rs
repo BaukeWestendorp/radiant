@@ -194,6 +194,20 @@ impl Objects {
         &self.layout_pages
     }
 
+    pub fn presets(&self, kind: PresetKind) -> &ObjectCollection<Preset> {
+        match kind {
+            PresetKind::Dimmer => &self.dimmer_presets,
+            PresetKind::Position => &self.position_presets,
+            PresetKind::Gobo => &self.gobo_presets,
+            PresetKind::Color => &self.color_presets,
+            PresetKind::Beam => &self.beam_presets,
+            PresetKind::Focus => &self.focus_presets,
+            PresetKind::Control => &self.control_presets,
+            PresetKind::Shapers => &self.shapers_presets,
+            PresetKind::Video => &self.video_presets,
+        }
+    }
+
     pub fn dimmer_presets(&self) -> &ObjectCollection<Preset> {
         &self.dimmer_presets
     }

@@ -44,7 +44,7 @@ impl EnttecInstance {
 
     pub fn start(
         &mut self,
-        notify_rx: crossbeam_channel::Receiver<()>,
+        notify_rx: flume::Receiver<()>,
         multiverse: Arc<RwLock<Multiverse>>,
     ) -> anyhow::Result<()> {
         if self.thread_handle.is_some() {

@@ -1,32 +1,46 @@
 use std::num::NonZeroU32;
 
-use gpui::{App, IntoElement, SharedString, Window, prelude::*};
+use gpui::{App, Entity, IntoElement, SharedString, Window, prelude::*};
 use rd_engine::{
     cmd::Command,
-    object::{Object as _, ObjectKind, Sequence, Slot},
+    event::Event,
+    object::{Object as _, ObjectCollection, ObjectKind, Sequence, Slot},
 };
 use rd_ui::{PoolTileDelegate, h_flex};
 
-use crate::engine::EngineManager;
+use crate::engine::EngineAppExt;
 
-pub struct SequencesPoolTile {}
+pub struct SequencePoolTile {
+    sequences: Entity<ObjectCollection<Sequence>>,
+}
 
-impl SequencesPoolTile {
-    pub fn new() -> Self {
-        Self {}
+impl SequencePoolTile {
+    pub fn new(cx: &mut Context<Self>) -> Self {
+        let sequences = cx.new(|cx| cx.engine_snapshot().objects().sequences().clone());
+        cx.on_engine_event({
+            let sequences = sequences.clone();
+            move |event, cx| match event {
+                Event::ObjectChanged { kind: ObjectKind::Sequence, .. } => {
+                    let new_sequences = cx.engine_snapshot().objects().sequences().clone();
+                    sequences.write(cx, new_sequences);
+                }
+                _ => {}
+            }
+        })
+        .detach();
+
+        Self { sequences }
     }
 
     pub fn sequence<'a>(&self, slot: u32, cx: &'a App) -> anyhow::Result<&'a Sequence> {
-        EngineManager::snapshot(cx)
-            .objects()
-            .sequences()
-            .get_by_slot(&Slot::new(NonZeroU32::new(slot).unwrap()))
+        let slot = Slot::new(NonZeroU32::new(slot).unwrap());
+        self.sequences.read(cx).get_by_slot(&slot)
     }
 }
 
-impl PoolTileDelegate for SequencesPoolTile {
+impl PoolTileDelegate for SequencePoolTile {
     fn title(&self, _cx: &App) -> SharedString {
-        "Cue Lists".into()
+        "Sequences".into()
     }
 
     fn is_occupied(&self, slot: u32, cx: &App) -> bool {
@@ -43,14 +57,17 @@ impl PoolTileDelegate for SequencesPoolTile {
     }
 
     fn on_activate_slot(&mut self, slot: u32, _window: &mut Window, cx: &mut App) {
-        let slot = Slot::new(NonZeroU32::new(slot).unwrap());
-        let Ok(sequence) = EngineManager::snapshot(cx).objects().sequences().get_by_slot(&slot)
-        else {
-            return;
+        let sequence = match self.sequence(slot, cx) {
+            Ok(sequence) => sequence,
+            Err(err) => {
+                log::warn!("{err}");
+                return;
+            }
         };
-        EngineManager::execute(
-            cx,
-            Command::Activate { object_kind: ObjectKind::Sequence, object_id: sequence.id() },
-        )
+
+        cx.execute_engine_cmd(Command::Activate {
+            object_kind: ObjectKind::Sequence,
+            object_id: sequence.id(),
+        })
     }
 }

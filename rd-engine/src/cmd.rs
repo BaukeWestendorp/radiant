@@ -1,12 +1,12 @@
-use std::time::Instant;
+use std::{sync::Arc, time::Instant};
 
 use crate::{
     Engine, FixtureCollection,
     event::Event,
     gdtf::attr::AttributeName,
     object::{
-        Executor, ExecutorButton, ExecutorButtonAction, ExecutorContent, ExecutorId, ObjectId,
-        ObjectKind,
+        Executor, ExecutorButton, ExecutorButtonAction, ExecutorContent, ExecutorId, Object,
+        ObjectId, ObjectKind,
     },
     patch::FixtureId,
     value::AttributeValue,
@@ -47,46 +47,51 @@ impl Command {
                 ObjectKind::Preset(_) => {}
             },
             Command::SelectionAdd { fixture_ids } => {
+                let selection = Arc::make_mut(&mut engine.selection);
                 for fixture_id in fixture_ids {
-                    if !engine.selection.contains(&fixture_id) {
-                        engine.selection.fixture_ids.push(fixture_id);
+                    if !selection.contains(&fixture_id) {
+                        selection.fixture_ids.push(fixture_id);
                     }
                 }
 
                 engine.emit(Event::SelectionChanged);
             }
             Command::SelectionRemove { fixture_ids } => {
+                let selection = Arc::make_mut(&mut engine.selection);
                 for fixture_id in fixture_ids {
-                    if let Some(pos) =
-                        engine.selection.fixture_ids().iter().position(|x| x == &fixture_id)
+                    if let Some(pos) = selection.fixture_ids().iter().position(|x| x == &fixture_id)
                     {
-                        engine.selection.fixture_ids.remove(pos);
+                        selection.fixture_ids.remove(pos);
                     }
                 }
 
                 engine.emit(Event::SelectionChanged);
             }
             Command::SelectionSet { fixture_ids } => {
-                engine.selection.fixture_ids.clear();
+                let selection = Arc::make_mut(&mut engine.selection);
+                selection.fixture_ids.clear();
                 for fixture_id in fixture_ids {
-                    if !engine.selection.contains(&fixture_id) {
-                        engine.selection.fixture_ids.push(fixture_id);
+                    if !selection.contains(&fixture_id) {
+                        selection.fixture_ids.push(fixture_id);
                     }
                 }
 
                 engine.emit(Event::SelectionChanged);
             }
             Command::SelectionClear => {
-                engine.selection.fixture_ids.clear();
+                let selection = Arc::make_mut(&mut engine.selection);
+                selection.fixture_ids.clear();
 
                 engine.emit(Event::SelectionChanged);
             }
             Command::SelectionAll => {
-                engine.selection.fixture_ids.clear();
                 let fixture_ids = engine.patch().fixture_ids().cloned().collect::<Vec<_>>();
+
+                let selection = Arc::make_mut(&mut engine.selection);
+                selection.fixture_ids.clear();
                 for fixture_id in fixture_ids {
-                    if !engine.selection.contains(&fixture_id) {
-                        engine.selection.fixture_ids.push(fixture_id);
+                    if !selection.contains(&fixture_id) {
+                        selection.fixture_ids.push(fixture_id);
                     }
                 }
 
@@ -94,15 +99,15 @@ impl Command {
             }
             Command::HighlightToggle => {
                 engine.highlight = !engine.highlight;
-                engine.emit(Event::HighlightChanged);
+                engine.emit(Event::HighlightChanged { enabled: engine.highlight });
             }
             Command::Highlight { enabled } => {
                 engine.highlight = enabled;
-                engine.emit(Event::HighlightChanged);
+                engine.emit(Event::HighlightChanged { enabled: engine.highlight });
             }
             Command::ExecutorSetMaster { executor_id, value } => {
-                let page = engine.objects.executor_pages.get_by_object_id_mut(&executor_id.page)?;
-
+                let objects = Arc::make_mut(&mut engine.objects);
+                let page = objects.executor_pages.get_by_object_id_mut(&executor_id.page)?;
                 let executor = page.executor_mut(executor_id.slot)?;
 
                 let prev_master = executor.master();
@@ -121,25 +126,35 @@ impl Command {
                 }
 
                 reset_sequence_to_start_if_disabled(executor);
-                engine.emit(Event::ExecutorChanged(executor_id));
+
+                let object_id = page.id();
+                engine.emit(Event::ObjectChanged { kind: ObjectKind::ExecutorPage, object_id });
             }
             Command::ExecutorToggleEnabled { executor_id } => {
-                let page = engine.objects.executor_pages.get_by_object_id_mut(&executor_id.page)?;
+                let objects = Arc::make_mut(&mut engine.objects);
+                let page = objects.executor_pages.get_by_object_id_mut(&executor_id.page)?;
                 let executor = page.executor_mut(executor_id.slot)?;
 
                 executor.set_enabled(!executor.enabled());
                 reset_sequence_to_start_if_disabled(executor);
-                engine.emit(Event::ExecutorChanged(executor_id));
+
+                let object_id = page.id();
+                engine.emit(Event::ObjectChanged { kind: ObjectKind::ExecutorPage, object_id });
             }
             Command::ExecutorSetEnabled { executor_id, value } => {
-                let page = engine.objects.executor_pages.get_by_object_id_mut(&executor_id.page)?;
+                let objects = Arc::make_mut(&mut engine.objects);
+                let page = objects.executor_pages.get_by_object_id_mut(&executor_id.page)?;
                 let executor = page.executor_mut(executor_id.slot)?;
+
                 executor.set_enabled(value);
                 reset_sequence_to_start_if_disabled(executor);
-                engine.emit(Event::ExecutorChanged(executor_id));
+
+                let object_id = page.id();
+                engine.emit(Event::ObjectChanged { kind: ObjectKind::ExecutorPage, object_id });
             }
             Command::ExecutorButton { executor_id, button, pressed } => {
-                let page = engine.objects.executor_pages.get_by_object_id_mut(&executor_id.page)?;
+                let objects = Arc::make_mut(&mut engine.objects);
+                let page = objects.executor_pages.get_by_object_id_mut(&executor_id.page)?;
                 let executor = page.executor_mut(executor_id.slot)?;
 
                 let action = match executor.content() {
@@ -183,7 +198,7 @@ impl Command {
 
                         if pressed {
                             let sequence_obj =
-                                engine.objects.sequences.get_by_object_id(&sc.sequence())?;
+                                objects.sequences.get_by_object_id(&sc.sequence())?;
                             if sc.cue_index() + 1 < sequence_obj.cues().len() {
                                 sc.cue_index += 1;
                             }
@@ -205,7 +220,8 @@ impl Command {
                     None => {}
                 }
 
-                engine.emit(Event::ExecutorChanged(executor_id));
+                let object_id = page.id();
+                engine.emit(Event::ObjectChanged { kind: ObjectKind::ExecutorPage, object_id });
             }
             Command::ProgrammerSet { fixtures, attribute, value } => {
                 let fixture_ids = fixtures
@@ -213,8 +229,9 @@ impl Command {
                     .cloned()
                     .collect::<Vec<_>>();
 
+                let programmer = Arc::make_mut(&mut engine.programmer);
                 for fixture_id in fixture_ids {
-                    engine.programmer.set(fixture_id, attribute.clone(), value);
+                    programmer.set(fixture_id, attribute.clone(), value);
                 }
             }
         }

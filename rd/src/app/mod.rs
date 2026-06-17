@@ -2,13 +2,13 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use gpui::{Context, Entity, FocusHandle, Window, div, prelude::*, px, size};
-use rd_engine::{Engine, EngineHandle, Project, cmd::Command};
+use rd_engine::{Engine, EngineHandle, Project, cmd::Command, event::Event};
 use rd_ui::{
     ActiveTheme, Button, Icon, IconSize, IconVariant, TITLE_BAR_HEIGHT, TITLE_BAR_RIGHT_PADDING,
     h_flex,
 };
 
-use crate::{app::ui::LayoutViewer, engine::EngineManager};
+use crate::{app::ui::LayoutViewer, engine::EngineAppExt};
 
 mod settings;
 mod ui;
@@ -18,7 +18,7 @@ pub mod action {
     use rd_engine::cmd::Command;
     use rd_ui::{Root, SETTINGS_WINDOW_OPTIONS, SettingsAppExt as _};
 
-    use crate::{app::settings::SettingsView, engine::EngineManager};
+    use crate::{app::settings::SettingsView, engine::EngineAppExt};
 
     gpui::actions!([SettingsOpen, Save, HighlightToggle]);
 
@@ -37,10 +37,10 @@ pub mod action {
         });
 
         cx.on_action::<HighlightToggle>(|_, cx| {
-            EngineManager::execute(cx, Command::HighlightToggle);
+            cx.execute_engine_cmd(Command::HighlightToggle);
         });
 
-        cx.on_action::<Save>(|_, cx| match EngineManager::snapshot(cx).showfile_path() {
+        cx.on_action::<Save>(|_, cx| match cx.engine_snapshot().showfile_path() {
             Some(_path) => {
                 todo!();
             }
@@ -57,8 +57,6 @@ pub fn run(showfile_path: Option<PathBuf>) -> Result<()> {
         .window_size(size(px((18.0 + 1.5) * 80.0), px(12.0 * 80.0) + TITLE_BAR_HEIGHT * 2.0))
         .title_bar_content(|_, cx| cx.new(|_| TitleBarContent).into())
         .run(|window, cx| {
-            crate::app::action::init(cx);
-
             let project = match showfile_path {
                 Some(showfile_path) => match Project::load_from_folder(showfile_path) {
                     Ok(project) => project,
@@ -78,10 +76,8 @@ pub fn run(showfile_path: Option<PathBuf>) -> Result<()> {
                 }
             };
 
-            let rd_engine_handle = EngineHandle::new(rd_engine);
-
-            let engine_handle = EngineManager::new(rd_engine_handle, cx);
-            cx.set_global(engine_handle);
+            crate::app::action::init(cx);
+            crate::engine::init(EngineHandle::new(rd_engine), cx);
 
             cx.new(|cx| RadiantApp::new(window, cx).expect("should create app"))
         });
@@ -93,6 +89,8 @@ struct RadiantApp {
     focus_handle: FocusHandle,
 
     layout_viewer: Entity<LayoutViewer>,
+
+    highlight: Entity<bool>,
 }
 
 impl RadiantApp {
@@ -102,7 +100,17 @@ impl RadiantApp {
 
         let layout_viewer = cx.new(|cx| LayoutViewer::new(window, cx));
 
-        Ok(Self { focus_handle, layout_viewer })
+        let highlight = cx.new(|cx| cx.engine_snapshot().highlight());
+        cx.on_engine_event({
+            let highlight = highlight.clone();
+            move |event, cx| match event {
+                Event::HighlightChanged { enabled } => highlight.write(cx, *enabled),
+                _ => {}
+            }
+        })
+        .detach();
+
+        Ok(Self { focus_handle, layout_viewer, highlight })
     }
 
     fn render_content(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -135,11 +143,12 @@ impl RadiantApp {
             div().text_sm().text_color(cx.theme().fg_tertiary).child(crate::version_string());
 
         let indicators = h_flex().gap_2().child(
-            render_indicator("highlight", EngineManager::snapshot(cx).highlight())
+            render_indicator("highlight", *self.highlight.read(cx))
                 .cursor_pointer()
-                .on_any_mouse_down(|_, _, cx| {
-                    EngineManager::execute(cx, Command::HighlightToggle);
-                }),
+                .on_any_mouse_down(cx.listener(|_, _, _, cx| {
+                    cx.execute_engine_cmd(Command::HighlightToggle);
+                    cx.notify();
+                })),
         );
 
         h_flex()
