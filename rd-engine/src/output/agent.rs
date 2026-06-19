@@ -22,7 +22,6 @@ pub struct OutputAgent {
     multiverse: Arc<RwLock<Multiverse>>,
 
     sacn_instances: Vec<super::instance::sacn::SacnInstance>,
-    enttec_instances: Vec<super::instance::enttec::EnttecInstance>,
 }
 
 impl Default for OutputAgent {
@@ -43,13 +42,6 @@ impl OutputAgent {
             .map(|instance| super::instance::sacn::SacnInstance::new(instance.clone()))
             .collect::<anyhow::Result<Vec<_>>>()?;
 
-        let enttec_instances = definition
-            .enttec
-            .instances()
-            .iter()
-            .map(|instance| super::instance::enttec::EnttecInstance::new(instance.clone()))
-            .collect::<anyhow::Result<Vec<_>>>()?;
-
         Ok(Self {
             scheduler_handle: None,
             scheduler_running: Arc::new(AtomicBool::new(false)),
@@ -59,7 +51,6 @@ impl OutputAgent {
             multiverse,
 
             sacn_instances,
-            enttec_instances,
         })
     }
 
@@ -70,12 +61,6 @@ impl OutputAgent {
             }
         }
 
-        for instance in &mut self.enttec_instances {
-            if let Err(err) = instance.start(self.notify_rx.clone(), self.multiverse.clone()) {
-                log::error!("Failed to start Enttec output instance: {err}");
-            }
-        }
-
         self.start_scheduler();
     }
 
@@ -83,10 +68,6 @@ impl OutputAgent {
         self.stop_scheduler();
 
         for instance in &mut self.sacn_instances {
-            instance.stop();
-        }
-
-        for instance in &mut self.enttec_instances {
             instance.stop();
         }
     }
