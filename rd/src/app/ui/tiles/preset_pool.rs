@@ -1,7 +1,7 @@
 use std::num::NonZeroU32;
 
-use gpui::{App, Entity, IntoElement, SharedString, Window, prelude::*};
-use rd_ui::{PoolTileDelegate, h_flex};
+use gpui::{App, Entity, FontWeight, IntoElement, SharedString, Window, div, prelude::*, relative};
+use rd_ui::{ActiveTheme, PoolTileDelegate, h_flex};
 
 use rd_engine::{
     cmd::Command,
@@ -53,12 +53,33 @@ impl PoolTileDelegate for PresetPoolTile {
     }
 
     fn occupied_content(&self, slot: u32, cx: &App) -> impl IntoElement {
-        let name = match self.preset(slot, cx) {
-            Ok(preset) => preset.name().to_string(),
-            Err(_) => "<unknown>".to_string(),
-        };
+        let Ok(preset) = self.preset(slot, cx) else { return div() };
 
-        h_flex().justify_center().size_full().child(name)
+        let universal = !preset.universal().is_empty();
+        let global = !preset.global().is_empty();
+        let selective = !preset.selective().is_empty();
+
+        div()
+            .relative()
+            .size_full()
+            .child(
+                h_flex().size_full().absolute().justify_center().child(preset.name().to_string()),
+            )
+            .child(
+                div()
+                    .text_sm()
+                    .p_1()
+                    .line_height(relative(0.8))
+                    .absolute()
+                    .size_full()
+                    .flex()
+                    .flex_row_reverse()
+                    .gap_1()
+                    .text_color(cx.theme().fg_secondary)
+                    .when(universal, |e| e.child(div().font_weight(FontWeight::BOLD).child("U")))
+                    .when(global, |e| e.child(div().font_weight(FontWeight::BOLD).child("G")))
+                    .when(selective, |e| e.child(div().font_weight(FontWeight::BOLD).child("S"))),
+            )
     }
 
     fn on_activate_slot(&mut self, slot: u32, _window: &mut Window, cx: &mut App) {
