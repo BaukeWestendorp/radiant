@@ -1,15 +1,17 @@
 use std::{sync::Arc, time::Instant};
 
+use anyhow::Context;
+
 use crate::{
     Engine, FixtureCollection,
     event::Event,
     gdtf::attr::AttributeName,
     object::{
         Executor, ExecutorButton, ExecutorButtonAction, ExecutorContent, ExecutorId, Object,
-        ObjectId, ObjectKind,
+        ObjectId, ObjectKind, PresetId,
     },
     patch::FixtureId,
-    value::AttributeValue,
+    value::{AttributeValue, AttributeValues},
 };
 
 pub enum Command {
@@ -47,7 +49,43 @@ impl Command {
                 ObjectKind::Sequence => {}
                 ObjectKind::ExecutorPage => {}
                 ObjectKind::LayoutPage => {}
-                ObjectKind::Preset(_) => {}
+                ObjectKind::Preset(preset_kind) => {
+                    let preset = engine
+                        .objects()
+                        .preset_by_object_id(&PresetId::new(preset_kind, object_id))?;
+
+                    let mut programmer_values = AttributeValues::new();
+                    for fixture_id in engine.selection().fixture_ids() {
+                        let fixture = engine.patch().fixture(&fixture_id).with_context(|| {
+                            format!("Could not find fixture with id {fixture_id}")
+                        })?;
+
+                        for (attribute, value) in preset.universal() {
+                            programmer_values.set(*fixture_id, attribute.clone(), *value);
+                        }
+
+                        for (fixture_type_id, values) in preset.global() {
+                            if fixture.gdtf().fixture_type_id() == *fixture_type_id {
+                                for (attribute, value) in values {
+                                    programmer_values.set(*fixture_id, attribute.clone(), *value);
+                                }
+                            }
+                        }
+
+                        for (preset_fixture_id, values) in preset.selective() {
+                            if *fixture_id == *preset_fixture_id {
+                                for (attribute, value) in values {
+                                    programmer_values.set(*fixture_id, attribute.clone(), *value);
+                                }
+                            }
+                        }
+                    }
+
+                    let programmer = Arc::make_mut(&mut engine.programmer);
+                    for (fixture_id, attribute, value) in programmer_values.values() {
+                        programmer.set(*fixture_id, attribute.clone(), *value);
+                    }
+                }
             },
             Command::SelectionAdd { fixture_ids } => {
                 let selection = Arc::make_mut(&mut engine.selection);
