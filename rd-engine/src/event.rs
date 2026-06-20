@@ -5,6 +5,7 @@ pub enum Event {
     SelectionChanged,
     HighlightChanged { enabled: bool },
     ObjectChanged { kind: ObjectKind, object_id: ObjectId },
+    ProgrammerChanged,
     EncoderChanged { encoder_ix: usize, value: f32 },
     PipelineResolved,
 }

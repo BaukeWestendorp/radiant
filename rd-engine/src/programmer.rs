@@ -18,6 +18,10 @@ impl Programmer {
         self.values.set(fixture_id, attribute, value);
     }
 
+    pub fn clear(&mut self) {
+        self.values.clear();
+    }
+
     pub fn values(&self) -> &AttributeValues {
         &self.values
     }

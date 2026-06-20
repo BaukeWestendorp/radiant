@@ -33,6 +33,7 @@ pub enum Command {
 
     ProgrammerSet { fixtures: FixtureCollection, attribute: AttributeName, value: AttributeValue },
     ProgrammerActivate { fixtures: FixtureCollection, attribute: AttributeName },
+    ProgrammerClear,
 
     EncoderSetValue { encoder_ix: usize, value: f32 },
 }
@@ -275,6 +276,7 @@ impl Command {
                 for fixture_id in fixture_ids {
                     programmer.set(fixture_id, attribute.clone(), value);
                 }
+                engine.emit(Event::ProgrammerChanged);
             }
             Command::ProgrammerActivate { fixtures, attribute } => {
                 let fixture_ids = fixtures
@@ -292,6 +294,12 @@ impl Command {
                     let programmer = Arc::make_mut(&mut engine.programmer);
                     programmer.set(fixture_id, attribute.clone(), value);
                 }
+                engine.emit(Event::ProgrammerChanged);
+            }
+            Command::ProgrammerClear => {
+                let programmer = Arc::make_mut(&mut engine.programmer);
+                programmer.clear();
+                engine.emit(Event::ProgrammerChanged);
             }
 
             Command::EncoderSetValue { encoder_ix, value } => {
