@@ -8,7 +8,7 @@ use crate::{
     gdtf::attr::AttributeName,
     object::{
         Executor, ExecutorButton, ExecutorButtonAction, ExecutorContent, ExecutorId, Object,
-        ObjectId, ObjectKind, PresetId,
+        ObjectId, ObjectKind, PresetId, PresetKind, Slot,
     },
     patch::FixtureId,
     value::{AttributeValue, AttributeValues},
@@ -34,6 +34,8 @@ pub enum Command {
     ProgrammerSet { fixtures: FixtureCollection, attribute: AttributeName, value: AttributeValue },
     ProgrammerActivate { fixtures: FixtureCollection, attribute: AttributeName },
     ProgrammerClear,
+
+    Store { kind: StoreKind },
 
     EncoderSetValue { encoder_ix: usize, value: f32 },
 }
@@ -302,6 +304,10 @@ impl Command {
                 engine.emit(Event::ProgrammerChanged);
             }
 
+            Command::Store { kind: StoreKind::Preset { slot, kind } } => {
+                todo!();
+            }
+
             Command::EncoderSetValue { encoder_ix, value } => {
                 engine.emit(Event::EncoderChanged { encoder_ix, value });
             }
@@ -323,4 +329,8 @@ fn reset_sequence_to_start_if_disabled(executor: &mut Executor) {
     if sc.reset_to_start_on_disable() {
         sc.cue_index = 0;
     }
+}
+
+pub enum StoreKind {
+    Preset { slot: Slot, kind: PresetKind },
 }

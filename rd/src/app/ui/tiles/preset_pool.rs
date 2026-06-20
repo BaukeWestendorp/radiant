@@ -1,15 +1,21 @@
 use std::num::NonZeroU32;
 
-use gpui::{App, Entity, FontWeight, IntoElement, SharedString, Window, div, prelude::*, relative};
+use gpui::{
+    App, Entity, FontWeight, IntoElement, ReadGlobal, SharedString, Window, div, prelude::*,
+    relative,
+};
 use rd_ui::{ActiveTheme, PoolTileDelegate, h_flex};
 
 use rd_engine::{
-    cmd::Command,
+    cmd::{Command, StoreKind},
     event::Event,
     object::{Object as _, ObjectCollection, ObjectKind, Preset, PresetKind, Slot},
 };
 
-use crate::engine::EngineAppExt;
+use crate::{
+    app::state::{Mode, State},
+    engine::EngineAppExt,
+};
 
 pub struct PresetPoolTile {
     kind: PresetKind,
@@ -91,9 +97,36 @@ impl PoolTileDelegate for PresetPoolTile {
             }
         };
 
-        cx.execute_engine_cmd(Command::Activate {
-            object_kind: ObjectKind::Preset(self.kind),
-            object_id: preset.id(),
-        })
+        match State::global(cx).mode().read(cx) {
+            Mode::Normal => cx.execute_engine_cmd(Command::Activate {
+                object_kind: ObjectKind::Preset(self.kind),
+                object_id: preset.id(),
+            }),
+            Mode::Store => {
+                let slot = Slot::new(NonZeroU32::new(slot).unwrap());
+                cx.execute_engine_cmd(Command::Store {
+                    kind: StoreKind::Preset { slot, kind: self.kind },
+                });
+            }
+        }
+    }
+
+    fn on_activate_empty_slot(&mut self, slot: u32, _window: &mut Window, cx: &mut App) {
+        match State::global(cx).mode().read(cx) {
+            Mode::Normal => {}
+            Mode::Store => {
+                let slot = Slot::new(NonZeroU32::new(slot).unwrap());
+                cx.execute_engine_cmd(Command::Store {
+                    kind: StoreKind::Preset { slot, kind: self.kind },
+                });
+            }
+        }
+    }
+
+    fn empty_slots_clickable(&self, cx: &App) -> bool {
+        match State::global(cx).mode().read(cx) {
+            Mode::Normal => false,
+            Mode::Store => true,
+        }
     }
 }
