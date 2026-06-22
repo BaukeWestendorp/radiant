@@ -97,7 +97,8 @@ impl PoolTileDelegate for PresetPoolTile {
             }
         };
 
-        match State::global(cx).mode().read(cx) {
+        let mode = State::global(cx).mode();
+        match mode.read(cx) {
             Mode::Normal => cx.execute_engine_cmd(Command::Activate {
                 object_kind: ObjectKind::Preset(self.kind),
                 object_id: preset.id(),
@@ -107,18 +108,21 @@ impl PoolTileDelegate for PresetPoolTile {
                 cx.execute_engine_cmd(Command::Store {
                     kind: StoreKind::Preset { slot, kind: self.kind },
                 });
+                mode.write(cx, Mode::Normal);
             }
         }
     }
 
     fn on_activate_empty_slot(&mut self, slot: u32, _window: &mut Window, cx: &mut App) {
-        match State::global(cx).mode().read(cx) {
+        let mode = State::global(cx).mode();
+        match mode.read(cx) {
             Mode::Normal => {}
             Mode::Store => {
                 let slot = Slot::new(NonZeroU32::new(slot).unwrap());
                 cx.execute_engine_cmd(Command::Store {
                     kind: StoreKind::Preset { slot, kind: self.kind },
                 });
+                mode.write(cx, Mode::Normal);
             }
         }
     }

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt};
+use std::{collections::HashMap, fmt, ops};
 
 use crate::{
     mvr_gdtf::gdtf::{FixtureTypeId, attr::AttributeName},
@@ -13,9 +13,9 @@ pub struct Preset {
     id: ObjectId,
     slot: Slot,
     name: String,
-    universal: HashMap<AttributeName, AttributeValue>,
-    global: HashMap<FixtureTypeId, HashMap<AttributeName, AttributeValue>>,
-    selective: HashMap<FixtureId, HashMap<AttributeName, AttributeValue>>,
+    pub(crate) universal: UniversalPresetContent,
+    pub(crate) global: GlobalPresetContent,
+    pub(crate) selective: SelectivePresetContent,
 }
 
 impl Preset {
@@ -24,9 +24,9 @@ impl Preset {
             id,
             slot,
             name,
-            universal: HashMap::new(),
-            global: HashMap::new(),
-            selective: HashMap::new(),
+            universal: Default::default(),
+            global: Default::default(),
+            selective: Default::default(),
         }
     }
 
@@ -54,6 +54,107 @@ impl Object for Preset {
 
     fn name(&self) -> &str {
         &self.name
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(transparent)]
+pub struct UniversalPresetContent {
+    values: HashMap<AttributeName, AttributeValue>,
+}
+
+impl UniversalPresetContent {
+    pub fn new(values: HashMap<AttributeName, AttributeValue>) -> Self {
+        Self { values }
+    }
+
+    pub fn merge(&mut self, other: UniversalPresetContent) {
+        for (attr_name, attr_value) in other.values {
+            // FIXME: Implement multiple merge modes.
+            self.values.insert(attr_name, attr_value);
+        }
+    }
+}
+
+impl ops::Deref for UniversalPresetContent {
+    type Target = HashMap<AttributeName, AttributeValue>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.values
+    }
+}
+
+impl ops::DerefMut for UniversalPresetContent {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.values
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(transparent)]
+pub struct GlobalPresetContent {
+    values: HashMap<FixtureTypeId, HashMap<AttributeName, AttributeValue>>,
+}
+
+impl GlobalPresetContent {
+    pub fn new(values: HashMap<FixtureTypeId, HashMap<AttributeName, AttributeValue>>) -> Self {
+        Self { values }
+    }
+
+    pub fn merge(&mut self, other: GlobalPresetContent) {
+        for (fixture_type_id, attr_map) in other.values {
+            self.values.entry(fixture_type_id).or_insert_with(HashMap::new).extend(attr_map);
+        }
+    }
+}
+
+impl ops::Deref for GlobalPresetContent {
+    type Target = HashMap<FixtureTypeId, HashMap<AttributeName, AttributeValue>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.values
+    }
+}
+
+impl ops::DerefMut for GlobalPresetContent {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.values
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(transparent)]
+pub struct SelectivePresetContent {
+    values: HashMap<FixtureId, HashMap<AttributeName, AttributeValue>>,
+}
+
+impl SelectivePresetContent {
+    pub fn new(values: HashMap<FixtureId, HashMap<AttributeName, AttributeValue>>) -> Self {
+        Self { values }
+    }
+
+    pub fn merge(&mut self, other: SelectivePresetContent) {
+        for (fixture_id, attr_map) in other.values {
+            // FIXME: Implement multiple merge modes.
+            self.values.entry(fixture_id).or_insert_with(HashMap::new).extend(attr_map);
+        }
+    }
+}
+
+impl ops::Deref for SelectivePresetContent {
+    type Target = HashMap<FixtureId, HashMap<AttributeName, AttributeValue>>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.values
+    }
+}
+
+impl ops::DerefMut for SelectivePresetContent {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.values
     }
 }
 
@@ -106,4 +207,20 @@ impl fmt::Display for PresetKind {
             PresetKind::Video => write!(f, "Video"),
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub enum PresetContentKind {
+    Universal,
+    Global,
+    Selective,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[derive(serde::Serialize, serde::Deserialize)]
+pub enum PresetContent {
+    Universal(UniversalPresetContent),
+    Global(GlobalPresetContent),
+    Selective(SelectivePresetContent),
 }

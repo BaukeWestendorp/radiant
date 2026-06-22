@@ -2,12 +2,12 @@ use crate::object::{ObjectId, ObjectKind};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Event {
+    PipelineResolved,
     SelectionChanged,
+    ProgrammerChanged,
     HighlightChanged { enabled: bool },
     ObjectChanged { kind: ObjectKind, object_id: ObjectId },
-    ProgrammerChanged,
     EncoderChanged { encoder_ix: usize, value: f32 },
-    PipelineResolved,
 }
 
 #[derive(Debug, Clone)]

@@ -1,9 +1,10 @@
-use std::{collections::BTreeMap, fmt, num, str};
+use std::{collections::HashMap, fmt, num, str};
 
 use crate::{
     dmx::{self, Address},
     mvr_gdtf::gdtf::{self, attr::AttributeName},
-    patch::FixtureId,
+    object::{GlobalPresetContent, PresetContent, SelectivePresetContent, UniversalPresetContent},
+    patch::{FixtureId, Patch},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -97,7 +98,7 @@ impl fmt::Display for AttributeValue {
 #[derive(serde::Serialize, serde::Deserialize)]
 #[serde(transparent)]
 pub struct AttributeValues {
-    values: BTreeMap<FixtureId, BTreeMap<AttributeName, AttributeValue>>,
+    values: HashMap<FixtureId, HashMap<AttributeName, AttributeValue>>,
 }
 
 impl Default for AttributeValues {
@@ -108,7 +109,7 @@ impl Default for AttributeValues {
 
 impl AttributeValues {
     pub fn new() -> Self {
-        Self { values: BTreeMap::new() }
+        Self { values: HashMap::new() }
     }
 
     pub fn set(
@@ -122,7 +123,7 @@ impl AttributeValues {
 
     pub fn values(&self) -> impl Iterator<Item = (&FixtureId, &AttributeName, &AttributeValue)> {
         self.values.iter().flat_map(
-            |(fixture_id, attrs): (&FixtureId, &BTreeMap<AttributeName, AttributeValue>)| {
+            |(fixture_id, attrs): (&FixtureId, &HashMap<AttributeName, AttributeValue>)| {
                 attrs.iter().map(move |(attr, val): (&AttributeName, &AttributeValue)| {
                     (fixture_id, attr, val)
                 })
@@ -133,7 +134,7 @@ impl AttributeValues {
     pub fn get(&self, id: &FixtureId, attribute: &AttributeName) -> Option<AttributeValue> {
         self.values
             .get(id)
-            .and_then(|attrs: &BTreeMap<AttributeName, AttributeValue>| attrs.get(attribute))
+            .and_then(|attrs: &HashMap<AttributeName, AttributeValue>| attrs.get(attribute))
             .copied()
     }
 
@@ -149,6 +150,57 @@ impl AttributeValues {
 
     pub fn clear(&mut self) {
         self.values.clear();
+    }
+
+    pub fn preset_content(&self, patch: &Patch) -> PresetContent {
+        let check_global = || {
+            let mut global_content = GlobalPresetContent::default();
+            for (fixture_id, attribute, value) in self.values() {
+                let Some(fixture) = patch.fixture(fixture_id) else { continue };
+                let fixture_type_id = fixture.gdtf().fixture_type_id();
+
+                match global_content.get_mut(&fixture_type_id) {
+                    Some(values) => {
+                        if let Some(entry_value) = values.get(attribute) {
+                            if entry_value != value {
+                                return PresetContent::Selective(SelectivePresetContent::new(
+                                    self.values.clone(),
+                                ));
+                            }
+                        } else {
+                            values.insert(attribute.clone(), *value);
+                        }
+                    }
+                    None => {
+                        global_content
+                            .entry(fixture_type_id)
+                            .or_default()
+                            .insert(attribute.clone(), *value);
+                    }
+                }
+            }
+
+            PresetContent::Global(global_content)
+        };
+
+        let mut universal_content = UniversalPresetContent::default();
+        for (_, attribute, value) in self.values() {
+            match universal_content.get(&attribute) {
+                Some(v) if v == value => {}
+                Some(_) => return check_global(),
+                None => {
+                    universal_content.insert(attribute.clone(), *value);
+                }
+            }
+        }
+
+        PresetContent::Universal(universal_content)
+    }
+}
+
+impl Into<HashMap<FixtureId, HashMap<AttributeName, AttributeValue>>> for AttributeValues {
+    fn into(self) -> HashMap<FixtureId, HashMap<AttributeName, AttributeValue>> {
+        self.values
     }
 }
 
