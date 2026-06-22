@@ -8,7 +8,7 @@ use crate::{
     gdtf::attr::AttributeName,
     object::{
         Executor, ExecutorButton, ExecutorButtonAction, ExecutorContent, ExecutorId, Object,
-        ObjectId, ObjectKind, PresetId,
+        ObjectId, ObjectKind, Preset, PresetContent, PresetId, PresetKind, Slot,
     },
     patch::FixtureId,
     value::{AttributeValue, AttributeValues},
@@ -33,6 +33,9 @@ pub enum Command {
 
     ProgrammerSet { fixtures: FixtureCollection, attribute: AttributeName, value: AttributeValue },
     ProgrammerActivate { fixtures: FixtureCollection, attribute: AttributeName },
+    ProgrammerClear,
+
+    Store { kind: StoreKind },
 
     EncoderSetValue { encoder_ix: usize, value: f32 },
 }
@@ -275,6 +278,7 @@ impl Command {
                 for fixture_id in fixture_ids {
                     programmer.set(fixture_id, attribute.clone(), value);
                 }
+                engine.emit(Event::ProgrammerChanged);
             }
             Command::ProgrammerActivate { fixtures, attribute } => {
                 let fixture_ids = fixtures
@@ -292,6 +296,70 @@ impl Command {
                     let programmer = Arc::make_mut(&mut engine.programmer);
                     programmer.set(fixture_id, attribute.clone(), value);
                 }
+                engine.emit(Event::ProgrammerChanged);
+            }
+            Command::ProgrammerClear => {
+                let programmer = Arc::make_mut(&mut engine.programmer);
+                programmer.clear();
+                engine.emit(Event::ProgrammerChanged);
+            }
+
+            Command::Store { kind: StoreKind::Preset { slot, kind } } => {
+                let programmer_values = engine.programmer().values();
+                let mut filtered_values = AttributeValues::new();
+                for (fixture_id, attribute_name, value) in programmer_values.values() {
+                    let Some(fixture) = engine.patch().fixture(fixture_id) else { continue };
+                    let Some(attribute) = fixture.gdtf().attribute(attribute_name) else {
+                        continue;
+                    };
+                    let Some(fg) = attribute.feature_group(fixture.gdtf()) else { continue };
+
+                    match (fg.name().as_str().to_ascii_lowercase().trim(), kind) {
+                        ("dimmer", PresetKind::Dimmer) => {}
+                        ("position", PresetKind::Position) => {}
+                        ("gobo", PresetKind::Gobo) => {}
+                        ("color", PresetKind::Color) => {}
+                        ("beam", PresetKind::Beam) => {}
+                        ("focus", PresetKind::Focus) => {}
+                        ("control", PresetKind::Control) => {}
+                        ("shapers", PresetKind::Shapers) => {}
+                        ("video", PresetKind::Video) => {}
+                        _ => continue,
+                    }
+
+                    filtered_values.set(*fixture_id, attribute_name.clone(), *value);
+                }
+
+                let preset_content = filtered_values.preset_content(engine.patch());
+
+                let (object_id, name) = match engine.objects().preset_by_slot(&slot, &kind) {
+                    Ok(preset) => (preset.id(), preset.name().to_string()),
+                    Err(_) => (ObjectId::random(), "New Preset".to_string()),
+                };
+                let preset = Preset::new(object_id, slot, name);
+                let objects = Arc::make_mut(&mut engine.objects);
+                let preset = match objects.preset_by_slot_mut(&slot, &kind) {
+                    Ok(preset) => preset,
+                    Err(_) => {
+                        objects.insert_preset(preset, &kind)?;
+                        objects.preset_by_slot_mut(&slot, &kind)?
+                    }
+                };
+
+                // FIXME: Implement overwrite store mode.
+                match preset_content {
+                    PresetContent::Universal(content) => {
+                        preset.universal.merge(content);
+                    }
+                    PresetContent::Global(content) => {
+                        preset.global.merge(content);
+                    }
+                    PresetContent::Selective(content) => {
+                        preset.selective.merge(content);
+                    }
+                }
+
+                engine.emit(Event::ObjectChanged { kind: ObjectKind::Preset(kind), object_id });
             }
 
             Command::EncoderSetValue { encoder_ix, value } => {
@@ -315,4 +383,8 @@ fn reset_sequence_to_start_if_disabled(executor: &mut Executor) {
     if sc.reset_to_start_on_disable() {
         sc.cue_index = 0;
     }
+}
+
+pub enum StoreKind {
+    Preset { slot: Slot, kind: PresetKind },
 }

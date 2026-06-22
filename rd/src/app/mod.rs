@@ -1,31 +1,43 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use gpui::{Context, Entity, FocusHandle, Window, div, prelude::*, px, size};
+use gpui::{Context, Entity, FocusHandle, Hsla, ReadGlobal, Window, div, prelude::*, px, size};
 use rd_engine::{Engine, EngineHandle, Project, cmd::Command, event::Event};
 use rd_ui::{
     ActiveTheme, Button, Icon, IconSize, IconVariant, TITLE_BAR_HEIGHT, TITLE_BAR_RIGHT_PADDING,
     h_flex,
 };
 
-use crate::{app::ui::LayoutViewer, engine::EngineAppExt};
+use crate::{
+    app::{state::State, ui::LayoutViewer},
+    engine::EngineAppExt,
+};
 
 mod settings;
+mod state;
 mod ui;
 
 pub mod action {
-    use gpui::{App, KeyBinding, prelude::*};
+    use gpui::{App, KeyBinding, ReadGlobal, prelude::*};
     use rd_engine::cmd::Command;
     use rd_ui::{Root, SETTINGS_WINDOW_OPTIONS, SettingsAppExt as _};
 
-    use crate::{app::settings::SettingsView, engine::EngineAppExt};
+    use crate::{
+        app::{
+            settings::SettingsView,
+            state::{Mode, State},
+        },
+        engine::EngineAppExt,
+    };
 
-    gpui::actions!([SettingsOpen, Save, HighlightToggle]);
+    gpui::actions!([SettingsOpen, Save, Clear, Store, HighlightToggle]);
 
     pub(crate) fn init(cx: &mut App) {
         cx.bind_keys([
             KeyBinding::new("secondary-,", SettingsOpen, None),
             KeyBinding::new("secondary-s", Save, None),
+            KeyBinding::new("escape", Clear, None),
+            KeyBinding::new("s", Store, None),
             KeyBinding::new("h", HighlightToggle, None),
         ]);
 
@@ -38,6 +50,24 @@ pub mod action {
 
         cx.on_action::<HighlightToggle>(|_, cx| {
             cx.execute_engine_cmd(Command::HighlightToggle);
+        });
+
+        cx.on_action::<Clear>(|_, cx| {
+            if !cx.engine_snapshot().selection().is_empty() {
+                cx.execute_engine_cmd(Command::SelectionClear);
+                return;
+            }
+
+            if State::global(cx).mode().read(cx) == &Mode::Normal {
+                cx.execute_engine_cmd(Command::ProgrammerClear);
+                return;
+            }
+
+            State::global(cx).mode().write(cx, Mode::Normal);
+        });
+
+        cx.on_action::<Store>(|_, cx| {
+            State::global(cx).mode().write(cx, Mode::Store);
         });
 
         cx.on_action::<Save>(|_, cx| match cx.engine_snapshot().showfile_path() {
@@ -76,6 +106,7 @@ pub fn run(showfile_path: Option<PathBuf>) -> Result<()> {
                 }
             };
 
+            crate::app::state::init(cx);
             crate::app::action::init(cx);
             crate::engine::init(EngineHandle::new(rd_engine), cx);
 
@@ -125,10 +156,11 @@ impl RadiantApp {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
-        let render_indicator = |label: &str, on: bool| {
-            let color = if on { cx.theme().accent } else { cx.theme().fg_primary };
+        let render_indicator = |label: &str, on: bool, accent: Hsla| {
+            let color = if on { accent } else { cx.theme().fg_primary };
 
             h_flex()
+                .justify_center()
                 .text_xs()
                 .border_1()
                 .border_color(color.opacity(0.5))
@@ -142,14 +174,21 @@ impl RadiantApp {
         let version =
             div().text_sm().text_color(cx.theme().fg_tertiary).child(crate::version_string());
 
-        let indicators = h_flex().gap_2().child(
-            render_indicator("highlight", *self.highlight.read(cx))
-                .cursor_pointer()
-                .on_any_mouse_down(cx.listener(|_, _, _, cx| {
-                    cx.execute_engine_cmd(Command::HighlightToggle);
-                    cx.notify();
-                })),
-        );
+        let mode = State::global(cx).mode().read(cx);
+        let indicators = h_flex()
+            .gap_2()
+            .child(
+                render_indicator(&mode.to_string().to_ascii_lowercase(), true, mode.color(cx))
+                    .w_16(),
+            )
+            .child(
+                render_indicator("highlight", *self.highlight.read(cx), cx.theme().accent)
+                    .cursor_pointer()
+                    .on_any_mouse_down(cx.listener(|_, _, _, cx| {
+                        cx.execute_engine_cmd(Command::HighlightToggle);
+                        cx.notify();
+                    })),
+            );
 
         h_flex()
             .bg(cx.theme().title_bar)

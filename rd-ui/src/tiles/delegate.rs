@@ -166,7 +166,16 @@ impl<D: PoolTileDelegate + 'static> TileDelegate for PoolTile<D> {
                     .child(div().w(self.cell_size.width).h(self.cell_size.height));
 
                 if delegate.read(cx).empty_slots_clickable(cx) {
-                    base.on_click(move |_, window, cx| {
+                    base.hover(|e| {
+                        e.bg(cx.theme().bg_primary.hover())
+                            .border_color(cx.theme().border_primary.hover())
+                    })
+                    .active(|e| {
+                        e.bg(cx.theme().bg_primary.active())
+                            .border_color(cx.theme().border_primary.active())
+                            .top(cx.theme().button_depression)
+                    })
+                    .on_click(move |_, window, cx| {
                         delegate.update(cx, |d, cx| d.on_activate_empty_slot(slot, window, cx));
                     })
                 } else {

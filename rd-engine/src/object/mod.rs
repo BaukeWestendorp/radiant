@@ -33,13 +33,13 @@ pub enum ObjectKind {
 }
 
 #[derive(Debug, Clone)]
-pub struct ObjectCollection<T> {
+pub struct ObjectCollection<T: Object> {
     objects: Vec<T>,
     object_id_index: HashMap<ObjectId, usize>,
     slot_index: HashMap<Slot, usize>,
 }
 
-impl<T> ObjectCollection<T> {
+impl<T: Object> ObjectCollection<T> {
     pub fn all(&self) -> &Vec<T> {
         &self.objects
     }
@@ -62,6 +62,29 @@ impl<T> ObjectCollection<T> {
         })
     }
 
+    pub(crate) fn get_by_slot_mut(&mut self, slot: &Slot) -> anyhow::Result<&mut T> {
+        self.slot_index.get(slot).map(|&ix| &mut self.objects[ix]).ok_or_else(|| {
+            anyhow::anyhow!("{} not found with slot: {}", std::any::type_name::<T>(), slot)
+        })
+    }
+
+    pub(crate) fn insert(&mut self, object: T) -> anyhow::Result<()> {
+        if self.object_id_index.contains_key(&object.id()) {
+            anyhow::bail!("Object with id {} already exists in collection", object.id());
+        }
+
+        if self.slot_index.contains_key(&object.slot()) {
+            anyhow::bail!("Object at slot {} already exists in collection", object.slot());
+        }
+
+        let ix = self.objects.len();
+        self.object_id_index.insert(object.id(), ix);
+        self.slot_index.insert(object.slot(), ix);
+        self.objects.push(object);
+
+        Ok(())
+    }
+
     pub fn len(&self) -> usize {
         self.objects.len()
     }
@@ -71,7 +94,7 @@ impl<T> ObjectCollection<T> {
     }
 }
 
-impl<T> Default for ObjectCollection<T> {
+impl<T: Object> Default for ObjectCollection<T> {
     fn default() -> Self {
         Self {
             objects: Default::default(),
@@ -81,7 +104,7 @@ impl<T> Default for ObjectCollection<T> {
     }
 }
 
-impl<T> serde::Serialize for ObjectCollection<T>
+impl<T: Object> serde::Serialize for ObjectCollection<T>
 where
     T: serde::Serialize,
 {
@@ -93,7 +116,7 @@ where
     }
 }
 
-impl<'de, T> serde::Deserialize<'de> for ObjectCollection<T>
+impl<'de, T: Object> serde::Deserialize<'de> for ObjectCollection<T>
 where
     T: serde::de::DeserializeOwned + Object,
 {
@@ -119,6 +142,10 @@ pub struct ObjectId(Uuid);
 impl ObjectId {
     pub fn new(uuid: Uuid) -> Self {
         Self(uuid)
+    }
+
+    pub fn random() -> Self {
+        Self(Uuid::new_v4())
     }
 }
 
@@ -269,6 +296,42 @@ impl Objects {
             PresetKind::Control => self.control_presets.get_by_slot(&slot),
             PresetKind::Shapers => self.shapers_presets.get_by_slot(&slot),
             PresetKind::Video => self.video_presets.get_by_slot(&slot),
+        }
+    }
+
+    pub(crate) fn preset_by_slot_mut(
+        &mut self,
+        slot: &Slot,
+        kind: &PresetKind,
+    ) -> anyhow::Result<&mut Preset> {
+        match kind {
+            PresetKind::Dimmer => self.dimmer_presets.get_by_slot_mut(&slot),
+            PresetKind::Position => self.position_presets.get_by_slot_mut(&slot),
+            PresetKind::Gobo => self.gobo_presets.get_by_slot_mut(&slot),
+            PresetKind::Color => self.color_presets.get_by_slot_mut(&slot),
+            PresetKind::Beam => self.beam_presets.get_by_slot_mut(&slot),
+            PresetKind::Focus => self.focus_presets.get_by_slot_mut(&slot),
+            PresetKind::Control => self.control_presets.get_by_slot_mut(&slot),
+            PresetKind::Shapers => self.shapers_presets.get_by_slot_mut(&slot),
+            PresetKind::Video => self.video_presets.get_by_slot_mut(&slot),
+        }
+    }
+
+    pub(crate) fn insert_preset(
+        &mut self,
+        preset: Preset,
+        kind: &PresetKind,
+    ) -> anyhow::Result<()> {
+        match kind {
+            PresetKind::Dimmer => self.dimmer_presets.insert(preset),
+            PresetKind::Position => self.position_presets.insert(preset),
+            PresetKind::Gobo => self.gobo_presets.insert(preset),
+            PresetKind::Color => self.color_presets.insert(preset),
+            PresetKind::Beam => self.beam_presets.insert(preset),
+            PresetKind::Focus => self.focus_presets.insert(preset),
+            PresetKind::Control => self.control_presets.insert(preset),
+            PresetKind::Shapers => self.shapers_presets.insert(preset),
+            PresetKind::Video => self.video_presets.insert(preset),
         }
     }
 }
