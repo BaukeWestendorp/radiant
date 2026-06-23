@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crate::object::{ObjectId, ObjectKind};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -8,6 +10,7 @@ pub enum Event {
     HighlightChanged { enabled: bool },
     ObjectChanged { kind: ObjectKind, object_id: ObjectId },
     EncoderChanged { encoder_ix: usize, value: f32 },
+    Saved { path: PathBuf },
 }
 
 #[derive(Debug, Clone)]

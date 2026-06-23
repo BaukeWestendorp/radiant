@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     path::{Path, PathBuf},
     sync::Arc,
     thread,
@@ -42,10 +41,7 @@ pub struct Engine {
 
 impl Engine {
     pub fn new(project: Project) -> anyhow::Result<Self> {
-        let patch = Patch::new(
-            project.patch().clone(),
-            project.file().map(|f| f.gdtfs()).unwrap_or(&HashMap::new()),
-        )?;
+        let patch = Patch::new(project.patch().clone(), project.gdtfs().clone())?;
         let objects = project.objects().clone();
         let pipeline = Pipeline::new(&patch);
 
@@ -56,7 +52,7 @@ impl Engine {
         let triggers_agent = TriggersAgent::new(project.triggers().clone())?;
 
         let engine = Self {
-            showfile_path: project.file().map(|p| p.path().clone()),
+            showfile_path: project.path().map(|p| p.to_path_buf()),
 
             patch: Arc::new(patch),
             objects: Arc::new(objects),
@@ -84,7 +80,11 @@ impl Engine {
         &self.patch
     }
 
-    pub fn output(&self) -> &OutputAgent {
+    pub fn triggers_agent(&self) -> &TriggersAgent {
+        &self.triggers_agent
+    }
+
+    pub fn output_agent(&self) -> &OutputAgent {
         &self.output_agent
     }
 

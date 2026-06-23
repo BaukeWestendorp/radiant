@@ -102,6 +102,26 @@ impl SacnInstance {
             }
         }
     }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn universe_ids(&self) -> &[UniverseId] {
+        &self.universe_ids
+    }
+
+    pub fn preview_mode(&self) -> bool {
+        self.preview_mode
+    }
+
+    pub fn priority(&self) -> u8 {
+        self.priority
+    }
+
+    pub fn target_address(&self) -> SocketAddr {
+        self.target_address
+    }
 }
 
 fn handle_frame(

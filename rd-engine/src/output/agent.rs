@@ -14,6 +14,8 @@ use crate::dmx::Multiverse;
 use crate::output::OutputDefinition;
 
 pub struct OutputAgent {
+    definition: OutputDefinition,
+
     scheduler_handle: Option<JoinHandle<()>>,
     scheduler_running: Arc<AtomicBool>,
 
@@ -51,6 +53,8 @@ impl OutputAgent {
             .collect::<anyhow::Result<Vec<_>>>()?;
 
         Ok(Self {
+            definition,
+
             scheduler_handle: None,
             scheduler_running: Arc::new(AtomicBool::new(false)),
 
@@ -61,6 +65,10 @@ impl OutputAgent {
             sacn_instances,
             enttec_instances,
         })
+    }
+
+    pub fn definition(&self) -> &OutputDefinition {
+        &self.definition
     }
 
     pub(crate) fn start(&mut self) {
@@ -149,6 +157,14 @@ impl OutputAgent {
 
     pub(crate) fn update(&self, multiverse: Multiverse) {
         *self.multiverse.write().unwrap() = multiverse;
+    }
+
+    pub fn sacn_instances(&self) -> &[super::instance::sacn::SacnInstance] {
+        &self.sacn_instances
+    }
+
+    pub fn enttec_instances(&self) -> &[super::instance::enttec::EnttecInstance] {
+        &self.enttec_instances
     }
 }
 

@@ -106,6 +106,14 @@ impl EnttecInstance {
             }
         }
     }
+
+    pub fn universe_id(&self) -> UniverseId {
+        self.universe_id
+    }
+
+    pub fn serial_number(&self) -> &str {
+        &self.serial_number
+    }
 }
 
 fn handle_frame(

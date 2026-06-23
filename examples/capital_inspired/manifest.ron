@@ -1,9 +1,0 @@
-Manifest(
-    paths: RelativePaths(
-        gdtf_folder: "gdtf/",
-        patch: "patch.ron",
-        output: "output.ron",
-        triggers: "triggers.ron",
-        objects: "objects.ron",
-    ),
-)
