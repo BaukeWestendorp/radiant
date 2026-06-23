@@ -1,0 +1,122 @@
+use gpui::{
+    AnyView, App, Entity, FontWeight, Global, IntoElement, ReadGlobal, SharedString, Styled,
+    Window, div, prelude::*, px,
+};
+
+use crate::{ActiveTheme, h_flex, v_flex};
+
+pub(crate) fn init(cx: &mut App) {
+    let popup = cx.new(|_| None);
+    cx.set_global(PopupGlobal { popup });
+}
+
+pub trait PopupAppExt {
+    fn show_popup<F: FnOnce(&mut App) -> Popup>(&mut self, popup_builder: F);
+
+    fn close_popup(&mut self);
+}
+
+impl PopupAppExt for App {
+    fn show_popup<F: FnOnce(&mut App) -> Popup>(&mut self, popup_builder: F) {
+        let popup = (popup_builder)(self);
+        let popup_view = self.new(|_| popup);
+        PopupGlobal::global(self).popup.clone().write(self, Some(popup_view));
+    }
+
+    fn close_popup(&mut self) {
+        PopupGlobal::global(self).popup.clone().write(self, None);
+    }
+}
+
+pub(crate) struct PopupGlobal {
+    pub popup: Entity<Option<Entity<Popup>>>,
+}
+
+impl Global for PopupGlobal {}
+
+pub(crate) fn render_overlay(cx: &mut gpui::Context<'_, crate::Root>) -> impl IntoElement {
+    let popup = PopupGlobal::global(cx).popup.read(cx).clone();
+
+    div().size_full().children(popup.map(|popup| {
+        div()
+            .flex()
+            .justify_center()
+            .items_center()
+            .occlude()
+            .size_full()
+            .bg(cx.theme().contrast.opacity(0.25))
+            .on_any_mouse_down(|_, _, cx| cx.close_popup())
+            .child(popup)
+    }))
+}
+
+pub enum Popup {
+    YesNo { title: SharedString },
+    Confirm { title: SharedString },
+    Custom { content: AnyView, title: SharedString },
+}
+
+impl Popup {
+    pub fn yes_no(title: impl Into<SharedString>) -> Self {
+        Self::YesNo { title: title.into() }
+    }
+
+    pub fn confirm(title: impl Into<SharedString>) -> Self {
+        Self::Confirm { title: title.into() }
+    }
+
+    pub fn custom(content: impl Into<AnyView>, title: impl Into<SharedString>) -> Self {
+        Self::Custom { content: content.into(), title: title.into() }
+    }
+
+    pub fn title(&self) -> &SharedString {
+        match self {
+            Popup::YesNo { title } => title,
+            Popup::Confirm { title } => title,
+            Popup::Custom { title, .. } => title,
+        }
+    }
+}
+
+impl Render for Popup {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let title = self.title().clone();
+
+        let header = h_flex()
+            .px_2()
+            .w_full()
+            .min_h(window.line_height() * 1.5)
+            .max_h(window.line_height() * 1.5)
+            .bg(cx.theme().bg_tile_header)
+            .border_1()
+            .border_color(cx.theme().border_tile_header)
+            .rounded_t(cx.theme().radius)
+            .text_color(cx.theme().fg_tile_header)
+            .font_weight(FontWeight::BOLD)
+            .child(title);
+
+        let content = div()
+            .size_full()
+            .bg(cx.theme().bg_primary)
+            .border_1()
+            .border_color(cx.theme().border_primary)
+            .rounded_b(cx.theme().radius)
+            .child(match self {
+                Popup::YesNo { .. } => todo!(),
+                Popup::Confirm { .. } => todo!(),
+                Popup::Custom { content, .. } => content.clone().into_any(),
+            });
+
+        let popup = v_flex().size_full().child(header).child(content);
+
+        div()
+            .focus(|e| e.border_1().border_color(gpui::red()))
+            .occlude()
+            .when(cx.theme().shadow, |e| e.shadow_md())
+            .w(px(320.0))
+            .max_w_3_4()
+            .h(px(160.0))
+            .max_h_3_4()
+            .child(popup)
+    }
+}

@@ -1,7 +1,10 @@
 pub fn init(cx: &mut gpui::App) {
-    crate::root::action::init(cx);
     crate::theme::init(cx);
+    crate::popup::init(cx);
     crate::settings::init(cx);
+
+    simple::action::init(cx);
+    crate::root::action::init(cx);
     crate::table::action::init(cx);
     crate::input::text_input::init(cx);
 }
@@ -96,7 +99,6 @@ pub mod simple {
                         crate::feature::config::init(config, cx);
                     }
 
-                    action::init(cx);
                     cx.set_menus([Menu::new("").items([MenuItem::action("Quit", action::Quit)])]);
 
                     if self.activate {

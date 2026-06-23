@@ -1,7 +1,7 @@
 use gpui::prelude::*;
 use gpui::{AnyView, Window, div};
 
-use crate::ActiveTheme;
+use crate::{ActiveTheme, z_stack};
 
 pub(crate) mod action {
     use gpui::{App, KeyBinding, actions};
@@ -49,6 +49,8 @@ impl Render for Root {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         window.set_rem_size(cx.theme().font_size);
 
+        let content = self.view.clone();
+
         div()
             .id("root")
             .key_context(action::KEY_CONTEXT)
@@ -58,6 +60,12 @@ impl Render for Root {
             .size_full()
             .bg(cx.theme().bg_primary)
             .text_color(cx.theme().fg_primary)
-            .child(self.view.clone())
+            .child(
+                z_stack([
+                    content.into_any_element(),
+                    crate::popup::render_overlay(cx).into_any_element(),
+                ])
+                .size_full(),
+            )
     }
 }
