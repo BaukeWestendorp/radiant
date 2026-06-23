@@ -1,9 +1,9 @@
-use std::{sync::Arc, time::Instant};
+use std::{path::PathBuf, sync::Arc, time::Instant};
 
 use anyhow::Context;
 
 use crate::{
-    Engine, FixtureCollection,
+    Engine, FixtureCollection, Project,
     event::Event,
     gdtf::attr::AttributeName,
     object::{
@@ -38,6 +38,8 @@ pub enum Command {
     Store { kind: StoreKind },
 
     EncoderSetValue { encoder_ix: usize, value: f32 },
+
+    Save { path: PathBuf },
 }
 
 impl Command {
@@ -364,6 +366,12 @@ impl Command {
 
             Command::EncoderSetValue { encoder_ix, value } => {
                 engine.emit(Event::EncoderChanged { encoder_ix, value });
+            }
+
+            Command::Save { path } => {
+                let project = Project::load_from_engine(&path, engine);
+                project.save_to_folder()?;
+                engine.emit(Event::Saved { path });
             }
         }
 

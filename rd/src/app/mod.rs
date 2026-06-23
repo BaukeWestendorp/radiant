@@ -71,8 +71,8 @@ pub mod action {
         });
 
         cx.on_action::<Save>(|_, cx| match cx.engine_snapshot().showfile_path() {
-            Some(_path) => {
-                todo!();
+            Some(path) => {
+                cx.execute_engine_cmd(Command::Save { path: path.to_path_buf() });
             }
             None => {
                 log::error!("FIXME: implement saving new showfiles");
