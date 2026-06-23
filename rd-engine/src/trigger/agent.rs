@@ -7,6 +7,8 @@ use crate::trigger::{
 };
 
 pub struct TriggersAgent {
+    definition: TriggersDefinition,
+
     trigger_rx: flume::Receiver<Trigger>,
 
     // NOTE: These are stored here to keep them alive for as long as the resolver lives.
@@ -77,11 +79,15 @@ impl TriggersAgent {
             midi_connections.push(midi_connection);
         }
 
-        Ok(Self { _midi_connections: midi_connections, trigger_rx })
+        Ok(Self { definition, _midi_connections: midi_connections, trigger_rx })
     }
 
     pub fn drain(&self) -> Vec<Trigger> {
         self.trigger_rx.try_iter().collect()
+    }
+
+    pub fn definition(&self) -> &TriggersDefinition {
+        &self.definition
     }
 
     fn handle_midi_event(
@@ -187,7 +193,11 @@ impl TriggersAgent {
 impl Default for TriggersAgent {
     fn default() -> Self {
         let (_, trigger_rx) = flume::bounded(1);
-        Self { trigger_rx, _midi_connections: Default::default() }
+        Self {
+            definition: TriggersDefinition::default(),
+            trigger_rx,
+            _midi_connections: Default::default(),
+        }
     }
 }
 

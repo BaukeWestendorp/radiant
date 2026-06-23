@@ -86,6 +86,7 @@ mod error {
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(serde::Serialize)]
+#[serde(transparent)]
 pub struct Channel(u16);
 
 impl Channel {

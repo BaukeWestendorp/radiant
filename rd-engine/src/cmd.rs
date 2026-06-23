@@ -369,7 +369,7 @@ impl Command {
             }
 
             Command::Save { path } => {
-                let project = Project::load_from_engine(&path, engine);
+                let project = Project::load_from_engine(path.clone(), engine);
                 project.save_to_folder()?;
                 engine.emit(Event::Saved { path });
             }

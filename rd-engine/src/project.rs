@@ -7,6 +7,7 @@ use std::{
 use anyhow::Context as _;
 
 use crate::{
+    Engine,
     mvr_gdtf::gdtf::{Gdtf, resource::ResourceKey},
     object::Objects,
     output::OutputDefinition,
@@ -22,7 +23,8 @@ const RELATIVE_OBJECTS_PATH: &str = "objects.ron";
 
 #[derive(Default)]
 pub struct Project {
-    file: Option<ProjectFile>,
+    path: Option<PathBuf>,
+    gdtfs: HashMap<ResourceKey, Arc<Gdtf>>,
 
     patch: PatchDefinition,
     output: OutputDefinition,
@@ -36,39 +38,99 @@ impl Project {
     }
 
     pub fn load_from_folder(path: impl Into<PathBuf>) -> anyhow::Result<Self> {
-        let project_file = ProjectFile::load_from_folder(path)?;
+        let path = path.into();
 
-        let patch_path = project_file.path().join(RELATIVE_PATCH_PATH);
+        let patch_path = path.join(RELATIVE_PATCH_PATH);
         let patch_str = std::fs::read_to_string(&patch_path)
             .with_context(|| format!("Failed to read patch file: {}", patch_path.display()))?;
-        let patch: PatchDefinition = ron::from_str(&patch_str)
-            .with_context(|| format!("Failed to parse patch file: {}", patch_path.display()))?;
+        let patch: PatchDefinition = ron::de::from_str(&patch_str)
+            .with_context(|| format!("Failed to parse patch file: {}", patch_path.display()))
+            .inspect_err(|e| log::error!("{:?}", e))?;
 
-        let output_path = project_file.path().join(RELATIVE_OUTPUT_PATH);
+        let gdtfs_path = path.join(RELATIVE_GDTF_FOLDER_PATH);
+        let gdtfs = load_gdtfs_from_folder(&gdtfs_path)
+            .with_context(|| format!("Failed to read GDTF files: {}", patch_path.display()))?;
+
+        let output_path = path.join(RELATIVE_OUTPUT_PATH);
         let output_str = std::fs::read_to_string(&output_path)
             .with_context(|| format!("Failed to read output file: {}", output_path.display()))?;
-        let output: OutputDefinition = ron::from_str(&output_str)
-            .with_context(|| format!("Failed to parse output file: {}", output_path.display()))?;
+        let output: OutputDefinition = ron::de::from_str(&output_str)
+            .with_context(|| format!("Failed to parse output file: {}", output_path.display()))
+            .inspect_err(|e| log::error!("{:?}", e))?;
 
-        let triggers_path = project_file.path().join(RELATIVE_TRIGGERS_PATH);
+        let triggers_path = path.join(RELATIVE_TRIGGERS_PATH);
         let triggers_str = std::fs::read_to_string(&triggers_path).with_context(|| {
             format!("Failed to read triggers file: {}", triggers_path.display())
         })?;
-        let triggers: TriggersDefinition = ron::from_str(&triggers_str).with_context(|| {
-            format!("Failed to parse triggers file: {}", triggers_path.display())
-        })?;
+        let triggers: TriggersDefinition = ron::de::from_str(&triggers_str)
+            .with_context(|| format!("Failed to parse triggers file: {}", triggers_path.display()))
+            .inspect_err(|e| log::error!("{:?}", e))?;
 
-        let objects_path = project_file.path().join(RELATIVE_OBJECTS_PATH);
+        let objects_path = path.join(RELATIVE_OBJECTS_PATH);
         let objects_str = std::fs::read_to_string(&objects_path)
             .with_context(|| format!("Failed to read objects file: {}", objects_path.display()))?;
-        let objects: Objects = ron::from_str(&objects_str)
-            .with_context(|| format!("Failed to parse objects file: {}", objects_path.display()))?;
+        let objects: Objects = ron::de::from_str(&objects_str)
+            .with_context(|| format!("Failed to parse objects file: {}", objects_path.display()))
+            .inspect_err(|e| log::error!("{:?}", e))?;
 
-        Ok(Self { file: Some(project_file), patch, output, triggers, objects })
+        Ok(Self { path: Some(path), patch, gdtfs, output, triggers, objects })
     }
 
-    pub fn file(&self) -> Option<&ProjectFile> {
-        self.file.as_ref()
+    pub fn load_from_engine(path: PathBuf, engine: &mut Engine) -> Self {
+        Self {
+            path: Some(path),
+            gdtfs: engine.patch().gdtfs().clone(),
+            patch: engine.patch().definition().clone(),
+            output: engine.output_agent().definition().clone(),
+            triggers: engine.triggers_agent().definition().clone(),
+            objects: engine.objects().clone(),
+        }
+    }
+
+    pub fn save_to_folder(&self) -> anyhow::Result<()> {
+        let ron_config = ron::ser::PrettyConfig::default().compact_arrays(true).struct_names(true);
+
+        let path = self.path.as_ref().ok_or_else(|| {
+            anyhow::anyhow!("Cannot save project to folder: project has no associated path")
+        })?;
+
+        let patch_path = path.join(RELATIVE_PATCH_PATH);
+        let patch_str = ron::ser::to_string_pretty(&self.patch, ron_config.clone())
+            .context("Failed to serialize patch")?;
+        std::fs::write(&patch_path, patch_str)
+            .with_context(|| format!("Failed to write patch file: {}", patch_path.display()))?;
+
+        let output_path = path.join(RELATIVE_OUTPUT_PATH);
+        let output_str = ron::ser::to_string_pretty(&self.output, ron_config.clone())
+            .context("Failed to serialize output")?;
+        std::fs::write(&output_path, output_str)
+            .with_context(|| format!("Failed to write output file: {}", output_path.display()))?;
+
+        let triggers_path = path.join(RELATIVE_TRIGGERS_PATH);
+        let triggers_str = ron::ser::to_string_pretty(&self.triggers, ron_config.clone())
+            .context("Failed to serialize triggers")?;
+        std::fs::write(&triggers_path, triggers_str).with_context(|| {
+            format!("Failed to write triggers file: {}", triggers_path.display())
+        })?;
+
+        let objects_path = path.join(RELATIVE_OBJECTS_PATH);
+        let objects_str = ron::ser::to_string_pretty(&self.objects, ron_config.clone())
+            .context("Failed to serialize objects")?;
+        std::fs::write(&objects_path, objects_str)
+            .with_context(|| format!("Failed to write objects file: {}", objects_path.display()))?;
+
+        // FIXME: We should also save the GDTF files, but as I've not yet implemented serializing the `Gdtf`
+        // struct this is not easily possible...
+
+        Ok(())
+    }
+
+    pub fn path(&self) -> Option<&Path> {
+        self.path.as_deref()
+    }
+
+    pub fn gdtfs(&self) -> &HashMap<ResourceKey, Arc<Gdtf>> {
+        &self.gdtfs
     }
 
     pub fn patch(&self) -> &PatchDefinition {
@@ -85,33 +147,6 @@ impl Project {
 
     pub fn objects(&self) -> &Objects {
         &self.objects
-    }
-}
-
-#[derive(Default)]
-pub struct ProjectFile {
-    path: PathBuf,
-
-    gdtfs: HashMap<ResourceKey, Arc<Gdtf>>,
-}
-
-impl ProjectFile {
-    pub fn load_from_folder(path: impl Into<PathBuf>) -> anyhow::Result<Self> {
-        let path = path.into();
-
-        let gdtf_folder = path.join(RELATIVE_GDTF_FOLDER_PATH);
-        let gdtfs = load_gdtfs_from_folder(&gdtf_folder)
-            .with_context(|| format!("Failed to load GDTF folder: {}", gdtf_folder.display()))?;
-
-        Ok(Self { path, gdtfs })
-    }
-
-    pub fn path(&self) -> &PathBuf {
-        &self.path
-    }
-
-    pub fn gdtfs(&self) -> &HashMap<ResourceKey, Arc<Gdtf>> {
-        &self.gdtfs
     }
 }
 

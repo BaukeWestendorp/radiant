@@ -1,458 +1,513 @@
 TriggersDefinition(
-    midi: [
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 0,
-                value: (from: 0, to: 127),
-            ),
-            target: (
-                type: "ExecutorMaster",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 1,
-                ),
+    midi: [MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 0,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 64,
-                value: (from: 0, to: 127),
-            ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 1,
-                ),
-                button: "Button1",
+        target: TriggerTarget(
+            type: "ExecutorMaster",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(1),
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 48,
-                value: (from: 0, to: 127),
-            ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 1,
-                ),
-                button: "Button2",
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 64,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 32,
-                value: (from: 0, to: 127),
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(1),
             ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 1,
-                ),
-                button: "Button3",
+            button: Button1,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 48,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 1,
-                value: (from: 0, to: 127),
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(1),
             ),
-            target: (
-                type: "ExecutorMaster",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 2,
-                ),
+            button: Button2,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 32,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 65,
-                value: (from: 0, to: 127),
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(1),
             ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 2,
-                ),
-                button: "Button1",
+            button: Button3,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 1,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 49,
-                value: (from: 0, to: 127),
-            ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 2,
-                ),
-                button: "Button2",
+        target: TriggerTarget(
+            type: "ExecutorMaster",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(2),
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 33,
-                value: (from: 0, to: 127),
-            ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 2,
-                ),
-                button: "Button3",
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 65,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 2,
-                value: (from: 0, to: 127),
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(2),
             ),
-            target: (
-                type: "ExecutorMaster",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 3,
-                ),
+            button: Button1,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 49,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 66,
-                value: (from: 0, to: 127),
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(2),
             ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 3,
-                ),
-                button: "Button1",
+            button: Button2,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 33,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 50,
-                value: (from: 0, to: 127),
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(2),
             ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 3,
-                ),
-                button: "Button2",
+            button: Button3,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 2,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 34,
-                value: (from: 0, to: 127),
-            ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 3,
-                ),
-                button: "Button3",
+        target: TriggerTarget(
+            type: "ExecutorMaster",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(3),
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 3,
-                value: (from: 0, to: 127),
-            ),
-            target: (
-                type: "ExecutorMaster",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 4,
-                ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 66,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 67,
-                value: (from: 0, to: 127),
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(3),
             ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 4,
-                ),
-                button: "Button1",
+            button: Button1,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 50,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 51,
-                value: (from: 0, to: 127),
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(3),
             ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 4,
-                ),
-                button: "Button2",
+            button: Button2,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 34,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 35,
-                value: (from: 0, to: 127),
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(3),
             ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 4,
-                ),
-                button: "Button3",
+            button: Button3,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 3,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 4,
-                value: (from: 0, to: 127),
-            ),
-            target: (
-                type: "ExecutorMaster",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 5,
-                ),
+        target: TriggerTarget(
+            type: "ExecutorMaster",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(4),
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 68,
-                value: (from: 0, to: 127),
-            ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 5,
-                ),
-                button: "Button1",
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 67,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 52,
-                value: (from: 0, to: 127),
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(4),
             ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 5,
-                ),
-                button: "Button2",
+            button: Button1,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 51,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 36,
-                value: (from: 0, to: 127),
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(4),
             ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 5,
-                ),
-                button: "Button3",
+            button: Button2,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 35,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 7,
-                value: (from: 0, to: 127),
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(4),
             ),
-            target: (
-                type: "ExecutorMaster",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 8,
-                ),
+            button: Button3,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 4,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 71,
-                value: (from: 0, to: 127),
-            ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 8,
-                ),
-                button: "Button1",
+        target: TriggerTarget(
+            type: "ExecutorMaster",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(5),
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 55,
-                value: (from: 0, to: 127),
-            ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 8,
-                ),
-                button: "Button2",
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 68,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 39,
-                value: (from: 0, to: 127),
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(5),
             ),
-            target: (
-                type: "ExecutorButton",
-                executor_id: (
-                    page: "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
-                    slot: 8,
-                ),
-                button: "Button3",
+            button: Button1,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 52,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 16,
-                value: (from: 0, to: 127),
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(5),
             ),
-            target: (
-                type: "Encoder",
-                encoder_ix: 0,
+            button: Button2,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 36,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 17,
-                value: (from: 0, to: 127),
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(5),
             ),
-            target: (
-                type: "Encoder",
-                encoder_ix: 1,
+            button: Button3,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 7,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 18,
-                value: (from: 0, to: 127),
-            ),
-            target: (
-                type: "Encoder",
-                encoder_ix: 2,
+        target: TriggerTarget(
+            type: "ExecutorMaster",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(8),
             ),
         ),
-        (
-            device_name: "nanoKONTROL2 SLIDER/KNOB",
-            channel: 0,
-            message: (
-                type: "ControlChange",
-                controller: 19,
-                value: (from: 0, to: 127),
-            ),
-            target: (
-                type: "Encoder",
-                encoder_ix: 3,
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 71,
+            value: MultiRange(
+                from: 0,
+                to: 127,
             ),
         ),
-    ],
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(8),
+            ),
+            button: Button1,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 55,
+            value: MultiRange(
+                from: 0,
+                to: 127,
+            ),
+        ),
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(8),
+            ),
+            button: Button2,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 39,
+            value: MultiRange(
+                from: 0,
+                to: 127,
+            ),
+        ),
+        target: TriggerTarget(
+            type: "ExecutorButton",
+            executor_id: ExecutorId(
+                page: ObjectId("77accb9e-3d6b-49fd-b0b4-a42f67e9563a"),
+                slot: Slot(8),
+            ),
+            button: Button3,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 16,
+            value: MultiRange(
+                from: 0,
+                to: 127,
+            ),
+        ),
+        target: TriggerTarget(
+            type: "Encoder",
+            encoder_ix: 0,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 17,
+            value: MultiRange(
+                from: 0,
+                to: 127,
+            ),
+        ),
+        target: TriggerTarget(
+            type: "Encoder",
+            encoder_ix: 1,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 18,
+            value: MultiRange(
+                from: 0,
+                to: 127,
+            ),
+        ),
+        target: TriggerTarget(
+            type: "Encoder",
+            encoder_ix: 2,
+        ),
+    ), MidiTriggerDefinition(
+        device_name: "nanoKONTROL2 SLIDER/KNOB",
+        channel: 0,
+        message: MidiMessage(
+            type: "ControlChange",
+            controller: 19,
+            value: MultiRange(
+                from: 0,
+                to: 127,
+            ),
+        ),
+        target: TriggerTarget(
+            type: "Encoder",
+            encoder_ix: 3,
+        ),
+    )],
 )
