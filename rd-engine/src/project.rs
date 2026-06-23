@@ -14,6 +14,12 @@ use crate::{
     trigger::TriggersDefinition,
 };
 
+const RELATIVE_GDTF_FOLDER_PATH: &str = "gdtf/";
+const RELATIVE_PATCH_PATH: &str = "patch.ron";
+const RELATIVE_OUTPUT_PATH: &str = "output.ron";
+const RELATIVE_TRIGGERS_PATH: &str = "triggers.ron";
+const RELATIVE_OBJECTS_PATH: &str = "objects.ron";
+
 #[derive(Default)]
 pub struct Project {
     file: Option<ProjectFile>,
@@ -32,19 +38,19 @@ impl Project {
     pub fn load_from_folder(path: impl Into<PathBuf>) -> anyhow::Result<Self> {
         let project_file = ProjectFile::load_from_folder(path)?;
 
-        let patch_path = project_file.path().join(project_file.manifest().paths().patch());
+        let patch_path = project_file.path().join(RELATIVE_PATCH_PATH);
         let patch_str = std::fs::read_to_string(&patch_path)
             .with_context(|| format!("Failed to read patch file: {}", patch_path.display()))?;
         let patch: PatchDefinition = ron::from_str(&patch_str)
             .with_context(|| format!("Failed to parse patch file: {}", patch_path.display()))?;
 
-        let output_path = project_file.path().join(project_file.manifest().paths().output());
+        let output_path = project_file.path().join(RELATIVE_OUTPUT_PATH);
         let output_str = std::fs::read_to_string(&output_path)
             .with_context(|| format!("Failed to read output file: {}", output_path.display()))?;
         let output: OutputDefinition = ron::from_str(&output_str)
             .with_context(|| format!("Failed to parse output file: {}", output_path.display()))?;
 
-        let triggers_path = project_file.path().join(project_file.manifest().paths().triggers());
+        let triggers_path = project_file.path().join(RELATIVE_TRIGGERS_PATH);
         let triggers_str = std::fs::read_to_string(&triggers_path).with_context(|| {
             format!("Failed to read triggers file: {}", triggers_path.display())
         })?;
@@ -52,7 +58,7 @@ impl Project {
             format!("Failed to parse triggers file: {}", triggers_path.display())
         })?;
 
-        let objects_path = project_file.path().join(project_file.manifest().paths().objects());
+        let objects_path = project_file.path().join(RELATIVE_OBJECTS_PATH);
         let objects_str = std::fs::read_to_string(&objects_path)
             .with_context(|| format!("Failed to read objects file: {}", objects_path.display()))?;
         let objects: Objects = ron::from_str(&objects_str)
@@ -86,8 +92,6 @@ impl Project {
 pub struct ProjectFile {
     path: PathBuf,
 
-    manifest: Manifest,
-
     gdtfs: HashMap<ResourceKey, Arc<Gdtf>>,
 }
 
@@ -95,93 +99,19 @@ impl ProjectFile {
     pub fn load_from_folder(path: impl Into<PathBuf>) -> anyhow::Result<Self> {
         let path = path.into();
 
-        let manifest_path = path.join(Manifest::FILE_NAME);
-        let manifest_str = std::fs::read_to_string(&manifest_path).with_context(|| {
-            format!("Failed to read manifest file: {}", manifest_path.display())
-        })?;
-        let manifest: Manifest = ron::from_str(&manifest_str).with_context(|| {
-            format!("Failed to parse manifest file: {}", manifest_path.display())
-        })?;
-
-        let gdtf_folder = path.join(manifest.paths.gdtf_folder());
+        let gdtf_folder = path.join(RELATIVE_GDTF_FOLDER_PATH);
         let gdtfs = load_gdtfs_from_folder(&gdtf_folder)
             .with_context(|| format!("Failed to load GDTF folder: {}", gdtf_folder.display()))?;
 
-        Ok(Self { path, manifest, gdtfs })
+        Ok(Self { path, gdtfs })
     }
 
     pub fn path(&self) -> &PathBuf {
         &self.path
     }
 
-    pub fn manifest(&self) -> &Manifest {
-        &self.manifest
-    }
-
     pub fn gdtfs(&self) -> &HashMap<ResourceKey, Arc<Gdtf>> {
         &self.gdtfs
-    }
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct Manifest {
-    pub paths: RelativePaths,
-}
-
-impl Manifest {
-    pub const FILE_NAME: &str = "manifest.ron";
-
-    pub fn paths(&self) -> &RelativePaths {
-        &self.paths
-    }
-}
-
-#[derive(serde::Serialize, serde::Deserialize)]
-pub struct RelativePaths {
-    gdtf_folder: PathBuf,
-    patch: PathBuf,
-    output: PathBuf,
-    triggers: PathBuf,
-    objects: PathBuf,
-}
-
-impl RelativePaths {
-    pub fn gdtf_folder(&self) -> &Path {
-        self.gdtf_folder.as_path()
-    }
-
-    pub fn patch(&self) -> &Path {
-        self.patch.as_path()
-    }
-
-    pub fn output(&self) -> &PathBuf {
-        &self.output
-    }
-
-    pub fn triggers(&self) -> &PathBuf {
-        &self.triggers
-    }
-
-    pub fn objects(&self) -> &PathBuf {
-        &self.objects
-    }
-}
-
-impl Default for Manifest {
-    fn default() -> Self {
-        Self { paths: RelativePaths::default() }
-    }
-}
-
-impl Default for RelativePaths {
-    fn default() -> Self {
-        Self {
-            gdtf_folder: PathBuf::from("gdtf/"),
-            patch: PathBuf::from("patch.ron"),
-            output: PathBuf::from("output.ron"),
-            triggers: PathBuf::from("triggers.ron"),
-            objects: PathBuf::from("objects.ron"),
-        }
     }
 }
 
