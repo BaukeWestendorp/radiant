@@ -16,10 +16,10 @@ use crate::{
 };
 
 const RELATIVE_GDTF_FOLDER_PATH: &str = "gdtf/";
-const RELATIVE_PATCH_PATH: &str = "patch.ron";
-const RELATIVE_OUTPUT_PATH: &str = "output.ron";
-const RELATIVE_TRIGGERS_PATH: &str = "triggers.ron";
-const RELATIVE_OBJECTS_PATH: &str = "objects.ron";
+const RELATIVE_PATCH_PATH: &str = "patch.json";
+const RELATIVE_OUTPUT_PATH: &str = "output.json";
+const RELATIVE_TRIGGERS_PATH: &str = "triggers.json";
+const RELATIVE_OBJECTS_PATH: &str = "objects.json";
 
 #[derive(Default)]
 pub struct Project {
@@ -43,7 +43,7 @@ impl Project {
         let patch_path = path.join(RELATIVE_PATCH_PATH);
         let patch_str = std::fs::read_to_string(&patch_path)
             .with_context(|| format!("Failed to read patch file: {}", patch_path.display()))?;
-        let patch: PatchDefinition = ron::de::from_str(&patch_str)
+        let patch: PatchDefinition = serde_json::from_str(&patch_str)
             .with_context(|| format!("Failed to parse patch file: {}", patch_path.display()))
             .inspect_err(|e| log::error!("{:?}", e))?;
 
@@ -54,7 +54,7 @@ impl Project {
         let output_path = path.join(RELATIVE_OUTPUT_PATH);
         let output_str = std::fs::read_to_string(&output_path)
             .with_context(|| format!("Failed to read output file: {}", output_path.display()))?;
-        let output: OutputDefinition = ron::de::from_str(&output_str)
+        let output: OutputDefinition = serde_json::from_str(&output_str)
             .with_context(|| format!("Failed to parse output file: {}", output_path.display()))
             .inspect_err(|e| log::error!("{:?}", e))?;
 
@@ -62,14 +62,14 @@ impl Project {
         let triggers_str = std::fs::read_to_string(&triggers_path).with_context(|| {
             format!("Failed to read triggers file: {}", triggers_path.display())
         })?;
-        let triggers: TriggersDefinition = ron::de::from_str(&triggers_str)
+        let triggers: TriggersDefinition = serde_json::from_str(&triggers_str)
             .with_context(|| format!("Failed to parse triggers file: {}", triggers_path.display()))
             .inspect_err(|e| log::error!("{:?}", e))?;
 
         let objects_path = path.join(RELATIVE_OBJECTS_PATH);
         let objects_str = std::fs::read_to_string(&objects_path)
             .with_context(|| format!("Failed to read objects file: {}", objects_path.display()))?;
-        let objects: Objects = ron::de::from_str(&objects_str)
+        let objects: Objects = serde_json::from_str(&objects_str)
             .with_context(|| format!("Failed to parse objects file: {}", objects_path.display()))
             .inspect_err(|e| log::error!("{:?}", e))?;
 
@@ -88,34 +88,32 @@ impl Project {
     }
 
     pub fn save_to_folder(&self) -> anyhow::Result<()> {
-        let ron_config = ron::ser::PrettyConfig::default().compact_arrays(true).struct_names(true);
-
         let path = self.path.as_ref().ok_or_else(|| {
             anyhow::anyhow!("Cannot save project to folder: project has no associated path")
         })?;
 
         let patch_path = path.join(RELATIVE_PATCH_PATH);
-        let patch_str = ron::ser::to_string_pretty(&self.patch, ron_config.clone())
-            .context("Failed to serialize patch")?;
+        let patch_str =
+            serde_json::to_string_pretty(&self.patch).context("Failed to serialize patch")?;
         std::fs::write(&patch_path, patch_str)
             .with_context(|| format!("Failed to write patch file: {}", patch_path.display()))?;
 
         let output_path = path.join(RELATIVE_OUTPUT_PATH);
-        let output_str = ron::ser::to_string_pretty(&self.output, ron_config.clone())
-            .context("Failed to serialize output")?;
+        let output_str =
+            serde_json::to_string_pretty(&self.output).context("Failed to serialize output")?;
         std::fs::write(&output_path, output_str)
             .with_context(|| format!("Failed to write output file: {}", output_path.display()))?;
 
         let triggers_path = path.join(RELATIVE_TRIGGERS_PATH);
-        let triggers_str = ron::ser::to_string_pretty(&self.triggers, ron_config.clone())
-            .context("Failed to serialize triggers")?;
+        let triggers_str =
+            serde_json::to_string_pretty(&self.triggers).context("Failed to serialize triggers")?;
         std::fs::write(&triggers_path, triggers_str).with_context(|| {
             format!("Failed to write triggers file: {}", triggers_path.display())
         })?;
 
         let objects_path = path.join(RELATIVE_OBJECTS_PATH);
-        let objects_str = ron::ser::to_string_pretty(&self.objects, ron_config.clone())
-            .context("Failed to serialize objects")?;
+        let objects_str =
+            serde_json::to_string_pretty(&self.objects).context("Failed to serialize objects")?;
         std::fs::write(&objects_path, objects_str)
             .with_context(|| format!("Failed to write objects file: {}", objects_path.display()))?;
 
