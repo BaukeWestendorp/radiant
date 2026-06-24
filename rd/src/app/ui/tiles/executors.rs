@@ -44,7 +44,7 @@ impl ExecutorsTile {
         cx.on_engine_event({
             let executor_page_view = executor_page_view.clone();
             move |event, cx| match event {
-                Event::ObjectChanged { kind: ObjectKind::ExecutorPage, .. } => {
+                Event::ObjectChanged { object_kind: ObjectKind::ExecutorPage, .. } => {
                     let Ok(new_executor_page) = cx
                         .engine_snapshot()
                         .objects()

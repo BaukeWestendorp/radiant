@@ -6,10 +6,10 @@ use crate::object::{Object, ObjectId, Slot};
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct ExecutorPage {
     id: ObjectId,
-    slot: Slot,
-    name: String,
+    pub(crate) slot: Slot,
+    pub(crate) name: String,
 
-    executors: [Executor; 18],
+    pub(crate) executors: [Executor; 18],
 }
 
 impl ExecutorPage {

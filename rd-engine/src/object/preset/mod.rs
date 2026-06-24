@@ -11,8 +11,9 @@ use crate::{
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Preset {
     id: ObjectId,
-    slot: Slot,
-    name: String,
+    pub(crate) slot: Slot,
+    pub(crate) name: String,
+
     pub(crate) universal: UniversalPresetContent,
     pub(crate) global: GlobalPresetContent,
     pub(crate) selective: SelectivePresetContent,

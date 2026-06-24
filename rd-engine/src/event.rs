@@ -8,7 +8,7 @@ pub enum Event {
     SelectionChanged,
     ProgrammerChanged,
     HighlightChanged { enabled: bool },
-    ObjectChanged { kind: ObjectKind, object_id: ObjectId },
+    ObjectChanged { object_kind: ObjectKind, object_id: ObjectId },
     EncoderChanged { encoder_ix: usize, value: f32 },
     Saved { path: PathBuf },
 }

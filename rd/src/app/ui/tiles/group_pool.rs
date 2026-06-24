@@ -20,7 +20,7 @@ impl GroupPoolTile {
         cx.on_engine_event({
             let groups = groups.clone();
             move |event, cx| match event {
-                Event::ObjectChanged { kind: ObjectKind::Group, .. } => {
+                Event::ObjectChanged { object_kind: ObjectKind::Group, .. } => {
                     let new_groups = cx.engine_snapshot().objects().groups().clone();
                     groups.write(cx, new_groups);
                 }

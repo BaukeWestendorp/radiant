@@ -285,6 +285,20 @@ impl Objects {
         }
     }
 
+    pub(crate) fn preset_by_object_id_mut(&mut self, id: &PresetId) -> anyhow::Result<&mut Preset> {
+        match id.kind() {
+            PresetKind::Dimmer => self.dimmer_presets.get_by_object_id_mut(&id.object_id()),
+            PresetKind::Position => self.position_presets.get_by_object_id_mut(&id.object_id()),
+            PresetKind::Gobo => self.gobo_presets.get_by_object_id_mut(&id.object_id()),
+            PresetKind::Color => self.color_presets.get_by_object_id_mut(&id.object_id()),
+            PresetKind::Beam => self.beam_presets.get_by_object_id_mut(&id.object_id()),
+            PresetKind::Focus => self.focus_presets.get_by_object_id_mut(&id.object_id()),
+            PresetKind::Control => self.control_presets.get_by_object_id_mut(&id.object_id()),
+            PresetKind::Shapers => self.shapers_presets.get_by_object_id_mut(&id.object_id()),
+            PresetKind::Video => self.video_presets.get_by_object_id_mut(&id.object_id()),
+        }
+    }
+
     pub fn preset_by_slot(&self, slot: &Slot, kind: &PresetKind) -> anyhow::Result<&Preset> {
         match kind {
             PresetKind::Dimmer => self.dimmer_presets.get_by_slot(&slot),
