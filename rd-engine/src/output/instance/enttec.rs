@@ -1,9 +1,12 @@
-use std::sync::{
-    Arc, RwLock,
-    atomic::{AtomicBool, Ordering},
-};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
+use std::{
+    sync::{
+        Arc, RwLock,
+        atomic::{AtomicBool, Ordering},
+    },
+    time::Instant,
+};
 
 use anyhow::Context as _;
 use libftd2xx::{BitsPerWord, Ftdi, FtdiCommon, Parity, StopBits, TimeoutError};
@@ -16,7 +19,7 @@ const PARITY_NONE: Parity = Parity::No;
 const READ_TIMEOUT: Duration = Duration::from_millis(1000);
 const WRITE_TIMEOUT: Duration = Duration::from_millis(1000);
 
-const TARGET_OUTPUT_INTERVAL: Duration = Duration::from_millis(25);
+const INTERVAL: Duration = Duration::from_millis(40);
 
 use crate::{
     dmx::{Multiverse, UniverseId},
@@ -73,18 +76,30 @@ impl EnttecInstance {
                     );
                 }
 
-                while running.load(Ordering::SeqCst) && notify_rx.recv().is_ok() {
+                let sleeper = spin_sleep::SpinSleeper::default();
+                let mut next_tick = Instant::now() + INTERVAL;
+                while running.load(Ordering::SeqCst) {
+                    let now = Instant::now();
+
                     let frame = multiverse.read().unwrap().clone();
-                    let start_time = std::time::Instant::now();
+
+                    if now < next_tick {
+                        sleeper.sleep_until(next_tick);
+                    } else {
+                        let deviation = (now - next_tick).as_secs_f64();
+                        if now > next_tick + INTERVAL {
+                            // If we are more than one tick late, skip ahead to catch up.
+                            let ticks_missed =
+                                (deviation / INTERVAL.as_secs_f64()).floor() as u32 + 1;
+                            next_tick += INTERVAL * ticks_missed;
+                        }
+                    }
 
                     if let Err(err) = handle_frame(&mut ftdi, &universe_id, frame) {
                         log::error!("Enttec instance '{serial}' failed to send frame: {err}");
                     }
 
-                    let elapsed = start_time.elapsed();
-                    if elapsed < TARGET_OUTPUT_INTERVAL {
-                        thread::sleep(TARGET_OUTPUT_INTERVAL - elapsed);
-                    }
+                    next_tick += INTERVAL;
                 }
 
                 if let Err(err) = ftdi_close(&mut ftdi) {
