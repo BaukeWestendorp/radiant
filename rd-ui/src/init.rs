@@ -3,6 +3,7 @@ pub fn init(cx: &mut gpui::App) {
     crate::theme::init(cx);
     crate::settings::init(cx);
     crate::table::action::init(cx);
+    crate::input::text_input::init(cx);
 }
 
 pub mod simple {
