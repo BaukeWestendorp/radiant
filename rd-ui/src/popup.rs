@@ -1,9 +1,9 @@
 use gpui::{
-    AnyView, App, Entity, FontWeight, Global, IntoElement, ReadGlobal, SharedString, Styled,
-    Window, div, prelude::*, px,
+    AnyView, App, Entity, Focusable, FontWeight, Global, IntoElement, ReadGlobal, SharedString,
+    Styled, Window, div, prelude::*, px,
 };
 
-use crate::{ActiveTheme, h_flex, v_flex};
+use crate::{ActiveTheme, FieldEvent, TextField, TextFieldState, h_flex, v_flex};
 
 pub(crate) fn init(cx: &mut App) {
     let popup = cx.new(|_| None);
@@ -50,32 +50,51 @@ pub(crate) fn render_overlay(cx: &mut gpui::Context<'_, crate::Root>) -> impl In
     }))
 }
 
-pub enum Popup {
-    YesNo { title: SharedString },
-    Confirm { title: SharedString },
-    Custom { content: AnyView, title: SharedString },
+pub struct Popup {
+    title: SharedString,
+    kind: PopupKind,
 }
 
 impl Popup {
     pub fn yes_no(title: impl Into<SharedString>) -> Self {
-        Self::YesNo { title: title.into() }
+        Self { title: title.into(), kind: PopupKind::YesNo }
     }
 
     pub fn confirm(title: impl Into<SharedString>) -> Self {
-        Self::Confirm { title: title.into() }
+        Self { title: title.into(), kind: PopupKind::Confirm }
+    }
+
+    pub fn text(
+        title: impl Into<SharedString>,
+        input: Entity<TextFieldState>,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> Self {
+        input.read(cx).input().focus_handle(cx).focus(window, cx);
+
+        cx.subscribe(&input, |_, event, cx| match event {
+            FieldEvent::Submit => cx.close_popup(),
+            _ => {}
+        })
+        .detach();
+
+        Self { title: title.into(), kind: PopupKind::Text { input } }
     }
 
     pub fn custom(content: impl Into<AnyView>, title: impl Into<SharedString>) -> Self {
-        Self::Custom { content: content.into(), title: title.into() }
+        Self { title: title.into(), kind: PopupKind::Custom { content: content.into() } }
     }
 
     pub fn title(&self) -> &SharedString {
-        match self {
-            Popup::YesNo { title } => title,
-            Popup::Confirm { title } => title,
-            Popup::Custom { title, .. } => title,
-        }
+        &self.title
     }
+}
+
+pub enum PopupKind {
+    YesNo,
+    Confirm,
+    Text { input: Entity<TextFieldState> },
+    Custom { content: AnyView },
 }
 
 impl Render for Popup {
@@ -101,10 +120,18 @@ impl Render for Popup {
             .border_1()
             .border_color(cx.theme().border_primary)
             .rounded_b(cx.theme().radius)
-            .child(match self {
-                Popup::YesNo { .. } => todo!(),
-                Popup::Confirm { .. } => todo!(),
-                Popup::Custom { content, .. } => content.clone().into_any(),
+            .child(match &self.kind {
+                PopupKind::YesNo => todo!(),
+                PopupKind::Confirm => todo!(),
+                PopupKind::Text { input } => div()
+                    .flex()
+                    .justify_center()
+                    .items_center()
+                    .size_full()
+                    .p_2()
+                    .child(div().w_full().child(TextField::new(input.clone())))
+                    .into_any_element(),
+                PopupKind::Custom { content } => content.clone().into_any_element(),
             });
 
         let popup = v_flex().size_full().child(header).child(content);
@@ -115,7 +142,6 @@ impl Render for Popup {
             .when(cx.theme().shadow, |e| e.shadow_md())
             .w(px(320.0))
             .max_w_3_4()
-            .h(px(160.0))
             .max_h_3_4()
             .child(popup)
     }
