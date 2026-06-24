@@ -4,14 +4,15 @@ use gpui::{
     div,
 };
 
+use crate::FieldEvent;
 use crate::container::interactive_container;
 use crate::input::text_input::{TextInput, TextInputEvent};
 
-pub struct TextField {
+pub struct TextFieldState {
     input: Entity<TextInput>,
 }
 
-impl TextField {
+impl TextFieldState {
     pub fn new(
         id: impl Into<ElementId>,
         focus_handle: FocusHandle,
@@ -137,28 +138,34 @@ impl TextField {
     }
 }
 
+impl EventEmitter<FieldEvent> for TextFieldState {}
+
+#[derive(IntoElement)]
+pub struct TextField {
+    state: Entity<TextFieldState>,
+}
+
+impl TextField {
+    pub fn new(state: Entity<TextFieldState>) -> Self {
+        Self { state }
+    }
+}
+
 impl Focusable for TextField {
     fn focus_handle(&self, cx: &App) -> FocusHandle {
-        self.input.focus_handle(cx)
+        self.state.read(cx).input.focus_handle(cx)
     }
 }
 
-impl Render for TextField {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let focus_handle = self.input.read(cx).focus_handle(cx);
+impl RenderOnce for TextField {
+    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let id = ElementId::View(self.state.entity_id());
+        let focus_handle = self.state.read(cx).input.read(cx).focus_handle(cx);
+        let disabled = self.state.read(cx).disabled(cx);
 
-        interactive_container(ElementId::View(cx.entity_id()), Some(focus_handle))
+        interactive_container(id, Some(focus_handle))
             .w_full()
-            .disabled(self.disabled(cx))
-            .child(div().size_full().p_0p5().child(self.input.clone()))
+            .disabled(disabled)
+            .child(div().size_full().p_0p5().child(self.state.read(cx).input.clone()))
     }
-}
-
-impl EventEmitter<FieldEvent> for TextField {}
-
-pub enum FieldEvent {
-    Focus,
-    Blur,
-    Submit,
-    Change,
 }
