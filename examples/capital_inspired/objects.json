@@ -4,19 +4,52 @@
       "id": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6c",
       "slot": 1,
       "name": "SPOT",
-      "fixture_ids": ["101", "102", "103", "104", "105", "106"]
+      "fixture_ids": [
+        "101",
+        "102",
+        "103",
+        "104",
+        "105",
+        "106"
+      ]
     },
     {
       "id": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6d",
       "slot": 2,
       "name": "WASH",
-      "fixture_ids": ["201", "202", "203", "204", "205", "206"]
+      "fixture_ids": [
+        "201",
+        "202",
+        "203",
+        "204",
+        "205",
+        "206"
+      ]
     },
     {
       "id": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6e",
       "slot": 3,
       "name": "LED1",
-      "fixture_ids": ["301", "302", "303", "304", "305", "306", "307", "308", "309", "310", "311", "312", "313", "314", "315", "316", "317", "318"]
+      "fixture_ids": [
+        "301",
+        "302",
+        "303",
+        "304",
+        "305",
+        "306",
+        "307",
+        "308",
+        "309",
+        "310",
+        "311",
+        "312",
+        "313",
+        "314",
+        "315",
+        "316",
+        "317",
+        "318"
+      ]
     },
     {
       "id": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6f",
@@ -61,7 +94,12 @@
       "id": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a70",
       "slot": 5,
       "name": "FLOOR",
-      "fixture_ids": ["501", "502", "503", "504"]
+      "fixture_ids": [
+        "501",
+        "502",
+        "503",
+        "504"
+      ]
     }
   ],
   "executor_pages": [
@@ -263,7 +301,9 @@
           "name": "Main Cue",
           "recipes": [
             {
-              "fixtures": { "Group": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6c" },
+              "fixtures": {
+                "Group": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6c"
+              },
               "content": {
                 "Preset": {
                   "kind": "Dimmer",
@@ -284,7 +324,9 @@
           "name": "Main Cue",
           "recipes": [
             {
-              "fixtures": { "Group": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6d" },
+              "fixtures": {
+                "Group": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6d"
+              },
               "content": {
                 "Preset": {
                   "kind": "Dimmer",
@@ -305,7 +347,9 @@
           "name": "Main Cue",
           "recipes": [
             {
-              "fixtures": { "Group": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6e" },
+              "fixtures": {
+                "Group": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6e"
+              },
               "content": {
                 "Preset": {
                   "kind": "Dimmer",
@@ -326,7 +370,9 @@
           "name": "Main Cue",
           "recipes": [
             {
-              "fixtures": { "Group": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6f" },
+              "fixtures": {
+                "Group": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a6f"
+              },
               "content": {
                 "Preset": {
                   "kind": "Dimmer",
@@ -347,7 +393,9 @@
           "name": "Main Cue",
           "recipes": [
             {
-              "fixtures": { "Group": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a70" },
+              "fixtures": {
+                "Group": "b6e2e5c2-7c5e-4e2a-9e3a-1e2d9b7f8a70"
+              },
               "content": {
                 "Preset": {
                   "kind": "Dimmer",
@@ -371,13 +419,27 @@
               "fixtures": "All",
               "content": {
                 "Static": {
-                  "ColorAdd_B": { "Clamped": 0.0 },
-                  "ColorSub_C": { "Clamped": 0.0 },
-                  "ColorSub_M": { "Clamped": 1.0 },
-                  "ColorSub_Y": { "Clamped": 1.0 },
-                  "ColorAdd_G": { "Clamped": 0.0 },
-                  "ColorAdd_W": { "Clamped": 0.0 },
-                  "ColorAdd_R": { "Clamped": 1.0 }
+                  "ColorAdd_W": {
+                    "Clamped": 0.0
+                  },
+                  "ColorSub_M": {
+                    "Clamped": 1.0
+                  },
+                  "ColorAdd_R": {
+                    "Clamped": 1.0
+                  },
+                  "ColorSub_Y": {
+                    "Clamped": 1.0
+                  },
+                  "ColorSub_C": {
+                    "Clamped": 0.0
+                  },
+                  "ColorAdd_B": {
+                    "Clamped": 0.0
+                  },
+                  "ColorAdd_G": {
+                    "Clamped": 0.0
+                  }
                 }
               }
             }
@@ -390,13 +452,27 @@
               "fixtures": "All",
               "content": {
                 "Static": {
-                  "ColorAdd_B": { "Clamped": 0.0 },
-                  "ColorAdd_G": { "Clamped": 1.0 },
-                  "ColorSub_C": { "Clamped": 1.0 },
-                  "ColorAdd_W": { "Clamped": 0.0 },
-                  "ColorAdd_R": { "Clamped": 0.0 },
-                  "ColorSub_M": { "Clamped": 0.0 },
-                  "ColorSub_Y": { "Clamped": 1.0 }
+                  "ColorSub_Y": {
+                    "Clamped": 1.0
+                  },
+                  "ColorSub_C": {
+                    "Clamped": 1.0
+                  },
+                  "ColorSub_M": {
+                    "Clamped": 0.0
+                  },
+                  "ColorAdd_R": {
+                    "Clamped": 0.0
+                  },
+                  "ColorAdd_W": {
+                    "Clamped": 0.0
+                  },
+                  "ColorAdd_G": {
+                    "Clamped": 1.0
+                  },
+                  "ColorAdd_B": {
+                    "Clamped": 0.0
+                  }
                 }
               }
             }
@@ -409,13 +485,27 @@
               "fixtures": "All",
               "content": {
                 "Static": {
-                  "ColorAdd_W": { "Clamped": 0.0 },
-                  "ColorSub_M": { "Clamped": 1.0 },
-                  "ColorAdd_R": { "Clamped": 0.0 },
-                  "ColorSub_C": { "Clamped": 1.0 },
-                  "ColorSub_Y": { "Clamped": 0.0 },
-                  "ColorAdd_G": { "Clamped": 0.0 },
-                  "ColorAdd_B": { "Clamped": 1.0 }
+                  "ColorSub_Y": {
+                    "Clamped": 0.0
+                  },
+                  "ColorSub_M": {
+                    "Clamped": 1.0
+                  },
+                  "ColorAdd_R": {
+                    "Clamped": 0.0
+                  },
+                  "ColorAdd_G": {
+                    "Clamped": 0.0
+                  },
+                  "ColorAdd_B": {
+                    "Clamped": 1.0
+                  },
+                  "ColorAdd_W": {
+                    "Clamped": 0.0
+                  },
+                  "ColorSub_C": {
+                    "Clamped": 1.0
+                  }
                 }
               }
             }
@@ -428,13 +518,27 @@
               "fixtures": "All",
               "content": {
                 "Static": {
-                  "ColorAdd_B": { "Clamped": 0.0 },
-                  "ColorSub_Y": { "Clamped": 1.0 },
-                  "ColorAdd_W": { "Clamped": 0.0 },
-                  "ColorAdd_R": { "Clamped": 1.0 },
-                  "ColorSub_C": { "Clamped": 0.0 },
-                  "ColorAdd_G": { "Clamped": 1.0 },
-                  "ColorSub_M": { "Clamped": 0.0 }
+                  "ColorAdd_R": {
+                    "Clamped": 1.0
+                  },
+                  "ColorSub_C": {
+                    "Clamped": 0.0
+                  },
+                  "ColorAdd_G": {
+                    "Clamped": 1.0
+                  },
+                  "ColorSub_M": {
+                    "Clamped": 0.0
+                  },
+                  "ColorAdd_B": {
+                    "Clamped": 0.0
+                  },
+                  "ColorSub_Y": {
+                    "Clamped": 1.0
+                  },
+                  "ColorAdd_W": {
+                    "Clamped": 0.0
+                  }
                 }
               }
             }
@@ -449,25 +553,123 @@
       "slot": 1,
       "name": "Presets",
       "tiles": [
-        { "kind": "Fixtures", "width": 9, "height": 8, "x": 0, "y": 0 },
-        { "kind": "GroupPool", "width": 9, "height": 1, "x": 0, "y": 8 },
-        { "kind": { "PresetPool": "Dimmer" }, "width": 9, "height": 1, "x": 9, "y": 0 },
-        { "kind": { "PresetPool": "Position" }, "width": 9, "height": 1, "x": 9, "y": 1 },
-        { "kind": { "PresetPool": "Gobo" }, "width": 9, "height": 1, "x": 9, "y": 2 },
-        { "kind": { "PresetPool": "Color" }, "width": 9, "height": 1, "x": 9, "y": 3 },
-        { "kind": { "PresetPool": "Beam" }, "width": 9, "height": 1, "x": 9, "y": 4 },
-        { "kind": { "PresetPool": "Focus" }, "width": 9, "height": 1, "x": 9, "y": 5 },
-        { "kind": { "PresetPool": "Control" }, "width": 9, "height": 1, "x": 9, "y": 6 },
-        { "kind": { "PresetPool": "Shapers" }, "width": 9, "height": 1, "x": 9, "y": 7 },
-        { "kind": { "PresetPool": "Video" }, "width": 9, "height": 1, "x": 9, "y": 8 },
-        { "kind": "AttributeEditor", "width": 18, "height": 3, "x": 0, "y": 9 }
+        {
+          "kind": "Fixtures",
+          "width": 9,
+          "height": 8,
+          "x": 0,
+          "y": 0
+        },
+        {
+          "kind": "GroupPool",
+          "width": 9,
+          "height": 1,
+          "x": 0,
+          "y": 8
+        },
+        {
+          "kind": {
+            "PresetPool": "Dimmer"
+          },
+          "width": 9,
+          "height": 1,
+          "x": 9,
+          "y": 0
+        },
+        {
+          "kind": {
+            "PresetPool": "Position"
+          },
+          "width": 9,
+          "height": 1,
+          "x": 9,
+          "y": 1
+        },
+        {
+          "kind": {
+            "PresetPool": "Gobo"
+          },
+          "width": 9,
+          "height": 1,
+          "x": 9,
+          "y": 2
+        },
+        {
+          "kind": {
+            "PresetPool": "Color"
+          },
+          "width": 9,
+          "height": 1,
+          "x": 9,
+          "y": 3
+        },
+        {
+          "kind": {
+            "PresetPool": "Beam"
+          },
+          "width": 9,
+          "height": 1,
+          "x": 9,
+          "y": 4
+        },
+        {
+          "kind": {
+            "PresetPool": "Focus"
+          },
+          "width": 9,
+          "height": 1,
+          "x": 9,
+          "y": 5
+        },
+        {
+          "kind": {
+            "PresetPool": "Control"
+          },
+          "width": 9,
+          "height": 1,
+          "x": 9,
+          "y": 6
+        },
+        {
+          "kind": {
+            "PresetPool": "Shapers"
+          },
+          "width": 9,
+          "height": 1,
+          "x": 9,
+          "y": 7
+        },
+        {
+          "kind": {
+            "PresetPool": "Video"
+          },
+          "width": 9,
+          "height": 1,
+          "x": 9,
+          "y": 8
+        },
+        {
+          "kind": "AttributeEditor",
+          "width": 18,
+          "height": 3,
+          "x": 0,
+          "y": 9
+        }
       ]
     },
     {
       "id": "cf209df8-5b16-474c-b592-5ce5126d1d01",
       "slot": 12,
       "name": "SHOW",
-      "tiles": [{ "kind": "Executors", "width": 18, "height": 3, "x": 0, "y": 9 }]
+      "tiles": [
+        {
+          "kind": "Executors",
+          "width": 18,
+          "height": 3,
+          "x": 0,
+          "y": 9
+        }
+      ]
     }
   ],
   "dimmer_presets": [
@@ -475,7 +677,11 @@
       "id": "cac2b5fd-6bc8-4031-a00b-7fb08fc30fd8",
       "slot": 1,
       "name": "0%",
-      "universal": { "Dimmer": { "Clamped": 0.0 } },
+      "universal": {
+        "Dimmer": {
+          "Clamped": 0.0
+        }
+      },
       "global": {},
       "selective": {}
     },
@@ -483,7 +689,11 @@
       "id": "212da0fb-4055-4aca-b7a4-94f4470ed9c7",
       "slot": 2,
       "name": "10%",
-      "universal": { "Dimmer": { "Clamped": 0.1 } },
+      "universal": {
+        "Dimmer": {
+          "Clamped": 0.1
+        }
+      },
       "global": {},
       "selective": {}
     },
@@ -491,7 +701,11 @@
       "id": "ac7a42b1-0c80-49a0-935e-bc9902d939c8",
       "slot": 3,
       "name": "25%",
-      "universal": { "Dimmer": { "Clamped": 0.25 } },
+      "universal": {
+        "Dimmer": {
+          "Clamped": 0.25
+        }
+      },
       "global": {},
       "selective": {}
     },
@@ -499,7 +713,11 @@
       "id": "921dd4d6-1a43-473a-9084-be4acc04326c",
       "slot": 4,
       "name": "50%",
-      "universal": { "Dimmer": { "Clamped": 0.5 } },
+      "universal": {
+        "Dimmer": {
+          "Clamped": 0.5
+        }
+      },
       "global": {},
       "selective": {}
     },
@@ -507,7 +725,11 @@
       "id": "ed9d178f-d6fa-49fc-84fc-a037acaa9d1d",
       "slot": 5,
       "name": "75%",
-      "universal": { "Dimmer": { "Clamped": 0.75 } },
+      "universal": {
+        "Dimmer": {
+          "Clamped": 0.75
+        }
+      },
       "global": {},
       "selective": {}
     },
@@ -515,7 +737,11 @@
       "id": "d530ec9c-1f42-4226-aed5-627707714479",
       "slot": 6,
       "name": "100%",
-      "universal": { "Dimmer": { "Clamped": 1.0 } },
+      "universal": {
+        "Dimmer": {
+          "Clamped": 1.0
+        }
+      },
       "global": {},
       "selective": {}
     }

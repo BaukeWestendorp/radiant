@@ -4,7 +4,9 @@ use gpui::{
     App, Entity, FontWeight, IntoElement, ReadGlobal, SharedString, Window, div, prelude::*,
     relative,
 };
-use rd_ui::{ActiveTheme, PoolTileDelegate, h_flex};
+use rd_ui::{
+    ActiveTheme, FieldEvent, PoolTileDelegate, Popup, PopupAppExt, TextFieldState, h_flex,
+};
 
 use rd_engine::{
     cmd::{Command, StoreKind},
@@ -29,9 +31,9 @@ impl PresetPoolTile {
         cx.on_engine_event({
             let presets = presets.clone();
             move |event, cx| match event {
-                Event::ObjectChanged { kind: ObjectKind::Preset(event_preset_kind), .. }
-                    if *event_preset_kind == kind =>
-                {
+                Event::ObjectChanged {
+                    object_kind: ObjectKind::Preset(event_preset_kind), ..
+                } if *event_preset_kind == kind => {
                     let new_presets = cx.engine_snapshot().objects().presets(kind).clone();
                     presets.write(cx, new_presets);
                 }
@@ -88,7 +90,7 @@ impl PoolTileDelegate for PresetPoolTile {
             )
     }
 
-    fn on_activate_slot(&mut self, slot: u32, _window: &mut Window, cx: &mut App) {
+    fn on_activate_slot(&mut self, slot: u32, window: &mut Window, cx: &mut App) {
         let preset = match self.preset(slot, cx) {
             Ok(preset) => preset,
             Err(err) => {
@@ -110,6 +112,22 @@ impl PoolTileDelegate for PresetPoolTile {
                 });
                 mode.write(cx, Mode::Normal);
             }
+            Mode::Rename => {
+                let object_id = preset.id();
+                let object_kind = ObjectKind::Preset(self.kind);
+                let input =
+                    cx.new(|cx| TextFieldState::new("rename-field", cx.focus_handle(), window, cx));
+                cx.subscribe(&input, move |input, event, cx| match event {
+                    FieldEvent::Submit => {
+                        let name = input.read(cx).value(cx).to_string();
+                        cx.execute_engine_cmd(Command::Rename { object_id, object_kind, name });
+                        mode.write(cx, Mode::Normal);
+                    }
+                    _ => {}
+                })
+                .detach();
+                cx.show_popup(|cx| Popup::text("Rename Object", input, window, cx));
+            }
         }
     }
 
@@ -124,6 +142,7 @@ impl PoolTileDelegate for PresetPoolTile {
                 });
                 mode.write(cx, Mode::Normal);
             }
+            Mode::Rename => {}
         }
     }
 
@@ -131,6 +150,7 @@ impl PoolTileDelegate for PresetPoolTile {
         match State::global(cx).mode().read(cx) {
             Mode::Normal => false,
             Mode::Store => true,
+            Mode::Rename => false,
         }
     }
 }

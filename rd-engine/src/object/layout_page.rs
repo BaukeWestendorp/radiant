@@ -4,10 +4,10 @@ use crate::object::{Object, ObjectId, PresetKind, Slot};
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct LayoutPage {
     id: ObjectId,
-    slot: Slot,
-    name: String,
+    pub(crate) slot: Slot,
+    pub(crate) name: String,
 
-    tiles: Vec<LayoutTile>,
+    pub(crate) tiles: Vec<LayoutTile>,
 }
 
 impl LayoutPage {

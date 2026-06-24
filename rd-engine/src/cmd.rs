@@ -36,6 +36,7 @@ pub enum Command {
     ProgrammerClear,
 
     Store { kind: StoreKind },
+    Rename { object_id: ObjectId, object_kind: ObjectKind, name: String },
 
     EncoderSetValue { encoder_ix: usize, value: f32 },
 
@@ -174,7 +175,10 @@ impl Command {
                 reset_sequence_to_start_if_disabled(executor);
 
                 let object_id = page.id();
-                engine.emit(Event::ObjectChanged { kind: ObjectKind::ExecutorPage, object_id });
+                engine.emit(Event::ObjectChanged {
+                    object_kind: ObjectKind::ExecutorPage,
+                    object_id,
+                });
             }
             Command::ExecutorToggleEnabled { executor_id } => {
                 let objects = Arc::make_mut(&mut engine.objects);
@@ -185,7 +189,10 @@ impl Command {
                 reset_sequence_to_start_if_disabled(executor);
 
                 let object_id = page.id();
-                engine.emit(Event::ObjectChanged { kind: ObjectKind::ExecutorPage, object_id });
+                engine.emit(Event::ObjectChanged {
+                    object_kind: ObjectKind::ExecutorPage,
+                    object_id,
+                });
             }
             Command::ExecutorSetEnabled { executor_id, value } => {
                 let objects = Arc::make_mut(&mut engine.objects);
@@ -196,7 +203,10 @@ impl Command {
                 reset_sequence_to_start_if_disabled(executor);
 
                 let object_id = page.id();
-                engine.emit(Event::ObjectChanged { kind: ObjectKind::ExecutorPage, object_id });
+                engine.emit(Event::ObjectChanged {
+                    object_kind: ObjectKind::ExecutorPage,
+                    object_id,
+                });
             }
             Command::ExecutorButton { executor_id, button, pressed } => {
                 let objects = Arc::make_mut(&mut engine.objects);
@@ -267,7 +277,10 @@ impl Command {
                 }
 
                 let object_id = page.id();
-                engine.emit(Event::ObjectChanged { kind: ObjectKind::ExecutorPage, object_id });
+                engine.emit(Event::ObjectChanged {
+                    object_kind: ObjectKind::ExecutorPage,
+                    object_id,
+                });
             }
 
             Command::ProgrammerSet { fixtures, attribute, value } => {
@@ -361,7 +374,35 @@ impl Command {
                     }
                 }
 
-                engine.emit(Event::ObjectChanged { kind: ObjectKind::Preset(kind), object_id });
+                engine.emit(Event::ObjectChanged {
+                    object_kind: ObjectKind::Preset(kind),
+                    object_id,
+                });
+            }
+            Command::Rename { object_id, object_kind, name } => {
+                let objects = Arc::make_mut(&mut engine.objects);
+
+                match object_kind {
+                    ObjectKind::Group => {
+                        objects.groups.get_by_object_id_mut(&object_id)?.name = name;
+                    }
+                    ObjectKind::Sequence => {
+                        objects.sequences.get_by_object_id_mut(&object_id)?.name = name;
+                    }
+                    ObjectKind::ExecutorPage => {
+                        objects.executor_pages.get_by_object_id_mut(&object_id)?.name = name;
+                    }
+                    ObjectKind::LayoutPage => {
+                        objects.layout_pages.get_by_object_id_mut(&object_id)?.name = name;
+                    }
+                    ObjectKind::Preset(preset_kind) => {
+                        objects
+                            .preset_by_object_id_mut(&PresetId::new(preset_kind, object_id))?
+                            .name = name;
+                    }
+                }
+
+                engine.emit(Event::ObjectChanged { object_kind, object_id });
             }
 
             Command::EncoderSetValue { encoder_ix, value } => {

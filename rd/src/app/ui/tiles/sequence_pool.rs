@@ -20,7 +20,7 @@ impl SequencePoolTile {
         cx.on_engine_event({
             let sequences = sequences.clone();
             move |event, cx| match event {
-                Event::ObjectChanged { kind: ObjectKind::Sequence, .. } => {
+                Event::ObjectChanged { object_kind: ObjectKind::Sequence, .. } => {
                     let new_sequences = cx.engine_snapshot().objects().sequences().clone();
                     sequences.write(cx, new_sequences);
                 }

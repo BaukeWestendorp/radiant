@@ -30,7 +30,7 @@ pub mod action {
         engine::EngineAppExt,
     };
 
-    gpui::actions!([SettingsOpen, Save, Clear, Store, HighlightToggle]);
+    gpui::actions!([SettingsOpen, Save, Clear, Store, Rename, HighlightToggle]);
 
     pub(crate) fn init(cx: &mut App) {
         cx.bind_keys([
@@ -38,6 +38,7 @@ pub mod action {
             KeyBinding::new("secondary-s", Save, None),
             KeyBinding::new("escape", Clear, None),
             KeyBinding::new("s", Store, None),
+            KeyBinding::new("r", Rename, None),
             KeyBinding::new("h", HighlightToggle, None),
         ]);
 
@@ -68,6 +69,10 @@ pub mod action {
 
         cx.on_action::<Store>(|_, cx| {
             State::global(cx).mode().write(cx, Mode::Store);
+        });
+
+        cx.on_action::<Rename>(|_, cx| {
+            State::global(cx).mode().write(cx, Mode::Rename);
         });
 
         cx.on_action::<Save>(|_, cx| match cx.engine_snapshot().showfile_path() {

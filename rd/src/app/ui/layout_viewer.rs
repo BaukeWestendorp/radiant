@@ -127,7 +127,7 @@ impl LayoutPageSelectorTile {
         cx.on_engine_event({
             let layout_pages = layout_pages.clone();
             move |event, cx| match event {
-                Event::ObjectChanged { kind: ObjectKind::LayoutPage, .. } => {
+                Event::ObjectChanged { object_kind: ObjectKind::LayoutPage, .. } => {
                     let new_layout_pages = cx.engine_snapshot().objects().layout_pages().clone();
                     layout_pages.write(cx, new_layout_pages);
                 }

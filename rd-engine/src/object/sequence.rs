@@ -13,9 +13,10 @@ use crate::{
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Sequence {
     id: ObjectId,
-    slot: Slot,
-    name: String,
-    cues: Vec<Cue>,
+    pub(crate) slot: Slot,
+    pub(crate) name: String,
+
+    pub(crate) cues: Vec<Cue>,
 }
 
 impl Sequence {

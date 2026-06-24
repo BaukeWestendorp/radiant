@@ -204,6 +204,7 @@ pub struct IndicationColors {
     pub programmer: Hsla,
     pub highlight: Hsla,
     pub playback: Hsla,
+    pub rename: Hsla,
 }
 
 impl IndicationColors {
@@ -216,6 +217,7 @@ impl IndicationColors {
             programmer: rgb(0xed2320).into(),
             highlight: rgb(0xffc94d).into(),
             playback: rgb(0x9ce152).into(),
+            rename: rgb(0xffa94d).into(),
         }
     }
 
@@ -228,6 +230,7 @@ impl IndicationColors {
             programmer: rgb(0xed2320).into(),
             highlight: rgb(0xffc94d).into(),
             playback: rgb(0x9ce152).into(),
+            rename: rgb(0xffa94d).into(),
         }
     }
 }

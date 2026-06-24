@@ -7,9 +7,10 @@ use crate::{
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Group {
     id: ObjectId,
-    slot: Slot,
-    name: String,
-    fixture_ids: Vec<FixtureId>,
+    pub(crate) slot: Slot,
+    pub(crate) name: String,
+
+    pub(crate) fixture_ids: Vec<FixtureId>,
 }
 
 impl Group {

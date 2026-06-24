@@ -30,6 +30,7 @@ pub enum Mode {
     #[default]
     Normal,
     Store,
+    Rename,
 }
 
 impl Mode {
@@ -37,6 +38,7 @@ impl Mode {
         match self {
             Mode::Normal => cx.theme().fg_primary,
             Mode::Store => cx.theme().indicate.programmer,
+            Mode::Rename => cx.theme().indicate.rename,
         }
     }
 }
@@ -46,6 +48,7 @@ impl fmt::Display for Mode {
         match self {
             Mode::Normal => write!(f, "Normal"),
             Mode::Store => write!(f, "Store"),
+            Mode::Rename => write!(f, "Rename"),
         }
     }
 }
