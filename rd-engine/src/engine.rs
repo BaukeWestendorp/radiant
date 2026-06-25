@@ -132,7 +132,9 @@ impl Engine {
         self.event_buffer.push(event);
     }
 
-    fn run(mut self, rx: Receiver<EngineMessage>, snapshot_store: Arc<ArcSwap<EngineSnapshot>>) {
+    fn start(mut self, rx: Receiver<EngineMessage>, snapshot_store: Arc<ArcSwap<EngineSnapshot>>) {
+        log::debug!("Starting Radiant Engine...");
+
         const INTERVAL: Duration = Duration::new(0, ((1_000_000_000_f64 / 60.0).round()) as u32);
 
         self.output_agent.start();
@@ -140,7 +142,13 @@ impl Engine {
         let mut next_tick = Instant::now() + INTERVAL;
         let mut running = true;
 
+        let mut started = false;
         while running {
+            if !started {
+                log::info!("Started Radiant Engine");
+                started = true;
+            }
+
             while let Ok(msg) = rx.try_recv() {
                 running = self.handle_message(msg, &snapshot_store);
                 if !running {
@@ -178,6 +186,8 @@ impl Engine {
         }
 
         self.output_agent.stop();
+
+        log::info!("Stopped Radiant Engine");
     }
 
     fn handle_message(
@@ -291,7 +301,7 @@ impl EngineHandle {
             .name("rd_engine".to_string())
             .spawn({
                 let snapshot = Arc::clone(&snapshot);
-                move || engine.run(rx, snapshot)
+                move || engine.start(rx, snapshot)
             })
             .expect("Failed to spawn engine thread");
 

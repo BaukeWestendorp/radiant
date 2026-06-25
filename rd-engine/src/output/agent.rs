@@ -72,6 +72,8 @@ impl OutputAgent {
     }
 
     pub(crate) fn start(&mut self) {
+        log::debug!("Starting Output Agent...");
+
         for instance in &mut self.sacn_instances {
             if let Err(err) = instance.start(self.notify_rx.clone(), self.multiverse.clone()) {
                 log::error!("Failed to start sACN output instance: {err}");
@@ -85,9 +87,13 @@ impl OutputAgent {
         }
 
         self.start_scheduler();
+
+        log::info!("Started Output Agent");
     }
 
     pub(crate) fn stop(&mut self) {
+        log::debug!("Stopping Output Agent..");
+
         self.stop_scheduler();
 
         for instance in &mut self.sacn_instances {
@@ -97,6 +103,8 @@ impl OutputAgent {
         for instance in &mut self.enttec_instances {
             instance.stop();
         }
+
+        log::info!("Stopped Output Agent");
     }
 
     fn start_scheduler(&mut self) {
@@ -107,7 +115,6 @@ impl OutputAgent {
             return;
         }
 
-        log::info!("Starting output scheduler");
         let running = self.scheduler_running.clone();
         running.store(true, Ordering::SeqCst);
 
@@ -147,7 +154,6 @@ impl OutputAgent {
 
     fn stop_scheduler(&mut self) {
         if self.scheduler_handle.is_some() {
-            log::info!("Stopping output scheduler");
             self.scheduler_running.store(false, Ordering::SeqCst);
             if let Some(handle) = self.scheduler_handle.take() {
                 let _ = handle.join();

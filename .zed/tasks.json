@@ -2,11 +2,6 @@
   {
     "label": "example [capital_inspired]",
     "command": "cargo run -p rd -- examples/capital_inspired",
-    "env": { "RUST_LOG": "info" },
-  },
-  {
-    "label": "example [single_universe]",
-    "command": "cargo run -p rd -- examples/single_universe",
-    "env": { "RUST_LOG": "info" },
+    "env": { "RUST_LOG": "debug" },
   },
 ]

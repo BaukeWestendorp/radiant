@@ -94,7 +94,7 @@ impl<'a> FixtureBuilder<'a> {
         reference_geometry: &gdtf::geo::ReferenceGeometry,
     ) -> Vec<Fixture> {
         if reference_geometry.breaks().len() > 1 {
-            log::warn!("multiple breaks not yet supported!");
+            log::warn!("Multiple breaks not yet supported");
         }
 
         let geometry_dmx_offset = match reference_geometry.breaks().first() {

@@ -38,6 +38,8 @@ impl Project {
     }
 
     pub fn load_from_folder(path: impl Into<PathBuf>) -> anyhow::Result<Self> {
+        log::debug!("Loading Radiant Project...");
+
         let path = path.into();
 
         let patch_path = path.join(RELATIVE_PATCH_PATH);
@@ -73,6 +75,8 @@ impl Project {
             .with_context(|| format!("Failed to parse objects file: {}", objects_path.display()))
             .inspect_err(|e| log::error!("{:?}", e))?;
 
+        log::info!("Loaded Radiant Project");
+
         Ok(Self { path: Some(path), patch, gdtfs, output, triggers, objects })
     }
 
@@ -88,6 +92,8 @@ impl Project {
     }
 
     pub fn save_to_folder(&self) -> anyhow::Result<()> {
+        log::debug!("Saving Radiant Project...");
+
         let path = self.path.as_ref().ok_or_else(|| {
             anyhow::anyhow!("Cannot save project to folder: project has no associated path")
         })?;
@@ -119,6 +125,8 @@ impl Project {
 
         // FIXME: We should also save the GDTF files, but as I've not yet implemented serializing the `Gdtf`
         // struct this is not easily possible...
+
+        log::info!("Saved Radiant Project");
 
         Ok(())
     }

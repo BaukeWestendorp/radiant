@@ -484,7 +484,7 @@ impl FixtureObject {
     pub fn id_u32(&self) -> anyhow::Result<u32> {
         match &self.id {
             ObjectIdentifier::Multipatch(_) => {
-                anyhow::bail!("Multipatch node IDs are not yet supported for fixture.");
+                anyhow::bail!("Multipatch node IDs are not yet supported for fixture");
             }
             ObjectIdentifier::Single {
                 fixture_id,
@@ -494,7 +494,7 @@ impl FixtureObject {
             } => {
                 if let Some(numeric_id) = fixture_id_numeric {
                     if *numeric_id < 0 {
-                        anyhow::bail!("Negative numeric fixture ID for fixture.");
+                        anyhow::bail!("Negative numeric fixture ID for fixture");
                     }
                     let numeric_id_u32 = u32::try_from(*numeric_id).map_err(|_| {
                         anyhow::anyhow!("Fixture ID out of range for u32 for fixture.")
@@ -509,14 +509,14 @@ impl FixtureObject {
                     }
                 } else if let Some(custom_id) = custom_id {
                     if *custom_id < 0 {
-                        anyhow::bail!("Negative numeric custom ID for fixture.");
+                        anyhow::bail!("Negative numeric custom ID for fixture");
                     }
                     let custom_id_u32 = u32::try_from(*custom_id).map_err(|_| {
                         anyhow::anyhow!("Custom ID out of range for u32 for fixture.")
                     })?;
                     Ok(custom_id_u32)
                 } else {
-                    anyhow::bail!("No valid fixture ID found for fixture.");
+                    anyhow::bail!("No valid fixture ID found for fixture");
                 }
             }
         }

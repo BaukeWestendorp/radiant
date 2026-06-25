@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::sync::{Arc, Mutex};
 
 use midir::MidiInputConnection;
 
@@ -8,22 +9,26 @@ use crate::trigger::{
 
 pub struct TriggersAgent {
     definition: TriggersDefinition,
-
     trigger_rx: flume::Receiver<Trigger>,
+    _inner: Arc<TriggersAgentInner>,
+}
 
+struct TriggersAgentInner {
     // NOTE: These are stored here to keep them alive for as long as the resolver lives.
     _midi_connections:
-        Vec<MidiInputConnection<(Vec<MidiTriggerDefinition>, flume::Sender<Trigger>)>>,
+        Mutex<Vec<MidiInputConnection<(Vec<MidiTriggerDefinition>, flume::Sender<Trigger>)>>>,
 }
 
 impl TriggersAgent {
     pub fn new(definition: TriggersDefinition) -> anyhow::Result<Self> {
+        log::debug!("Starting Triggers Agent...");
+
         let (trigger_tx, trigger_rx) = flume::bounded(512);
 
         let unique_midi_device_names: HashSet<_> =
             definition.midi().iter().map(|child| child.device_name()).collect();
 
-        let mut midi_connections = Vec::new();
+        let mut devices_to_init = Vec::new();
         for device_name in unique_midi_device_names {
             let midi = definition
                 .midi()
@@ -32,54 +37,74 @@ impl TriggersAgent {
                 .cloned()
                 .collect::<Vec<_>>();
 
-            let midi_in = match midir::MidiInput::new("Radiant") {
-                Ok(midi_in) => midi_in,
-                Err(err) => {
-                    log::error!("Failed to create a MIDI input: {err}");
-                    continue;
-                }
-            };
-
-            let port = match midi_in
-                .ports()
-                .into_iter()
-                .find(|port| midi_in.port_name(port).as_deref().ok() == Some(device_name))
-            {
-                Some(port) => port,
-                None => {
-                    let available_ports = midi_in
-                        .ports()
-                        .into_iter()
-                        .filter_map(|port| midi_in.port_name(&port).ok())
-                        .collect::<Vec<_>>();
-
-                    log::error!(
-                        "midi port not found: {}. available ports: {:?}",
-                        device_name,
-                        available_ports
-                    );
-
-                    continue;
-                }
-            };
-
-            let midi_connection = match midi_in.connect(
-                &port,
-                "Radiant",
-                Self::handle_midi_event,
-                (midi, trigger_tx.clone()),
-            ) {
-                Ok(midi_connection) => midi_connection,
-                Err(err) => {
-                    log::error!("failed to connect to midi port: {err}");
-                    continue;
-                }
-            };
-
-            midi_connections.push(midi_connection);
+            devices_to_init.push((device_name.to_string(), midi));
         }
 
-        Ok(Self { definition, _midi_connections: midi_connections, trigger_rx })
+        let inner = Arc::new(TriggersAgentInner { _midi_connections: Mutex::new(Vec::new()) });
+
+        let inner_clone = Arc::clone(&inner);
+        std::thread::spawn(move || {
+            log::info!("Initializing MIDI...");
+
+            let mut local_connections = Vec::new();
+
+            for (device_name, midi) in devices_to_init {
+                let midi_in = match midir::MidiInput::new("Radiant") {
+                    Ok(midi_in) => midi_in,
+                    Err(err) => {
+                        log::error!("Failed to create a MIDI input: {err}");
+                        continue;
+                    }
+                };
+
+                let port = match midi_in.ports().into_iter().find(|port| {
+                    midi_in.port_name(port).as_deref().ok() == Some(device_name.as_str())
+                }) {
+                    Some(port) => port,
+                    None => {
+                        let available_ports = midi_in
+                            .ports()
+                            .into_iter()
+                            .filter_map(|port| midi_in.port_name(&port).ok())
+                            .collect::<Vec<_>>();
+
+                        log::error!(
+                            "MIDI port not found: {}. available ports: {:?}",
+                            device_name,
+                            available_ports
+                        );
+
+                        continue;
+                    }
+                };
+
+                let midi_connection = match midi_in.connect(
+                    &port,
+                    "Radiant",
+                    Self::handle_midi_event,
+                    (midi, trigger_tx.clone()),
+                ) {
+                    Ok(midi_connection) => midi_connection,
+                    Err(err) => {
+                        log::error!("Failed to connect to MIDI port: {err}");
+                        continue;
+                    }
+                };
+
+                local_connections.push(midi_connection);
+            }
+
+            match inner_clone._midi_connections.lock() {
+                Ok(mut guard) => *guard = local_connections,
+                Err(err) => log::error!("Failed to lock MIDI connections guard: {err}"),
+            }
+
+            log::info!("MIDI Initialized");
+        });
+
+        log::info!("Started Triggers Agent");
+
+        Ok(Self { definition, trigger_rx, _inner: inner })
     }
 
     pub fn drain(&self) -> Vec<Trigger> {
@@ -97,13 +122,13 @@ impl TriggersAgent {
     ) {
         let event = match midly::live::LiveEvent::parse(event_bytes) {
             Err(err) => {
-                log::warn!("received invalid midi bytes {:?}: {}", event_bytes, err);
+                log::warn!("Received invalid MIDI bytes {:?}: {}", event_bytes, err);
                 return;
             }
             Ok(event) => event,
         };
 
-        log::debug!("received midi event: {:?}", event);
+        log::debug!("Received MIDI event: {:?}", event);
 
         let midly::live::LiveEvent::Midi { channel, message } = event else { return };
 
@@ -151,7 +176,7 @@ impl TriggersAgent {
                     TriggerTarget::ExecutorMaster { executor_id } => {
                         let Some(value) = midi_value_as_f32(&message) else {
                             log::warn!(
-                                "mapped midi message did not carry a value usable as f32: {:?}",
+                                "Mapped MIDI message did not carry a value usable as f32: {:?}",
                                 message
                             );
                             return None;
@@ -169,7 +194,7 @@ impl TriggersAgent {
                     TriggerTarget::Encoder { encoder_ix } => {
                         let Some(value) = midi_value_as_f32(&message) else {
                             log::warn!(
-                                "mapped midi message did not carry a value usable as f32: {:?}",
+                                "Mapped MIDI message did not contain a value usable as f32: {:?}",
                                 message
                             );
                             return None;
@@ -181,10 +206,10 @@ impl TriggersAgent {
             .collect::<Vec<_>>();
 
         for trigger in triggers {
-            log::debug!("sending trigger: {:?}", event);
+            log::debug!("Sending trigger: {:?}", event);
 
             if let Err(err) = trigger_tx.send(trigger) {
-                log::error!("failed to send trigger: {}", err);
+                log::error!("Failed to send trigger: {}", err);
             }
         }
     }
@@ -196,7 +221,7 @@ impl Default for TriggersAgent {
         Self {
             definition: TriggersDefinition::default(),
             trigger_rx,
-            _midi_connections: Default::default(),
+            _inner: Arc::new(TriggersAgentInner { _midi_connections: Default::default() }),
         }
     }
 }
