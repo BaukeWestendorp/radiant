@@ -18,7 +18,7 @@ mod state;
 mod ui;
 
 pub mod action {
-    use gpui::{App, KeyBinding, ReadGlobal, prelude::*};
+    use gpui::{App, KeyBinding, ReadGlobal, prelude::*, px, size};
     use rd_engine::cmd::Command;
     use rd_ui::{Root, SETTINGS_WINDOW_OPTIONS, SettingsAppExt as _};
 
@@ -43,7 +43,11 @@ pub mod action {
         ]);
 
         cx.on_action::<SettingsOpen>(|_, cx| {
-            cx.open_settings(Some(SETTINGS_WINDOW_OPTIONS), |window, cx| {
+            let mut window_options = SETTINGS_WINDOW_OPTIONS;
+            window_options.window_bounds =
+                Some(gpui::WindowBounds::centered(size(px(1080.0), px(720.0)), cx));
+
+            cx.open_settings(Some(window_options), |window, cx| {
                 cx.new(|cx| Root::new(cx.new(|cx| SettingsView::new(window, cx)), window, cx))
                     .into()
             });

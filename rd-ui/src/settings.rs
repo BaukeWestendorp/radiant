@@ -12,7 +12,7 @@ pub const SETTINGS_WINDOW_OPTIONS: WindowOptions = WindowOptions {
     window_bounds: None,
     focus: true,
     show: true,
-    kind: gpui::WindowKind::Floating,
+    kind: gpui::WindowKind::Normal,
     is_movable: true,
     is_resizable: true,
     is_minimizable: false,
