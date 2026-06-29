@@ -4,18 +4,9 @@ use gpui::{AnyView, Window, div};
 use crate::{ActiveTheme, z_stack};
 
 pub(crate) mod action {
-    use gpui::{App, KeyBinding, actions};
-
-    actions!(root, [Tab, TabPrev, OpenSettings]);
-
     pub const KEY_CONTEXT: &str = "Root";
 
-    pub fn init(cx: &mut App) {
-        cx.bind_keys([
-            KeyBinding::new("tab", Tab, Some(KEY_CONTEXT)),
-            KeyBinding::new("shift-tab", TabPrev, Some(KEY_CONTEXT)),
-        ]);
-    }
+    gpui::actions!(root, [Tab, TabPrev, OpenSettings]);
 }
 
 pub struct Root {

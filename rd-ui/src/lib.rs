@@ -7,6 +7,7 @@ mod grid;
 mod icon;
 mod init;
 mod input;
+mod keymap;
 mod org;
 mod popup;
 mod root;
@@ -47,6 +48,7 @@ pub use tiles::{PoolTile, PoolTileDelegate, TileDelegate, TileGrid, TileGridStat
 pub use title_bar::{TITLE_BAR_HEIGHT, TITLE_BAR_LEFT_PADDING, TITLE_BAR_RIGHT_PADDING, TitleBar};
 pub use typo::{article, h1, h2, h3, h4, h5, h6, link, sub};
 pub use util::{todo, z_stack};
+pub use keymap::{Keymap, KeymapBinding};
 
 pub use element_ext::ElementExt;
 pub use styled_ext::{StyledExt, h_flex, v_flex};

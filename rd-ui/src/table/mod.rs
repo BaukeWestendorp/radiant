@@ -16,10 +16,10 @@ pub use state::*;
 use crate::{ActiveTheme, ElementExt, Icon, IconSize, IconVariant, h_flex, theme::HslaExt};
 
 pub(crate) mod action {
-    use gpui::{App, KeyBinding, actions};
+    pub const KEY_CONTEXT: &str = "Table";
 
-    actions!(
-        root,
+    gpui::actions!(
+        table,
         [
             ClearSelection,
             EditSelection,
@@ -34,25 +34,6 @@ pub(crate) mod action {
             SelectAll,
         ]
     );
-
-    pub const KEY_CONTEXT: &str = "Table";
-
-    pub fn init(cx: &mut App) {
-        cx.bind_keys([
-            KeyBinding::new("escape", ClearSelection, Some(KEY_CONTEXT)),
-            KeyBinding::new("enter", EditSelection, Some(KEY_CONTEXT)),
-            KeyBinding::new("delete", DeleteSelection, Some(KEY_CONTEXT)),
-            KeyBinding::new("backspace", DeleteSelection, Some(KEY_CONTEXT)),
-            KeyBinding::new("tab", ToggleExpandSelection, Some(KEY_CONTEXT)),
-            KeyBinding::new("right", NextColumn, Some(KEY_CONTEXT)),
-            KeyBinding::new("left", PrevColumn, Some(KEY_CONTEXT)),
-            KeyBinding::new("down", NextRow, Some(KEY_CONTEXT)),
-            KeyBinding::new("up", PrevRow, Some(KEY_CONTEXT)),
-            KeyBinding::new("secondary-down", ExtendSelectionNext, Some(KEY_CONTEXT)),
-            KeyBinding::new("secondary-up", ExtendSelectionPrev, Some(KEY_CONTEXT)),
-            KeyBinding::new("secondary-a", SelectAll, Some(KEY_CONTEXT)),
-        ]);
-    }
 }
 
 #[derive(IntoElement)]

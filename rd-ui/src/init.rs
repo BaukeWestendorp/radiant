@@ -4,9 +4,6 @@ pub fn init(cx: &mut gpui::App) {
     crate::settings::init(cx);
 
     simple::action::init(cx);
-    crate::root::action::init(cx);
-    crate::table::action::init(cx);
-    crate::input::text_input::init(cx);
 }
 
 pub mod simple {
@@ -18,10 +15,10 @@ pub mod simple {
 
     use crate::{ActiveTheme, Root, TitleBar, h_flex};
 
-    pub mod action {
+    pub(crate) mod action {
         gpui::actions!([Quit]);
+
         pub(crate) fn init(cx: &mut gpui::App) {
-            cx.bind_keys([gpui::KeyBinding::new("secondary-q", Quit, None)]);
             cx.on_action::<Quit>(|_, cx| cx.quit());
         }
     }
@@ -94,6 +91,7 @@ pub mod simple {
                 .with_quit_mode(QuitMode::LastWindowClosed)
                 .run(move |cx: &mut App| {
                     crate::init(cx);
+                    crate::keymap::default_keymap().apply(cx);
 
                     if let Some(config) = self.config {
                         crate::feature::config::init(config, cx);

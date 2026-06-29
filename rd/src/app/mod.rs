@@ -13,12 +13,13 @@ use crate::{
     engine::EngineAppExt,
 };
 
+mod keymap;
 mod settings;
 mod state;
 mod ui;
 
-pub mod action {
-    use gpui::{App, KeyBinding, ReadGlobal, prelude::*, px, size};
+pub(crate) mod action {
+    use gpui::{App, ReadGlobal, prelude::*, px, size};
     use rd_engine::cmd::Command;
     use rd_ui::{Root, SETTINGS_WINDOW_OPTIONS, SettingsAppExt as _};
 
@@ -30,18 +31,10 @@ pub mod action {
         engine::EngineAppExt,
     };
 
-    gpui::actions!([SettingsOpen, Save, Clear, Store, Rename, HighlightToggle]);
+    gpui::actions!([SettingsOpen]);
+    gpui::actions!(cmd, [Save, Clear, Store, Rename, Highlight]);
 
     pub(crate) fn init(cx: &mut App) {
-        cx.bind_keys([
-            KeyBinding::new("secondary-,", SettingsOpen, None),
-            KeyBinding::new("secondary-s", Save, None),
-            KeyBinding::new("escape", Clear, None),
-            KeyBinding::new("s", Store, None),
-            KeyBinding::new("r", Rename, None),
-            KeyBinding::new("h", HighlightToggle, None),
-        ]);
-
         cx.on_action::<SettingsOpen>(|_, cx| {
             let mut window_options = SETTINGS_WINDOW_OPTIONS;
             window_options.window_bounds =
@@ -53,7 +46,7 @@ pub mod action {
             });
         });
 
-        cx.on_action::<HighlightToggle>(|_, cx| {
+        cx.on_action::<Highlight>(|_, cx| {
             cx.execute_engine_cmd(Command::HighlightToggle);
         });
 
@@ -118,6 +111,9 @@ pub fn run(showfile_path: Option<PathBuf>) -> Result<()> {
 
             crate::app::state::init(cx);
             crate::app::action::init(cx);
+
+            keymap::default_keymap().apply(cx);
+
             crate::engine::init(EngineHandle::new(rd_engine), cx);
 
             log::info!("Started Radiant");

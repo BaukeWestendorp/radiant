@@ -64,7 +64,7 @@ impl TableDelegate for PatchTable {
     }
 
     fn root_row_ids(&self, cx: &App) -> Vec<Self::RowId> {
-        self.fixture_definitions.read(cx).iter().map(|f|f.id()).collect()
+        self.fixture_definitions.read(cx).iter().map(|f| f.id()).collect()
     }
 
     fn render_cell(
@@ -74,7 +74,10 @@ impl TableDelegate for PatchTable {
         _window: &mut Window,
         cx: &App,
     ) -> impl IntoElement {
-        let Some(fixture) = self.fixture_definitions.read(cx).iter().find(|f|f.id() == *row_id) else { return div() };
+        let Some(fixture) = self.fixture_definitions.read(cx).iter().find(|f| f.id() == *row_id)
+        else {
+            return div();
+        };
         let column = self.column(col_ix, cx);
 
         match column.id().as_str() {
@@ -83,7 +86,7 @@ impl TableDelegate for PatchTable {
             "address" => div().px_1().child(fixture.dmx_address().to_string()),
             "fixture_type_id" => div().px_1().child(fixture.gdtf_file_name().to_string()),
             "dmx_mode" => div().px_1().child(fixture.gdtf_dmx_mode().to_string()),
-            _ => div()
+            _ => div(),
         }
     }
 }
