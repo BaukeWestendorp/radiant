@@ -1,13 +1,20 @@
 use gpui::{Entity, FontWeight, Window, div, prelude::*};
 use rd_ui::{ActiveTheme as _, Tab, Tabs, TabsState, TabsVariant, TitleBar, h_flex, todo, v_flex};
 
+mod patch;
+
 pub struct SettingsView {
     tabs_state: Entity<TabsState>,
+
+    patch_view: Entity<patch::PatchView>,
 }
 
 impl SettingsView {
-    pub fn new(_window: &mut Window, cx: &mut Context<Self>) -> Self {
-        Self { tabs_state: cx.new(|_| TabsState::new().with_selected("patch")) }
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        Self {
+            tabs_state: cx.new(|_| TabsState::new().with_selected("patch")),
+            patch_view: cx.new(|cx| patch::PatchView::new(window, cx)),
+        }
     }
 
     fn render_title_bar_content(
@@ -25,7 +32,7 @@ impl SettingsView {
 
     fn render_content(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         Tabs::new("tabs", self.tabs_state.clone(), TabsVariant::Sidebar).tabs([
-            Tab::new("patch", "Patch", todo(cx).into_any_element()),
+            Tab::new("patch", "Patch", self.patch_view.clone().into_any_element()),
             Tab::new("dmx_output", "DMX Output", todo(cx).into_any_element()),
         ])
     }
