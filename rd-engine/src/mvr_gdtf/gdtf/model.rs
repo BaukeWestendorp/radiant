@@ -51,7 +51,7 @@ impl Model {
     }
 }
 
-impl bundle::FromBundle for Model {
+impl<'src> bundle::FromBundle<'src> for Model {
     type Source = bundle::Model;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {

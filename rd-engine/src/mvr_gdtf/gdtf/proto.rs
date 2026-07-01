@@ -55,7 +55,7 @@ impl Protocols {
     }
 }
 
-impl bundle::FromBundle for Protocols {
+impl<'src> bundle::FromBundle<'src> for Protocols {
     type Source = bundle::Protocols;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -114,7 +114,7 @@ impl SoftwareVersion {
     }
 }
 
-impl bundle::FromBundle for Rdm {
+impl<'src> bundle::FromBundle<'src> for Rdm {
     type Source = bundle::Ftrdm;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -156,7 +156,7 @@ impl DmxPersonality {
     }
 }
 
-impl bundle::FromBundle for DmxPersonality {
+impl<'src> bundle::FromBundle<'src> for DmxPersonality {
     type Source = bundle::DmxPersonality;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -176,7 +176,7 @@ impl ArtNet {
     }
 }
 
-impl bundle::FromBundle for ArtNet {
+impl<'src> bundle::FromBundle<'src> for ArtNet {
     type Source = bundle::ArtNet;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -199,7 +199,7 @@ impl SAcn {
     }
 }
 
-impl bundle::FromBundle for SAcn {
+impl<'src> bundle::FromBundle<'src> for SAcn {
     type Source = bundle::SAcn;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -214,7 +214,7 @@ impl bundle::FromBundle for SAcn {
 #[derive(Debug, Clone, PartialEq)]
 pub struct PosiStageNet {}
 
-impl bundle::FromBundle for PosiStageNet {
+impl<'src> bundle::FromBundle<'src> for PosiStageNet {
     type Source = bundle::PosiStageNet;
     fn from_bundle(_source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
         Self {}
@@ -224,7 +224,7 @@ impl bundle::FromBundle for PosiStageNet {
 #[derive(Debug, Clone, PartialEq)]
 pub struct OpenSoundControl {}
 
-impl bundle::FromBundle for OpenSoundControl {
+impl<'src> bundle::FromBundle<'src> for OpenSoundControl {
     type Source = bundle::OpenSoundControl;
     fn from_bundle(_source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
         Self {}
@@ -234,7 +234,7 @@ impl bundle::FromBundle for OpenSoundControl {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Citp {}
 
-impl bundle::FromBundle for Citp {
+impl<'src> bundle::FromBundle<'src> for Citp {
     type Source = bundle::Citp;
     fn from_bundle(_source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
         Self {}

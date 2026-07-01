@@ -29,7 +29,7 @@ impl Wheel {
     }
 }
 
-impl bundle::FromBundle for Wheel {
+impl<'src> bundle::FromBundle<'src> for Wheel {
     type Source = bundle::Wheel;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -71,7 +71,7 @@ impl WheelSlot {
     }
 }
 
-impl bundle::FromBundle for WheelSlot {
+impl<'src> bundle::FromBundle<'src> for WheelSlot {
     type Source = bundle::Slot;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -166,7 +166,7 @@ impl PrismFacet {
     }
 }
 
-impl bundle::FromBundle for PrismFacet {
+impl<'src> bundle::FromBundle<'src> for PrismFacet {
     type Source = bundle::Facet;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -207,7 +207,7 @@ impl AnimationSystem {
     }
 }
 
-impl bundle::FromBundle for AnimationSystem {
+impl<'src> bundle::FromBundle<'src> for AnimationSystem {
     type Source = bundle::AnimationSystem;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {

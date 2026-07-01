@@ -3,6 +3,9 @@ name = "rd-engine"
 version.workspace = true
 edition.workspace = true
 
+[features]
+rd-ui = ["dep:rd-ui"]
+
 [dependencies]
 anyhow.workspace = true
 
@@ -32,6 +35,9 @@ arrayvec = "0.7.6"
 socket2 = "0.6.4"
 thiserror = "2.0.18"
 libftd2xx = "0.33.1"
+
+# feature = "rd-ui"
+rd-ui = { workspace = true, optional = true }
 
 [dev-dependencies]
 pretty_env_logger = "0.5.0"

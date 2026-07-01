@@ -41,7 +41,7 @@ pub struct Revision {
     pub modified_by: String,
 }
 
-impl bundle::FromBundle for Revision {
+impl<'src> bundle::FromBundle<'src> for Revision {
     type Source = bundle::Revision;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {

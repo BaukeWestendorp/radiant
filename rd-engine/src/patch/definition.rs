@@ -23,6 +23,16 @@ pub struct FixtureDefinition {
 }
 
 impl FixtureDefinition {
+    pub fn new(
+        id: FixtureIdPart,
+        name: String,
+        dmx_address: Address,
+        gdtf_file_name: String,
+        gdtf_dmx_mode: String,
+    ) -> Self {
+        Self { id, name, dmx_address, gdtf_file_name, gdtf_dmx_mode }
+    }
+
     pub fn id(&self) -> FixtureIdPart {
         self.id
     }

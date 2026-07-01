@@ -434,7 +434,8 @@ impl From<&bundle::Bundle> for Gdtf {
         }
 
         for dm in &ft.dmx_modes.dmx_modes {
-            let dm = dmx::DmxMode::from_bundle(dm, bundle);
+            let geometry = dm.geometry.as_ref().and_then(|g| gdtf.geometry(&Name::new(g.clone())));
+            let dm = dmx::DmxMode::from_bundle(&(geometry, dm), bundle);
             gdtf.dmx_modes_by_name.insert(dm.name().clone(), dm.clone());
             gdtf.dmx_modes.push(dm);
         }

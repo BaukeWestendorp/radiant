@@ -3,7 +3,7 @@ use gpui::{
     Styled, Window, div, prelude::*, px,
 };
 
-use crate::{ActiveTheme, FieldEvent, TextField, TextFieldState, h_flex, v_flex};
+use crate::{ActiveTheme, Field, FieldEvent, FieldState, h_flex, v_flex};
 
 pub(crate) fn init(cx: &mut App) {
     let popup = cx.new(|_| None);
@@ -66,19 +66,19 @@ impl Popup {
 
     pub fn text(
         title: impl Into<SharedString>,
-        input: Entity<TextFieldState>,
+        field: Entity<FieldState<SharedString>>,
         window: &mut Window,
         cx: &mut App,
     ) -> Self {
-        input.read(cx).input().focus_handle(cx).focus(window, cx);
+        field.focus_handle(cx).focus(window, cx);
 
-        cx.subscribe(&input, |_, event, cx| match event {
-            FieldEvent::Submit => cx.close_popup(),
+        cx.subscribe(&field, |_, event, cx| match event {
+            FieldEvent::Submit(_) => cx.close_popup(),
             _ => {}
         })
         .detach();
 
-        Self { title: title.into(), kind: PopupKind::Text { input } }
+        Self { title: title.into(), kind: PopupKind::Text { field } }
     }
 
     pub fn custom(content: impl Into<AnyView>, title: impl Into<SharedString>) -> Self {
@@ -93,7 +93,7 @@ impl Popup {
 pub enum PopupKind {
     YesNo,
     Confirm,
-    Text { input: Entity<TextFieldState> },
+    Text { field: Entity<FieldState<SharedString>> },
     Custom { content: AnyView },
 }
 
@@ -123,13 +123,13 @@ impl Render for Popup {
             .child(match &self.kind {
                 PopupKind::YesNo => todo!(),
                 PopupKind::Confirm => todo!(),
-                PopupKind::Text { input } => div()
+                PopupKind::Text { field: input } => div()
                     .flex()
                     .justify_center()
                     .items_center()
                     .size_full()
                     .p_2()
-                    .child(div().w_full().child(TextField::new(input.clone())))
+                    .child(div().w_full().child(Field::new(input.clone())))
                     .into_any_element(),
                 PopupKind::Custom { content } => content.clone().into_any_element(),
             });

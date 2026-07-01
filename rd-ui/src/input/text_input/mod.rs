@@ -48,8 +48,8 @@ pub struct TextInput {
     disabled: bool,
     masked: bool,
     interactive: bool,
-    validator: Option<Box<dyn Fn(&SharedString) -> bool>>,
-    submit_validator: Option<Box<dyn Fn(&SharedString) -> bool>>,
+    validator: Option<Box<dyn Fn(&str) -> bool>>,
+    submit_validator: Option<Box<dyn Fn(&str) -> bool>>,
 
     utf16_selection: Range<usize>,
     new_selection_start_utf16_offset: Option<usize>,
@@ -145,11 +145,11 @@ impl TextInput {
         self.masked = masked;
     }
 
-    pub fn set_validator<F: Fn(&SharedString) -> bool + 'static>(&mut self, validator: F) {
+    pub fn set_validator<F: Fn(&str) -> bool + 'static>(&mut self, validator: F) {
         self.validator = Some(Box::new(validator));
     }
 
-    pub fn set_submit_validator<F: Fn(&SharedString) -> bool + 'static>(&mut self, validator: F) {
+    pub fn set_submit_validator<F: Fn(&str) -> bool + 'static>(&mut self, validator: F) {
         self.submit_validator = Some(Box::new(validator));
     }
 

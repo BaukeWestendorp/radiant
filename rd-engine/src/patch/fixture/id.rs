@@ -29,6 +29,12 @@ impl FixtureIdPart {
     }
 }
 
+impl Default for FixtureIdPart {
+    fn default() -> Self {
+        Self(NonZeroU32::new(1).unwrap())
+    }
+}
+
 impl fmt::Display for FixtureIdPart {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.as_u32())

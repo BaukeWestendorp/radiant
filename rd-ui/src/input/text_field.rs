@@ -46,15 +46,15 @@ impl TextFieldState {
         self.input.read(cx).text()
     }
 
-    pub fn set_value(&self, value: SharedString, cx: &mut App) {
+    pub fn set_value(&self, value: impl Into<SharedString>, cx: &mut App) {
         self.input.update(cx, |this, cx| {
-            this.set_text(value, cx);
+            this.set_text(value.into(), cx);
             this.move_to_end_of_line(cx);
         })
     }
 
-    pub fn with_value(self, value: SharedString, cx: &mut App) -> Self {
-        self.set_value(value, cx);
+    pub fn with_value(self, value: impl Into<SharedString>, cx: &mut App) -> Self {
+        self.set_value(value.into(), cx);
         self
     }
 

@@ -32,6 +32,8 @@ pub struct DmxMode {
     relations_by_name: HashMap<Name, usize>,
     ft_macros: Vec<FtMacro>,
     ft_macros_by_name: HashMap<Name, usize>,
+
+    max_channel_offset: u32,
 }
 
 impl DmxMode {
@@ -92,22 +94,26 @@ impl DmxMode {
         self.dmx_channels().iter().flat_map(|dc| dc.logical_channels())
     }
 
-    pub fn logical_channel(&self, attribute_name: &AttributeName) -> Option<&LogicalChannel> {
-        self.dmx_channels().iter().flat_map(|dc| dc.logical_channels()).find(|lc| {
-            lc.attribute_node().parts().get(0).map_or(false, |name| {
-                AttributeName::from_str(name.as_str()).unwrap() == *attribute_name
-            })
-        })
+    pub fn logical_channel(
+        &self,
+        attribute_name: &AttributeName,
+    ) -> Option<(&DmxChannel, &LogicalChannel)> {
+        for dc in self.dmx_channels() {
+            if let Some(lc) = dc.logical_channel(attribute_name) {
+                return Some((dc, lc));
+            }
+        }
+        None
     }
 
     pub fn channel_functions(
         &self,
-        cf_path: &ChannelFunctionPath,
-    ) -> impl Iterator<Item = &ChannelFunction> {
-        self.dmx_channel(cf_path.dmx_channel_name())
-            .into_iter()
-            .flat_map(|dc| dc.logical_channel(&cf_path.attribute_name()))
-            .flat_map(|lc| lc.channel_functions())
+    ) -> impl Iterator<Item = (&DmxChannel, &LogicalChannel, &ChannelFunction)> {
+        self.dmx_channels().iter().flat_map(|dc| {
+            dc.logical_channels()
+                .iter()
+                .flat_map(move |lc| lc.channel_functions().iter().map(move |cf| (dc, lc, cf)))
+        })
     }
 
     pub fn channel_function(&self, cf_path: &ChannelFunctionPath) -> Option<&ChannelFunction> {
@@ -115,12 +121,16 @@ impl DmxMode {
             .logical_channel(&cf_path.attribute_name())?
             .channel_function(cf_path.channel_function_name())
     }
+
+    pub fn max_channel_offset(&self) -> u32 {
+        self.max_channel_offset
+    }
 }
 
-impl bundle::FromBundle for DmxMode {
-    type Source = bundle::DmxMode;
+impl<'src> bundle::FromBundle<'src> for DmxMode {
+    type Source = (Option<&'src Geometry>, &'src bundle::DmxMode);
 
-    fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
+    fn from_bundle((geometry, source): &Self::Source, bundle: &bundle::Bundle) -> Self {
         let dmx_channels: Vec<DmxChannel> = source
             .dmx_channels
             .dmx_channels
@@ -149,6 +159,51 @@ impl bundle::FromBundle for DmxMode {
         let ft_macros_by_name: HashMap<Name, usize> =
             ft_macros.iter().enumerate().map(|(ix, ftm)| (ftm.name().clone(), ix)).collect();
 
+        let mut max_channel_offset = 0;
+        for dmx_channel in &dmx_channels {
+            match dmx_channel.offset() {
+                DmxOffset::Physical(offsets) => {
+                    let offset = offsets.iter().map(|o| o.saturating_sub(1)).max().unwrap_or(0);
+                    max_channel_offset = u32::max(max_channel_offset, offset)
+                }
+                DmxOffset::Virtual => {
+                    let Some(geometry) = geometry else { continue };
+
+                    find_max_offset(&mut max_channel_offset, geometry);
+
+                    fn find_max_offset(max_channel_offset: &mut u32, geometry: &Geometry) {
+                        match geometry {
+                            Geometry::GeometryReference(reference_geometry) => {
+                                if reference_geometry.breaks().len() > 1 {
+                                    log::warn!("Multiple breaks not yet supported");
+                                }
+
+                                let offset = match reference_geometry.breaks().first() {
+                                    Some(offset) => match offset.absolute().checked_sub_signed(1) {
+                                        Some(offset) => offset,
+                                        None => {
+                                            log::warn!(
+                                                "Found a DMX break offset of 0, while the minimum is 1"
+                                            );
+                                            0
+                                        }
+                                    },
+                                    None => 0,
+                                };
+
+                                *max_channel_offset = u32::max(*max_channel_offset, offset);
+                            }
+                            other_geometry => {
+                                for child_geometry in other_geometry.children() {
+                                    find_max_offset(max_channel_offset, child_geometry);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         Self {
             name: Name::new(&source.name),
             description: match source.description.as_deref() {
@@ -176,6 +231,8 @@ impl bundle::FromBundle for DmxMode {
             relations_by_name,
             ft_macros,
             ft_macros_by_name,
+
+            max_channel_offset,
         }
     }
 }
@@ -261,7 +318,7 @@ impl DmxChannel {
     }
 }
 
-impl bundle::FromBundle for DmxChannel {
+impl<'src> bundle::FromBundle<'src> for DmxChannel {
     type Source = bundle::DmxChannel;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -404,7 +461,7 @@ impl LogicalChannel {
     }
 }
 
-impl bundle::FromBundle for LogicalChannel {
+impl<'src> bundle::FromBundle<'src> for LogicalChannel {
     type Source = bundle::LogicalChannel;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -440,7 +497,7 @@ pub enum Snap {
     On,
 }
 
-impl bundle::FromBundle for Snap {
+impl<'src> bundle::FromBundle<'src> for Snap {
     type Source = bundle::Snap;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -461,7 +518,7 @@ pub enum Master {
     Group,
 }
 
-impl bundle::FromBundle for Master {
+impl<'src> bundle::FromBundle<'src> for Master {
     type Source = bundle::Master;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -686,7 +743,7 @@ impl ChannelFunctionPath {
     }
 }
 
-impl bundle::FromBundle for ChannelFunction {
+impl<'src> bundle::FromBundle<'src> for ChannelFunction {
     type Source = (usize, bundle::ChannelFunction);
 
     fn from_bundle((cf_ix, source): &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -827,7 +884,7 @@ impl ChannelSet {
     }
 }
 
-impl bundle::FromBundle for ChannelSet {
+impl<'src> bundle::FromBundle<'src> for ChannelSet {
     type Source = bundle::ChannelSet;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -888,7 +945,7 @@ impl SubChannelSet {
     }
 }
 
-impl bundle::FromBundle for SubChannelSet {
+impl<'src> bundle::FromBundle<'src> for SubChannelSet {
     type Source = bundle::SubChannelSet;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -950,7 +1007,7 @@ impl Relation {
     }
 }
 
-impl bundle::FromBundle for Relation {
+impl<'src> bundle::FromBundle<'src> for Relation {
     type Source = bundle::Relation;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -969,7 +1026,7 @@ pub enum RelationKind {
     Override,
 }
 
-impl bundle::FromBundle for RelationKind {
+impl<'src> bundle::FromBundle<'src> for RelationKind {
     type Source = bundle::RelationType;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -1017,7 +1074,7 @@ impl FtMacro {
     }
 }
 
-impl bundle::FromBundle for FtMacro {
+impl<'src> bundle::FromBundle<'src> for FtMacro {
     type Source = bundle::FtMacro;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -1043,7 +1100,7 @@ impl MacroDmx {
     }
 }
 
-impl bundle::FromBundle for MacroDmx {
+impl<'src> bundle::FromBundle<'src> for MacroDmx {
     type Source = bundle::MacroDmx;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -1073,7 +1130,7 @@ impl MacroDmxStep {
     }
 }
 
-impl bundle::FromBundle for MacroDmxStep {
+impl<'src> bundle::FromBundle<'src> for MacroDmxStep {
     type Source = bundle::MacroDmxStep;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -1109,7 +1166,7 @@ impl MacroDmxValue {
     }
 }
 
-impl bundle::FromBundle for MacroDmxValue {
+impl<'src> bundle::FromBundle<'src> for MacroDmxValue {
     type Source = bundle::MacroDmxValue;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {

@@ -11,6 +11,7 @@ pub mod trigger;
 pub mod value;
 
 mod engine;
+mod features;
 mod mvr_gdtf;
 mod project;
 

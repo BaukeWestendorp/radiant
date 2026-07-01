@@ -50,7 +50,7 @@ impl Bundle {
     }
 }
 
-pub(crate) trait FromBundle {
+pub(crate) trait FromBundle<'src> {
     type Source;
 
     fn from_bundle(source: &Self::Source, bundle: &Bundle) -> Self;

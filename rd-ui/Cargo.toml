@@ -8,6 +8,7 @@ config = { version = "0.15.22", default-features = false, features = ["toml"] }
 gpui.workspace = true
 gpui_platform.workspace = true
 log.workspace = true
+regex = "1.12.4"
 serde.workspace = true
 smallvec = "1.15.1"
 toml = "1.1"

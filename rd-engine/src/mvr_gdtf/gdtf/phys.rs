@@ -32,7 +32,7 @@ impl Emitter {
     }
 }
 
-impl bundle::FromBundle for Emitter {
+impl<'src> bundle::FromBundle<'src> for Emitter {
     type Source = bundle::Emitter;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -88,7 +88,7 @@ impl EmitterMeasurement {
     }
 }
 
-impl bundle::FromBundle for EmitterMeasurement {
+impl<'src> bundle::FromBundle<'src> for EmitterMeasurement {
     type Source = bundle::EmitterMeasurement;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -126,7 +126,7 @@ impl Filter {
     }
 }
 
-impl bundle::FromBundle for Filter {
+impl<'src> bundle::FromBundle<'src> for Filter {
     type Source = bundle::Filter;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -172,7 +172,7 @@ impl FilterMeasurement {
     }
 }
 
-impl bundle::FromBundle for FilterMeasurement {
+impl<'src> bundle::FromBundle<'src> for FilterMeasurement {
     type Source = bundle::FilterMeasurement;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -205,7 +205,7 @@ impl MeasurementPoint {
     }
 }
 
-impl bundle::FromBundle for MeasurementPoint {
+impl<'src> bundle::FromBundle<'src> for MeasurementPoint {
     type Source = bundle::MeasurementPoint;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -220,7 +220,7 @@ pub enum InterpolationTo {
     Log,
 }
 
-impl bundle::FromBundle for InterpolationTo {
+impl<'src> bundle::FromBundle<'src> for InterpolationTo {
     type Source = bundle::InterpolationTo;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -248,7 +248,7 @@ impl ColorSpace {
     }
 }
 
-impl bundle::FromBundle for ColorSpace {
+impl<'src> bundle::FromBundle<'src> for ColorSpace {
     type Source = bundle::ColorSpace;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -298,7 +298,7 @@ impl Gamut {
     }
 }
 
-impl bundle::FromBundle for Gamut {
+impl<'src> bundle::FromBundle<'src> for Gamut {
     type Source = bundle::Gamut;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -323,7 +323,7 @@ impl DmxProfile {
     }
 }
 
-impl bundle::FromBundle for DmxProfile {
+impl<'src> bundle::FromBundle<'src> for DmxProfile {
     type Source = bundle::DmxProfile;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -350,7 +350,7 @@ impl DmxPoint {
     }
 }
 
-impl bundle::FromBundle for DmxPoint {
+impl<'src> bundle::FromBundle<'src> for DmxPoint {
     type Source = bundle::Point;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -382,7 +382,7 @@ impl CriGroup {
     }
 }
 
-impl bundle::FromBundle for CriGroup {
+impl<'src> bundle::FromBundle<'src> for CriGroup {
     type Source = bundle::CriGroup;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -409,7 +409,7 @@ impl Cri {
     }
 }
 
-impl bundle::FromBundle for Cri {
+impl<'src> bundle::FromBundle<'src> for Cri {
     type Source = bundle::Cri;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -441,7 +441,7 @@ impl Properties {
     }
 }
 
-impl bundle::FromBundle for Properties {
+impl<'src> bundle::FromBundle<'src> for Properties {
     type Source = bundle::Properties;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -484,7 +484,7 @@ impl OperatingTemperature {
     }
 }
 
-impl bundle::FromBundle for OperatingTemperature {
+impl<'src> bundle::FromBundle<'src> for OperatingTemperature {
     type Source = bundle::OperatingTemperature;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -504,7 +504,7 @@ impl Ces {
     }
 }
 
-impl bundle::FromBundle for Ces {
+impl<'src> bundle::FromBundle<'src> for Ces {
     type Source = bundle::Ces;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {

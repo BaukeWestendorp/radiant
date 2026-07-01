@@ -168,7 +168,7 @@ impl Geometry {
     }
 }
 
-impl bundle::FromBundle for Geometry {
+impl<'src> bundle::FromBundle<'src> for Geometry {
     type Source = bundle::Geometry;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -258,7 +258,7 @@ impl BasicGeometry {
     }
 }
 
-impl bundle::FromBundle for BasicGeometry {
+impl<'src> bundle::FromBundle<'src> for BasicGeometry {
     type Source = bundle::BasicGeometryType;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -314,7 +314,7 @@ impl AxisGeometry {
     }
 }
 
-impl bundle::FromBundle for AxisGeometry {
+impl<'src> bundle::FromBundle<'src> for AxisGeometry {
     type Source = bundle::BasicGeometryType;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -370,7 +370,7 @@ impl FilterBeamGeometry {
     }
 }
 
-impl bundle::FromBundle for FilterBeamGeometry {
+impl<'src> bundle::FromBundle<'src> for FilterBeamGeometry {
     type Source = bundle::BasicGeometryType;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -426,7 +426,7 @@ impl FilterColorGeometry {
     }
 }
 
-impl bundle::FromBundle for FilterColorGeometry {
+impl<'src> bundle::FromBundle<'src> for FilterColorGeometry {
     type Source = bundle::BasicGeometryType;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -482,7 +482,7 @@ impl FilterGoboGeometry {
     }
 }
 
-impl bundle::FromBundle for FilterGoboGeometry {
+impl<'src> bundle::FromBundle<'src> for FilterGoboGeometry {
     type Source = bundle::BasicGeometryType;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -538,7 +538,7 @@ impl FilterShaperGeometry {
     }
 }
 
-impl bundle::FromBundle for FilterShaperGeometry {
+impl<'src> bundle::FromBundle<'src> for FilterShaperGeometry {
     type Source = bundle::BasicGeometryType;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -659,7 +659,7 @@ impl BeamGeometry {
     }
 }
 
-impl bundle::FromBundle for BeamGeometry {
+impl<'src> bundle::FromBundle<'src> for BeamGeometry {
     type Source = bundle::Beam;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -706,7 +706,7 @@ pub enum LampType {
     Led,
 }
 
-impl bundle::FromBundle for LampType {
+impl<'src> bundle::FromBundle<'src> for LampType {
     type Source = bundle::LampType;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -730,7 +730,7 @@ pub enum BeamType {
     Glow,
 }
 
-impl bundle::FromBundle for BeamType {
+impl<'src> bundle::FromBundle<'src> for BeamType {
     type Source = bundle::BeamType;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -783,7 +783,7 @@ impl MediaServerLayerGeometry {
     }
 }
 
-impl bundle::FromBundle for MediaServerLayerGeometry {
+impl<'src> bundle::FromBundle<'src> for MediaServerLayerGeometry {
     type Source = bundle::BasicGeometryType;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -839,7 +839,7 @@ impl MediaServerCameraGeometry {
     }
 }
 
-impl bundle::FromBundle for MediaServerCameraGeometry {
+impl<'src> bundle::FromBundle<'src> for MediaServerCameraGeometry {
     type Source = bundle::BasicGeometryType;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -895,7 +895,7 @@ impl MediaServerMasterGeometry {
     }
 }
 
-impl bundle::FromBundle for MediaServerMasterGeometry {
+impl<'src> bundle::FromBundle<'src> for MediaServerMasterGeometry {
     type Source = bundle::BasicGeometryType;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -956,7 +956,7 @@ impl DisplayGeometry {
     }
 }
 
-impl bundle::FromBundle for DisplayGeometry {
+impl<'src> bundle::FromBundle<'src> for DisplayGeometry {
     type Source = bundle::Display;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -1029,7 +1029,7 @@ impl ReferenceGeometry {
     }
 }
 
-impl bundle::FromBundle for ReferenceGeometry {
+impl<'src> bundle::FromBundle<'src> for ReferenceGeometry {
     type Source = bundle::GeometryReference;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -1160,7 +1160,7 @@ impl LaserGeometry {
     }
 }
 
-impl bundle::FromBundle for LaserGeometry {
+impl<'src> bundle::FromBundle<'src> for LaserGeometry {
     type Source = bundle::Laser;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -1298,7 +1298,7 @@ impl WiringObjectGeometry {
     }
 }
 
-impl bundle::FromBundle for WiringObjectGeometry {
+impl<'src> bundle::FromBundle<'src> for WiringObjectGeometry {
     type Source = bundle::WiringObject;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -1424,7 +1424,7 @@ pub enum WiringComponentType {
     NetworkInOut,
 }
 
-impl bundle::FromBundle for WiringComponentType {
+impl<'src> bundle::FromBundle<'src> for WiringComponentType {
     type Source = bundle::WiringComponentType;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -1451,7 +1451,7 @@ pub enum FuseRating {
     Z,
 }
 
-impl bundle::FromBundle for FuseRating {
+impl<'src> bundle::FromBundle<'src> for FuseRating {
     type Source = bundle::WiringFuseRating;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -1473,7 +1473,7 @@ pub enum PinOrientation {
     Bottom,
 }
 
-impl bundle::FromBundle for PinOrientation {
+impl<'src> bundle::FromBundle<'src> for PinOrientation {
     type Source = bundle::WiringOrientation;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -1511,7 +1511,7 @@ impl PinPatch {
     }
 }
 
-impl bundle::FromBundle for PinPatch {
+impl<'src> bundle::FromBundle<'src> for PinPatch {
     type Source = bundle::PinPatch;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -1565,7 +1565,7 @@ impl InventoryGeometry {
     }
 }
 
-impl bundle::FromBundle for InventoryGeometry {
+impl<'src> bundle::FromBundle<'src> for InventoryGeometry {
     type Source = bundle::Inventory;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -1641,7 +1641,7 @@ impl StructureGeometry {
     }
 }
 
-impl bundle::FromBundle for StructureGeometry {
+impl<'src> bundle::FromBundle<'src> for StructureGeometry {
     type Source = bundle::Structure;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -1685,7 +1685,7 @@ pub enum StructureType {
     Detail,
 }
 
-impl bundle::FromBundle for StructureType {
+impl<'src> bundle::FromBundle<'src> for StructureType {
     type Source = bundle::StructureType;
 
     fn from_bundle(source: &Self::Source, _bundle: &bundle::Bundle) -> Self {
@@ -1754,7 +1754,7 @@ impl SupportGeometry {
     }
 }
 
-impl bundle::FromBundle for SupportGeometry {
+impl<'src> bundle::FromBundle<'src> for SupportGeometry {
     type Source = bundle::Support;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
@@ -1844,7 +1844,7 @@ impl MagnetGeometry {
     }
 }
 
-impl bundle::FromBundle for MagnetGeometry {
+impl<'src> bundle::FromBundle<'src> for MagnetGeometry {
     type Source = bundle::BasicGeometryType;
 
     fn from_bundle(source: &Self::Source, bundle: &bundle::Bundle) -> Self {
