@@ -155,7 +155,7 @@ impl Theme {
             bg_tertiary: rgb(0x302e2d).into(),
             bg_selected: rgb(0x232a36).into(),
             bg_selected_extra: rgb(0x556683).into(),
-            bg_focus: rgb(0x3bb2f6).into(),
+            bg_focus: rgb(0x153649).into(),
             bg_table: rgb(0x100f0f).into(),
             bg_table_odd: rgb(0x151414).into(),
             bg_tile_header: rgb(0x1f3446).into(),

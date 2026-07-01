@@ -19,7 +19,7 @@ impl TextFieldState {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
-        let input = cx.new(|cx| TextInput::new(id, focus_handle, window, cx));
+        let input = cx.new(|cx| TextInput::new(id, focus_handle.tab_stop(true), window, cx));
 
         cx.subscribe(&input, |this, _, event, cx| {
             cx.notify();

@@ -1,11 +1,12 @@
-use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Div, ElementId, FocusHandle, Hsla, Interactivity, Stateful, StyleRefinement,
     Window, div,
 };
+use gpui::{prelude::*, px};
 use smallvec::SmallVec;
 
 use crate::HslaExt;
+use crate::styled_ext::FocusableExt;
 use crate::theme::ActiveTheme;
 
 pub fn container(window: &Window, cx: &App) -> Container {
@@ -106,8 +107,8 @@ impl ContainerStyle {
 
     pub fn focused(window: &Window, cx: &App) -> Self {
         Self {
-            background: cx.theme().bg_focus,
-            border: cx.theme().border_focus,
+            background: cx.theme().bg_secondary,
+            border: cx.theme().border_secondary,
             text_color: window.text_style().color,
         }
     }
@@ -217,9 +218,9 @@ impl From<InteractiveContainer> for AnyElement {
 
 impl RenderOnce for InteractiveContainer {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
-        let focused = self.focus_handle.as_ref().is_some_and(|fh| fh.is_focused(window));
+        let is_focused = self.focus_handle.as_ref().is_some_and(|fh| fh.is_focused(window));
 
-        let mut style = if focused {
+        let mut style = if is_focused {
             ContainerStyle::focused(window, cx)
         } else if self.selected {
             ContainerStyle::selected(window, cx)
@@ -231,38 +232,45 @@ impl RenderOnce for InteractiveContainer {
             style = style.disabled();
         }
 
-        if self.disabled || self.selected {
-            self.base
-                .focusable()
-                // We have to use this instead of .block_mouse_down()
-                // because that implementation only blocks MouseButton::Left.
-                .on_any_mouse_down(|_, _, cx| cx.stop_propagation())
-        } else if let Some(focus_handle) = &self.focus_handle {
-            self.base.track_focus(focus_handle)
-        } else {
-            self.base.focusable()
-        }
-        .bg(style.background)
-        .border_1()
-        .border_color(style.border)
-        .rounded(cx.theme().radius)
-        .text_color(style.text_color)
-        .overflow_hidden()
-        .occlude()
-        .when(self.disabled, |e| e.cursor_not_allowed())
-        .when(!self.disabled, |e| {
-            let hover_active_style =
-                if !focused && !self.selected { ContainerStyle::normal(window, cx) } else { style };
+        div()
+            .child(
+                if self.disabled || self.selected {
+                    self.base
+                        .focusable()
+                        // We have to use this instead of .block_mouse_down()
+                        // because that implementation only blocks MouseButton::Left.
+                        .on_any_mouse_down(|_, _, cx| cx.stop_propagation())
+                } else if let Some(focus_handle) = &self.focus_handle {
+                    self.base.track_focus(focus_handle)
+                } else {
+                    self.base.focusable()
+                }
+                .bg(style.background)
+                .border_1()
+                .border_color(style.border)
+                .rounded(cx.theme().radius)
+                .text_color(style.text_color)
+                .overflow_hidden()
+                .occlude()
+                .when(self.disabled, |e| e.cursor_not_allowed())
+                .when(!self.disabled, |e| {
+                    let hover_active_style = if !is_focused && !self.selected {
+                        ContainerStyle::normal(window, cx)
+                    } else {
+                        style
+                    };
 
-            e.hover(|e| {
-                e.bg(hover_active_style.hovered().background)
-                    .border_color(hover_active_style.hovered().border)
-            })
-            .active(|e| {
-                e.bg(hover_active_style.active().background)
-                    .border_color(hover_active_style.active().border)
-            })
-        })
-        .children(self.children)
+                    e.hover(|e| {
+                        e.bg(hover_active_style.hovered().background)
+                            .border_color(hover_active_style.hovered().border)
+                    })
+                    .active(|e| {
+                        e.bg(hover_active_style.active().background)
+                            .border_color(hover_active_style.active().border)
+                    })
+                })
+                .children(self.children),
+            )
+            .focus_ring(is_focused, px(1.0), window, cx)
     }
 }
