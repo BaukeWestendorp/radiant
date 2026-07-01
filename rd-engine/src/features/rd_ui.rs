@@ -75,7 +75,7 @@ impl FieldValue for Address {
                 Button::new("open-picker")
                     .icon(Icon::new(IconVariant::TableCellsMerge, IconSize::ExtraSmall))
                     .on_click(|_, _, cx| {
-                        cx.show_popup(|_| {
+                        cx.open_popup(|_| {
                             Popup::message("Select an Address", "FIXME: Implement address selector")
                         });
                     }),

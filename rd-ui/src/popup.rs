@@ -3,7 +3,7 @@ use gpui::{
     Styled, Window, div, prelude::*, px,
 };
 
-use crate::{ActiveTheme, Button, Field, FieldEvent, FieldState, StyledExt, h_flex, v_flex};
+use crate::{ActiveTheme, Button, Field, FieldEvent, FieldState, h_flex, v_flex};
 
 pub(crate) fn init(cx: &mut App) {
     let popup = cx.new(|_| None);
@@ -11,13 +11,13 @@ pub(crate) fn init(cx: &mut App) {
 }
 
 pub trait PopupAppExt {
-    fn show_popup<F: FnOnce(&mut App) -> Popup>(&mut self, popup_builder: F);
+    fn open_popup<F: FnOnce(&mut App) -> Popup>(&mut self, popup_builder: F);
 
     fn close_popup(&mut self);
 }
 
 impl PopupAppExt for App {
-    fn show_popup<F: FnOnce(&mut App) -> Popup>(&mut self, popup_builder: F) {
+    fn open_popup<F: FnOnce(&mut App) -> Popup>(&mut self, popup_builder: F) {
         let popup = (popup_builder)(self);
         let popup_view = self.new(|_| popup);
         PopupGlobal::global(self).popup.clone().write(self, Some(popup_view));
