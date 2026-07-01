@@ -1,47 +1,66 @@
+use std::collections::HashMap;
+
 use gpui::{
-    AnyView, App, BoxShadow, Entity, Focusable, FontWeight, Global, IntoElement, ReadGlobal,
-    SharedString, Styled, Window, div, hsla, point, prelude::*, px,
+    AnyView, AnyWindowHandle, App, BoxShadow, Context, Entity, Focusable, FontWeight, Global,
+    IntoElement, ReadGlobal, SharedString, Styled, Window, div, hsla, point, prelude::*, px,
 };
 
 use crate::{ActiveTheme, Button, Field, FieldEvent, FieldState, h_flex, v_flex};
 
 pub(crate) fn init(cx: &mut App) {
-    let popup_stack = cx.new(|_| Vec::new());
-    cx.set_global(PopupGlobal { popup_stack });
+    let popup_stacks = cx.new(|_| HashMap::new());
+    cx.set_global(PopupGlobal { popup_stacks });
 }
 
 pub trait PopupAppExt {
-    fn open_popup<F: FnOnce(&mut App) -> Popup>(&mut self, popup_builder: F);
+    fn open_popup<F: FnOnce(&mut Window, &mut App) -> Popup>(
+        &mut self,
+        window: &mut Window,
+        popup_builder: F,
+    );
 
-    fn close_popup(&mut self);
+    fn close_popup(&mut self, window: &Window);
 }
 
 impl PopupAppExt for App {
-    fn open_popup<F: FnOnce(&mut App) -> Popup>(&mut self, popup_builder: F) {
-        let popup = (popup_builder)(self);
+    fn open_popup<F: FnOnce(&mut Window, &mut App) -> Popup>(
+        &mut self,
+        window: &mut Window,
+        popup_builder: F,
+    ) {
+        let popup = (popup_builder)(window, self);
         let popup_view = self.new(|_| popup);
-        PopupGlobal::global(self).popup_stack.clone().update(self, |stack, cx| {
-            stack.push(popup_view);
+        PopupGlobal::global(self).popup_stacks.clone().update(self, |stacks, cx| {
+            stacks.entry(window.window_handle()).or_default().push(popup_view);
             cx.notify();
         });
     }
 
-    fn close_popup(&mut self) {
-        PopupGlobal::global(self).popup_stack.clone().update(self, |stack, cx| {
-            stack.pop();
+    fn close_popup(&mut self, window: &Window) {
+        PopupGlobal::global(self).popup_stacks.clone().update(self, |stacks, cx| {
+            if let Some(stack) = stacks.get_mut(&window.window_handle()) {
+                stack.pop();
+            }
             cx.notify();
         });
     }
 }
 
 pub(crate) struct PopupGlobal {
-    pub popup_stack: Entity<Vec<Entity<Popup>>>,
+    pub popup_stacks: Entity<HashMap<AnyWindowHandle, Vec<Entity<Popup>>>>,
 }
 
 impl Global for PopupGlobal {}
 
-pub(crate) fn render_overlay(cx: &mut gpui::Context<'_, crate::Root>) -> impl IntoElement {
-    let last_popup = PopupGlobal::global(cx).popup_stack.read(cx).last().cloned();
+pub(crate) fn render_overlay(
+    window: &mut Window,
+    cx: &mut Context<'_, crate::Root>,
+) -> impl IntoElement {
+    let last_popup = PopupGlobal::global(cx)
+        .popup_stacks
+        .read(cx)
+        .get(&window.window_handle())
+        .and_then(|stack| stack.last().cloned());
 
     div().size_full().children(last_popup.map(|popup| {
         div()
@@ -51,7 +70,7 @@ pub(crate) fn render_overlay(cx: &mut gpui::Context<'_, crate::Root>) -> impl In
             .occlude()
             .size_full()
             .bg(gpui::black().opacity(0.25))
-            .on_any_mouse_down(|_, _, cx| cx.close_popup())
+            .on_any_mouse_down(|_, window, cx| cx.close_popup(window))
             .child(popup)
     }))
 }
@@ -78,11 +97,12 @@ impl Popup {
     ) -> Self {
         field.focus_handle(cx).focus(window, cx);
 
-        cx.subscribe(&field, |_, event, cx| match event {
-            FieldEvent::Submit(_) => cx.close_popup(),
-            _ => {}
-        })
-        .detach();
+        window
+            .subscribe(&field, cx, |_, event, window, cx| match event {
+                FieldEvent::Submit(_) => cx.close_popup(window),
+                _ => {}
+            })
+            .detach();
 
         Self { title: title.into(), kind: PopupKind::Text { field } }
     }
@@ -141,7 +161,9 @@ impl Render for Popup {
                             .child(message.clone()),
                     )
                     .child(
-                        Button::new("close").child("Close").on_click(|_, _, cx| cx.close_popup()),
+                        Button::new("close")
+                            .child("Close")
+                            .on_click(|_, window, cx| cx.close_popup(window)),
                     )
                     .into_any_element(),
                 PopupKind::Text { field: input } => div()

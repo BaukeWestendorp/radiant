@@ -74,8 +74,8 @@ impl FieldValue for Address {
             h_flex().size_full().justify_end().px_1().child(
                 Button::new("open-picker")
                     .icon(Icon::new(IconVariant::TableCellsMerge, IconSize::ExtraSmall))
-                    .on_click(|_, _, cx| {
-                        cx.open_popup(|_| {
+                    .on_click(|_, window, cx| {
+                        cx.open_popup(window, |_, _| {
                             Popup::message("Select an Address", "FIXME: Implement address selector")
                         });
                     }),

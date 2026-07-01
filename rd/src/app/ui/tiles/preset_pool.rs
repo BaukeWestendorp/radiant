@@ -125,7 +125,7 @@ impl PoolTileDelegate for PresetPoolTile {
                     _ => {}
                 })
                 .detach();
-                cx.open_popup(|cx| Popup::text("Rename Object", input, window, cx));
+                cx.open_popup(window, |window, cx| Popup::text("Rename Object", input, window, cx));
             }
         }
     }

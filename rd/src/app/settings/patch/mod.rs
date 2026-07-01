@@ -38,7 +38,7 @@ impl PatchView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        cx.open_popup(|cx| {
+        cx.open_popup(window, |window, cx| {
             struct AddFixturePopup {
                 form: Entity<FormState<add_fixture::AddFixtureForm>>,
             }

@@ -54,7 +54,7 @@ impl Render for Root {
             .child(
                 z_stack([
                     content.into_any_element(),
-                    crate::popup::render_overlay(cx).into_any_element(),
+                    crate::popup::render_overlay(window, cx).into_any_element(),
                 ])
                 .size_full(),
             )
