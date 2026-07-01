@@ -3,7 +3,7 @@ use gpui::{
     Styled, Window, div, prelude::*, px,
 };
 
-use crate::{ActiveTheme, Field, FieldEvent, FieldState, h_flex, v_flex};
+use crate::{ActiveTheme, Button, Field, FieldEvent, FieldState, StyledExt, h_flex, v_flex};
 
 pub(crate) fn init(cx: &mut App) {
     let popup = cx.new(|_| None);
@@ -60,8 +60,8 @@ impl Popup {
         Self { title: title.into(), kind: PopupKind::YesNo }
     }
 
-    pub fn confirm(title: impl Into<SharedString>) -> Self {
-        Self { title: title.into(), kind: PopupKind::Confirm }
+    pub fn message(title: impl Into<SharedString>, message: impl Into<SharedString>) -> Self {
+        Self { title: title.into(), kind: PopupKind::Message { message: message.into() } }
     }
 
     pub fn text(
@@ -92,7 +92,7 @@ impl Popup {
 
 pub enum PopupKind {
     YesNo,
-    Confirm,
+    Message { message: SharedString },
     Text { field: Entity<FieldState<SharedString>> },
     Custom { content: AnyView },
 }
@@ -122,7 +122,22 @@ impl Render for Popup {
             .rounded_b(cx.theme().radius)
             .child(match &self.kind {
                 PopupKind::YesNo => todo!(),
-                PopupKind::Confirm => todo!(),
+                PopupKind::Message { message } => v_flex()
+                    .size_full()
+                    .items_center()
+                    .gap_2()
+                    .p_2()
+                    .child(
+                        div()
+                            .text_color(cx.theme().fg_secondary)
+                            .w_1_2()
+                            .text_center()
+                            .child(message.clone()),
+                    )
+                    .child(
+                        Button::new("close").child("Close").on_click(|_, _, cx| cx.close_popup()),
+                    )
+                    .into_any_element(),
                 PopupKind::Text { field: input } => div()
                     .flex()
                     .justify_center()
