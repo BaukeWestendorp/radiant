@@ -6,8 +6,8 @@ use gpui::{
 use crate::{ActiveTheme, Button, Field, FieldEvent, FieldState, h_flex, v_flex};
 
 pub(crate) fn init(cx: &mut App) {
-    let popup = cx.new(|_| None);
-    cx.set_global(PopupGlobal { popup });
+    let popup_stack = cx.new(|_| Vec::new());
+    cx.set_global(PopupGlobal { popup_stack });
 }
 
 pub trait PopupAppExt {
@@ -20,24 +20,30 @@ impl PopupAppExt for App {
     fn open_popup<F: FnOnce(&mut App) -> Popup>(&mut self, popup_builder: F) {
         let popup = (popup_builder)(self);
         let popup_view = self.new(|_| popup);
-        PopupGlobal::global(self).popup.clone().write(self, Some(popup_view));
+        PopupGlobal::global(self).popup_stack.clone().update(self, |stack, cx| {
+            stack.push(popup_view);
+            cx.notify();
+        });
     }
 
     fn close_popup(&mut self) {
-        PopupGlobal::global(self).popup.clone().write(self, None);
+        PopupGlobal::global(self).popup_stack.clone().update(self, |stack, cx| {
+            stack.pop();
+            cx.notify();
+        });
     }
 }
 
 pub(crate) struct PopupGlobal {
-    pub popup: Entity<Option<Entity<Popup>>>,
+    pub popup_stack: Entity<Vec<Entity<Popup>>>,
 }
 
 impl Global for PopupGlobal {}
 
 pub(crate) fn render_overlay(cx: &mut gpui::Context<'_, crate::Root>) -> impl IntoElement {
-    let popup = PopupGlobal::global(cx).popup.read(cx).clone();
+    let last_popup = PopupGlobal::global(cx).popup_stack.read(cx).last().cloned();
 
-    div().size_full().children(popup.map(|popup| {
+    div().size_full().children(last_popup.map(|popup| {
         div()
             .flex()
             .justify_center()
