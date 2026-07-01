@@ -381,7 +381,7 @@ impl AttributeEditorTile {
             self.selection.read(cx).encoder_attributes.iter().enumerate().map(|(ix, attribute)| {
                 let value = current_attribute_values.get(attribute.name()).cloned().flatten();
 
-                div().w(px(80.0) * 2).h_full().child(
+                div().w(px(76.0) * 2).h_full().child(
                     div()
                         .size_full()
                         .p_1()

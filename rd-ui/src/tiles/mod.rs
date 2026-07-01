@@ -19,7 +19,7 @@ pub struct TileGrid {
 
 impl TileGrid {
     pub fn new(state: Entity<TileGridState>) -> Self {
-        Self { state, grid_size: size(18, 12), cell_size: size(px(80.0), px(80.0)) }
+        Self { state, grid_size: size(18, 12), cell_size: size(px(76.0), px(76.0)) }
     }
 
     pub fn grid_size(&self) -> Size<u32> {

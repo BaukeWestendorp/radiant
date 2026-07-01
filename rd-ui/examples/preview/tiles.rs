@@ -15,7 +15,7 @@ impl TilesPreview {
                 let mut grid = TileGridState::new();
                 grid.add_tile(AlphaTile {}, bounds(point(0, 0), size(4, 4)));
                 grid.add_tile(
-                    PoolTile::new(cx.new(|_| BetaTile {}), size(px(80.0), px(80.0))),
+                    PoolTile::new(cx.new(|_| BetaTile {}), size(px(76.0), px(76.0))),
                     bounds(point(5, 0), size(3, 5)),
                 );
                 grid

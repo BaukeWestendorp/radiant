@@ -24,7 +24,7 @@ pub struct LayoutViewer {
 }
 
 impl LayoutViewer {
-    const CELL_SIZE: Size<Pixels> = size(px(80.0), px(80.0));
+    const CELL_SIZE: Size<Pixels> = size(px(76.0), px(76.0));
 
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let tile_grid = cx.new(|_| TileGridState::new());
@@ -78,7 +78,7 @@ struct LayoutPageSelector {
 }
 
 impl LayoutPageSelector {
-    const CELL_SIZE: Size<Pixels> = size(px(120.0), px(80.0));
+    const CELL_SIZE: Size<Pixels> = size(px(114.0), px(76.0));
 
     pub fn new(
         selected_page: Entity<Option<Slot>>,

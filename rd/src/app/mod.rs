@@ -87,7 +87,7 @@ pub fn run(showfile_path: Option<PathBuf>) -> Result<()> {
     log::debug!("Starting Radiant...");
     rd_ui::build_simple_app()
         .window_title(if cfg!(debug_assertions) { "Radiant [debug-mode]" } else { "Radiant" })
-        .window_size(size(px((18.0 + 1.5) * 80.0), px(12.0 * 80.0) + TITLE_BAR_HEIGHT * 2.0))
+        .window_size(size(px((18.0 + 1.5) * 76.0), px(12.0 * 76.0) + TITLE_BAR_HEIGHT * 2.0))
         .title_bar_content(|_, cx| cx.new(|_| TitleBarContent).into())
         .run(|window, cx| {
             let project = match showfile_path {
