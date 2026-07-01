@@ -1,85 +1,15 @@
-use gpui::{
-    App, ElementId, Entity, EventEmitter, FocusHandle, Focusable, SharedString, Window, div,
-    prelude::*,
-};
+use gpui::{App, ElementId, Entity, FocusHandle, Focusable, SharedString, Window, prelude::*};
 
 use crate::{
-    input::text_input::{TextInput, TextInputEvent},
-    interactive_container,
+    FieldEvent,
+    input::{
+        field::FieldValue,
+        text_input::{TextInput, TextInputEvent},
+    },
 };
 
-pub trait FieldValue {
-    fn from_str(s: &str) -> Option<Self>
-    where
-        Self: Sized;
-
-    fn to_shared_string(&self) -> impl Into<SharedString>;
-
-    fn validator(s: &str) -> bool;
-
-    fn submit_validator(s: &str) -> bool;
-
-    fn render_overlay(_window: &mut Window, _cx: &mut App) -> Option<impl IntoElement> {
-        Option::<gpui::Empty>::None
-    }
-
-    fn render(field: Field<Self>, window: &mut Window, cx: &mut App) -> impl IntoElement
-    where
-        Self: Sized,
-    {
-        let id = ElementId::View(field.state.entity_id());
-        let focus_handle = field.state.read(cx).text_input.read(cx).focus_handle(cx);
-        let disabled = field.state.read(cx).disabled(cx);
-
-        let overlay = Self::render_overlay(window, cx).map(|e| e.into_any_element());
-
-        interactive_container(id, Some(focus_handle))
-            .relative()
-            .w_full()
-            .disabled(disabled)
-            .child(div().size_full().px_1().py_0p5().child(field.state.read(cx).text_input.clone()))
-            .when_some(overlay, |e, overlay| e.child(div().absolute().inset_0().child(overlay)))
-    }
-}
-
-impl FieldValue for f64 {
-    fn from_str(s: &str) -> Option<Self> {
-        s.parse().ok()
-    }
-
-    fn to_shared_string(&self) -> impl Into<SharedString> {
-        self.to_string()
-    }
-
-    fn validator(s: &str) -> bool {
-        s.parse::<f64>().is_ok()
-    }
-
-    fn submit_validator(s: &str) -> bool {
-        s.parse::<f64>().is_ok()
-    }
-}
-
-impl FieldValue for SharedString {
-    fn from_str(s: &str) -> Option<Self> {
-        Some(s.into())
-    }
-
-    fn to_shared_string(&self) -> impl Into<SharedString> {
-        self.clone()
-    }
-
-    fn validator(s: &str) -> bool {
-        !s.trim().is_empty()
-    }
-
-    fn submit_validator(s: &str) -> bool {
-        !s.trim().is_empty()
-    }
-}
-
 pub struct FieldState<T: FieldValue> {
-    text_input: Entity<TextInput>,
+    pub(crate) text_input: Entity<TextInput>,
 
     _marker: std::marker::PhantomData<T>,
 }
@@ -214,38 +144,5 @@ impl<T: FieldValue + 'static> FieldState<T> {
     ) -> Self {
         self.set_submit_validator(cx, validator);
         self
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum FieldEvent<T: FieldValue> {
-    Focus,
-    Blur,
-    Submit(T),
-    Change(T),
-}
-
-impl<T: FieldValue + 'static> EventEmitter<FieldEvent<T>> for FieldState<T> {}
-
-#[derive(IntoElement)]
-pub struct Field<T: FieldValue + 'static> {
-    state: Entity<FieldState<T>>,
-}
-
-impl<T: FieldValue + 'static> Field<T> {
-    pub fn new(state: Entity<FieldState<T>>) -> Self {
-        Self { state }
-    }
-}
-
-impl<T: FieldValue + 'static> Focusable for Field<T> {
-    fn focus_handle(&self, cx: &App) -> FocusHandle {
-        self.state.read(cx).text_input.focus_handle(cx)
-    }
-}
-
-impl<T: FieldValue + 'static> RenderOnce for Field<T> {
-    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
-        T::render(self, window, cx)
     }
 }
