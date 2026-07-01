@@ -2,7 +2,11 @@ use crate::{
     dmx::{Address, Channel, UniverseId},
     patch::FixtureIdPart,
 };
-use rd_ui::{FieldValue, gpui::SharedString};
+use rd_ui::{
+    Button, FieldValue, Icon, IconSize, IconVariant, Popup, PopupAppExt,
+    gpui::{App, IntoElement, ParentElement, SharedString, Styled, Window},
+    h_flex,
+};
 
 impl FieldValue for FixtureIdPart {
     fn from_str(s: &str) -> Option<Self> {
@@ -63,5 +67,19 @@ impl FieldValue for Address {
 
     fn submit_validator(s: &str) -> bool {
         Self::from_str(s).is_some()
+    }
+
+    fn render_overlay(_window: &mut Window, _cx: &mut App) -> Option<impl IntoElement> {
+        Some(
+            h_flex().size_full().justify_end().px_1().child(
+                Button::new("open-picker")
+                    .icon(Icon::new(IconVariant::TableCellsMerge, IconSize::ExtraSmall))
+                    .on_click(|_, _, cx| {
+                        cx.show_popup(|_| {
+                            Popup::message("Select an Address", "FIXME: Implement address selector")
+                        });
+                    }),
+            ),
+        )
     }
 }
