@@ -1,6 +1,6 @@
 use gpui::{
-    AnyView, App, Entity, Focusable, FontWeight, Global, IntoElement, ReadGlobal, SharedString,
-    Styled, Window, div, prelude::*, px,
+    AnyView, App, BoxShadow, Entity, Focusable, FontWeight, Global, IntoElement, ReadGlobal,
+    SharedString, Styled, Window, div, hsla, point, prelude::*, px,
 };
 
 use crate::{ActiveTheme, Button, Field, FieldEvent, FieldState, h_flex, v_flex};
@@ -50,7 +50,7 @@ pub(crate) fn render_overlay(cx: &mut gpui::Context<'_, crate::Root>) -> impl In
             .items_center()
             .occlude()
             .size_full()
-            .bg(cx.theme().contrast.opacity(0.25))
+            .bg(gpui::black().opacity(0.25))
             .on_any_mouse_down(|_, _, cx| cx.close_popup())
             .child(popup)
     }))
@@ -158,9 +158,16 @@ impl Render for Popup {
         let popup = v_flex().size_full().child(header).child(content);
 
         div()
-            .focus(|e| e.border_1().border_color(gpui::red()))
             .occlude()
-            .when(cx.theme().shadow, |e| e.shadow_md())
+            .when(cx.theme().shadow, |e| {
+                e.shadow(vec![BoxShadow {
+                    color: hsla(0.0, 0.0, 0.0, 0.3),
+                    offset: point(px(0.0), px(0.0)),
+                    blur_radius: px(24.0),
+                    spread_radius: px(-1.0),
+                    inset: false,
+                }])
+            })
             .w(px(320.0))
             .max_w_3_4()
             .max_h_3_4()
