@@ -4,9 +4,7 @@ use gpui::{
     App, Entity, FontWeight, IntoElement, ReadGlobal, SharedString, Window, div, prelude::*,
     relative,
 };
-use rd_ui::{
-    ActiveTheme, FieldEvent, PoolTileDelegate, Popup, PopupAppExt, TextFieldState, h_flex,
-};
+use rd_ui::{ActiveTheme, FieldEvent, FieldState, PoolTileDelegate, Popup, PopupAppExt, h_flex};
 
 use rd_engine::{
     cmd::{Command, StoreKind},
@@ -115,11 +113,12 @@ impl PoolTileDelegate for PresetPoolTile {
             Mode::Rename => {
                 let object_id = preset.id();
                 let object_kind = ObjectKind::Preset(self.kind);
-                let input =
-                    cx.new(|cx| TextFieldState::new("rename-field", cx.focus_handle(), window, cx));
-                cx.subscribe(&input, move |input, event, cx| match event {
-                    FieldEvent::Submit => {
-                        let name = input.read(cx).value(cx).to_string();
+                let input = cx.new(|cx| {
+                    FieldState::<SharedString>::new("rename-field", cx.focus_handle(), window, cx)
+                });
+                cx.subscribe(&input, move |_, event, cx| match event {
+                    FieldEvent::Submit(v) => {
+                        let name = v.to_string();
                         cx.execute_engine_cmd(Command::Rename { object_id, object_kind, name });
                         mode.write(cx, Mode::Normal);
                     }

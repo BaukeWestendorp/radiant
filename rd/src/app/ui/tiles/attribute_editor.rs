@@ -475,7 +475,7 @@ impl AttributeEditorTile {
                 };
 
                 let current_cs =
-                    fixture.dmx_mode().logical_channel(attribute.name()).and_then(|lc| {
+                    fixture.dmx_mode().logical_channel(attribute.name()).and_then(|(_dc, lc)| {
                         lc.channel_set_for_value(DmxValue::from_u32(
                             (value.as_f32() * u32::MAX as f32) as u32,
                             false,
@@ -527,7 +527,7 @@ impl AttributeEditorTile {
         let mut channel_sets = Vec::new();
 
         if let Some(attribute) = &self.selection.read(cx).selected_attribute() {
-            if let Some(lc) = fixture.dmx_mode().logical_channel(attribute.name()) {
+            if let Some((_dc, lc)) = fixture.dmx_mode().logical_channel(attribute.name()) {
                 channel_sets.extend(
                     lc.channel_functions()
                         .iter()

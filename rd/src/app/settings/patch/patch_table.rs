@@ -1,44 +1,15 @@
-use gpui::{App, Context, Entity, Window, div, prelude::*, px};
+use gpui::{App, Entity, Window, div, prelude::*, px};
 use rd_engine::patch::{FixtureDefinition, FixtureIdPart};
-use rd_ui::{ActiveTheme, Column, Table, TableDelegate, TableState, v_flex};
+use rd_ui::{Column, TableDelegate};
 
-use crate::engine::EngineAppExt;
-
-pub struct PatchView {
-    table: Entity<TableState<PatchTable>>,
-}
-
-impl PatchView {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let fixture_definitions =
-            cx.new(|cx| cx.engine_snapshot().patch().definition().fixtures().to_vec());
-
-        let selection = cx.new(|_| Vec::new());
-
-        Self {
-            table: cx.new(|cx| {
-                TableState::new(PatchTable::new(fixture_definitions), selection, window, cx)
-            }),
-        }
-    }
-}
-
-impl Render for PatchView {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let bottom_bar = div().w_full().h_8().border_t_1().border_color(cx.theme().border_primary);
-
-        v_flex().size_full().child(Table::new(self.table.clone())).child(bottom_bar)
-    }
-}
-
-struct PatchTable {
+pub struct PatchTable {
     fixture_definitions: Entity<Vec<FixtureDefinition>>,
 
     columns: Vec<Column>,
 }
 
 impl PatchTable {
-    fn new(fixture_definitions: Entity<Vec<FixtureDefinition>>) -> Self {
+    pub fn new(fixture_definitions: Entity<Vec<FixtureDefinition>>) -> Self {
         Self {
             fixture_definitions,
             columns: vec![
