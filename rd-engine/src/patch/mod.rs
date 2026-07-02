@@ -1,6 +1,9 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::mvr_gdtf::gdtf::{Gdtf, resource::ResourceKey};
+use crate::{
+    gdtf::FixtureTypeId,
+    mvr_gdtf::gdtf::{Gdtf, resource::ResourceKey},
+};
 
 mod definition;
 mod fixture;
@@ -65,5 +68,29 @@ impl Patch {
 
     pub fn gdtfs(&self) -> &HashMap<ResourceKey, Arc<Gdtf>> {
         &self.gdtfs
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FixtureKind {
+    fixture_type_id: FixtureTypeId,
+    dmx_mode: String,
+}
+
+impl FixtureKind {
+    pub fn new(fixture_type_id: FixtureTypeId, dmx_mode: String) -> Self {
+        Self { fixture_type_id, dmx_mode }
+    }
+
+    pub fn fixture_type_id(&self) -> FixtureTypeId {
+        self.fixture_type_id
+    }
+
+    pub fn dmx_mode(&self) -> &str {
+        &self.dmx_mode
+    }
+
+    pub fn display(&self, patch: &Patch) -> Option<String> {
+        Some("FIXUTRE_DISPLAY_NAME".to_string())
     }
 }

@@ -1,15 +1,20 @@
 use gpui::{App, Context, Entity, FlexDirection, SharedString, Window, prelude::*};
-use rd_engine::{dmx::Address, patch::FixtureIdPart};
+use rd_engine::{
+    dmx::Address,
+    patch::{FixtureIdPart, FixtureKind},
+};
 use rd_ui::{Button, Field, FieldState, FormDelegate, FormNode, FormState};
 
-use crate::engine::EngineAppExt;
+use crate::{
+    app::ui::{FixtureKindPicker, FixtureKindPickerState},
+    engine::EngineAppExt,
+};
 
 pub struct AddFixtureForm {
     pub fixture_id: Entity<FieldState<FixtureIdPart>>,
     pub address: Entity<FieldState<Address>>,
     pub name: Entity<FieldState<SharedString>>,
-    pub fixture_type: Entity<FieldState<SharedString>>,
-    pub dmx_mode: Entity<FieldState<SharedString>>,
+    pub fixture_kind: Entity<FixtureKindPickerState>,
 }
 
 impl AddFixtureForm {
@@ -51,8 +56,9 @@ impl AddFixtureForm {
                 FieldState::new("name-field", cx.focus_handle(), window, cx)
                     .with_value(next_name, cx)
             }),
-            fixture_type: cx.new(|cx| FieldState::new("gdtf-field", cx.focus_handle(), window, cx)),
-            dmx_mode: cx.new(|cx| FieldState::new("dmx-mode-field", cx.focus_handle(), window, cx)),
+            fixture_kind: cx.new(|cx| {
+                FixtureKindPickerState::new("fixture-kind-picker", cx.focus_handle(), window, cx)
+            }),
         }
     }
 }
@@ -75,10 +81,7 @@ impl FormDelegate for AddFixtureForm {
             FormNode::section(
                 "GDTF",
                 FlexDirection::Row,
-                vec![
-                    FormNode::field(AddFixtureFormId::FixtureType, "Fixture Type"),
-                    FormNode::field(AddFixtureFormId::DmxMode, "DMX Mode"),
-                ],
+                vec![FormNode::field(AddFixtureFormId::FixtureKind, "Fixture Kind")],
             ),
             FormNode::section_headless(
                 FlexDirection::Row,
@@ -97,10 +100,9 @@ impl FormDelegate for AddFixtureForm {
             AddFixtureFormId::FixtureId => Field::new(self.fixture_id.clone()).into_any_element(),
             AddFixtureFormId::Address => Field::new(self.address.clone()).into_any_element(),
             AddFixtureFormId::Name => Field::new(self.name.clone()).into_any_element(),
-            AddFixtureFormId::FixtureType => {
-                Field::new(self.fixture_type.clone()).into_any_element()
+            AddFixtureFormId::FixtureKind => {
+                FixtureKindPicker::new(self.fixture_kind.clone()).into_any_element()
             }
-            AddFixtureFormId::DmxMode => Field::new(self.dmx_mode.clone()).into_any_element(),
             AddFixtureFormId::Submit => Button::new("submit")
                 .w_full()
                 .child("Add Fixture(s)")
@@ -116,8 +118,7 @@ impl FormDelegate for AddFixtureForm {
             fixture_id: self.fixture_id.read(cx).value(cx)?,
             address: self.address.read(cx).value(cx)?,
             name: self.name.read(cx).value(cx)?.to_string(),
-            fixture_type: self.fixture_type.read(cx).value(cx)?.to_string(),
-            dmx_mode: self.dmx_mode.read(cx).value(cx)?.to_string(),
+            fixture_kind: self.fixture_kind.read(cx).fixture_kind()?,
         })
     }
 }
@@ -127,8 +128,7 @@ pub struct AddFixtureFormData {
     pub fixture_id: FixtureIdPart,
     pub address: Address,
     pub name: String,
-    pub fixture_type: String,
-    pub dmx_mode: String,
+    pub fixture_kind: FixtureKind,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -136,7 +136,6 @@ pub enum AddFixtureFormId {
     FixtureId,
     Address,
     Name,
-    FixtureType,
-    DmxMode,
+    FixtureKind,
     Submit,
 }

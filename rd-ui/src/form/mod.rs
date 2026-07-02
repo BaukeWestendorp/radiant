@@ -23,7 +23,6 @@ impl<D: FormDelegate + 'static> Form<D> {
 
 impl<D: FormDelegate + 'static> RenderOnce for Form<D> {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
-        // We update the state to get mutable context access for listener bindings
         self.state.clone().update(cx, |state, cx| {
             let layout = state.delegate().layout(cx);
             let mut form_container = div().tab_group().flex().flex_col().w_full().gap_4();
