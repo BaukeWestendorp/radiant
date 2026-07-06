@@ -7,12 +7,8 @@ use std::{
 use anyhow::Context as _;
 
 use crate::{
-    Engine,
-    mvr_gdtf::gdtf::{Gdtf, resource::ResourceKey},
-    object::Objects,
-    output::OutputDefinition,
-    patch::PatchDefinition,
-    trigger::TriggersDefinition,
+    Engine, gdtf::FixtureTypeId, mvr_gdtf::gdtf::Gdtf, object::Objects, output::OutputDefinition,
+    patch::PatchDefinition, trigger::TriggersDefinition,
 };
 
 const RELATIVE_GDTF_FOLDER_PATH: &str = "gdtf/";
@@ -24,7 +20,7 @@ const RELATIVE_OBJECTS_PATH: &str = "objects.json";
 #[derive(Default)]
 pub struct Project {
     path: Option<PathBuf>,
-    gdtfs: HashMap<ResourceKey, Arc<Gdtf>>,
+    gdtfs: HashMap<FixtureTypeId, Arc<Gdtf>>,
 
     patch: PatchDefinition,
     output: OutputDefinition,
@@ -135,7 +131,7 @@ impl Project {
         self.path.as_deref()
     }
 
-    pub fn gdtfs(&self) -> &HashMap<ResourceKey, Arc<Gdtf>> {
+    pub fn gdtfs(&self) -> &HashMap<FixtureTypeId, Arc<Gdtf>> {
         &self.gdtfs
     }
 
@@ -156,11 +152,11 @@ impl Project {
     }
 }
 
-fn load_gdtfs_from_folder(folder: &Path) -> anyhow::Result<HashMap<ResourceKey, Arc<Gdtf>>> {
+fn load_gdtfs_from_folder(folder: &Path) -> anyhow::Result<HashMap<FixtureTypeId, Arc<Gdtf>>> {
     fn visit_dir(
         base: &Path,
         dir: &Path,
-        out: &mut HashMap<ResourceKey, Arc<Gdtf>>,
+        out: &mut HashMap<FixtureTypeId, Arc<Gdtf>>,
     ) -> anyhow::Result<()> {
         for entry in std::fs::read_dir(dir)? {
             let entry = entry?;
@@ -180,14 +176,11 @@ fn load_gdtfs_from_folder(folder: &Path) -> anyhow::Result<HashMap<ResourceKey, 
                 continue;
             }
 
-            let rel = path.strip_prefix(base).unwrap_or(&path);
-            let resource_key = ResourceKey::new(rel.to_string_lossy().to_string());
-
             let bytes = std::fs::read(&path)
                 .with_context(|| format!("Failed to read GDTF file: {}", path.display()))?;
             let parsed = Gdtf::from_archive_bytes(&bytes);
 
-            out.insert(resource_key, Arc::new(parsed));
+            out.insert(parsed.fixture_type_id(), Arc::new(parsed));
         }
 
         Ok(())

@@ -70,7 +70,7 @@ impl FixtureKindPicker {
 }
 
 impl RenderOnce for FixtureKindPicker {
-    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
         let state = self.state.read(cx);
         let id = state.id.clone();
         let focus_handle = state.focus_handle.clone();
@@ -79,7 +79,7 @@ impl RenderOnce for FixtureKindPicker {
 
         let preview = fixture_kind
             .and_then(|fk| fk.display(&cx.engine_snapshot().patch()))
-            .unwrap_or("".to_string());
+            .unwrap_or("< click to select a fixture kind... >".to_string());
 
         interactive_container(id, Some(focus_handle))
             .relative()

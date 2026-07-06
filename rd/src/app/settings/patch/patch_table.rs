@@ -2,6 +2,8 @@ use gpui::{App, Entity, Window, div, prelude::*, px};
 use rd_engine::patch::{FixtureDefinition, FixtureIdPart};
 use rd_ui::{Column, TableDelegate};
 
+use crate::engine::EngineAppExt;
+
 pub struct PatchTable {
     fixture_definitions: Entity<Vec<FixtureDefinition>>,
 
@@ -16,8 +18,7 @@ impl PatchTable {
                 Column::new("fixture_id", "Id").with_min_width(px(100.0)),
                 Column::new("name", "Name").with_min_width(px(150.0)),
                 Column::new("address", "Address").with_min_width(px(100.0)),
-                Column::new("fixture_type_id", "Type").with_min_width(px(150.0)),
-                Column::new("dmx_mode", "Mode").with_min_width(px(150.0)),
+                Column::new("fixture_type", "Type").with_min_width(px(150.0)),
             ],
         }
     }
@@ -55,8 +56,12 @@ impl TableDelegate for PatchTable {
             "fixture_id" => div().px_1().child(fixture.id().to_string()),
             "name" => div().px_1().child(fixture.name().to_string()),
             "address" => div().px_1().child(fixture.dmx_address().to_string()),
-            "fixture_type_id" => div().px_1().child(fixture.gdtf_file_name().to_string()),
-            "dmx_mode" => div().px_1().child(fixture.gdtf_dmx_mode().to_string()),
+            "fixture_type" => {
+                let patch = cx.engine_snapshot().patch();
+                div().px_1().child(
+                    fixture.fixture_kind().display(&patch).unwrap_or("".to_string()).to_string(),
+                )
+            }
             _ => div(),
         }
     }

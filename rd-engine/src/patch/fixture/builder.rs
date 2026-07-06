@@ -4,8 +4,8 @@ use anyhow::Context;
 
 use crate::{
     dmx::Address,
-    gdtf::dmx::ChannelFunctionPath,
-    mvr_gdtf::gdtf::{self, Gdtf, Name, attr::AttributeName, resource::ResourceKey},
+    gdtf::{FixtureTypeId, dmx::ChannelFunctionPath},
+    mvr_gdtf::gdtf::{self, Gdtf, Name, attr::AttributeName},
     patch::{Fixture, FixtureDefinition, FixtureId, FixtureIdPart},
 };
 
@@ -23,21 +23,21 @@ pub struct FixtureBuilder<'a> {
 impl<'a> FixtureBuilder<'a> {
     pub fn new(
         definition: FixtureDefinition,
-        gdtfs: &'a HashMap<ResourceKey, Arc<Gdtf>>,
+        gdtfs: &'a HashMap<FixtureTypeId, Arc<Gdtf>>,
     ) -> anyhow::Result<Self> {
         let root_id = FixtureId::new(definition.id);
-        let name = definition.name;
+        let name = definition.name.clone();
         let dmx_address = definition.dmx_address;
 
-        let gdtf_dmx_mode = definition.gdtf_dmx_mode;
+        let gdtf_dmx_mode = definition.fixture_kind().dmx_mode();
         let fixture_name_for_errors = name.clone();
 
         let gdtf = gdtfs
-            .get(&ResourceKey::new(definition.gdtf_file_name))
+            .get(&definition.fixture_kind().fixture_type_id())
             .context("Could not find GDTF by resource key")?;
 
         let dmx_mode = gdtf
-            .dmx_mode(&gdtf::Name::new(&gdtf_dmx_mode))
+            .dmx_mode(&gdtf::Name::new(gdtf_dmx_mode))
             .ok_or_else(|| {
                 anyhow::anyhow!(
                     "Could not create fixture builder: No DMX mode '{}' found in GDTF for fixture '{}'. Skipping.",

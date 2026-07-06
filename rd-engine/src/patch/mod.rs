@@ -1,9 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{
-    gdtf::FixtureTypeId,
-    mvr_gdtf::gdtf::{Gdtf, resource::ResourceKey},
-};
+use crate::{gdtf::FixtureTypeId, mvr_gdtf::gdtf::Gdtf};
 
 mod definition;
 mod fixture;
@@ -18,13 +15,13 @@ pub struct Patch {
     fixtures: Vec<Fixture>,
     fixtures_by_id: HashMap<FixtureId, usize>,
 
-    gdtfs: HashMap<ResourceKey, Arc<Gdtf>>,
+    gdtfs: HashMap<FixtureTypeId, Arc<Gdtf>>,
 }
 
 impl Patch {
     pub fn new(
         definition: PatchDefinition,
-        gdtfs: HashMap<ResourceKey, Arc<Gdtf>>,
+        gdtfs: HashMap<FixtureTypeId, Arc<Gdtf>>,
     ) -> anyhow::Result<Self> {
         let mut patch =
             Self { definition, fixtures: Vec::new(), fixtures_by_id: HashMap::new(), gdtfs };
@@ -66,11 +63,12 @@ impl Patch {
         self.fixtures_by_id.get(fixture_id).map(|&idx| &self.fixtures[idx])
     }
 
-    pub fn gdtfs(&self) -> &HashMap<ResourceKey, Arc<Gdtf>> {
+    pub fn gdtfs(&self) -> &HashMap<FixtureTypeId, Arc<Gdtf>> {
         &self.gdtfs
     }
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct FixtureKind {
     fixture_type_id: FixtureTypeId,
@@ -91,6 +89,7 @@ impl FixtureKind {
     }
 
     pub fn display(&self, patch: &Patch) -> Option<String> {
-        Some("FIXUTRE_DISPLAY_NAME".to_string())
+        let gdtf = patch.gdtfs().get(&self.fixture_type_id)?;
+        Some(format!("{} [{}]", gdtf.name(), self.dmx_mode))
     }
 }

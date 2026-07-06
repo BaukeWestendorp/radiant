@@ -7,8 +7,10 @@
         "universe": 1,
         "channel": 1
       },
-      "gdtf_file_name": "Martin_Professional@MAC_700_Profile@V1-0.gdtf",
-      "gdtf_dmx_mode": "16 Bit Basic Mode"
+      "fixture_kind": {
+        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "dmx_mode": "16 Bit Basic Mode"
+      }
     },
     {
       "id": 102,
@@ -17,8 +19,10 @@
         "universe": 1,
         "channel": 24
       },
-      "gdtf_file_name": "Martin_Professional@MAC_700_Profile@V1-0.gdtf",
-      "gdtf_dmx_mode": "16 Bit Basic Mode"
+      "fixture_kind": {
+        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "dmx_mode": "16 Bit Basic Mode"
+      }
     },
     {
       "id": 103,
@@ -27,8 +31,10 @@
         "universe": 1,
         "channel": 47
       },
-      "gdtf_file_name": "Martin_Professional@MAC_700_Profile@V1-0.gdtf",
-      "gdtf_dmx_mode": "16 Bit Basic Mode"
+      "fixture_kind": {
+        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "dmx_mode": "16 Bit Basic Mode"
+      }
     },
     {
       "id": 104,
@@ -37,8 +43,10 @@
         "universe": 1,
         "channel": 70
       },
-      "gdtf_file_name": "Martin_Professional@MAC_700_Profile@V1-0.gdtf",
-      "gdtf_dmx_mode": "16 Bit Basic Mode"
+      "fixture_kind": {
+        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "dmx_mode": "16 Bit Basic Mode"
+      }
     },
     {
       "id": 105,
@@ -47,8 +55,10 @@
         "universe": 1,
         "channel": 93
       },
-      "gdtf_file_name": "Martin_Professional@MAC_700_Profile@V1-0.gdtf",
-      "gdtf_dmx_mode": "16 Bit Basic Mode"
+      "fixture_kind": {
+        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "dmx_mode": "16 Bit Basic Mode"
+      }
     },
     {
       "id": 106,
@@ -57,8 +67,10 @@
         "universe": 1,
         "channel": 116
       },
-      "gdtf_file_name": "Martin_Professional@MAC_700_Profile@V1-0.gdtf",
-      "gdtf_dmx_mode": "16 Bit Basic Mode"
+      "fixture_kind": {
+        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "dmx_mode": "16 Bit Basic Mode"
+      }
     },
     {
       "id": 201,
@@ -67,8 +79,10 @@
         "universe": 1,
         "channel": 139
       },
-      "gdtf_file_name": "Robe_Lighting%40Robin_600_LEDWash%402024-03-25__Zoom_range_fix.gdtf",
-      "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+      "fixture_kind": {
+        "fixture_type_id": "1C8C3DB6-A31F-4220-BD67-99035290B312",
+        "dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+      }
     },
     {
       "id": 202,
@@ -77,8 +91,10 @@
         "universe": 1,
         "channel": 154
       },
-      "gdtf_file_name": "Robe_Lighting%40Robin_600_LEDWash%402024-03-25__Zoom_range_fix.gdtf",
-      "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+      "fixture_kind": {
+        "fixture_type_id": "1C8C3DB6-A31F-4220-BD67-99035290B312",
+        "dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+      }
     },
     {
       "id": 203,
@@ -87,8 +103,10 @@
         "universe": 1,
         "channel": 169
       },
-      "gdtf_file_name": "Robe_Lighting%40Robin_600_LEDWash%402024-03-25__Zoom_range_fix.gdtf",
-      "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+      "fixture_kind": {
+        "fixture_type_id": "1C8C3DB6-A31F-4220-BD67-99035290B312",
+        "dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+      }
     },
     {
       "id": 204,
@@ -97,8 +115,10 @@
         "universe": 1,
         "channel": 184
       },
-      "gdtf_file_name": "Robe_Lighting%40Robin_600_LEDWash%402024-03-25__Zoom_range_fix.gdtf",
-      "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+      "fixture_kind": {
+        "fixture_type_id": "1C8C3DB6-A31F-4220-BD67-99035290B312",
+        "dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+      }
     },
     {
       "id": 205,
@@ -107,8 +127,10 @@
         "universe": 1,
         "channel": 199
       },
-      "gdtf_file_name": "Robe_Lighting%40Robin_600_LEDWash%402024-03-25__Zoom_range_fix.gdtf",
-      "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+      "fixture_kind": {
+        "fixture_type_id": "1C8C3DB6-A31F-4220-BD67-99035290B312",
+        "dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+      }
     },
     {
       "id": 206,
@@ -117,8 +139,10 @@
         "universe": 1,
         "channel": 214
       },
-      "gdtf_file_name": "Robe_Lighting%40Robin_600_LEDWash%402024-03-25__Zoom_range_fix.gdtf",
-      "gdtf_dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+      "fixture_kind": {
+        "fixture_type_id": "1C8C3DB6-A31F-4220-BD67-99035290B312",
+        "dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
+      }
     },
     {
       "id": 301,
@@ -127,8 +151,10 @@
         "universe": 1,
         "channel": 229
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 302,
@@ -137,8 +163,10 @@
         "universe": 1,
         "channel": 233
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 303,
@@ -147,8 +175,10 @@
         "universe": 1,
         "channel": 237
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 304,
@@ -157,8 +187,10 @@
         "universe": 1,
         "channel": 241
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 305,
@@ -167,8 +199,10 @@
         "universe": 1,
         "channel": 245
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 306,
@@ -177,8 +211,10 @@
         "universe": 1,
         "channel": 249
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 307,
@@ -187,8 +223,10 @@
         "universe": 1,
         "channel": 253
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 308,
@@ -197,8 +235,10 @@
         "universe": 1,
         "channel": 257
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 309,
@@ -207,8 +247,10 @@
         "universe": 1,
         "channel": 261
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 310,
@@ -217,8 +259,10 @@
         "universe": 1,
         "channel": 265
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 311,
@@ -227,8 +271,10 @@
         "universe": 1,
         "channel": 269
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 312,
@@ -237,8 +283,10 @@
         "universe": 1,
         "channel": 273
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 313,
@@ -247,8 +295,10 @@
         "universe": 1,
         "channel": 277
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 314,
@@ -257,8 +307,10 @@
         "universe": 1,
         "channel": 281
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 315,
@@ -267,8 +319,10 @@
         "universe": 1,
         "channel": 285
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 316,
@@ -277,8 +331,10 @@
         "universe": 1,
         "channel": 289
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 317,
@@ -287,8 +343,10 @@
         "universe": 1,
         "channel": 293
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 318,
@@ -297,8 +355,10 @@
         "universe": 1,
         "channel": 297
       },
-      "gdtf_file_name": "Robe_Lighting@LEDForce_18_RGBW@2022-11-04__Color_wheels_correction.gdtf",
-      "gdtf_dmx_mode": "Mode 1 RGBW"
+      "fixture_kind": {
+        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "dmx_mode": "Mode 1 RGBW"
+      }
     },
     {
       "id": 401,
@@ -307,8 +367,10 @@
         "universe": 1,
         "channel": 301
       },
-      "gdtf_file_name": "Astera_LED_Technology@FP1_Titan_Tube@tested_by_Astera__V3.gdtf",
-      "gdtf_dmx_mode": "74: RGB RGB S"
+      "fixture_kind": {
+        "fixture_type_id": "6365583D-AEBF-46CE-9952-E1E9CAF26202",
+        "dmx_mode": "74: RGB RGB S"
+      }
     },
     {
       "id": 402,
@@ -317,8 +379,10 @@
         "universe": 1,
         "channel": 326
       },
-      "gdtf_file_name": "Astera_LED_Technology@FP1_Titan_Tube@tested_by_Astera__V3.gdtf",
-      "gdtf_dmx_mode": "74: RGB RGB S"
+      "fixture_kind": {
+        "fixture_type_id": "6365583D-AEBF-46CE-9952-E1E9CAF26202",
+        "dmx_mode": "74: RGB RGB S"
+      }
     },
     {
       "id": 403,
@@ -327,8 +391,10 @@
         "universe": 1,
         "channel": 351
       },
-      "gdtf_file_name": "Astera_LED_Technology@FP3_Hyperion_Tube@tested_by_Astera__V3.gdtf",
-      "gdtf_dmx_mode": "26: RGB RGB S"
+      "fixture_kind": {
+        "fixture_type_id": "1D3F5EC4-0208-4A99-A1F5-A07FC43CFFE8",
+        "dmx_mode": "26: RGB RGB S"
+      }
     },
     {
       "id": 404,
@@ -337,8 +403,10 @@
         "universe": 1,
         "channel": 376
       },
-      "gdtf_file_name": "Astera_LED_Technology@FP3_Hyperion_Tube@tested_by_Astera__V3.gdtf",
-      "gdtf_dmx_mode": "26: RGB RGB S"
+      "fixture_kind": {
+        "fixture_type_id": "1D3F5EC4-0208-4A99-A1F5-A07FC43CFFE8",
+        "dmx_mode": "26: RGB RGB S"
+      }
     },
     {
       "id": 501,
@@ -347,8 +415,10 @@
         "universe": 1,
         "channel": 401
       },
-      "gdtf_file_name": "Martin_Professional@MAC_700_Profile@V1-0.gdtf",
-      "gdtf_dmx_mode": "16 Bit Basic Mode"
+      "fixture_kind": {
+        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "dmx_mode": "16 Bit Basic Mode"
+      }
     },
     {
       "id": 502,
@@ -357,8 +427,10 @@
         "universe": 1,
         "channel": 424
       },
-      "gdtf_file_name": "Martin_Professional@MAC_700_Profile@V1-0.gdtf",
-      "gdtf_dmx_mode": "16 Bit Basic Mode"
+      "fixture_kind": {
+        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "dmx_mode": "16 Bit Basic Mode"
+      }
     },
     {
       "id": 503,
@@ -367,8 +439,10 @@
         "universe": 1,
         "channel": 447
       },
-      "gdtf_file_name": "Martin_Professional@MAC_700_Profile@V1-0.gdtf",
-      "gdtf_dmx_mode": "16 Bit Basic Mode"
+      "fixture_kind": {
+        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "dmx_mode": "16 Bit Basic Mode"
+      }
     },
     {
       "id": 504,
@@ -377,8 +451,10 @@
         "universe": 1,
         "channel": 470
       },
-      "gdtf_file_name": "Martin_Professional@MAC_700_Profile@V1-0.gdtf",
-      "gdtf_dmx_mode": "16 Bit Basic Mode"
+      "fixture_kind": {
+        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "dmx_mode": "16 Bit Basic Mode"
+      }
     }
   ]
 }
