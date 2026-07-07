@@ -39,10 +39,10 @@ impl<D: ServiceDelegate + 'static> Service<D> {
         }
     }
 
-    pub fn new_driven(delegate: D) -> Self {
+    pub fn new_driven(delegate: D, notify_rx: flume::Receiver<()>) -> Self {
         Self {
             delegate: Arc::new(delegate),
-            runner: Runner::Driven {},
+            runner: Runner::Driven { notify_rx, driver_handle: None },
             running: Arc::new(AtomicBool::new(false)),
             ticker_handle: None,
         }
@@ -78,7 +78,7 @@ impl<D: ServiceDelegate + 'static> Service<D> {
                             );
                         }
                     }
-                    Err(flume::RecvError::Disconnected) => todo!(),
+                    Err(flume::RecvError::Disconnected) => break,
                 }
             }
         });
@@ -94,6 +94,10 @@ impl<D: ServiceDelegate + 'static> Service<D> {
             .with_context(|| format!("Failed to stop {} service", self.delegate.name()))?;
         self.runner.stop();
 
+        if let Some(handle) = self.ticker_handle.take() {
+            let _ = handle.join();
+        }
+
         Ok(())
     }
 
@@ -104,7 +108,7 @@ impl<D: ServiceDelegate + 'static> Service<D> {
 
 enum Runner {
     Scheduled { interval: Duration, scheduler_handle: Option<JoinHandle<()>> },
-    Driven {},
+    Driven { notify_rx: flume::Receiver<()>, driver_handle: Option<JoinHandle<()>> },
 }
 
 impl Runner {
@@ -114,10 +118,10 @@ impl Runner {
         running: Arc<AtomicBool>,
         delegate: &D,
     ) {
+        running.store(true, Ordering::SeqCst);
+
         match self {
             Runner::Scheduled { interval, scheduler_handle } => {
-                running.store(true, Ordering::SeqCst);
-
                 let interval = *interval;
                 let running = running.clone();
                 let handle = thread::Builder::new()
@@ -136,7 +140,7 @@ impl Runner {
                             } else {
                                 let deviation = (now - next_tick).as_secs_f64();
                                 if now > next_tick + interval {
-                                    // If we are more than one tick late, skip ahead to catch up.
+                                    // We need to add this prefix byte to convert the buffer's 0-index to a 1-index.
                                     let ticks_missed =
                                         (deviation / interval.as_secs_f64()).floor() as u32 + 1;
                                     next_tick += interval * ticks_missed;
@@ -152,19 +156,44 @@ impl Runner {
 
                 *scheduler_handle = Some(handle);
             }
-            Runner::Driven { .. } => {
-                running.store(true, Ordering::SeqCst);
+            Runner::Driven { notify_rx, driver_handle } => {
+                let notify_rx = notify_rx.clone();
+                let running = running.clone();
+                let handle = thread::Builder::new()
+                    .name(format!("rd_{}_driven", delegate.name().to_lowercase()))
+                    .spawn_with_priority(ThreadPriority::Max, move |tp_res| {
+                        if let Err(err) = tp_res {
+                            log::warn!("Failed to set thread priority: {err}");
+                        };
+
+                        while running.load(Ordering::SeqCst) {
+                            match notify_rx.recv_timeout(Duration::from_millis(50)) {
+                                Ok(()) => {
+                                    let _ = tick_tx.try_send(());
+                                }
+                                Err(flume::RecvTimeoutError::Timeout) => continue,
+                                Err(flume::RecvTimeoutError::Disconnected) => break,
+                            }
+                        }
+                    })
+                    .expect("Failed to spawn driver thread");
+
+                *driver_handle = Some(handle);
             }
         }
     }
 
     pub fn stop(&mut self) {
         match self {
-            Runner::Scheduled { .. } => {
-                todo!();
+            Runner::Scheduled { scheduler_handle, .. } => {
+                if let Some(handle) = scheduler_handle.take() {
+                    let _ = handle.join();
+                }
             }
-            Runner::Driven { .. } => {
-                todo!();
+            Runner::Driven { driver_handle, .. } => {
+                if let Some(handle) = driver_handle.take() {
+                    let _ = handle.join();
+                }
             }
         }
     }

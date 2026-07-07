@@ -1,13 +1,8 @@
-use std::net::SocketAddr;
-use std::sync::{
-    Arc, RwLock,
-    atomic::{AtomicBool, Ordering},
-};
-use std::thread::{self, JoinHandle};
+use std::sync::{Arc, RwLock};
 
-use anyhow::Context as _;
 use uuid::Uuid;
 
+use crate::service::ServiceDelegate;
 use crate::{
     dmx::{Multiverse, UniverseId},
     output::{
@@ -16,111 +11,93 @@ use crate::{
     },
 };
 
-pub struct SacnInstance {
-    name: String,
-    universe_ids: Vec<UniverseId>,
-    preview_mode: bool,
-    priority: u8,
-    target_address: SocketAddr,
+pub struct SacnInstanceService {
+    definition: SacnDmxOutputInstanceDefinition,
 
-    thread_handle: Option<JoinHandle<()>>,
-    thread_running: Arc<AtomicBool>,
+    multiverse: Arc<RwLock<Multiverse>>,
+
+    sacn_source: RwLock<Option<sacn::source::Source>>,
 }
 
-impl SacnInstance {
-    pub fn new(definition: SacnDmxOutputInstanceDefinition) -> anyhow::Result<Self> {
-        Ok(Self {
-            name: definition.name,
-            universe_ids: definition.universe_ids,
-            preview_mode: definition.preview_mode,
-            priority: definition.priority,
-            target_address: definition.target_address,
-
-            thread_handle: None,
-            thread_running: Arc::new(AtomicBool::new(false)),
-        })
-    }
-
-    pub fn start(
-        &mut self,
-        notify_rx: flume::Receiver<()>,
+impl SacnInstanceService {
+    pub fn new(
+        definition: SacnDmxOutputInstanceDefinition,
         multiverse: Arc<RwLock<Multiverse>>,
-    ) -> anyhow::Result<()> {
-        if self.thread_handle.is_some() {
-            log::warn!("sACN instance '{}' thread already running", self.name);
-            return Ok(());
-        }
+    ) -> anyhow::Result<Self> {
+        Ok(Self { definition, multiverse, sacn_source: RwLock::new(None) })
+    }
+}
 
-        let ip = self.target_address.ip();
-        let port = self.target_address.port();
+impl ServiceDelegate for SacnInstanceService {
+    fn on_start(&self) -> anyhow::Result<()> {
+        let ip = self.definition.target_address.ip();
+        let port = self.definition.target_address.port();
 
-        let mut sacn_source = sacn::source::Source::new(sacn::source::SourceConfig {
+        let sacn_source = sacn::source::Source::new(sacn::source::SourceConfig {
             // FIXME: We should find a way to make this unique for each device, without it changing over time.
             cid: Uuid::new_v4(),
-            name: self.name.to_owned(),
+            name: self.definition.name.to_owned(),
             // FIXME: Implement multicasting.
             ip,
             port,
-            priority: self.priority,
-            preview_data: self.preview_mode,
+            priority: self.definition.priority,
+            preview_data: self.definition.preview_mode,
             synchronization_address: 0,
             force_synchronization: false,
         })?;
 
-        let universe_ids = self.universe_ids.clone();
-        let running = self.thread_running.clone();
-        running.store(true, Ordering::SeqCst);
+        let mut lock = self
+            .sacn_source
+            .write()
+            .map_err(|err| anyhow::anyhow!("Failed to acquire sACN source lock: {err}"))?;
 
-        let name = self.name.clone();
-        let handle = thread::Builder::new()
-            .name(format!("rd_sacn_{}", self.name))
-            .spawn(move || {
-                while running.load(Ordering::SeqCst) && notify_rx.recv().is_ok() {
-                    let frame = multiverse.read().unwrap().clone();
-
-                    if let Err(err) = handle_frame(&mut sacn_source, &universe_ids, frame) {
-                        log::error!("sACN instance '{name}' failed to send frame: {err}");
-                    }
-                }
-
-                if let Err(err) = sacn_source.shutdown() {
-                    log::error!("sACN instance '{name}' failed to shut down cleanly: {err}");
-                }
-            })
-            .context("Failed to spawn sACN instance thread")?;
-
-        self.thread_handle = Some(handle);
+        *lock = Some(sacn_source);
 
         Ok(())
     }
 
-    pub fn stop(&mut self) {
-        if self.thread_handle.is_some() {
-            self.thread_running.store(false, Ordering::SeqCst);
-            if let Some(handle) = self.thread_handle.take() {
-                let _ = handle.join();
+    fn on_tick(&self) -> anyhow::Result<()> {
+        let mut lock = self
+            .sacn_source
+            .write()
+            .map_err(|err| anyhow::anyhow!("Failed to acquire sACN source lock: {err}"))?;
+
+        let Some(sacn_source) = lock.as_mut() else {
+            log::error!("sACN instance not initialized");
+            return Ok(());
+        };
+
+        if let Err(err) = handle_frame(
+            sacn_source,
+            &self.definition.universe_ids,
+            self.multiverse
+                .read()
+                .map_err(|err| anyhow::anyhow!("Failed to acquire multiverse lock: {err}"))?
+                .clone(),
+        ) {
+            log::error!("sACN instance failed to send frame: {err}");
+        }
+
+        Ok(())
+    }
+
+    fn on_stop(&self) -> anyhow::Result<()> {
+        let mut lock = self
+            .sacn_source
+            .write()
+            .map_err(|err| anyhow::anyhow!("Failed to acquire sACN source lock: {err}"))?;
+
+        if let Some(sacn_source) = lock.take() {
+            if let Err(err) = sacn_source.shutdown() {
+                log::error!("sACN instance failed to shut down cleanly: {err}");
             }
         }
+
+        Ok(())
     }
 
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-
-    pub fn universe_ids(&self) -> &[UniverseId] {
-        &self.universe_ids
-    }
-
-    pub fn preview_mode(&self) -> bool {
-        self.preview_mode
-    }
-
-    pub fn priority(&self) -> u8 {
-        self.priority
-    }
-
-    pub fn target_address(&self) -> SocketAddr {
-        self.target_address
+    fn name(&self) -> &'static str {
+        "sACN Instance"
     }
 }
 

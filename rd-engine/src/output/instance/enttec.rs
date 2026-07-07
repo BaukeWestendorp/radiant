@@ -1,16 +1,8 @@
-use std::thread::{self, JoinHandle};
+use std::sync::{Arc, RwLock};
 use std::time::Duration;
-use std::{
-    sync::{
-        Arc, RwLock,
-        atomic::{AtomicBool, Ordering},
-    },
-    time::Instant,
-};
 
-use anyhow::Context as _;
+use anyhow::Context;
 use libftd2xx::{BitsPerWord, Ftdi, FtdiCommon, Parity, StopBits, TimeoutError};
-use thread_priority::ThreadBuilderExt;
 
 const BAUDRATE: u32 = 250000;
 const BITS_8: BitsPerWord = BitsPerWord::Bits8;
@@ -19,115 +11,83 @@ const PARITY_NONE: Parity = Parity::No;
 const READ_TIMEOUT: Duration = Duration::from_millis(1000);
 const WRITE_TIMEOUT: Duration = Duration::from_millis(1000);
 
-const INTERVAL: Duration = Duration::from_millis(40);
+use crate::dmx::{Multiverse, UniverseId};
+use crate::output::EnttecDmxOutputInstanceDefinition;
+use crate::service::ServiceDelegate;
 
-use crate::{
-    dmx::{Multiverse, UniverseId},
-    output::EnttecDmxOutputInstanceDefinition,
-};
-
-pub struct EnttecInstance {
+pub struct EnttecInstanceService {
     universe_id: UniverseId,
     serial_number: String,
 
-    thread_handle: Option<JoinHandle<()>>,
-    thread_running: Arc<AtomicBool>,
+    multiverse: Arc<RwLock<Multiverse>>,
+
+    ftdi: Option<RwLock<Ftdi>>,
 }
 
-impl EnttecInstance {
-    pub fn new(definition: EnttecDmxOutputInstanceDefinition) -> anyhow::Result<Self> {
+impl EnttecInstanceService {
+    pub fn new(
+        definition: EnttecDmxOutputInstanceDefinition,
+        multiverse: Arc<RwLock<Multiverse>>,
+    ) -> anyhow::Result<Self> {
         Ok(Self {
             universe_id: definition.universe_id,
             serial_number: definition.serial_number,
 
-            thread_handle: None,
-            thread_running: Arc::new(AtomicBool::new(false)),
+            multiverse,
+
+            ftdi: None,
         })
     }
+}
 
-    pub fn start(
-        &mut self,
-        _notify_rx: flume::Receiver<()>,
-        multiverse: Arc<RwLock<Multiverse>>,
-    ) -> anyhow::Result<()> {
-        if self.thread_handle.is_some() {
-            log::warn!("Enttec instance '{}' thread already running", self.serial_number);
-            return Ok(());
-        }
-
+impl ServiceDelegate for EnttecInstanceService {
+    fn on_start(&self) -> anyhow::Result<()> {
         let mut ftdi = Ftdi::with_serial_number(&self.serial_number).with_context(|| {
             format!("Failed to open FTDI device, possible devices: {:?}", libftd2xx::list_devices())
         })?;
 
         ftdi_init(&mut ftdi).context("Failed to initialize FTDI device")?;
 
-        let universe_id = self.universe_id.clone();
-        let running = self.thread_running.clone();
-        running.store(true, Ordering::SeqCst);
+        Ok(())
+    }
 
-        let serial = self.serial_number.clone();
-        let handle = thread::Builder::new()
-            .name(format!("enttec_open_dmx_{}", self.serial_number))
-            .spawn_with_priority(thread_priority::ThreadPriority::Max, move |prio_result| {
-                if prio_result.is_err() {
-                    log::warn!(
-                        "could not set {} thread priority to max",
-                        thread::current().name().unwrap_or("<unnamed>")
-                    );
-                }
+    fn on_tick(&self) -> anyhow::Result<()> {
+        let Some(ftdi) = self.ftdi.as_ref() else {
+            log::error!("Enttec instance '{}' FTDI device not initialized", self.serial_number);
+            return Ok(());
+        };
 
-                let sleeper = spin_sleep::SpinSleeper::default();
-                let mut next_tick = Instant::now() + INTERVAL;
-                while running.load(Ordering::SeqCst) {
-                    let now = Instant::now();
+        let mut ftdi =
+            ftdi.write().map_err(|err| anyhow::anyhow!("Failed to acquire FTDI lock: {err}"))?;
 
-                    let frame = multiverse.read().unwrap().clone();
-
-                    if now < next_tick {
-                        sleeper.sleep_until(next_tick);
-                    } else {
-                        let deviation = (now - next_tick).as_secs_f64();
-                        if now > next_tick + INTERVAL {
-                            // If we are more than one tick late, skip ahead to catch up.
-                            let ticks_missed =
-                                (deviation / INTERVAL.as_secs_f64()).floor() as u32 + 1;
-                            next_tick += INTERVAL * ticks_missed;
-                        }
-                    }
-
-                    if let Err(err) = handle_frame(&mut ftdi, &universe_id, frame) {
-                        log::error!("Enttec instance '{serial}' failed to send frame: {err}");
-                    }
-
-                    next_tick += INTERVAL;
-                }
-
-                if let Err(err) = ftdi_close(&mut ftdi) {
-                    log::error!("Enttec instance '{serial}' failed to shut down cleanly: {err}");
-                }
-            })
-            .context("Failed to spawn Enttec instance thread")?;
-
-        self.thread_handle = Some(handle);
+        if let Err(err) = handle_frame(
+            &mut ftdi,
+            &self.universe_id,
+            self.multiverse
+                .read()
+                .map_err(|err| anyhow::anyhow!("Failed to acquire multiverse lock: {err}"))?
+                .clone(),
+        ) {
+            log::error!("Enttec instance '{}' failed to send frame: {err}", self.serial_number);
+        }
 
         Ok(())
     }
 
-    pub fn stop(&mut self) {
-        if self.thread_handle.is_some() {
-            self.thread_running.store(false, Ordering::SeqCst);
-            if let Some(handle) = self.thread_handle.take() {
-                let _ = handle.join();
-            }
-        }
+    fn on_stop(&self) -> anyhow::Result<()> {
+        let Some(ftdi) = self.ftdi.as_ref() else {
+            log::error!("Enttec instance '{}' FTDI device not initialized", self.serial_number);
+            return Ok(());
+        };
+
+        let mut ftdi =
+            ftdi.write().map_err(|err| anyhow::anyhow!("Failed to acquire FTDI lock: {err}"))?;
+
+        ftdi_close(&mut ftdi)
     }
 
-    pub fn universe_id(&self) -> UniverseId {
-        self.universe_id
-    }
-
-    pub fn serial_number(&self) -> &str {
-        &self.serial_number
+    fn name(&self) -> &'static str {
+        "EnttecOpenDmx"
     }
 }
 

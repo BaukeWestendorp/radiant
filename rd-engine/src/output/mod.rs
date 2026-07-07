@@ -1,7 +1,7 @@
-mod agent;
 mod definition;
 mod instance;
 mod protocol;
+mod service;
 
-pub use agent::*;
 pub use definition::*;
+pub use service::*;
