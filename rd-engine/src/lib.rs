@@ -14,6 +14,7 @@ mod engine;
 mod features;
 mod mvr_gdtf;
 mod project;
+mod service;
 
 pub use engine::*;
 pub use mvr_gdtf::*;

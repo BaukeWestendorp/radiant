@@ -81,7 +81,7 @@ impl Project {
             path: Some(path),
             gdtfs: engine.patch().gdtfs().clone(),
             patch: engine.patch().definition().clone(),
-            output: engine.output_agent().definition().clone(),
+            output: engine.output_service().delegate().definition().clone(),
             triggers: engine.triggers_agent().definition().clone(),
             objects: engine.objects().clone(),
         }

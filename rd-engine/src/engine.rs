@@ -13,11 +13,12 @@ use crate::{
     cmd::Command,
     event::{Event, EventListener},
     object::Objects,
-    output::OutputAgent,
+    output::OutputService,
     patch::Patch,
     pipeline::Pipeline,
     programmer::Programmer,
     selection::Selection,
+    service::Service,
     trigger::{Trigger, TriggersAgent},
 };
 
@@ -32,7 +33,7 @@ pub struct Engine {
     pub(crate) highlight: bool,
 
     pub(crate) triggers_agent: TriggersAgent,
-    pub(crate) output_agent: OutputAgent,
+    pub(crate) output_service: Service<OutputService>,
 
     event_tx: flume::Sender<Event>,
     event_listener: EventListener,
@@ -48,7 +49,10 @@ impl Engine {
         let (event_tx, event_rx) = flume::unbounded();
         let event_listener = EventListener::new(event_rx);
 
-        let output_agent = OutputAgent::new(project.output().clone())?;
+        let output_service = Service::new_scheduled(
+            OutputService::new(project.output().clone())?,
+            Duration::from_secs_f64(1.0 / 44.0),
+        );
         let triggers_agent = TriggersAgent::new(project.triggers().clone())?;
 
         let engine = Self {
@@ -65,7 +69,7 @@ impl Engine {
             event_listener,
             event_buffer: Vec::new(),
 
-            output_agent,
+            output_service,
             triggers_agent,
         };
 
@@ -84,8 +88,8 @@ impl Engine {
         &self.triggers_agent
     }
 
-    pub fn output_agent(&self) -> &OutputAgent {
-        &self.output_agent
+    pub fn output_service(&self) -> &Service<OutputService> {
+        &self.output_service
     }
 
     pub fn objects(&self) -> &Objects {
@@ -133,11 +137,13 @@ impl Engine {
     }
 
     fn start(mut self, rx: Receiver<EngineMessage>, snapshot_store: Arc<ArcSwap<EngineSnapshot>>) {
-        log::debug!("Starting Radiant Engine...");
+        log::debug!("Starting engine...");
 
         const INTERVAL: Duration = Duration::new(0, ((1_000_000_000_f64 / 60.0).round()) as u32);
 
-        self.output_agent.start();
+        if let Err(err) = self.output_service.start() {
+            log::error!("{err}");
+        }
 
         let mut next_tick = Instant::now() + INTERVAL;
         let mut running = true;
@@ -145,7 +151,7 @@ impl Engine {
         let mut started = false;
         while running {
             if !started {
-                log::info!("Started Radiant Engine");
+                log::info!("Started engine");
                 started = true;
             }
 
@@ -185,9 +191,11 @@ impl Engine {
             next_tick += INTERVAL;
         }
 
-        self.output_agent.stop();
+        if let Err(err) = self.output_service.stop() {
+            log::error!("{err}");
+        }
 
-        log::info!("Stopped Radiant Engine");
+        log::info!("Stopped engine");
     }
 
     fn handle_message(
@@ -250,7 +258,7 @@ impl Engine {
             let _ = self.event_tx.send(event);
         }
 
-        self.output_agent.update(self.pipeline.multiverse().clone());
+        self.output_service.delegate().update(self.pipeline.multiverse().clone());
     }
 
     fn resolve_pipeline(&mut self) {
