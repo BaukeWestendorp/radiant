@@ -1,10 +1,11 @@
 use gpui::{ClickEvent, Context, Entity, Window, div, prelude::*};
+use rd_engine::patch::FixtureDefinition;
 use rd_ui::{
     ActiveTheme, Button, Form, FormEvent, FormState, Popup, PopupAppExt, Table, TableSelection,
     TableState, h_flex, v_flex,
 };
 
-use crate::engine::EngineAppExt;
+use crate::{app::settings::patch::add_fixture::AddFixtureFormData, engine::EngineAppExt};
 
 mod add_fixture;
 mod patch_table;
@@ -56,12 +57,64 @@ impl PatchView {
             let form = cx
                 .new(|cx| FormState::new(add_fixture::AddFixtureForm::new(window, cx), window, cx));
 
-            cx.subscribe(&form, |_, event, _| match event {
-                FormEvent::Submit { data } => {
-                    dbg!(data);
-                }
-            })
-            .detach();
+            window
+                .subscribe(&form, cx, |_, event, window, cx| match event {
+                    FormEvent::Submit { data } => {
+                        let AddFixtureFormData { fixture_id, address, name, fixture_kind, count } =
+                            data;
+
+                        let patch = cx.engine_snapshot().patch();
+                        let Some(dmx_mode) = fixture_kind.dmx_mode(&patch) else {
+                            log::error!("Could not find DMX mode for FixtureKind");
+                            return;
+                        };
+
+                        let mut digit_start = name.len();
+                        for (idx, c) in name.char_indices().rev() {
+                            if c.is_ascii_digit() {
+                                digit_start = idx;
+                            } else {
+                                break;
+                            }
+                        }
+
+                        let (base_name, start_num) = if digit_start < name.len() {
+                            (&name[..digit_start], name[digit_start..].parse::<u32>().ok())
+                        } else {
+                            (&name[..], None)
+                        };
+
+                        for i in 0..*count {
+                            let enumerated_id = fixture_id
+                                .offset(i as i32)
+                                .expect("Offset should always be positive");
+
+                            let enumerated_name = match start_num {
+                                Some(num) => format!("{}{}", base_name, num + i as u32),
+                                None => name.to_string(),
+                            };
+
+                            let enumerated_dmx_address = address
+                                .with_channel_offset(
+                                    (dmx_mode.max_channel_offset() * i as u32) as i32,
+                                )
+                                .expect("Offset should always be positive");
+
+                            let fixture = FixtureDefinition::new(
+                                enumerated_id,
+                                enumerated_name,
+                                enumerated_dmx_address,
+                                fixture_kind.clone(),
+                            );
+
+                            // FIXME: Find out how to actually add them to the patch. Maybe a Command?
+                            dbg!(fixture);
+                        }
+
+                        cx.close_popup(window);
+                    }
+                })
+                .detach();
 
             let popup = cx.new(|_| AddFixturePopup { form });
 
@@ -79,6 +132,7 @@ impl Render for PatchView {
             .border_t_1()
             .border_color(cx.theme().border_primary)
             .child(
+                // FIXME: Disable this button with missing fields or if the fixtures that would be created are invalid.
                 Button::new("add-fixtures")
                     .child("Add Fixture(s)")
                     .on_click(cx.listener(Self::show_add_fixtures_popup)),

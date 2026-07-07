@@ -3,7 +3,9 @@ use rd_engine::{
     dmx::Address,
     patch::{FixtureIdPart, FixtureKind},
 };
-use rd_ui::{Button, Field, FieldState, FormDelegate, FormNode, FormState};
+use rd_ui::{
+    Button, Field, FieldState, FormDelegate, FormNode, FormState, NumberField, NumberFieldState,
+};
 
 use crate::{
     app::ui::{FixtureKindPicker, FixtureKindPickerState},
@@ -15,6 +17,7 @@ pub struct AddFixtureForm {
     pub address: Entity<FieldState<Address>>,
     pub name: Entity<FieldState<SharedString>>,
     pub fixture_kind: Entity<FixtureKindPickerState>,
+    pub count: Entity<NumberFieldState>,
 }
 
 impl AddFixtureForm {
@@ -59,6 +62,12 @@ impl AddFixtureForm {
             fixture_kind: cx.new(|cx| {
                 FixtureKindPickerState::new("fixture-kind-picker", cx.focus_handle(), window, cx)
             }),
+            count: cx.new(|cx| {
+                NumberFieldState::new("count-field", cx.focus_handle(), window, cx)
+                    .with_value(Some(1.0), cx)
+                    .with_min(Some(1.0), cx)
+                    .with_step(Some(1.0), cx)
+            }),
         }
     }
 }
@@ -78,14 +87,16 @@ impl FormDelegate for AddFixtureForm {
                 ],
             ),
             FormNode::field(AddFixtureFormId::Name, "Name"),
-            FormNode::section(
-                "GDTF",
+            FormNode::section_headless(
                 FlexDirection::Row,
                 vec![FormNode::field(AddFixtureFormId::FixtureKind, "Fixture Kind")],
             ),
             FormNode::section_headless(
                 FlexDirection::Row,
-                vec![FormNode::custom(AddFixtureFormId::Submit)],
+                vec![
+                    FormNode::field(AddFixtureFormId::Count, "Count"),
+                    FormNode::custom(AddFixtureFormId::Submit),
+                ],
             ),
         ]
     }
@@ -103,8 +114,8 @@ impl FormDelegate for AddFixtureForm {
             AddFixtureFormId::FixtureKind => {
                 FixtureKindPicker::new(self.fixture_kind.clone()).into_any_element()
             }
+            AddFixtureFormId::Count => NumberField::new(self.count.clone()).into_any_element(),
             AddFixtureFormId::Submit => Button::new("submit")
-                .w_full()
                 .child("Add Fixture(s)")
                 .on_click(cx.listener(|state, _event, _window, cx| {
                     state.submit(cx);
@@ -119,6 +130,7 @@ impl FormDelegate for AddFixtureForm {
             address: self.address.read(cx).value(cx)?,
             name: self.name.read(cx).value(cx)?.to_string(),
             fixture_kind: self.fixture_kind.read(cx).fixture_kind()?,
+            count: self.count.read(cx).value(cx)? as usize,
         })
     }
 }
@@ -129,6 +141,7 @@ pub struct AddFixtureFormData {
     pub address: Address,
     pub name: String,
     pub fixture_kind: FixtureKind,
+    pub count: usize,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -137,5 +150,6 @@ pub enum AddFixtureFormId {
     Address,
     Name,
     FixtureKind,
+    Count,
     Submit,
 }

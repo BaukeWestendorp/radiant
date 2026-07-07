@@ -66,9 +66,8 @@ fn render_node<D: FormDelegate + 'static>(
             let input = state.delegate.render_input(&id, window, cx).into_any_element();
 
             div()
-                .w_full()
-                .items_center()
-                .gap_2()
+                .flex_col()
+                .flex_grow_1()
                 .when_some(label, |e, label| {
                     e.child(div().text_color(cx.theme().fg_secondary).child(label))
                 })
