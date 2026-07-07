@@ -11,7 +11,7 @@ use anyhow::Context;
 use thread_priority::{ThreadBuilderExt, ThreadPriority};
 
 pub trait ServiceDelegate: Send + Sync {
-    fn on_start(&self) -> anyhow::Result<()>;
+    fn on_start(&self, tick_tx: flume::Sender<()>) -> anyhow::Result<()>;
 
     fn on_tick(&self) -> anyhow::Result<()>;
 
@@ -30,6 +30,15 @@ pub struct Service<D: ServiceDelegate> {
 }
 
 impl<D: ServiceDelegate + 'static> Service<D> {
+    pub fn new_event_driven(delegate: D) -> Self {
+        Self {
+            delegate: Arc::new(delegate),
+            runner: Runner::EventDriven,
+            running: Arc::new(AtomicBool::new(false)),
+            ticker_handle: None,
+        }
+    }
+
     pub fn new_scheduled(delegate: D, interval: Duration) -> Self {
         Self {
             delegate: Arc::new(delegate),
@@ -60,9 +69,9 @@ impl<D: ServiceDelegate + 'static> Service<D> {
 
         let (tick_tx, tick_rx) = flume::bounded(1);
 
-        self.runner.start(tick_tx, Arc::clone(&self.running), self.delegate.as_ref());
+        self.runner.start(tick_tx.clone(), Arc::clone(&self.running), self.delegate.as_ref());
         self.delegate
-            .on_start()
+            .on_start(tick_tx)
             .with_context(|| format!("Failed to start {} service", self.delegate.name()))?;
         self.running.store(true, Ordering::SeqCst);
 
@@ -107,6 +116,7 @@ impl<D: ServiceDelegate + 'static> Service<D> {
 }
 
 enum Runner {
+    EventDriven,
     Scheduled { interval: Duration, scheduler_handle: Option<JoinHandle<()>> },
     Driven { notify_rx: flume::Receiver<()>, driver_handle: Option<JoinHandle<()>> },
 }
@@ -121,6 +131,7 @@ impl Runner {
         running.store(true, Ordering::SeqCst);
 
         match self {
+            Runner::EventDriven => {}
             Runner::Scheduled { interval, scheduler_handle } => {
                 let interval = *interval;
                 let running = running.clone();
@@ -195,6 +206,7 @@ impl Runner {
                     let _ = handle.join();
                 }
             }
+            Runner::EventDriven => {}
         }
     }
 }

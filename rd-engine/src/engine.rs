@@ -1,9 +1,7 @@
-use std::{
-    path::{Path, PathBuf},
-    sync::Arc,
-    thread,
-    time::{Duration, Instant},
-};
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::thread;
+use std::time::{Duration, Instant};
 
 use arc_swap::ArcSwap;
 use flume::{Receiver, Sender};
@@ -19,7 +17,7 @@ use crate::{
     programmer::Programmer,
     selection::Selection,
     service::Service,
-    trigger::{Trigger, TriggersAgent},
+    trigger::{Trigger, TriggersService},
 };
 
 pub struct Engine {
@@ -32,7 +30,7 @@ pub struct Engine {
     pub(crate) selection: Arc<Selection>,
     pub(crate) highlight: bool,
 
-    pub(crate) triggers_agent: TriggersAgent,
+    pub(crate) triggers_service: Service<TriggersService>,
     pub(crate) output_service: Service<OutputService>,
 
     event_tx: flume::Sender<Event>,
@@ -53,7 +51,8 @@ impl Engine {
             OutputService::new(project.output().clone())?,
             Duration::from_secs_f64(1.0 / 44.0),
         );
-        let triggers_agent = TriggersAgent::new(project.triggers().clone())?;
+        let triggers_service =
+            Service::new_event_driven(TriggersService::new(project.triggers().clone())?);
 
         let engine = Self {
             showfile_path: project.path().map(|p| p.to_path_buf()),
@@ -70,7 +69,7 @@ impl Engine {
             event_buffer: Vec::new(),
 
             output_service,
-            triggers_agent,
+            triggers_service,
         };
 
         Ok(engine)
@@ -84,8 +83,8 @@ impl Engine {
         &self.patch
     }
 
-    pub fn triggers_agent(&self) -> &TriggersAgent {
-        &self.triggers_agent
+    pub fn triggers_service(&self) -> &Service<TriggersService> {
+        &self.triggers_service
     }
 
     pub fn output_service(&self) -> &Service<OutputService> {
@@ -145,6 +144,10 @@ impl Engine {
             log::error!("{err}");
         }
 
+        if let Err(err) = self.triggers_service.start() {
+            log::error!("{err}");
+        }
+
         let mut next_tick = Instant::now() + INTERVAL;
         let mut running = true;
 
@@ -195,6 +198,10 @@ impl Engine {
             log::error!("{err}");
         }
 
+        if let Err(err) = self.triggers_service.stop() {
+            log::error!("{err}");
+        }
+
         log::info!("Stopped engine");
     }
 
@@ -226,7 +233,7 @@ impl Engine {
 
     fn tick(&mut self, snapshot_store: &Arc<ArcSwap<EngineSnapshot>>) {
         let mut snapshot_dirty = false;
-        for trigger in self.triggers_agent.drain() {
+        for trigger in self.triggers_service.delegate().drain() {
             match trigger {
                 Trigger::ExecutorMaster { executor_id, value } => {
                     self.execute(Command::ExecutorSetMaster { executor_id, value })

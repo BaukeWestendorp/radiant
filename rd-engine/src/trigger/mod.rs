@@ -1,10 +1,10 @@
 use crate::object::{ExecutorButton, ExecutorId};
 
-mod agent;
 mod definition;
+mod service;
 
-pub use agent::*;
 pub use definition::*;
+pub use service::*;
 
 pub enum Trigger {
     ExecutorMaster { executor_id: ExecutorId, value: f32 },

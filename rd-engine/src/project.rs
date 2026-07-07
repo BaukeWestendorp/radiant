@@ -82,7 +82,7 @@ impl Project {
             gdtfs: engine.patch().gdtfs().clone(),
             patch: engine.patch().definition().clone(),
             output: engine.output_service().delegate().definition().clone(),
-            triggers: engine.triggers_agent().definition().clone(),
+            triggers: engine.triggers_service().delegate().definition().clone(),
             objects: engine.objects().clone(),
         }
     }

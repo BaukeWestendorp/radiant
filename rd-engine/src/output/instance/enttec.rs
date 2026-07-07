@@ -41,7 +41,7 @@ impl EnttecInstanceService {
 }
 
 impl ServiceDelegate for EnttecInstanceService {
-    fn on_start(&self) -> anyhow::Result<()> {
+    fn on_start(&self, _tick_tx: flume::Sender<()>) -> anyhow::Result<()> {
         let mut ftdi = Ftdi::with_serial_number(&self.serial_number).with_context(|| {
             format!("Failed to open FTDI device, possible devices: {:?}", libftd2xx::list_devices())
         })?;

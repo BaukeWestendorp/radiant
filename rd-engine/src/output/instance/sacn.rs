@@ -2,14 +2,10 @@ use std::sync::{Arc, RwLock};
 
 use uuid::Uuid;
 
+use crate::dmx::{Multiverse, UniverseId};
+use crate::output::SacnDmxOutputInstanceDefinition;
+use crate::output::protocol::sacn::{self, Universe};
 use crate::service::ServiceDelegate;
-use crate::{
-    dmx::{Multiverse, UniverseId},
-    output::{
-        SacnDmxOutputInstanceDefinition,
-        protocol::sacn::{self, Universe},
-    },
-};
 
 pub struct SacnInstanceService {
     definition: SacnDmxOutputInstanceDefinition,
@@ -29,7 +25,7 @@ impl SacnInstanceService {
 }
 
 impl ServiceDelegate for SacnInstanceService {
-    fn on_start(&self) -> anyhow::Result<()> {
+    fn on_start(&self, _tick_tx: flume::Sender<()>) -> anyhow::Result<()> {
         let ip = self.definition.target_address.ip();
         let port = self.definition.target_address.port();
 

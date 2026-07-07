@@ -19,7 +19,7 @@ pub struct OutputService {
 }
 
 impl ServiceDelegate for OutputService {
-    fn on_start(&self) -> anyhow::Result<()> {
+    fn on_start(&self, _tick_tx: flume::Sender<()>) -> anyhow::Result<()> {
         for instance in &self.sacn_instances {
             instance
                 .write()
