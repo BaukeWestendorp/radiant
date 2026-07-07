@@ -25,13 +25,13 @@ impl<D: FormDelegate + 'static> RenderOnce for Form<D> {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         self.state.clone().update(cx, |state, cx| {
             let layout = state.delegate().layout(cx);
-            let mut form_container = div().tab_group().flex().flex_col().w_full().gap_4();
-
-            for node in layout {
-                form_container = form_container.child(render_node(state, node, window, cx));
-            }
-
-            form_container
+            div()
+                .tab_group()
+                .flex()
+                .flex_col()
+                .w_full()
+                .gap_4()
+                .children(layout.into_iter().map(|node| render_node(state, node, window, cx)))
         })
     }
 }

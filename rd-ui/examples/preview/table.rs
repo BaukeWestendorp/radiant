@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use gpui::prelude::*;
 use gpui::{App, Entity, Window, div};
-use rd_ui::{ActiveTheme, Column, Table, TableDelegate, TableState, section};
+use rd_ui::{ActiveTheme, Column, Table, TableDelegate, TableSelection, TableState, section};
 
 pub struct TablePreview {
     table_a: Entity<TableState<PreviewTableDelegate>>,
@@ -11,8 +11,8 @@ pub struct TablePreview {
 
 impl TablePreview {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let selection_a = cx.new(|_| Vec::new());
-        let selection_b = cx.new(|_| Vec::new());
+        let selection_a = cx.new(|_| TableSelection::Multiple(Vec::new()));
+        let selection_b = cx.new(|_| TableSelection::Single(None));
 
         Self {
             table_a: cx.new(|cx| {

@@ -1,6 +1,6 @@
 use gpui::{AnyElement, App, Bounds, Entity, SharedString, Window, div, prelude::*};
 use rd_engine::{cmd::Command, event::Event};
-use rd_ui::{Table, TableState, TileDelegate};
+use rd_ui::{Table, TableSelection, TableState, TileDelegate};
 
 use crate::{app::ui::FixtureTableDelegate, engine::EngineAppExt};
 
@@ -10,10 +10,12 @@ pub struct FixturesTile {
 
 impl FixturesTile {
     pub fn new(window: &mut Window, cx: &mut App) -> Self {
-        let selection = cx.new(|cx| cx.engine_snapshot().selection().fixture_ids().to_vec());
+        let selection = cx.new(|cx| {
+            TableSelection::Multiple(cx.engine_snapshot().selection().fixture_ids().to_vec())
+        });
 
         cx.observe(&selection, |selection, cx| {
-            let fixture_ids = selection.read(cx).clone();
+            let fixture_ids = selection.read(cx).iter().copied().collect();
             cx.execute_engine_cmd(Command::SelectionSet { fixture_ids });
         })
         .detach();
@@ -23,8 +25,9 @@ impl FixturesTile {
             move |event, cx| match event {
                 Event::SelectionChanged => {
                     let fixture_ids = cx.engine_snapshot().selection().fixture_ids().to_vec();
-                    if fixture_ids != selection.read(cx).as_slice() {
-                        selection.write(cx, fixture_ids);
+                    let table_fixture_ids = selection.read(cx).iter().copied().collect::<Vec<_>>();
+                    if fixture_ids != table_fixture_ids.as_slice() {
+                        selection.write(cx, TableSelection::Multiple(fixture_ids));
                     }
                 }
                 _ => {}

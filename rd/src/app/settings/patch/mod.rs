@@ -1,7 +1,7 @@
 use gpui::{ClickEvent, Context, Entity, Window, div, prelude::*};
 use rd_ui::{
-    ActiveTheme, Button, Form, FormEvent, FormState, Popup, PopupAppExt, Table, TableState, h_flex,
-    v_flex,
+    ActiveTheme, Button, Form, FormEvent, FormState, Popup, PopupAppExt, Table, TableSelection,
+    TableState, h_flex, v_flex,
 };
 
 use crate::engine::EngineAppExt;
@@ -18,7 +18,7 @@ impl PatchView {
         let fixture_definitions =
             cx.new(|cx| cx.engine_snapshot().patch().definition().fixtures().to_vec());
 
-        let selection = cx.new(|_| Vec::new());
+        let selection = cx.new(|_| TableSelection::Multiple(Vec::new()));
 
         Self {
             table: cx.new(|cx| {

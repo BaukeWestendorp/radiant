@@ -12,7 +12,7 @@ pub struct TableState<D: TableDelegate> {
 
     pub(crate) rows: RowRegistry<D>,
 
-    selection: Entity<Vec<D::RowId>>,
+    selection: Entity<TableSelection<D::RowId>>,
     pub(crate) selected_column_ix: usize,
     pub(crate) is_selecting: bool,
     pub(crate) is_subtracting: bool,
@@ -28,7 +28,7 @@ pub struct TableState<D: TableDelegate> {
 impl<D: TableDelegate + 'static> TableState<D> {
     pub fn new(
         delegate: D,
-        selection: Entity<Vec<D::RowId>>,
+        selection: Entity<TableSelection<D::RowId>>,
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
@@ -44,10 +44,16 @@ impl<D: TableDelegate + 'static> TableState<D> {
         cx.observe(&selection, |this, selection, cx| {
             // When selection changes externally, ensure any selected rows that are nested
             // are visible by expanding their ancestor path(s).
-            let selected_ids = selection.read(cx).clone();
+            let selected_ids = match selection.read(cx) {
+                TableSelection::Multiple(vec) => vec.clone(),
+                TableSelection::Single(Some(id)) => vec![id.clone()],
+                TableSelection::Single(None) => vec![],
+            };
+
             for row_id in selected_ids.iter() {
                 this.rows.expand_path_to(row_id);
             }
+
             cx.notify();
         })
         .detach();
@@ -87,21 +93,40 @@ impl<D: TableDelegate + 'static> TableState<D> {
         self.rows.is_collapsible(row_id)
     }
 
-    pub fn selection(&self) -> Entity<Vec<D::RowId>> {
+    pub fn selection(&self) -> Entity<TableSelection<D::RowId>> {
         self.selection.clone()
     }
 
     pub fn selected_row_ids(&self, cx: &App) -> Vec<D::RowId> {
-        self.selection.read(cx).clone()
+        match self.selection.read(cx) {
+            TableSelection::Multiple(vec) => vec.clone(),
+            TableSelection::Single(Some(id)) => vec![id.clone()],
+            TableSelection::Single(None) => vec![],
+        }
     }
 
     pub fn selection_contains(&self, row_id: &D::RowId, cx: &App) -> bool {
-        self.selection.read(cx).contains(row_id)
+        match self.selection.read(cx) {
+            TableSelection::Multiple(vec) => vec.contains(row_id),
+            TableSelection::Single(Some(id)) => id == row_id,
+            TableSelection::Single(None) => false,
+        }
+    }
+
+    pub fn has_selection(&self, cx: &App) -> bool {
+        self.selection.read(cx).single().is_some()
     }
 
     pub fn set_selection(&mut self, row_ids: Vec<D::RowId>, cx: &mut Context<Self>) {
         self.selection.update(cx, move |selection, cx| {
-            *selection = row_ids;
+            match selection {
+                TableSelection::Multiple(vec) => {
+                    *vec = row_ids;
+                }
+                TableSelection::Single(opt) => {
+                    *opt = row_ids.into_iter().next();
+                }
+            }
             cx.notify();
         });
         cx.notify();
@@ -121,7 +146,10 @@ impl<D: TableDelegate + 'static> TableState<D> {
 
     pub fn clear_selection(&mut self, cx: &mut Context<Self>) {
         self.selection.update(cx, |selection, cx| {
-            selection.clear();
+            match selection {
+                TableSelection::Multiple(vec) => vec.clear(),
+                TableSelection::Single(opt) => *opt = None,
+            }
             cx.notify();
         });
         cx.notify();
@@ -129,11 +157,20 @@ impl<D: TableDelegate + 'static> TableState<D> {
 
     pub fn toggle_selected(&mut self, row_id: &D::RowId, cx: &mut Context<Self>) {
         let row_id = row_id.clone();
-        self.selection.update(cx, move |selection, _| {
-            if let Some(ix) = selection.iter().position(|id| id == &row_id) {
-                selection.remove(ix);
-            } else {
-                selection.push(row_id.clone());
+        self.selection.update(cx, move |selection, _| match selection {
+            TableSelection::Multiple(vec) => {
+                if let Some(ix) = vec.iter().position(|id| id == &row_id) {
+                    vec.remove(ix);
+                } else {
+                    vec.push(row_id);
+                }
+            }
+            TableSelection::Single(opt) => {
+                if opt.as_ref() == Some(&row_id) {
+                    *opt = None;
+                } else {
+                    *opt = Some(row_id);
+                }
             }
         });
         cx.notify();
@@ -146,9 +183,9 @@ impl<D: TableDelegate + 'static> TableState<D> {
         }
 
         let current = if extend {
-            self.range_selection_head.clone().or(self.selection.read(cx).last().cloned())
+            self.range_selection_head.clone().or_else(|| self.selected_row_ids(cx).last().cloned())
         } else {
-            self.selection.read(cx).last().cloned()
+            self.selected_row_ids(cx).last().cloned()
         };
 
         // Empty selection behavior:
@@ -193,7 +230,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
     }
 
     pub(crate) fn edit_selection(&mut self, cx: &mut Context<Self>) {
-        let row_ids = self.selection.read(cx).clone();
+        let row_ids = self.selected_row_ids(cx);
         if row_ids.is_empty() {
             return;
         }
@@ -203,7 +240,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
     }
 
     pub(crate) fn delete_selection(&mut self, cx: &mut Context<Self>) {
-        let row_ids = self.selection.read(cx).clone();
+        let row_ids = self.selected_row_ids(cx);
         if row_ids.is_empty() {
             return;
         }
@@ -214,7 +251,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
     }
 
     pub(crate) fn toggle_expand_selected_rows(&mut self, cx: &mut Context<Self>) {
-        let selected = self.selection.read(cx).clone();
+        let selected = self.selected_row_ids(cx);
         if selected.is_empty() {
             return;
         }
@@ -329,7 +366,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
             return;
         }
 
-        let previous_selection = self.selection.read(cx).clone();
+        let previous_selection = self.selected_row_ids(cx);
 
         let next_selection = if self.is_subtracting {
             let mut next = previous_selection;
@@ -401,6 +438,11 @@ impl<D: TableDelegate + 'static> TableState<D> {
 
     pub(crate) fn on_cell_mouse_up_out(&mut self, cx: &mut Context<Self>) {
         self.end_range_selection(cx);
+    }
+
+    pub fn reload(&mut self, cx: &mut Context<Self>) {
+        self.rows = RowRegistry::from_delegate(&self.delegate, cx);
+        cx.notify();
     }
 }
 
@@ -594,6 +636,80 @@ impl<D: TableDelegate> RowRegistry<D> {
             if node.parent.is_none() {
                 visit(&self.nodes, i, &self.expanded, &mut self.visible_depths_cache);
             }
+        }
+    }
+}
+
+pub enum TableSelection<T> {
+    Multiple(Vec<T>),
+    Single(Option<T>),
+}
+
+impl<T> TableSelection<T> {
+    pub fn single(&self) -> Option<&T> {
+        match self {
+            TableSelection::Multiple(vec) => vec.first(),
+            TableSelection::Single(opt) => opt.as_ref(),
+        }
+    }
+
+    pub fn iter(&self) -> TableSelectionIter<'_, T> {
+        self.into_iter()
+    }
+}
+
+pub enum TableSelectionIter<'a, T> {
+    Multiple(std::slice::Iter<'a, T>),
+    Single(std::option::Iter<'a, T>),
+}
+
+impl<'a, T> Iterator for TableSelectionIter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::Multiple(iter) => iter.next(),
+            Self::Single(iter) => iter.next(),
+        }
+    }
+}
+
+impl<'a, T> IntoIterator for &'a TableSelection<T> {
+    type Item = &'a T;
+    type IntoIter = TableSelectionIter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        match self {
+            TableSelection::Multiple(vec) => TableSelectionIter::Multiple(vec.iter()),
+            TableSelection::Single(opt) => TableSelectionIter::Single(opt.iter()),
+        }
+    }
+}
+
+pub enum TableSelectionIntoIter<T> {
+    Multiple(std::vec::IntoIter<T>),
+    Single(std::option::IntoIter<T>),
+}
+
+impl<T> Iterator for TableSelectionIntoIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            Self::Multiple(iter) => iter.next(),
+            Self::Single(iter) => iter.next(),
+        }
+    }
+}
+
+impl<T> IntoIterator for TableSelection<T> {
+    type Item = T;
+    type IntoIter = TableSelectionIntoIter<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        match self {
+            TableSelection::Multiple(vec) => TableSelectionIntoIter::Multiple(vec.into_iter()),
+            TableSelection::Single(opt) => TableSelectionIntoIter::Single(opt.into_iter()),
         }
     }
 }

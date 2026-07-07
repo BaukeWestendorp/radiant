@@ -129,7 +129,7 @@ impl Render for Popup {
 
         let header = h_flex()
             .px_2()
-            .w_full()
+            .min_w_full()
             .min_h(window.line_height() * 1.5)
             .max_h(window.line_height() * 1.5)
             .bg(cx.theme().bg_tile_header)
@@ -177,10 +177,11 @@ impl Render for Popup {
                 PopupKind::Custom { content } => content.clone().into_any_element(),
             });
 
-        let popup = v_flex().size_full().child(header).child(content);
-
-        div()
+        v_flex()
             .occlude()
+            .min_w(px(320.0))
+            .max_w_5_6()
+            .max_h_5_6()
             .when(cx.theme().shadow, |e| {
                 e.shadow(vec![BoxShadow {
                     color: hsla(0.0, 0.0, 0.0, 0.3),
@@ -190,9 +191,7 @@ impl Render for Popup {
                     inset: false,
                 }])
             })
-            .w(px(320.0))
-            .max_w_3_4()
-            .max_h_3_4()
-            .child(popup)
+            .child(header)
+            .child(content)
     }
 }
