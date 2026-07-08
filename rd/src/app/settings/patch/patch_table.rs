@@ -36,7 +36,7 @@ impl TableDelegate for PatchTable {
     }
 
     fn root_row_ids(&self, cx: &App) -> Vec<Self::RowId> {
-        self.fixture_definitions.read(cx).iter().map(|f| f.id()).collect()
+        self.fixture_definitions.read(cx).iter().map(|f| f.id).collect()
     }
 
     fn render_cell(
@@ -46,20 +46,20 @@ impl TableDelegate for PatchTable {
         _window: &mut Window,
         cx: &App,
     ) -> impl IntoElement {
-        let Some(fixture) = self.fixture_definitions.read(cx).iter().find(|f| f.id() == *row_id)
+        let Some(fixture) = self.fixture_definitions.read(cx).iter().find(|f| f.id == *row_id)
         else {
             return div();
         };
         let column = self.column(col_ix, cx);
 
         match column.id().as_str() {
-            "fixture_id" => div().px_1().child(fixture.id().to_string()),
-            "name" => div().px_1().child(fixture.name().to_string()),
-            "address" => div().px_1().child(fixture.dmx_address().to_string()),
+            "fixture_id" => div().px_1().child(fixture.id.to_string()),
+            "name" => div().px_1().child(fixture.name.to_string()),
+            "address" => div().px_1().child(fixture.dmx_address.to_string()),
             "fixture_type" => {
                 let patch = cx.engine_snapshot().patch();
                 div().px_1().child(
-                    fixture.fixture_kind().display(&patch).unwrap_or("".to_string()).to_string(),
+                    fixture.fixture_kind.display(&patch).unwrap_or("".to_string()).to_string(),
                 )
             }
             _ => div(),

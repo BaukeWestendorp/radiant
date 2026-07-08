@@ -7,8 +7,8 @@ use std::{
 use anyhow::Context as _;
 
 use crate::{
-    Engine, gdtf::FixtureTypeId, mvr_gdtf::gdtf::Gdtf, object::Objects, output::OutputDefinition,
-    patch::PatchDefinition, trigger::TriggersDefinition,
+    EngineSnapshot, gdtf::FixtureTypeId, mvr_gdtf::gdtf::Gdtf, object::Objects,
+    output::OutputDefinition, patch::PatchDefinition, trigger::TriggersDefinition,
 };
 
 const RELATIVE_GDTF_FOLDER_PATH: &str = "gdtf/";
@@ -19,13 +19,13 @@ const RELATIVE_OBJECTS_PATH: &str = "objects.json";
 
 #[derive(Default)]
 pub struct Project {
-    path: Option<PathBuf>,
-    gdtfs: HashMap<FixtureTypeId, Arc<Gdtf>>,
+    pub path: Option<PathBuf>,
+    pub gdtfs: HashMap<FixtureTypeId, Arc<Gdtf>>,
 
-    patch: PatchDefinition,
-    output: OutputDefinition,
-    triggers: TriggersDefinition,
-    objects: Objects,
+    pub patch: PatchDefinition,
+    pub output: OutputDefinition,
+    pub triggers: TriggersDefinition,
+    pub objects: Objects,
 }
 
 impl Project {
@@ -76,14 +76,14 @@ impl Project {
         Ok(Self { path: Some(path), patch, gdtfs, output, triggers, objects })
     }
 
-    pub fn load_from_engine(path: PathBuf, engine: &mut Engine) -> Self {
+    pub fn load_from_engine(path: Option<PathBuf>, snapshot: &EngineSnapshot) -> Self {
         Self {
-            path: Some(path),
-            gdtfs: engine.patch().gdtfs().clone(),
-            patch: engine.patch().definition().clone(),
-            output: engine.output_service().delegate().definition().clone(),
-            triggers: engine.triggers_service().delegate().definition().clone(),
-            objects: engine.objects().clone(),
+            path,
+            gdtfs: snapshot.patch().gdtfs().clone(),
+            patch: snapshot.patch().definition().clone(),
+            output: snapshot.output_definition().clone(),
+            triggers: snapshot.triggers_definition().clone(),
+            objects: snapshot.objects().as_ref().clone(),
         }
     }
 
@@ -125,30 +125,6 @@ impl Project {
         log::info!("Saved Radiant Project");
 
         Ok(())
-    }
-
-    pub fn path(&self) -> Option<&Path> {
-        self.path.as_deref()
-    }
-
-    pub fn gdtfs(&self) -> &HashMap<FixtureTypeId, Arc<Gdtf>> {
-        &self.gdtfs
-    }
-
-    pub fn patch(&self) -> &PatchDefinition {
-        &self.patch
-    }
-
-    pub fn output(&self) -> &OutputDefinition {
-        &self.output
-    }
-
-    pub fn triggers(&self) -> &TriggersDefinition {
-        &self.triggers
-    }
-
-    pub fn objects(&self) -> &Objects {
-        &self.objects
     }
 }
 

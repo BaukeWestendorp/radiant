@@ -3,40 +3,16 @@ use crate::object::{ExecutorButton, ExecutorId};
 #[derive(Debug, Clone, PartialEq, Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct TriggersDefinition {
-    midi: Vec<MidiTriggerDefinition>,
-}
-
-impl TriggersDefinition {
-    pub fn midi(&self) -> &[MidiTriggerDefinition] {
-        &self.midi
-    }
+    pub midi: Vec<MidiTriggerDefinition>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct MidiTriggerDefinition {
-    device_name: String,
-    channel: MultiRange<u4>,
-    message: MidiMessage,
-    target: TriggerTarget,
-}
-
-impl MidiTriggerDefinition {
-    pub fn device_name(&self) -> &str {
-        &self.device_name
-    }
-
-    pub fn channel(&self) -> &MultiRange<u4> {
-        &self.channel
-    }
-
-    pub fn trigger(&self) -> &MidiMessage {
-        &self.message
-    }
-
-    pub fn target(&self) -> &TriggerTarget {
-        &self.target
-    }
+    pub device_name: String,
+    pub channel: MultiRange<u4>,
+    pub message: MidiMessage,
+    pub target: TriggerTarget,
 }
 
 #[derive(Debug, Clone, PartialEq)]

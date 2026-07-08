@@ -74,7 +74,7 @@ impl rd_service::Runner for TriggerServiceRunner {
         log::info!("Initializing MIDI...");
 
         let unique_midi_device_names: HashSet<_> =
-            self.definition.midi().iter().map(|child| child.device_name()).collect();
+            self.definition.midi.iter().map(|child| &child.device_name).collect();
 
         // NOTE: These are stored here to keep them alive for as long as the service runs.
         let mut connections = Vec::new();
@@ -82,9 +82,9 @@ impl rd_service::Runner for TriggerServiceRunner {
         for device_name in unique_midi_device_names {
             let midi_mappings = self
                 .definition
-                .midi()
+                .midi
                 .iter()
-                .filter(|mapping| mapping.device_name() == device_name)
+                .filter(|mapping| &mapping.device_name == device_name)
                 .cloned()
                 .collect::<Vec<_>>();
 
@@ -169,7 +169,7 @@ fn handle_midi_event(
     let triggers = mappings
         .iter()
         .filter(|mapping| match_midi_message(mapping, channel, &message))
-        .filter_map(|mapping| build_trigger(mapping.target(), &message));
+        .filter_map(|mapping| build_trigger(&mapping.target, &message));
 
     for trigger in triggers {
         if let Err(err) = trigger_tx.try_send(trigger) {
@@ -189,11 +189,11 @@ fn match_midi_message(
     channel: midly::num::u4,
     message: &midly::MidiMessage,
 ) -> bool {
-    if !mapping.channel().contains(&channel.into()) {
+    if !mapping.channel.contains(&channel.into()) {
         return false;
     }
 
-    match (mapping.trigger(), message) {
+    match (&mapping.message, message) {
         (MidiMessage::NoteOff { note, velocity }, midly::MidiMessage::NoteOff { key, vel })
         | (MidiMessage::NoteOn { note, velocity }, midly::MidiMessage::NoteOn { key, vel }) => {
             note.contains(&(*key).into()) && velocity.contains(&(*vel).into())

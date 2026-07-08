@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use gpui::{App, AppContext, Entity, EventEmitter, Global, ReadGlobal, Subscription};
-use rd_engine::{EngineHandle, EngineSnapshot, cmd::Command, event::Event};
+use gpui::{App, AppContext, Entity, EventEmitter, Global, ReadGlobal, Subscription, UpdateGlobal};
+use rd_engine::{Engine, EngineHandle, EngineSnapshot, Project, cmd::Command, event::Event};
 
 pub(crate) fn init(handle: EngineHandle, cx: &mut App) {
     let engine_global = EngineGlobal::new(handle, cx);
@@ -16,6 +16,8 @@ pub trait EngineAppExt {
     fn execute_engine_cmd(&self, command: Command);
 
     fn try_execute_engine_cmd(&self, command: Command);
+
+    fn reload_engine(&mut self, project: Project);
 
     fn on_engine_event(&mut self, handler: impl FnMut(&Event, &mut App) + 'static) -> Subscription;
 }
@@ -39,6 +41,24 @@ impl EngineAppExt for App {
         if let Err(err) = self.engine().try_execute(command) {
             log::error!("Failed to execute command: {err}");
         }
+    }
+
+    fn reload_engine(&mut self, project: Project) {
+        &EngineGlobal::update_global(self, |engine, _| {
+            if let Err(err) = engine.handle.stop() {
+                log::error!("Failed to stop engine: {err}");
+            }
+
+            let rd_engine = match Engine::new(project) {
+                Ok(rd_engine) => rd_engine,
+                Err(err) => {
+                    log::error!("Could not load engine: {err}");
+                    Engine::new(Project::new()).expect("should create new showfile")
+                }
+            };
+
+            engine.handle = EngineHandle::new(rd_engine);
+        });
     }
 
     fn on_engine_event(

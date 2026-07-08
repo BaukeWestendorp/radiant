@@ -29,11 +29,11 @@ impl<'a> FixtureBuilder<'a> {
         let name = definition.name.clone();
         let dmx_address = definition.dmx_address;
 
-        let gdtf_dmx_mode = definition.fixture_kind().dmx_mode_name();
+        let gdtf_dmx_mode = definition.fixture_kind.dmx_mode_name();
         let fixture_name_for_errors = name.clone();
 
         let gdtf = gdtfs
-            .get(&definition.fixture_kind().fixture_type_id())
+            .get(&definition.fixture_kind.fixture_type_id())
             .context("Could not find GDTF by resource key")?;
 
         let dmx_mode = gdtf

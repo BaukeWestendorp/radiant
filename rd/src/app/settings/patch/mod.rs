@@ -1,5 +1,5 @@
 use gpui::{ClickEvent, Context, Entity, Window, div, prelude::*};
-use rd_engine::patch::FixtureDefinition;
+use rd_engine::{Project, patch::FixtureDefinition};
 use rd_ui::{
     ActiveTheme, Button, Form, FormEvent, FormState, Popup, PopupAppExt, Table, TableSelection,
     TableState, h_flex, v_flex,
@@ -17,7 +17,7 @@ pub struct PatchView {
 impl PatchView {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let fixture_definitions =
-            cx.new(|cx| cx.engine_snapshot().patch().definition().fixtures().to_vec());
+            cx.new(|cx| cx.engine_snapshot().patch().definition().fixtures.to_vec());
 
         let selection = cx.new(|_| TableSelection::Multiple(Vec::new()));
 
@@ -84,6 +84,14 @@ impl PatchView {
                             (&name[..], None)
                         };
 
+                        let mut project = {
+                            let snapshot = cx.engine_snapshot();
+                            Project::load_from_engine(
+                                snapshot.showfile_path().map(|p| p.to_path_buf()),
+                                snapshot.as_ref(),
+                            )
+                        };
+
                         for i in 0..*count {
                             let enumerated_id = fixture_id
                                 .offset(i as i32)
@@ -100,16 +108,17 @@ impl PatchView {
                                 )
                                 .expect("Offset should always be positive");
 
-                            let fixture = FixtureDefinition::new(
-                                enumerated_id,
-                                enumerated_name,
-                                enumerated_dmx_address,
-                                fixture_kind.clone(),
-                            );
+                            let fixture = FixtureDefinition {
+                                id: enumerated_id,
+                                name: enumerated_name,
+                                dmx_address: enumerated_dmx_address,
+                                fixture_kind: fixture_kind.clone(),
+                            };
 
-                            // FIXME: Find out how to actually add them to the patch. Maybe a Command?
-                            dbg!(fixture);
+                            project.patch.fixtures.push(fixture);
                         }
+
+                        cx.reload_engine(project);
 
                         cx.close_popup(window);
                     }

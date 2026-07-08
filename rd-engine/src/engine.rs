@@ -7,7 +7,8 @@ use arc_swap::ArcSwap;
 use flume::{Receiver, Sender};
 use rd_service::Service;
 
-use crate::trigger::{TriggerService, TriggerServiceRunner};
+use crate::output::OutputDefinition;
+use crate::trigger::{TriggerService, TriggerServiceRunner, TriggersDefinition};
 use crate::{
     Project,
     cmd::Command,
@@ -41,23 +42,23 @@ pub struct Engine {
 
 impl Engine {
     pub fn new(project: Project) -> anyhow::Result<Self> {
-        let patch = Patch::new(project.patch().clone(), project.gdtfs().clone())?;
-        let objects = project.objects().clone();
+        let patch = Patch::new(project.patch.clone(), project.gdtfs.clone())?;
+        let objects = project.objects.clone();
         let pipeline = Pipeline::new(&patch);
 
         let (event_tx, event_rx) = flume::unbounded();
         let event_listener = EventListener::new(event_rx);
 
         let output_service = Service::new(
-            OutputService::new(project.output().clone())?,
+            OutputService::new(project.output.clone())?,
             rd_service::Scheduled::new(Duration::from_secs_f64(1.0 / 44.0)),
         );
 
-        let (triggers_delegate, triggers_runner) = TriggerService::new(project.triggers().clone());
+        let (triggers_delegate, triggers_runner) = TriggerService::new(project.triggers.clone());
         let triggers_service = Service::new(triggers_delegate, triggers_runner);
 
         let engine = Self {
-            showfile_path: project.path().map(|p| p.to_path_buf()),
+            showfile_path: project.path.map(|p| p.to_path_buf()),
 
             patch: Arc::new(patch),
             objects: Arc::new(objects),
@@ -129,6 +130,8 @@ impl Engine {
             programmer: Arc::clone(&self.programmer),
             pipeline: Arc::clone(&self.pipeline),
             selection: Arc::clone(&self.selection),
+            triggers_definition: self.triggers_service.delegate().definition().clone(),
+            output_definition: self.output_service.delegate().definition().clone(),
             highlight: self.highlight,
         }
     }
@@ -386,6 +389,8 @@ pub struct EngineSnapshot {
     programmer: Arc<Programmer>,
     pipeline: Arc<Pipeline>,
     selection: Arc<Selection>,
+    triggers_definition: TriggersDefinition,
+    output_definition: OutputDefinition,
     highlight: bool,
 }
 
@@ -408,6 +413,14 @@ impl EngineSnapshot {
 
     pub fn pipeline(&self) -> Arc<Pipeline> {
         Arc::clone(&self.pipeline)
+    }
+
+    pub fn triggers_definition(&self) -> &TriggersDefinition {
+        &self.triggers_definition
+    }
+
+    pub fn output_definition(&self) -> &OutputDefinition {
+        &self.output_definition
     }
 
     pub fn selection(&self) -> Arc<Selection> {
