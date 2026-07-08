@@ -543,7 +543,7 @@ impl AttributeEditorTile {
                                     let fixtures =
                                         cx.engine_snapshot().selection().fixture_ids().to_vec();
 
-                                    cx.execute_engine_cmd(Command::ProgrammerSet {
+                                    cx.exec_cmd(Command::ProgrammerSet {
                                         fixtures: FixtureCollection::Multiple(fixtures),
                                         attribute: attribute_name.clone(),
                                         value,

@@ -99,15 +99,13 @@ impl PoolTileDelegate for PresetPoolTile {
 
         let mode = State::global(cx).mode();
         match mode.read(cx) {
-            Mode::Normal => cx.execute_engine_cmd(Command::Activate {
+            Mode::Normal => cx.exec_cmd(Command::Activate {
                 object_kind: ObjectKind::Preset(self.kind),
                 object_id: preset.id(),
             }),
             Mode::Store => {
                 let slot = Slot::new(NonZeroU32::new(slot).unwrap());
-                cx.execute_engine_cmd(Command::Store {
-                    kind: StoreKind::Preset { slot, kind: self.kind },
-                });
+                cx.exec_cmd(Command::Store { kind: StoreKind::Preset { slot, kind: self.kind } });
                 mode.write(cx, Mode::Normal);
             }
             Mode::Rename => {
@@ -119,7 +117,7 @@ impl PoolTileDelegate for PresetPoolTile {
                 cx.subscribe(&input, move |_, event, cx| match event {
                     FieldEvent::Submit(v) => {
                         let name = v.to_string();
-                        cx.execute_engine_cmd(Command::Rename { object_id, object_kind, name });
+                        cx.exec_cmd(Command::Rename { object_id, object_kind, name });
                         mode.write(cx, Mode::Normal);
                     }
                     _ => {}
@@ -136,9 +134,7 @@ impl PoolTileDelegate for PresetPoolTile {
             Mode::Normal => {}
             Mode::Store => {
                 let slot = Slot::new(NonZeroU32::new(slot).unwrap());
-                cx.execute_engine_cmd(Command::Store {
-                    kind: StoreKind::Preset { slot, kind: self.kind },
-                });
+                cx.exec_cmd(Command::Store { kind: StoreKind::Preset { slot, kind: self.kind } });
                 mode.write(cx, Mode::Normal);
             }
             Mode::Rename => {}

@@ -17,7 +17,12 @@ pub struct Service<D: Delegate, R: Runner> {
     delegate_handle: Option<JoinHandle<()>>,
 }
 
-impl<D: Delegate + Send + Sync + 'static, R: Runner + Send + 'static> Service<D, R> {
+impl<D, R> Service<D, R>
+where
+    D: Delegate + Send + Sync + 'static,
+    R: Runner<Data = D::Data> + Send + 'static,
+    D::Data: Send + 'static,
+{
     pub fn new(delegate: D, runner: R) -> Self {
         Self {
             delegate: Arc::new(delegate),
@@ -41,7 +46,7 @@ impl<D: Delegate + Send + Sync + 'static, R: Runner + Send + 'static> Service<D,
 
         self.running.store(true, Ordering::SeqCst);
 
-        let (notify_tx, notify_rx) = flume::bounded(1);
+        let (notify_tx, notify_rx) = flume::unbounded();
 
         self.runner_handle = Some(thread::spawn({
             let running = Arc::clone(&self.running);
@@ -63,8 +68,8 @@ impl<D: Delegate + Send + Sync + 'static, R: Runner + Send + 'static> Service<D,
 
                 while running.load(Ordering::SeqCst) {
                     match notify_rx.recv() {
-                        Ok(()) => {
-                            if let Err(err) = delegate.on_frame() {
+                        Ok(notification) => {
+                            if let Err(err) = delegate.on_frame(notification) {
                                 log::error!("Delegate frame failed: {err}");
                             }
                         }
@@ -100,8 +105,9 @@ impl<D: Delegate + Send + Sync + 'static, R: Runner + Send + 'static> Service<D,
 
 pub trait Delegate {
     type Error: std::fmt::Display;
+    type Data;
 
     fn on_start(&self) -> std::result::Result<(), Self::Error>;
-    fn on_frame(&self) -> std::result::Result<(), Self::Error>;
+    fn on_frame(&self, data: Self::Data) -> std::result::Result<(), Self::Error>;
     fn on_stop(&self) -> std::result::Result<(), Self::Error>;
 }

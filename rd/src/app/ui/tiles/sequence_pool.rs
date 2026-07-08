@@ -65,7 +65,7 @@ impl PoolTileDelegate for SequencePoolTile {
             }
         };
 
-        cx.execute_engine_cmd(Command::Activate {
+        cx.exec_cmd(Command::Activate {
             object_kind: ObjectKind::Sequence,
             object_id: sequence.id(),
         })

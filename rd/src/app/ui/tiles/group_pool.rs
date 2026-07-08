@@ -62,9 +62,6 @@ impl PoolTileDelegate for GroupPoolTile {
             }
         };
 
-        cx.execute_engine_cmd(Command::Activate {
-            object_kind: ObjectKind::Group,
-            object_id: group.id(),
-        })
+        cx.exec_cmd(Command::Activate { object_kind: ObjectKind::Group, object_id: group.id() })
     }
 }

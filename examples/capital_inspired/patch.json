@@ -8,7 +8,7 @@
         "channel": 1
       },
       "fixture_kind": {
-        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "fixture_type_id": "43828d58-2696-4487-a20f-c73b9a7bbe6d",
         "dmx_mode": "16 Bit Basic Mode"
       }
     },
@@ -20,7 +20,7 @@
         "channel": 24
       },
       "fixture_kind": {
-        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "fixture_type_id": "43828d58-2696-4487-a20f-c73b9a7bbe6d",
         "dmx_mode": "16 Bit Basic Mode"
       }
     },
@@ -32,7 +32,7 @@
         "channel": 47
       },
       "fixture_kind": {
-        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "fixture_type_id": "43828d58-2696-4487-a20f-c73b9a7bbe6d",
         "dmx_mode": "16 Bit Basic Mode"
       }
     },
@@ -44,7 +44,7 @@
         "channel": 70
       },
       "fixture_kind": {
-        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "fixture_type_id": "43828d58-2696-4487-a20f-c73b9a7bbe6d",
         "dmx_mode": "16 Bit Basic Mode"
       }
     },
@@ -56,7 +56,7 @@
         "channel": 93
       },
       "fixture_kind": {
-        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "fixture_type_id": "43828d58-2696-4487-a20f-c73b9a7bbe6d",
         "dmx_mode": "16 Bit Basic Mode"
       }
     },
@@ -68,7 +68,7 @@
         "channel": 116
       },
       "fixture_kind": {
-        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "fixture_type_id": "43828d58-2696-4487-a20f-c73b9a7bbe6d",
         "dmx_mode": "16 Bit Basic Mode"
       }
     },
@@ -80,7 +80,7 @@
         "channel": 139
       },
       "fixture_kind": {
-        "fixture_type_id": "1C8C3DB6-A31F-4220-BD67-99035290B312",
+        "fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
         "dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
       }
     },
@@ -92,7 +92,7 @@
         "channel": 154
       },
       "fixture_kind": {
-        "fixture_type_id": "1C8C3DB6-A31F-4220-BD67-99035290B312",
+        "fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
         "dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
       }
     },
@@ -104,7 +104,7 @@
         "channel": 169
       },
       "fixture_kind": {
-        "fixture_type_id": "1C8C3DB6-A31F-4220-BD67-99035290B312",
+        "fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
         "dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
       }
     },
@@ -116,7 +116,7 @@
         "channel": 184
       },
       "fixture_kind": {
-        "fixture_type_id": "1C8C3DB6-A31F-4220-BD67-99035290B312",
+        "fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
         "dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
       }
     },
@@ -128,7 +128,7 @@
         "channel": 199
       },
       "fixture_kind": {
-        "fixture_type_id": "1C8C3DB6-A31F-4220-BD67-99035290B312",
+        "fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
         "dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
       }
     },
@@ -140,7 +140,7 @@
         "channel": 214
       },
       "fixture_kind": {
-        "fixture_type_id": "1C8C3DB6-A31F-4220-BD67-99035290B312",
+        "fixture_type_id": "1c8c3db6-a31f-4220-bd67-99035290b312",
         "dmx_mode": "Mode 3 Reduced RGBW Wash 8bit"
       }
     },
@@ -152,7 +152,7 @@
         "channel": 229
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -164,7 +164,7 @@
         "channel": 233
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -176,7 +176,7 @@
         "channel": 237
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -188,7 +188,7 @@
         "channel": 241
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -200,7 +200,7 @@
         "channel": 245
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -212,7 +212,7 @@
         "channel": 249
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -224,7 +224,7 @@
         "channel": 253
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -236,7 +236,7 @@
         "channel": 257
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -248,7 +248,7 @@
         "channel": 261
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -260,7 +260,7 @@
         "channel": 265
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -272,7 +272,7 @@
         "channel": 269
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -284,7 +284,7 @@
         "channel": 273
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -296,7 +296,7 @@
         "channel": 277
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -308,7 +308,7 @@
         "channel": 281
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -320,7 +320,7 @@
         "channel": 285
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -332,7 +332,7 @@
         "channel": 289
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -344,7 +344,7 @@
         "channel": 293
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -356,7 +356,7 @@
         "channel": 297
       },
       "fixture_kind": {
-        "fixture_type_id": "69C31FC8-932B-4C7D-B1D8-CDDE0B2A7B2C",
+        "fixture_type_id": "69c31fc8-932b-4c7d-b1d8-cdde0b2a7b2c",
         "dmx_mode": "Mode 1 RGBW"
       }
     },
@@ -368,7 +368,7 @@
         "channel": 301
       },
       "fixture_kind": {
-        "fixture_type_id": "6365583D-AEBF-46CE-9952-E1E9CAF26202",
+        "fixture_type_id": "6365583d-aebf-46ce-9952-e1e9caf26202",
         "dmx_mode": "74: RGB RGB S"
       }
     },
@@ -380,7 +380,7 @@
         "channel": 326
       },
       "fixture_kind": {
-        "fixture_type_id": "6365583D-AEBF-46CE-9952-E1E9CAF26202",
+        "fixture_type_id": "6365583d-aebf-46ce-9952-e1e9caf26202",
         "dmx_mode": "74: RGB RGB S"
       }
     },
@@ -392,7 +392,7 @@
         "channel": 351
       },
       "fixture_kind": {
-        "fixture_type_id": "1D3F5EC4-0208-4A99-A1F5-A07FC43CFFE8",
+        "fixture_type_id": "1d3f5ec4-0208-4a99-a1f5-a07fc43cffe8",
         "dmx_mode": "26: RGB RGB S"
       }
     },
@@ -404,7 +404,7 @@
         "channel": 376
       },
       "fixture_kind": {
-        "fixture_type_id": "1D3F5EC4-0208-4A99-A1F5-A07FC43CFFE8",
+        "fixture_type_id": "1d3f5ec4-0208-4a99-a1f5-a07fc43cffe8",
         "dmx_mode": "26: RGB RGB S"
       }
     },
@@ -416,7 +416,7 @@
         "channel": 401
       },
       "fixture_kind": {
-        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "fixture_type_id": "43828d58-2696-4487-a20f-c73b9a7bbe6d",
         "dmx_mode": "16 Bit Basic Mode"
       }
     },
@@ -428,7 +428,7 @@
         "channel": 424
       },
       "fixture_kind": {
-        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "fixture_type_id": "43828d58-2696-4487-a20f-c73b9a7bbe6d",
         "dmx_mode": "16 Bit Basic Mode"
       }
     },
@@ -440,7 +440,7 @@
         "channel": 447
       },
       "fixture_kind": {
-        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "fixture_type_id": "43828d58-2696-4487-a20f-c73b9a7bbe6d",
         "dmx_mode": "16 Bit Basic Mode"
       }
     },
@@ -452,7 +452,7 @@
         "channel": 470
       },
       "fixture_kind": {
-        "fixture_type_id": "43828D58-2696-4487-A20F-C73B9A7BBE6D",
+        "fixture_type_id": "43828d58-2696-4487-a20f-c73b9a7bbe6d",
         "dmx_mode": "16 Bit Basic Mode"
       }
     }

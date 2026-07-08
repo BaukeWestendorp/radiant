@@ -47,17 +47,17 @@ pub(crate) mod action {
         });
 
         cx.on_action::<Highlight>(|_, cx| {
-            cx.execute_engine_cmd(Command::HighlightToggle);
+            cx.exec_cmd(Command::HighlightToggle);
         });
 
         cx.on_action::<Clear>(|_, cx| {
             if !cx.engine_snapshot().selection().is_empty() {
-                cx.execute_engine_cmd(Command::SelectionClear);
+                cx.exec_cmd(Command::SelectionClear);
                 return;
             }
 
             if State::global(cx).mode().read(cx) == &Mode::Normal {
-                cx.execute_engine_cmd(Command::ProgrammerClear);
+                cx.exec_cmd(Command::ProgrammerClear);
                 return;
             }
 
@@ -74,7 +74,7 @@ pub(crate) mod action {
 
         cx.on_action::<Save>(|_, cx| match cx.engine_snapshot().showfile_path() {
             Some(path) => {
-                cx.execute_engine_cmd(Command::Save { path: path.to_path_buf() });
+                cx.exec_cmd(Command::Save { path: path.to_path_buf() });
             }
             None => {
                 log::error!("FIXME: implement saving new showfiles");
@@ -193,7 +193,7 @@ impl RadiantApp {
                 render_indicator("highlight", *self.highlight.read(cx), cx.theme().accent)
                     .cursor_pointer()
                     .on_any_mouse_down(cx.listener(|_, _, _, cx| {
-                        cx.execute_engine_cmd(Command::HighlightToggle);
+                        cx.exec_cmd(Command::HighlightToggle);
                         cx.notify();
                     })),
             );

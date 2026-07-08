@@ -1,0 +1,18 @@
+[package]
+name = "rd-engine-2"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+facet = { version = "0.46.5", features = ["uuid", "nonzero"] }
+facet-json = "0.46.1"
+flume.workspace = true
+log.workspace = true
+midir = "0.10.0"
+rd-service.workspace = true
+serde.workspace = true
+uuid = { version = "1.23.4", features = ["v4"] }
+
+[dev-dependencies]
+pretty_env_logger.workspace = true

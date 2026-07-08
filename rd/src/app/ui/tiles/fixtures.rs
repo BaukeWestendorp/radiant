@@ -16,7 +16,7 @@ impl FixturesTile {
 
         cx.observe(&selection, |selection, cx| {
             let fixture_ids = selection.read(cx).iter().copied().collect();
-            cx.execute_engine_cmd(Command::SelectionSet { fixture_ids });
+            cx.exec_cmd(Command::SelectionSet { fixture_ids });
         })
         .detach();
 

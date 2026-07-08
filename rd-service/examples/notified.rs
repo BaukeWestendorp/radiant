@@ -12,6 +12,7 @@ struct EventTriggerDelegate {
 
 impl Delegate for EventTriggerDelegate {
     type Error = anyhow::Error;
+    type Data = ();
 
     fn on_start(&self) -> Result<(), Self::Error> {
         println!("Notified service has initialized.");
@@ -19,7 +20,7 @@ impl Delegate for EventTriggerDelegate {
         Ok(())
     }
 
-    fn on_frame(&self) -> Result<(), Self::Error> {
+    fn on_frame(&self, _: Self::Data) -> Result<(), Self::Error> {
         self.event_count.fetch_add(1, Ordering::SeqCst);
         println!(
             "Trigger event processed! Total events: {}",
