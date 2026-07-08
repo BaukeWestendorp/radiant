@@ -4659,6 +4659,7 @@ dependencies = [
  "midly",
  "pretty_env_logger",
  "quick-xml 0.39.4",
+ "rd-service",
  "rd-ui",
  "serde",
  "serde-big-array",
@@ -4670,6 +4671,17 @@ dependencies = [
  "thread-priority",
  "uuid",
  "zip",
+]
+
+[[package]]
+name = "rd-service"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "flume 0.12.0",
+ "log",
+ "spin_sleep",
+ "thiserror 2.0.18",
 ]
 
 [[package]]

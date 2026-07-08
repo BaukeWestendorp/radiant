@@ -13,7 +13,6 @@ const WRITE_TIMEOUT: Duration = Duration::from_millis(1000);
 
 use crate::dmx::{Multiverse, UniverseId};
 use crate::output::EnttecDmxOutputInstanceDefinition;
-use crate::service::ServiceDelegate;
 
 pub struct EnttecInstanceService {
     universe_id: UniverseId,
@@ -40,8 +39,10 @@ impl EnttecInstanceService {
     }
 }
 
-impl ServiceDelegate for EnttecInstanceService {
-    fn on_start(&self, _tick_tx: flume::Sender<()>) -> anyhow::Result<()> {
+impl rd_service::Delegate for EnttecInstanceService {
+    type Error = anyhow::Error;
+
+    fn on_start(&self) -> Result<(), Self::Error> {
         let mut ftdi = Ftdi::with_serial_number(&self.serial_number).with_context(|| {
             format!("Failed to open FTDI device, possible devices: {:?}", libftd2xx::list_devices())
         })?;
@@ -51,7 +52,7 @@ impl ServiceDelegate for EnttecInstanceService {
         Ok(())
     }
 
-    fn on_tick(&self) -> anyhow::Result<()> {
+    fn on_frame(&self) -> Result<(), Self::Error> {
         let Some(ftdi) = self.ftdi.as_ref() else {
             log::error!("Enttec instance '{}' FTDI device not initialized", self.serial_number);
             return Ok(());
@@ -74,7 +75,7 @@ impl ServiceDelegate for EnttecInstanceService {
         Ok(())
     }
 
-    fn on_stop(&self) -> anyhow::Result<()> {
+    fn on_stop(&self) -> Result<(), Self::Error> {
         let Some(ftdi) = self.ftdi.as_ref() else {
             log::error!("Enttec instance '{}' FTDI device not initialized", self.serial_number);
             return Ok(());
@@ -84,10 +85,6 @@ impl ServiceDelegate for EnttecInstanceService {
             ftdi.write().map_err(|err| anyhow::anyhow!("Failed to acquire FTDI lock: {err}"))?;
 
         ftdi_close(&mut ftdi)
-    }
-
-    fn name(&self) -> &'static str {
-        "EnttecOpenDmx"
     }
 }
 

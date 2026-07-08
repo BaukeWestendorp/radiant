@@ -5,7 +5,6 @@ use uuid::Uuid;
 use crate::dmx::{Multiverse, UniverseId};
 use crate::output::SacnDmxOutputInstanceDefinition;
 use crate::output::protocol::sacn::{self, Universe};
-use crate::service::ServiceDelegate;
 
 pub struct SacnInstanceService {
     definition: SacnDmxOutputInstanceDefinition,
@@ -24,8 +23,10 @@ impl SacnInstanceService {
     }
 }
 
-impl ServiceDelegate for SacnInstanceService {
-    fn on_start(&self, _tick_tx: flume::Sender<()>) -> anyhow::Result<()> {
+impl rd_service::Delegate for SacnInstanceService {
+    type Error = anyhow::Error;
+
+    fn on_start(&self) -> Result<(), Self::Error> {
         let ip = self.definition.target_address.ip();
         let port = self.definition.target_address.port();
 
@@ -52,7 +53,7 @@ impl ServiceDelegate for SacnInstanceService {
         Ok(())
     }
 
-    fn on_tick(&self) -> anyhow::Result<()> {
+    fn on_frame(&self) -> Result<(), Self::Error> {
         let mut lock = self
             .sacn_source
             .write()
@@ -77,7 +78,7 @@ impl ServiceDelegate for SacnInstanceService {
         Ok(())
     }
 
-    fn on_stop(&self) -> anyhow::Result<()> {
+    fn on_stop(&self) -> Result<(), Self::Error> {
         let mut lock = self
             .sacn_source
             .write()
@@ -90,10 +91,6 @@ impl ServiceDelegate for SacnInstanceService {
         }
 
         Ok(())
-    }
-
-    fn name(&self) -> &'static str {
-        "sACN Instance"
     }
 }
 

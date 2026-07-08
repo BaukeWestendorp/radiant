@@ -1,11 +1,13 @@
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
 use arc_swap::ArcSwap;
 use flume::{Receiver, Sender};
+use rd_service::Service;
 
+use crate::trigger::{TriggerService, TriggerServiceRunner};
 use crate::{
     Project,
     cmd::Command,
@@ -16,8 +18,7 @@ use crate::{
     pipeline::Pipeline,
     programmer::Programmer,
     selection::Selection,
-    service::Service,
-    trigger::{Trigger, TriggersService},
+    trigger::Trigger,
 };
 
 pub struct Engine {
@@ -30,8 +31,8 @@ pub struct Engine {
     pub(crate) selection: Arc<Selection>,
     pub(crate) highlight: bool,
 
-    pub(crate) triggers_service: Service<TriggersService>,
-    pub(crate) output_service: Service<OutputService>,
+    pub(crate) triggers_service: Service<TriggerService, TriggerServiceRunner>,
+    pub(crate) output_service: Service<OutputService, rd_service::Scheduled>,
 
     event_tx: flume::Sender<Event>,
     event_listener: EventListener,
@@ -47,12 +48,13 @@ impl Engine {
         let (event_tx, event_rx) = flume::unbounded();
         let event_listener = EventListener::new(event_rx);
 
-        let output_service = Service::new_scheduled(
+        let output_service = Service::new(
             OutputService::new(project.output().clone())?,
-            Duration::from_secs_f64(1.0 / 44.0),
+            rd_service::Scheduled::new(Duration::from_secs_f64(1.0 / 44.0)),
         );
-        let triggers_service =
-            Service::new_event_driven(TriggersService::new(project.triggers().clone())?);
+
+        let (triggers_delegate, triggers_runner) = TriggerService::new(project.triggers().clone());
+        let triggers_service = Service::new(triggers_delegate, triggers_runner);
 
         let engine = Self {
             showfile_path: project.path().map(|p| p.to_path_buf()),
@@ -83,11 +85,11 @@ impl Engine {
         &self.patch
     }
 
-    pub fn triggers_service(&self) -> &Service<TriggersService> {
+    pub fn triggers_service(&self) -> &Service<TriggerService, TriggerServiceRunner> {
         &self.triggers_service
     }
 
-    pub fn output_service(&self) -> &Service<OutputService> {
+    pub fn output_service(&self) -> &Service<OutputService, rd_service::Scheduled> {
         &self.output_service
     }
 
@@ -298,6 +300,7 @@ struct EngineHandleInner {
     tx: Sender<EngineMessage>,
     snapshot: Arc<ArcSwap<EngineSnapshot>>,
     event_listener: EventListener,
+    thread_handle: Mutex<Option<thread::JoinHandle<()>>>,
 }
 
 pub struct EngineHandle {
@@ -312,7 +315,7 @@ impl EngineHandle {
 
         let event_listener = engine.event_listener();
 
-        thread::Builder::new()
+        let thread_handle = thread::Builder::new()
             .name("rd_engine".to_string())
             .spawn({
                 let snapshot = Arc::clone(&snapshot);
@@ -320,7 +323,14 @@ impl EngineHandle {
             })
             .expect("Failed to spawn engine thread");
 
-        Self { inner: Arc::new(EngineHandleInner { tx, snapshot, event_listener }) }
+        Self {
+            inner: Arc::new(EngineHandleInner {
+                tx,
+                snapshot,
+                event_listener,
+                thread_handle: Mutex::new(Some(thread_handle)),
+            }),
+        }
     }
 
     pub fn execute(&self, command: Command) -> anyhow::Result<()> {
@@ -347,13 +357,17 @@ impl EngineHandle {
         self.inner.event_listener.clone()
     }
 
-    pub fn shutdown(&self) -> anyhow::Result<()> {
+    pub fn stop(&self) -> anyhow::Result<()> {
         let (resp_tx, resp_rx) = flume::bounded(1);
-        self.inner
-            .tx
-            .send(EngineMessage::Shutdown { resp: Some(resp_tx) })
-            .map_err(|_| anyhow::anyhow!("Engine thread stopped"))?;
-        resp_rx.recv().map_err(|_| anyhow::anyhow!("Engine thread stopped"))?;
+
+        if self.inner.tx.send(EngineMessage::Shutdown { resp: Some(resp_tx) }).is_ok() {
+            let _ = resp_rx.recv();
+        }
+
+        if let Some(handle) = self.inner.thread_handle.lock().unwrap().take() {
+            handle.join().map_err(|_| anyhow::anyhow!("Engine thread panicked during shutdown"))?;
+        }
+
         Ok(())
     }
 }

@@ -40,6 +40,8 @@ pub enum Command {
 
     EncoderSetValue { encoder_ix: usize, value: f32 },
 
+    Reload,
+
     Save { path: PathBuf },
 }
 
@@ -413,6 +415,14 @@ impl Command {
                 let project = Project::load_from_engine(path.clone(), engine);
                 project.save_to_folder()?;
                 engine.emit(Event::Saved { path });
+            }
+
+            Command::Reload => {
+                // TODO: First check if the Engine::stop function actually blocks until everything stopped.
+                // TODO: Then implement this command.
+                // TODO: Then use it to replace the patch.
+                // TODO: Then make sure the UI reloads when the project reloads.
+                todo!();
             }
         }
 

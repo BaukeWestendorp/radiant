@@ -9,6 +9,8 @@ rd-ui = ["dep:rd-ui"]
 [dependencies]
 anyhow.workspace = true
 
+rd-service.workspace = true
+
 arc-swap = "1.7.1"
 
 serde.workspace = true

@@ -1,12 +1,12 @@
 use std::sync::Arc;
 use std::sync::RwLock;
 
+use rd_service::Service;
+
 use crate::dmx::Multiverse;
 use crate::output::OutputDefinition;
 use crate::output::instance::enttec::EnttecInstanceService;
 use crate::output::instance::sacn::SacnInstanceService;
-use crate::service::Service;
-use crate::service::ServiceDelegate;
 
 pub struct OutputService {
     definition: OutputDefinition,
@@ -14,12 +14,14 @@ pub struct OutputService {
     multiverse: Arc<RwLock<Multiverse>>,
     notify_tx: flume::Sender<()>,
 
-    sacn_instances: Vec<RwLock<Service<SacnInstanceService>>>,
-    enttec_instances: Vec<RwLock<Service<EnttecInstanceService>>>,
+    sacn_instances: Vec<RwLock<Service<SacnInstanceService, rd_service::Notified>>>,
+    enttec_instances: Vec<RwLock<Service<EnttecInstanceService, rd_service::Notified>>>,
 }
 
-impl ServiceDelegate for OutputService {
-    fn on_start(&self, _tick_tx: flume::Sender<()>) -> anyhow::Result<()> {
+impl rd_service::Delegate for OutputService {
+    type Error = anyhow::Error;
+
+    fn on_start(&self) -> Result<(), Self::Error> {
         for instance in &self.sacn_instances {
             instance
                 .write()
@@ -37,12 +39,12 @@ impl ServiceDelegate for OutputService {
         Ok(())
     }
 
-    fn on_tick(&self) -> anyhow::Result<()> {
+    fn on_frame(&self) -> Result<(), Self::Error> {
         self.notify_tx.send(())?;
         Ok(())
     }
 
-    fn on_stop(&self) -> anyhow::Result<()> {
+    fn on_stop(&self) -> Result<(), Self::Error> {
         for instance in &self.sacn_instances {
             instance
                 .write()
@@ -58,10 +60,6 @@ impl ServiceDelegate for OutputService {
         }
 
         Ok(())
-    }
-
-    fn name(&self) -> &'static str {
-        "Output"
     }
 }
 
@@ -75,8 +73,14 @@ impl OutputService {
             .instances()
             .iter()
             .map(|instance| {
-                SacnInstanceService::new(instance.clone(), Arc::clone(&multiverse))
-                    .map(|instance| RwLock::new(Service::new_driven(instance, notify_rx.clone())))
+                SacnInstanceService::new(instance.clone(), Arc::clone(&multiverse)).map(
+                    |instance| {
+                        RwLock::new(Service::new(
+                            instance,
+                            rd_service::Notified::new(notify_rx.clone()),
+                        ))
+                    },
+                )
             })
             .collect::<anyhow::Result<Vec<_>>>()?;
 
@@ -85,8 +89,14 @@ impl OutputService {
             .instances()
             .iter()
             .map(|instance| {
-                EnttecInstanceService::new(instance.clone(), Arc::clone(&multiverse))
-                    .map(|instance| RwLock::new(Service::new_driven(instance, notify_rx.clone())))
+                EnttecInstanceService::new(instance.clone(), Arc::clone(&multiverse)).map(
+                    |instance| {
+                        RwLock::new(Service::new(
+                            instance,
+                            rd_service::Notified::new(notify_rx.clone()),
+                        ))
+                    },
+                )
             })
             .collect::<anyhow::Result<Vec<_>>>()?;
 

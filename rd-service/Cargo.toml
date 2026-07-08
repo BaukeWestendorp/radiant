@@ -1,0 +1,13 @@
+[package]
+name = "rd-service"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+flume.workspace = true
+log.workspace = true
+spin_sleep = "1.3.3"
+thiserror = "2.0.18"
+
+[dev-dependencies]
+anyhow.workspace = true
