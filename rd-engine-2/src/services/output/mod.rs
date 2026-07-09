@@ -50,7 +50,7 @@ impl rd_service::Delegate for OutputService {
         Ok(())
     }
 
-    fn on_frame(&self, instant: Instant) -> Result<(), Self::Error> {
+    fn on_frame(&self, _instant: Instant) -> Result<(), Self::Error> {
         let _ = self.notify_tx.send(());
         Ok(())
     }

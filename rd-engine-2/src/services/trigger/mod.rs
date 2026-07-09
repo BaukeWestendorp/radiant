@@ -50,10 +50,21 @@ impl rd_service::Delegate for TriggerService {
                 self.commander.execute(Command::HighlightToggle);
             }
 
-            Trigger::ExecutorMaster { .. } => todo!(),
-            Trigger::ExecutorButton { .. } => todo!(),
+            Trigger::ExecutorMaster { executor_id, value } => {
+                log::error!("FIXME: Implement handling ExecutorMaster {} {}", executor_id, value);
+            }
+            Trigger::ExecutorButton { executor_id, button, pressed } => {
+                log::error!(
+                    "FIXME: Implement handling ExecutorButton {} {:?} {}",
+                    executor_id,
+                    button,
+                    pressed
+                );
+            }
 
-            Trigger::EncoderSetValue { .. } => todo!(),
+            Trigger::EncoderSetValue { encoder_ix, value } => {
+                log::error!("FIXME: Implement handling EncoderSetValue {} {}", encoder_ix, value);
+            }
         };
 
         Ok(())

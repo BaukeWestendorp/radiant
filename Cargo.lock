@@ -4734,7 +4734,6 @@ dependencies = [
  "midir",
  "pretty_env_logger",
  "rd-service",
- "serde",
  "uuid",
 ]
 

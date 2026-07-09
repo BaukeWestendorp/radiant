@@ -6,7 +6,7 @@ pub use executor::*;
 
 mod executor;
 
-pub trait Object: serde::Serialize + for<'de> serde::Deserialize<'de> {
+pub trait Object: for<'facet> facet::Facet<'facet> {
     fn slot(&self) -> Slot;
 
     fn id(&self) -> ObjectId;

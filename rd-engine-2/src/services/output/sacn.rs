@@ -4,7 +4,7 @@ use crate::project;
 pub struct SacnOutputService {}
 
 impl SacnOutputService {
-    pub fn new(config: &project::SacnOutputConfig) -> Self {
+    pub fn new(_config: &project::SacnOutputConfig) -> Self {
         Self {}
     }
 }
