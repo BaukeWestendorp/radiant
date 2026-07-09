@@ -1,14 +1,13 @@
-use std::sync::{Arc, atomic::AtomicBool};
-
 use midir::MidiInput;
 
 use crate::{ExecutorId, project, services::trigger::Trigger};
 
 pub fn start_listener(
-    running: Arc<AtomicBool>,
+    stop_rx: flume::Receiver<()>,
     notify_tx: flume::Sender<Trigger>,
     config: &project::midi::MidiTriggerConfig,
 ) -> anyhow::Result<()> {
+    // FIXME: Use stop_rx, and maybe create rd-midi?
     let scanner = MidiInput::new("rd_trigger_service").map_err(|e| anyhow::anyhow!(e))?;
     let mut connections = Vec::new();
 

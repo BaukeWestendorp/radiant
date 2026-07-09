@@ -1,8 +1,5 @@
 use std::{
-    sync::{
-        Arc,
-        atomic::{AtomicBool, Ordering},
-    },
+    ops::ControlFlow,
     time::{Duration, Instant},
 };
 
@@ -12,7 +9,7 @@ pub trait Runner {
 
     fn start(
         &mut self,
-        running: Arc<AtomicBool>,
+        stop_rx: flume::Receiver<()>,
         notify_tx: flume::Sender<Self::Data>,
     ) -> Result<(), Self::Error>;
 }
@@ -37,13 +34,17 @@ impl Runner for Scheduled {
 
     fn start(
         &mut self,
-        running: Arc<AtomicBool>,
+        stop_rx: flume::Receiver<()>,
         notify_tx: flume::Sender<Self::Data>,
     ) -> Result<(), Self::Error> {
         let sleeper = spin_sleep::SpinSleeper::default();
         let mut next_tick = Instant::now() + self.interval;
 
-        while running.load(Ordering::SeqCst) {
+        loop {
+            if stop_rx.try_recv().is_ok() {
+                break;
+            };
+
             let now = Instant::now();
             if now < next_tick {
                 sleeper.sleep_until(next_tick);
@@ -78,21 +79,27 @@ impl Runner for Notified {
 
     fn start(
         &mut self,
-        running: Arc<AtomicBool>,
+        stop_rx: flume::Receiver<()>,
         notify_tx: flume::Sender<Self::Data>,
     ) -> Result<(), Self::Error> {
-        while running.load(Ordering::SeqCst) {
-            match self.notify_rx.recv_timeout(Duration::from_millis(50)) {
-                Ok(()) => {
-                    let _ = notify_tx.try_send(());
-                }
-                Err(flume::RecvTimeoutError::Timeout) => {
-                    continue;
-                }
-                Err(flume::RecvTimeoutError::Disconnected) => {
-                    log::warn!("Notify channel disconnected, stopping runner.");
-                    break;
-                }
+        loop {
+            match flume::Selector::new()
+                .recv(&stop_rx, |_| Some(ControlFlow::Break(())))
+                .recv(&self.notify_rx, |n| match n {
+                    Ok(()) => {
+                        let _ = notify_tx.send(());
+                        None
+                    }
+                    Err(flume::RecvError::Disconnected) => {
+                        log::warn!("Notify channel disconnected, stopping runner.");
+                        Some(ControlFlow::Break(()))
+                    }
+                })
+                .wait()
+            {
+                Some(ControlFlow::Break(())) => break,
+                Some(ControlFlow::Continue(())) => continue,
+                None => {}
             }
         }
 

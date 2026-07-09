@@ -1,5 +1,3 @@
-use std::sync::{Arc, atomic::AtomicBool};
-
 use anyhow::Context;
 
 use crate::{Command, Commander, ExecutorButton, ExecutorId, project};
@@ -87,10 +85,10 @@ impl rd_service::Runner for TriggerServiceRunner {
 
     fn start(
         &mut self,
-        running: Arc<AtomicBool>,
+        stop_rx: flume::Receiver<()>,
         notify_tx: flume::Sender<Self::Data>,
     ) -> Result<(), Self::Error> {
-        midi::start_listener(running, notify_tx, &self.config.midi)
+        midi::start_listener(stop_rx, notify_tx, &self.config.midi)
             .context("Failed to start MIDI listener")?;
 
         Ok(())

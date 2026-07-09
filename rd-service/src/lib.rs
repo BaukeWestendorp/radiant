@@ -1,5 +1,5 @@
+use std::ops::ControlFlow;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::{self, JoinHandle};
 
 mod error;
@@ -11,7 +11,9 @@ pub use runner::*;
 pub struct Service<D: Delegate, R: Runner> {
     delegate: Arc<D>,
     runner: Option<R>,
-    running: Arc<AtomicBool>,
+
+    stop_tx: flume::Sender<()>,
+    stop_rx: flume::Receiver<()>,
 
     runner_handle: Option<JoinHandle<()>>,
     delegate_handle: Option<JoinHandle<()>>,
@@ -24,10 +26,14 @@ where
     D::Data: Send + 'static,
 {
     pub fn new(delegate: D, runner: R) -> Self {
+        let (stop_tx, stop_rx) = flume::bounded(1);
+
         Self {
             delegate: Arc::new(delegate),
             runner: Some(runner),
-            running: Arc::new(AtomicBool::new(false)),
+            stop_tx,
+            stop_rx,
+
             runner_handle: None,
             delegate_handle: None,
         }
@@ -38,20 +44,14 @@ where
     }
 
     pub fn start(&mut self) -> crate::Result<()> {
-        if self.running.load(Ordering::SeqCst) {
-            return Err(Error::ServiceAlreadyRunning);
-        }
-
         let mut runner = self.runner.take().ok_or(Error::ServiceAlreadyRunning)?;
-
-        self.running.store(true, Ordering::SeqCst);
 
         let (notify_tx, notify_rx) = flume::unbounded();
 
         self.runner_handle = Some(thread::spawn({
-            let running = Arc::clone(&self.running);
+            let stop_rx = self.stop_rx.clone();
             move || {
-                if let Err(err) = runner.start(running, notify_tx) {
+                if let Err(err) = runner.start(stop_rx, notify_tx) {
                     log::error!("Service runner failed: {err}");
                 }
             }
@@ -59,23 +59,31 @@ where
 
         self.delegate_handle = Some(thread::spawn({
             let delegate = Arc::clone(&self.delegate);
-            let running = Arc::clone(&self.running);
+            let stop_rx = self.stop_rx.clone();
             move || {
                 if let Err(err) = delegate.on_start() {
                     log::error!("Delegate start failed: {err}");
                     return;
                 }
 
-                while running.load(Ordering::SeqCst) {
-                    match notify_rx.recv() {
-                        Ok(notification) => {
-                            if let Err(err) = delegate.on_frame(notification) {
-                                log::error!("Delegate frame failed: {err}");
+                loop {
+                    match flume::Selector::new()
+                        .recv(&stop_rx, |_| Some(ControlFlow::Break(())))
+                        .recv(&notify_rx, |n| match n {
+                            Ok(notification) => {
+                                if let Err(err) = delegate.on_frame(notification) {
+                                    log::error!("Delegate frame failed: {err}");
+                                }
+
+                                None
                             }
-                        }
-                        Err(_) => {
-                            break;
-                        }
+                            Err(_) => Some(ControlFlow::Break(())),
+                        })
+                        .wait()
+                    {
+                        Some(ControlFlow::Continue(())) => continue,
+                        Some(ControlFlow::Break(())) => break,
+                        None => {}
                     }
                 }
 
@@ -89,7 +97,7 @@ where
     }
 
     pub fn stop(&mut self) -> crate::Result<()> {
-        self.running.store(false, Ordering::SeqCst);
+        let _ = self.stop_tx.send(());
 
         if let Some(handle) = self.runner_handle.take() {
             let _ = handle.join();
