@@ -12,8 +12,7 @@ pub struct Service<D: Delegate, R: Runner> {
     delegate: Arc<D>,
     runner: Option<R>,
 
-    stop_tx: flume::Sender<()>,
-    stop_rx: flume::Receiver<()>,
+    stop_tx: Option<flume::Sender<()>>,
 
     runner_handle: Option<JoinHandle<()>>,
     delegate_handle: Option<JoinHandle<()>>,
@@ -26,13 +25,10 @@ where
     D::Data: Send + 'static,
 {
     pub fn new(delegate: D, runner: R) -> Self {
-        let (stop_tx, stop_rx) = flume::bounded(1);
-
         Self {
             delegate: Arc::new(delegate),
             runner: Some(runner),
-            stop_tx,
-            stop_rx,
+            stop_tx: None,
 
             runner_handle: None,
             delegate_handle: None,
@@ -47,9 +43,11 @@ where
         let mut runner = self.runner.take().ok_or(Error::ServiceAlreadyRunning)?;
 
         let (notify_tx, notify_rx) = flume::unbounded();
+        let (stop_tx, stop_rx) = flume::unbounded();
+        self.stop_tx = Some(stop_tx);
 
         self.runner_handle = Some(thread::spawn({
-            let stop_rx = self.stop_rx.clone();
+            let stop_rx = stop_rx.clone();
             move || {
                 if let Err(err) = runner.start(stop_rx, notify_tx) {
                     log::error!("Service runner failed: {err}");
@@ -59,7 +57,7 @@ where
 
         self.delegate_handle = Some(thread::spawn({
             let delegate = Arc::clone(&self.delegate);
-            let stop_rx = self.stop_rx.clone();
+            let stop_rx = stop_rx.clone();
             move || {
                 if let Err(err) = delegate.on_start() {
                     log::error!("Delegate start failed: {err}");
@@ -97,7 +95,7 @@ where
     }
 
     pub fn stop(&mut self) -> crate::Result<()> {
-        let _ = self.stop_tx.send(());
+        let _ = self.stop_tx.take();
 
         if let Some(handle) = self.runner_handle.take() {
             let _ = handle.join();

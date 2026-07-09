@@ -160,14 +160,6 @@ impl EngineInner {
     }
 }
 
-impl Drop for EngineInner {
-    fn drop(&mut self) {
-        if let Err(err) = self.stop() {
-            log::error!("Failed to stop engine: {:?}", err);
-        }
-    }
-}
-
 struct Services {
     pub output: Service<OutputService, Scheduled>,
     pub trigger: Service<TriggerService, TriggerServiceRunner>,

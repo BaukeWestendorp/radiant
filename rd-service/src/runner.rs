@@ -41,9 +41,10 @@ impl Runner for Scheduled {
         let mut next_tick = Instant::now() + self.interval;
 
         loop {
-            if stop_rx.try_recv().is_ok() {
-                break;
-            };
+            match stop_rx.try_recv() {
+                Ok(()) | Err(flume::TryRecvError::Disconnected) => break,
+                Err(flume::TryRecvError::Empty) => {}
+            }
 
             let now = Instant::now();
             if now < next_tick {
