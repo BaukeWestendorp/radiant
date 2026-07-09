@@ -4666,10 +4666,23 @@ dependencies = [
  "facet-json",
  "flume 0.12.0",
  "log",
+ "pretty_env_logger",
+ "rd-midi",
+ "rd-service",
+ "uuid",
+]
+
+[[package]]
+name = "rd-midi"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "facet",
+ "facet-error",
+ "flume 0.12.0",
  "midir",
  "pretty_env_logger",
  "rd-service",
- "uuid",
 ]
 
 [[package]]
@@ -4681,6 +4694,7 @@ dependencies = [
  "facet-error",
  "flume 0.12.0",
  "log",
+ "pretty_env_logger",
  "spin_sleep",
 ]
 
