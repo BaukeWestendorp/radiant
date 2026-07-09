@@ -6,19 +6,20 @@
         "channel": 0,
         "mappings": [
           {
-            "msg": { "type": "ControlChange", "controller": 0 },
+            "filter": { "type": "ControlChange", "controller": 0 },
+            "transform": { "invert": false, "min_output": 0.0, "max_output": 1.0 },
             "target": { "type": "ExecutorMaster", "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a", "slot": 1 }
           },
           {
-            "msg": { "type": "ControlChange", "controller": 64 },
+            "filter": { "type": "ControlChange", "controller": 64 },
             "target": { "type": "ExecutorButton", "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a", "slot": 1, "button": "Button1" }
           },
           {
-            "msg": { "type": "ControlChange", "controller": 16 },
+            "filter": { "type": "ControlChange", "controller": 16 },
             "target": { "type": "Encoder", "ix": 0 }
           },
           {
-            "msg": { "type": "ControlChange", "controller": 43 },
+            "filter": { "type": "ControlChange", "controller": 43 },
             "target": { "type": "HighlightToggle" }
           }
         ]

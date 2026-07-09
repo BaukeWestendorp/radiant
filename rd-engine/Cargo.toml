@@ -9,9 +9,10 @@ facet = { workspace = true, features = ["uuid", "nonzero"] }
 facet-json.workspace = true
 flume.workspace = true
 log.workspace = true
-midir = "0.10.0"
 rd-service.workspace = true
+rd-midi = { workspace = true, features = ["rd-service"] }
 uuid = { workspace = true, features = ["v4"] }
 
 [dev-dependencies]
+anyhow.workspace = true
 pretty_env_logger.workspace = true

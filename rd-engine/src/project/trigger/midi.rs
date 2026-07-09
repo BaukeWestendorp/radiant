@@ -10,14 +10,22 @@ pub struct MidiTriggerConfig {
 #[derive(facet::Facet)]
 pub struct MidiDeviceConfig {
     pub name: String,
-    pub channel: u8,
+    /// `None` will allow any channel.
+    pub channel: Option<u8>,
     pub mappings: Vec<MidiMapping>,
 }
 
 #[derive(Debug, Clone)]
 #[derive(facet::Facet)]
 pub struct MidiMapping {
-    pub msg: MidiMessage,
+    /// What incoming MIDI events should trigger this?
+    pub filter: MidiFilter,
+
+    /// How should we scale/invert the value before sending it?
+    #[facet(default)]
+    pub transform: ValueTransform,
+
+    /// What internal action to take
     pub target: TriggerTarget,
 }
 
@@ -25,20 +33,33 @@ pub struct MidiMapping {
 #[derive(facet::Facet)]
 #[facet(tag = "type")]
 #[repr(C)]
-pub enum MidiMessage {
+pub enum MidiFilter {
     ControlChange {
-        controller: u8,
-        #[facet(default = MidiRange { from: 0, to: 127 })]
-        value: MidiRange,
+        /// `None` will allow any controller.
+        controller: Option<u8>,
     },
     NoteOn {
-        note: u8,
+        note: Option<u8>,
     },
+    NoteOff {
+        note: Option<u8>,
+    },
+    PitchBend,
 }
 
 #[derive(Debug, Clone)]
 #[derive(facet::Facet)]
-pub struct MidiRange {
-    pub from: u8,
-    pub to: u8,
+pub struct ValueTransform {
+    #[facet(default = false)]
+    pub invert: bool,
+    #[facet(default = 1.0)]
+    pub max_output: f32,
+    #[facet(default = 0.0)]
+    pub min_output: f32,
+}
+
+impl Default for ValueTransform {
+    fn default() -> Self {
+        Self { invert: false, max_output: 1.0, min_output: 0.0 }
+    }
 }

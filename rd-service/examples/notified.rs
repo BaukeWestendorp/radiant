@@ -39,6 +39,8 @@ impl Delegate for EventTriggerDelegate {
 }
 
 fn main() -> rd_service::Result<()> {
+    pretty_env_logger::init();
+
     let (trigger_tx, trigger_rx) = flume::bounded(1);
 
     let mut service = Service::new(

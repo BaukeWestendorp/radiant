@@ -40,6 +40,8 @@ impl Delegate for ExampleSchedulerDelegate {
 }
 
 fn main() -> rd_service::Result<()> {
+    pretty_env_logger::init();
+
     let mut service = Service::new(
         ExampleSchedulerDelegate { frames_processed: AtomicUsize::new(9) },
         Scheduled::new(Duration::from_secs_f64(1.0 / 44.0)),
