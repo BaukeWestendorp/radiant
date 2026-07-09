@@ -3,10 +3,6 @@ name = "rd-midi"
 version.workspace = true
 edition.workspace = true
 
-[features]
-default = []
-rd-service = ["dep:rd-service"]
-
 [dependencies]
 facet.workspace = true
 facet-error.workspace = true
@@ -17,7 +13,3 @@ rd-service = { workspace = true, optional = true }
 [dev-dependencies]
 anyhow.workspace = true
 pretty_env_logger.workspace = true
-
-[[example]]
-name = "service"
-required-features = ["rd-service"]

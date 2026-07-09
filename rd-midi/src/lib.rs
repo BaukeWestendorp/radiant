@@ -1,11 +1,7 @@
-#[cfg(feature = "rd-service")]
-mod rd_service;
-
-#[cfg(feature = "rd-service")]
-pub use rd_service::*;
-
 mod error;
 mod message;
+mod service;
 
 pub use error::*;
 pub use message::*;
+pub use service::*;

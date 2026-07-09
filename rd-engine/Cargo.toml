@@ -10,7 +10,7 @@ facet-json.workspace = true
 flume.workspace = true
 log.workspace = true
 rd-service.workspace = true
-rd-midi = { workspace = true, features = ["rd-service"] }
+rd-midi.workspace = true
 uuid = { workspace = true, features = ["v4"] }
 
 [dev-dependencies]
