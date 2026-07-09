@@ -1,433 +1,208 @@
-use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use std::thread;
-use std::time::{Duration, Instant};
+use std::thread::{self, JoinHandle};
+use std::time::Duration;
 
-use arc_swap::ArcSwap;
-use flume::{Receiver, Sender};
-use rd_service::Service;
+use anyhow::Context;
+use rd_service::{Scheduled, Service};
 
-use crate::output::OutputDefinition;
-use crate::trigger::{TriggerService, TriggerServiceRunner, TriggersDefinition};
 use crate::{
-    Project,
-    cmd::Command,
-    event::{Event, EventListener},
-    object::Objects,
-    output::OutputService,
-    patch::Patch,
-    pipeline::Pipeline,
-    programmer::Programmer,
-    selection::Selection,
-    trigger::Trigger,
+    Command, Commander, Project,
+    services::{
+        output::OutputService,
+        trigger::{TriggerService, TriggerServiceRunner},
+    },
 };
+use crate::{Event, Events};
 
 pub struct Engine {
-    showfile_path: Option<PathBuf>,
+    inner: Arc<Mutex<EngineInner>>,
+    commander: Commander,
+    events: Events,
 
-    pub(crate) patch: Arc<Patch>,
-    pub(crate) objects: Arc<Objects>,
-    pub(crate) programmer: Arc<Programmer>,
-    pub(crate) pipeline: Arc<Pipeline>,
-    pub(crate) selection: Arc<Selection>,
-    pub(crate) highlight: bool,
-
-    pub(crate) triggers_service: Service<TriggerService, TriggerServiceRunner>,
-    pub(crate) output_service: Service<OutputService, rd_service::Scheduled>,
-
-    event_tx: flume::Sender<Event>,
-    event_listener: EventListener,
-    event_buffer: Vec<Event>,
+    // NOTE: We keep the handle so the thread isn't completely detached.
+    _cmd_thread: JoinHandle<()>,
 }
 
 impl Engine {
-    pub fn new(project: Project) -> anyhow::Result<Self> {
-        let patch = Patch::new(project.patch.clone(), project.gdtfs.clone())?;
-        let objects = project.objects.clone();
-        let pipeline = Pipeline::new(&patch);
-
+    pub fn new() -> Self {
+        let (cmd_tx, cmd_rx) = flume::unbounded();
         let (event_tx, event_rx) = flume::unbounded();
-        let event_listener = EventListener::new(event_rx);
 
-        let output_service = Service::new(
-            OutputService::new(project.output.clone())?,
-            rd_service::Scheduled::new(Duration::from_secs_f64(1.0 / 44.0)),
-        );
+        let commander = Commander::new(cmd_tx);
+        let events = Events::new(event_rx);
 
-        let (triggers_delegate, triggers_runner) = TriggerService::new(project.triggers.clone());
-        let triggers_service = Service::new(triggers_delegate, triggers_runner);
-
-        let engine = Self {
-            showfile_path: project.path.map(|p| p.to_path_buf()),
-
-            patch: Arc::new(patch),
-            objects: Arc::new(objects),
-            selection: Arc::new(Selection::new()),
-            programmer: Arc::new(Programmer::new()),
-            pipeline: Arc::new(pipeline),
+        let inner = Arc::new(Mutex::new(EngineInner {
+            project: Default::default(),
+            services: Services::default(),
             highlight: false,
-
             event_tx,
-            event_listener,
-            event_buffer: Vec::new(),
+        }));
 
-            output_service,
-            triggers_service,
-        };
-
-        Ok(engine)
-    }
-
-    pub fn showfile_path(&self) -> Option<&Path> {
-        self.showfile_path.as_deref()
-    }
-
-    pub fn patch(&self) -> &Patch {
-        &self.patch
-    }
-
-    pub fn triggers_service(&self) -> &Service<TriggerService, TriggerServiceRunner> {
-        &self.triggers_service
-    }
-
-    pub fn output_service(&self) -> &Service<OutputService, rd_service::Scheduled> {
-        &self.output_service
-    }
-
-    pub fn objects(&self) -> &Objects {
-        &self.objects
-    }
-
-    pub fn programmer(&self) -> &Programmer {
-        &self.programmer
-    }
-
-    pub fn pipeline(&self) -> &Pipeline {
-        &self.pipeline
-    }
-
-    pub fn selection(&self) -> &Selection {
-        &self.selection
-    }
-
-    pub fn highlight(&self) -> bool {
-        self.highlight
-    }
-
-    pub fn event_listener(&self) -> EventListener {
-        self.event_listener.clone()
-    }
-
-    pub fn execute(&mut self, command: Command) -> anyhow::Result<()> {
-        command.execute(self)
-    }
-
-    pub fn generate_snapshot(&self) -> EngineSnapshot {
-        EngineSnapshot {
-            showfile_path: self.showfile_path.clone(),
-            patch: Arc::clone(&self.patch),
-            objects: Arc::clone(&self.objects),
-            programmer: Arc::clone(&self.programmer),
-            pipeline: Arc::clone(&self.pipeline),
-            selection: Arc::clone(&self.selection),
-            triggers_definition: self.triggers_service.delegate().definition().clone(),
-            output_definition: self.output_service.delegate().definition().clone(),
-            highlight: self.highlight,
-        }
-    }
-
-    pub(crate) fn emit(&mut self, event: Event) {
-        self.event_buffer.push(event);
-    }
-
-    fn start(mut self, rx: Receiver<EngineMessage>, snapshot_store: Arc<ArcSwap<EngineSnapshot>>) {
-        log::debug!("Starting engine...");
-
-        const INTERVAL: Duration = Duration::new(0, ((1_000_000_000_f64 / 60.0).round()) as u32);
-
-        if let Err(err) = self.output_service.start() {
-            log::error!("{err}");
-        }
-
-        if let Err(err) = self.triggers_service.start() {
-            log::error!("{err}");
-        }
-
-        let mut next_tick = Instant::now() + INTERVAL;
-        let mut running = true;
-
-        let mut started = false;
-        while running {
-            if !started {
-                log::info!("Started engine");
-                started = true;
-            }
-
-            while let Ok(msg) = rx.try_recv() {
-                running = self.handle_message(msg, &snapshot_store);
-                if !running {
-                    break;
-                }
-            }
-
-            if !running {
-                break;
-            }
-
-            let now = Instant::now();
-            if now < next_tick {
-                match rx.recv_timeout(next_tick - now) {
-                    Ok(msg) => {
-                        running = self.handle_message(msg, &snapshot_store);
-                    }
-                    Err(flume::RecvTimeoutError::Timeout) => {}
-                    Err(flume::RecvTimeoutError::Disconnected) => {
-                        running = false;
+        let cmd_thread = thread::spawn({
+            let inner = Arc::clone(&inner);
+            move || {
+                while let Ok(command) = cmd_rx.recv() {
+                    let mut state = inner.lock().unwrap();
+                    if let Err(e) = state.execute(command) {
+                        log::error!("Command execution failed: {}", e);
                     }
                 }
-                continue;
             }
+        });
 
-            let now = Instant::now();
-            if now > next_tick + INTERVAL {
-                let deviation = (now - next_tick).as_secs_f64();
-                let ticks_missed = (deviation / INTERVAL.as_secs_f64()).floor() as u32 + 1;
-                next_tick += INTERVAL * ticks_missed;
-            }
-
-            self.tick(&snapshot_store);
-            next_tick += INTERVAL;
-        }
-
-        if let Err(err) = self.output_service.stop() {
-            log::error!("{err}");
-        }
-
-        if let Err(err) = self.triggers_service.stop() {
-            log::error!("{err}");
-        }
-
-        log::info!("Stopped engine");
+        Self { inner, commander, events, _cmd_thread: cmd_thread }
     }
 
-    fn handle_message(
-        &mut self,
-        msg: EngineMessage,
-        snapshot_store: &Arc<ArcSwap<EngineSnapshot>>,
-    ) -> bool {
-        match msg {
-            EngineMessage::Command { command, resp } => {
-                let res = self.execute(command);
-
-                self.resolve_pipeline();
-                snapshot_store.store(Arc::new(self.generate_snapshot()));
-
-                if let Some(resp) = resp {
-                    let _ = resp.send(res);
-                }
-                true
-            }
-            EngineMessage::Shutdown { resp } => {
-                if let Some(resp) = resp {
-                    let _ = resp.send(());
-                }
-                false
-            }
-        }
+    pub fn with_project<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce(&Project) -> R,
+    {
+        let state = self.inner.lock().unwrap();
+        f(&state.project)
     }
 
-    fn tick(&mut self, snapshot_store: &Arc<ArcSwap<EngineSnapshot>>) {
-        let mut snapshot_dirty = false;
-        for trigger in self.triggers_service.delegate().drain() {
-            match trigger {
-                Trigger::ExecutorMaster { executor_id, value } => {
-                    self.execute(Command::ExecutorSetMaster { executor_id, value })
-                        .map_err(|err| log::error!("{err}"))
-                        .ok();
-                    snapshot_dirty = true;
-                }
-                Trigger::ExecutorButton { executor_id, button, pressed } => {
-                    self.execute(Command::ExecutorButton { executor_id, button, pressed })
-                        .map_err(|err| log::error!("{err}"))
-                        .ok();
-                    snapshot_dirty = true;
-                }
-                Trigger::EncoderSetValue { encoder_ix, value } => {
-                    self.execute(Command::EncoderSetValue { encoder_ix, value })
-                        .map_err(|err| log::error!("{err}"))
-                        .ok();
-                }
-            }
-        }
-
-        self.resolve_pipeline();
-
-        if snapshot_dirty {
-            snapshot_store.store(Arc::new(self.generate_snapshot()));
-        }
-
-        for event in self.event_buffer.drain(..) {
-            let _ = self.event_tx.send(event);
-        }
-
-        self.output_service.delegate().update(self.pipeline.multiverse().clone());
+    pub fn load_project(&mut self, project: Project) -> anyhow::Result<()> {
+        self.inner.lock().unwrap().load_project(project, &self.commander)
     }
 
-    fn resolve_pipeline(&mut self) {
-        let pipeline = Arc::make_mut(&mut self.pipeline);
-
-        let highlighted_fixtures =
-            self.highlight.then(|| self.selection.fixture_ids().to_vec()).unwrap_or_default();
-        if let Err(err) = pipeline.resolve_attributes(
-            &self.objects,
-            &self.patch,
-            &self.programmer,
-            highlighted_fixtures,
-        ) {
-            log::error!("Failed to resolve attribute values: {err}");
-            return;
-        };
-
-        pipeline.resolve_dmx();
-
-        self.emit(Event::PipelineResolved);
+    pub fn unload_project(&mut self) -> anyhow::Result<Project> {
+        self.inner.lock().unwrap().unload_project()
     }
-}
 
-enum EngineMessage {
-    Command { command: Command, resp: Option<Sender<anyhow::Result<()>>> },
-    Shutdown { resp: Option<Sender<()>> },
-}
+    pub fn reload_project(&mut self) -> anyhow::Result<()> {
+        self.inner.lock().unwrap().reload_project(&self.commander)
+    }
 
-struct EngineHandleInner {
-    tx: Sender<EngineMessage>,
-    snapshot: Arc<ArcSwap<EngineSnapshot>>,
-    event_listener: EventListener,
-    thread_handle: Mutex<Option<thread::JoinHandle<()>>>,
-}
+    pub fn commander(&self) -> Commander {
+        self.commander.clone()
+    }
 
-pub struct EngineHandle {
-    inner: Arc<EngineHandleInner>,
-}
-
-impl EngineHandle {
-    pub fn new(engine: Engine) -> Self {
-        let (tx, rx) = flume::unbounded();
-
-        let snapshot = Arc::new(ArcSwap::from_pointee(engine.generate_snapshot()));
-
-        let event_listener = engine.event_listener();
-
-        let thread_handle = thread::Builder::new()
-            .name("rd_engine".to_string())
-            .spawn({
-                let snapshot = Arc::clone(&snapshot);
-                move || engine.start(rx, snapshot)
-            })
-            .expect("Failed to spawn engine thread");
-
-        Self {
-            inner: Arc::new(EngineHandleInner {
-                tx,
-                snapshot,
-                event_listener,
-                thread_handle: Mutex::new(Some(thread_handle)),
-            }),
-        }
+    pub fn events(&self) -> Events {
+        self.events.clone()
     }
 
     pub fn execute(&self, command: Command) -> anyhow::Result<()> {
-        let (resp_tx, resp_rx) = flume::bounded(1);
-        self.inner
-            .tx
-            .send(EngineMessage::Command { command, resp: Some(resp_tx) })
-            .map_err(|_| anyhow::anyhow!("Engine thread stopped"))?;
-        resp_rx.recv().map_err(|_| anyhow::anyhow!("Engine thread stopped"))?
-    }
-
-    pub fn try_execute(&self, command: Command) -> anyhow::Result<()> {
-        self.inner
-            .tx
-            .send(EngineMessage::Command { command, resp: None })
-            .map_err(|_| anyhow::anyhow!("Engine thread stopped"))
-    }
-
-    pub fn snapshot(&self) -> Arc<EngineSnapshot> {
-        self.inner.snapshot.load_full()
-    }
-
-    pub fn event_listener(&self) -> EventListener {
-        self.inner.event_listener.clone()
-    }
-
-    pub fn stop(&self) -> anyhow::Result<()> {
-        let (resp_tx, resp_rx) = flume::bounded(1);
-
-        if self.inner.tx.send(EngineMessage::Shutdown { resp: Some(resp_tx) }).is_ok() {
-            let _ = resp_rx.recv();
-        }
-
-        if let Some(handle) = self.inner.thread_handle.lock().unwrap().take() {
-            handle.join().map_err(|_| anyhow::anyhow!("Engine thread panicked during shutdown"))?;
-        }
-
+        self.commander.execute(command);
         Ok(())
     }
 }
 
-impl Clone for EngineHandle {
-    fn clone(&self) -> Self {
-        Self { inner: Arc::clone(&self.inner) }
+impl Drop for Engine {
+    fn drop(&mut self) {
+        if let Err(err) = self.inner.lock().unwrap().stop() {
+            log::error!("Failed to stop engine: {:?}", err);
+        }
     }
 }
 
-#[derive(Clone, Default)]
-pub struct EngineSnapshot {
-    showfile_path: Option<PathBuf>,
-    patch: Arc<Patch>,
-    objects: Arc<Objects>,
-    programmer: Arc<Programmer>,
-    pipeline: Arc<Pipeline>,
-    selection: Arc<Selection>,
-    triggers_definition: TriggersDefinition,
-    output_definition: OutputDefinition,
+struct EngineInner {
+    project: Project,
+    services: Services,
     highlight: bool,
+
+    event_tx: flume::Sender<Event>,
 }
 
-impl EngineSnapshot {
-    pub fn showfile_path(&self) -> Option<&Path> {
-        self.showfile_path.as_deref()
+impl EngineInner {
+    pub fn load_project(&mut self, project: Project, commander: &Commander) -> anyhow::Result<()> {
+        self.unload_project()?;
+        self.project = project;
+        self.services = Services::new(&self.project, commander.clone());
+        self.start()?;
+        Ok::<(), anyhow::Error>(()).context("Could not load project")
     }
 
-    pub fn patch(&self) -> Arc<Patch> {
-        Arc::clone(&self.patch)
+    pub fn unload_project(&mut self) -> anyhow::Result<Project> {
+        self.stop()?;
+        self.services = Services::default();
+        let old_project = std::mem::take(&mut self.project);
+        Ok::<Project, anyhow::Error>(old_project).context("Could not unload project")
     }
 
-    pub fn objects(&self) -> Arc<Objects> {
-        Arc::clone(&self.objects)
+    pub fn reload_project(&mut self, commander: &Commander) -> anyhow::Result<()> {
+        let project = self.unload_project()?;
+        self.load_project(project, commander)?;
+        Ok::<(), anyhow::Error>(()).context("Could not reload project")
     }
 
-    pub fn programmer(&self) -> Arc<Programmer> {
-        Arc::clone(&self.programmer)
+    pub fn execute(&mut self, command: Command) -> anyhow::Result<()> {
+        match &command {
+            Command::HighlightToggle => {
+                self.highlight = !self.highlight;
+                self.emit(Event::HighlightChanged { highlight: self.highlight });
+            }
+            Command::Save { path } => {
+                self.project
+                    .save_to_folder()
+                    .with_context(|| format!("Saving project to '{}'", path.display()))?;
+                self.emit(Event::Saved { path: path.to_owned() });
+            }
+        }
+
+        Ok::<(), anyhow::Error>(())
+            .with_context(|| format!("Command '{:?}' could not be executed", command))
     }
 
-    pub fn pipeline(&self) -> Arc<Pipeline> {
-        Arc::clone(&self.pipeline)
+    fn start(&mut self) -> anyhow::Result<()> {
+        self.services.output.start().context("Output service failed to start")?;
+        self.services.trigger.start().context("Trigger service failed to start")?;
+        Ok::<(), anyhow::Error>(()).context("Services failed to start")
     }
 
-    pub fn triggers_definition(&self) -> &TriggersDefinition {
-        &self.triggers_definition
+    fn stop(&mut self) -> anyhow::Result<()> {
+        self.services.output.stop().context("Output service failed to stop")?;
+        self.services.trigger.stop().context("Trigger service failed to stop")?;
+        Ok::<(), anyhow::Error>(()).context("Services failed to stop")
     }
 
-    pub fn output_definition(&self) -> &OutputDefinition {
-        &self.output_definition
+    fn emit(&mut self, event: Event) {
+        let _ = self.event_tx.send(event);
     }
+}
 
-    pub fn selection(&self) -> Arc<Selection> {
-        Arc::clone(&self.selection)
+impl Drop for EngineInner {
+    fn drop(&mut self) {
+        if let Err(err) = self.stop() {
+            log::error!("Failed to stop engine: {:?}", err);
+        }
     }
+}
 
-    pub fn highlight(&self) -> bool {
-        self.highlight
+struct Services {
+    pub output: Service<OutputService, Scheduled>,
+    pub trigger: Service<TriggerService, TriggerServiceRunner>,
+}
+
+impl Services {
+    const DMX_OUTPUT_FREQUENCY: u32 = 40;
+    const DMX_OUTPUT_INTERVAL: Duration =
+        Duration::new(0, 1_000_000_000 / Self::DMX_OUTPUT_FREQUENCY);
+
+    pub fn new(project: &Project, commander: Commander) -> Self {
+        Self {
+            output: Service::new(
+                OutputService::new(&project.output),
+                Scheduled::new(Self::DMX_OUTPUT_INTERVAL),
+            ),
+            trigger: Service::new(
+                TriggerService::new(commander),
+                TriggerServiceRunner::new(&project.trigger),
+            ),
+        }
+    }
+}
+
+impl Default for Services {
+    fn default() -> Self {
+        Self {
+            output: Service::new(
+                OutputService::default(),
+                Scheduled::new(Self::DMX_OUTPUT_INTERVAL),
+            ),
+            trigger: Service::new(
+                TriggerService::new(Default::default()),
+                TriggerServiceRunner::new(&Default::default()),
+            ),
+        }
     }
 }

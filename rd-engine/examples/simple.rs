@@ -1,6 +1,6 @@
 use std::{thread, time::Duration};
 
-use rd_engine_2::{Command, Engine, Project};
+use rd_engine::{Command, Engine, Project};
 
 fn main() -> anyhow::Result<()> {
     pretty_env_logger::init();

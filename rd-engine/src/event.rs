@@ -1,24 +1,23 @@
 use std::path::PathBuf;
 
-use crate::object::{ObjectId, ObjectKind};
-
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug)]
 pub enum Event {
-    PipelineResolved,
-    SelectionChanged,
-    ProgrammerChanged,
-    HighlightChanged { enabled: bool },
-    ObjectChanged { object_kind: ObjectKind, object_id: ObjectId },
-    EncoderChanged { encoder_ix: usize, value: f32 },
+    HighlightChanged { highlight: bool },
+
     Saved { path: PathBuf },
 }
 
-#[derive(Debug, Clone)]
-pub struct EventListener {
+pub struct Events {
     rx: flume::Receiver<Event>,
 }
 
-impl std::ops::Deref for EventListener {
+impl Events {
+    pub(crate) fn new(rx: flume::Receiver<Event>) -> Self {
+        Self { rx }
+    }
+}
+
+impl std::ops::Deref for Events {
     type Target = flume::Receiver<Event>;
 
     fn deref(&self) -> &Self::Target {
@@ -26,8 +25,8 @@ impl std::ops::Deref for EventListener {
     }
 }
 
-impl EventListener {
-    pub(crate) fn new(rx: flume::Receiver<Event>) -> Self {
-        Self { rx }
+impl Clone for Events {
+    fn clone(&self) -> Self {
+        Self { rx: flume::Receiver::clone(&self.rx) }
     }
 }
