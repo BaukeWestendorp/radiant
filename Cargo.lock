@@ -4641,6 +4641,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "rd-dmx"
+version = "0.1.0"
+dependencies = [
+ "facet",
+]
+
+[[package]]
 name = "rd-engine"
 version = "0.1.0"
 dependencies = [

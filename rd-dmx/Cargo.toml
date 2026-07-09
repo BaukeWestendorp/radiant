@@ -1,0 +1,7 @@
+[package]
+name = "rd-dmx"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+facet.workspace = true
