@@ -4,6 +4,7 @@ pub(crate) mod services;
 
 mod cmd;
 mod engine;
+mod event;
 mod object;
 
 pub use project::Project;

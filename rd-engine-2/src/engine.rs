@@ -12,28 +12,30 @@ use crate::{
         trigger::{TriggerService, TriggerServiceRunner},
     },
 };
+use crate::{Event, Events};
 
 pub struct Engine {
     inner: Arc<Mutex<EngineInner>>,
     commander: Commander,
-    services: Services,
+    events: Events,
 
-    // We keep the handle so the thread isn't completely detached
+    // NOTE: We keep the handle so the thread isn't completely detached.
     _cmd_thread: JoinHandle<()>,
 }
 
 impl Engine {
     pub fn new() -> Self {
         let (cmd_tx, cmd_rx) = flume::unbounded();
+        let (event_tx, event_rx) = flume::unbounded();
+
         let commander = Commander::new(cmd_tx);
+        let events = Events::new(event_rx);
 
         let inner = Arc::new(Mutex::new(EngineInner {
             project: Default::default(),
-
-            commander: Commander::new(cmd_tx),
             services: Services::default(),
-
             highlight: false,
+            event_tx,
         }));
 
         let cmd_thread = thread::spawn({
@@ -48,7 +50,7 @@ impl Engine {
             }
         });
 
-        Self { inner, commander, _cmd_thread: cmd_thread }
+        Self { inner, commander, events, _cmd_thread: cmd_thread }
     }
 
     pub fn with_project<F, R>(&self, f: F) -> R
@@ -75,8 +77,12 @@ impl Engine {
         self.commander.clone()
     }
 
+    pub fn events(&self) -> Events {
+        self.events.clone()
+    }
+
     pub fn execute(&self, command: Command) -> anyhow::Result<()> {
-        self.commander.exec(command);
+        self.commander.execute(command);
         Ok(())
     }
 }
@@ -93,6 +99,8 @@ struct EngineInner {
     project: Project,
     services: Services,
     highlight: bool,
+
+    event_tx: flume::Sender<Event>,
 }
 
 impl EngineInner {
@@ -121,11 +129,13 @@ impl EngineInner {
         match &command {
             Command::HighlightToggle => {
                 self.highlight = !self.highlight;
+                self.emit(Event::HighlightChanged { highlight: self.highlight });
             }
             Command::Save { path } => {
                 self.project
                     .save_to_folder()
                     .with_context(|| format!("Saving project to '{}'", path.display()))?;
+                self.emit(Event::Saved { path: path.to_owned() });
             }
         }
 
@@ -143,6 +153,10 @@ impl EngineInner {
         self.services.output.stop().context("Output service failed to stop")?;
         self.services.trigger.stop().context("Trigger service failed to stop")?;
         Ok::<(), anyhow::Error>(()).context("Services failed to stop")
+    }
+
+    fn emit(&mut self, event: Event) {
+        let _ = self.event_tx.send(event);
     }
 }
 
