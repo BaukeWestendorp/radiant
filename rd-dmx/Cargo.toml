@@ -5,3 +5,4 @@ edition.workspace = true
 
 [dependencies]
 facet.workspace = true
+facet-error.workspace = true
