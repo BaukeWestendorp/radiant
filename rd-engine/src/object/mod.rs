@@ -14,7 +14,7 @@ pub trait Object: for<'facet> facet::Facet<'facet> {
     fn name(&self) -> &str;
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(facet::Facet)]
 #[facet(transparent)]
 pub struct ObjectId(Uuid);
@@ -35,7 +35,7 @@ impl fmt::Display for ObjectId {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(facet::Facet)]
 #[facet(transparent)]
 pub struct Slot(NonZeroU32);

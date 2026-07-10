@@ -2,9 +2,13 @@ use std::path::PathBuf;
 
 #[derive(Debug)]
 pub enum Event {
-    HighlightChanged { highlight: bool },
+    ProjectLoaded,
+    ProjectUnloaded,
+    ProjectReloaded,
 
     Saved { path: PathBuf },
+
+    HighlightChanged { highlight: bool },
 }
 
 pub struct Events {

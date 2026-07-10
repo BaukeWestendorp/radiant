@@ -1,6 +1,5 @@
 use gpui::{
-    AnyView, AnyWindowHandle, App, BorrowAppContext, Entity, FontWeight, Global, Window,
-    WindowOptions, div,
+    AnyView, AnyWindowHandle, App, BorrowAppContext, FontWeight, Global, Window, WindowOptions, div,
 };
 use gpui::{SharedString, prelude::*};
 

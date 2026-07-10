@@ -3,22 +3,19 @@ use rd_midi::MidiPacket;
 use crate::{ExecutorId, project, services::trigger::Trigger};
 
 pub struct MidiTriggerService {
-    device_config: project::midi::MidiTriggerConfig,
+    mappings: Vec<project::midi::MidiMapping>,
     trigger_tx: flume::Sender<Trigger>,
 }
 
 impl MidiTriggerService {
     pub fn new(
-        device_config: project::midi::MidiTriggerConfig,
+        mappings: Vec<project::midi::MidiMapping>,
         trigger_tx: flume::Sender<Trigger>,
     ) -> Self {
-        Self { device_config, trigger_tx }
+        Self { mappings, trigger_tx }
     }
 
     fn parse_trigger(&self, packet: MidiPacket) -> Option<Trigger> {
-        let device_config =
-            self.device_config.devices.iter().find(|d| d.name == packet.port_name)?;
-
         let msg_channel = match &packet.message {
             rd_midi::MidiMessage::ControlChange { channel, .. } => *channel,
             rd_midi::MidiMessage::NoteOn { channel, .. } => *channel,
@@ -27,54 +24,58 @@ impl MidiTriggerService {
             _ => return None,
         };
 
-        if let Some(dev_channel) = device_config.channel {
-            if dev_channel != msg_channel {
-                return None;
+        for mapping in &self.mappings {
+            if mapping.device_name != packet.port_name {
+                continue;
             }
-        }
 
-        for mapping in &device_config.mappings {
-            let (mut normalized_val, mut is_pressed) = match (&mapping.filter, &packet.message) {
+            if let Some(dev_channel) = mapping.device_channel {
+                if dev_channel != msg_channel {
+                    continue;
+                }
+            }
+
+            let (mut normalized_val, mut is_pressed) = match (&mapping.filter_type, &packet.message)
+            {
                 (
-                    project::midi::MidiFilter::ControlChange { controller },
+                    project::midi::FilterType::ControlChange,
                     rd_midi::MidiMessage::ControlChange { controller: pkt_ctrl, value, .. },
-                ) if controller.map_or(true, |c| c == *pkt_ctrl) => {
+                ) if mapping.filter_controller.map_or(true, |c| c == *pkt_ctrl) => {
                     (*value as f32 / 127.0, *value > 0)
                 }
 
                 (
-                    project::midi::MidiFilter::NoteOn { note },
+                    project::midi::FilterType::NoteOn,
                     rd_midi::MidiMessage::NoteOn { note: pkt_note, velocity, .. },
-                ) if note.map_or(true, |n| n == *pkt_note) => {
+                ) if mapping.filter_note.map_or(true, |n| n == *pkt_note) => {
                     (*velocity as f32 / 127.0, *velocity > 0)
                 }
 
                 (
-                    project::midi::MidiFilter::NoteOff { note },
+                    project::midi::FilterType::NoteOff,
                     rd_midi::MidiMessage::NoteOff { note: pkt_note, .. },
-                ) if note.map_or(true, |n| n == *pkt_note) => (0.0, false),
+                ) if mapping.filter_note.map_or(true, |n| n == *pkt_note) => (0.0, false),
 
                 (
-                    project::midi::MidiFilter::NoteOff { note },
+                    project::midi::FilterType::NoteOff,
                     rd_midi::MidiMessage::NoteOn { note: pkt_note, velocity: 0, .. },
-                ) if note.map_or(true, |n| n == *pkt_note) => (0.0, false),
+                ) if mapping.filter_note.map_or(true, |n| n == *pkt_note) => (0.0, false),
 
                 (
-                    project::midi::MidiFilter::PitchBend,
+                    project::midi::FilterType::PitchBend,
                     rd_midi::MidiMessage::PitchBend { value, .. },
                 ) => ((*value as f32 + 8192.0) / 16383.0, *value > 0),
 
                 _ => continue,
             };
 
-            let transform = &mapping.transform;
-            if transform.invert {
+            if mapping.transform_invert {
                 normalized_val = 1.0 - normalized_val;
                 is_pressed = !is_pressed;
             }
 
-            let final_value = transform.min_output
-                + (normalized_val * (transform.max_output - transform.min_output));
+            let final_value = mapping.transform_min_output
+                + (normalized_val * (mapping.transform_max_output - mapping.transform_min_output));
 
             return match &mapping.target {
                 project::TriggerTarget::HighlightToggle => {

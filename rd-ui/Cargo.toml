@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 config = { version = "0.15.22", default-features = false, features = ["toml"] }
+facet = { workspace = true, optional = true }
 gpui.workspace = true
 gpui_platform.workspace = true
 log.workspace = true

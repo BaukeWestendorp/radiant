@@ -17,3 +17,4 @@ rd-ui.workspace = true
 rd-engine.workspace = true
 facet.workspace = true
 figue = "4.0.5"
+uuid = { workspace = true, features = ["v4"] }

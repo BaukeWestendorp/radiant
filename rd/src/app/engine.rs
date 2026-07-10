@@ -1,5 +1,7 @@
-use gpui::{App, AppContext, Entity, EventEmitter, Global, ReadGlobal, Subscription};
-use rd_engine::{Engine, Event};
+use gpui::{
+    App, AppContext, Entity, EventEmitter, Global, ReadGlobal, Subscription, UpdateGlobal, Window,
+};
+use rd_engine::{Engine, Event, Project};
 
 pub(crate) fn init(engine: Engine, cx: &mut App) {
     let engine_global = EngineGlobal::new(engine, cx);
@@ -9,12 +11,32 @@ pub(crate) fn init(engine: Engine, cx: &mut App) {
 pub trait EngineAppExt {
     fn engine(&self) -> &Engine;
 
+    fn update_project<R, F: FnOnce(&mut Project, &mut App) -> R>(
+        &mut self,
+        f: F,
+    ) -> anyhow::Result<R>;
+
     fn on_engine_event(&mut self, handler: impl FnMut(&Event, &mut App) + 'static) -> Subscription;
+
+    fn on_engine_event_in(
+        &mut self,
+        window: &mut Window,
+        handler: impl FnMut(&Event, &mut Window, &mut App) + 'static,
+    ) -> Subscription;
 }
 
 impl EngineAppExt for App {
     fn engine(&self) -> &Engine {
         &EngineGlobal::global(self).engine
+    }
+
+    fn update_project<R, F: FnOnce(&mut Project, &mut App) -> R>(
+        &mut self,
+        f: F,
+    ) -> anyhow::Result<R> {
+        EngineGlobal::update_global(self, |engine, cx| {
+            engine.engine.update_project(|project| (f)(project, cx))
+        })
     }
 
     fn on_engine_event(
@@ -23,6 +45,16 @@ impl EngineAppExt for App {
     ) -> Subscription {
         let event_buffer = EngineGlobal::global(self).event_buffer.clone();
         self.subscribe(&event_buffer, move |_, event, cx| handler(event, cx))
+    }
+
+    fn on_engine_event_in(
+        &mut self,
+        window: &mut Window,
+        mut handler: impl FnMut(&Event, &mut Window, &mut App) + 'static,
+    ) -> Subscription {
+        let event_buffer = EngineGlobal::global(self).event_buffer.clone();
+        window
+            .subscribe(&event_buffer, self, move |_, event, window, cx| handler(event, window, cx))
     }
 }
 

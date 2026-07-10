@@ -16,9 +16,9 @@ pub trait TableDelegate {
         Vec::new()
     }
 
-    fn edit_rows(&self, _row_ids: &[Self::RowId], _cx: &App) {}
+    fn edit_rows(&self, _row_ids: &[Self::RowId], _cx: &mut App) {}
 
-    fn delete_rows(&self, _row_ids: &[Self::RowId], _cx: &App) {}
+    fn delete_rows(&self, _row_ids: &[Self::RowId], _cx: &mut App) {}
 
     fn render_cell(
         &self,

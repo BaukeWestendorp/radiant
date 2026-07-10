@@ -4789,6 +4789,7 @@ dependencies = [
  "pretty_env_logger",
  "rd-engine",
  "rd-ui",
+ "uuid",
 ]
 
 [[package]]
@@ -4846,6 +4847,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "config",
+ "facet",
  "gpui",
  "gpui_platform",
  "log",

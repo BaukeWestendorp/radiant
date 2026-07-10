@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::{ObjectId, Slot};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(facet::Facet)]
 #[repr(C)]
 pub enum ExecutorButton {
@@ -11,7 +11,7 @@ pub enum ExecutorButton {
     Button3,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(facet::Facet)]
 #[repr(C)]
 pub enum ExecutorButtonAction {
@@ -22,7 +22,7 @@ pub enum ExecutorButtonAction {
     CueGoPrevious,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(facet::Facet)]
 pub struct ExecutorId {
     pub page: ObjectId,

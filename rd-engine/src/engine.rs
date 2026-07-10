@@ -36,6 +36,8 @@ impl Engine {
             project: Default::default(),
             services: Services::default(),
             highlight: false,
+
+            is_dirty: false,
             event_tx,
         }));
 
@@ -60,6 +62,17 @@ impl Engine {
     {
         let state = self.inner.lock().unwrap();
         f(&state.project)
+    }
+
+    pub fn update_project<F, R>(&mut self, f: F) -> anyhow::Result<R>
+    where
+        F: FnOnce(&mut Project) -> R,
+    {
+        let mut project = self.unload_project()?;
+        let result = (f)(&mut project);
+        self.load_project(project)?;
+
+        Ok(result)
     }
 
     pub fn load_project(&mut self, project: Project) -> anyhow::Result<()> {
@@ -111,12 +124,15 @@ struct EngineInner {
     services: Services,
     highlight: bool,
 
+    is_dirty: bool,
     event_tx: flume::Sender<Event>,
 }
 
 impl EngineInner {
     pub fn load_project(&mut self, project: Project, commander: &Commander) -> anyhow::Result<()> {
-        self.unload_project()?;
+        if self.is_dirty {
+            self.unload_project()?;
+        }
         self.project = project;
         self.services = Services::new(&self.project, commander.clone());
         self.start()?;
@@ -129,6 +145,8 @@ impl EngineInner {
                 .map(|p| p.display().to_string())
                 .unwrap_or("<unsaved project>".to_string())
         );
+
+        self.emit(Event::ProjectLoaded);
 
         Ok::<(), anyhow::Error>(()).context("Could not load project")
     }
@@ -147,6 +165,8 @@ impl EngineInner {
                 .unwrap_or("<unsaved project>".to_string())
         );
 
+        self.emit(Event::ProjectUnloaded);
+
         Ok::<Project, anyhow::Error>(old_project).context("Could not unload project")
     }
 
@@ -163,10 +183,13 @@ impl EngineInner {
                 .unwrap_or("<unsaved project>".to_string())
         );
 
+        self.emit(Event::ProjectReloaded);
+
         Ok::<(), anyhow::Error>(()).context("Could not reload project")
     }
 
     pub fn execute(&mut self, command: Command) -> anyhow::Result<()> {
+        self.is_dirty = true;
         match &command {
             Command::HighlightToggle => {
                 self.highlight = !self.highlight;
@@ -177,6 +200,7 @@ impl EngineInner {
                     .save_to_folder()
                     .with_context(|| format!("Saving project to '{}'", path.display()))?;
                 self.emit(Event::Saved { path: path.to_owned() });
+                self.is_dirty = false;
             }
         }
 
