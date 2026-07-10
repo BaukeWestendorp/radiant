@@ -20,17 +20,17 @@ impl TabsPreview {
 
 impl Render for TabsPreview {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let sidebar_tabs =
-            Tabs::new("sidebar_tabs", self.sidebar_tabs.clone(), TabsVariant::Sidebar).tabs([
-                Tab::new("alpha", "Alpha", alpha_content().into_any_element()),
-                Tab::new("beta", "Beta", beta_content().into_any_element()),
-                Tab::new("gamma", "Gamma", gamma_content().into_any_element()),
-            ]);
-        let top_tabs = Tabs::new("top_tabs", self.top_tabs.clone(), TabsVariant::Top).tabs([
+        let sidebar_tabs = Tabs::new("sidebar_tabs", self.sidebar_tabs.clone()).tabs([
             Tab::new("alpha", "Alpha", alpha_content().into_any_element()),
             Tab::new("beta", "Beta", beta_content().into_any_element()),
             Tab::new("gamma", "Gamma", gamma_content().into_any_element()),
         ]);
+        let top_tabs =
+            Tabs::new("top_tabs", self.top_tabs.clone()).variant(TabsVariant::Top).tabs([
+                Tab::new("alpha", "Alpha", alpha_content().into_any_element()),
+                Tab::new("beta", "Beta", beta_content().into_any_element()),
+                Tab::new("gamma", "Gamma", gamma_content().into_any_element()),
+            ]);
 
         div()
             .size_full()

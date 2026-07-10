@@ -44,8 +44,13 @@ pub struct Tabs {
 }
 
 impl Tabs {
-    pub fn new(id: impl Into<ElementId>, state: Entity<TabsState>, variant: TabsVariant) -> Self {
-        Self { id: id.into(), state, variant, tabs: Vec::new() }
+    pub fn new(id: impl Into<ElementId>, state: Entity<TabsState>) -> Self {
+        Self { id: id.into(), state, variant: TabsVariant::default(), tabs: Vec::new() }
+    }
+
+    pub fn variant(mut self, variant: TabsVariant) -> Self {
+        self.variant = variant;
+        self
     }
 
     pub fn tabs(mut self, tabs: impl IntoIterator<Item = Tab>) -> Self {
@@ -150,8 +155,9 @@ impl Tab {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum TabsVariant {
     Top,
+    #[default]
     Sidebar,
 }

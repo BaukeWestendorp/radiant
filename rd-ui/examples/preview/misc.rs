@@ -33,14 +33,16 @@ impl MiscPreview {
 
 impl Render for MiscPreview {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().child(Tabs::new("misc-tabs", self.tabs.clone(), TabsVariant::Top).tabs([
-            Tab::new("binding", "Bindings", self.binding.clone().into_any_element()),
-            Tab::new("grid", "Grid", self.grid.clone().into_any_element()),
-            Tab::new("icon", "Icon", self.icon.clone().into_any_element()),
-            Tab::new("org", "Organization", self.org.clone().into_any_element()),
-            Tab::new("settings", "Settings", self.settings.clone().into_any_element()),
-            Tab::new("title_bar", "Title Bar", self.title_bar.clone().into_any_element()),
-        ]))
+        div().size_full().child(
+            Tabs::new("misc-tabs", self.tabs.clone()).variant(TabsVariant::Top).tabs([
+                Tab::new("binding", "Bindings", self.binding.clone().into_any_element()),
+                Tab::new("grid", "Grid", self.grid.clone().into_any_element()),
+                Tab::new("icon", "Icon", self.icon.clone().into_any_element()),
+                Tab::new("org", "Organization", self.org.clone().into_any_element()),
+                Tab::new("settings", "Settings", self.settings.clone().into_any_element()),
+                Tab::new("title_bar", "Title Bar", self.title_bar.clone().into_any_element()),
+            ]),
+        )
     }
 }
 

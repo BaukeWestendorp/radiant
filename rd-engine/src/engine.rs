@@ -82,9 +82,8 @@ impl Engine {
         self.events.clone()
     }
 
-    pub fn execute(&self, command: Command) -> anyhow::Result<()> {
+    pub fn execute(&self, command: Command) {
         self.commander.execute(command);
-        Ok(())
     }
 }
 

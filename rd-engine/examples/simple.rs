@@ -25,7 +25,7 @@ fn main() -> anyhow::Result<()> {
             project.path.as_ref().expect("Project should have a path").to_path_buf()
         });
         Command::Save { path }
-    })?;
+    });
 
     thread::sleep(Duration::from_secs(3600));
 
