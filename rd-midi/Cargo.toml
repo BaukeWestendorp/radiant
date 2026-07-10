@@ -8,7 +8,7 @@ facet.workspace = true
 facet-error.workspace = true
 flume.workspace = true
 midir = "0.10.0"
-rd-service = { workspace = true, optional = true }
+rd-service.workspace = true
 
 [dev-dependencies]
 anyhow.workspace = true

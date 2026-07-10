@@ -94,7 +94,7 @@ impl TriggerServiceRunner {
                     runner,
                 )
             })
-            .map_err(|err| log::error!("Failed to initialize MIDI trigger service runner: {err}"))
+            .map_err(|err| log::error!("Failed to initialize MIDI trigger service runner: {err:#}"))
             .ok();
 
         Self { midi_trigger_service, trigger_rx }

@@ -25,7 +25,7 @@ pub struct MidiMapping {
     #[facet(default)]
     pub transform: ValueTransform,
 
-    /// What internal action to take
+    /// What internal action to take.
     pub target: TriggerTarget,
 }
 

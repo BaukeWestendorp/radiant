@@ -83,7 +83,7 @@ mod app {
     impl Render for PreviewApp {
         fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
             div().size_full().child(
-                // FIXME: TabVariant::Sidebar fucks with the table width.
+                // FIXME: TabVariant::Sidebar fucks with the table width. But maybe not anymore???
                 Tabs::new("preview-pages", self.tabs.clone(), TabsVariant::Top).tabs([
                     Tab::new(
                         "interactive",

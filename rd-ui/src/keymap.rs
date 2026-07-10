@@ -37,7 +37,7 @@ impl Keymap {
                     }
                 }
                 Err(err) => {
-                    log::warn!("Failed to generate Action for {}: {err}", binding.action_name);
+                    log::warn!("Failed to generate Action for {}: {err:#}", binding.action_name);
                     None
                 }
             })
@@ -46,8 +46,6 @@ impl Keymap {
         cx.bind_keys(key_bindings);
     }
 }
-
-// ... rest of your code ...
 
 pub struct KeymapBinding {
     action_name: String,

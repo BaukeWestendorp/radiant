@@ -14,13 +14,14 @@ use crate::{
 };
 use crate::{Event, Events};
 
+/// Can be cloned safely as it acts like a handle.
 pub struct Engine {
     inner: Arc<Mutex<EngineInner>>,
     commander: Commander,
     events: Events,
 
     // NOTE: We keep the handle so the thread isn't completely detached.
-    _cmd_thread: JoinHandle<()>,
+    _cmd_thread: Arc<JoinHandle<()>>,
 }
 
 impl Engine {
@@ -43,14 +44,14 @@ impl Engine {
             move || {
                 while let Ok(command) = cmd_rx.recv() {
                     let mut state = inner.lock().unwrap();
-                    if let Err(e) = state.execute(command) {
-                        log::error!("Command execution failed: {}", e);
+                    if let Err(err) = state.execute(command) {
+                        log::error!("Command execution failed: {err:#}");
                     }
                 }
             }
         });
 
-        Self { inner, commander, events, _cmd_thread: cmd_thread }
+        Self { inner, commander, events, _cmd_thread: Arc::new(cmd_thread) }
     }
 
     pub fn with_project<F, R>(&self, f: F) -> R
@@ -87,10 +88,21 @@ impl Engine {
     }
 }
 
+impl Clone for Engine {
+    fn clone(&self) -> Self {
+        Self {
+            inner: Arc::clone(&self.inner),
+            commander: Commander::clone(&self.commander),
+            events: Events::clone(&self.events),
+            _cmd_thread: Arc::clone(&self._cmd_thread),
+        }
+    }
+}
+
 impl Drop for Engine {
     fn drop(&mut self) {
         if let Err(err) = self.inner.lock().unwrap().stop() {
-            log::error!("Failed to stop engine: {:?}", err);
+            log::error!("Failed to stop engine: {err:#}");
         }
     }
 }
@@ -109,6 +121,16 @@ impl EngineInner {
         self.project = project;
         self.services = Services::new(&self.project, commander.clone());
         self.start()?;
+
+        log::info!(
+            "Project loaded: '{}'",
+            self.project
+                .path
+                .as_ref()
+                .map(|p| p.display().to_string())
+                .unwrap_or("<unsaved project>".to_string())
+        );
+
         Ok::<(), anyhow::Error>(()).context("Could not load project")
     }
 
@@ -116,12 +138,32 @@ impl EngineInner {
         self.stop()?;
         self.services = Services::default();
         let old_project = std::mem::take(&mut self.project);
+
+        log::info!(
+            "Project unloaded: '{}'",
+            self.project
+                .path
+                .as_ref()
+                .map(|p| p.display().to_string())
+                .unwrap_or("<unsaved project>".to_string())
+        );
+
         Ok::<Project, anyhow::Error>(old_project).context("Could not unload project")
     }
 
     pub fn reload_project(&mut self, commander: &Commander) -> anyhow::Result<()> {
         let project = self.unload_project()?;
         self.load_project(project, commander)?;
+
+        log::info!(
+            "Project reloaded: '{}'",
+            self.project
+                .path
+                .as_ref()
+                .map(|p| p.display().to_string())
+                .unwrap_or("<unsaved project>".to_string())
+        );
+
         Ok::<(), anyhow::Error>(()).context("Could not reload project")
     }
 
@@ -139,6 +181,8 @@ impl EngineInner {
             }
         }
 
+        log::info!("Command executed: {:?}", command);
+
         Ok::<(), anyhow::Error>(())
             .with_context(|| format!("Command '{:?}' could not be executed", command))
     }
@@ -146,16 +190,19 @@ impl EngineInner {
     fn start(&mut self) -> anyhow::Result<()> {
         self.services.output.start().context("Output service failed to start")?;
         self.services.trigger.start().context("Trigger service failed to start")?;
+        log::debug!("All services started successfully");
         Ok::<(), anyhow::Error>(()).context("Services failed to start")
     }
 
     fn stop(&mut self) -> anyhow::Result<()> {
         self.services.output.stop().context("Output service failed to stop")?;
         self.services.trigger.stop().context("Trigger service failed to stop")?;
+        log::debug!("All services stopped successfully");
         Ok::<(), anyhow::Error>(()).context("Services failed to stop")
     }
 
     fn emit(&mut self, event: Event) {
+        log::debug!("Event emitted: {:?}", event);
         let _ = self.event_tx.send(event);
     }
 }

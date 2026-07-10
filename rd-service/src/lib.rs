@@ -50,7 +50,7 @@ where
             let stop_rx = stop_rx.clone();
             move || {
                 if let Err(err) = runner.start(stop_rx, notify_tx) {
-                    log::error!("Service runner failed: {err}");
+                    log::error!("Service runner failed: {err:#}");
                 }
             }
         }));
@@ -60,7 +60,7 @@ where
             let stop_rx = stop_rx.clone();
             move || {
                 if let Err(err) = delegate.on_start() {
-                    log::error!("Delegate start failed: {err}");
+                    log::error!("Delegate start failed: {err:#}");
                     return;
                 }
 
@@ -70,7 +70,7 @@ where
                         .recv(&notify_rx, |n| match n {
                             Ok(notification) => {
                                 if let Err(err) = delegate.on_frame(notification) {
-                                    log::error!("Delegate frame failed: {err}");
+                                    log::error!("Delegate frame failed: {err:#}");
                                 }
 
                                 None
@@ -86,7 +86,7 @@ where
                 }
 
                 if let Err(err) = delegate.on_stop() {
-                    log::error!("Delegate stop failed: {err}");
+                    log::error!("Delegate stop failed: {err:#}");
                 }
             }
         }));
