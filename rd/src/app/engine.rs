@@ -1,30 +1,20 @@
-use std::sync::Arc;
+use gpui::{App, AppContext, Entity, EventEmitter, Global, ReadGlobal, Subscription};
+use rd_engine::{Engine, Event};
 
-use gpui::{App, AppContext, Entity, EventEmitter, Global, ReadGlobal, Subscription, UpdateGlobal};
-use rd_engine::{Engine, Project, cmd::Command, event::Event};
-
-pub(crate) fn init(handle: EngineHandle, cx: &mut App) {
-    let engine_global = EngineGlobal::new(handle, cx);
+pub(crate) fn init(engine: Engine, cx: &mut App) {
+    let engine_global = EngineGlobal::new(engine, cx);
     cx.set_global(engine_global);
 }
 
 pub trait EngineAppExt {
     fn engine(&self) -> &Engine;
 
-    fn exec_cmd(&self, command: Command);
-
     fn on_engine_event(&mut self, handler: impl FnMut(&Event, &mut App) + 'static) -> Subscription;
 }
 
 impl EngineAppExt for App {
     fn engine(&self) -> &Engine {
-        &EngineGlobal::global(self).handle
-    }
-
-    fn exec_cmd(&self, command: Command) {
-        if let Err(err) = self.engine().execute(command) {
-            log::error!("Failed to execute command: {err}");
-        }
+        &EngineGlobal::global(self).engine
     }
 
     fn on_engine_event(
@@ -52,22 +42,22 @@ struct EngineEventBus;
 impl EventEmitter<Event> for EngineEventBus {}
 
 struct EngineGlobal {
-    handle: EngineHandle,
+    engine: Engine,
     event_buffer: Entity<EngineEventBus>,
 }
 
 impl EngineGlobal {
-    pub fn new(handle: EngineHandle, cx: &mut App) -> Self {
+    pub fn new(engine: Engine, cx: &mut App) -> Self {
         let event_buffer = cx.new(|_| EngineEventBus);
 
         cx.spawn({
-            let handle = handle.clone();
+            let engine = engine.clone();
             async move |cx| {
-                let event_listener = handle.event_listener();
-                while let Ok(first_event) = event_listener.recv_async().await {
+                let events = engine.events();
+                while let Ok(first_event) = events.recv_async().await {
                     let _ = cx.update(|cx| {
                         cx.emit_engine_event(first_event);
-                        while let Ok(event) = event_listener.try_recv() {
+                        while let Ok(event) = events.try_recv() {
                             cx.emit_engine_event(event);
                         }
                     });
@@ -76,7 +66,7 @@ impl EngineGlobal {
         })
         .detach();
 
-        Self { handle, event_buffer }
+        Self { engine, event_buffer }
     }
 }
 

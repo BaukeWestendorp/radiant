@@ -1,17 +1,8 @@
 use std::path::PathBuf;
 
-use clap::Parser;
+mod app;
 
-// mod app;
-// mod engine;
-
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Args {
-    /// Path to the showfile to load.
-    showfile_path: Option<PathBuf>,
-}
-
+#[inline]
 fn init_logger() {
     let is_debug_mode = cfg!(debug_assertions);
     let default_level =
@@ -19,16 +10,24 @@ fn init_logger() {
     pretty_env_logger::formatted_builder().filter_level(default_level).parse_env("RUST_LOG").init();
 }
 
+#[derive(Debug)]
+#[derive(facet::Facet)]
+struct Cli {
+    /// Path to the showfile to load.
+    #[facet(figue::positional)]
+    showfile_path: Option<PathBuf>,
+
+    /// Adds --help, --version, and --completions
+    #[facet(flatten)]
+    builtins: figue::FigueBuiltins,
+}
+
 fn main() -> anyhow::Result<()> {
     init_logger();
 
-    let args = Args::parse();
+    let cli: Cli = figue::from_std_args().unwrap();
 
-    app::run(args.showfile_path)?;
+    app::run(cli.showfile_path)?;
 
     Ok(())
-}
-
-fn version_string() -> String {
-    format!("v{} ({})", env!("CARGO_PKG_VERSION"), env!("GIT_HASH"))
 }

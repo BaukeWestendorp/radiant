@@ -1,5 +1,5 @@
 [workspace]
-members = ["rd-dmx", "rd-engine", "rd-midi", "rd-service", "rd-ui"]
+members = ["rd", "rd-dmx", "rd-engine", "rd-midi", "rd-service", "rd-ui"]
 resolver = "3"
 
 [workspace.package]
