@@ -13,6 +13,7 @@ pub enum ExecutorButton {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[derive(facet::Facet)]
+#[facet(tag = "type")]
 #[repr(C)]
 pub enum ExecutorButtonAction {
     ToggleEnabled,

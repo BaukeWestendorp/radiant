@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 
 #[derive(Debug)]
+#[derive(facet::Facet)]
+#[facet(tag = "type")]
+#[repr(C)]
 pub enum Event {
     ProjectLoaded,
     ProjectUnloaded,

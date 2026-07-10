@@ -1,6 +1,9 @@
 use std::path::PathBuf;
 
 #[derive(Debug, Clone)]
+#[derive(facet::Facet)]
+#[facet(tag = "type")]
+#[repr(C)]
 pub enum Command {
     HighlightToggle,
 

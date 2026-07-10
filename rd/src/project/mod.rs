@@ -12,6 +12,7 @@ const RELATIVE_OUTPUT_PATH: &str = "output.json";
 const RELATIVE_TRIGGER_PATH: &str = "trigger.json";
 
 #[derive(Default, Clone)]
+#[derive(facet::Facet)]
 pub struct Project {
     pub path: Option<PathBuf>,
 
