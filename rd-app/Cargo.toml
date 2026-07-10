@@ -1,5 +1,5 @@
 [package]
-name = "rd"
+name = "rd-app"
 version.workspace = true
 edition.workspace = true
 
