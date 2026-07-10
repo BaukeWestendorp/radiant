@@ -1,7 +1,10 @@
-use gpui::{AnyView, AnyWindowHandle, App, BorrowAppContext, Global, Window, WindowOptions};
+use gpui::{
+    AnyView, AnyWindowHandle, App, BorrowAppContext, Entity, FontWeight, Global, Window,
+    WindowOptions, div,
+};
 use gpui::{SharedString, prelude::*};
 
-use crate::Root;
+use crate::{ActiveTheme, Root, TitleBar, h_flex, v_flex};
 
 pub const SETTINGS_WINDOW_OPTIONS: WindowOptions = WindowOptions {
     titlebar: Some(gpui::TitlebarOptions {
@@ -50,7 +53,13 @@ impl SettingsAgent {
                 .open_window(window_options.unwrap_or_default(), |window, cx| {
                     cx.on_window_closed(|cx, _| Self::close(cx)).detach();
 
-                    cx.new(|cx| Root::new((build_root_view)(window, cx), window, cx))
+                    cx.new(|cx| {
+                        Root::new(
+                            cx.new(|cx| SettingsRoot::new(window, cx, build_root_view)),
+                            window,
+                            cx,
+                        )
+                    })
                 })
                 .expect("should open settings window");
 
@@ -92,5 +101,49 @@ impl SettingsAppExt for App {
 
     fn close_settings(&mut self) {
         SettingsAgent::close(self);
+    }
+}
+
+pub struct SettingsRoot {
+    view: AnyView,
+}
+
+impl SettingsRoot {
+    pub fn new<F: Fn(&mut Window, &mut App) -> AnyView>(
+        window: &mut Window,
+        cx: &mut Context<Self>,
+        build_content: F,
+    ) -> Self {
+        Self { view: ((build_content)(window, cx)) }
+    }
+
+    fn render_title_bar_content(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> impl IntoElement {
+        h_flex().size_full().justify_between().child(
+            div()
+                .font_weight(FontWeight::BOLD)
+                .text_color(cx.theme().fg_secondary)
+                .child(window.window_title()),
+        )
+    }
+
+    fn render_content(
+        &mut self,
+        _window: &mut Window,
+        _cx: &mut Context<Self>,
+    ) -> impl IntoElement {
+        self.view.clone()
+    }
+}
+
+impl Render for SettingsRoot {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        v_flex()
+            .size_full()
+            .child(TitleBar::new().child(self.render_title_bar_content(window, cx)))
+            .child(div().size_full().overflow_hidden().child(self.render_content(window, cx)))
     }
 }
