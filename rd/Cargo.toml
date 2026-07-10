@@ -1,5 +1,5 @@
 [package]
-name = "rd-engine"
+name = "rd"
 version.workspace = true
 edition.workspace = true
 

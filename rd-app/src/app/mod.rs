@@ -1,7 +1,6 @@
 use std::path::{Path, PathBuf};
 
 use gpui::{App, Window, prelude::*};
-use rd_engine::{Command, Engine, Project};
 use rd_ui::{SettingsAppExt, todo};
 
 use crate::app::engine::EngineAppExt;
@@ -16,7 +15,7 @@ gpui::actions!(cmd, [Save, Highlight]);
 pub(crate) fn init(cx: &mut App) {
     cx.on_action::<Save>(|_, cx| match cx.engine().with_project(|p| p.path.clone()) {
         Some(path) => {
-            cx.engine().execute(Command::Save { path });
+            cx.engine().execute(rd::Command::Save { path });
         }
         None => {
             let path_prompt = cx.prompt_for_new_path(Path::new(""), None);
@@ -24,7 +23,7 @@ pub(crate) fn init(cx: &mut App) {
                 Ok(Ok(path)) => match path {
                     Some(path) => {
                         cx.update(|cx| {
-                            cx.engine().execute(Command::Save { path });
+                            cx.engine().execute(rd::Command::Save { path });
                         });
                     }
                     None => {
@@ -44,7 +43,7 @@ pub(crate) fn init(cx: &mut App) {
     });
 
     cx.on_action::<Highlight>(|_, cx| {
-        cx.engine().execute(Command::HighlightToggle);
+        cx.engine().execute(rd::Command::HighlightToggle);
     });
 
     cx.on_action::<SettingsOpen>(|_, cx| {
@@ -55,9 +54,9 @@ pub(crate) fn init(cx: &mut App) {
 }
 
 pub fn run(showfile_path: Option<PathBuf>) -> anyhow::Result<()> {
-    let mut engine = Engine::new();
+    let mut engine = rd::Engine::new();
     if let Some(showfile_path) = showfile_path {
-        let project = Project::load_from_folder(showfile_path)?;
+        let project = rd::Project::load_from_folder(showfile_path)?;
         engine.load_project(project)?;
     }
 

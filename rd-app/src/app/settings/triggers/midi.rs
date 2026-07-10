@@ -1,5 +1,5 @@
 use gpui::{App, Entity, Window, div, prelude::*, px};
-use rd_engine::project;
+
 use rd_ui::{Column, Table, TableDelegate, TableSelection, TableState};
 use uuid::Uuid;
 
@@ -33,7 +33,7 @@ impl Render for MidiTabView {
 struct MidiMappingTable {
     columns: Vec<Column>,
 
-    mappings: Vec<(Uuid, project::midi::MidiMapping)>,
+    mappings: Vec<(Uuid, rd::project::midi::MidiMapping)>,
 }
 
 impl MidiMappingTable {
@@ -50,7 +50,7 @@ impl MidiMappingTable {
 
         let this = cx.entity();
         cx.on_engine_event_in(window, move |event, window, cx| match event {
-            rd_engine::Event::ProjectLoaded => {
+            rd::Event::ProjectLoaded => {
                 cx.update_entity(&this, |this, cx| {
                     this.clear_selection(cx);
                     *this = TableState::new(

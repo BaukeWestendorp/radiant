@@ -14,7 +14,7 @@ gpui.workspace = true
 log.workspace = true
 pretty_env_logger.workspace = true
 rd-ui.workspace = true
-rd-engine.workspace = true
+rd.workspace = true
 facet.workspace = true
 figue = "4.0.5"
 uuid = { workspace = true, features = ["v4"] }
