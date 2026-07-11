@@ -7,19 +7,19 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::{ArtPoll, ArtPollReply, FixedString, Packet, PacketPayload};
+use crate::{ArtPoll, ArtPollReply, FixedString, NetId, Packet, PacketPayload, SubNetId};
 
 pub enum NetworkConfig {
     Default { interface_name: Option<String> },
-    Custom { ip: Ipv4Addr, mask: Ipv4Addr },
+    Custom { ip: Ipv4Addr, mask: Ipv4Addr, mac_address: [u8; 6] },
 }
 
 impl NetworkConfig {
-    pub fn resolve_network_details(&self) -> Option<(Ipv4Addr, Ipv4Addr)> {
+    pub fn resolve_network_details(&self) -> Option<(Ipv4Addr, Ipv4Addr, [u8; 6])> {
         match self {
-            NetworkConfig::Custom { ip, mask } => {
+            NetworkConfig::Custom { ip, mask, mac_address } => {
                 log::info!("Using custom network configuration: IP {}, Mask {}", ip, mask);
-                Some((*ip, *mask))
+                Some((*ip, *mask, *mac_address))
             }
             NetworkConfig::Default { interface_name } => {
                 log::debug!("Resolving default network configuration from interfaces");
@@ -45,6 +45,21 @@ impl NetworkConfig {
                     None
                 })?;
 
+                let mac_address = match mac_address::mac_address_by_name(&iface.name)
+                    .ok()
+                    .flatten()
+                    .map(|mac| mac.bytes())
+                {
+                    Some(mac) => mac,
+                    None => {
+                        log::warn!(
+                            "Failed to retrieve MAC address for interface '{}'. Using zeroed MAC address.",
+                            iface.name
+                        );
+                        [0u8; 6]
+                    }
+                };
+
                 if let if_addrs::IfAddr::V4(v4_addr) = iface.addr {
                     log::info!(
                         "Network interface '{}' to IP: {}, Mask: {}",
@@ -52,7 +67,7 @@ impl NetworkConfig {
                         v4_addr.ip,
                         v4_addr.netmask
                     );
-                    Some((v4_addr.ip, v4_addr.netmask))
+                    Some((v4_addr.ip, v4_addr.netmask, mac_address))
                 } else {
                     None
                 }
@@ -71,7 +86,7 @@ pub struct Source {
 impl Source {
     pub fn new(network_config: NetworkConfig) -> crate::Result<Self> {
         log::info!("Initializing Art-Net Source...");
-        let (bind_ip, mask) = network_config
+        let (bind_ip, mask, mac_address) = network_config
             .resolve_network_details()
             .ok_or(crate::Error::Network("Could not resolve network details".to_string()))?;
 
@@ -97,8 +112,13 @@ impl Source {
         socket.bind(&socket2::SockAddr::from(addr))?;
         let socket: UdpSocket = socket.into();
 
-        let inner =
-            Arc::new(Inner { bind_ip, mask, socket, nodes: Mutex::new(NodeRegistry::new()) });
+        let inner = Arc::new(Inner {
+            bind_ip,
+            mask,
+            mac_address,
+            socket,
+            nodes: Mutex::new(NodeRegistry::new()),
+        });
 
         let (stop_tx, stop_rx) = flume::unbounded();
 
@@ -143,6 +163,7 @@ impl Drop for Source {
 struct Inner {
     bind_ip: Ipv4Addr,
     mask: Ipv4Addr,
+    mac_address: [u8; 6],
 
     socket: UdpSocket,
 
@@ -288,8 +309,9 @@ fn handle_packet(inner: &Arc<Inner>, packet: Packet) -> crate::Result<()> {
             reply.set_esta_man(0x7F00);
             reply.set_oem(0x000);
             reply.set_vers_info(0x00);
-            reply.set_net_switch(0x00);
-            reply.set_sub_switch(0x00);
+            reply.set_net_switch(NetId::new(0x00)?);
+            reply.set_sub_switch(SubNetId::new(0x00)?);
+            reply.set_mac(inner.mac_address);
 
             reply.set_ip_address(inner.bind_ip);
             reply.set_bind_ip(inner.bind_ip);
@@ -308,7 +330,7 @@ fn handle_packet(inner: &Arc<Inner>, packet: Packet) -> crate::Result<()> {
 }
 
 struct NodeRegistry {
-    nodes: HashMap<(Ipv4Addr, (u8, u8)), NodeRegistry>,
+    nodes: HashMap<(Ipv4Addr, (NetId, SubNetId)), NodeRegistry>,
 }
 
 impl NodeRegistry {

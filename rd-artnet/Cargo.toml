@@ -11,6 +11,8 @@ facet-validate = "0.46.5"
 flume.workspace = true
 if-addrs = "0.15.0"
 log.workspace = true
+mac_address = "1.1.8"
+modular-bitfield = "0.13.1"
 socket2 = { version = "0.6.4", features = ["all"] }
 
 [dev-dependencies]

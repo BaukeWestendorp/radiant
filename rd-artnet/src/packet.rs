@@ -2,7 +2,7 @@ use std::{io, net::Ipv4Addr};
 
 use bytes::{BufMut, Bytes, BytesMut};
 
-use crate::{FixedString, PortAddress};
+use crate::{FixedString, NetId, PortAddress, SubNetId, UniverseId};
 
 pub const PACKET_ID: [u8; 8] = *b"Art-Net\0";
 pub const PROTOCOL_VERSION: u16 = 14;
@@ -46,8 +46,8 @@ impl Packet {
                 buf.put_u16_le(p.prot_ver);
                 buf.put_u8(p.flags);
                 buf.put_u8(p.diag_priority);
-                buf.put_slice(&p.target_port_address_top.get().to_be_bytes());
-                buf.put_slice(&p.target_port_address_bottom.get().to_be_bytes());
+                buf.put_slice(&p.target_port_address_top.as_u16().to_be_bytes());
+                buf.put_slice(&p.target_port_address_bottom.as_u16().to_be_bytes());
                 buf.put_u16_le(p.esta_man);
                 buf.put_u16_le(p.oem);
             }
@@ -55,36 +55,36 @@ impl Packet {
                 buf.put_slice(&p.ip_address.octets());
                 buf.put_u16_le(p.port);
                 buf.put_u16_le(p.vers_info);
-                buf.put_u8(p.net_switch);
-                buf.put_u8(p.sub_switch);
+                buf.put_u8(p.net_switch.as_u8());
+                buf.put_u8(p.sub_switch.as_u8());
                 buf.put_u16_le(p.oem);
                 buf.put_u8(p.ubea_version);
-                buf.put_u8(p.status1);
+                buf.put_slice(&p.status1.bytes);
                 buf.put_u16_le(p.esta_man);
                 buf.put_slice(p.port_name.as_bytes());
                 buf.put_slice(p.long_name.as_bytes());
                 buf.put_slice(p.node_report.as_bytes());
                 buf.put_u16_le(p.num_ports);
-                buf.put_slice(&p.port_types);
-                buf.put_slice(&p.good_input);
-                buf.put_slice(&p.good_output_a);
-                buf.put_slice(&p.sw_in);
-                buf.put_slice(&p.sw_out);
+                buf.put_slice(&p.port_types.map(|v| v.bytes).as_flattened());
+                buf.put_slice(&p.good_input.map(|v| v.bytes).as_flattened());
+                buf.put_slice(&p.good_output_a.map(|v| v.bytes).as_flattened());
+                buf.put_slice(&p.sw_in.map(|p| p.as_u8()));
+                buf.put_slice(&p.sw_out.map(|p| p.as_u8()));
                 buf.put_u8(p.acn_priority);
-                buf.put_u8(p.sw_macro);
-                buf.put_u8(p.sw_remote);
+                buf.put_slice(&p.sw_macro.bytes);
+                buf.put_slice(&p.sw_remote.bytes);
                 buf.put_slice(&p._spare);
-                buf.put_u8(p.style);
+                buf.put_u8(p.style as u8);
                 buf.put_slice(&p.mac);
                 buf.put_slice(&p.bind_ip.octets());
                 buf.put_u8(p.bind_index);
-                buf.put_u8(p.status2);
-                buf.put_slice(&p.good_output_b);
-                buf.put_u8(p.status3);
+                buf.put_slice(&p.status2.bytes);
+                buf.put_slice(&p.good_output_b.map(|v| v.bytes).as_flattened());
+                buf.put_slice(&p.status3.bytes);
                 buf.put_slice(&p.default_resp_uid);
                 buf.put_u16_le(p.user);
                 buf.put_u16_le(p.refresh_rate);
-                buf.put_u8(p.background_queue_policy);
+                buf.put_slice(&p.background_queue_policy.bytes);
                 buf.put_slice(&p._filler);
             }
         }
@@ -158,26 +158,51 @@ impl Packet {
                     ),
                     port: u16::from_le_bytes([reply_data[4], reply_data[5]]),
                     vers_info: u16::from_be_bytes([reply_data[6], reply_data[7]]),
-                    net_switch: reply_data[8],
-                    sub_switch: reply_data[9],
+                    net_switch: reply_data[8].try_into()?,
+                    sub_switch: reply_data[9].try_into()?,
                     oem: u16::from_be_bytes([reply_data[10], reply_data[11]]),
                     ubea_version: reply_data[12],
-                    status1: reply_data[13],
+                    status1: Status1::from_bytes([reply_data[13]]),
                     esta_man: u16::from_be_bytes([reply_data[14], reply_data[15]]),
                     port_name: reply_data[16..34].try_into()?,
                     long_name: reply_data[34..98].try_into()?,
                     node_report: reply_data[98..162].try_into()?,
                     num_ports: u16::from_be_bytes([reply_data[162], reply_data[163]]),
-                    port_types: reply_data[164..168].try_into().unwrap(),
-                    good_input: reply_data[168..172].try_into().unwrap(),
-                    good_output_a: reply_data[172..176].try_into().unwrap(),
-                    sw_in: reply_data[176..180].try_into().unwrap(),
-                    sw_out: reply_data[180..184].try_into().unwrap(),
+                    port_types: [
+                        PortType::from_bytes([reply_data[164]]),
+                        PortType::from_bytes([reply_data[165]]),
+                        PortType::from_bytes([reply_data[166]]),
+                        PortType::from_bytes([reply_data[167]]),
+                    ],
+                    good_input: [
+                        GoodInput::from_bytes([reply_data[168]]),
+                        GoodInput::from_bytes([reply_data[169]]),
+                        GoodInput::from_bytes([reply_data[170]]),
+                        GoodInput::from_bytes([reply_data[171]]),
+                    ],
+                    good_output_a: [
+                        GoodOutputA::from_bytes([reply_data[172]]),
+                        GoodOutputA::from_bytes([reply_data[173]]),
+                        GoodOutputA::from_bytes([reply_data[174]]),
+                        GoodOutputA::from_bytes([reply_data[175]]),
+                    ],
+                    sw_in: [
+                        UniverseId::new(reply_data[176])?,
+                        UniverseId::new(reply_data[177])?,
+                        UniverseId::new(reply_data[178])?,
+                        UniverseId::new(reply_data[179])?,
+                    ],
+                    sw_out: [
+                        UniverseId::new(reply_data[180])?,
+                        UniverseId::new(reply_data[181])?,
+                        UniverseId::new(reply_data[182])?,
+                        UniverseId::new(reply_data[183])?,
+                    ],
                     acn_priority: reply_data[184],
-                    sw_macro: reply_data[185],
-                    sw_remote: reply_data[186],
+                    sw_macro: SwMacro::from_bytes([reply_data[185]]),
+                    sw_remote: SwRemote::from_bytes([reply_data[186]]),
                     _spare: reply_data[187..190].try_into().unwrap(),
-                    style: reply_data[190],
+                    style: StyleCode::try_from(reply_data[190])?,
                     mac: reply_data[191..197].try_into().unwrap(),
                     bind_ip: Ipv4Addr::new(
                         reply_data[197],
@@ -186,13 +211,18 @@ impl Packet {
                         reply_data[200],
                     ),
                     bind_index: reply_data[201],
-                    status2: reply_data[202],
-                    good_output_b: reply_data[203..207].try_into().unwrap(),
-                    status3: reply_data[207],
+                    status2: Status2::from_bytes([reply_data[202]]),
+                    good_output_b: [
+                        GoodOutputB::from_bytes([reply_data[203]]),
+                        GoodOutputB::from_bytes([reply_data[204]]),
+                        GoodOutputB::from_bytes([reply_data[205]]),
+                        GoodOutputB::from_bytes([reply_data[206]]),
+                    ],
+                    status3: Status3::from_bytes([reply_data[207]]),
                     default_resp_uid: reply_data[208..214].try_into().unwrap(),
                     user: u16::from_be_bytes([reply_data[214], reply_data[215]]),
                     refresh_rate: u16::from_be_bytes([reply_data[216], reply_data[217]]),
-                    background_queue_policy: reply_data[218],
+                    background_queue_policy: BackgroundQueuePolicy::from_bytes([reply_data[218]]),
                     _filler: reply_data[219..229].try_into().unwrap(),
                 })
             }
@@ -404,15 +434,15 @@ pub struct ArtPollReply {
     /// The convention is that a higher number is a more recent release of firmware.
     vers_info: u16,
     /// Bits 14-8 of the 15 bit Port-Address are encoded into the bottom 7 bits of this field.
-    net_switch: u8,
+    net_switch: NetId,
     /// Bits 7-4 of the 15 bit Port-Address are encoded into the bottom 4 bits of this field.
-    sub_switch: u8,
+    sub_switch: SubNetId,
     /// The Oem code uniquely identifies the product.
     oem: u16,
     /// Firmware version of the User Bios Extension Area (UBEA). Zero if not programmed.
     ubea_version: u8,
     /// General Status register 1.
-    status1: u8,
+    status1: Status1,
     /// The ESTA manufacturer code.
     esta_man: u16,
     /// Null terminated name for each port of the node. Max length is 17 characters plus the null.
@@ -425,25 +455,25 @@ pub struct ArtPollReply {
     /// Number of input or output ports. Maximum value is 4.
     num_ports: u16,
     /// Defines the operation and protocol of each channel.
-    port_types: [u8; 4],
+    port_types: [PortType; 4],
     /// Defines input status of the node.
-    good_input: [u8; 4],
+    good_input: [GoodInput; 4],
     /// Defines output status of the node.
-    good_output_a: [u8; 4],
+    good_output_a: [GoodOutputA; 4],
     /// Bits 3-0 of the 15 bit Port-Address for each of the 4 possible input ports.
-    sw_in: [u8; 4],
+    sw_in: [UniverseId; 4],
     /// Bits 3-0 of the 15 bit Port-Address for each of the 4 possible output ports.
-    sw_out: [u8; 4],
+    sw_out: [UniverseId; 4],
     /// The sACN priority value that will be used when any received DMX is converted to sACN.
     acn_priority: u8,
     /// If the Node supports macro key inputs, this byte represents the trigger values.
-    sw_macro: u8,
+    sw_macro: SwMacro,
     /// If the Node supports remote trigger inputs, this byte represents the trigger values.
-    sw_remote: u8,
+    sw_remote: SwRemote,
     /// Not used, set to zero.
     _spare: [u8; 3],
     /// The Style code defines the equipment style of the device.
-    style: u8,
+    style: StyleCode,
     /// MAC Address.
     mac: [u8; 6],
     /// If this unit is part of a larger or modular product, this is the IP of the root device.
@@ -451,11 +481,11 @@ pub struct ArtPollReply {
     /// This number represents the order of bound devices.
     bind_index: u8,
     /// General Status register 2.
-    status2: u8,
+    status2: Status2,
     /// Defines output status of the node.
-    good_output_b: [u8; 4],
+    good_output_b: [GoodOutputB; 4],
     /// General Status register 3.
-    status3: u8,
+    status3: Status3,
     /// RDMnet & LLRP Default Responder UID.
     default_resp_uid: [u8; 6],
     /// Available for user specific data.
@@ -463,7 +493,7 @@ pub struct ArtPollReply {
     /// Allows the device to specify the maximum refresh rate, expressed in Hz.
     refresh_rate: u16,
     /// Defines the method by which the node retrieves STATUS_MESSAGE and QUEUED_MESSAGE pids.
-    background_queue_policy: u8,
+    background_queue_policy: BackgroundQueuePolicy,
     /// Transmit as zero. For future expansion.
     _filler: [u8; 10],
 }
@@ -474,36 +504,36 @@ impl ArtPollReply {
             ip_address: Ipv4Addr::new(0, 0, 0, 0),
             port: crate::PORT,
             vers_info: 0,
-            net_switch: 0,
-            sub_switch: 0,
+            net_switch: NetId::default(),
+            sub_switch: SubNetId::default(),
             oem: 0,
             ubea_version: 0,
-            status1: 0,
+            status1: Status1::new(),
             esta_man: 0,
             port_name: FixedString::default(),
             long_name: FixedString::default(),
             node_report: FixedString::default(),
             num_ports: 0,
-            port_types: [0; 4],
-            good_input: [0; 4],
-            good_output_a: [0; 4],
-            sw_in: [0; 4],
-            sw_out: [0; 4],
+            port_types: [PortType::new(); 4],
+            good_input: [GoodInput::new(); 4],
+            good_output_a: [GoodOutputA::new(); 4],
+            sw_in: [UniverseId::default(); 4],
+            sw_out: [UniverseId::default(); 4],
             acn_priority: 0,
-            sw_macro: 0,
-            sw_remote: 0,
+            sw_macro: SwMacro::new(),
+            sw_remote: SwRemote::new(),
             _spare: [0; 3],
-            style: 0,
+            style: StyleCode::default(),
             mac: [0; 6],
             bind_ip: Ipv4Addr::new(0, 0, 0, 0),
             bind_index: 0,
-            status2: 0,
-            good_output_b: [0; 4],
-            status3: 0,
+            status2: Status2::new(),
+            good_output_b: [GoodOutputB::new(); 4],
+            status3: Status3::new(),
             default_resp_uid: [0; 6],
             user: 0,
             refresh_rate: 0,
-            background_queue_policy: 0,
+            background_queue_policy: BackgroundQueuePolicy::new(),
             _filler: [0; 10],
         }
     }
@@ -528,19 +558,19 @@ impl ArtPollReply {
         self.vers_info = vers_info;
     }
 
-    pub fn net_switch(&self) -> u8 {
+    pub fn net_switch(&self) -> NetId {
         self.net_switch
     }
 
-    pub fn set_net_switch(&mut self, net_switch: u8) {
+    pub fn set_net_switch(&mut self, net_switch: NetId) {
         self.net_switch = net_switch;
     }
 
-    pub fn sub_switch(&self) -> u8 {
+    pub fn sub_switch(&self) -> SubNetId {
         self.sub_switch
     }
 
-    pub fn set_sub_switch(&mut self, sub_switch: u8) {
+    pub fn set_sub_switch(&mut self, sub_switch: SubNetId) {
         self.sub_switch = sub_switch;
     }
 
@@ -560,12 +590,12 @@ impl ArtPollReply {
         self.ubea_version = ubea_version;
     }
 
-    pub fn status1(&self) -> u8 {
+    pub fn status1(&self) -> Status1 {
         self.status1
     }
 
-    pub fn set_status1(&mut self, status1: u8) {
-        self.status1 = status1;
+    pub fn status1_mut(&mut self) -> &mut Status1 {
+        &mut self.status1
     }
 
     pub fn esta_man(&self) -> u16 {
@@ -608,44 +638,44 @@ impl ArtPollReply {
         self.num_ports = num_ports;
     }
 
-    pub fn port_types(&self) -> &[u8; 4] {
+    pub fn port_types(&self) -> &[PortType; 4] {
         &self.port_types
     }
 
-    pub fn set_port_types(&mut self, port_types: [u8; 4]) {
-        self.port_types = port_types;
+    pub fn port_types_mut(&mut self) -> &mut [PortType; 4] {
+        &mut self.port_types
     }
 
-    pub fn good_input(&self) -> &[u8; 4] {
+    pub fn good_input(&self) -> &[GoodInput; 4] {
         &self.good_input
     }
 
-    pub fn set_good_input(&mut self, good_input: [u8; 4]) {
-        self.good_input = good_input;
+    pub fn good_input_mut(&mut self) -> &mut [GoodInput; 4] {
+        &mut self.good_input
     }
 
-    pub fn good_output_a(&self) -> &[u8; 4] {
+    pub fn good_output_a(&self) -> &[GoodOutputA; 4] {
         &self.good_output_a
     }
 
-    pub fn set_good_output_a(&mut self, good_output_a: [u8; 4]) {
-        self.good_output_a = good_output_a;
+    pub fn good_output_a_mut(&mut self) -> &mut [GoodOutputA; 4] {
+        &mut self.good_output_a
     }
 
-    pub fn sw_in(&self) -> &[u8; 4] {
+    pub fn sw_in(&self) -> &[UniverseId; 4] {
         &self.sw_in
     }
 
-    pub fn set_sw_in(&mut self, sw_in: [u8; 4]) {
-        self.sw_in = sw_in;
+    pub fn sw_in_mut(&mut self) -> &mut [UniverseId; 4] {
+        &mut self.sw_in
     }
 
-    pub fn sw_out(&self) -> &[u8; 4] {
+    pub fn sw_out(&self) -> &[UniverseId; 4] {
         &self.sw_out
     }
 
-    pub fn set_sw_out(&mut self, sw_out: [u8; 4]) {
-        self.sw_out = sw_out;
+    pub fn sw_out_mut(&mut self) -> &mut [UniverseId; 4] {
+        &mut self.sw_out
     }
 
     pub fn acn_priority(&self) -> u8 {
@@ -656,27 +686,27 @@ impl ArtPollReply {
         self.acn_priority = acn_priority;
     }
 
-    pub fn sw_macro(&self) -> u8 {
+    pub fn sw_macro(&self) -> SwMacro {
         self.sw_macro
     }
 
-    pub fn set_sw_macro(&mut self, sw_macro: u8) {
-        self.sw_macro = sw_macro;
+    pub fn sw_macro_mut(&mut self) -> &mut SwMacro {
+        &mut self.sw_macro
     }
 
-    pub fn sw_remote(&self) -> u8 {
+    pub fn sw_remote(&self) -> SwRemote {
         self.sw_remote
     }
 
-    pub fn set_sw_remote(&mut self, sw_remote: u8) {
-        self.sw_remote = sw_remote;
+    pub fn sw_remote_mut(&mut self) -> &mut SwRemote {
+        &mut self.sw_remote
     }
 
-    pub fn style(&self) -> u8 {
+    pub fn style(&self) -> StyleCode {
         self.style
     }
 
-    pub fn set_style(&mut self, style: u8) {
+    pub fn set_style(&mut self, style: StyleCode) {
         self.style = style;
     }
 
@@ -704,28 +734,28 @@ impl ArtPollReply {
         self.bind_index = bind_index;
     }
 
-    pub fn status2(&self) -> u8 {
+    pub fn status2(&self) -> Status2 {
         self.status2
     }
 
-    pub fn set_status2(&mut self, status2: u8) {
-        self.status2 = status2;
+    pub fn status2_mut(&mut self) -> &mut Status2 {
+        &mut self.status2
     }
 
-    pub fn good_output_b(&self) -> &[u8; 4] {
+    pub fn good_output_b(&self) -> &[GoodOutputB; 4] {
         &self.good_output_b
     }
 
-    pub fn set_good_output_b(&mut self, good_output_b: [u8; 4]) {
-        self.good_output_b = good_output_b;
+    pub fn good_output_b_mut(&mut self) -> &mut [GoodOutputB; 4] {
+        &mut self.good_output_b
     }
 
-    pub fn status3(&self) -> u8 {
+    pub fn status3(&self) -> Status3 {
         self.status3
     }
 
-    pub fn set_status3(&mut self, status3: u8) {
-        self.status3 = status3;
+    pub fn status3_mut(&mut self) -> &mut Status3 {
+        &mut self.status3
     }
 
     pub fn default_resp_uid(&self) -> &[u8; 6] {
@@ -752,241 +782,225 @@ impl ArtPollReply {
         self.refresh_rate = refresh_rate;
     }
 
-    pub fn background_queue_policy(&self) -> u8 {
+    pub fn background_queue_policy(&self) -> BackgroundQueuePolicy {
         self.background_queue_policy
     }
 
-    pub fn set_background_queue_policy(&mut self, background_queue_policy: u8) {
-        self.background_queue_policy = background_queue_policy;
+    pub fn background_queue_policy_mut(&mut self) -> &mut BackgroundQueuePolicy {
+        &mut self.background_queue_policy
     }
+}
 
-    pub fn indicator_state(&self) -> u8 {
-        (self.status1 >> 6) & 0b11
-    }
+#[modular_bitfield::bitfield]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(facet::Facet)]
+pub struct Status1 {
+    pub ubea_present: bool,
+    pub rdm_capable: bool,
+    pub booted_from_rom: bool,
+    pub reserved_not_implemented: modular_bitfield::specifiers::B1,
+    pub programming_authority: ProgrammingAuthority,
+    pub indicator_state: IndicatorState,
+}
 
-    pub fn set_indicator_state(&mut self, state: u8) {
-        self.status1 = (self.status1 & !(0b11 << 6)) | ((state & 0b11) << 6);
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(modular_bitfield::Specifier)]
+#[derive(facet::Facet)]
+#[repr(u8)]
+#[bits = 2]
+pub enum IndicatorState {
+    Unknown = 0b00,
+    LocateIdentify = 0b01,
+    Mute = 0b10,
+    Normal = 0b11,
+}
 
-    pub fn port_address_programming_authority(&self) -> u8 {
-        (self.status1 >> 4) & 0b11
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(modular_bitfield::Specifier)]
+#[derive(facet::Facet)]
+#[repr(u8)]
+#[bits = 2]
+pub enum ProgrammingAuthority {
+    Unknown = 0b00,
+    FrontPanel = 0b01,
+    NetworkWeb = 0b10,
+    NotUsed = 0b11,
+}
 
-    pub fn set_port_address_programming_authority(&mut self, authority: u8) {
-        self.status1 = (self.status1 & !(0b11 << 4)) | ((authority & 0b11) << 4);
-    }
+#[modular_bitfield::bitfield]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(facet::Facet)]
+pub struct PortType {
+    pub protocol: Protocol,
+    pub can_input_artnet: bool,
+    pub can_output_artnet: bool,
+}
 
-    pub fn is_booted_from_rom(&self) -> bool {
-        (self.status1 & (1 << 2)) != 0
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(modular_bitfield::Specifier)]
+#[derive(facet::Facet)]
+#[repr(u8)]
+#[bits = 6]
+pub enum Protocol {
+    Dmx512 = 0b000000,
+    Midi = 0b000001,
+    Avab = 0b000010,
+    ColortranCmx = 0b000011,
+    Adb62_5 = 0b000100,
+    ArtNet = 0b000101,
+    Dali = 0b0000110,
+}
+#[modular_bitfield::bitfield]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(facet::Facet)]
+pub struct GoodInput {
+    pub convert_to_sacn: bool,
+    pub unused_1: bool,
+    pub receive_errors_detected: bool,
+    pub input_disabled: bool,
+    pub includes_text_packets: bool,
+    pub includes_sips: bool,
+    pub includes_test_packets: bool,
+    pub data_received: bool,
+}
 
-    pub fn set_booted_from_rom(&mut self, booted: bool) {
-        if booted {
-            self.status1 |= 1 << 2;
-        } else {
-            self.status1 &= !(1 << 2);
+#[modular_bitfield::bitfield]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(facet::Facet)]
+pub struct GoodOutputA {
+    pub convert_from_sacn: bool,
+    pub merge_mode_is_ltp: bool,
+    pub short_detected: bool,
+    pub merging_artnet: bool,
+    pub includes_text_packets: bool,
+    pub includes_sips: bool,
+    pub includes_test_packets: bool,
+    pub data_being_output: bool,
+}
+
+#[modular_bitfield::bitfield]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(facet::Facet)]
+pub struct SwMacro {
+    pub macro_1_active: bool,
+    pub macro_2_active: bool,
+    pub macro_3_active: bool,
+    pub macro_4_active: bool,
+    pub macro_5_active: bool,
+    pub macro_6_active: bool,
+    pub macro_7_active: bool,
+    pub macro_8_active: bool,
+}
+
+#[modular_bitfield::bitfield]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(facet::Facet)]
+pub struct SwRemote {
+    pub remote_1_active: bool,
+    pub remote_2_active: bool,
+    pub remote_3_active: bool,
+    pub remote_4_active: bool,
+    pub remote_5_active: bool,
+    pub remote_6_active: bool,
+    pub remote_7_active: bool,
+    pub remote_8_active: bool,
+}
+
+/// The Style code defines the general functionality of a Controller.
+/// The Style code is returned in [`ArtPollReply`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(facet::Facet)]
+#[repr(u8)]
+pub enum StyleCode {
+    /// A DMX to/from Art-Net device.
+    #[default]
+    StNode = 0x00,
+    /// A lighting console.
+    StController = 0x01,
+    /// A Media Server.
+    StMedia = 0x02,
+    /// A network routing device.
+    StRoute = 0x03,
+    /// A backup device.
+    StBackup = 0x04,
+    /// A configuration or diagnostic tool.
+    StConfig = 0x05,
+    /// A visualiser.
+    StVisual = 0x06,
+}
+
+impl TryFrom<u8> for StyleCode {
+    type Error = crate::Error;
+
+    fn try_from(value: u8) -> crate::Result<Self> {
+        match value {
+            0x00 => Ok(StyleCode::StNode),
+            0x01 => Ok(StyleCode::StController),
+            0x02 => Ok(StyleCode::StMedia),
+            0x03 => Ok(StyleCode::StRoute),
+            0x04 => Ok(StyleCode::StBackup),
+            0x05 => Ok(StyleCode::StConfig),
+            0x06 => Ok(StyleCode::StVisual),
+            _ => Err(crate::Error::InvalidStyleCode(value)),
         }
     }
+}
 
-    pub fn is_rdm_capable(&self) -> bool {
-        (self.status1 & (1 << 1)) != 0
-    }
+#[modular_bitfield::bitfield]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(facet::Facet)]
+pub struct Status2 {
+    pub supports_web_browser_configuration: bool,
+    pub ip_dhcp_configured: bool,
+    pub dhcp_capable: bool,
+    pub supports_15bit_port_address: bool,
+    pub able_to_switch_artnet_sacn: bool,
+    pub squawking: bool,
+    pub supports_output_style_switching: bool,
+    pub supports_rdm_control: bool,
+}
 
-    pub fn set_rdm_capable(&mut self, capable: bool) {
-        if capable {
-            self.status1 |= 1 << 1;
-        } else {
-            self.status1 &= !(1 << 1);
-        }
-    }
+#[modular_bitfield::bitfield]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(facet::Facet)]
+pub struct GoodOutputB {
+    pub unused_0_to_3: modular_bitfield::prelude::B4,
+    pub background_discovery_disabled: bool,
+    pub discovery_not_running: bool,
+    pub output_style_is_continuous: bool,
+    pub rdm_disabled: bool,
+}
 
-    pub fn is_ubea_present(&self) -> bool {
-        (self.status1 & (1 << 0)) != 0
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(modular_bitfield::Specifier)]
+#[derive(facet::Facet)]
+#[repr(u8)]
+#[bits = 2]
+pub enum FailsafeState {
+    HoldLastState = 0b00,
+    AllOutputsToZero = 0b01,
+    AllOutputsToFull = 0b10,
+    PlaybackFailsafeScene = 0b11,
+}
 
-    pub fn set_ubea_present(&mut self, present: bool) {
-        if present {
-            self.status1 |= 1 << 0;
-        } else {
-            self.status1 &= !(1 << 0);
-        }
-    }
+#[modular_bitfield::bitfield]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(facet::Facet)]
+pub struct Status3 {
+    pub background_discovery_can_be_disabled: bool,
+    pub background_queue_supported: bool,
+    pub supports_rdmnet: bool,
+    pub supports_switching_port_direction: bool,
+    pub supports_llrp: bool,
+    pub supports_programmable_failsafe: bool,
+    pub failsafe_state: FailsafeState,
+}
 
-    pub fn supports_rdm_artaddress(&self) -> bool {
-        (self.status2 & (1 << 7)) != 0
-    }
-
-    pub fn set_supports_rdm_artaddress(&mut self, supports: bool) {
-        if supports {
-            self.status2 |= 1 << 7;
-        } else {
-            self.status2 &= !(1 << 7);
-        }
-    }
-
-    pub fn supports_switching_output_style(&self) -> bool {
-        (self.status2 & (1 << 6)) != 0
-    }
-
-    pub fn set_supports_switching_output_style(&mut self, supports: bool) {
-        if supports {
-            self.status2 |= 1 << 6;
-        } else {
-            self.status2 &= !(1 << 6);
-        }
-    }
-
-    pub fn is_squawking(&self) -> bool {
-        (self.status2 & (1 << 5)) != 0
-    }
-
-    pub fn set_squawking(&mut self, squawking: bool) {
-        if squawking {
-            self.status2 |= 1 << 5;
-        } else {
-            self.status2 &= !(1 << 5);
-        }
-    }
-
-    pub fn supports_sacn_switch(&self) -> bool {
-        (self.status2 & (1 << 4)) != 0
-    }
-
-    pub fn set_supports_sacn_switch(&mut self, supports: bool) {
-        if supports {
-            self.status2 |= 1 << 4;
-        } else {
-            self.status2 &= !(1 << 4);
-        }
-    }
-
-    pub fn supports_15bit_port_address(&self) -> bool {
-        (self.status2 & (1 << 3)) != 0
-    }
-
-    pub fn set_supports_15bit_port_address(&mut self, supports: bool) {
-        if supports {
-            self.status2 |= 1 << 3;
-        } else {
-            self.status2 &= !(1 << 3);
-        }
-    }
-
-    pub fn is_dhcp_capable(&self) -> bool {
-        (self.status2 & (1 << 2)) != 0
-    }
-
-    pub fn set_dhcp_capable(&mut self, capable: bool) {
-        if capable {
-            self.status2 |= 1 << 2;
-        } else {
-            self.status2 &= !(1 << 2);
-        }
-    }
-
-    pub fn is_ip_dhcp_configured(&self) -> bool {
-        (self.status2 & (1 << 1)) != 0
-    }
-
-    pub fn set_ip_dhcp_configured(&mut self, configured: bool) {
-        if configured {
-            self.status2 |= 1 << 1;
-        } else {
-            self.status2 &= !(1 << 1);
-        }
-    }
-
-    pub fn supports_web_browser_config(&self) -> bool {
-        (self.status2 & (1 << 0)) != 0
-    }
-
-    pub fn set_supports_web_browser_config(&mut self, supports: bool) {
-        if supports {
-            self.status2 |= 1 << 0;
-        } else {
-            self.status2 &= !(1 << 0);
-        }
-    }
-
-    pub fn failsafe_state(&self) -> u8 {
-        (self.status3 >> 6) & 0b11
-    }
-
-    pub fn set_failsafe_state(&mut self, state: u8) {
-        self.status3 = (self.status3 & !(0b11 << 6)) | ((state & 0b11) << 6);
-    }
-
-    pub fn supports_programmable_failsafe(&self) -> bool {
-        (self.status3 & (1 << 5)) != 0
-    }
-
-    pub fn set_supports_programmable_failsafe(&mut self, supports: bool) {
-        if supports {
-            self.status3 |= 1 << 5;
-        } else {
-            self.status3 &= !(1 << 5);
-        }
-    }
-
-    pub fn supports_llrp(&self) -> bool {
-        (self.status3 & (1 << 4)) != 0
-    }
-
-    pub fn set_supports_llrp(&mut self, supports: bool) {
-        if supports {
-            self.status3 |= 1 << 4;
-        } else {
-            self.status3 &= !(1 << 4);
-        }
-    }
-
-    pub fn supports_switching_port_direction(&self) -> bool {
-        (self.status3 & (1 << 3)) != 0
-    }
-
-    pub fn set_supports_switching_port_direction(&mut self, supports: bool) {
-        if supports {
-            self.status3 |= 1 << 3;
-        } else {
-            self.status3 &= !(1 << 3);
-        }
-    }
-
-    pub fn supports_rdmnet(&self) -> bool {
-        (self.status3 & (1 << 2)) != 0
-    }
-
-    pub fn set_supports_rdmnet(&mut self, supports: bool) {
-        if supports {
-            self.status3 |= 1 << 2;
-        } else {
-            self.status3 &= !(1 << 2);
-        }
-    }
-
-    pub fn is_background_queue_supported(&self) -> bool {
-        (self.status3 & (1 << 1)) != 0
-    }
-
-    pub fn set_background_queue_supported(&mut self, supported: bool) {
-        if supported {
-            self.status3 |= 1 << 1;
-        } else {
-            self.status3 &= !(1 << 1);
-        }
-    }
-
-    pub fn background_discovery_disable_by_artaddress(&self) -> bool {
-        (self.status3 & (1 << 0)) != 0
-    }
-
-    pub fn set_background_discovery_disable_by_artaddress(&mut self, can_disable: bool) {
-        if can_disable {
-            self.status3 |= 1 << 0;
-        } else {
-            self.status3 &= !(1 << 0);
-        }
-    }
+#[modular_bitfield::bitfield]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(facet::Facet)]
+pub struct BackgroundQueuePolicy {
+    pub policy: u8,
 }
 
 /// Legal OpCode values used in Art-Net packets:

@@ -14,11 +14,11 @@ pub enum Error {
     Network(String),
 
     /// Net must be between 0..=127
-    InvalidNet,
+    InvalidNetId,
     /// Sub-Net must be between 0..=15
-    InvalidSubNet,
+    InvalidSubNetId,
     /// Universe must be between 0..=15
-    InvalidUniverse,
+    InvalidUniverseId,
     /// Port address must be a 15-bit number between 0..=32767
     InvalidPortAddress,
     /// Channel index must be between 0..=511
