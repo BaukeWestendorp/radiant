@@ -814,9 +814,9 @@ checksum = "8f1fe948ff07f4bd06c30984e69f5b4899c516a3ef74f34df92a2df2ab535495"
 
 [[package]]
 name = "bytes"
-version = "1.11.1"
+version = "1.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e748733b7cbc798e1434b6ac524f0c1ff2ab456fe201501e6497c8417a4fc33"
+checksum = "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04"
 
 [[package]]
 name = "bzip2"
@@ -1877,6 +1877,17 @@ dependencies = [
  "facet-core",
  "facet-reflect",
  "strsim",
+]
+
+[[package]]
+name = "facet-validate"
+version = "0.46.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ddb26ddd02828e59b60c21e516ed80c01d4303d5d25d1a99cf42fa7635bb0a6"
+dependencies = [
+ "facet",
+ "facet-core",
+ "regex",
 ]
 
 [[package]]
@@ -3037,6 +3048,16 @@ checksum = "cb68373c0d6620ef8105e855e7745e18b0d00d3bdb07fb532e434244cdb9a714"
 dependencies = [
  "icu_normalizer",
  "icu_properties",
+]
+
+[[package]]
+name = "if-addrs"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c0a05c691e1fae256cf7013d99dad472dc52d5543322761f83ec8d47eab40d2b"
+dependencies = [
+ "libc",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4808,6 +4829,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "rd-artnet"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bytes",
+ "facet",
+ "facet-error",
+ "facet-validate",
+ "flume 0.12.0",
+ "if-addrs",
+ "log",
+ "pretty_env_logger",
+ "socket2",
+]
+
+[[package]]
 name = "rd-dmx"
 version = "0.1.0"
 dependencies = [
@@ -5503,6 +5540,16 @@ checksum = "4aaa7368fcf4852a4c2dd92df0cace6a71f2091ca0a23391ce7f3a31833f1523"
 dependencies = [
  "borsh",
  "serde_core",
+]
+
+[[package]]
+name = "socket2"
+version = "0.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52d1cfed4120b4d927bf7c0f86d2087a4a7d6027c906d9f9d525a80573b9be51"
+dependencies = [
+ "libc",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
