@@ -8,93 +8,32 @@ use std::{
 };
 
 use crate::{
-    ArtDmx, ArtPoll, ArtPollReply, FixedString, NetId, Packet, PacketPayload, PortAddress,
-    SubNetId, Universe, UniverseId,
+    ArtDmx, ArtPoll, ArtPollReply, DiagnosticPriority, FixedString, Packet, PacketPayload, Universe,
 };
 
-pub enum NetworkConfig {
-    Default { interface_name: Option<String> },
-    Custom { ip: Ipv4Addr, mask: Ipv4Addr, mac_address: [u8; 6] },
-}
+mod config;
+mod port;
 
-impl NetworkConfig {
-    pub fn resolve_network_details(&self) -> Option<(Ipv4Addr, Ipv4Addr, [u8; 6])> {
-        match self {
-            NetworkConfig::Custom { ip, mask, mac_address } => {
-                log::info!("Using custom network configuration: IP {}, Mask {}", ip, mask);
-                Some((*ip, *mask, *mac_address))
-            }
-            NetworkConfig::Default { interface_name } => {
-                log::debug!("Resolving default network configuration from interfaces");
-                let interfaces = if_addrs::get_if_addrs().ok()?;
-                let mut ipv4_interfaces = interfaces
-                    .into_iter()
-                    .filter(|iface| matches!(iface.addr, if_addrs::IfAddr::V4(_)));
-                let target_interface = match interface_name {
-                    Some(name) => {
-                        log::debug!("Searching for requested interface: {}", name);
-                        ipv4_interfaces.find(|iface| iface.name == *name)
-                    }
-                    None => {
-                        log::debug!(
-                            "No interface specified. Selecting first non-loopback IPv4 interface"
-                        );
-                        ipv4_interfaces.find(|iface| !iface.is_loopback())
-                    }
-                };
+pub use config::*;
+pub use port::*;
 
-                let iface = target_interface.or_else(|| {
-                    log::warn!("Failed to find a network interface match");
-                    None
-                })?;
-
-                let mac_address = match mac_address::mac_address_by_name(&iface.name)
-                    .ok()
-                    .flatten()
-                    .map(|mac| mac.bytes())
-                {
-                    Some(mac) => mac,
-                    None => {
-                        log::warn!(
-                            "Failed to retrieve MAC address for interface '{}'. Using zeroed MAC address.",
-                            iface.name
-                        );
-                        [0u8; 6]
-                    }
-                };
-
-                if let if_addrs::IfAddr::V4(v4_addr) = iface.addr {
-                    log::info!(
-                        "Network interface '{}' to IP: {}, Mask: {}",
-                        iface.name,
-                        v4_addr.ip,
-                        v4_addr.netmask
-                    );
-                    Some((v4_addr.ip, v4_addr.netmask, mac_address))
-                } else {
-                    None
-                }
-            }
-        }
-    }
-}
-
-pub struct Source {
+pub struct Node {
     inner: Arc<Inner>,
     stop_tx: Option<flume::Sender<()>>,
     poller_handle: Option<JoinHandle<()>>,
     receiver_handle: Option<JoinHandle<()>>,
 }
 
-impl Source {
-    pub fn new(network_config: NetworkConfig) -> crate::Result<Self> {
-        log::info!("Initializing Art-Net Source...");
-        let (bind_ip, mask, mac_address) = network_config
-            .resolve_network_details()
-            .ok_or(crate::Error::Network("Could not resolve network details".to_string()))?;
+impl Node {
+    pub fn new(config: NodeConfig) -> crate::Result<Self> {
+        log::info!("Initializing Art-Net Node...");
 
-        // FIXME: Check with Art-Net spec if UNSPECIFIED is allowed/the correct thing to use here.
-        let listen_ip = if bind_ip.is_loopback() { bind_ip } else { Ipv4Addr::UNSPECIFIED };
+        let network_details = NetworkDetails::try_from(config.network.clone())?;
+        let listen_ip = if network_details.ip.is_loopback() {
+            network_details.ip
+        } else {
+            Ipv4Addr::UNSPECIFIED
+        };
 
         let addr = SocketAddrV4::new(listen_ip, crate::PORT);
         log::debug!("Creating UDP socket bound to target address: {}", addr);
@@ -111,14 +50,14 @@ impl Source {
         socket.set_broadcast(true)?;
         // Set a read timeout so the receiver thread can cleanly exit
         // when checking stop_rx, otherwise it blocks forever on read.
+        // FIXME: This feels a bit hacky as it will take 500ms to shut down the Node.
         socket.set_read_timeout(Some(Duration::from_millis(500)))?;
         socket.bind(&socket2::SockAddr::from(addr))?;
         let socket: UdpSocket = socket.into();
 
         let inner = Arc::new(Inner {
-            bind_ip,
-            mask,
-            mac_address,
+            config,
+            network_details,
             socket,
             nodes: Mutex::new(NodeRegistry::new()),
         });
@@ -129,7 +68,7 @@ impl Source {
         let poller_handle = start_poller(Arc::clone(&inner), stop_rx.clone());
         let receiver_handle = start_receiver(Arc::clone(&inner), stop_rx);
 
-        log::info!("Art-Net Source running");
+        log::info!("Art-Net Node running");
         Ok(Self {
             inner,
             stop_tx: Some(stop_tx),
@@ -143,9 +82,9 @@ impl Source {
     }
 }
 
-impl Drop for Source {
+impl Drop for Node {
     fn drop(&mut self) {
-        log::info!("Art-Net Source shutting down gracefully...");
+        log::info!("Art-Net Node shutting down gracefully...");
 
         if let Some(tx) = self.stop_tx.take() {
             log::debug!("Sending termination signal to background threads");
@@ -163,14 +102,13 @@ impl Drop for Source {
                 handle.join().map_err(|_| log::error!("Failed to join receiver thread cleanly"));
         }
 
-        log::info!("Art-Net Source shut down");
+        log::info!("Art-Net Node shut down");
     }
 }
 
 struct Inner {
-    bind_ip: Ipv4Addr,
-    mask: Ipv4Addr,
-    mac_address: [u8; 6],
+    network_details: NetworkDetails,
+    config: NodeConfig,
 
     socket: UdpSocket,
 
@@ -193,8 +131,8 @@ impl Inner {
     }
 
     pub fn broadcast_packet(&self, payload: impl Into<PacketPayload>) -> crate::Result<()> {
-        let ip_octets = self.bind_ip.octets();
-        let mask_octets = self.mask.octets();
+        let ip_octets = self.network_details.ip.octets();
+        let mask_octets = self.network_details.mask.octets();
         let broadcast_ip = Ipv4Addr::new(
             ip_octets[0] | !mask_octets[0],
             ip_octets[1] | !mask_octets[1],
@@ -235,10 +173,10 @@ fn start_poller(inner: Arc<Inner>, stop_rx: flume::Receiver<()>) -> JoinHandle<(
             log::trace!("Executing periodic ArtPoll broadcast");
 
             let mut art_poll = ArtPoll::new();
-            // FIXME: Get these from a config.
             art_poll.set_reply_on_change_enabled(true);
-            art_poll.set_oem(0xFFFF);
-            art_poll.set_esta_man(0xFFFF);
+            art_poll.set_oem(inner.config.oem_code);
+            art_poll.set_esta_man(inner.config.esta_man);
+            art_poll.set_diag_priority(DiagnosticPriority::DpLow);
 
             if let Err(err) = inner.broadcast_packet(art_poll) {
                 log::error!("Failed to broadcast ArtPoll packet: {}", err);
@@ -325,18 +263,18 @@ fn handle_packet(inner: &Arc<Inner>, packet: Packet) -> crate::Result<()> {
             log::debug!("Handling incoming ArtPoll");
 
             let mut reply = ArtPollReply::new();
-            // FIXME: Get these from a config.
-            reply.set_port_name(FixedString::try_from_str("Art-Net Node")?);
-            reply.set_long_name(FixedString::try_from_str("Art-Net Source Node")?);
-            reply.set_esta_man(0x7F00);
-            reply.set_oem(0x000);
-            reply.set_vers_info(0x00);
+            reply.set_long_name(inner.config.name.clone());
+            reply.set_esta_man(inner.config.esta_man);
+            reply.set_oem(inner.config.oem_code);
+            reply.set_vers_info(inner.config.version_info);
+
+            reply.set_mac(inner.network_details.mac_address);
+            reply.set_ip_address(inner.network_details.ip);
+
+            reply.set_port_name(FixedString::try_from_str("FIXME: From Conf")?);
             reply.set_net_switch(NetId::new(0x00)?);
             reply.set_sub_switch(SubNetId::new(0x00)?);
-            reply.set_mac(inner.mac_address);
-
-            reply.set_ip_address(inner.bind_ip);
-            reply.set_bind_ip(inner.bind_ip);
+            reply.set_bind_ip(inner.network_details.ip);
             reply.set_bind_index(1);
 
             log::debug!("Broadcasting ArtPollReply in response to ArtPoll");
@@ -379,6 +317,82 @@ impl NodeRegistry {
                 art_poll_reply.long_name(),
                 art_poll_reply.ip_address()
             );
+        }
+    }
+}
+
+struct NetworkDetails {
+    ip: Ipv4Addr,
+    mask: Ipv4Addr,
+    mac_address: [u8; 6],
+}
+
+impl TryFrom<NodeNetworkConfig> for NetworkDetails {
+    type Error = crate::Error;
+
+    fn try_from(value: NodeNetworkConfig) -> Result<Self, Self::Error> {
+        match value {
+            NodeNetworkConfig::Custom { ip, mask, mac_address } => {
+                log::info!("Using custom network configuration: IP {}, Mask {}", ip, mask);
+                Ok(Self { ip, mask, mac_address })
+            }
+            NodeNetworkConfig::Interface { interface_name } => {
+                log::debug!("Resolving default network configuration from interfaces");
+                let interfaces = if_addrs::get_if_addrs()?;
+                let mut ipv4_interfaces = interfaces
+                    .into_iter()
+                    .filter(|iface| matches!(iface.addr, if_addrs::IfAddr::V4(_)));
+                let target_interface = match interface_name {
+                    Some(name) => {
+                        log::debug!("Searching for requested interface: {}", name);
+                        ipv4_interfaces.find(|iface| iface.name == *name)
+                    }
+                    None => {
+                        log::debug!(
+                            "No interface specified. Selecting first non-loopback IPv4 interface"
+                        );
+                        ipv4_interfaces.find(|iface| !iface.is_loopback())
+                    }
+                };
+
+                let iface = match target_interface {
+                    Some(iface) => iface,
+                    None => {
+                        return Err(crate::Error::Network(
+                            "Failed to find a network interface match".to_string(),
+                        ));
+                    }
+                };
+
+                let mac_address = match mac_address::mac_address_by_name(&iface.name)
+                    .ok()
+                    .flatten()
+                    .map(|mac| mac.bytes())
+                {
+                    Some(mac) => mac,
+                    None => {
+                        return Err(crate::Error::Network(format!(
+                            "Failed to retrieve MAC address for interface '{}'.",
+                            iface.name
+                        )));
+                    }
+                };
+
+                if let if_addrs::IfAddr::V4(v4_addr) = iface.addr {
+                    log::info!(
+                        "Network interface '{}' to IP: {}, Mask: {}",
+                        iface.name,
+                        v4_addr.ip,
+                        v4_addr.netmask
+                    );
+                    Ok(Self { ip: v4_addr.ip, mask: v4_addr.netmask, mac_address })
+                } else {
+                    Err(crate::Error::Network(format!(
+                        "Interface '{}' does not have an IPv4 address.",
+                        iface.name
+                    )))
+                }
+            }
         }
     }
 }

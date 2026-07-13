@@ -45,7 +45,7 @@ impl Packet {
             PacketPayload::ArtPoll(p) => {
                 buf.put_u16_le(p.prot_ver);
                 buf.put_u8(p.flags);
-                buf.put_u8(p.diag_priority);
+                buf.put_u8(p.diag_priority as u8);
                 buf.put_slice(&p.target_port_address_top.as_u16().to_be_bytes());
                 buf.put_slice(&p.target_port_address_bottom.as_u16().to_be_bytes());
                 buf.put_u16_le(p.esta_man);
@@ -133,7 +133,7 @@ impl Packet {
                 PacketPayload::ArtPoll(ArtPoll {
                     prot_ver: u16::from_be_bytes([poll_data[0], poll_data[1]]),
                     flags: poll_data[2],
-                    diag_priority: poll_data[3],
+                    diag_priority: DiagnosticPriority::try_from(poll_data[3])?,
                     target_port_address_top: PortAddress::from_raw(u16::from_be_bytes([
                         poll_data[4],
                         poll_data[5],
@@ -319,7 +319,7 @@ pub struct ArtPoll {
     /// Set behaviour of Node.
     flags: u8,
     /// The lowest priority of diagnostics message that should be sent.
-    diag_priority: u8,
+    diag_priority: DiagnosticPriority,
     /// Top of the range of [`PortAddress`]es to be tested if Targeted Mode is active.
     target_port_address_top: PortAddress,
     /// Bottom of the range of [`PortAddress`]es to be tested if Targeted Mode is active.
@@ -335,7 +335,7 @@ impl ArtPoll {
         Self {
             prot_ver: 14,
             flags: 0,
-            diag_priority: 0,
+            diag_priority: DiagnosticPriority::DpLow,
             target_port_address_top: PortAddress::MAX,
             target_port_address_bottom: PortAddress::MIN,
             esta_man: 0,
@@ -359,11 +359,11 @@ impl ArtPoll {
         self.flags = flags;
     }
 
-    pub fn diag_priority(&self) -> u8 {
+    pub fn diag_priority(&self) -> DiagnosticPriority {
         self.diag_priority
     }
 
-    pub fn set_diag_priority(&mut self, diag_priority: u8) {
+    pub fn set_diag_priority(&mut self, diag_priority: DiagnosticPriority) {
         self.diag_priority = diag_priority;
     }
 
@@ -456,6 +456,39 @@ impl ArtPoll {
             self.flags |= 1 << 1;
         } else {
             self.flags &= !(1 << 1);
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(facet::Facet)]
+#[repr(u8)]
+pub enum DiagnosticPriority {
+    /// Low priority message.
+    DpLow = 0x10,
+    /// Medium priority message.
+    DpMed = 0x40,
+    /// High priority message.
+    DpHigh = 0x80,
+    /// Critical priority message.
+    DpCritical = 0xe0,
+    /// Volatile message. Messages of this type are displayed
+    /// on a single line in the DMX-Workshop diagnostics
+    /// display. All other types are displayed in a list box.
+    DpVolatile = 0xf0,
+}
+
+impl TryFrom<u8> for DiagnosticPriority {
+    type Error = crate::Error;
+
+    fn try_from(value: u8) -> crate::Result<Self> {
+        match value {
+            0x10 => Ok(DiagnosticPriority::DpLow),
+            0x40 => Ok(DiagnosticPriority::DpMed),
+            0x80 => Ok(DiagnosticPriority::DpHigh),
+            0xe0 => Ok(DiagnosticPriority::DpCritical),
+            0xf0 => Ok(DiagnosticPriority::DpVolatile),
+            _ => Err(crate::Error::InvalidDiagnosticPriority(value)),
         }
     }
 }
@@ -871,7 +904,7 @@ pub enum ProgrammingAuthority {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[derive(facet::Facet)]
 pub struct PortType {
-    pub protocol: Protocol,
+    pub protocol: PortProtocol,
     pub can_input_artnet: bool,
     pub can_output_artnet: bool,
 }
@@ -881,7 +914,7 @@ pub struct PortType {
 #[derive(facet::Facet)]
 #[repr(u8)]
 #[bits = 6]
-pub enum Protocol {
+pub enum PortProtocol {
     Dmx512 = 0b000000,
     Midi = 0b000001,
     Avab = 0b000010,

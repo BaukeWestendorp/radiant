@@ -4,7 +4,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use rd_artnet::Universe;
+use rd_artnet::{FixedString, Universe};
 
 fn main() -> anyhow::Result<()> {
     pretty_env_logger::formatted_builder().filter_level(log::LevelFilter::Info).init();
@@ -22,12 +22,12 @@ fn main() -> anyhow::Result<()> {
 }
 
 struct ArtNetOutput {
-    source: RwLock<Option<rd_artnet::Source>>,
+    node: RwLock<Option<rd_artnet::Node>>,
 }
 
 impl ArtNetOutput {
     fn new() -> Self {
-        Self { source: RwLock::new(None) }
+        Self { node: RwLock::new(None) }
     }
 }
 
@@ -37,10 +37,10 @@ impl rd_service::Delegate for ArtNetOutput {
     type Data = Instant;
 
     fn on_start(&self) -> Result<(), Self::Error> {
-        *self.source.write().unwrap() =
-            Some(rd_artnet::Source::new(rd_artnet::NetworkConfig::Default {
-                interface_name: Some("en0".to_string()),
-            })?);
+        *self.node.write().unwrap() = Some(rd_artnet::Node::new(rd_artnet::NodeConfig {
+            name: FixedString::try_from_str("rd-artnet")?,
+            ..Default::default()
+        })?);
 
         Ok(())
     }
@@ -51,13 +51,13 @@ impl rd_service::Delegate for ArtNetOutput {
             universe.set_channel(ix, ix as u8)?;
         }
 
-        self.source.read().unwrap().as_ref().unwrap().send_dmx(universe)?;
+        self.node.read().unwrap().as_ref().unwrap().send_dmx(universe)?;
 
         Ok(())
     }
 
     fn on_stop(&self) -> Result<(), Self::Error> {
-        let _ = self.source.write().unwrap().take();
+        let _ = self.node.write().unwrap().take();
 
         Ok(())
     }
