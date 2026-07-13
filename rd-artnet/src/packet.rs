@@ -87,6 +87,14 @@ impl Packet {
                 buf.put_slice(&p.background_queue_policy.bytes);
                 buf.put_slice(&p._filler);
             }
+            PacketPayload::ArtDmx(p) => {
+                buf.put_slice(&p.prot_ver.to_be_bytes());
+                buf.put_u8(p.sequence);
+                buf.put_u8(p.physical);
+                buf.put_u16_le(p.port_address.as_u16());
+                buf.put_u16(p.length);
+                buf.put_slice(&p.data);
+            }
         }
 
         buf.freeze()
@@ -139,91 +147,115 @@ impl Packet {
                 })
             }
             Opcode::OpPollReply => {
-                let mut reply_data = [0u8; 229];
+                let mut data = [0u8; 229];
                 let mut bytes_read = 0;
 
                 while bytes_read < 229 {
-                    match reader.read(&mut reply_data[bytes_read..]).unwrap_or(0) {
+                    match reader.read(&mut data[bytes_read..]).unwrap_or(0) {
                         0 => break,
                         n => bytes_read += n,
                     }
                 }
 
                 PacketPayload::ArtPollReply(ArtPollReply {
-                    ip_address: Ipv4Addr::new(
-                        reply_data[0],
-                        reply_data[1],
-                        reply_data[2],
-                        reply_data[3],
-                    ),
-                    port: u16::from_le_bytes([reply_data[4], reply_data[5]]),
-                    vers_info: u16::from_be_bytes([reply_data[6], reply_data[7]]),
-                    net_switch: reply_data[8].try_into()?,
-                    sub_switch: reply_data[9].try_into()?,
-                    oem: u16::from_be_bytes([reply_data[10], reply_data[11]]),
-                    ubea_version: reply_data[12],
-                    status1: Status1::from_bytes([reply_data[13]]),
-                    esta_man: u16::from_be_bytes([reply_data[14], reply_data[15]]),
-                    port_name: reply_data[16..34].try_into()?,
-                    long_name: reply_data[34..98].try_into()?,
-                    node_report: reply_data[98..162].try_into()?,
-                    num_ports: u16::from_be_bytes([reply_data[162], reply_data[163]]),
+                    ip_address: Ipv4Addr::new(data[0], data[1], data[2], data[3]),
+                    port: u16::from_le_bytes([data[4], data[5]]),
+                    vers_info: u16::from_be_bytes([data[6], data[7]]),
+                    net_switch: data[8].try_into()?,
+                    sub_switch: data[9].try_into()?,
+                    oem: u16::from_be_bytes([data[10], data[11]]),
+                    ubea_version: data[12],
+                    status1: Status1::from_bytes([data[13]]),
+                    esta_man: u16::from_be_bytes([data[14], data[15]]),
+                    port_name: data[16..34].try_into()?,
+                    long_name: data[34..98].try_into()?,
+                    node_report: data[98..162].try_into()?,
+                    num_ports: u16::from_be_bytes([data[162], data[163]]),
                     port_types: [
-                        PortType::from_bytes([reply_data[164]]),
-                        PortType::from_bytes([reply_data[165]]),
-                        PortType::from_bytes([reply_data[166]]),
-                        PortType::from_bytes([reply_data[167]]),
+                        PortType::from_bytes([data[164]]),
+                        PortType::from_bytes([data[165]]),
+                        PortType::from_bytes([data[166]]),
+                        PortType::from_bytes([data[167]]),
                     ],
                     good_input: [
-                        GoodInput::from_bytes([reply_data[168]]),
-                        GoodInput::from_bytes([reply_data[169]]),
-                        GoodInput::from_bytes([reply_data[170]]),
-                        GoodInput::from_bytes([reply_data[171]]),
+                        GoodInput::from_bytes([data[168]]),
+                        GoodInput::from_bytes([data[169]]),
+                        GoodInput::from_bytes([data[170]]),
+                        GoodInput::from_bytes([data[171]]),
                     ],
                     good_output_a: [
-                        GoodOutputA::from_bytes([reply_data[172]]),
-                        GoodOutputA::from_bytes([reply_data[173]]),
-                        GoodOutputA::from_bytes([reply_data[174]]),
-                        GoodOutputA::from_bytes([reply_data[175]]),
+                        GoodOutputA::from_bytes([data[172]]),
+                        GoodOutputA::from_bytes([data[173]]),
+                        GoodOutputA::from_bytes([data[174]]),
+                        GoodOutputA::from_bytes([data[175]]),
                     ],
                     sw_in: [
-                        UniverseId::new(reply_data[176])?,
-                        UniverseId::new(reply_data[177])?,
-                        UniverseId::new(reply_data[178])?,
-                        UniverseId::new(reply_data[179])?,
+                        UniverseId::new(data[176])?,
+                        UniverseId::new(data[177])?,
+                        UniverseId::new(data[178])?,
+                        UniverseId::new(data[179])?,
                     ],
                     sw_out: [
-                        UniverseId::new(reply_data[180])?,
-                        UniverseId::new(reply_data[181])?,
-                        UniverseId::new(reply_data[182])?,
-                        UniverseId::new(reply_data[183])?,
+                        UniverseId::new(data[180])?,
+                        UniverseId::new(data[181])?,
+                        UniverseId::new(data[182])?,
+                        UniverseId::new(data[183])?,
                     ],
-                    acn_priority: reply_data[184],
-                    sw_macro: SwMacro::from_bytes([reply_data[185]]),
-                    sw_remote: SwRemote::from_bytes([reply_data[186]]),
-                    _spare: reply_data[187..190].try_into().unwrap(),
-                    style: StyleCode::try_from(reply_data[190])?,
-                    mac: reply_data[191..197].try_into().unwrap(),
-                    bind_ip: Ipv4Addr::new(
-                        reply_data[197],
-                        reply_data[198],
-                        reply_data[199],
-                        reply_data[200],
-                    ),
-                    bind_index: reply_data[201],
-                    status2: Status2::from_bytes([reply_data[202]]),
+                    acn_priority: data[184],
+                    sw_macro: SwMacro::from_bytes([data[185]]),
+                    sw_remote: SwRemote::from_bytes([data[186]]),
+                    _spare: data[187..190].try_into().unwrap(),
+                    style: StyleCode::try_from(data[190])?,
+                    mac: data[191..197].try_into().unwrap(),
+                    bind_ip: Ipv4Addr::new(data[197], data[198], data[199], data[200]),
+                    bind_index: data[201],
+                    status2: Status2::from_bytes([data[202]]),
                     good_output_b: [
-                        GoodOutputB::from_bytes([reply_data[203]]),
-                        GoodOutputB::from_bytes([reply_data[204]]),
-                        GoodOutputB::from_bytes([reply_data[205]]),
-                        GoodOutputB::from_bytes([reply_data[206]]),
+                        GoodOutputB::from_bytes([data[203]]),
+                        GoodOutputB::from_bytes([data[204]]),
+                        GoodOutputB::from_bytes([data[205]]),
+                        GoodOutputB::from_bytes([data[206]]),
                     ],
-                    status3: Status3::from_bytes([reply_data[207]]),
-                    default_resp_uid: reply_data[208..214].try_into().unwrap(),
-                    user: u16::from_be_bytes([reply_data[214], reply_data[215]]),
-                    refresh_rate: u16::from_be_bytes([reply_data[216], reply_data[217]]),
-                    background_queue_policy: BackgroundQueuePolicy::from_bytes([reply_data[218]]),
-                    _filler: reply_data[219..229].try_into().unwrap(),
+                    status3: Status3::from_bytes([data[207]]),
+                    default_resp_uid: data[208..214].try_into().unwrap(),
+                    user: u16::from_be_bytes([data[214], data[215]]),
+                    refresh_rate: u16::from_be_bytes([data[216], data[217]]),
+                    background_queue_policy: BackgroundQueuePolicy::from_bytes([data[218]]),
+                    _filler: data[219..229].try_into().unwrap(),
+                })
+            }
+            Opcode::OpDmx => {
+                let mut header = [0u8; 8];
+                let mut bytes_read = 0;
+
+                while bytes_read < 8 {
+                    match reader.read(&mut header[bytes_read..]).unwrap_or(0) {
+                        0 => break,
+                        n => bytes_read += n,
+                    }
+                }
+
+                let length = u16::from_be_bytes([header[6], header[7]]);
+
+                let mut dmx_data = vec![0u8; length as usize];
+                let mut bytes_read = 0;
+
+                while bytes_read < length as usize {
+                    match reader.read(&mut dmx_data[bytes_read..]).unwrap_or(0) {
+                        0 => break,
+                        n => bytes_read += n,
+                    }
+                }
+
+                PacketPayload::ArtDmx(ArtDmx {
+                    prot_ver: u16::from_be_bytes([header[0], header[1]]),
+                    sequence: header[2],
+                    physical: header[3],
+                    port_address: PortAddress::from_raw(u16::from_le_bytes([
+                        header[4], header[5],
+                    ]))?,
+                    length,
+                    data: dmx_data,
                 })
             }
             opcode => {
@@ -248,6 +280,7 @@ impl From<PacketPayload> for Packet {
 pub enum PacketPayload {
     ArtPoll(ArtPoll),
     ArtPollReply(ArtPollReply),
+    ArtDmx(ArtDmx),
 }
 
 impl PacketPayload {
@@ -255,6 +288,7 @@ impl PacketPayload {
         match self {
             PacketPayload::ArtPoll(_) => Opcode::OpPoll,
             PacketPayload::ArtPollReply(_) => Opcode::OpPollReply,
+            PacketPayload::ArtDmx(_) => Opcode::OpDmx,
         }
     }
 }
@@ -268,6 +302,12 @@ impl From<ArtPoll> for PacketPayload {
 impl From<ArtPollReply> for PacketPayload {
     fn from(p: ArtPollReply) -> Self {
         PacketPayload::ArtPollReply(p)
+    }
+}
+
+impl From<ArtDmx> for PacketPayload {
+    fn from(p: ArtDmx) -> Self {
+        PacketPayload::ArtDmx(p)
     }
 }
 
@@ -1197,5 +1237,101 @@ impl TryFrom<u16> for NodeReport {
             0x0010 => Ok(NodeReport::RcFactoryRes),
             _ => Err(crate::Error::InvalidNodeReport(value)),
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[derive(facet::Facet)]
+pub struct ArtDmx {
+    /// Controllers should ignore communication with nodes using a protocol version lower than 14.
+    prot_ver: u16,
+    /// The sequence number is used to ensure that
+    /// ArtDmx packets are used in the correct order.
+    /// When Art-Net is carried over a medium such as
+    /// the Internet, it is possible that ArtDmx packets
+    /// will reach the receiver out of order.
+    /// This field is incremented in the range 0x01 to
+    /// 0xff to allow the receiving node to re-sequence
+    /// packets.
+    /// The Sequence field is set to 0x00 to disable this
+    /// feature.
+    sequence: u8,
+    /// The physical input port from which DMX512
+    /// data was input. This field is used by the
+    /// receiving device to discriminate between
+    /// packets with identical Port-Address that have
+    /// been generated by different input ports and so
+    /// need to be merged.
+    physical: u8,
+    /// SubUni + Net fields.
+    port_address: PortAddress,
+    /// The length of the DMX512 data array. This
+    /// value should be an even number in the range 2
+    /// - 512.
+    /// It represents the number of DMX512 channels
+    /// encoded in packet. NB: Products which convert
+    /// Art-Net to DMX512 may opt to always send 512
+    /// channels.
+    length: u16,
+    /// A variable length array of DMX512 lighting
+    /// data.
+    data: Vec<u8>,
+}
+
+impl ArtDmx {
+    pub fn new() -> Self {
+        Self {
+            prot_ver: crate::PROTOCOL_VERSION,
+            sequence: 0,
+            physical: 0,
+            port_address: PortAddress::default(),
+            length: 0,
+            data: Vec::with_capacity(512),
+        }
+    }
+
+    pub fn prot_ver(&self) -> u16 {
+        self.prot_ver
+    }
+
+    pub fn set_prot_ver(&mut self, prot_ver: u16) {
+        self.prot_ver = prot_ver;
+    }
+
+    pub fn sequence(&self) -> u8 {
+        self.sequence
+    }
+
+    pub fn set_sequence(&mut self, sequence: u8) {
+        self.sequence = sequence;
+    }
+
+    pub fn physical(&self) -> u8 {
+        self.physical
+    }
+
+    pub fn set_physical(&mut self, physical: u8) {
+        self.physical = physical;
+    }
+
+    pub fn port_address(&self) -> PortAddress {
+        self.port_address
+    }
+
+    pub fn set_port_address(&mut self, port_address: PortAddress) {
+        self.port_address = port_address;
+    }
+
+    pub fn length(&self) -> u16 {
+        self.length
+    }
+
+    pub fn data(&self) -> &[u8] {
+        &self.data
+    }
+
+    pub fn set_data(&mut self, data: Vec<u8>) {
+        self.length = data.len() as u16;
+        self.data = data;
     }
 }

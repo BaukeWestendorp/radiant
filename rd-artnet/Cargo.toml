@@ -18,3 +18,4 @@ socket2 = { version = "0.6.4", features = ["all"] }
 [dev-dependencies]
 anyhow.workspace = true
 pretty_env_logger.workspace = true
+rd-service.workspace = true

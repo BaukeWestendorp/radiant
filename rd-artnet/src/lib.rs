@@ -55,6 +55,13 @@ impl TryFrom<u16> for PortAddress {
     }
 }
 
+impl Default for PortAddress {
+    fn default() -> Self {
+        // Let's use 1 as a default, as a universe of 0 is deprecated in Art-Net 4 for better sACN compatibility.
+        Self(1)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[derive(facet::Facet)]
 #[facet(transparent)]

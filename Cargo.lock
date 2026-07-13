@@ -4875,6 +4875,7 @@ dependencies = [
  "mac_address",
  "modular-bitfield",
  "pretty_env_logger",
+ "rd-service",
  "socket2",
 ]
 

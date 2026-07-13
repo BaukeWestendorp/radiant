@@ -7,7 +7,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::{ArtPoll, ArtPollReply, FixedString, NetId, Packet, PacketPayload, SubNetId};
+use crate::{
+    ArtDmx, ArtPoll, ArtPollReply, FixedString, NetId, Packet, PacketPayload, PortAddress,
+    SubNetId, Universe, UniverseId,
+};
 
 pub enum NetworkConfig {
     Default { interface_name: Option<String> },
@@ -77,7 +80,7 @@ impl NetworkConfig {
 }
 
 pub struct Source {
-    _inner: Arc<Inner>,
+    inner: Arc<Inner>,
     stop_tx: Option<flume::Sender<()>>,
     poller_handle: Option<JoinHandle<()>>,
     receiver_handle: Option<JoinHandle<()>>,
@@ -128,11 +131,15 @@ impl Source {
 
         log::info!("Art-Net Source running");
         Ok(Self {
-            _inner: inner,
+            inner,
             stop_tx: Some(stop_tx),
             poller_handle: Some(poller_handle),
             receiver_handle: Some(receiver_handle),
         })
+    }
+
+    pub fn send_dmx(&self, universe: Universe) -> crate::Result<()> {
+        self.inner.send_dmx(universe)
     }
 }
 
@@ -199,6 +206,20 @@ impl Inner {
         self.send_packet(payload, broadcast_ip)
     }
 
+    fn send_dmx(&self, universe: Universe) -> crate::Result<()> {
+        let mut art_dmx = ArtDmx::new();
+        art_dmx.set_port_address(PortAddress::new(
+            NetId::new(0).unwrap(),
+            SubNetId::new(0).unwrap(),
+            UniverseId::new(1).unwrap(),
+        ));
+        art_dmx.set_data(universe.as_bytes().to_vec());
+
+        self.send_packet(art_dmx, "127.0.0.1".parse().unwrap())?;
+
+        Ok(())
+    }
+
     fn register_node(&self, art_poll_reply: ArtPollReply) {
         let mut node_registry_guard = self.nodes.lock().unwrap();
         node_registry_guard.register_if_absent(art_poll_reply);
@@ -214,6 +235,7 @@ fn start_poller(inner: Arc<Inner>, stop_rx: flume::Receiver<()>) -> JoinHandle<(
             log::trace!("Executing periodic ArtPoll broadcast");
 
             let mut art_poll = ArtPoll::new();
+            // FIXME: Get these from a config.
             art_poll.set_reply_on_change_enabled(true);
             art_poll.set_oem(0xFFFF);
             art_poll.set_esta_man(0xFFFF);
@@ -324,6 +346,7 @@ fn handle_packet(inner: &Arc<Inner>, packet: Packet) -> crate::Result<()> {
             log::debug!("Handling ArtPollReply");
             inner.register_node(art_poll_reply);
         }
+        PacketPayload::ArtDmx(_) => {}
     }
 
     Ok(())
