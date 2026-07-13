@@ -3,19 +3,31 @@ name = "rd-artnet"
 version.workspace = true
 edition.workspace = true
 
+[features]
+default = ["node"]
+node = ["dep:flume", "dep:if-addrs", "dep:mac_address", "dep:socket2"]
+
 [dependencies]
 bytes = "1.12.1"
+
 facet = { workspace = true, features = ["net"] }
 facet-error.workspace = true
 facet-validate = "0.46.5"
-flume.workspace = true
-if-addrs = "0.15.0"
+
 log.workspace = true
-mac_address = "1.1.8"
 modular-bitfield = "0.13.1"
-socket2 = { version = "0.6.4", features = ["all"] }
+
+# feature = "node"
+flume = { workspace = true, optional = true }
+if-addrs = { version = "0.15.0", optional = true }
+mac_address = { version = "1.1.8", optional = true }
+socket2 = { version = "0.6.4", features = ["all"], optional = true }
 
 [dev-dependencies]
 anyhow.workspace = true
 pretty_env_logger.workspace = true
 rd-service.workspace = true
+
+[[examples]]
+name = "node"
+features = ["node"]
