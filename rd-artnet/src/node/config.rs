@@ -3,7 +3,7 @@ use std::net::Ipv4Addr;
 use crate::FixedString;
 
 #[derive(Debug, Clone, PartialEq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct NodeConfig {
     pub name: FixedString<64>,
     pub esta_man: u16,
@@ -30,7 +30,7 @@ impl Default for NodeConfig {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 #[repr(C)]
 pub enum NodeNetworkConfig {
     Interface {

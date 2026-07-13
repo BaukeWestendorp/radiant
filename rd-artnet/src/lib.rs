@@ -11,7 +11,7 @@ pub use packet::*;
 pub const PORT: u16 = 6454;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct Universe {
     channels: [u8; 512],
 }
@@ -46,7 +46,7 @@ impl Default for Universe {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct Kiloverse {
     universes: Box<[Universe; 1024]>,
 }
@@ -72,7 +72,7 @@ impl Default for Kiloverse {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 #[repr(transparent)]
 pub struct FixedString<const N: usize>([u8; N]);
 
@@ -120,9 +120,9 @@ impl<const N: usize> TryFrom<&[u8]> for FixedString<N> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(facet::Facet)]
-#[facet(transparent)]
-#[facet(facet_validate::min = 0, facet_validate::max = 32767)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
+#[cfg_attr(feature = "facet", facet(transparent))]
+#[cfg_attr(feature = "facet", facet(facet_validate::min = 0, facet_validate::max = 32767))]
 #[repr(transparent)]
 pub struct PortAddress(u16);
 
@@ -179,9 +179,9 @@ impl Default for PortAddress {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[derive(facet::Facet)]
-#[facet(transparent)]
-#[facet(facet_validate::min = 0, facet_validate::max = 127)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
+#[cfg_attr(feature = "facet", facet(transparent))]
+#[cfg_attr(feature = "facet", facet(facet_validate::min = 0, facet_validate::max = 127))]
 #[repr(transparent)]
 pub struct NetId(u8);
 
@@ -207,9 +207,9 @@ impl TryFrom<u8> for NetId {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[derive(facet::Facet)]
-#[facet(transparent)]
-#[facet(facet_validate::min = 0, facet_validate::max = 15)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
+#[cfg_attr(feature = "facet", facet(transparent))]
+#[cfg_attr(feature = "facet", facet(facet_validate::min = 0, facet_validate::max = 15))]
 #[repr(transparent)]
 pub struct SubNetId(u8);
 
@@ -235,9 +235,9 @@ impl TryFrom<u8> for SubNetId {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[derive(facet::Facet)]
-#[facet(transparent)]
-#[facet(facet_validate::min = 0, facet_validate::max = 15)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
+#[cfg_attr(feature = "facet", facet(transparent))]
+#[cfg_attr(feature = "facet", facet(facet_validate::min = 0, facet_validate::max = 15))]
 #[repr(transparent)]
 pub struct UniverseId(u8);
 

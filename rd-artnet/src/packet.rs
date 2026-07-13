@@ -8,7 +8,7 @@ pub const PACKET_ID: [u8; 8] = *b"Art-Net\0";
 pub const PROTOCOL_VERSION: u16 = 14;
 
 #[derive(Debug, Clone, PartialEq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct Packet {
     /// Byte representation of "Art-Net\0"
     id: [u8; 8],
@@ -275,7 +275,7 @@ impl From<PacketPayload> for Packet {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 #[repr(C)]
 pub enum PacketPayload {
     ArtPoll(ArtPoll),
@@ -312,7 +312,7 @@ impl From<ArtDmx> for PacketPayload {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct ArtPoll {
     /// Controllers should ignore communication with nodes using a protocol version lower than 14.
     prot_ver: u16,
@@ -402,7 +402,7 @@ impl ArtPoll {
 
 #[modular_bitfield::bitfield]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct ArtPollFlags {
     /// Deprecated.
     #[skip]
@@ -434,7 +434,7 @@ pub struct ArtPollFlags {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 #[repr(u8)]
 pub enum DiagnosticPriority {
     /// Low priority message.
@@ -467,7 +467,7 @@ impl TryFrom<u8> for DiagnosticPriority {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct ArtPollReply {
     /// Array containing the Node's IP address.
     ip_address: Ipv4Addr,
@@ -839,7 +839,7 @@ impl ArtPollReply {
 
 #[modular_bitfield::bitfield]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct Status1 {
     pub ubea_present: bool,
     pub rdm_capable: bool,
@@ -851,7 +851,7 @@ pub struct Status1 {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[derive(modular_bitfield::Specifier)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 #[repr(u8)]
 #[bits = 2]
 pub enum IndicatorState {
@@ -863,7 +863,7 @@ pub enum IndicatorState {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[derive(modular_bitfield::Specifier)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 #[repr(u8)]
 #[bits = 2]
 pub enum ProgrammingAuthority {
@@ -875,7 +875,7 @@ pub enum ProgrammingAuthority {
 
 #[modular_bitfield::bitfield]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct PortType {
     pub protocol: PortProtocol,
     pub can_input_artnet: bool,
@@ -884,7 +884,7 @@ pub struct PortType {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[derive(modular_bitfield::Specifier)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 #[repr(u8)]
 #[bits = 6]
 pub enum PortProtocol {
@@ -898,7 +898,7 @@ pub enum PortProtocol {
 }
 #[modular_bitfield::bitfield]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct GoodInput {
     pub convert_to_sacn: bool,
     #[skip]
@@ -913,7 +913,7 @@ pub struct GoodInput {
 
 #[modular_bitfield::bitfield]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct GoodOutputA {
     pub convert_from_sacn: bool,
     pub merge_mode_is_ltp: bool,
@@ -927,7 +927,7 @@ pub struct GoodOutputA {
 
 #[modular_bitfield::bitfield]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct SwMacro {
     pub macro_1_active: bool,
     pub macro_2_active: bool,
@@ -941,7 +941,7 @@ pub struct SwMacro {
 
 #[modular_bitfield::bitfield]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct SwRemote {
     pub remote_1_active: bool,
     pub remote_2_active: bool,
@@ -956,7 +956,7 @@ pub struct SwRemote {
 /// The Style code defines the general functionality of a Controller.
 /// The Style code is returned in [`ArtPollReply`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 #[repr(u8)]
 pub enum StyleCode {
     /// A DMX to/from Art-Net device.
@@ -995,7 +995,7 @@ impl TryFrom<u8> for StyleCode {
 
 #[modular_bitfield::bitfield]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct Status2 {
     pub supports_web_browser_configuration: bool,
     pub ip_dhcp_configured: bool,
@@ -1009,7 +1009,7 @@ pub struct Status2 {
 
 #[modular_bitfield::bitfield]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct GoodOutputB {
     #[skip]
     pub __: modular_bitfield::specifiers::B4,
@@ -1021,7 +1021,7 @@ pub struct GoodOutputB {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[derive(modular_bitfield::Specifier)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 #[repr(u8)]
 #[bits = 2]
 pub enum FailsafeState {
@@ -1033,7 +1033,7 @@ pub enum FailsafeState {
 
 #[modular_bitfield::bitfield]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct Status3 {
     pub background_discovery_can_be_disabled: bool,
     pub background_queue_supported: bool,
@@ -1046,14 +1046,14 @@ pub struct Status3 {
 
 #[modular_bitfield::bitfield]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct BackgroundQueuePolicy {
     pub policy: u8,
 }
 
 /// Legal OpCode values used in Art-Net packets:
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 #[repr(u16)]
 pub enum Opcode {
     /// This is an ArtPoll packet, no other data is contained in this UDP packet.
@@ -1182,7 +1182,7 @@ impl TryFrom<u16> for Opcode {
 
 /// Defines generic error, advisory and status messages for both Nodes and Controllers. The NodeReport is returned in [`ArtPollReply`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 #[repr(u16)]
 pub enum NodeReport {
     /// Booted in debug mode (Only used in development)
@@ -1249,7 +1249,7 @@ impl TryFrom<u16> for NodeReport {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct ArtDmx {
     /// Controllers should ignore communication with nodes using a protocol version lower than 14.
     prot_ver: u16,

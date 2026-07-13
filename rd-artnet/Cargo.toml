@@ -6,15 +6,12 @@ edition.workspace = true
 [features]
 default = ["node"]
 node = ["dep:flume", "dep:if-addrs", "dep:mac_address", "dep:socket2"]
+facet = ["dep:facet", "dep:facet-validate"]
 
 [dependencies]
-bytes = "1.12.1"
-
-facet = { workspace = true, features = ["net"] }
-facet-error.workspace = true
-facet-validate = "0.46.5"
-
 log.workspace = true
+
+bytes = "1.12.1"
 modular-bitfield = "0.13.1"
 
 # feature = "node"
@@ -22,11 +19,14 @@ flume = { workspace = true, optional = true }
 if-addrs = { version = "0.15.0", optional = true }
 mac_address = { version = "1.1.8", optional = true }
 socket2 = { version = "0.6.4", features = ["all"], optional = true }
+thiserror = "2.0.18"
+
+# feature = "facet"
+facet = { workspace = true, features = ["net"], optional = true }
+facet-validate = { version = "0.46.5", optional = true }
 
 [dev-dependencies]
-anyhow.workspace = true
 pretty_env_logger.workspace = true
-rd-service.workspace = true
 
 [[examples]]
 name = "node"

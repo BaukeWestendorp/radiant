@@ -16,8 +16,8 @@ pub struct Port {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[derive(facet::Facet)]
-#[facet(transparent)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
+#[cfg_attr(feature = "facet", facet(transparent))]
 #[repr(transparent)]
 pub struct PortId(u16);
 
