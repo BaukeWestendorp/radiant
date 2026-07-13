@@ -173,7 +173,7 @@ fn start_poller(inner: Arc<Inner>, stop_rx: flume::Receiver<()>) -> JoinHandle<(
             log::trace!("Executing periodic ArtPoll broadcast");
 
             let mut art_poll = ArtPoll::new();
-            art_poll.set_reply_on_change_enabled(true);
+            art_poll.flags_mut().set_send_reply_on_change(true);
             art_poll.set_oem(inner.config.oem_code);
             art_poll.set_esta_man(inner.config.esta_man);
             art_poll.set_diag_priority(DiagnosticPriority::DpLow);

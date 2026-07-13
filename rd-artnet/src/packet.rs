@@ -44,7 +44,7 @@ impl Packet {
         match &self.payload {
             PacketPayload::ArtPoll(p) => {
                 buf.put_u16_le(p.prot_ver);
-                buf.put_u8(p.flags);
+                buf.put_slice(&p.flags.bytes);
                 buf.put_u8(p.diag_priority as u8);
                 buf.put_slice(&p.target_port_address_top.as_u16().to_be_bytes());
                 buf.put_slice(&p.target_port_address_bottom.as_u16().to_be_bytes());
@@ -132,7 +132,7 @@ impl Packet {
 
                 PacketPayload::ArtPoll(ArtPoll {
                     prot_ver: u16::from_be_bytes([poll_data[0], poll_data[1]]),
-                    flags: poll_data[2],
+                    flags: ArtPollFlags::from_bytes([poll_data[2]]),
                     diag_priority: DiagnosticPriority::try_from(poll_data[3])?,
                     target_port_address_top: PortAddress::from_raw(u16::from_be_bytes([
                         poll_data[4],
@@ -317,7 +317,7 @@ pub struct ArtPoll {
     /// Controllers should ignore communication with nodes using a protocol version lower than 14.
     prot_ver: u16,
     /// Set behaviour of Node.
-    flags: u8,
+    flags: ArtPollFlags,
     /// The lowest priority of diagnostics message that should be sent.
     diag_priority: DiagnosticPriority,
     /// Top of the range of [`PortAddress`]es to be tested if Targeted Mode is active.
@@ -334,7 +334,7 @@ impl ArtPoll {
     pub fn new() -> Self {
         Self {
             prot_ver: 14,
-            flags: 0,
+            flags: ArtPollFlags::new(),
             diag_priority: DiagnosticPriority::DpLow,
             target_port_address_top: PortAddress::MAX,
             target_port_address_bottom: PortAddress::MIN,
@@ -351,12 +351,12 @@ impl ArtPoll {
         self.prot_ver = prot_ver;
     }
 
-    pub fn flags(&self) -> u8 {
+    pub fn flags(&self) -> ArtPollFlags {
         self.flags
     }
 
-    pub fn set_flags(&mut self, flags: u8) {
-        self.flags = flags;
+    pub fn flags_mut(&mut self) -> &mut ArtPollFlags {
+        &mut self.flags
     }
 
     pub fn diag_priority(&self) -> DiagnosticPriority {
@@ -398,66 +398,39 @@ impl ArtPoll {
     pub fn set_oem(&mut self, oem: u16) {
         self.oem = oem;
     }
+}
 
-    pub fn is_targeted_mode_enabled(&self) -> bool {
-        (self.flags & (1 << 5)) != 0
-    }
+#[modular_bitfield::bitfield]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(facet::Facet)]
+pub struct ArtPollFlags {
+    /// Deprecated.
+    #[skip]
+    pub __: bool,
 
-    pub fn set_targeted_mode_enabled(&mut self, enabled: bool) {
-        if enabled {
-            self.flags |= 1 << 5;
-        } else {
-            self.flags &= !(1 << 5);
-        }
-    }
+    /// `false` = Only send ArtPollReply in response to an ArtPoll or ArtAddress.
+    /// `true` = Send ArtPollReply whenever Node conditions change.
+    pub send_reply_on_change: bool,
 
-    pub fn is_vlc_transmission_disabled(&self) -> bool {
-        (self.flags & (1 << 4)) != 0
-    }
+    /// `false` = Do not send me diagnostics messages.
+    /// `true` = Send me diagnostics messages.
+    pub send_diagnostics: bool,
 
-    pub fn set_vlc_transmission_disabled(&mut self, disabled: bool) {
-        if disabled {
-            self.flags |= 1 << 4;
-        } else {
-            self.flags &= !(1 << 4);
-        }
-    }
+    /// `false` = Diagnostics messages are broadcast. (if `send_diagnostics` is `true`).
+    /// `true` = Diagnostics messages are unicast. (if `send_diagnostics` is `true`).
+    pub diagnostics_unicast: bool,
 
-    pub fn is_diagnostics_unicast(&self) -> bool {
-        (self.flags & (1 << 3)) != 0
-    }
+    /// `false` = Enable VLC transmission.
+    /// `true` = Disable VLC transmission.
+    pub disable_vlc_transmission: bool,
 
-    pub fn set_diagnostics_unicast(&mut self, unicast: bool) {
-        if unicast {
-            self.flags |= 1 << 3;
-        } else {
-            self.flags &= !(1 << 3);
-        }
-    }
+    /// `false` = Disable Targeted Mode.
+    /// `true` = Enable Targeted Mode.
+    pub enable_targeted_mode: bool,
 
-    pub fn is_diagnostics_requested(&self) -> bool {
-        (self.flags & (1 << 2)) != 0
-    }
-
-    pub fn set_diagnostics_requested(&mut self, requested: bool) {
-        if requested {
-            self.flags |= 1 << 2;
-        } else {
-            self.flags &= !(1 << 2);
-        }
-    }
-
-    pub fn is_reply_on_change_enabled(&self) -> bool {
-        (self.flags & (1 << 1)) != 0
-    }
-
-    pub fn set_reply_on_change_enabled(&mut self, enabled: bool) {
-        if enabled {
-            self.flags |= 1 << 1;
-        } else {
-            self.flags &= !(1 << 1);
-        }
-    }
+    /// Unused, transmit as zero, do not test upon receipt.
+    #[skip]
+    pub __: modular_bitfield::specifiers::B2,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -928,7 +901,8 @@ pub enum PortProtocol {
 #[derive(facet::Facet)]
 pub struct GoodInput {
     pub convert_to_sacn: bool,
-    pub unused_1: bool,
+    #[skip]
+    pub __: bool,
     pub receive_errors_detected: bool,
     pub input_disabled: bool,
     pub includes_text_packets: bool,
@@ -1037,7 +1011,8 @@ pub struct Status2 {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[derive(facet::Facet)]
 pub struct GoodOutputB {
-    pub unused_0_to_3: modular_bitfield::prelude::B4,
+    #[skip]
+    pub __: modular_bitfield::specifiers::B4,
     pub background_discovery_disabled: bool,
     pub discovery_not_running: bool,
     pub output_style_is_continuous: bool,
