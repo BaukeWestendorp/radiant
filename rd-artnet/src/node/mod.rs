@@ -264,7 +264,7 @@ fn handle_packet(inner: &Arc<Inner>, packet: Packet) -> crate::Result<()> {
             log::debug!("Handling incoming ArtPoll");
 
             let mut reply = ArtPollReply::new();
-            reply.set_long_name(inner.config.name.clone());
+            reply.set_long_name(inner.config.long_name.clone());
             reply.set_esta_man(inner.config.esta_man);
             reply.set_oem(inner.config.oem_code);
             reply.set_vers_info(inner.config.version_info);
@@ -333,11 +333,11 @@ impl TryFrom<NodeNetworkConfig> for NetworkDetails {
 
     fn try_from(value: NodeNetworkConfig) -> Result<Self, Self::Error> {
         match value {
-            NodeNetworkConfig::Custom { ip, mask, mac_address } => {
+            NodeNetworkConfig::Custom { ip, mask, mac_address, .. } => {
                 log::info!("Using custom network configuration: IP {}, Mask {}", ip, mask);
                 Ok(Self { ip, mask, mac_address })
             }
-            NodeNetworkConfig::Interface { interface_name } => {
+            NodeNetworkConfig::Interface { interface_name, .. } => {
                 log::debug!("Resolving default network configuration from interfaces");
                 let interfaces = if_addrs::get_if_addrs()?;
                 let mut ipv4_interfaces = interfaces
