@@ -421,8 +421,8 @@ fn handle_packet(inner: &Arc<Inner>, packet: Packet, source_ip: Ipv4Addr) -> cra
                     .with_supports_output_style_switching(false)
                     .with_squawking(false) // FIXME: Connect to internal squawk state.
                     .with_able_to_switch_artnet_sacn(false)
-                    .with_dhcp_capable(true) // FIXME: Revise how we handle DHCP.
-                    .with_ip_dhcp_configured(false) // FIXME: Revise how we handle DHCP.
+                    .with_dhcp_capable(inner.config.network_config().dhcp_capable())
+                    .with_ip_dhcp_configured(inner.network_details.assignment == IpAssignment::Dhcp)
                     .with_supports_web_browser_configuration(
                         inner.config.supports_web_browser_configuration(),
                     );
@@ -471,6 +471,7 @@ fn handle_packet(inner: &Arc<Inner>, packet: Packet, source_ip: Ipv4Addr) -> cra
 
 #[derive(Clone)]
 #[cfg_attr(feature = "facet", derive(facet::Facet))]
+#[cfg_attr(feature = "facet", facet(tag = "type"))]
 #[repr(C)]
 pub enum FrameScheduler {
     Internal {
@@ -577,6 +578,7 @@ struct NetworkDetails {
     ip: Ipv4Addr,
     mask: Ipv4Addr,
     mac_address: [u8; 6],
+    assignment: IpAssignment,
 }
 
 impl TryFrom<NodeNetworkConfig> for NetworkDetails {
@@ -584,17 +586,22 @@ impl TryFrom<NodeNetworkConfig> for NetworkDetails {
 
     fn try_from(value: NodeNetworkConfig) -> Result<Self, Self::Error> {
         match value {
-            NodeNetworkConfig::Custom { ip, mask, mac_address, .. } => {
+            NodeNetworkConfig::Custom { ip, mask, mac_address, dhcp_capable, .. } => {
                 log::info!("Using custom network configuration: IP {}, Mask {}", ip, mask);
-                Ok(Self { ip, mask, mac_address })
+                Ok(Self {
+                    ip,
+                    mask,
+                    mac_address,
+                    assignment: IpAssignment::Static { dhcp_capable },
+                })
             }
-            NodeNetworkConfig::Interface { interface_name, .. } => {
+            NodeNetworkConfig::Interface { name, assignment, .. } => {
                 log::debug!("Resolving default network configuration from interfaces");
                 let interfaces = if_addrs::get_if_addrs()?;
                 let mut ipv4_interfaces = interfaces
                     .into_iter()
                     .filter(|iface| matches!(iface.addr, if_addrs::IfAddr::V4(_)));
-                let target_interface = match interface_name {
+                let target_interface = match name {
                     Some(name) => {
                         log::debug!("Searching for requested interface: {}", name);
                         ipv4_interfaces.find(|iface| iface.name == *name)
@@ -637,7 +644,7 @@ impl TryFrom<NodeNetworkConfig> for NetworkDetails {
                         v4_addr.ip,
                         v4_addr.netmask
                     );
-                    Ok(Self { ip: v4_addr.ip, mask: v4_addr.netmask, mac_address })
+                    Ok(Self { ip: v4_addr.ip, mask: v4_addr.netmask, mac_address, assignment })
                 } else {
                     Err(crate::Error::Network(format!(
                         "Interface '{}' does not have an IPv4 address.",

@@ -37,8 +37,8 @@ impl NodeConfig {
             supports_web_browser_configuration: false,
 
             network_config: NodeNetworkConfig::Interface {
-                interface_name: None,
-                dhcp_enabled: true,
+                name: None,
+                assignment: IpAssignment::Dhcp,
             },
             bound_node_config: BoundNodeConfig::new(
                 short_name,
@@ -365,27 +365,55 @@ impl NodeConfig {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
+#[cfg_attr(feature = "facet", facet(tag = "type"))]
+#[repr(C)]
+pub enum IpAssignment {
+    Static { dhcp_capable: bool },
+    Dhcp,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "facet", derive(facet::Facet))]
+#[cfg_attr(feature = "facet", facet(tag = "type"))]
 #[repr(C)]
 pub enum NodeNetworkConfig {
     Interface {
         /// When set to `None` it will try to select the first non-loopback interface.
-        interface_name: Option<String>,
-        dhcp_enabled: bool,
+        name: Option<String>,
+        // Explicitly define the DHCP state of this system interface.
+        #[cfg_attr(feature = "facet", facet(default = IpAssignment::Dhcp))]
+        assignment: IpAssignment,
     },
     Custom {
         ip: Ipv4Addr,
         mask: Ipv4Addr,
         mac_address: [u8; 6],
         default_gateway: Ipv4Addr,
-        dhcp_enabled: bool,
+        // NOTE: Let's assume 'DHCP Capable', as the most common use for this crate
+        // probably will be software built on top of an OS, which pretty much always
+        // supports DHCP.
+        #[cfg_attr(feature = "facet", facet(default = true))]
+        dhcp_capable: bool,
     },
+}
+
+impl NodeNetworkConfig {
+    pub fn dhcp_capable(&self) -> bool {
+        match self {
+            NodeNetworkConfig::Interface { assignment, .. } => match assignment {
+                IpAssignment::Static { dhcp_capable } => *dhcp_capable,
+                IpAssignment::Dhcp => true,
+            },
+            NodeNetworkConfig::Custom { .. } => false,
+        }
+    }
 }
 
 impl Default for NodeNetworkConfig {
     fn default() -> Self {
-        Self::Interface { interface_name: None, dhcp_enabled: true }
+        Self::Interface { name: None, assignment: IpAssignment::Dhcp }
     }
 }
 

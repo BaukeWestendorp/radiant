@@ -276,6 +276,7 @@ impl From<PacketPayload> for Packet {
 
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "facet", derive(facet::Facet))]
+#[cfg_attr(feature = "facet", facet(tag = "type"))]
 #[repr(C)]
 pub enum PacketPayload {
     ArtPoll(ArtPoll),
