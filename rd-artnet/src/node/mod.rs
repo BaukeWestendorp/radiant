@@ -479,7 +479,7 @@ pub enum FrameScheduler {
     External {
         refresh_rate: u16,
         #[cfg_attr(feature = "facet", facet(opaque))]
-        notify_tx: Arc<Box<dyn Fn(flume::Sender<()>) + Send + Sync>>,
+        notifier: Arc<Box<dyn Fn(flume::Sender<()>) + Send + Sync>>,
     },
 }
 

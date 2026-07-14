@@ -1,4 +1,5 @@
 use std::{
+    ops::ControlFlow,
     sync::Arc,
     thread::{self, JoinHandle},
     time::{Duration, Instant},
@@ -55,6 +56,20 @@ impl PortManager {
         let frame_scheduler = bound_node.frame_scheduler().clone();
         let dmx_provider = bound_node.dmx_provider().clone();
 
+        let send_output = move || {
+            let mut universe = Universe::default();
+            if let Err(err) = dmx_provider(&mut universe, port_address) {
+                log::error!("DMX provider failed: {}", err);
+            } else {
+                // FIXME: Art-Net recommends a keep-alive of 800ms to 1000ms if
+                // data is not changing, rather than continuously blasting at 40Hz,
+                // unless the port's OutputStyle is specifically set to Continuous.
+                if let Err(err) = inner.send_dmx(universe, port_address, physical) {
+                    log::error!("Failed to send DMX data: {}", err);
+                }
+            }
+        };
+
         thread::spawn(move || match frame_scheduler {
             FrameScheduler::Internal { refresh_rate } => {
                 let interval = Duration::from_secs_f64(1.0 / refresh_rate as f64);
@@ -80,25 +95,41 @@ impl PortManager {
                         }
                     }
 
-                    let mut universe = Universe::default();
-                    if let Err(err) = dmx_provider(&mut universe, port_address) {
-                        log::error!("DMX provider failed: {}", err);
-                    } else {
-                        // FIXME: Art-Net recommends a keep-alive of 800ms to 1000ms if
-                        // data is not changing, rather than continuously blasting at 40Hz,
-                        // unless the port's OutputStyle is specifically set to Continuous.
-                        if let Err(err) = inner.send_dmx(universe, port_address, physical) {
-                            log::error!("Failed to send DMX data: {}", err);
-                        }
-                    }
+                    send_output();
 
                     next_tick += interval;
                 }
                 log::debug!("Stopped internal frame scheduler thread");
             }
-            FrameScheduler::External { refresh_rate: _, notify_tx: _ } => {
-                // FIXME: Implement External scheduler.
-                todo!();
+            FrameScheduler::External { notifier, .. } => {
+                let (notify_tx, notify_rx) = flume::bounded(1);
+
+                thread::spawn(move || {
+                    log::debug!("Started external frame scheduler notifier thread for port.");
+                    notifier(notify_tx);
+                    log::debug!("Stopped external frame scheduler notifier thread");
+                });
+
+                loop {
+                    match flume::Selector::new()
+                        .recv(&stop_rx, |_| Some(ControlFlow::Break(())))
+                        .recv(&notify_rx, |v| match v {
+                            Ok(()) => {
+                                send_output();
+                                None
+                            }
+                            Err(flume::RecvError::Disconnected) => {
+                                log::error!("Frame scheduler notifier disconnected");
+                                return Some(ControlFlow::Break(()));
+                            }
+                        })
+                        .wait()
+                    {
+                        Some(ControlFlow::Break(())) => break,
+                        Some(ControlFlow::Continue(())) => continue,
+                        None => {}
+                    }
+                }
             }
         })
     }
