@@ -43,28 +43,28 @@ impl Packet {
 
         match &self.payload {
             PacketPayload::ArtPoll(p) => {
-                buf.put_u16_le(p.prot_ver);
+                buf.put_u16(p.prot_ver);
                 buf.put_slice(&p.flags.bytes);
                 buf.put_u8(p.diag_priority as u8);
-                buf.put_slice(&p.target_port_address_top.as_u16().to_be_bytes());
-                buf.put_slice(&p.target_port_address_bottom.as_u16().to_be_bytes());
-                buf.put_u16_le(p.esta_man);
-                buf.put_u16_le(p.oem);
+                buf.put_u16(p.target_port_address_top.as_u16());
+                buf.put_u16(p.target_port_address_bottom.as_u16());
+                buf.put_u16(p.esta_man);
+                buf.put_u16(p.oem);
             }
             PacketPayload::ArtPollReply(p) => {
                 buf.put_slice(&p.ip_address.octets());
                 buf.put_u16_le(p.port);
-                buf.put_u16_le(p.vers_info);
+                buf.put_u16(p.vers_info);
                 buf.put_u8(p.net_switch.as_u8());
                 buf.put_u8(p.sub_switch.as_u8());
-                buf.put_u16_le(p.oem);
+                buf.put_u16(p.oem);
                 buf.put_u8(p.ubea_version);
                 buf.put_slice(&p.status1.bytes);
-                buf.put_u16_le(p.esta_man);
+                buf.put_u16(p.esta_man);
                 buf.put_slice(p.port_name.as_bytes());
                 buf.put_slice(p.long_name.as_bytes());
                 buf.put_slice(p.node_report.as_bytes());
-                buf.put_u16_le(p.num_ports);
+                buf.put_u16(p.num_ports);
                 buf.put_slice(&p.port_types.map(|v| v.bytes).as_flattened());
                 buf.put_slice(&p.good_input.map(|v| v.bytes).as_flattened());
                 buf.put_slice(&p.good_output_a.map(|v| v.bytes).as_flattened());
@@ -82,13 +82,13 @@ impl Packet {
                 buf.put_slice(&p.good_output_b.map(|v| v.bytes).as_flattened());
                 buf.put_slice(&p.status3.bytes);
                 buf.put_slice(&p.default_resp_uid);
-                buf.put_u16_le(p.user);
-                buf.put_u16_le(p.refresh_rate);
-                buf.put_slice(&p.background_queue_policy.bytes);
+                buf.put_u16(p.user);
+                buf.put_u16(p.refresh_rate);
+                buf.put_slice(&p.bg_queue_policy.bytes);
                 buf.put_slice(&p._filler);
             }
             PacketPayload::ArtDmx(p) => {
-                buf.put_slice(&p.prot_ver.to_be_bytes());
+                buf.put_u16(p.prot_ver);
                 buf.put_u8(p.sequence);
                 buf.put_u8(p.physical);
                 buf.put_u16_le(p.port_address.as_u16());
@@ -220,7 +220,7 @@ impl Packet {
                     default_resp_uid: data[208..214].try_into().unwrap(),
                     user: u16::from_be_bytes([data[214], data[215]]),
                     refresh_rate: u16::from_be_bytes([data[216], data[217]]),
-                    background_queue_policy: BackgroundQueuePolicy::from_bytes([data[218]]),
+                    bg_queue_policy: BackgroundQueuePolicy::from_bytes([data[218]]),
                     _filler: data[219..229].try_into().unwrap(),
                 })
             }
@@ -335,7 +335,7 @@ impl ArtPoll {
         Self {
             prot_ver: 14,
             flags: ArtPollFlags::new(),
-            diag_priority: DiagnosticPriority::DpLow,
+            diag_priority: DiagnosticPriority::DpAll,
             target_port_address_top: PortAddress::MAX,
             target_port_address_bottom: PortAddress::MIN,
             esta_man: 0,
@@ -437,6 +437,11 @@ pub struct ArtPollFlags {
 #[cfg_attr(feature = "facet", derive(facet::Facet))]
 #[repr(u8)]
 pub enum DiagnosticPriority {
+    /// All diagnostic messages
+    ///
+    /// _**NOTE:** This is not officially in the spec, but GrandMA3 does send
+    /// this value as `0x00`, and Wireshark parses it as `DpAll`._
+    DpAll = 0x00,
     /// Low priority message.
     DpLow = 0x10,
     /// Medium priority message.
@@ -455,13 +460,16 @@ impl TryFrom<u8> for DiagnosticPriority {
     type Error = crate::Error;
 
     fn try_from(value: u8) -> crate::Result<Self> {
+        // FIXME: Find out if it's actually OK to parse the values in the
+        // ranges from DP to DP+1. I think it's a nice way to prevent
+        // unneccesary errors, but it should not defy the spec...
         match value {
-            0x10 => Ok(DiagnosticPriority::DpLow),
-            0x40 => Ok(DiagnosticPriority::DpMed),
-            0x80 => Ok(DiagnosticPriority::DpHigh),
-            0xe0 => Ok(DiagnosticPriority::DpCritical),
-            0xf0 => Ok(DiagnosticPriority::DpVolatile),
-            _ => Err(crate::Error::InvalidDiagnosticPriority(value)),
+            0x00..0x10 => Ok(DiagnosticPriority::DpAll),
+            0x10..0x40 => Ok(DiagnosticPriority::DpLow),
+            0x40..0x80 => Ok(DiagnosticPriority::DpMed),
+            0x80..0xe0 => Ok(DiagnosticPriority::DpHigh),
+            0xe0..0xf0 => Ok(DiagnosticPriority::DpCritical),
+            0xf0..=0xff => Ok(DiagnosticPriority::DpVolatile),
         }
     }
 }
@@ -539,7 +547,7 @@ pub struct ArtPollReply {
     /// Allows the device to specify the maximum refresh rate, expressed in Hz.
     refresh_rate: u16,
     /// Defines the method by which the node retrieves STATUS_MESSAGE and QUEUED_MESSAGE pids.
-    background_queue_policy: BackgroundQueuePolicy,
+    bg_queue_policy: BackgroundQueuePolicy,
     /// Transmit as zero. For future expansion.
     _filler: [u8; 10],
 }
@@ -579,7 +587,7 @@ impl ArtPollReply {
             default_resp_uid: [0; 6],
             user: 0,
             refresh_rate: 0,
-            background_queue_policy: BackgroundQueuePolicy::new(),
+            bg_queue_policy: BackgroundQueuePolicy::new(),
             _filler: [0; 10],
         }
     }
@@ -828,12 +836,12 @@ impl ArtPollReply {
         self.refresh_rate = refresh_rate;
     }
 
-    pub fn background_queue_policy(&self) -> BackgroundQueuePolicy {
-        self.background_queue_policy
+    pub fn bg_queue_policy(&self) -> BackgroundQueuePolicy {
+        self.bg_queue_policy
     }
 
-    pub fn background_queue_policy_mut(&mut self) -> &mut BackgroundQueuePolicy {
-        &mut self.background_queue_policy
+    pub fn bg_queue_policy_mut(&mut self) -> &mut BackgroundQueuePolicy {
+        &mut self.bg_queue_policy
     }
 }
 
@@ -844,7 +852,8 @@ pub struct Status1 {
     pub ubea_present: bool,
     pub rdm_capable: bool,
     pub booted_from_rom: bool,
-    pub reserved_not_implemented: modular_bitfield::specifiers::B1,
+    #[skip]
+    pub __: modular_bitfield::specifiers::B1,
     pub programming_authority: ProgrammingAuthority,
     pub indicator_state: IndicatorState,
 }
@@ -1013,7 +1022,7 @@ pub struct Status2 {
 pub struct GoodOutputB {
     #[skip]
     pub __: modular_bitfield::specifiers::B4,
-    pub background_discovery_disabled: bool,
+    pub bg_discovery_disabled: bool,
     pub discovery_not_running: bool,
     pub output_style_is_continuous: bool,
     pub rdm_disabled: bool,
@@ -1035,8 +1044,8 @@ pub enum FailsafeState {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct Status3 {
-    pub background_discovery_can_be_disabled: bool,
-    pub background_queue_supported: bool,
+    pub bg_discovery_can_be_disabled: bool,
+    pub bg_queue_supported: bool,
     pub supports_rdmnet: bool,
     pub supports_switching_port_direction: bool,
     pub supports_llrp: bool,

@@ -4874,6 +4874,7 @@ dependencies = [
  "modular-bitfield",
  "pretty_env_logger",
  "socket2",
+ "spin_sleep",
  "thiserror 2.0.18",
 ]
 

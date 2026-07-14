@@ -119,6 +119,14 @@ impl<const N: usize> TryFrom<&[u8]> for FixedString<N> {
     }
 }
 
+impl<const N: usize> TryFrom<&str> for FixedString<N> {
+    type Error = crate::Error;
+
+    fn try_from(value: &str) -> Result<Self> {
+        Self::try_from_str(value)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "facet", derive(facet::Facet))]
 #[cfg_attr(feature = "facet", facet(transparent))]
@@ -175,6 +183,12 @@ impl Default for PortAddress {
         // Let's use 1 as a default, as a universe of 0
         // is deprecated in Art-Net 4 for better sACN compatibility.
         Self(1)
+    }
+}
+
+impl std::fmt::Display for PortAddress {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}.{}.{}", self.net().as_u8(), self.sub_net().as_u8(), self.universe().as_u8())
     }
 }
 

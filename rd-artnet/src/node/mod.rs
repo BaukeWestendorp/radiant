@@ -8,28 +8,30 @@ use std::{
 };
 
 use crate::{
-    ArtDmx, ArtPoll, ArtPollReply, DiagnosticPriority, FixedString, NetId, Packet, PacketPayload,
-    PortAddress, SubNetId, Universe, UniverseId,
+    ArtDmx, ArtPoll, ArtPollReply, DiagnosticPriority, FailsafeState, FixedString, GoodInput,
+    GoodOutputA, GoodOutputB, IndicatorState, Packet, PacketPayload, PortAddress, PortProtocol,
+    PortType, ProgrammingAuthority, Status1, Status2, Status3, Universe, UniverseId,
+    node::port::PortManager,
 };
 
 mod config;
 mod port;
 
 pub use config::*;
-pub use port::*;
 
 pub struct Node {
-    inner: Arc<Inner>,
+    _inner: Arc<Inner>,
     stop_tx: Option<flume::Sender<()>>,
     poller_handle: Option<JoinHandle<()>>,
     receiver_handle: Option<JoinHandle<()>>,
+    port_manager: Option<PortManager>,
 }
 
 impl Node {
     pub fn new(config: NodeConfig) -> crate::Result<Self> {
         log::info!("Initializing Art-Net Node...");
 
-        let network_details = NetworkDetails::try_from(config.network.clone())?;
+        let network_details = NetworkDetails::try_from(config.network_config().clone())?;
         let listen_ip = if network_details.ip.is_loopback() {
             network_details.ip
         } else {
@@ -60,6 +62,9 @@ impl Node {
             config,
             network_details,
             socket,
+
+            state: Mutex::new(NodeState::default()),
+            sequence_values: Mutex::new(HashMap::new()),
             nodes: Mutex::new(NodeRegistry::new()),
         });
 
@@ -67,19 +72,18 @@ impl Node {
 
         log::debug!("Spawning poller and receiver background threads");
         let poller_handle = start_poller(Arc::clone(&inner), stop_rx.clone());
-        let receiver_handle = start_receiver(Arc::clone(&inner), stop_rx);
+        let receiver_handle = start_receiver(Arc::clone(&inner), stop_rx.clone());
+
+        let port_manager = PortManager::new(Arc::clone(&inner), stop_rx.clone());
 
         log::info!("Art-Net Node running");
         Ok(Self {
-            inner,
+            _inner: inner,
             stop_tx: Some(stop_tx),
             poller_handle: Some(poller_handle),
             receiver_handle: Some(receiver_handle),
+            port_manager: Some(port_manager),
         })
-    }
-
-    pub fn send_dmx(&self, universe: Universe) -> crate::Result<()> {
-        self.inner.send_dmx(universe)
     }
 }
 
@@ -103,6 +107,31 @@ impl Drop for Node {
                 handle.join().map_err(|_| log::error!("Failed to join receiver thread cleanly"));
         }
 
+        if let Some(port_manager) = self.port_manager.take() {
+            for worker in port_manager.workers {
+                match worker {
+                    port::WorkerHandle::Input { port_address, handle } => {
+                        log::debug!(
+                            "Waiting for input worker thread for port {} to join...",
+                            port_address
+                        );
+                        let _ = handle
+                            .join()
+                            .map_err(|_| log::error!("Failed to join input worker thread cleanly"));
+                    }
+                    port::WorkerHandle::Output { port_address, handle } => {
+                        log::debug!(
+                            "Waiting for output worker thread for port {} to join...",
+                            port_address
+                        );
+                        let _ = handle.join().map_err(|_| {
+                            log::error!("Failed to join output worker thread cleanly")
+                        });
+                    }
+                }
+            }
+        }
+
         log::info!("Art-Net Node shut down");
     }
 }
@@ -113,6 +142,8 @@ struct Inner {
 
     socket: UdpSocket,
 
+    state: Mutex<NodeState>,
+    sequence_values: Mutex<HashMap<PortAddress, u8>>,
     nodes: Mutex<NodeRegistry>,
 }
 
@@ -145,23 +176,44 @@ impl Inner {
         self.send_packet(payload, broadcast_ip)
     }
 
-    fn send_dmx(&self, universe: Universe) -> crate::Result<()> {
-        let mut art_dmx = ArtDmx::new();
-        art_dmx.set_port_address(PortAddress::new(
-            NetId::new(0).unwrap(),
-            SubNetId::new(0).unwrap(),
-            UniverseId::new(1).unwrap(),
-        ));
-        art_dmx.set_data(universe.as_bytes().to_vec());
+    fn send_dmx(
+        &self,
+        universe: Universe,
+        port_address: PortAddress,
+        physical: u8,
+    ) -> crate::Result<()> {
+        let sequence = {
+            let mut sequence_values_guard = self.sequence_values.lock().unwrap();
+            let sequence = sequence_values_guard.entry(port_address).or_insert(0);
+            *sequence = sequence.wrapping_add(1);
+            *sequence
+        };
 
-        self.send_packet(art_dmx, "127.0.0.1".parse().unwrap())?;
+        let subscribers = {
+            let mut registry = self.nodes.lock().unwrap();
+            registry.get_subscribers(port_address)
+        };
+
+        if subscribers.is_empty() {
+            return Ok(());
+        }
+
+        let mut art_dmx = ArtDmx::new();
+        art_dmx.set_port_address(port_address);
+        art_dmx.set_data(universe.as_bytes().to_vec());
+        art_dmx.set_sequence(sequence);
+        art_dmx.set_physical(physical);
+
+        for ip in subscribers {
+            self.send_packet(art_dmx.clone(), ip)?;
+        }
 
         Ok(())
     }
 
     fn register_node(&self, art_poll_reply: ArtPollReply) {
         let mut node_registry_guard = self.nodes.lock().unwrap();
-        node_registry_guard.register_if_absent(art_poll_reply);
+        node_registry_guard.update(art_poll_reply);
     }
 }
 
@@ -171,13 +223,14 @@ fn start_poller(inner: Arc<Inner>, stop_rx: flume::Receiver<()>) -> JoinHandle<(
         log::debug!("Started poller thread. Polling interval: {:?}", POLL_INTERVAL);
 
         let poll = || {
-            log::trace!("Executing periodic ArtPoll broadcast");
+            log::debug!("Executing periodic ArtPoll broadcast");
 
             let mut art_poll = ArtPoll::new();
             art_poll.flags_mut().set_send_reply_on_change(true);
-            art_poll.set_oem(inner.config.oem_code);
-            art_poll.set_esta_man(inner.config.esta_man);
-            art_poll.set_diag_priority(DiagnosticPriority::DpLow);
+            art_poll.set_oem(inner.config.oem_code());
+            art_poll.set_esta_man(inner.config.esta_man());
+            // FIXME: Get this from config.
+            art_poll.set_diag_priority(DiagnosticPriority::DpAll);
 
             if let Err(err) = inner.broadcast_packet(art_poll) {
                 log::error!("Failed to broadcast ArtPoll packet: {}", err);
@@ -224,7 +277,7 @@ fn start_receiver(inner: Arc<Inner>, stop_rx: flume::Receiver<()>) -> JoinHandle
                 _ => {}
             }
 
-            let (size, src) = match inner.socket.recv_from(&mut buf) {
+            let (size, source) = match inner.socket.recv_from(&mut buf) {
                 Ok(result) => result,
                 Err(e)
                     if e.kind() == io::ErrorKind::WouldBlock
@@ -238,19 +291,27 @@ fn start_receiver(inner: Arc<Inner>, stop_rx: flume::Receiver<()>) -> JoinHandle
                 }
             };
 
-            log::trace!("Read successful: received {} bytes from {}", size, src);
+            log::trace!("Read successful: received {} bytes from {}", size, source);
 
             let bytes = bytes::Bytes::copy_from_slice(&buf[..size]);
             let packet = match Packet::decode(&bytes) {
                 Ok(packet) => packet,
                 Err(err) => {
-                    log::error!("Could not decode packet from {}: {err:#}", src);
+                    log::error!("Could not decode packet from {}: {err:#}", source);
                     continue;
                 }
             };
 
-            if let Err(err) = handle_packet(&inner, packet) {
-                log::error!("Failed to handle packet from {}: {err:#}", src);
+            let source_ip = match source {
+                std::net::SocketAddr::V4(addr) => *addr.ip(),
+                std::net::SocketAddr::V6(_) => {
+                    log::warn!("Received packet from IPv6 address {}. Ignoring.", source);
+                    continue;
+                }
+            };
+
+            if let Err(err) = handle_packet(&inner, packet, source_ip) {
+                log::error!("Failed to handle packet from {}: {err:#}", source);
             }
         }
 
@@ -258,41 +319,208 @@ fn start_receiver(inner: Arc<Inner>, stop_rx: flume::Receiver<()>) -> JoinHandle
     })
 }
 
-fn handle_packet(inner: &Arc<Inner>, packet: Packet) -> crate::Result<()> {
+fn handle_packet(inner: &Arc<Inner>, packet: Packet, source_ip: Ipv4Addr) -> crate::Result<()> {
     match packet.payload {
         PacketPayload::ArtPoll(_) => {
             log::debug!("Handling incoming ArtPoll");
 
-            let mut reply = ArtPollReply::new();
-            reply.set_long_name(inner.config.long_name.clone());
-            reply.set_esta_man(inner.config.esta_man);
-            reply.set_oem(inner.config.oem_code);
-            reply.set_vers_info(inner.config.version_info);
+            // FIXME: Art-Net 4 specifies Targeted Mode (Flags bit 5).
+            // If enabled, we must check if any of our ports fall between
+            // TargetPortAddress Top and Bottom before responding.
 
-            reply.set_mac(inner.network_details.mac_address);
-            reply.set_ip_address(inner.network_details.ip);
+            let state = inner.state.lock().unwrap().clone();
 
-            reply.set_port_name(FixedString::try_from_str("FIXME: From Conf")?);
-            reply.set_net_switch(NetId::new(0x00)?);
-            reply.set_sub_switch(SubNetId::new(0x00)?);
-            reply.set_bind_ip(inner.network_details.ip);
-            reply.set_bind_index(1);
+            let unicast_reply = |bound_node: &BoundNodeConfig| -> crate::Result<()> {
+                let mut reply = ArtPollReply::new();
+                reply.set_ip_address(inner.network_details.ip);
+                reply.set_vers_info(inner.config.version_info());
+                reply.set_net_switch(bound_node.net());
+                reply.set_sub_switch(bound_node.sub_net());
+                reply.set_oem(inner.config.oem_code());
+                reply.set_ubea_version(inner.config.ueba_version());
+                *reply.status1_mut() = Status1::new()
+                    .with_indicator_state(state.indicator_state)
+                    .with_programming_authority(state.programming_authority)
+                    .with_booted_from_rom(state.booted_from_rom)
+                    .with_rdm_capable(false) // FIXME: Implement RDM support.
+                    .with_ubea_present(state.ubea_present);
+                reply.set_esta_man(inner.config.esta_man());
+                reply.set_port_name(inner.config.port_name().clone());
+                reply.set_long_name(inner.config.long_name().clone());
+                // FIXME: Implement Node Reports.
+                reply.set_node_report(FixedString::default());
+                reply.set_num_ports(bound_node.port_count() as u16);
+                for (ix, port) in bound_node.ports().iter().enumerate() {
+                    match port {
+                        Some(port) => {
+                            reply.port_types_mut()[ix] = PortType::new()
+                                // NOTE: Yes, this is correct. The input and output are reversed here, as they
+                                // represent rd-artnet INPUT ONTO the Art-Net network and getting OUTPUT FROM
+                                // the Art-Net network.
+                                .with_can_input_artnet(port.output().is_some())
+                                .with_can_output_artnet(port.input().is_some())
+                                // NOTE: This always should be DMX512, as our DMX provider only allows for updating a simple
+                                // DMX Universe with 512 channels and not via any other protocols.
+                                .with_protocol(PortProtocol::Dmx512);
+                            reply.good_input_mut()[ix] = GoodInput::new()
+                                .with_data_received(false) // FIXME: Make library internal state.
+                                .with_includes_test_packets(false)
+                                .with_includes_sips(false)
+                                .with_includes_text_packets(false)
+                                .with_input_disabled(false) // FIXME: Implement disabling inputs and outputs.
+                                .with_receive_errors_detected(false) // FIXME: Make library internal state.
+                                .with_convert_to_sacn(false);
+                            reply.good_output_a_mut()[ix] = GoodOutputA::new()
+                                .with_data_being_output(false) // FIXME: Make library internal state.
+                                .with_includes_test_packets(false)
+                                .with_includes_sips(false)
+                                .with_includes_text_packets(false)
+                                .with_merging_artnet(false) // FIXME: Implement merging.
+                                .with_short_detected(false) // FIMXE: Imlplement short detection.
+                                .with_merge_mode_is_ltp(false) // FIXME: Implement merging.
+                                .with_convert_from_sacn(false);
+                            reply.good_output_b_mut()[ix] = GoodOutputB::new()
+                                .with_rdm_disabled(true) // FIXME: Implement RDM.
+                                .with_output_style_is_continuous(true) // FIXME: Implement different output styles.
+                                .with_discovery_not_running(false)
+                                .with_bg_discovery_disabled(false);
 
-            log::debug!("Broadcasting ArtPollReply in response to ArtPoll");
-            inner.broadcast_packet(reply)?;
+                            reply.sw_in_mut()[ix] = port
+                                .input()
+                                .unwrap_or(PortAddress::from_raw(0).unwrap())
+                                .universe();
+                            reply.sw_out_mut()[ix] = port
+                                .output()
+                                .unwrap_or(PortAddress::from_raw(0).unwrap())
+                                .universe();
+                        }
+                        None => {
+                            reply.port_types_mut()[ix] = PortType::new()
+                                .with_can_input_artnet(false)
+                                .with_can_output_artnet(false)
+                                .with_protocol(PortProtocol::Dmx512);
+                            reply.good_input_mut()[ix] = GoodInput::new();
+                            reply.good_output_a_mut()[ix] = GoodOutputA::new();
+                            reply.good_output_b_mut()[ix] = GoodOutputB::new();
+                            reply.sw_in_mut()[ix] =
+                                UniverseId::new(0).expect("0 Should be a valid UniverseId");
+                            reply.sw_out_mut()[ix] =
+                                UniverseId::new(0).expect("0 Should be a valid UniverseId");
+                        }
+                    }
+                }
+                reply.set_acn_priority(bound_node.sacn_priority());
+                *reply.sw_macro_mut() = bound_node.macros();
+                *reply.sw_remote_mut() = bound_node.remotes();
+                reply.set_style(bound_node.style());
+                reply.set_mac(inner.network_details.mac_address);
+                reply.set_bind_ip(inner.network_details.ip);
+                reply.set_bind_index(bound_node.bind_index());
+                *reply.status2_mut() = Status2::new()
+                    .with_supports_rdm_control(false) // FIXME: Implement RDM.
+                    .with_supports_output_style_switching(false)
+                    .with_squawking(false) // FIXME: Connect to internal squawk state.
+                    .with_able_to_switch_artnet_sacn(false)
+                    .with_dhcp_capable(true) // FIXME: Revise how we handle DHCP.
+                    .with_ip_dhcp_configured(false) // FIXME: Revise how we handle DHCP.
+                    .with_supports_web_browser_configuration(
+                        inner.config.supports_web_browser_configuration(),
+                    );
+                *reply.status3_mut() = Status3::new()
+                    .with_failsafe_state(FailsafeState::HoldLastState) // FIXME: Implement Failsafe states.
+                    .with_supports_programmable_failsafe(false) // FIXME: Implement Failsafe states.
+                    .with_supports_llrp(false)
+                    .with_supports_switching_port_direction(false) // FIXME: Implement switching port direction.
+                    .with_supports_rdmnet(false) // FIXME: Implement RDMNet
+                    .with_bg_discovery_can_be_disabled(false);
+                reply.set_default_resp_uid(bound_node.default_resp_uid());
+                reply.set_user(bound_node.user_data());
+                reply.set_refresh_rate(bound_node.frame_scheduler().refresh_rate());
+                *reply.bg_queue_policy_mut() = bound_node.bg_queue_policy();
+
+                log::debug!(
+                    "Unicasting ArtPollReply for bound node with index {} to {}",
+                    bound_node.bind_index(),
+                    source_ip
+                );
+
+                inner.send_packet(reply, source_ip)?;
+
+                Ok(())
+            };
+
+            unicast_reply(inner.config.bound_node_config())?;
+
+            for bound_node in inner.config.bound_nodes() {
+                unicast_reply(bound_node)?;
+            }
         }
         PacketPayload::ArtPollReply(art_poll_reply) => {
             log::debug!("Handling ArtPollReply");
             inner.register_node(art_poll_reply);
         }
-        PacketPayload::ArtDmx(_) => {}
+        PacketPayload::ArtDmx(_) => {
+            // FIXME: Route incoming DMX to the correct PortManager Input Worker.
+            // We need to check if the PortAddress matches any of our `Input` ports,
+            // and if so, send the data over a channel to the worker for merging and state updates.
+        }
     }
 
     Ok(())
 }
 
+#[derive(Clone)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
+#[repr(C)]
+pub enum FrameScheduler {
+    Internal {
+        refresh_rate: u16,
+    },
+    External {
+        refresh_rate: u16,
+        #[cfg_attr(feature = "facet", facet(opaque))]
+        notify_tx: Arc<Box<dyn Fn(flume::Sender<()>) + Send + Sync>>,
+    },
+}
+
+impl FrameScheduler {
+    pub fn refresh_rate(&self) -> u16 {
+        match self {
+            FrameScheduler::Internal { refresh_rate, .. } => *refresh_rate,
+            FrameScheduler::External { refresh_rate, .. } => *refresh_rate,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
+pub struct NodeState {
+    pub indicator_state: IndicatorState,
+    pub programming_authority: ProgrammingAuthority,
+    pub booted_from_rom: bool,
+    pub ubea_present: bool,
+}
+
+impl Default for NodeState {
+    fn default() -> Self {
+        Self {
+            indicator_state: IndicatorState::Normal,
+            programming_authority: ProgrammingAuthority::NotUsed,
+            booted_from_rom: false,
+            ubea_present: false,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RegisteredNode {
+    pub reply: ArtPollReply,
+    pub last_seen: Instant,
+}
+
+#[derive(Debug, Clone)]
 struct NodeRegistry {
-    nodes: HashMap<(Ipv4Addr, (NetId, SubNetId)), NodeRegistry>,
+    nodes: HashMap<(Ipv4Addr, u8), RegisteredNode>,
 }
 
 impl NodeRegistry {
@@ -300,28 +528,51 @@ impl NodeRegistry {
         Self { nodes: HashMap::new() }
     }
 
-    pub fn register_if_absent(&mut self, art_poll_reply: ArtPollReply) {
-        let key = (
-            *art_poll_reply.ip_address(),
-            (art_poll_reply.net_switch(), art_poll_reply.sub_switch()),
-        );
-        if !self.nodes.contains_key(&key) {
-            log::info!(
-                "Registering new Art-Net node: {} at {}",
-                art_poll_reply.long_name(),
-                art_poll_reply.ip_address()
-            );
-            self.nodes.insert(key, NodeRegistry { nodes: HashMap::new() });
-        } else {
-            log::debug!(
-                "Art-Net node already registered: {} at {}",
-                art_poll_reply.long_name(),
-                art_poll_reply.ip_address()
-            );
+    pub fn update(&mut self, reply: ArtPollReply) {
+        let key = (*reply.ip_address(), reply.bind_index());
+
+        self.nodes.insert(key, RegisteredNode { reply, last_seen: Instant::now() });
+    }
+
+    pub fn get_subscribers(&mut self, port_address: PortAddress) -> Vec<Ipv4Addr> {
+        let now = Instant::now();
+        let timeout = Duration::from_secs(3);
+
+        self.nodes.retain(|_, node| now.duration_since(node.last_seen) < timeout);
+
+        let mut subscribers = Vec::new();
+
+        for node in self.nodes.values() {
+            let net = node.reply.net_switch();
+            let sub_net = node.reply.sub_switch();
+
+            if net == port_address.net() && sub_net == port_address.sub_net() {
+                let mut is_subscribed = false;
+
+                for (i, port_type) in node.reply.port_types().iter().enumerate() {
+                    let sw_out_match = port_type.can_output_artnet()
+                        && node.reply.sw_out()[i] == port_address.universe();
+                    let sw_in_match = port_type.can_input_artnet()
+                        && node.reply.sw_in()[i] == port_address.universe();
+
+                    if sw_out_match || sw_in_match {
+                        is_subscribed = true;
+                        break;
+                    }
+                }
+
+                if is_subscribed && !subscribers.contains(node.reply.ip_address()) {
+                    subscribers.push(*node.reply.ip_address());
+                }
+            }
         }
+
+        subscribers
     }
 }
 
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
 struct NetworkDetails {
     ip: Ipv4Addr,
     mask: Ipv4Addr,

@@ -59,10 +59,6 @@ pub enum Error {
     #[error("The provided string is too long.")]
     StringTooLong,
 
-    /// Invalid diagnostic priority: {0}
-    #[error("Invalid diagnostic priority: {0}")]
-    InvalidDiagnosticPriority(u8),
-
     // FIXME: Remove this once everything has been implemented.
     /// Received an unimplemented packet.
     #[error("Received an unimplemented packet.")]
