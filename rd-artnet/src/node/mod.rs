@@ -354,11 +354,8 @@ fn handle_packet(inner: &Arc<Inner>, packet: Packet, source_ip: Ipv4Addr) -> cra
                     match port {
                         Some(port) => {
                             reply.port_types_mut()[ix] = PortType::new()
-                                // NOTE: Yes, this is correct. The input and output are reversed here, as they
-                                // represent rd-artnet INPUT ONTO the Art-Net network and getting OUTPUT FROM
-                                // the Art-Net network.
-                                .with_can_input_from_artnet(port.output().is_some())
-                                .with_can_output_from_artnet(port.input().is_some())
+                                .with_can_input_artnet(port.input().is_some())
+                                .with_can_output_artnet(port.output().is_some())
                                 // NOTE: This always should be DMX512, as our DMX provider only allows for updating a simple
                                 // DMX Universe with 512 channels and not via any other protocols.
                                 .with_protocol(PortProtocol::Dmx512);
@@ -396,8 +393,8 @@ fn handle_packet(inner: &Arc<Inner>, packet: Packet, source_ip: Ipv4Addr) -> cra
                         }
                         None => {
                             reply.port_types_mut()[ix] = PortType::new()
-                                .with_can_input_from_artnet(false)
-                                .with_can_output_from_artnet(false)
+                                .with_can_input_artnet(false)
+                                .with_can_output_artnet(false)
                                 .with_protocol(PortProtocol::Dmx512);
                             reply.good_input_mut()[ix] = GoodInput::new();
                             reply.good_output_a_mut()[ix] = GoodOutputA::new();
@@ -568,9 +565,9 @@ impl NodeRegistry {
                 let mut is_subscribed = false;
 
                 for (i, port_type) in node.reply.port_types().iter().enumerate() {
-                    let sw_out_match = port_type.can_input_from_artnet()
+                    let sw_out_match = port_type.can_output_artnet()
                         && node.reply.sw_out()[i] == port_address.universe();
-                    let sw_in_match = port_type.can_output_from_artnet()
+                    let sw_in_match = port_type.can_input_artnet()
                         && node.reply.sw_in()[i] == port_address.universe();
 
                     if sw_out_match || sw_in_match {

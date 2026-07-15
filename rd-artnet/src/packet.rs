@@ -888,8 +888,8 @@ pub enum ProgrammingAuthority {
 #[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct PortType {
     pub protocol: PortProtocol,
-    pub can_input_from_artnet: bool,
-    pub can_output_from_artnet: bool,
+    pub can_input_artnet: bool,
+    pub can_output_artnet: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

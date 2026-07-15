@@ -7,6 +7,7 @@ edition.workspace = true
 facet.workspace = true
 facet-error.workspace = true
 flume.workspace = true
+log.workspace = true
 midir = "0.10.0"
 rd-service.workspace = true
 

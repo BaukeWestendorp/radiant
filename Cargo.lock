@@ -4938,6 +4938,7 @@ dependencies = [
  "facet",
  "facet-error",
  "flume 0.12.0",
+ "log",
  "midir",
  "pretty_env_logger",
  "rd-service",

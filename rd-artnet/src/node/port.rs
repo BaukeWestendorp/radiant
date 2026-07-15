@@ -65,7 +65,7 @@ impl PortManager {
                 // data is not changing, rather than continuously blasting at 40Hz,
                 // unless the port's OutputStyle is specifically set to Continuous.
                 if let Err(err) = inner.send_dmx(universe, port_address, physical) {
-                    log::error!("Failed to send DMX data: {}", err);
+                    log::error!("Failed to send DMX data to {}: {}", port_address, err);
                 }
             }
         };

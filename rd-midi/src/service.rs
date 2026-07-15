@@ -44,9 +44,10 @@ impl rd_service::Runner for MidiInputServiceRunner {
                         let message = match MidiMessage::decode(message) {
                             Ok(msg) => msg,
                             Err(err) => {
-                                eprintln!(
+                                log::error!(
                                     "Failed to decode MIDI message from port {}: {:?}",
-                                    port_name, err
+                                    port_name,
+                                    err
                                 );
                                 return;
                             }
