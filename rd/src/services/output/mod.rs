@@ -1,29 +1,40 @@
-use std::{sync::Mutex, time::Instant};
+use std::{
+    sync::{Arc, Mutex, RwLock},
+    time::Instant,
+};
 
+use rd_dmx::Multiverse;
 use rd_service::{Notified, Service};
 
 use crate::project;
 
-mod sacn;
+mod artnet;
 
 pub struct OutputService {
-    notify_tx: flume::Sender<()>,
+    artnet_output_service: Mutex<Service<artnet::ArtnetOutputService, Notified>>,
 
-    sacn_output_service: Mutex<Service<sacn::SacnOutputService, Notified>>,
+    notify_tx: flume::Sender<()>,
+    multiverse: Arc<RwLock<Multiverse>>,
 }
 
 impl OutputService {
     pub fn new(config: &project::OutputConfig) -> Self {
         let (notify_tx, notify_rx) = flume::bounded(1);
+        let multiverse = Arc::new(RwLock::new(Multiverse::new()));
 
         Self {
-            notify_tx,
-
-            sacn_output_service: Mutex::new(Service::new(
-                sacn::SacnOutputService::new(&config.sacn),
+            artnet_output_service: Mutex::new(Service::new(
+                artnet::ArtnetOutputService::new(config.artnet.clone(), multiverse.clone()),
                 Notified::new(notify_rx),
             )),
+
+            notify_tx,
+            multiverse,
         }
+    }
+
+    pub fn update_multiverse(&self, multiverse: Multiverse) {
+        *self.multiverse.write().unwrap() = multiverse;
     }
 }
 
@@ -33,7 +44,9 @@ impl Default for OutputService {
 
         Self {
             notify_tx,
-            sacn_output_service: Mutex::new(Service::new(
+            multiverse: Arc::new(RwLock::new(Multiverse::new())),
+
+            artnet_output_service: Mutex::new(Service::new(
                 Default::default(),
                 Notified::new(notify_rx),
             )),
@@ -46,7 +59,7 @@ impl rd_service::Delegate for OutputService {
     type Data = Instant;
 
     fn on_start(&self) -> Result<(), Self::Error> {
-        self.sacn_output_service.lock().expect("Service should not be locked").start()?;
+        self.artnet_output_service.lock().expect("Service should not be locked").start()?;
         Ok(())
     }
 
@@ -56,7 +69,7 @@ impl rd_service::Delegate for OutputService {
     }
 
     fn on_stop(&self) -> Result<(), Self::Error> {
-        self.sacn_output_service.lock().expect("Service should not be locked").stop()?;
+        self.artnet_output_service.lock().expect("Service should not be locked").stop()?;
         Ok(())
     }
 }

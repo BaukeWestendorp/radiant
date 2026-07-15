@@ -13,6 +13,7 @@ pub struct NodeConfig {
     version_info: u16,
     ueba_version: u8,
     supports_web_browser_configuration: bool,
+    poll_reply_strategy: PollReplyStrategy,
 
     network_config: NodeNetworkConfig,
     bound_node_config: BoundNodeConfig,
@@ -35,6 +36,7 @@ impl NodeConfig {
             version_info: 0x00,
             ueba_version: 0x00,
             supports_web_browser_configuration: false,
+            poll_reply_strategy: PollReplyStrategy::Unicast,
 
             network_config: NodeNetworkConfig::Interface {
                 name: None,
@@ -127,6 +129,19 @@ impl NodeConfig {
 
     pub fn with_supports_web_browser_configuration(mut self, supported: bool) -> Self {
         self.set_supports_web_browser_configuration(supported);
+        self
+    }
+
+    pub fn poll_reply_strategy(&self) -> PollReplyStrategy {
+        self.poll_reply_strategy
+    }
+
+    pub fn set_poll_reply_strategy(&mut self, strategy: PollReplyStrategy) {
+        self.poll_reply_strategy = strategy;
+    }
+
+    pub fn with_poll_reply_strategy(mut self, strategy: PollReplyStrategy) -> Self {
+        self.set_poll_reply_strategy(strategy);
         self
     }
 
@@ -363,6 +378,17 @@ impl NodeConfig {
     pub(crate) fn bound_node_config(&self) -> &BoundNodeConfig {
         &self.bound_node_config
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "facet", derive(facet::Facet))]
+#[repr(C)]
+pub enum PollReplyStrategy {
+    /// Strictly comply with the Art-Net 4 specification by unicasting the ArtPollReply directly to the poller's IP.
+    Unicast,
+    /// Fall back to legacy Art-Net 3 style by broadcasting the ArtPollReply to the subnet.
+    /// This allows local port-sharing apps (like Capture on the same machine) to receive it.
+    Broadcast,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,18 +1,15 @@
 {
-  "sacn": {
+  "artnet": {
+    "network": {
+      "type": "Interface",
+      "name": "en0"
+    },
     "instances": [
       {
-        "name": "Zeevonk U1",
-        "universe_ids": [
-          1
-        ],
-        "preview_mode": false,
-        "priority": 100,
-        "target_address": "127.0.0.1:5568"
+        "name": "Radiant Example",
+        "port_address": 1,
+        "local_universe": 1
       }
     ]
-  },
-  "enttec": {
-    "instances": []
   }
 }

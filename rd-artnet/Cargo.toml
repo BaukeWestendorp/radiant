@@ -25,6 +25,7 @@ thiserror = "2.0.18"
 facet = { workspace = true, features = ["net"], optional = true }
 facet-validate = { workspace = true, optional = true }
 spin_sleep = "1.3.3"
+rand = "0.10.2"
 
 [dev-dependencies]
 pretty_env_logger.workspace = true

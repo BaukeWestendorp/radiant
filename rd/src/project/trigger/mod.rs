@@ -6,6 +6,7 @@ pub mod midi;
 
 #[derive(Default, Clone)]
 #[derive(facet::Facet)]
+#[facet(deny_unknown_fields)]
 pub struct TriggerConfig {
     pub midi: Vec<midi::MidiMapping>,
 }

@@ -4,6 +4,7 @@ use crate::project::TriggerTarget;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[derive(facet::Facet)]
+#[facet(deny_unknown_fields)]
 pub struct MidiMapping {
     pub device_name: String,
 

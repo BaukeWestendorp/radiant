@@ -19,6 +19,8 @@ mod port;
 
 pub use config::*;
 
+const ART_POLL_REPLY_TIMEOUT: Duration = Duration::from_secs(3);
+
 pub struct Node {
     _inner: Arc<Inner>,
     stop_tx: Option<flume::Sender<()>>,
@@ -32,21 +34,14 @@ impl Node {
         log::info!("Initializing Art-Net Node...");
 
         let network_details = NetworkDetails::try_from(config.network_config().clone())?;
-        let listen_ip = if network_details.ip.is_loopback() {
-            network_details.ip
-        } else {
-            Ipv4Addr::UNSPECIFIED
-        };
 
-        let addr = SocketAddrV4::new(listen_ip, crate::PORT);
+        let addr = SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, crate::PORT);
         log::debug!("Creating UDP socket bound to target address: {}", addr);
-
         let socket = socket2::Socket::new(
             socket2::Domain::IPV4,
             socket2::Type::DGRAM,
             Some(socket2::Protocol::UDP),
         )?;
-
         socket.set_reuse_address(true)?;
         #[cfg(not(windows))]
         socket.set_reuse_port(true)?;
@@ -163,14 +158,18 @@ impl Inner {
     }
 
     pub fn broadcast_packet(&self, payload: impl Into<PacketPayload>) -> crate::Result<()> {
-        let ip_octets = self.network_details.ip.octets();
-        let mask_octets = self.network_details.mask.octets();
-        let broadcast_ip = Ipv4Addr::new(
-            ip_octets[0] | !mask_octets[0],
-            ip_octets[1] | !mask_octets[1],
-            ip_octets[2] | !mask_octets[2],
-            ip_octets[3] | !mask_octets[3],
-        );
+        let broadcast_ip = if self.network_details.ip.is_loopback() {
+            self.network_details.ip
+        } else {
+            let ip_octets = self.network_details.ip.octets();
+            let mask_octets = self.network_details.mask.octets();
+            Ipv4Addr::new(
+                ip_octets[0] | !mask_octets[0],
+                ip_octets[1] | !mask_octets[1],
+                ip_octets[2] | !mask_octets[2],
+                ip_octets[3] | !mask_octets[3],
+            )
+        };
 
         log::trace!("Broadcast IP: {}", broadcast_ip);
         self.send_packet(payload, broadcast_ip)
@@ -311,7 +310,7 @@ fn start_receiver(inner: Arc<Inner>, stop_rx: flume::Receiver<()>) -> JoinHandle
             };
 
             if let Err(err) = handle_packet(&inner, packet, source_ip) {
-                log::error!("Failed to handle packet from {}: {err:#}", source);
+                log::error!("Failed to handle packet from {}: {err:#}", source_ip);
             }
         }
 
@@ -322,15 +321,16 @@ fn start_receiver(inner: Arc<Inner>, stop_rx: flume::Receiver<()>) -> JoinHandle
 fn handle_packet(inner: &Arc<Inner>, packet: Packet, source_ip: Ipv4Addr) -> crate::Result<()> {
     match packet.payload {
         PacketPayload::ArtPoll(_) => {
-            log::debug!("Handling incoming ArtPoll");
+            log::debug!("Handling incoming ArtPoll from {}", source_ip);
 
             // FIXME: Art-Net 4 specifies Targeted Mode (Flags bit 5).
             // If enabled, we must check if any of our ports fall between
             // TargetPortAddress Top and Bottom before responding.
 
             let state = inner.state.lock().unwrap().clone();
+            let reply_strategy = inner.config.poll_reply_strategy();
 
-            let unicast_reply = |bound_node: &BoundNodeConfig| -> crate::Result<()> {
+            let send_reply = |bound_node: &BoundNodeConfig| -> crate::Result<()> {
                 let mut reply = ArtPollReply::new();
                 reply.set_ip_address(inner.network_details.ip);
                 reply.set_vers_info(inner.config.version_info());
@@ -357,8 +357,8 @@ fn handle_packet(inner: &Arc<Inner>, packet: Packet, source_ip: Ipv4Addr) -> cra
                                 // NOTE: Yes, this is correct. The input and output are reversed here, as they
                                 // represent rd-artnet INPUT ONTO the Art-Net network and getting OUTPUT FROM
                                 // the Art-Net network.
-                                .with_can_input_artnet(port.output().is_some())
-                                .with_can_output_artnet(port.input().is_some())
+                                .with_can_input_from_artnet(port.output().is_some())
+                                .with_can_output_from_artnet(port.input().is_some())
                                 // NOTE: This always should be DMX512, as our DMX provider only allows for updating a simple
                                 // DMX Universe with 512 channels and not via any other protocols.
                                 .with_protocol(PortProtocol::Dmx512);
@@ -396,8 +396,8 @@ fn handle_packet(inner: &Arc<Inner>, packet: Packet, source_ip: Ipv4Addr) -> cra
                         }
                         None => {
                             reply.port_types_mut()[ix] = PortType::new()
-                                .with_can_input_artnet(false)
-                                .with_can_output_artnet(false)
+                                .with_can_input_from_artnet(false)
+                                .with_can_output_from_artnet(false)
                                 .with_protocol(PortProtocol::Dmx512);
                             reply.good_input_mut()[ix] = GoodInput::new();
                             reply.good_output_a_mut()[ix] = GoodOutputA::new();
@@ -438,21 +438,31 @@ fn handle_packet(inner: &Arc<Inner>, packet: Packet, source_ip: Ipv4Addr) -> cra
                 reply.set_refresh_rate(bound_node.frame_scheduler().refresh_rate());
                 *reply.bg_queue_policy_mut() = bound_node.bg_queue_policy();
 
-                log::debug!(
-                    "Unicasting ArtPollReply for bound node with index {} to {}",
-                    bound_node.bind_index(),
-                    source_ip
-                );
-
-                inner.send_packet(reply, source_ip)?;
+                match reply_strategy {
+                    PollReplyStrategy::Unicast => {
+                        log::debug!(
+                            "Unicasting ArtPollReply for bound node with index {} to {}",
+                            bound_node.bind_index(),
+                            source_ip
+                        );
+                        inner.send_packet(reply, source_ip)?;
+                    }
+                    PollReplyStrategy::Broadcast => {
+                        log::debug!(
+                            "Broadcasting ArtPollReply for bound node with index {} (compatibility mode)",
+                            bound_node.bind_index()
+                        );
+                        inner.broadcast_packet(reply)?;
+                    }
+                }
 
                 Ok(())
             };
 
-            unicast_reply(inner.config.bound_node_config())?;
+            send_reply(inner.config.bound_node_config())?;
 
             for bound_node in inner.config.bound_nodes() {
-                unicast_reply(bound_node)?;
+                send_reply(bound_node)?;
             }
         }
         PacketPayload::ArtPollReply(art_poll_reply) => {
@@ -532,14 +542,21 @@ impl NodeRegistry {
     pub fn update(&mut self, reply: ArtPollReply) {
         let key = (*reply.ip_address(), reply.bind_index());
 
+        if !self.nodes.contains_key(&key) {
+            log::info!(
+                "Discovered new Art-Net node: {} (Bind Index: {})",
+                reply.ip_address(),
+                reply.bind_index()
+            );
+        }
+
         self.nodes.insert(key, RegisteredNode { reply, last_seen: Instant::now() });
     }
 
     pub fn get_subscribers(&mut self, port_address: PortAddress) -> Vec<Ipv4Addr> {
         let now = Instant::now();
-        let timeout = Duration::from_secs(3);
 
-        self.nodes.retain(|_, node| now.duration_since(node.last_seen) < timeout);
+        self.nodes.retain(|_, node| now.duration_since(node.last_seen) < ART_POLL_REPLY_TIMEOUT);
 
         let mut subscribers = Vec::new();
 
@@ -551,9 +568,9 @@ impl NodeRegistry {
                 let mut is_subscribed = false;
 
                 for (i, port_type) in node.reply.port_types().iter().enumerate() {
-                    let sw_out_match = port_type.can_output_artnet()
+                    let sw_out_match = port_type.can_input_from_artnet()
                         && node.reply.sw_out()[i] == port_address.universe();
-                    let sw_in_match = port_type.can_input_artnet()
+                    let sw_in_match = port_type.can_output_from_artnet()
                         && node.reply.sw_in()[i] == port_address.universe();
 
                     if sw_out_match || sw_in_match {
@@ -630,10 +647,11 @@ impl TryFrom<NodeNetworkConfig> for NetworkDetails {
                 {
                     Some(mac) => mac,
                     None => {
-                        return Err(crate::Error::Network(format!(
-                            "Failed to retrieve MAC address for interface '{}'.",
+                        log::warn!(
+                            "Failed to retrieve MAC address for interface '{}'. Defaulting to zeroed MAC address",
                             iface.name
-                        )));
+                        );
+                        [0x00; 6]
                     }
                 };
 
