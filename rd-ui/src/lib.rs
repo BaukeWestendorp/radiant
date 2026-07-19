@@ -25,8 +25,6 @@ mod util;
 mod element_ext;
 mod styled_ext;
 
-pub(crate) mod feature;
-
 pub use asset::Assets;
 pub use binding::Binding;
 pub use button::Button;
@@ -56,9 +54,5 @@ pub use util::{todo, z_stack};
 
 pub use element_ext::ElementExt;
 pub use styled_ext::{StyledExt, h_flex, v_flex};
-
-pub use feature::config::ConfigAppExt;
-
-pub use ::config;
 
 pub use ::gpui;

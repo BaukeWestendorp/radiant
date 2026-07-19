@@ -32,7 +32,6 @@ pub mod simple {
         window_size: Size<Pixels>,
         title_bar_content: Option<Box<dyn FnOnce(&mut Window, &mut App) -> AnyView>>,
         activate: bool,
-        config: Option<config::Config>,
     }
 
     impl Default for SimpleAppBuilder {
@@ -42,7 +41,6 @@ pub mod simple {
                 window_size: size(px(1080.0), px(720.0)),
                 title_bar_content: None,
                 activate: true,
-                config: None,
             }
         }
     }
@@ -75,11 +73,6 @@ pub mod simple {
             self
         }
 
-        pub fn config(mut self, config: config::Config) -> Self {
-            self.config = config.into();
-            self
-        }
-
         pub fn run<V>(
             self,
             build_content: impl FnOnce(&mut Window, &mut App) -> Entity<V> + 'static,
@@ -92,10 +85,6 @@ pub mod simple {
                 .run(move |cx: &mut App| {
                     crate::init(cx);
                     crate::keymap::default_keymap().apply(cx);
-
-                    if let Some(config) = self.config {
-                        crate::feature::config::init(config, cx);
-                    }
 
                     cx.set_menus([Menu::new("").items([MenuItem::action("Quit", action::Quit)])]);
 

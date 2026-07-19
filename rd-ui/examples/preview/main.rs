@@ -16,7 +16,7 @@ fn main() -> anyhow::Result<()> {
 mod app {
     use gpui::prelude::*;
     use gpui::{Entity, Window, div};
-    use rd_ui::{ConfigAppExt as _, Tab, Tabs, TabsState, TabsVariant};
+    use rd_ui::{Tab, Tabs, TabsState, TabsVariant};
 
     use crate::interactive::InteractivePreview;
     use crate::misc::MiscPreview;
@@ -30,16 +30,6 @@ mod app {
     pub fn run() -> anyhow::Result<()> {
         rd_ui::build_simple_app()
             .window_title("MaakUI Preview")
-            .config(
-                rd_ui::config::Config::builder()
-                    .add_source(rd_ui::config::File::from(
-                        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-                            .join("examples")
-                            .join("preview")
-                            .join("config.toml"),
-                    ))
-                    .build()?,
-            )
             .run(|window, cx| cx.new(|cx| PreviewApp::new(window, cx)));
 
         Ok(())
@@ -62,11 +52,7 @@ mod app {
     impl PreviewApp {
         fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
             Self {
-                tabs: cx.new(|cx| {
-                    let selected =
-                        cx.config().get_string("current_tab").unwrap_or("button".to_string());
-                    TabsState::new().with_selected(selected)
-                }),
+                tabs: cx.new(|_| TabsState::new().with_selected("button")),
 
                 tab_interactive: cx.new(|cx| InteractivePreview::new(window, cx)),
                 tab_tabs: cx.new(|cx| TabsPreview::new(window, cx)),

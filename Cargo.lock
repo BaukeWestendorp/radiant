@@ -1087,18 +1087,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "config"
-version = "0.15.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f316c6237b2d38be61949ecd15268a4c6ca32570079394a2444d9ce2c72a72d8"
-dependencies = [
- "pathdiff",
- "serde_core",
- "toml 1.1.2+spec-1.1.0",
- "winnow 1.0.3",
-]
-
-[[package]]
 name = "console_error_panic_hook"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4285,12 +4273,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "35fb2e5f958ec131621fdd531e9fc186ed768cbe395337403ae56c17a74c68ec"
 
 [[package]]
-name = "pathdiff"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df94ce210e5bc13cb6651479fa48d14f601d9858cfe0467f43ae157023b938d3"
-
-[[package]]
 name = "pathfinder_geometry"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4962,18 +4944,13 @@ name = "rd-ui"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "config",
- "facet",
  "gpui",
  "gpui_platform",
  "log",
  "pretty_env_logger",
  "regex",
- "serde",
  "smallvec 1.15.1",
- "toml 1.1.2+spec-1.1.0",
  "uuid",
- "xdg",
 ]
 
 [[package]]
@@ -7557,12 +7534,6 @@ dependencies = [
  "quick-xml 0.30.0",
  "x11",
 ]
-
-[[package]]
-name = "xdg"
-version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2fb433233f2df9344722454bc7e96465c9d03bff9d77c248f9e7523fe79585b5"
 
 [[package]]
 name = "xml-rs"
