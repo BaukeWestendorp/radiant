@@ -36,6 +36,8 @@ pub use grid::{dot_grid, line_grid, scrollable_line_grid};
 pub use icon::{Icon, IconSize, IconVariant};
 pub use init::init;
 pub use init::simple::build_simple_app;
+pub use input::INPUT_HEIGHT;
+pub use input::dropdown::{Dropdown, DropdownItem, DropdownState};
 pub use input::field::{Field, FieldEvent, FieldState, FieldValue};
 pub use input::number_field::{NumberField, NumberFieldState};
 pub use keymap::{Keymap, KeymapBinding};
