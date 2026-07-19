@@ -1,19 +1,23 @@
 use gpui::{Entity, Window, div, prelude::*};
+use rd::Project;
 use rd_ui::{Tab, Tabs, TabsState, TabsVariant};
 
 mod midi;
 
 pub struct TriggersTabView {
     tabs: Entity<TabsState>,
-
     midi_tab: Entity<midi::MidiTabView>,
 }
 
 impl TriggersTabView {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(
+        uncommitted_project: Entity<Project>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
         Self {
             tabs: cx.new(|_| TabsState::new().with_selected("midi")),
-            midi_tab: cx.new(|cx| midi::MidiTabView::new(window, cx)),
+            midi_tab: cx.new(|cx| midi::MidiTabView::new(uncommitted_project.clone(), window, cx)),
         }
     }
 }

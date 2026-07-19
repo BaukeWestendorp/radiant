@@ -2,7 +2,7 @@
   "artnet": {
     "network": {
       "type": "Interface",
-      "name": "en0"
+      "name": "en6"
     },
     "instances": [
       {

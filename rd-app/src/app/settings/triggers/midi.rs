@@ -1,5 +1,6 @@
 use gpui::{App, Entity, Window, div, prelude::*, px};
 
+use rd::Project;
 use rd_ui::{Column, Table, TableDelegate, TableSelection, TableState};
 use uuid::Uuid;
 
@@ -10,11 +11,15 @@ pub struct MidiTabView {
 }
 
 impl MidiTabView {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(
+        uncommitted_project: Entity<Project>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
         Self {
             table: cx.new(|cx| {
                 TableState::new(
-                    MidiMappingTable::new(window, cx),
+                    MidiMappingTable::new(uncommitted_project, window, cx),
                     cx.new(|_| TableSelection::Multiple(Vec::new())),
                     window,
                     cx,
@@ -34,35 +39,55 @@ struct MidiMappingTable {
     columns: Vec<Column>,
 
     mappings: Vec<(Uuid, rd::project::midi::MidiMapping)>,
+
+    uncommitted_project: Entity<Project>,
 }
 
 impl MidiMappingTable {
-    fn new(window: &mut Window, cx: &mut Context<TableState<Self>>) -> Self {
-        let mut mappings = cx.engine().with_project(|project| {
-            project
-                .trigger
-                .midi
-                .iter()
-                .map(|mapping| (Uuid::new_v4(), mapping.clone()))
-                .collect::<Vec<_>>()
-        });
+    fn new(
+        uncommitted_project: Entity<Project>,
+        window: &mut Window,
+        cx: &mut Context<TableState<Self>>,
+    ) -> Self {
+        let mut mappings = uncommitted_project
+            .read(cx)
+            .trigger
+            .midi
+            .iter()
+            .map(|mapping| (Uuid::new_v4(), mapping.clone()))
+            .collect::<Vec<_>>();
         mappings.sort_by(|(_, a), (_, b)| a.device_name.cmp(&b.device_name));
 
         let this = cx.entity();
-        cx.on_engine_event_in(window, move |event, window, cx| match event {
-            rd::Event::ProjectLoaded => {
-                cx.update_entity(&this, |this, cx| {
-                    this.clear_selection(cx);
-                    *this = TableState::new(
-                        MidiMappingTable::new(window, cx),
-                        this.selection(),
-                        window,
-                        cx,
-                    );
-                    cx.notify();
-                });
+        cx.on_engine_event_in(window, {
+            let uncommitted_project = uncommitted_project.clone();
+            move |event, window, cx| match event {
+                rd::Event::ProjectLoaded => {
+                    cx.update_entity(&this, |this, cx| {
+                        this.clear_selection(cx);
+                        *this = TableState::new(
+                            MidiMappingTable::new(uncommitted_project.clone(), window, cx),
+                            this.selection(),
+                            window,
+                            cx,
+                        );
+                        cx.notify();
+                    });
+                }
+                _ => {}
             }
-            _ => {}
+        })
+        .detach();
+
+        cx.observe_in(&uncommitted_project, window, move |this, project, window, cx| {
+            this.clear_selection(cx);
+            *this = TableState::new(
+                MidiMappingTable::new(project.clone(), window, cx),
+                this.selection(),
+                window,
+                cx,
+            );
+            cx.notify();
         })
         .detach();
 
@@ -79,6 +104,7 @@ impl MidiMappingTable {
                 Column::new("target", "Target").with_min_width(px(200.0)),
             ],
             mappings,
+            uncommitted_project,
         }
     }
 }
@@ -111,11 +137,10 @@ impl TableDelegate for MidiMappingTable {
             })
             .collect::<Vec<_>>();
 
-        if let Err(err) = cx.update_project(|project, _cx| {
+        self.uncommitted_project.update(cx, |project, cx| {
             project.trigger.midi = mappings;
-        }) {
-            log::error!("Failed to update project: {err:#}");
-        }
+            cx.notify();
+        });
     }
 
     fn render_cell(
