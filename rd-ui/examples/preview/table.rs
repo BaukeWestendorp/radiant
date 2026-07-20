@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use gpui::prelude::*;
-use gpui::{App, Entity, Window, div};
+use gpui::{Entity, Window, div};
 use rd_ui::{ActiveTheme, Column, Table, TableDelegate, TableSelection, TableState, section};
 
 pub struct TablePreview {
@@ -17,18 +17,18 @@ impl TablePreview {
         Self {
             table_a: cx.new(|cx| {
                 let delegate = PreviewTableDelegate::new();
-                TableState::new(delegate, selection_a, window, cx)
+                TableState::new(delegate, window, cx).with_selection(selection_a)
             }),
             table_b: cx.new(|cx| {
                 let delegate = PreviewTableDelegate::new();
-                TableState::new(delegate, selection_b, window, cx)
+                TableState::new(delegate, window, cx).with_selection(selection_b)
             }),
         }
     }
 }
 
 impl Render for TablePreview {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .size_full()
             .flex()
@@ -36,21 +36,21 @@ impl Render for TablePreview {
             .gap_2()
             .p_2()
             .child(
-                section("Table Full").w_full().h_24().child(
+                section("Table Full").w_full().h_48().child(
                     div()
                         .size_full()
                         .border_1()
                         .border_color(cx.theme().border_primary)
-                        .child(Table::new(self.table_a.clone())),
+                        .child(Table::new("table-full", self.table_a.clone(), window, cx)),
                 ),
             )
             .child(
-                section("Table Small").w_48().h_24().child(
+                section("Table Small").w_48().h_48().child(
                     div()
                         .size_full()
                         .border_1()
                         .border_color(cx.theme().border_primary)
-                        .child(Table::new(self.table_b.clone())),
+                        .child(Table::new("table-small", self.table_b.clone(), window, cx)),
                 ),
             )
     }
@@ -59,7 +59,7 @@ impl Render for TablePreview {
 struct PreviewTableDelegate {
     items: HashMap<String, Item>,
 
-    columns: Vec<Column>,
+    columns: Vec<Column<Self>>,
 }
 
 impl PreviewTableDelegate {
@@ -74,9 +74,32 @@ impl PreviewTableDelegate {
                 ("row-006".into(), Item { alpha: 13, beta: "thirteen", gamma: 2.1 }),
             ]),
             columns: vec![
-                Column::new("alpha", "Alpha"),
-                Column::new("beta", "Beta"),
-                Column::new("gamma", "Gamma"),
+                Column::new("alpha", "Alpha")
+                    .with_cell_builder(|row: &Item, _window, _cx| {
+                        row.alpha.to_string().into_any_element()
+                    })
+                    .with_edit_handler(|_rows| {
+                        todo!();
+                    })
+                    .with_sort_handler(|a: &Item, b: &Item| a.alpha.cmp(&b.alpha)),
+                Column::new("beta", "Beta")
+                    .with_cell_builder(|row: &Item, _window, _cx| {
+                        row.beta.to_string().into_any_element()
+                    })
+                    .with_edit_handler(|_rows| {
+                        todo!();
+                    })
+                    .with_sort_handler(|a: &Item, b: &Item| a.beta.cmp(&b.beta)),
+                Column::new("gamma", "Gamma")
+                    .with_cell_builder(|row: &Item, _window, _cx| {
+                        row.gamma.to_string().into_any_element()
+                    })
+                    .with_edit_handler(|_rows| {
+                        todo!();
+                    })
+                    .with_sort_handler(|a: &Item, b: &Item| {
+                        a.gamma.partial_cmp(&b.gamma).unwrap_or(std::cmp::Ordering::Equal)
+                    }),
             ],
         }
     }
@@ -84,35 +107,14 @@ impl PreviewTableDelegate {
 
 impl TableDelegate for PreviewTableDelegate {
     type RowId = String;
+    type Row = Item;
 
-    fn root_row_ids(&self, _cx: &App) -> Vec<Self::RowId> {
-        self.items.keys().cloned().collect()
+    fn columns(&self) -> &[Column<Self>] {
+        &self.columns
     }
 
-    fn column_count(&self, _cx: &App) -> usize {
-        self.columns.len()
-    }
-
-    fn column(&self, col_ix: usize, _cx: &App) -> &Column {
-        &self.columns[col_ix]
-    }
-
-    fn render_cell(
-        &self,
-        row_id: &Self::RowId,
-        col_ix: usize,
-        _window: &mut Window,
-        cx: &App,
-    ) -> impl IntoElement {
-        let item = self.items.get(row_id).expect("should have item");
-        let content = match self.column(col_ix, cx).id().as_str() {
-            "alpha" => item.alpha.to_string().into_any_element(),
-            "beta" => item.beta.to_string().into_any_element(),
-            "gamma" => item.gamma.to_string().into_any_element(),
-            _ => gpui::Empty.into_any_element(),
-        };
-
-        div().px_1().child(content)
+    fn rows(&self) -> impl IntoIterator<Item = &Self::Row> {
+        self.items.values()
     }
 }
 
