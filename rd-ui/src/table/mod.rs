@@ -1,7 +1,4 @@
-use gpui::{
-    App, ElementId, Entity, FontWeight, Pixels, Window, accesskit::SortDirection, div, prelude::*,
-    px,
-};
+use gpui::{App, ElementId, Entity, FontWeight, Pixels, Window, div, prelude::*, px};
 
 mod column;
 mod delegate;
@@ -11,9 +8,7 @@ pub use column::*;
 pub use delegate::*;
 pub use state::*;
 
-use crate::{
-    ActiveTheme, Button, Icon, IconSize, IconVariant, ScrollableState, h_flex, todo, v_flex,
-};
+use crate::{ActiveTheme, Button, Icon, IconSize, IconVariant, h_flex, todo, v_flex};
 
 const ROW_HEIGHT: Pixels = px(24.0);
 
@@ -29,7 +24,7 @@ impl<D: TableDelegate> Table<D> {
         id: impl Into<ElementId>,
         state: Entity<TableState<D>>,
         _window: &mut Window,
-        cx: &mut App,
+        _cx: &mut App,
     ) -> Self {
         Self { id: id.into(), state }
     }

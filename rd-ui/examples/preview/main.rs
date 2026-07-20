@@ -52,7 +52,7 @@ mod app {
     impl PreviewApp {
         fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
             Self {
-                tabs: cx.new(|_| TabsState::new().with_selected("button")),
+                tabs: cx.new(|_| TabsState::new().with_selected("table")),
 
                 tab_interactive: cx.new(|cx| InteractivePreview::new(window, cx)),
                 tab_tabs: cx.new(|cx| TabsPreview::new(window, cx)),

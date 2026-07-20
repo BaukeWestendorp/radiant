@@ -4,18 +4,22 @@ use crate::TableDelegate;
 
 pub struct TableState<D: TableDelegate> {
     delegate: D,
+
     selection: Entity<TableSelection<D>>,
+
     sorted_column: Option<(String, TableSortDirection)>,
-    cached_order: Option<Vec<usize>>,
+    cached_row_order: Option<Vec<usize>>,
 }
 
 impl<D: TableDelegate + 'static> TableState<D> {
     pub fn new(delegate: D, _window: &mut Window, cx: &mut Context<Self>) -> Self {
         Self {
             delegate,
+
             selection: cx.new(|_| TableSelection::Multiple(Vec::new())),
+
             sorted_column: None,
-            cached_order: None,
+            cached_row_order: None,
         }
     }
 
@@ -43,7 +47,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
     pub fn sorted_rows(&self) -> Vec<&D::Row> {
         let rows = self.delegate.rows().into_iter().collect::<Vec<_>>();
 
-        if let Some(order) = &self.cached_order {
+        if let Some(order) = &self.cached_row_order {
             if order.len() == rows.len() {
                 return order.iter().map(|i| rows[*i]).collect();
             }
@@ -57,19 +61,24 @@ impl<D: TableDelegate + 'static> TableState<D> {
         self.update_sort_cache();
     }
 
-    pub fn update_sort_cache(&mut self) {
+    pub fn clear_sort(&mut self) {
+        self.sorted_column = None;
+        self.cached_row_order = None;
+    }
+
+    fn update_sort_cache(&mut self) {
         let Some((col_id, direction)) = &self.sorted_column else {
-            self.cached_order = None;
+            self.cached_row_order = None;
             return;
         };
 
         let Some(column) = self.delegate.columns().iter().find(|c| c.id() == col_id) else {
-            self.cached_order = None;
+            self.cached_row_order = None;
             return;
         };
 
         let Some(sort_handler) = &column.sort_handler else {
-            self.cached_order = None;
+            self.cached_row_order = None;
             return;
         };
 
@@ -83,7 +92,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
             }
         });
 
-        self.cached_order = Some(indexed_rows.into_iter().map(|(i, _)| i).collect());
+        self.cached_row_order = Some(indexed_rows.into_iter().map(|(i, _)| i).collect());
     }
 }
 
