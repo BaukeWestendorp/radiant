@@ -59,10 +59,9 @@ impl<D: TableDelegate> Table<D> {
         let is_active_sort = state.sorted_column() == Some(column.id());
 
         let sort_icon = match (is_active_sort, state.sort_direction()) {
-            (true, None) => IconVariant::ArrowDown,
-            (true, Some(TableSortDirection::Ascending)) => IconVariant::ArrowDown,
-            (true, Some(TableSortDirection::Descending)) => IconVariant::ArrowUp,
-            _ => IconVariant::ArrowDown,
+            (true, Some(TableSortDirection::Ascending)) => IconVariant::ArrowDownAZ,
+            (true, Some(TableSortDirection::Descending)) => IconVariant::ArrowUpZA,
+            _ => IconVariant::ArrowDownUp,
         };
 
         h_flex()
