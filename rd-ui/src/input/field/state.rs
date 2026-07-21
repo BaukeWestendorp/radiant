@@ -1,11 +1,10 @@
-use gpui::{App, ElementId, Entity, FocusHandle, Focusable, SharedString, Window, prelude::*};
+use gpui::{
+    App, ElementId, Entity, EventEmitter, FocusHandle, Focusable, SharedString, Window, prelude::*,
+};
 
 use crate::{
-    FieldEvent,
-    input::{
-        field::FieldValue,
-        text_input::{TextInput, TextInputEvent},
-    },
+    Field, Input, InputEvent, InputState,
+    input::{field::FieldValue, text_input::TextInput},
 };
 
 pub struct FieldState<T: FieldValue> {
@@ -36,24 +35,24 @@ impl<T: FieldValue + 'static> FieldState<T> {
         });
 
         cx.subscribe(&text_input, |this, _, event, cx| {
-            cx.notify();
             match event {
-                TextInputEvent::Focus => cx.emit(FieldEvent::Focus),
-                TextInputEvent::Blur => {
+                InputEvent::Focus => cx.emit(InputEvent::Focus),
+                InputEvent::Blur => {
                     this.commit_value(cx);
-                    cx.emit(FieldEvent::Blur);
+                    cx.emit(InputEvent::Blur);
                 }
-                TextInputEvent::Submit(s) => {
+                InputEvent::Submit(s) => {
                     if let Some(v) = FieldValue::from_str(s) {
-                        cx.emit(FieldEvent::Submit(v))
+                        cx.emit(InputEvent::Submit(v))
                     }
                 }
-                TextInputEvent::Change(s) => {
+                InputEvent::Change(s) => {
                     if let Some(v) = FieldValue::from_str(s) {
-                        cx.emit(FieldEvent::Change(v))
+                        cx.emit(InputEvent::Change(v))
                     }
                 }
             }
+            cx.notify();
         })
         .detach();
 
@@ -146,3 +145,18 @@ impl<T: FieldValue + 'static> FieldState<T> {
         self
     }
 }
+
+impl<T: Clone + FieldValue + 'static> InputState for FieldState<T> {
+    type Value = T;
+    type Element = Field<T>;
+
+    fn new_element(
+        this: Entity<Input<Self>>,
+        _window: &mut Window,
+        _cx: &mut App,
+    ) -> Self::Element {
+        Field::new(this)
+    }
+}
+
+impl<T: FieldValue + 'static> EventEmitter<InputEvent<T>> for FieldState<T> {}

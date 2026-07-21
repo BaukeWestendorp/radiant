@@ -27,6 +27,11 @@ impl<D: TableDelegate + 'static> TableState<D> {
         &self.delegate
     }
 
+    pub fn delegate_mut(&mut self) -> &mut D {
+        self.cached_row_order = None;
+        &mut self.delegate
+    }
+
     pub fn selection(&self) -> &Entity<TableSelection<D>> {
         &self.selection
     }
@@ -44,12 +49,26 @@ impl<D: TableDelegate + 'static> TableState<D> {
         self.sorted_column.as_ref().map(|(_, direction)| *direction)
     }
 
-    pub fn sorted_rows(&self) -> Vec<&D::Row> {
-        let rows = self.delegate.rows().into_iter().collect::<Vec<_>>();
+    pub fn sorted_rows(&self) -> Vec<(&D::RowId, &D::Row)> {
+        let mut rows = self.delegate.rows().into_iter().collect::<Vec<_>>();
 
         if let Some(order) = &self.cached_row_order {
             if order.len() == rows.len() {
                 return order.iter().map(|i| rows[*i]).collect();
+            }
+        }
+
+        if let Some((col_id, direction)) = &self.sorted_column {
+            if let Some(column) = self.delegate.columns().iter().find(|c| c.id() == col_id) {
+                if let Some(sort_handler) = &column.sort_handler {
+                    rows.sort_by(|(_, a), (_, b)| {
+                        let cmp = sort_handler(a, b);
+                        match direction {
+                            TableSortDirection::Ascending => cmp,
+                            TableSortDirection::Descending => cmp.reverse(),
+                        }
+                    });
+                }
             }
         }
 
@@ -66,7 +85,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
         self.cached_row_order = None;
     }
 
-    fn update_sort_cache(&mut self) {
+    pub fn update_sort_cache(&mut self) {
         let Some((col_id, direction)) = &self.sorted_column else {
             self.cached_row_order = None;
             return;
@@ -84,8 +103,8 @@ impl<D: TableDelegate + 'static> TableState<D> {
 
         let mut indexed_rows: Vec<_> = self.delegate.rows().into_iter().enumerate().collect();
 
-        indexed_rows.sort_by(|(_, a), (_, b)| {
-            let cmp = sort_handler(*a, *b);
+        indexed_rows.sort_by(|(_, (_, a)), (_, (_, b))| {
+            let cmp = sort_handler(a, b);
             match direction {
                 TableSortDirection::Ascending => cmp,
                 TableSortDirection::Descending => cmp.reverse(),

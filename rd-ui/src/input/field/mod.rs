@@ -1,27 +1,27 @@
 use gpui::{App, Entity, FocusHandle, Focusable, Window, prelude::*};
 
-mod event;
 mod state;
 mod value;
 
-pub use event::*;
 pub use state::*;
 pub use value::*;
 
+use crate::Input;
+
 #[derive(IntoElement)]
 pub struct Field<T: FieldValue + 'static> {
-    state: Entity<FieldState<T>>,
+    state: Entity<Input<FieldState<T>>>,
 }
 
 impl<T: FieldValue + 'static> Field<T> {
-    pub fn new(state: Entity<FieldState<T>>) -> Self {
+    pub fn new(state: Entity<Input<FieldState<T>>>) -> Self {
         Self { state }
     }
 }
 
 impl<T: FieldValue + 'static> Focusable for Field<T> {
     fn focus_handle(&self, cx: &App) -> FocusHandle {
-        self.state.read(cx).text_input.focus_handle(cx)
+        self.state.read(cx).state().read(cx).text_input.focus_handle(cx)
     }
 }
 

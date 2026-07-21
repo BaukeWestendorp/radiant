@@ -8,6 +8,8 @@ use gpui::{
 };
 use std::ops::Range;
 
+use crate::InputEvent;
+
 mod blink;
 mod element;
 
@@ -112,7 +114,7 @@ impl TextInput {
         }
 
         self.text = text;
-        cx.emit(TextInputEvent::Change(self.text.clone()));
+        cx.emit(InputEvent::Change(self.text.clone()));
         cx.notify();
     }
 
@@ -615,8 +617,10 @@ impl TextInput {
     }
 
     fn handle_submit(&mut self, _: &action::Submit, window: &mut Window, cx: &mut Context<Self>) {
-        window.blur();
-        cx.emit(TextInputEvent::Submit(self.text.clone()));
+        cx.emit(InputEvent::Submit(self.text.clone()));
+        window.defer(cx, |window, _cx| {
+            window.blur();
+        });
     }
 
     fn handle_mouse_down(
@@ -689,7 +693,7 @@ impl TextInput {
                 blink_cursor.start(cx);
             });
         }
-        cx.emit(TextInputEvent::Focus);
+        cx.emit(InputEvent::Focus);
     }
 
     fn handle_blur(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
@@ -703,7 +707,7 @@ impl TextInput {
         self.blink_cursor.update(cx, |blink_cursor, cx| {
             blink_cursor.stop(cx);
         });
-        cx.emit(TextInputEvent::Blur);
+        cx.emit(InputEvent::Blur);
     }
 }
 
@@ -859,12 +863,4 @@ impl Focusable for TextInput {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum TextInputEvent {
-    Focus,
-    Blur,
-    Submit(SharedString),
-    Change(SharedString),
-}
-
-impl EventEmitter<TextInputEvent> for TextInput {}
+impl EventEmitter<InputEvent<SharedString>> for TextInput {}

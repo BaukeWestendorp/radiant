@@ -5,7 +5,7 @@ use gpui::{
     IntoElement, ReadGlobal, SharedString, Styled, Window, div, hsla, point, prelude::*, px,
 };
 
-use crate::{ActiveTheme, Button, Field, FieldEvent, FieldState, h_flex, v_flex};
+use crate::{ActiveTheme, Button, Input, InputEvent, InputState, h_flex, v_flex};
 
 pub(crate) fn init(cx: &mut App) {
     let popup_stacks = cx.new(|_| HashMap::new());
@@ -81,33 +81,43 @@ pub struct Popup {
 }
 
 impl Popup {
-    pub fn yes_no(title: impl Into<SharedString>) -> Self {
-        Self { title: title.into(), kind: PopupKind::YesNo }
-    }
-
     pub fn message(title: impl Into<SharedString>, message: impl Into<SharedString>) -> Self {
         Self { title: title.into(), kind: PopupKind::Message { message: message.into() } }
     }
 
-    pub fn text(
+    pub fn input<S: InputState + 'static>(
         title: impl Into<SharedString>,
-        field: Entity<FieldState<SharedString>>,
+        input: Entity<Input<S>>,
         window: &mut Window,
         cx: &mut App,
+        on_submit: impl FnOnce(&S::Value, &mut App) + 'static,
     ) -> Self {
-        field.focus_handle(cx).focus(window, cx);
+        window.defer(cx, {
+            let input = input.clone();
+            move |window, cx| {
+                input.focus_handle(cx).focus(window, cx);
+            }
+        });
 
+        let mut on_submit = Some(on_submit);
         window
-            .subscribe(&field, cx, |_, event, window, cx| match event {
-                FieldEvent::Submit(_) => cx.close_popup(window),
+            .subscribe(&input, cx, move |_, event, window, cx| match event {
+                InputEvent::Submit(value) => {
+                    if let Some(on_submit) = on_submit.take() {
+                        on_submit(value, cx);
+                        cx.close_popup(window);
+                    }
+                }
                 _ => {}
             })
             .detach();
 
-        Self { title: title.into(), kind: PopupKind::Text { field } }
+        let wrapper = cx.new(|_| InputPopup { input: input.clone() });
+
+        Self { title: title.into(), kind: PopupKind::Input { input: wrapper.into() } }
     }
 
-    pub fn custom(content: impl Into<AnyView>, title: impl Into<SharedString>) -> Self {
+    pub fn custom(title: impl Into<SharedString>, content: impl Into<AnyView>) -> Self {
         Self { title: title.into(), kind: PopupKind::Custom { content: content.into() } }
     }
 
@@ -117,9 +127,8 @@ impl Popup {
 }
 
 pub enum PopupKind {
-    YesNo,
     Message { message: SharedString },
-    Text { field: Entity<FieldState<SharedString>> },
+    Input { input: AnyView },
     Custom { content: AnyView },
 }
 
@@ -147,7 +156,6 @@ impl Render for Popup {
             .border_color(cx.theme().border_primary)
             .rounded_b(cx.theme().radius)
             .child(match &self.kind {
-                PopupKind::YesNo => todo!(),
                 PopupKind::Message { message } => v_flex()
                     .size_full()
                     .items_center()
@@ -166,14 +174,7 @@ impl Render for Popup {
                             .on_click(|_, window, cx| cx.close_popup(window)),
                     )
                     .into_any_element(),
-                PopupKind::Text { field: input } => div()
-                    .flex()
-                    .justify_center()
-                    .items_center()
-                    .size_full()
-                    .p_2()
-                    .child(div().w_full().child(Field::new(input.clone())))
-                    .into_any_element(),
+                PopupKind::Input { input } => input.clone().into_any_element(),
                 PopupKind::Custom { content } => content.clone().into_any_element(),
             });
 
@@ -193,5 +194,21 @@ impl Render for Popup {
             })
             .child(header)
             .child(content)
+    }
+}
+
+struct InputPopup<S: InputState> {
+    input: Entity<Input<S>>,
+}
+
+impl<S: InputState + 'static> Render for InputPopup<S> {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        div()
+            .flex()
+            .justify_center()
+            .items_center()
+            .size_full()
+            .p_2()
+            .child(div().w_full().child(S::new_element(self.input.clone(), window, cx)))
     }
 }

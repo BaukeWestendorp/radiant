@@ -2,7 +2,7 @@ use gpui::{App, ElementId, Focusable, SharedString, Window, div, prelude::*};
 
 use crate::{Field, interactive_container};
 
-pub trait FieldValue {
+pub trait FieldValue: Clone {
     fn from_str(s: &str) -> Option<Self>
     where
         Self: Sized;
@@ -22,8 +22,8 @@ pub trait FieldValue {
         Self: Sized,
     {
         let id = ElementId::View(field.state.entity_id());
-        let focus_handle = field.state.read(cx).text_input.read(cx).focus_handle(cx);
-        let disabled = field.state.read(cx).disabled(cx);
+        let focus_handle = field.focus_handle(cx);
+        let disabled = field.state.read(cx).state().read(cx).disabled(cx);
 
         let overlay = Self::render_overlay(window, cx).map(|e| e.into_any_element());
 
@@ -31,43 +31,88 @@ pub trait FieldValue {
             .relative()
             .w_full()
             .disabled(disabled)
-            .child(div().size_full().px_1().py_0p5().child(field.state.read(cx).text_input.clone()))
+            .child(
+                div()
+                    .size_full()
+                    .px_1()
+                    .py_0p5()
+                    .child(field.state.read(cx).state().read(cx).text_input.clone()),
+            )
             .when_some(overlay, |e, overlay| e.child(div().absolute().inset_0().child(overlay)))
     }
 }
 
-impl FieldValue for f64 {
-    fn from_str(s: &str) -> Option<Self> {
-        s.parse().ok()
-    }
+macro_rules! impl_field_value_parse {
+    ($($t:ty),*) => {
+        $(
+            impl FieldValue for $t {
+                fn from_str(s: &str) -> Option<Self> {
+                    s.parse().ok()
+                }
 
-    fn to_shared_string(&self) -> impl Into<SharedString> {
-        self.to_string()
-    }
+                fn to_shared_string(&self) -> impl Into<SharedString> {
+                    self.to_string()
+                }
 
-    fn validator(s: &str) -> bool {
-        s.parse::<f64>().is_ok()
-    }
+                fn validator(s: &str) -> bool {
+                    s.parse::<$t>().is_ok()
+                }
 
-    fn submit_validator(s: &str) -> bool {
-        s.parse::<f64>().is_ok()
-    }
+                fn submit_validator(s: &str) -> bool {
+                    s.parse::<$t>().is_ok()
+                }
+            }
+        )*
+    };
 }
 
-impl FieldValue for SharedString {
+impl_field_value_parse!(
+    f32, f64, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, bool
+);
+
+macro_rules! impl_field_value_string {
+    ($($t:ty),*) => {
+        $(
+            impl FieldValue for $t {
+                fn from_str(s: &str) -> Option<Self> {
+                    Some(s.into())
+                }
+
+                fn to_shared_string(&self) -> impl Into<SharedString> {
+                    self.clone()
+                }
+
+                fn validator(s: &str) -> bool {
+                    !s.trim().is_empty()
+                }
+
+                fn submit_validator(s: &str) -> bool {
+                    !s.trim().is_empty()
+                }
+            }
+        )*
+    };
+}
+
+impl_field_value_string!(SharedString, String);
+
+impl<T: FieldValue> FieldValue for Option<T> {
     fn from_str(s: &str) -> Option<Self> {
-        Some(s.into())
+        if s.trim().is_empty() { Some(None) } else { T::from_str(s).map(Some) }
     }
 
     fn to_shared_string(&self) -> impl Into<SharedString> {
-        self.clone()
+        match self {
+            Some(value) => value.to_shared_string().into(),
+            None => SharedString::default(),
+        }
     }
 
     fn validator(s: &str) -> bool {
-        !s.trim().is_empty()
+        if s.trim().is_empty() { true } else { T::validator(s) }
     }
 
     fn submit_validator(s: &str) -> bool {
-        !s.trim().is_empty()
+        if s.trim().is_empty() { true } else { T::submit_validator(s) }
     }
 }

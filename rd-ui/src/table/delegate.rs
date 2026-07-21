@@ -5,13 +5,28 @@ use crate::Column;
 pub trait TableDelegate {
     type Row;
 
-    type RowId: Hash + Eq;
+    type RowId: Clone + Hash + Eq;
 
     fn columns(&self) -> &[Column<Self>]
     where
         Self: Sized;
 
-    fn rows(&self) -> impl IntoIterator<Item = &Self::Row>
+    fn rows(&self) -> impl Iterator<Item = (&Self::RowId, &Self::Row)>
     where
         Self: Sized;
+
+    fn row(&self, row_id: &Self::RowId) -> Option<&Self::Row>
+    where
+        Self: Sized;
+
+    fn row_mut(&mut self, row_id: &Self::RowId) -> Option<&mut Self::Row>
+    where
+        Self: Sized;
+
+    fn row_ids(&self) -> impl Iterator<Item = &Self::RowId>
+    where
+        Self: Sized,
+    {
+        self.rows().map(|(row_id, _)| row_id)
+    }
 }

@@ -7,11 +7,10 @@ use gpui::{
 };
 use gpui::{canvas, prelude::*};
 
-use crate::FieldEvent;
 use crate::container::interactive_container;
-use crate::input::text_input::{TextInput, TextInputEvent};
+use crate::input::text_input::TextInput;
 use crate::theme::ActiveTheme;
-use crate::z_stack;
+use crate::{InputEvent, z_stack};
 
 pub struct NumberFieldState {
     id: ElementId,
@@ -51,20 +50,20 @@ impl NumberFieldState {
         cx.subscribe(&input, |this, _, event, cx| {
             cx.notify();
             match event {
-                TextInputEvent::Focus => cx.emit(FieldEvent::Focus),
-                TextInputEvent::Blur => {
+                InputEvent::Focus => cx.emit(InputEvent::Focus),
+                InputEvent::Blur => {
                     this.commit_value(cx);
                     this.input.update(cx, |input, cx| input.set_interactive(false, cx));
-                    cx.emit(FieldEvent::Blur);
+                    cx.emit(InputEvent::Blur);
                 }
-                TextInputEvent::Submit(s) => {
+                InputEvent::Submit(s) => {
                     if let Ok(v) = s.parse() {
-                        cx.emit(FieldEvent::Submit(v))
+                        cx.emit(InputEvent::Submit(v))
                     }
                 }
-                TextInputEvent::Change(s) => {
+                InputEvent::Change(s) => {
                     if let Ok(v) = s.parse() {
-                        cx.emit(FieldEvent::Change(v))
+                        cx.emit(InputEvent::Change(v))
                     }
                 }
             }
@@ -232,7 +231,7 @@ impl NumberFieldState {
 
     pub fn submit(&self, cx: &mut Context<Self>) {
         if let Some(v) = self.value(cx) {
-            cx.emit(FieldEvent::Submit(v));
+            cx.emit(InputEvent::Submit(v));
         }
     }
 
@@ -313,7 +312,7 @@ impl NumberFieldState {
     }
 }
 
-impl EventEmitter<FieldEvent<f64>> for NumberFieldState {}
+impl EventEmitter<InputEvent<f64>> for NumberFieldState {}
 
 #[derive(IntoElement)]
 pub struct NumberField {

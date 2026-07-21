@@ -1,4 +1,4 @@
-use gpui::{App, ElementId, Entity, FontWeight, Pixels, Window, div, prelude::*, px};
+use gpui::{App, ElementId, Entity, FontWeight, MouseButton, Pixels, Window, div, prelude::*, px};
 
 mod column;
 mod delegate;
@@ -11,6 +11,7 @@ pub use state::*;
 use crate::{ActiveTheme, Button, Icon, IconSize, IconVariant, h_flex, todo, v_flex};
 
 const ROW_HEIGHT: Pixels = px(24.0);
+const EDIT_MOUSE_BUTTON: MouseButton = MouseButton::Right;
 
 #[derive(IntoElement)]
 pub struct Table<D: TableDelegate + 'static> {
@@ -103,6 +104,21 @@ impl<D: TableDelegate> Table<D> {
                         }),
                 )
             })
+            .on_mouse_down(EDIT_MOUSE_BUTTON, {
+                let state = self.state.clone();
+                let edit_handler = column.edit_handler.clone();
+                move |_, window, cx| {
+                    if let Some(edit_handler) = &edit_handler {
+                        let row_ids = state
+                            .read(cx)
+                            .sorted_rows()
+                            .iter()
+                            .map(|(id, _)| (*id).clone())
+                            .collect();
+                        (edit_handler)(state.clone(), row_ids, window, cx);
+                    }
+                }
+            })
     }
 
     fn render_body(&self, window: &Window, cx: &App) -> impl IntoElement {
@@ -110,7 +126,7 @@ impl<D: TableDelegate> Table<D> {
         let rows = state.sorted_rows();
 
         let cells =
-            rows.into_iter().enumerate().map(|(ix, row)| self.render_row(ix, row, window, cx));
+            rows.into_iter().enumerate().map(|(ix, (_, row))| self.render_row(ix, row, window, cx));
 
         div().flex().flex_col().children(cells)
     }
