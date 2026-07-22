@@ -3,7 +3,7 @@ use gpui::{
 };
 
 use crate::{
-    Field, Input, InputEvent, InputState,
+    Field, Input, InputDelegate, InputEvent,
     input::{field::FieldValue, text_input::TextInput},
 };
 
@@ -146,7 +146,7 @@ impl<T: FieldValue + 'static> FieldState<T> {
     }
 }
 
-impl<T: Clone + FieldValue + 'static> InputState for FieldState<T> {
+impl<T: Clone + FieldValue + 'static> InputDelegate for FieldState<T> {
     type Value = T;
     type Element = Field<T>;
 

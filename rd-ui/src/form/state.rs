@@ -1,11 +1,12 @@
-use crate::FormDelegate;
 use gpui::{Context, EventEmitter, Window};
 
-pub struct FormState<D: FormDelegate> {
+use crate::{FormDelegate, FormEvent};
+
+pub struct FormState<D: FormDelegate + 'static> {
     pub delegate: D,
 }
 
-impl<D: FormDelegate> EventEmitter<FormEvent<D>> for FormState<D> {}
+impl<D: FormDelegate + 'static> EventEmitter<FormEvent<D>> for FormState<D> {}
 
 impl<D: FormDelegate + 'static> FormState<D> {
     pub fn new(delegate: D, _window: &mut Window, _cx: &mut Context<Self>) -> Self {
@@ -17,11 +18,8 @@ impl<D: FormDelegate + 'static> FormState<D> {
     }
 
     pub fn submit(&mut self, cx: &mut Context<Self>) {
-        let Some(data) = self.delegate.extract_data(cx) else { return };
-        cx.emit(FormEvent::Submit { data });
+        if let Some(data) = self.delegate.extract_data(cx) {
+            cx.emit(FormEvent::Submit { data });
+        }
     }
-}
-
-pub enum FormEvent<D: FormDelegate> {
-    Submit { data: D::Data },
 }

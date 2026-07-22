@@ -1,64 +1,20 @@
-use std::hash::Hash;
+use gpui::{AnyElement, App, IntoElement, SharedString};
 
-use crate::FormState;
-use gpui::{App, Context, FlexDirection, SharedString, Window, prelude::*};
-
-pub enum FormNode<Id> {
-    Section {
-        title: Option<SharedString>,
-        flex_direction: FlexDirection,
-        children: Vec<FormNode<Id>>,
-    },
-    Field {
-        id: Id,
-        label: Option<SharedString>,
-    },
-    Custom {
-        id: Id,
-    },
+pub struct FormField {
+    pub label: SharedString,
+    pub input: AnyElement,
 }
 
-impl<Id> FormNode<Id> {
-    pub fn section(
-        title: impl Into<SharedString>,
-        flex_direction: FlexDirection,
-        children: impl IntoIterator<Item = FormNode<Id>>,
-    ) -> Self {
-        Self::Section {
-            title: Some(title.into()),
-            flex_direction,
-            children: children.into_iter().collect(),
-        }
-    }
-
-    pub fn section_headless(
-        flex_direction: FlexDirection,
-        children: impl IntoIterator<Item = FormNode<Id>>,
-    ) -> Self {
-        Self::Section { title: None, flex_direction, children: children.into_iter().collect() }
-    }
-
-    pub fn field(id: Id, label: impl Into<SharedString>) -> Self {
-        Self::Field { id, label: Some(label.into()) }
-    }
-
-    pub fn custom(id: Id) -> Self {
-        Self::Custom { id }
+impl FormField {
+    pub fn new(label: impl Into<SharedString>, input: impl IntoElement) -> Self {
+        Self { label: label.into(), input: input.into_any_element() }
     }
 }
 
-pub trait FormDelegate: Sized + 'static {
-    type Id: Clone + Eq + Hash;
+pub trait FormDelegate {
     type Data;
 
-    fn layout(&self, cx: &App) -> Vec<FormNode<Self::Id>>;
-
-    fn render_input(
-        &self,
-        id: &Self::Id,
-        window: &mut Window,
-        cx: &mut Context<FormState<Self>>,
-    ) -> impl IntoElement;
+    fn fields(&self) -> Vec<FormField>;
 
     fn extract_data(&self, cx: &App) -> Option<Self::Data>;
 }

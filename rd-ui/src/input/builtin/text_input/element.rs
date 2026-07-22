@@ -1,4 +1,4 @@
-use crate::input::text_input::TextInput;
+use super::TextInput;
 use crate::theme::ActiveTheme;
 
 use gpui::{

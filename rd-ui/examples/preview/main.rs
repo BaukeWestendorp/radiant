@@ -1,7 +1,8 @@
+mod form;
 mod interactive;
 mod misc;
 mod scrollable;
-mod table;
+// TODO: mod table;
 mod tabs;
 mod theme;
 mod tiles;
@@ -18,10 +19,11 @@ mod app {
     use gpui::{Entity, Window, div};
     use rd_ui::{Tab, Tabs, TabsState, TabsVariant};
 
+    use crate::form::FormPreview;
     use crate::interactive::InteractivePreview;
     use crate::misc::MiscPreview;
     use crate::scrollable::ScrollablePreview;
-    use crate::table::TablePreview;
+    // TODO: use crate::table::TablePreview;
     use crate::tabs::TabsPreview;
     use crate::theme::ThemePreview;
     use crate::tiles::TilesPreview;
@@ -38,9 +40,10 @@ mod app {
     struct PreviewApp {
         tabs: Entity<TabsState>,
 
+        tab_form: Entity<FormPreview>,
         tab_interactive: Entity<InteractivePreview>,
         tab_tabs: Entity<TabsPreview>,
-        tab_table: Entity<TablePreview>,
+        // TODO: tab_table: Entity<TablePreview>,
         tab_scrollable: Entity<ScrollablePreview>,
         tab_theme: Entity<ThemePreview>,
         tab_tiles: Entity<TilesPreview>,
@@ -52,11 +55,12 @@ mod app {
     impl PreviewApp {
         fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
             Self {
-                tabs: cx.new(|_| TabsState::new().with_selected("table")),
+                tabs: cx.new(|_| TabsState::new().with_selected("form")),
 
+                tab_form: cx.new(|cx| FormPreview::new(window, cx)),
                 tab_interactive: cx.new(|cx| InteractivePreview::new(window, cx)),
                 tab_tabs: cx.new(|cx| TabsPreview::new(window, cx)),
-                tab_table: cx.new(|cx| TablePreview::new(window, cx)),
+                // TODO: tab_table: cx.new(|cx| TablePreview::new(window, cx)),
                 tab_scrollable: cx.new(|cx| ScrollablePreview::new(window, cx)),
                 tab_theme: cx.new(|cx| ThemePreview::new(window, cx)),
                 tab_tiles: cx.new(|cx| TilesPreview::new(window, cx)),
@@ -71,6 +75,7 @@ mod app {
             div().size_full().child(
                 // FIXME: TabVariant::Sidebar fucks with the table width. But maybe not anymore???
                 Tabs::new("preview-pages", self.tabs.clone()).variant(TabsVariant::Top).tabs([
+                    Tab::new("form", "Form", self.tab_form.clone().into_any_element()),
                     Tab::new(
                         "interactive",
                         "Interactive",
@@ -79,7 +84,7 @@ mod app {
                     Tab::new("typo", "Typography", self.tab_typo.clone().into_any_element()),
                     Tab::new("theme", "Theme", self.tab_theme.clone().into_any_element()),
                     Tab::new("tabs", "Tabs", self.tab_tabs.clone().into_any_element()),
-                    Tab::new("table", "Table", self.tab_table.clone().into_any_element()),
+                    // TODO: Tab::new("table", "Table", self.tab_table.clone().into_any_element()),
                     Tab::new(
                         "scrollable",
                         "Scrollable",

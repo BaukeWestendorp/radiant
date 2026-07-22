@@ -1,13 +1,13 @@
-use crate::{ActiveTheme, section};
-use gpui::{
-    AnyElement, App, Entity, FlexDirection, IntoElement, ParentElement, RenderOnce, Styled, Window,
-    div, prelude::*,
-};
+use gpui::{App, Entity, IntoElement, MouseButton, RenderOnce, Window, div, prelude::*, px};
+
+use crate::{Button, h_flex, v_flex};
 
 mod delegate;
+mod event;
 mod state;
 
 pub use delegate::*;
+pub use event::*;
 pub use state::*;
 
 #[derive(IntoElement)]
@@ -16,64 +16,29 @@ pub struct Form<D: FormDelegate + 'static> {
 }
 
 impl<D: FormDelegate + 'static> Form<D> {
-    pub fn new(state: Entity<FormState<D>>) -> Self {
+    pub fn new(state: Entity<FormState<D>>, _window: &mut Window, _cx: &mut App) -> Self {
         Self { state }
     }
 }
 
 impl<D: FormDelegate + 'static> RenderOnce for Form<D> {
-    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
-        self.state.clone().update(cx, |state, cx| {
-            let layout = state.delegate().layout(cx);
-            div()
-                .tab_group()
-                .flex()
-                .flex_col()
+    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let fields = self.state.read(cx).delegate().fields().into_iter().map(|field| {
+            h_flex()
                 .w_full()
                 .gap_4()
-                .children(layout.into_iter().map(|node| render_node(state, node, window, cx)))
-        })
-    }
-}
+                .items_center()
+                .child(div().w(px(120.0)).child(field.label))
+                .child(div().flex_1().child(field.input))
+        });
 
-fn render_node<D: FormDelegate + 'static>(
-    state: &FormState<D>,
-    node: FormNode<D::Id>,
-    window: &mut Window,
-    cx: &mut Context<FormState<D>>,
-) -> AnyElement {
-    match node {
-        FormNode::Section { title, flex_direction, children } => {
-            let mut content = div().flex().flex_col().w_full().gap_2();
-
-            match flex_direction {
-                FlexDirection::Row => content = content.flex_row().items_end(),
-                FlexDirection::Column => content = content.flex_col(),
-                FlexDirection::RowReverse => content = content.flex_row_reverse().items_end(),
-                FlexDirection::ColumnReverse => content = content.flex_col_reverse(),
+        let submit_button = Button::new("submit").child("Submit").on_click({
+            let state = self.state.clone();
+            move |_, _, cx| {
+                state.update(cx, |state, cx| state.submit(cx));
             }
+        });
 
-            for child in children {
-                content = content.child(render_node(state, child, window, cx));
-            }
-
-            match title {
-                Some(title) => section(title).child(content).into_any_element(),
-                None => content.into_any_element(),
-            }
-        }
-        FormNode::Field { id, label } => {
-            let input = state.delegate.render_input(&id, window, cx).into_any_element();
-
-            div()
-                .flex_col()
-                .flex_grow_1()
-                .when_some(label, |e, label| {
-                    e.child(div().text_color(cx.theme().fg_secondary).child(label))
-                })
-                .child(div().child(input.into_any_element()))
-                .into_any_element()
-        }
-        FormNode::Custom { id } => state.delegate.render_input(&id, window, cx).into_any_element(),
+        v_flex().gap_4().size_full().children(fields).child(submit_button)
     }
 }
