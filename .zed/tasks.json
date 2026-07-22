@@ -1,7 +1,12 @@
 [
   {
     "label": "example [capital_inspired]",
-    "command": "cargo run -p rd -- examples/capital_inspired",
+    "command": "cargo run -p rd-app -- examples/capital_inspired",
+    "env": { "RUST_LOG": "debug" },
+  },
+  {
+    "label": "rd-ui preview",
+    "command": "cargo run -p rd-ui --example preview",
     "env": { "RUST_LOG": "debug" },
   },
 ]
