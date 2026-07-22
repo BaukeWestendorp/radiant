@@ -48,3 +48,19 @@ impl fmt::Display for FilterType {
         }
     }
 }
+
+#[cfg(feature = "rd-ui")]
+impl rd_ui::DropdownItem for FilterType {
+    fn label(&self) -> String {
+        self.to_string()
+    }
+
+    fn variants() -> Vec<Self> {
+        vec![
+            FilterType::ControlChange,
+            FilterType::NoteOn,
+            FilterType::NoteOff,
+            FilterType::PitchBend,
+        ]
+    }
+}

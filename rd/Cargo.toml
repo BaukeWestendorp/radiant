@@ -3,6 +3,9 @@ name = "rd"
 version.workspace = true
 edition.workspace = true
 
+[features]
+rd-ui = ["dep:rd-ui"]
+
 [dependencies]
 anyhow.workspace = true
 facet = { workspace = true, features = ["uuid", "nonzero"] }
@@ -17,6 +20,9 @@ rd-midi.workspace = true
 uuid = { workspace = true, features = ["v4"] }
 ariadne = "0.6.0"
 rand = "0.10.2"
+
+# feature = "rd-ui"
+rd-ui = { workspace = true, optional = true }
 
 [dev-dependencies]
 anyhow.workspace = true
