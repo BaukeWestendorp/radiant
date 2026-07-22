@@ -1,6 +1,6 @@
 use gpui::{
-    App, ElementId, Entity, EventEmitter, FocusHandle, Focusable, MouseButton, RenderOnce, Window,
-    div, prelude::*,
+    App, ElementId, Entity, FocusHandle, Focusable, MouseButton, RenderOnce, Window, div,
+    prelude::*,
 };
 
 use crate::{
@@ -40,6 +40,8 @@ impl<V: DropdownValue + 'static> Dropdown<V> {
     }
 
     pub fn set_value(&mut self, new_value: V, cx: &mut Context<InputState<Self>>) {
+        cx.emit(InputEvent::Submit(new_value.clone()));
+
         self.value.update(cx, |value, cx| {
             *value = new_value;
             cx.notify();
@@ -76,12 +78,10 @@ impl<V: DropdownValue + 'static> InputDelegate for Dropdown<V> {
 }
 
 impl<V: DropdownValue + 'static> Focusable for Dropdown<V> {
-    fn focus_handle(&self, _cx: &App) -> gpui::FocusHandle {
+    fn focus_handle(&self, _cx: &App) -> FocusHandle {
         self.focus_handle.clone()
     }
 }
-
-impl<V: DropdownValue + 'static> EventEmitter<InputEvent<V>> for Dropdown<V> {}
 
 #[derive(IntoElement)]
 struct DropdownElement<V: DropdownValue + 'static> {
@@ -90,7 +90,7 @@ struct DropdownElement<V: DropdownValue + 'static> {
 }
 
 impl<V: DropdownValue + 'static> RenderOnce for DropdownElement<V> {
-    fn render(self, window: &mut Window, cx: &mut App) -> impl gpui::IntoElement {
+    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let focus_handle = self.state.focus_handle(cx).clone();
         let open = self.state.read(cx).is_opened;
         let variants = V::variants();
@@ -187,107 +187,3 @@ impl<V: DropdownValue + 'static> RenderOnce for DropdownElement<V> {
             .children(picker)
     }
 }
-
-// use gpui::{
-//     App, ElementId, Entity, EventEmitter, FocusHandle, Focusable, IntoElement, MouseButton,
-//     RenderOnce, Styled, Window, div, prelude::*,
-// };
-
-// use crate::{
-//     ActiveTheme, HslaExt, INPUT_HEIGHT, Icon, IconSize, IconVariant, InputDelegate, InputEvent,
-//     container, h_flex, interactive_container,
-// };
-
-// pub trait DropdownValue: Clone + 'static {
-//     fn label(&self) -> String;
-
-//     fn variants() -> Vec<Self>
-//     where
-//         Self: Sized;
-// }
-
-// pub struct DropdownState<T>
-// where
-//     T: DropdownValue,
-// {
-//     value: Entity<T>,
-//     open: bool,
-// }
-
-// impl<T> DropdownState<T>
-// where
-//     T: DropdownValue,
-// {
-//     pub fn new(value: Entity<T>, cx: &mut Context<Self>) -> Self {
-//         Self { value, open: false }
-//     }
-
-//     pub fn open(&mut self, open: bool) {
-//         self.open = open;
-//     }
-
-//     pub fn toggle(&mut self) {
-//         self.open = !self.open;
-//     }
-
-//     pub fn set_value(&mut self, new_value: T, cx: &mut Context<Self>) {
-//         cx.emit(InputEvent::Submit(new_value.clone()));
-//         self.open(false);
-//         self.value.update(cx, |value, cx| {
-//             *value = new_value;
-//             cx.notify();
-//         });
-//     }
-// }
-
-// impl<T: DropdownValue + 'static> InputDelegate for DropdownState<T> {
-//     type Value = T;
-
-//     type Element = Dropdown<T>;
-
-//     fn new_element(
-//         this: Entity<Input<Self>>,
-//         _window: &mut Window,
-//         _cx: &mut App,
-//     ) -> Self::Element {
-//         Dropdown::new("dropdown", this)
-//     }
-// }
-
-// impl<T: DropdownValue + 'static> Focusable for DropdownState<T> {
-//     fn focus_handle(&self, _cx: &App) -> FocusHandle {
-//         self.focus_handle.clone()
-//     }
-// }
-
-// impl<T: DropdownValue + 'static> EventEmitter<InputEvent<T>> for DropdownState<T> {}
-
-// #[derive(IntoElement)]
-// pub struct Dropdown<T>
-// where
-//     T: DropdownValue,
-// {
-//     id: ElementId,
-//     state: Entity<Input<DropdownState<T>>>,
-// }
-
-// impl<T> Dropdown<T>
-// where
-//     T: DropdownValue,
-// {
-//     pub fn new(id: impl Into<ElementId>, state: Entity<Input<DropdownState<T>>>) -> Self {
-//         Self { id: id.into(), state }
-//     }
-
-//     fn value<'a>(&self, cx: &'a App) -> &'a T {
-//         self.state.read(cx).state.read(cx).value.read(cx)
-//     }
-
-//     fn value_label(&self, cx: &App) -> String {
-//         self.value(cx).label()
-//     }
-
-//     fn variants(&self) -> Vec<T> {
-//         T::variants()
-//     }
-// }

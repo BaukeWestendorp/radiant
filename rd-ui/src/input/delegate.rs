@@ -1,9 +1,9 @@
 use gpui::Window;
-use gpui::{App, Entity, EventEmitter, Focusable, prelude::*};
+use gpui::{App, Entity, Focusable, prelude::*};
 
-use crate::{InputEvent, InputState};
+use crate::InputState;
 
-pub trait InputDelegate: Focusable + EventEmitter<InputEvent<Self::Value>> {
+pub trait InputDelegate: Focusable {
     type Value;
 
     fn new_element(

@@ -1,6 +1,6 @@
-use gpui::{Focusable, Window, prelude::*};
+use gpui::{EventEmitter, Focusable, Window, prelude::*};
 
-use crate::InputDelegate;
+use crate::{InputDelegate, InputEvent};
 
 pub struct InputState<D: InputDelegate> {
     delegate: D,
@@ -11,6 +11,8 @@ impl<D: InputDelegate> InputState<D> {
         Self { delegate }
     }
 }
+
+impl<D: InputDelegate> EventEmitter<InputEvent<D::Value>> for InputState<D> {}
 
 impl<D: InputDelegate> Focusable for InputState<D> {
     fn focus_handle(&self, cx: &gpui::App) -> gpui::FocusHandle {

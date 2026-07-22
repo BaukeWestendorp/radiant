@@ -43,7 +43,7 @@ pub(crate) mod action {
 }
 
 pub struct TextInput {
-    id: ElementId,
+    element_id: ElementId,
 
     text: SharedString,
     placeholder: SharedString,
@@ -78,7 +78,7 @@ impl TextInput {
         cx.on_blur(&focus_handle, window, Self::handle_blur).detach();
 
         Self {
-            id: id.into(),
+            element_id: id.into(),
 
             text: "".into(),
             placeholder: "".into(),
@@ -98,6 +98,10 @@ impl TextInput {
 
             blink_cursor,
         }
+    }
+
+    pub fn element_id(&self) -> &ElementId {
+        &self.element_id
     }
 
     pub fn px(mut self, padding_x: Pixels) -> Self {
@@ -660,7 +664,7 @@ impl TextInput {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if event.drag(cx) != &self.id {
+        if event.drag(cx) != &self.element_id {
             return;
         }
 
@@ -818,9 +822,9 @@ impl Render for TextInput {
         let can_interact = self.is_interactive() && !self.disabled();
 
         if self.disabled() {
-            div().id(self.id.clone()).focusable()
+            div().id(self.element_id.clone()).focusable()
         } else {
-            div().id(self.id.clone()).track_focus(&self.focus_handle)
+            div().id(self.element_id.clone()).track_focus(&self.focus_handle)
         }
         .key_context(action::KEY_CONTEXT)
         .size_full()
@@ -849,7 +853,7 @@ impl Render for TextInput {
                 .on_action(cx.listener(Self::handle_submit))
                 .on_mouse_down(MouseButton::Left, cx.listener(Self::handle_mouse_down))
                 .on_mouse_down_out(cx.listener(|_, _, w, _| w.blur()))
-                .on_drag(self.id.clone(), |_, _, _, cx| cx.new(|_| EmptyView))
+                .on_drag(self.element_id.clone(), |_, _, _, cx| cx.new(|_| EmptyView))
                 .on_drag_move(cx.listener(Self::handle_drag_move))
                 .on_mouse_up(MouseButton::Left, cx.listener(Self::handle_mouse_up))
                 .on_mouse_up_out(MouseButton::Left, cx.listener(Self::handle_mouse_up))

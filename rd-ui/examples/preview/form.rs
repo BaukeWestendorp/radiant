@@ -1,6 +1,7 @@
-use gpui::prelude::*;
-use gpui::{Entity, Window, div};
-use rd_ui::{Dropdown, Form, FormDelegate, FormEvent, FormField, FormState, InputState};
+use gpui::{Entity, Window, div, prelude::*};
+use rd_ui::{
+    Dropdown, Field, Form, FormDelegate, FormEvent, FormField, FormState, Input, InputState,
+};
 
 pub struct FormPreview {
     form: Entity<FormState<PreviewForm>>,
@@ -29,6 +30,7 @@ impl Render for FormPreview {
 
 struct PreviewForm {
     enum_value: Entity<InputState<Dropdown<EnumValue>>>,
+    name: Entity<InputState<Field<String>>>,
 }
 
 impl PreviewForm {
@@ -41,6 +43,13 @@ impl PreviewForm {
                     cx,
                 )
             }),
+            name: cx.new(|cx| {
+                InputState::new(
+                    Field::new("Initial Name".to_string(), cx.focus_handle(), window, cx),
+                    window,
+                    cx,
+                )
+            }),
         }
     }
 }
@@ -49,21 +58,24 @@ impl FormDelegate for PreviewForm {
     type Data = PreviewFormData;
 
     fn fields(&self) -> Vec<FormField> {
-        vec![FormField::new("Enum Value", rd_ui::Input::new(self.enum_value.clone()))]
+        vec![
+            FormField::new("Enum Value", Input::new(self.enum_value.clone())),
+            FormField::new("Name", Input::new(self.name.clone())),
+        ]
     }
 
     fn extract_data(&self, cx: &gpui::App) -> Option<Self::Data> {
-        let input_state = self.enum_value.read(cx);
-
-        let current_enum_value = input_state.value().read(cx).clone();
-
-        Some(PreviewFormData { enum_value: current_enum_value })
+        Some(PreviewFormData {
+            enum_value: self.enum_value.read(cx).value().read(cx).clone(),
+            name: self.name.read(cx).value(cx).clone()?,
+        })
     }
 }
 
 #[derive(Debug)]
 struct PreviewFormData {
     enum_value: EnumValue,
+    name: String,
 }
 
 #[derive(Debug, Clone)]

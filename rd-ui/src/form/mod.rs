@@ -1,4 +1,4 @@
-use gpui::{App, Entity, IntoElement, MouseButton, RenderOnce, Window, div, prelude::*, px};
+use gpui::{App, Entity, IntoElement, RenderOnce, Window, div, prelude::*, px};
 
 use crate::{Button, h_flex, v_flex};
 
