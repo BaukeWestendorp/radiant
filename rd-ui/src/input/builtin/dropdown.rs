@@ -1,5 +1,5 @@
 use gpui::{
-    App, ElementId, Entity, FocusHandle, Focusable, MouseButton, RenderOnce, Window, div,
+    App, ElementId, Entity, FocusHandle, Focusable, MouseButton, RenderOnce, Window, deferred, div,
     prelude::*,
 };
 
@@ -105,62 +105,64 @@ impl<V: DropdownValue + 'static> RenderOnce for DropdownElement<V> {
         let icon = Icon::new(IconVariant::ChevronDown, IconSize::Small);
 
         let picker = if open {
-            let picker = container(window, cx)
-                .occlude()
-                .mt_1()
-                .absolute()
-                .top_full()
-                .min_w_full()
-                .child(div().flex().flex_col().gap_1().child(div().children(
-                    variants.into_iter().enumerate().map(|(ix, variant)| {
-                        let label = variant.label();
-                        div()
-                            .group("picker-list")
-                            .px_1()
-                            .py_0p5()
-                            .when(ix != 0, |e| e.border_t_1())
-                            .border_color(cx.theme().border_secondary)
-                            .on_mouse_down(MouseButton::Left, {
-                                let state = self.state.clone();
-                                let variant = variant.clone();
-                                move |_, _, cx| {
-                                    state.update(cx, |state, cx| {
-                                        state.set_value(variant.clone(), cx);
-                                        cx.notify();
-                                    });
-                                }
-                            })
-                            .on_mouse_up(MouseButton::Left, {
-                                let state = self.state.clone();
-                                let variant = variant.clone();
-                                move |_, _, cx| {
-                                    state.update(cx, |state, cx| {
-                                        state.set_value(variant.clone(), cx);
-                                        cx.notify();
-                                    });
-                                }
-                            })
-                            .child(
-                                div()
-                                    .id(ix)
-                                    .bg(cx.theme().bg_secondary)
-                                    .border_1()
-                                    .rounded(cx.theme().radius)
-                                    .group_hover("picker-list", |e| {
-                                        e.bg(cx.theme().bg_secondary.hover())
-                                            .border_color(cx.theme().border_secondary)
-                                    })
-                                    .group_active("picker-list", |e| {
-                                        e.bg(cx.theme().bg_secondary.active())
-                                            .border_color(cx.theme().border_secondary)
-                                    })
-                                    .px_1()
-                                    .whitespace_nowrap()
-                                    .child(label),
-                            )
-                    }),
-                )))
-                .when(cx.theme().shadow, |e| e.shadow_md());
+            let picker = deferred(
+                container(window, cx)
+                    .occlude()
+                    .mt_1()
+                    .absolute()
+                    .top_full()
+                    .min_w_full()
+                    .child(div().flex().flex_col().gap_1().child(div().children(
+                        variants.into_iter().enumerate().map(|(ix, variant)| {
+                            let label = variant.label();
+                            div()
+                                .group("picker-list")
+                                .px_1()
+                                .py_0p5()
+                                .when(ix != 0, |e| e.border_t_1())
+                                .border_color(cx.theme().border_secondary)
+                                .on_mouse_down(MouseButton::Left, {
+                                    let state = self.state.clone();
+                                    let variant = variant.clone();
+                                    move |_, _, cx| {
+                                        state.update(cx, |state, cx| {
+                                            state.set_value(variant.clone(), cx);
+                                            cx.notify();
+                                        });
+                                    }
+                                })
+                                .on_mouse_up(MouseButton::Left, {
+                                    let state = self.state.clone();
+                                    let variant = variant.clone();
+                                    move |_, _, cx| {
+                                        state.update(cx, |state, cx| {
+                                            state.set_value(variant.clone(), cx);
+                                            cx.notify();
+                                        });
+                                    }
+                                })
+                                .child(
+                                    div()
+                                        .id(ix)
+                                        .bg(cx.theme().bg_secondary)
+                                        .border_1()
+                                        .rounded(cx.theme().radius)
+                                        .group_hover("picker-list", |e| {
+                                            e.bg(cx.theme().bg_secondary.hover())
+                                                .border_color(cx.theme().border_secondary)
+                                        })
+                                        .group_active("picker-list", |e| {
+                                            e.bg(cx.theme().bg_secondary.active())
+                                                .border_color(cx.theme().border_secondary)
+                                        })
+                                        .px_1()
+                                        .whitespace_nowrap()
+                                        .child(label),
+                                )
+                        }),
+                    )))
+                    .when(cx.theme().shadow, |e| e.shadow_md()),
+            );
 
             Some(picker)
         } else {
