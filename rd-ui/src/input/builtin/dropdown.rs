@@ -35,15 +35,15 @@ impl<V: DropdownValue + 'static> Dropdown<V> {
         Self { value, focus_handle, is_opened: false }
     }
 
-    pub fn value(&self) -> &Entity<V> {
-        &self.value
+    pub fn value<'a>(&'a self, cx: &'a App) -> &'a V {
+        self.value.read(cx)
     }
 
-    pub fn set_value(&mut self, new_value: V, cx: &mut Context<InputState<Self>>) {
-        cx.emit(InputEvent::Submit(new_value.clone()));
+    pub fn set_value(&mut self, value: V, cx: &mut Context<InputState<Self>>) {
+        cx.emit(InputEvent::Submit(value.clone()));
 
-        self.value.update(cx, |value, cx| {
-            *value = new_value;
+        self.value.update(cx, |v, cx| {
+            *v = value;
             cx.notify();
         });
 
@@ -73,7 +73,7 @@ impl<V: DropdownValue + 'static> InputDelegate for Dropdown<V> {
         _window: &mut Window,
         _cx: &mut App,
     ) -> impl IntoElement {
-        DropdownElement { id: ElementId::View(state.entity_id()), state }
+        DropdownElement { state }
     }
 }
 
@@ -85,12 +85,12 @@ impl<V: DropdownValue + 'static> Focusable for Dropdown<V> {
 
 #[derive(IntoElement)]
 struct DropdownElement<V: DropdownValue + 'static> {
-    id: ElementId,
     state: Entity<InputState<Dropdown<V>>>,
 }
 
 impl<V: DropdownValue + 'static> RenderOnce for DropdownElement<V> {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let id = ElementId::View(self.state.entity_id());
         let focus_handle = self.state.focus_handle(cx).clone();
         let open = self.state.read(cx).is_opened;
         let variants = V::variants();
@@ -170,7 +170,7 @@ impl<V: DropdownValue + 'static> RenderOnce for DropdownElement<V> {
         div()
             .relative()
             .child(
-                interactive_container(self.id, Some(focus_handle))
+                interactive_container(id, Some(focus_handle))
                     .px_2()
                     .w_full()
                     .h(INPUT_HEIGHT)

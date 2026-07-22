@@ -13,21 +13,18 @@ mod value;
 pub use value::*;
 
 pub struct Field<V: FieldValue> {
-    value: Entity<V>,
-
     text_input: Entity<TextInput>,
+
+    _marker: std::marker::PhantomData<V>,
 }
 
 impl<V: FieldValue + 'static> Field<V> {
     pub fn new(
-        value: V,
         focus_handle: FocusHandle,
         window: &mut Window,
         cx: &mut Context<InputState<Self>>,
     ) -> Self {
         let id = ElementId::View(cx.entity_id());
-
-        let value = cx.new(|_| value);
 
         let text_input = cx.new(move |cx| {
             let mut text_input = TextInput::new(id, focus_handle, window, cx);
@@ -58,7 +55,7 @@ impl<V: FieldValue + 'static> Field<V> {
         })
         .detach();
 
-        Self { value, text_input }
+        Self { text_input, _marker: std::marker::PhantomData }
     }
 
     pub fn value<'a>(&self, cx: &'a App) -> Option<V> {
@@ -66,10 +63,10 @@ impl<V: FieldValue + 'static> Field<V> {
         V::from_str(s)
     }
 
-    pub fn set_value(&self, new_value: V, cx: &mut Context<InputState<Self>>) {
-        self.value.update(cx, |value, cx| {
-            *value = new_value;
-            cx.notify();
+    pub fn set_value(&self, value: V, cx: &mut Context<InputState<Self>>) {
+        self.text_input.update(cx, |this, cx| {
+            this.set_text(value.to_shared_string().into(), cx);
+            this.move_to_end_of_line(cx);
         });
     }
 

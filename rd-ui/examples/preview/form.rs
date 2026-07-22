@@ -1,6 +1,6 @@
 use gpui::{Entity, Window, div, prelude::*};
 use rd_ui::{
-    Dropdown, Field, Form, FormDelegate, FormEvent, FormField, FormState, Input, InputState,
+    Dropdown, Field, Form, FormDelegate, FormEvent, FormField, FormState, Input, InputState, Slider,
 };
 
 pub struct FormPreview {
@@ -31,6 +31,7 @@ impl Render for FormPreview {
 struct PreviewForm {
     enum_value: Entity<InputState<Dropdown<EnumValue>>>,
     name: Entity<InputState<Field<String>>>,
+    slider: Entity<InputState<Slider>>,
 }
 
 impl PreviewForm {
@@ -43,9 +44,13 @@ impl PreviewForm {
                     cx,
                 )
             }),
-            name: cx.new(|cx| {
+            name: cx
+                .new(|cx| InputState::new(Field::new(cx.focus_handle(), window, cx), window, cx)),
+            slider: cx.new(|cx| {
                 InputState::new(
-                    Field::new("Initial Name".to_string(), cx.focus_handle(), window, cx),
+                    Slider::new(cx.focus_handle(), window, cx)
+                        .with_min(Some(0.0), cx)
+                        .with_max(Some(1.0), cx),
                     window,
                     cx,
                 )
@@ -61,13 +66,15 @@ impl FormDelegate for PreviewForm {
         vec![
             FormField::new("Enum Value", Input::new(self.enum_value.clone())),
             FormField::new("Name", Input::new(self.name.clone())),
+            FormField::new("Slider", Input::new(self.slider.clone())),
         ]
     }
 
     fn extract_data(&self, cx: &gpui::App) -> Option<Self::Data> {
         Some(PreviewFormData {
-            enum_value: self.enum_value.read(cx).value().read(cx).clone(),
-            name: self.name.read(cx).value(cx).clone()?,
+            enum_value: self.enum_value.read(cx).value(cx).clone(),
+            name: self.name.read(cx).value(cx)?.clone(),
+            slider: self.slider.read(cx).value(cx)?.clone(),
         })
     }
 }
@@ -76,6 +83,7 @@ impl FormDelegate for PreviewForm {
 struct PreviewFormData {
     enum_value: EnumValue,
     name: String,
+    slider: f64,
 }
 
 #[derive(Debug, Clone)]

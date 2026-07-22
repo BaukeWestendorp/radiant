@@ -1,20 +1,15 @@
-use std::f64;
-
 use gpui::{
-    App, Bounds, ClickEvent, DragMoveEvent, ElementId, EmptyView, Entity, EventEmitter,
-    FocusHandle, Focusable, MouseButton, MouseUpEvent, Pixels, Point, RenderOnce, Window, div,
-    relative, rems,
+    App, Bounds, ClickEvent, DragMoveEvent, ElementId, Entity, FocusHandle, Focusable, MouseButton,
+    MouseUpEvent, Pixels, Point, RenderOnce, Window, canvas, div, prelude::*, relative, rems,
 };
-use gpui::{canvas, prelude::*};
 
-use crate::container::interactive_container;
-use crate::input::text_input::TextInput;
-use crate::theme::ActiveTheme;
-use crate::{InputEvent, z_stack};
+use crate::{
+    ActiveTheme, InputDelegate, InputEvent, InputState, TextInput, interactive_container, z_stack,
+};
 
-pub struct NumberFieldState {
-    id: ElementId,
-    input: Entity<TextInput>,
+pub struct Slider {
+    element_id: ElementId,
+    text_input: Entity<TextInput>,
 
     min: Option<f64>,
     max: Option<f64>,
@@ -25,35 +20,35 @@ pub struct NumberFieldState {
     prev_mouse_pos: Option<Point<Pixels>>,
 }
 
-impl NumberFieldState {
+impl Slider {
     pub fn new(
-        id: impl Into<ElementId>,
         focus_handle: FocusHandle,
         window: &mut Window,
-        cx: &mut Context<Self>,
+        cx: &mut Context<InputState<Self>>,
     ) -> Self {
-        let id = id.into();
+        let element_id = ElementId::View(cx.entity_id());
 
-        let input = cx.new(|cx| {
-            let mut input = TextInput::new(id.clone(), focus_handle.tab_stop(true), window, cx)
+        let text_input = cx.new(|cx| {
+            let mut text_input = TextInput::new(element_id.clone(), focus_handle, window, cx)
                 .px(rems(0.125).to_pixels(window.rem_size()));
-            input.set_interactive(false, cx);
-            input.set_validator(|text| {
+            text_input.set_text("0".into(), cx);
+            text_input.set_interactive(false, cx);
+            text_input.set_validator(|text| {
                 text.trim().is_empty()
                     || regex::Regex::new(r"^[+-]?(\d+\.?\d*|\.\d+)?$")
                         .unwrap()
                         .is_match(text.trim())
             });
-            input
+            text_input
         });
 
-        cx.subscribe(&input, |this, _, event, cx| {
+        cx.subscribe(&text_input, |this, _, event, cx| {
             cx.notify();
             match event {
                 InputEvent::Focus => cx.emit(InputEvent::Focus),
                 InputEvent::Blur => {
                     this.commit_value(cx);
-                    this.input.update(cx, |input, cx| input.set_interactive(false, cx));
+                    this.text_input.update(cx, |input, cx| input.set_interactive(false, cx));
                     cx.emit(InputEvent::Blur);
                 }
                 InputEvent::Submit(s) => {
@@ -71,8 +66,8 @@ impl NumberFieldState {
         .detach();
 
         Self {
-            id,
-            input,
+            element_id,
+            text_input,
 
             min: None,
             max: None,
@@ -84,20 +79,16 @@ impl NumberFieldState {
         }
     }
 
-    pub fn input(&self) -> &Entity<TextInput> {
-        &self.input
-    }
-
     pub fn min(&self) -> Option<f64> {
         self.min
     }
 
-    pub fn set_min(&mut self, min: Option<f64>, cx: &mut Context<Self>) {
+    pub fn set_min(&mut self, min: Option<f64>, cx: &mut Context<InputState<Self>>) {
         self.min = min;
         self.commit_value(cx);
     }
 
-    pub fn with_min(mut self, min: Option<f64>, cx: &mut Context<Self>) -> Self {
+    pub fn with_min(mut self, min: Option<f64>, cx: &mut Context<InputState<Self>>) -> Self {
         self.set_min(min, cx);
         self
     }
@@ -106,12 +97,12 @@ impl NumberFieldState {
         self.max
     }
 
-    pub fn set_max(&mut self, max: Option<f64>, cx: &mut Context<Self>) {
+    pub fn set_max(&mut self, max: Option<f64>, cx: &mut Context<InputState<Self>>) {
         self.max = max;
         self.commit_value(cx);
     }
 
-    pub fn with_max(mut self, max: Option<f64>, cx: &mut Context<Self>) -> Self {
+    pub fn with_max(mut self, max: Option<f64>, cx: &mut Context<InputState<Self>>) -> Self {
         self.set_max(max, cx);
         self
     }
@@ -120,12 +111,12 @@ impl NumberFieldState {
         self.step
     }
 
-    pub fn set_step(&mut self, step: Option<f64>, cx: &mut Context<Self>) {
+    pub fn set_step(&mut self, step: Option<f64>, cx: &mut Context<InputState<Self>>) {
         self.step = step;
         self.commit_value(cx);
     }
 
-    pub fn with_step(mut self, step: Option<f64>, cx: &mut Context<Self>) -> Self {
+    pub fn with_step(mut self, step: Option<f64>, cx: &mut Context<InputState<Self>>) -> Self {
         self.set_step(step, cx);
         self
     }
@@ -144,11 +135,11 @@ impl NumberFieldState {
     }
 
     pub fn disabled(&self, cx: &App) -> bool {
-        self.input.read(cx).disabled()
+        self.text_input.read(cx).disabled()
     }
 
     pub fn set_disabled(&self, disabled: bool, cx: &mut App) {
-        self.input.update(cx, |text_field, _cx| text_field.set_disabled(disabled));
+        self.text_input.update(cx, |text_input, _cx| text_input.set_disabled(disabled));
     }
 
     pub fn with_disabled(self, disabled: bool, cx: &mut App) -> Self {
@@ -157,11 +148,11 @@ impl NumberFieldState {
     }
 
     pub fn masked(&self, cx: &App) -> bool {
-        self.input.read(cx).masked()
+        self.text_input.read(cx).masked()
     }
 
     pub fn set_masked(&self, masked: bool, cx: &mut App) {
-        self.input.update(cx, |text_field, _cx| text_field.set_masked(masked));
+        self.text_input.update(cx, |text_input, _cx| text_input.set_masked(masked));
     }
 
     pub fn with_masked(self, masked: bool, cx: &mut App) -> Self {
@@ -170,7 +161,7 @@ impl NumberFieldState {
     }
 
     pub fn value(&self, cx: &App) -> Option<f64> {
-        let value_str = self.input.read(cx).text().to_string();
+        let value_str = self.text_input.read(cx).text().to_string();
         if value_str.trim().is_empty() {
             return None;
         };
@@ -179,8 +170,8 @@ impl NumberFieldState {
 
     pub fn set_value(&mut self, value: Option<f64>, cx: &mut App) {
         let Some(value) = value else {
-            self.input.update(cx, |text_field, cx| {
-                text_field.set_text("".into(), cx);
+            self.text_input.update(cx, |text_input, cx| {
+                text_input.set_text("".into(), cx);
             });
             return;
         };
@@ -196,9 +187,9 @@ impl NumberFieldState {
         // Round
         value = (value * 10e3f64).round() / 10e3f64;
 
-        self.input.update(cx, |text_field, cx| {
+        self.text_input.update(cx, |text_input, cx| {
             let value_str = value.to_string().into();
-            text_field.set_text(value_str, cx);
+            text_input.set_text(value_str, cx);
         })
     }
 
@@ -208,7 +199,7 @@ impl NumberFieldState {
     }
 
     pub fn set_validator<F: Fn(&str) -> bool + 'static>(&self, cx: &mut App, validator: F) {
-        self.input.update(cx, |text_field, _cx| text_field.set_validator(validator));
+        self.text_input.update(cx, |text_input, _cx| text_input.set_validator(validator));
     }
 
     pub fn with_validator<F: Fn(&str) -> bool + 'static>(self, cx: &mut App, validator: F) -> Self {
@@ -217,7 +208,7 @@ impl NumberFieldState {
     }
 
     pub fn set_submit_validator<F: Fn(&str) -> bool + 'static>(&self, cx: &mut App, validator: F) {
-        self.input.update(cx, |text_field, _cx| text_field.set_submit_validator(validator));
+        self.text_input.update(cx, |text_input, _cx| text_input.set_submit_validator(validator));
     }
 
     pub fn with_submit_validator<F: Fn(&str) -> bool + 'static>(
@@ -229,13 +220,13 @@ impl NumberFieldState {
         self
     }
 
-    pub fn submit(&self, cx: &mut Context<Self>) {
+    pub fn submit(&self, cx: &mut Context<InputState<Self>>) {
         if let Some(v) = self.value(cx) {
             cx.emit(InputEvent::Submit(v));
         }
     }
 
-    fn commit_value(&mut self, cx: &mut Context<Self>) {
+    fn commit_value(&mut self, cx: &mut Context<InputState<Self>>) {
         self.set_value(self.value(cx), cx);
         self.submit(cx);
     }
@@ -270,9 +261,9 @@ impl NumberFieldState {
         &mut self,
         _event: &ClickEvent,
         _window: &mut Window,
-        cx: &mut Context<Self>,
+        cx: &mut Context<InputState<Self>>,
     ) {
-        self.input.update(cx, |input, cx| {
+        self.text_input.update(cx, |input, cx| {
             if !input.is_interactive() {
                 input.set_interactive(true, cx);
                 input.select_all(cx);
@@ -284,11 +275,11 @@ impl NumberFieldState {
         &mut self,
         event: &DragMoveEvent<(ElementId, Option<f64>, Pixels)>,
         window: &mut Window,
-        cx: &mut Context<Self>,
+        cx: &mut Context<InputState<Self>>,
     ) {
         let (id, start_value, x_start) = event.drag(cx);
 
-        if &self.id != id {
+        if &self.element_id != id {
             return;
         }
 
@@ -307,49 +298,62 @@ impl NumberFieldState {
         self.prev_mouse_pos = Some(mouse_position);
     }
 
-    fn handle_mouse_up(&mut self, _: &MouseUpEvent, _window: &mut Window, _cx: &mut Context<Self>) {
+    fn handle_mouse_up(
+        &mut self,
+        _: &MouseUpEvent,
+        _window: &mut Window,
+        _cx: &mut Context<InputState<Self>>,
+    ) {
         self.prev_mouse_pos = None;
     }
 }
 
-impl EventEmitter<InputEvent<f64>> for NumberFieldState {}
+impl InputDelegate for Slider {
+    type Value = f64;
+
+    fn new_element(
+        state: Entity<InputState<Self>>,
+        _window: &mut Window,
+        _cx: &mut App,
+    ) -> impl IntoElement {
+        SliderElement { state }
+    }
+}
+
+impl Focusable for Slider {
+    fn focus_handle(&self, cx: &App) -> FocusHandle {
+        self.text_input.focus_handle(cx)
+    }
+}
 
 #[derive(IntoElement)]
-pub struct NumberField {
-    state: Entity<NumberFieldState>,
+struct SliderElement {
+    state: Entity<InputState<Slider>>,
 }
 
-impl NumberField {
-    pub fn new(state: Entity<NumberFieldState>) -> Self {
-        Self { state }
-    }
-}
-
-impl Focusable for NumberField {
-    fn focus_handle(&self, cx: &App) -> FocusHandle {
-        self.state.read(cx).input.focus_handle(cx)
-    }
-}
-
-impl RenderOnce for NumberField {
+impl RenderOnce for SliderElement {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
-        let state_ref = self.state.read(cx);
-        let is_interactive = !state_ref.input.read(cx).is_interactive();
-        let focus_handle = state_ref.input.read(cx).focus_handle(cx);
-        let disabled = state_ref.disabled(cx);
+        let state = self.state.read(cx);
+        let is_interactive = !state.text_input.read(cx).is_interactive();
+        let is_at_either_end = state.relative_value(cx).map_or(false, |v| v <= 0.0 || v >= 1.0);
+        let focus_handle = state.text_input.read(cx).focus_handle(cx);
+        let disabled = state.disabled(cx);
 
-        let relative_value = state_ref.relative_value(cx);
+        let relative_value = state.relative_value(cx);
 
         let slider_bar = match relative_value {
-            Some(relative_value) => {
-                div().w(relative(relative_value as f32)).h_full().bg(cx.theme().bg_secondary)
-            }
+            Some(relative_value) => div()
+                .w(relative(relative_value as f32))
+                .h_full()
+                .bg(cx.theme().bg_tertiary)
+                .when(!is_at_either_end, |e| e.border_r_1())
+                .border_color(cx.theme().border_primary),
             None => div().size_full(),
         };
 
-        let id = state_ref.id.clone();
-        let value = state_ref.value(cx);
-        let input = state_ref.input.clone();
+        let element_id = state.element_id.clone();
+        let value = state.value(cx);
+        let text_input = state.text_input.clone();
         let entity_id = self.state.entity_id();
 
         let state_click = self.state.clone();
@@ -367,9 +371,9 @@ impl RenderOnce for NumberField {
                     state_click.update(cx, |this, cx| this.handle_on_click(event, window, cx))
                 })
                 .when(is_interactive, |e| {
-                    let drag = (id, value, window.mouse_position().x);
+                    let drag = (element_id, value, window.mouse_position().x);
                     e.on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
-                        .on_drag(drag, |_, _, _, cx| cx.new(|_cx| EmptyView))
+                        .on_drag(drag, |_, _, _, cx| cx.new(|_cx| gpui::EmptyView))
                         .on_drag_move(move |event, window, cx| {
                             state_drag_move
                                 .update(cx, |this, cx| this.handle_drag_move(event, window, cx))
@@ -383,7 +387,7 @@ impl RenderOnce for NumberField {
             .child(
                 z_stack([
                     slider_bar.into_any_element(),
-                    div().py_0p5().child(input).into_any_element(),
+                    div().py_0p5().child(text_input).into_any_element(),
                     canvas(
                         move |bounds, _, cx| {
                             state_canvas.update(cx, |this, cx| {
