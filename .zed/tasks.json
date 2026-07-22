@@ -6,7 +6,7 @@
   },
   {
     "label": "rd-ui preview",
-    "command": "cargo run -p rd-ui --example preview",
+    "command": "cargo run -p rd-ui --example preview -F derive",
     "env": { "RUST_LOG": "debug" },
   },
 ]
