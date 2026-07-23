@@ -28,3 +28,13 @@ impl<D: InputDelegate + 'static> RenderOnce for Input<D> {
         D::new_element(self.state, window, cx)
     }
 }
+
+pub trait AutoInput: Clone + 'static {
+    type Delegate: InputDelegate<Value = Self>;
+
+    fn build_input(
+        initial_value: Self,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> Entity<InputState<Self::Delegate>>;
+}
