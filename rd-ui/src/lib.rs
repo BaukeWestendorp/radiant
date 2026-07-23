@@ -14,7 +14,7 @@ mod popup;
 mod root;
 mod scrollable;
 mod settings;
-// TODO: mod table;
+mod table;
 mod tabs;
 mod theme;
 mod tiles;
@@ -35,8 +35,8 @@ pub use icon::{Icon, IconSize, IconVariant};
 pub use init::init;
 pub use init::simple::build_simple_app;
 pub use input::{
-    Dropdown, DropdownValue, Field, FieldValue, INPUT_HEIGHT, Input, InputDelegate, InputEvent,
-    InputState, Slider, TextInput,
+    AutoInput, Dropdown, DropdownValue, Field, FieldValue, INPUT_HEIGHT, Input, InputDelegate,
+    InputEvent, InputState, Slider, TextInput,
 };
 pub use keymap::{Keymap, KeymapBinding};
 pub use org::section;
@@ -44,7 +44,7 @@ pub use popup::{Popup, PopupAppExt};
 pub use root::Root;
 pub use scrollable::{Scrollable, ScrollableState};
 pub use settings::{SETTINGS_WINDOW_OPTIONS, SettingsAppExt};
-// TODO: pub use table::{Column, Table, TableDelegate, TableSelection, TableState};
+pub use table::{Column, Table, TableDelegate, TableSelection, TableState};
 pub use tabs::{Tab, Tabs, TabsState, TabsVariant};
 pub use theme::{ActiveTheme, HslaExt};
 pub use tiles::{PoolTile, PoolTileDelegate, TileDelegate, TileGrid, TileGridState};

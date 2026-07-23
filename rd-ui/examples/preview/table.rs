@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use gpui::prelude::*;
 use gpui::{Entity, Window, div};
 use rd_ui::{
-    ActiveTheme, Column, DropdownItem, Table, TableDelegate, TableSelection, TableState, section,
+    ActiveTheme, Column, DropdownValue, Table, TableDelegate, TableSelection, TableState, section,
 };
 
 pub struct TablePreview {
@@ -78,19 +78,19 @@ impl PreviewTableDelegate {
             ]),
             columns: vec![
                 Column::new("alpha", "Alpha")
-                    .with_clonable_field_edit_handler(|row: &mut Item| &mut row.alpha)
                     .with_sort_handler(|a: &Item, b: &Item| a.alpha.cmp(&b.alpha))
-                    .with_cell_builder(|row: &Item, _, _| row.alpha.to_string().into_any_element()),
+                    .with_cell_builder(|row: &Item, _, _| row.alpha.to_string().into_any_element())
+                    .with_auto_enumerable_editor(|row: &mut Item| &mut row.alpha),
                 Column::new("beta", "Beta")
-                    .with_enumerable_field_edit_handler(|row: &mut Item| &mut row.beta)
                     .with_sort_handler(|a: &Item, b: &Item| a.beta.cmp(&b.beta))
-                    .with_cell_builder(|row: &Item, _, _| row.beta.to_string().into_any_element()),
+                    .with_cell_builder(|row: &Item, _, _| row.beta.to_string().into_any_element())
+                    .with_auto_enumerable_editor(|row: &mut Item| &mut row.beta),
                 Column::new("gamma", "Gamma")
-                    .with_dropdown_edit_handler(|row: &mut Item| &mut row.gamma)
                     .with_sort_handler(|a: &Item, b: &Item| {
                         a.gamma.partial_cmp(&b.gamma).unwrap_or(std::cmp::Ordering::Equal)
                     })
-                    .with_cell_builder(|row: &Item, _, _| row.gamma.to_string().into_any_element()),
+                    .with_cell_builder(|row: &Item, _, _| row.gamma.label().into_any_element())
+                    .with_auto_editor(|row: &mut Item| &mut row.gamma),
             ],
         }
     }
@@ -125,35 +125,10 @@ struct Item {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(rd_ui::Input)]
 pub enum Protocol {
     Artnet,
     Sacn,
     PosiStageNet,
     Dmx512,
-}
-
-impl std::fmt::Display for Protocol {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Protocol::Artnet => write!(f, "Art-Net"),
-            Protocol::Sacn => write!(f, "sACN"),
-            Protocol::PosiStageNet => write!(f, "PosiStageNet"),
-            Protocol::Dmx512 => write!(f, "DMX512"),
-        }
-    }
-}
-
-impl DropdownItem for Protocol {
-    fn label(&self) -> String {
-        match self {
-            Protocol::Artnet => "Art-Net".to_string(),
-            Protocol::Sacn => "sACN".to_string(),
-            Protocol::PosiStageNet => "PosiStageNet".to_string(),
-            Protocol::Dmx512 => "DMX512".to_string(),
-        }
-    }
-
-    fn variants() -> Vec<Self> {
-        vec![Protocol::Artnet, Protocol::Sacn, Protocol::PosiStageNet, Protocol::Dmx512]
-    }
 }

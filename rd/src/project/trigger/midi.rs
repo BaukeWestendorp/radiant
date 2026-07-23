@@ -30,6 +30,7 @@ pub struct MidiMapping {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 #[derive(facet::Facet)]
+#[cfg_attr(feature = "rd-ui", derive(rd_ui::Input))]
 #[repr(C)]
 pub enum FilterType {
     ControlChange,
@@ -46,21 +47,5 @@ impl fmt::Display for FilterType {
             FilterType::NoteOff => write!(f, "Note Off"),
             FilterType::PitchBend => write!(f, "Pitch Bend"),
         }
-    }
-}
-
-#[cfg(feature = "rd-ui")]
-impl rd_ui::DropdownItem for FilterType {
-    fn label(&self) -> String {
-        self.to_string()
-    }
-
-    fn variants() -> Vec<Self> {
-        vec![
-            FilterType::ControlChange,
-            FilterType::NoteOn,
-            FilterType::NoteOff,
-            FilterType::PitchBend,
-        ]
     }
 }

@@ -2,7 +2,7 @@ mod form;
 mod interactive;
 mod misc;
 mod scrollable;
-// TODO: mod table;
+mod table;
 mod tabs;
 mod theme;
 mod tiles;
@@ -23,7 +23,7 @@ mod app {
     use crate::interactive::InteractivePreview;
     use crate::misc::MiscPreview;
     use crate::scrollable::ScrollablePreview;
-    // TODO: use crate::table::TablePreview;
+    use crate::table::TablePreview;
     use crate::tabs::TabsPreview;
     use crate::theme::ThemePreview;
     use crate::tiles::TilesPreview;
@@ -43,7 +43,7 @@ mod app {
         tab_form: Entity<FormPreview>,
         tab_interactive: Entity<InteractivePreview>,
         tab_tabs: Entity<TabsPreview>,
-        // TODO: tab_table: Entity<TablePreview>,
+        tab_table: Entity<TablePreview>,
         tab_scrollable: Entity<ScrollablePreview>,
         tab_theme: Entity<ThemePreview>,
         tab_tiles: Entity<TilesPreview>,
@@ -60,7 +60,7 @@ mod app {
                 tab_form: cx.new(|cx| FormPreview::new(window, cx)),
                 tab_interactive: cx.new(|cx| InteractivePreview::new(window, cx)),
                 tab_tabs: cx.new(|cx| TabsPreview::new(window, cx)),
-                // TODO: tab_table: cx.new(|cx| TablePreview::new(window, cx)),
+                tab_table: cx.new(|cx| TablePreview::new(window, cx)),
                 tab_scrollable: cx.new(|cx| ScrollablePreview::new(window, cx)),
                 tab_theme: cx.new(|cx| ThemePreview::new(window, cx)),
                 tab_tiles: cx.new(|cx| TilesPreview::new(window, cx)),
@@ -84,7 +84,7 @@ mod app {
                     Tab::new("typo", "Typography", self.tab_typo.clone().into_any_element()),
                     Tab::new("theme", "Theme", self.tab_theme.clone().into_any_element()),
                     Tab::new("tabs", "Tabs", self.tab_tabs.clone().into_any_element()),
-                    // TODO: Tab::new("table", "Table", self.tab_table.clone().into_any_element()),
+                    Tab::new("table", "Table", self.tab_table.clone().into_any_element()),
                     Tab::new(
                         "scrollable",
                         "Scrollable",

@@ -5,7 +5,7 @@ use gpui::{
     IntoElement, ReadGlobal, SharedString, Styled, Window, div, hsla, point, prelude::*, px,
 };
 
-use crate::{ActiveTheme, Button, Input, InputEvent, InputState, h_flex, v_flex};
+use crate::{ActiveTheme, Button, InputDelegate, InputEvent, h_flex, input::InputState, v_flex};
 
 pub(crate) fn init(cx: &mut App) {
     let popup_stacks = cx.new(|_| HashMap::new());
@@ -85,9 +85,9 @@ impl Popup {
         Self { title: title.into(), kind: PopupKind::Message { message: message.into() } }
     }
 
-    pub fn input<S: InputState + 'static>(
+    pub fn input<S: InputDelegate + 'static>(
         title: impl Into<SharedString>,
-        input: Entity<Input<S>>,
+        input: Entity<InputState<S>>,
         window: &mut Window,
         cx: &mut App,
         on_submit: impl FnOnce(&S::Value, &mut App) + 'static,
@@ -197,11 +197,11 @@ impl Render for Popup {
     }
 }
 
-struct InputPopup<S: InputState> {
-    input: Entity<Input<S>>,
+struct InputPopup<S: InputDelegate> {
+    input: Entity<InputState<S>>,
 }
 
-impl<S: InputState + 'static> Render for InputPopup<S> {
+impl<S: InputDelegate + 'static> Render for InputPopup<S> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .flex()

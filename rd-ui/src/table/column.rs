@@ -1,11 +1,8 @@
 use std::rc::Rc;
 
-use gpui::{AnyElement, App, Entity, SharedString, Window, prelude::*};
+use gpui::{AnyElement, App, Entity, SharedString, Window};
 
-use crate::{
-    DropdownItem, DropdownState, FieldState, FieldValue, Input, Popup, PopupAppExt, TableDelegate,
-    TableState,
-};
+use crate::{AutoInput, InputDelegate, InputState, Popup, PopupAppExt, TableDelegate, TableState};
 
 pub struct Column<D: TableDelegate> {
     id: SharedString,
@@ -60,7 +57,7 @@ impl<D: TableDelegate + 'static> Column<D> {
         self
     }
 
-    pub fn with_popup_edit_handler<
+    pub fn with_input_popup_edit_handler<
         V: 'static,
         S: Fn(&mut D::Row) -> V + 'static,
         P: Fn(V, Entity<TableState<D>>, Vec<D::RowId>, &mut Window, &mut App) -> Popup + 'static,
@@ -72,10 +69,7 @@ impl<D: TableDelegate + 'static> Column<D> {
         let initial_value = Rc::new(initial_value);
         let popup_builder = Rc::new(popup_builder);
 
-        let edit_handler = move |table: Entity<TableState<D>>,
-                                 row_ids: Vec<D::RowId>,
-                                 window: &mut Window,
-                                 cx: &mut App| {
+        self.with_edit_handler(move |table, row_ids, window, cx| {
             let Some(first_row_id) = row_ids.first() else {
                 return;
             };
@@ -95,21 +89,25 @@ impl<D: TableDelegate + 'static> Column<D> {
             cx.open_popup(window, move |window, cx| {
                 popup_builder(first_value, table, row_ids, window, cx)
             });
-        };
-
-        self.with_edit_handler(edit_handler)
+        })
     }
 
-    pub fn with_enumerable_field_edit_handler<
-        V: FieldValue + EnumerableValue + 'static,
-        F: Fn(&mut D::Row) -> &mut V + 'static,
+    pub fn with_editor<
+        I: InputDelegate + 'static,
+        F: Fn(&mut D::Row) -> &mut I::Value + 'static,
+        B: Fn(I::Value, &mut Window, &mut App) -> Entity<InputState<I>> + 'static,
     >(
         self,
         field_selector: F,
-    ) -> Self {
+        input_builder: B,
+    ) -> Self
+    where
+        I::Value: Clone,
+    {
         let field_selector = Rc::new(field_selector);
+        let input_builder = Rc::new(input_builder);
 
-        self.with_popup_edit_handler(
+        self.with_input_popup_edit_handler(
             {
                 let field_selector = Rc::clone(&field_selector);
                 move |row| field_selector(row).clone()
@@ -117,106 +115,14 @@ impl<D: TableDelegate + 'static> Column<D> {
             move |first_value, table, row_ids, window, cx| {
                 let field_selector = Rc::clone(&field_selector);
 
-                let input = cx.new(|cx| {
-                    let state = cx.new(|cx| {
-                        let focus_handle = cx.focus_handle();
-                        let state = FieldState::<V>::new("popup-field", focus_handle, window, cx);
-                        state.set_value(first_value, cx);
-                        state
-                    });
-                    Input::new(state, cx)
-                });
+                let input = input_builder(first_value, window, cx);
 
-                Popup::input("Edit value(s)", input, window, cx, move |value, cx| {
-                    for (offset, row_id) in row_ids.into_iter().enumerate() {
+                Popup::input("Edit value(s)", input, window, cx, move |new_value: &I::Value, cx| {
+                    for row_id in &row_ids {
                         table.update(cx, |state, cx| {
-                            if let Some(row) = state.delegate_mut().row_mut(&row_id) {
+                            if let Some(row) = state.delegate_mut().row_mut(row_id) {
                                 let target_field = field_selector(row);
-                                *target_field = value.enumerated_value(offset);
-                            }
-                            cx.notify();
-                        })
-                    }
-                })
-            },
-        )
-    }
-
-    pub fn with_clonable_field_edit_handler<
-        V: FieldValue + 'static,
-        F: Fn(&mut D::Row) -> &mut V + 'static,
-    >(
-        self,
-        field_selector: F,
-    ) -> Self {
-        let field_selector = Rc::new(field_selector);
-
-        self.with_popup_edit_handler(
-            {
-                let field_selector = Rc::clone(&field_selector);
-                move |row| field_selector(row).clone()
-            },
-            move |first_value, table, row_ids, window, cx| {
-                let field_selector = Rc::clone(&field_selector);
-
-                let input = cx.new(|cx| {
-                    let state = cx.new(|cx| {
-                        let focus_handle = cx.focus_handle();
-                        let state = FieldState::<V>::new("popup-field", focus_handle, window, cx);
-                        state.set_value(first_value, cx);
-                        state
-                    });
-                    Input::new(state, cx)
-                });
-
-                Popup::input("Edit value(s)", input, window, cx, move |value, cx| {
-                    for row_id in row_ids {
-                        table.update(cx, |state, cx| {
-                            if let Some(row) = state.delegate_mut().row_mut(&row_id) {
-                                let target_field = field_selector(row);
-                                *target_field = value.clone();
-                            }
-                            cx.notify();
-                        })
-                    }
-                })
-            },
-        )
-    }
-
-    pub fn with_dropdown_edit_handler<
-        V: DropdownItem + 'static,
-        F: Fn(&mut D::Row) -> &mut V + 'static,
-    >(
-        self,
-        field_selector: F,
-    ) -> Self {
-        let field_selector = Rc::new(field_selector);
-
-        self.with_popup_edit_handler(
-            {
-                let field_selector = Rc::clone(&field_selector);
-                move |row| field_selector(row).clone()
-            },
-            move |first_value, table, row_ids, window, cx| {
-                let field_selector = Rc::clone(&field_selector);
-
-                let value = cx.new(|_| first_value);
-                let input = cx.new(|cx| {
-                    let state = cx.new(|cx| {
-                        let mut state = DropdownState::<V>::new(value, cx);
-                        state.open(true);
-                        state
-                    });
-                    Input::new(state, cx)
-                });
-
-                Popup::input("Edit value(s)", input, window, cx, move |value, cx| {
-                    for row_id in row_ids {
-                        table.update(cx, |state, cx| {
-                            if let Some(row) = state.delegate_mut().row_mut(&row_id) {
-                                let target_field = field_selector(row);
-                                *target_field = value.clone();
+                                *target_field = new_value.clone();
                             }
                             cx.notify();
                         });
@@ -224,6 +130,63 @@ impl<D: TableDelegate + 'static> Column<D> {
                 })
             },
         )
+    }
+
+    pub fn with_auto_editor<V: AutoInput, F: Fn(&mut D::Row) -> &mut V + 'static>(
+        self,
+        field_selector: F,
+    ) -> Self {
+        self.with_editor(field_selector, V::build_input)
+    }
+
+    pub fn with_enumerable_editor<
+        I: InputDelegate + 'static,
+        F: Fn(&mut D::Row) -> &mut I::Value + 'static,
+        B: Fn(I::Value, &mut Window, &mut App) -> Entity<InputState<I>> + 'static,
+    >(
+        self,
+        field_selector: F,
+        input_builder: B,
+    ) -> Self
+    where
+        I::Value: EnumerableValue,
+    {
+        let field_selector = Rc::new(field_selector);
+        let input_builder = Rc::new(input_builder);
+
+        self.with_input_popup_edit_handler(
+            {
+                let field_selector = Rc::clone(&field_selector);
+                move |row| field_selector(row).clone()
+            },
+            move |first_value, table, row_ids, window, cx| {
+                let field_selector = Rc::clone(&field_selector);
+
+                let input = input_builder(first_value, window, cx);
+
+                Popup::input("Edit value(s)", input, window, cx, move |new_value: &I::Value, cx| {
+                    for (offset, row_id) in row_ids.iter().enumerate() {
+                        table.update(cx, |state, cx| {
+                            if let Some(row) = state.delegate_mut().row_mut(row_id) {
+                                let target_field = field_selector(row);
+                                *target_field = new_value.enumerated_value(offset);
+                            }
+                            cx.notify();
+                        });
+                    }
+                })
+            },
+        )
+    }
+
+    pub fn with_auto_enumerable_editor<
+        V: AutoInput + EnumerableValue,
+        F: Fn(&mut D::Row) -> &mut V + 'static,
+    >(
+        self,
+        field_selector: F,
+    ) -> Self {
+        self.with_enumerable_editor(field_selector, V::build_input)
     }
 
     pub fn with_sort_handler(

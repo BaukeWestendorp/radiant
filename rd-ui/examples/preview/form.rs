@@ -31,7 +31,7 @@ impl Render for FormPreview {
 struct PreviewForm {
     enum_value: Entity<InputState<Dropdown<EnumValue>>>,
     name: Entity<InputState<Field<String>>>,
-    slider: Entity<InputState<Slider>>,
+    slider: Entity<InputState<Slider<f64>>>,
 }
 
 impl PreviewForm {
@@ -79,6 +79,7 @@ impl FormDelegate for PreviewForm {
     }
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 struct PreviewFormData {
     enum_value: EnumValue,

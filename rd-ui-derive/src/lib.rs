@@ -55,6 +55,25 @@ pub fn derive_input(input: TokenStream) -> TokenStream {
                 }
             }
         }
+
+        impl ::rd_ui::AutoInput for #name {
+            type Delegate = ::rd_ui::Dropdown<Self>;
+
+            fn build_input(
+                initial_value: Self,
+                window: &mut ::rd_ui::gpui::Window,
+                cx: &mut ::rd_ui::gpui::App,
+            ) -> ::rd_ui::gpui::Entity<::rd_ui::InputState<Self::Delegate>> {
+                use ::rd_ui::gpui::AppContext as _;
+                cx.new(|cx| {
+                    ::rd_ui::InputState::new(
+                        ::rd_ui::Dropdown::new(initial_value, cx.focus_handle(), window, cx),
+                        window,
+                        cx,
+                    )
+                })
+            }
+        }
     };
 
     TokenStream::from(expanded)

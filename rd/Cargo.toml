@@ -22,7 +22,7 @@ ariadne = "0.6.0"
 rand = "0.10.2"
 
 # feature = "rd-ui"
-rd-ui = { workspace = true, optional = true }
+rd-ui = { workspace = true, optional = true, features = ["derive"] }
 
 [dev-dependencies]
 anyhow.workspace = true
