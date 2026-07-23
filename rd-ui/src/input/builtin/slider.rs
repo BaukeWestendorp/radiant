@@ -2,25 +2,154 @@ use gpui::{
     App, Bounds, ClickEvent, DragMoveEvent, ElementId, Entity, FocusHandle, Focusable, MouseButton,
     MouseUpEvent, Pixels, Point, RenderOnce, Window, canvas, div, prelude::*, relative, rems,
 };
+use std::fmt::Display;
+use std::str::FromStr;
 
 use crate::{
     ActiveTheme, InputDelegate, InputEvent, InputState, TextInput, interactive_container, z_stack,
 };
 
-pub struct Slider {
+pub trait SliderValue: Copy + FromStr + Display + PartialEq + Default + 'static {
+    fn to_f64(&self) -> f64;
+    fn from_f64(value: f64) -> Self;
+    fn min_value() -> Option<Self>;
+    fn max_value() -> Option<Self>;
+    fn step_value() -> Option<Self>;
+}
+
+macro_rules! impl_slider_value_int {
+    ($($t:ty),*) => {
+        $(
+            impl SliderValue for $t {
+                fn to_f64(&self) -> f64 { *self as f64 }
+                fn from_f64(value: f64) -> Self { value.round() as $t }
+                fn min_value() -> Option<Self> { Some(<$t>::MIN) }
+                fn max_value() -> Option<Self> { None }
+                fn step_value() -> Option<Self> { Some(1) }
+            }
+
+            impl $crate::AutoInput for $t {
+                type Delegate = $crate::Slider<$t>;
+
+                fn build_input(
+                    initial_value: Self,
+                    window: &mut Window,
+                    cx: &mut App,
+                ) -> $crate::gpui::Entity<$crate::InputState<Self::Delegate>> {
+                    cx.new(|cx| {
+                        let field = $crate::Slider::new(cx.focus_handle(), window, cx).with_value(Some(initial_value), cx);
+                        $crate::InputState::new(field, window, cx)
+                    })
+                }
+            }
+        )*
+    };
+}
+
+impl_slider_value_int!(u16, u32, u64, u128, usize, i16, i32, i64, i128, isize);
+
+impl SliderValue for i8 {
+    fn to_f64(&self) -> f64 {
+        *self as f64
+    }
+
+    fn from_f64(value: f64) -> Self {
+        value as i8
+    }
+
+    fn min_value() -> Option<Self> {
+        Some(i8::MIN)
+    }
+
+    fn max_value() -> Option<Self> {
+        Some(i8::MAX)
+    }
+
+    fn step_value() -> Option<Self> {
+        None
+    }
+}
+
+impl SliderValue for u8 {
+    fn to_f64(&self) -> f64 {
+        *self as f64
+    }
+
+    fn from_f64(value: f64) -> Self {
+        value as u8
+    }
+
+    fn min_value() -> Option<Self> {
+        Some(u8::MIN)
+    }
+
+    fn max_value() -> Option<Self> {
+        Some(u8::MAX)
+    }
+
+    fn step_value() -> Option<Self> {
+        None
+    }
+}
+
+impl SliderValue for f32 {
+    fn to_f64(&self) -> f64 {
+        *self as f64
+    }
+
+    fn from_f64(value: f64) -> Self {
+        value as f32
+    }
+
+    fn min_value() -> Option<Self> {
+        Some(f32::MIN)
+    }
+
+    fn max_value() -> Option<Self> {
+        None
+    }
+
+    fn step_value() -> Option<Self> {
+        None
+    }
+}
+
+impl SliderValue for f64 {
+    fn to_f64(&self) -> f64 {
+        *self
+    }
+
+    fn from_f64(value: f64) -> Self {
+        value
+    }
+
+    fn min_value() -> Option<Self> {
+        Some(f64::MIN)
+    }
+
+    fn max_value() -> Option<Self> {
+        Some(f64::MAX)
+    }
+
+    fn step_value() -> Option<Self> {
+        None
+    }
+}
+
+pub struct Slider<T: SliderValue> {
     element_id: ElementId,
     text_input: Entity<TextInput>,
 
-    min: Option<f64>,
-    max: Option<f64>,
-    step: Option<f64>,
+    min: Option<T>,
+    max: Option<T>,
+    step: Option<T>,
     submit_on_drag: bool,
 
     bounds: Bounds<Pixels>,
     prev_mouse_pos: Option<Point<Pixels>>,
 }
 
-impl Slider {
+impl<T: SliderValue> Slider<T> {
     pub fn new(
         focus_handle: FocusHandle,
         window: &mut Window,
@@ -52,12 +181,12 @@ impl Slider {
                     cx.emit(InputEvent::Blur);
                 }
                 InputEvent::Submit(s) => {
-                    if let Ok(v) = s.parse() {
+                    if let Ok(v) = s.parse::<T>() {
                         cx.emit(InputEvent::Submit(v))
                     }
                 }
                 InputEvent::Change(s) => {
-                    if let Ok(v) = s.parse() {
+                    if let Ok(v) = s.parse::<T>() {
                         cx.emit(InputEvent::Change(v))
                     }
                 }
@@ -69,54 +198,54 @@ impl Slider {
             element_id,
             text_input,
 
-            min: None,
-            max: None,
-            step: None,
-            submit_on_drag: true,
+            min: T::min_value(),
+            max: T::max_value(),
+            step: T::step_value(),
+            submit_on_drag: false,
 
             bounds: Bounds::default(),
             prev_mouse_pos: None,
         }
     }
 
-    pub fn min(&self) -> Option<f64> {
+    pub fn min(&self) -> Option<T> {
         self.min
     }
 
-    pub fn set_min(&mut self, min: Option<f64>, cx: &mut Context<InputState<Self>>) {
+    pub fn set_min(&mut self, min: Option<T>, cx: &mut Context<InputState<Self>>) {
         self.min = min;
         self.commit_value(cx);
     }
 
-    pub fn with_min(mut self, min: Option<f64>, cx: &mut Context<InputState<Self>>) -> Self {
+    pub fn with_min(mut self, min: Option<T>, cx: &mut Context<InputState<Self>>) -> Self {
         self.set_min(min, cx);
         self
     }
 
-    pub fn max(&self) -> Option<f64> {
+    pub fn max(&self) -> Option<T> {
         self.max
     }
 
-    pub fn set_max(&mut self, max: Option<f64>, cx: &mut Context<InputState<Self>>) {
+    pub fn set_max(&mut self, max: Option<T>, cx: &mut Context<InputState<Self>>) {
         self.max = max;
         self.commit_value(cx);
     }
 
-    pub fn with_max(mut self, max: Option<f64>, cx: &mut Context<InputState<Self>>) -> Self {
+    pub fn with_max(mut self, max: Option<T>, cx: &mut Context<InputState<Self>>) -> Self {
         self.set_max(max, cx);
         self
     }
 
-    pub fn step(&self) -> Option<f64> {
+    pub fn step(&self) -> Option<T> {
         self.step
     }
 
-    pub fn set_step(&mut self, step: Option<f64>, cx: &mut Context<InputState<Self>>) {
+    pub fn set_step(&mut self, step: Option<T>, cx: &mut Context<InputState<Self>>) {
         self.step = step;
         self.commit_value(cx);
     }
 
-    pub fn with_step(mut self, step: Option<f64>, cx: &mut Context<InputState<Self>>) -> Self {
+    pub fn with_step(mut self, step: Option<T>, cx: &mut Context<InputState<Self>>) -> Self {
         self.set_step(step, cx);
         self
     }
@@ -160,15 +289,15 @@ impl Slider {
         self
     }
 
-    pub fn value(&self, cx: &App) -> Option<f64> {
+    pub fn value(&self, cx: &App) -> Option<T> {
         let value_str = self.text_input.read(cx).text().to_string();
         if value_str.trim().is_empty() {
             return None;
         };
-        Some(value_str.parse().unwrap_or_default())
+        value_str.parse::<T>().ok()
     }
 
-    pub fn set_value(&mut self, value: Option<f64>, cx: &mut App) {
+    pub fn set_value(&mut self, value: Option<T>, cx: &mut App) {
         let Some(value) = value else {
             self.text_input.update(cx, |text_input, cx| {
                 text_input.set_text("".into(), cx);
@@ -176,24 +305,31 @@ impl Slider {
             return;
         };
 
+        let mut f_val = value.to_f64();
+        let min = self.min.or(T::min_value()).map(|v| v.to_f64()).unwrap_or(f64::MIN);
+        let max = self.max.or(T::max_value()).map(|v| v.to_f64()).unwrap_or(f64::MAX);
+
         // Clamp
-        let mut value = value.clamp(self.min.unwrap_or(f64::MIN), self.max.unwrap_or(f64::MAX));
+        f_val = f_val.clamp(min, max);
 
         // Step
-        if let Some(step) = self.step() {
-            value = (value / step).round() * step;
+        if let Some(step) = self.step {
+            let f_step = step.to_f64();
+            f_val = (f_val / f_step).round() * f_step;
         }
 
-        // Round
-        value = (value * 10e3f64).round() / 10e3f64;
+        // Round visually (avoid 0.10000000000000001)
+        f_val = (f_val * 10e3_f64).round() / 10e3_f64;
+
+        let final_val = T::from_f64(f_val);
 
         self.text_input.update(cx, |text_input, cx| {
-            let value_str = value.to_string().into();
+            let value_str = final_val.to_string().into();
             text_input.set_text(value_str, cx);
         })
     }
 
-    pub fn with_value(mut self, value: Option<f64>, cx: &mut App) -> Self {
+    pub fn with_value(mut self, value: Option<T>, cx: &mut App) -> Self {
         self.set_value(value, cx);
         self
     }
@@ -240,16 +376,17 @@ impl Slider {
             return None;
         }
 
-        let min = self.min.unwrap_or(f64::MIN);
-        let max = self.max.unwrap_or(f64::MAX);
-        let value = self.value(cx)?.clamp(min, max);
+        let min = self.min.or(T::min_value()).map(|v| v.to_f64()).unwrap_or(f64::MIN);
+        let max = self.max.or(T::max_value()).map(|v| v.to_f64()).unwrap_or(f64::MAX);
+        let value = self.value(cx)?.to_f64().clamp(min, max);
+
         Some((value - min) / (max - min))
     }
 
     fn drag_factor(&self) -> f64 {
         if self.is_slider() {
-            let min = self.min.unwrap_or(f64::MIN);
-            let max = self.max.unwrap_or(f64::MAX);
+            let min = self.min.or(T::min_value()).map(|v| v.to_f64()).unwrap_or(f64::MIN);
+            let max = self.max.or(T::max_value()).map(|v| v.to_f64()).unwrap_or(f64::MAX);
             let delta = max - min;
             delta / self.bounds.size.width.as_f32() as f64
         } else {
@@ -273,7 +410,7 @@ impl Slider {
 
     fn handle_drag_move(
         &mut self,
-        event: &DragMoveEvent<(ElementId, Option<f64>, Pixels)>,
+        event: &DragMoveEvent<(ElementId, Option<T>, Pixels)>,
         window: &mut Window,
         cx: &mut Context<InputState<Self>>,
     ) {
@@ -287,8 +424,11 @@ impl Slider {
         let delta_x = mouse_position.x.as_f32() - x_start.as_f32();
 
         let factor = self.drag_factor();
-        let value = start_value.unwrap_or_default() + delta_x as f64 * factor;
-        self.set_value(Some(value), cx);
+        let start_f64 = start_value.map(|v| v.to_f64()).unwrap_or(0.0);
+        let value = start_f64 + delta_x as f64 * factor;
+
+        self.set_value(Some(T::from_f64(value)), cx);
+
         if self.submit_on_drag {
             self.commit_value(cx);
         } else {
@@ -308,8 +448,8 @@ impl Slider {
     }
 }
 
-impl InputDelegate for Slider {
-    type Value = f64;
+impl<T: SliderValue> InputDelegate for Slider<T> {
+    type Value = T;
 
     fn new_element(
         state: Entity<InputState<Self>>,
@@ -320,18 +460,18 @@ impl InputDelegate for Slider {
     }
 }
 
-impl Focusable for Slider {
+impl<T: SliderValue> Focusable for Slider<T> {
     fn focus_handle(&self, cx: &App) -> FocusHandle {
         self.text_input.focus_handle(cx)
     }
 }
 
 #[derive(IntoElement)]
-struct SliderElement {
-    state: Entity<InputState<Slider>>,
+struct SliderElement<T: SliderValue> {
+    state: Entity<InputState<Slider<T>>>,
 }
 
-impl RenderOnce for SliderElement {
+impl<T: SliderValue> RenderOnce for SliderElement<T> {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let state = self.state.read(cx);
         let is_interactive = !state.text_input.read(cx).is_interactive();
