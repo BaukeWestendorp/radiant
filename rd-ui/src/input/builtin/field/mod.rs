@@ -163,6 +163,13 @@ impl<V: FieldValue + 'static> InputDelegate for Field<V> {
     ) -> impl IntoElement {
         FieldElement { state }
     }
+
+    fn value_or_default(&self, cx: &App) -> Self::Value
+    where
+        Self::Value: Default,
+    {
+        self.value(cx).unwrap_or_default()
+    }
 }
 
 impl<V: FieldValue + 'static> Focusable for Field<V> {

@@ -10,6 +10,14 @@ impl<D: InputDelegate> InputState<D> {
     pub fn new(delegate: D, _window: &mut Window, _cx: &mut Context<Self>) -> Self {
         Self { delegate }
     }
+
+    pub fn delegate(&self) -> &D {
+        &self.delegate
+    }
+
+    pub fn delegate_mut(&mut self) -> &mut D {
+        &mut self.delegate
+    }
 }
 
 impl<D: InputDelegate> EventEmitter<InputEvent<D::Value>> for InputState<D> {}

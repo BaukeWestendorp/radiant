@@ -3,7 +3,6 @@ mod binding;
 mod button;
 
 mod container;
-mod form;
 mod grid;
 mod icon;
 mod init;
@@ -29,14 +28,13 @@ pub use asset::Assets;
 pub use binding::Binding;
 pub use button::Button;
 pub use container::{ContainerStyle, container, interactive_container};
-pub use form::{Form, FormDelegate, FormEvent, FormField, FormState};
 pub use grid::{dot_grid, line_grid, scrollable_line_grid};
 pub use icon::{Icon, IconSize, IconVariant};
 pub use init::init;
 pub use init::simple::build_simple_app;
 pub use input::{
-    AutoInput, Dropdown, DropdownValue, Field, FieldValue, INPUT_HEIGHT, Input, InputDelegate,
-    InputEvent, InputState, Slider, TextInput,
+    AutoInput, Dropdown, DropdownValue, Field, FieldValue, Form, FormDelegate, FormField,
+    INPUT_HEIGHT, Input, InputDelegate, InputEvent, InputState, OptionInput, Slider, TextInput,
 };
 pub use keymap::{Keymap, KeymapBinding};
 pub use org::section;
@@ -44,7 +42,7 @@ pub use popup::{Popup, PopupAppExt};
 pub use root::Root;
 pub use scrollable::{Scrollable, ScrollableState};
 pub use settings::{SETTINGS_WINDOW_OPTIONS, SettingsAppExt};
-pub use table::{Column, Table, TableDelegate, TableSelection, TableState};
+pub use table::{Column, Table, TableDelegate, TableEvent, TableSelection, TableState};
 pub use tabs::{Tab, Tabs, TabsState, TabsVariant};
 pub use theme::{ActiveTheme, HslaExt};
 pub use tiles::{PoolTile, PoolTileDelegate, TileDelegate, TileGrid, TileGridState};

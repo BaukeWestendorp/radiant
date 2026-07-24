@@ -6,7 +6,8 @@ use std::fmt::Display;
 use std::str::FromStr;
 
 use crate::{
-    ActiveTheme, InputDelegate, InputEvent, InputState, TextInput, interactive_container, z_stack,
+    ActiveTheme, AutoInput, InputDelegate, InputEvent, InputState, TextInput,
+    interactive_container, z_stack,
 };
 
 pub trait SliderValue: Copy + FromStr + Display + PartialEq + Default + 'static {
@@ -70,6 +71,22 @@ impl SliderValue for i8 {
     }
 }
 
+impl AutoInput for i8 {
+    type Delegate = Slider<i8>;
+
+    fn build_input(
+        initial_value: Self,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> Entity<InputState<Self::Delegate>> {
+        cx.new(|cx| {
+            let slider =
+                Slider::new(cx.focus_handle(), window, cx).with_value(Some(initial_value), cx);
+            InputState::new(slider, window, cx)
+        })
+    }
+}
+
 impl SliderValue for u8 {
     fn to_f64(&self) -> f64 {
         *self as f64
@@ -89,6 +106,22 @@ impl SliderValue for u8 {
 
     fn step_value() -> Option<Self> {
         None
+    }
+}
+
+impl AutoInput for u8 {
+    type Delegate = Slider<u8>;
+
+    fn build_input(
+        initial_value: Self,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> Entity<InputState<Self::Delegate>> {
+        cx.new(|cx| {
+            let slider =
+                Slider::new(cx.focus_handle(), window, cx).with_value(Some(initial_value), cx);
+            InputState::new(slider, window, cx)
+        })
     }
 }
 
@@ -114,6 +147,22 @@ impl SliderValue for f32 {
     }
 }
 
+impl AutoInput for f32 {
+    type Delegate = Slider<f32>;
+
+    fn build_input(
+        initial_value: Self,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> Entity<InputState<Self::Delegate>> {
+        cx.new(|cx| {
+            let slider =
+                Slider::new(cx.focus_handle(), window, cx).with_value(Some(initial_value), cx);
+            InputState::new(slider, window, cx)
+        })
+    }
+}
+
 impl SliderValue for f64 {
     fn to_f64(&self) -> f64 {
         *self
@@ -133,6 +182,22 @@ impl SliderValue for f64 {
 
     fn step_value() -> Option<Self> {
         None
+    }
+}
+
+impl AutoInput for f64 {
+    type Delegate = Slider<f64>;
+
+    fn build_input(
+        initial_value: Self,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> Entity<InputState<Self::Delegate>> {
+        cx.new(|cx| {
+            let slider =
+                Slider::new(cx.focus_handle(), window, cx).with_value(Some(initial_value), cx);
+            InputState::new(slider, window, cx)
+        })
     }
 }
 
@@ -457,6 +522,13 @@ impl<T: SliderValue> InputDelegate for Slider<T> {
         _cx: &mut App,
     ) -> impl IntoElement {
         SliderElement { state }
+    }
+
+    fn value_or_default(&self, cx: &App) -> Self::Value
+    where
+        Self::Value: Default,
+    {
+        self.value(cx).unwrap_or_default()
     }
 }
 

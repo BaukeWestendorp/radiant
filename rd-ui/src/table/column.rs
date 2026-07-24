@@ -4,11 +4,14 @@ use gpui::{AnyElement, App, Entity, SharedString, Window};
 
 use crate::{AutoInput, InputDelegate, InputState, Popup, PopupAppExt, TableDelegate, TableState};
 
+use super::TableEvent;
+
 pub struct Column<D: TableDelegate> {
     id: SharedString,
     name: SharedString,
 
     pub(crate) cell_builder: Option<Box<dyn Fn(&D::Row, &Window, &App) -> AnyElement>>,
+    /// After finishing the edit, you need to emit `TableEvent::EditSubmitted`.
     pub(crate) edit_handler:
         Option<Rc<dyn Fn(Entity<TableState<D>>, Vec<D::RowId>, &mut Window, &mut App)>>,
     pub(crate) sort_handler: Option<Box<dyn Fn(&D::Row, &D::Row) -> std::cmp::Ordering>>,
@@ -118,15 +121,17 @@ impl<D: TableDelegate + 'static> Column<D> {
                 let input = input_builder(first_value, window, cx);
 
                 Popup::input("Edit value(s)", input, window, cx, move |new_value: &I::Value, cx| {
-                    for row_id in &row_ids {
-                        table.update(cx, |state, cx| {
+                    table.update(cx, |state, cx| {
+                        for row_id in &row_ids {
                             if let Some(row) = state.delegate_mut().row_mut(row_id) {
                                 let target_field = field_selector(row);
                                 *target_field = new_value.clone();
                             }
+
                             cx.notify();
-                        });
-                    }
+                        }
+                        cx.emit(TableEvent::EditSubmitted);
+                    });
                 })
             },
         )
@@ -165,15 +170,16 @@ impl<D: TableDelegate + 'static> Column<D> {
                 let input = input_builder(first_value, window, cx);
 
                 Popup::input("Edit value(s)", input, window, cx, move |new_value: &I::Value, cx| {
-                    for (offset, row_id) in row_ids.iter().enumerate() {
-                        table.update(cx, |state, cx| {
+                    table.update(cx, |state, cx| {
+                        for (offset, row_id) in row_ids.iter().enumerate() {
                             if let Some(row) = state.delegate_mut().row_mut(row_id) {
                                 let target_field = field_selector(row);
                                 *target_field = new_value.enumerated_value(offset);
                             }
                             cx.notify();
-                        });
-                    }
+                        }
+                        cx.emit(TableEvent::EditSubmitted);
+                    });
                 })
             },
         )
@@ -238,7 +244,7 @@ macro_rules! impl_enumerate_number {
         $(
             impl EnumerableValue for $t {
                 fn enumerated_value(&self, offset: usize) -> Self {
-                    *self + (offset as $t)
+                    (*self).saturating_add(offset as $t)
                 }
             }
         )*

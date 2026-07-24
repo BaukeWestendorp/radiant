@@ -1,20 +1,27 @@
-use gpui::{Entity, Window, div, prelude::*};
+use gpui::{App, Entity, Window, div, prelude::*};
 use rd_ui::{
-    Dropdown, Field, Form, FormDelegate, FormEvent, FormField, FormState, Input, InputState, Slider,
+    Dropdown, Field, Form, FormDelegate, FormField, Input, InputEvent, InputState, Slider,
 };
 
 pub struct FormPreview {
-    form: Entity<FormState<PreviewForm>>,
+    form: Entity<InputState<Form<PreviewForm>>>,
 }
 
 impl FormPreview {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let form = cx.new(|cx| FormState::new(PreviewForm::new(window, cx), window, cx));
+        let form = cx.new(|cx| {
+            InputState::new(
+                Form::new(PreviewForm::new(window, cx), cx.focus_handle(), window, cx),
+                window,
+                cx,
+            )
+        });
 
         cx.subscribe(&form, |_, _, event, _| match event {
-            FormEvent::Submit { data } => {
+            InputEvent::Submit(data) => {
                 dbg!(data);
             }
+            _ => {}
         })
         .detach();
 
@@ -23,8 +30,8 @@ impl FormPreview {
 }
 
 impl Render for FormPreview {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().p_2().child(Form::new(self.form.clone(), window, cx))
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        div().size_full().p_2().child(Input::new(self.form.clone()))
     }
 }
 
@@ -35,7 +42,7 @@ struct PreviewForm {
 }
 
 impl PreviewForm {
-    fn new(window: &mut Window, cx: &mut Context<FormState<Self>>) -> Self {
+    fn new(window: &mut Window, cx: &mut Context<InputState<Form<Self>>>) -> Self {
         Self {
             enum_value: cx.new(|cx| {
                 InputState::new(
@@ -62,7 +69,7 @@ impl PreviewForm {
 impl FormDelegate for PreviewForm {
     type Data = PreviewFormData;
 
-    fn fields(&self) -> Vec<FormField> {
+    fn fields(&self, _cx: &App) -> Vec<FormField> {
         vec![
             FormField::new("Enum Value", Input::new(self.enum_value.clone())),
             FormField::new("Name", Input::new(self.name.clone())),
@@ -70,7 +77,7 @@ impl FormDelegate for PreviewForm {
         ]
     }
 
-    fn extract_data(&self, cx: &gpui::App) -> Option<Self::Data> {
+    fn extract_data(&self, cx: &App) -> Option<Self::Data> {
         Some(PreviewFormData {
             enum_value: self.enum_value.read(cx).value(cx).clone(),
             name: self.name.read(cx).value(cx)?.clone(),

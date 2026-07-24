@@ -13,4 +13,8 @@ pub trait InputDelegate: Focusable {
     ) -> impl IntoElement
     where
         Self: Sized;
+
+    fn value_or_default(&self, cx: &App) -> Self::Value
+    where
+        Self::Value: Default;
 }

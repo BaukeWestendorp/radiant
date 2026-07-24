@@ -75,6 +75,13 @@ impl<V: DropdownValue + 'static> InputDelegate for Dropdown<V> {
     ) -> impl IntoElement {
         DropdownElement { state }
     }
+
+    fn value_or_default(&self, cx: &App) -> Self::Value
+    where
+        Self::Value: Default,
+    {
+        self.value.read(cx).clone()
+    }
 }
 
 impl<V: DropdownValue + 'static> Focusable for Dropdown<V> {

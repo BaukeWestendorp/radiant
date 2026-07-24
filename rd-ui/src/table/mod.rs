@@ -115,6 +115,7 @@ impl<D: TableDelegate> Table<D> {
                             .iter()
                             .map(|(id, _)| (*id).clone())
                             .collect();
+
                         (edit_handler)(state.clone(), row_ids, window, cx);
                     }
                 }

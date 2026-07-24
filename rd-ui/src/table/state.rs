@@ -1,4 +1,4 @@
-use gpui::{Entity, Window, prelude::*};
+use gpui::{Entity, EventEmitter, Window, prelude::*};
 
 use crate::TableDelegate;
 
@@ -126,3 +126,10 @@ pub enum TableSortDirection {
     Ascending,
     Descending,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TableEvent {
+    EditSubmitted,
+}
+
+impl<D: TableDelegate + 'static> EventEmitter<TableEvent> for TableState<D> {}

@@ -84,24 +84,3 @@ macro_rules! impl_field_value_string {
 }
 
 impl_field_value_string!(SharedString, String);
-
-impl<T: FieldValue> FieldValue for Option<T> {
-    fn from_str(s: &str) -> Option<Self> {
-        if s.trim().is_empty() { Some(None) } else { T::from_str(s).map(Some) }
-    }
-
-    fn to_shared_string(&self) -> impl Into<SharedString> {
-        match self {
-            Some(value) => value.to_shared_string().into(),
-            None => SharedString::default(),
-        }
-    }
-
-    fn validator(s: &str) -> bool {
-        if s.trim().is_empty() { true } else { T::validator(s) }
-    }
-
-    fn submit_validator(s: &str) -> bool {
-        if s.trim().is_empty() { true } else { T::submit_validator(s) }
-    }
-}
