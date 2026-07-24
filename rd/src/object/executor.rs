@@ -2,10 +2,12 @@ use std::fmt;
 
 use crate::{ObjectId, Slot};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[derive(facet::Facet)]
+#[cfg_attr(feature = "rd-ui", derive(rd_ui::Input))]
 #[repr(C)]
 pub enum ExecutorButton {
+    #[default]
     Button1,
     Button2,
     Button3,
