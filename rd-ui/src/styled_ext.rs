@@ -1,8 +1,10 @@
 // From gpui-component:crates/ui/src/styled.rs
 
+use std::rc::Rc;
+
 use gpui::{
-    Action, App, Div, Edges, Empty, Refineable, StatefulInteractiveElement, StyleRefinement,
-    Styled, Window, div,
+    Action, App, Div, Edges, Empty, MouseButton, Refineable, StatefulInteractiveElement,
+    StyleRefinement, Styled, Window, div,
 };
 use gpui::{Pixels, prelude::*, px};
 
@@ -41,6 +43,25 @@ pub trait StyledExt: Styled + Sized {
 }
 
 impl<E: Styled> StyledExt for E {}
+
+pub trait InteractiveElementExt: InteractiveElement + Sized {
+    fn on_edit(self, listener: impl Fn(&mut Window, &mut App) + 'static) -> Self {
+        let listener = Rc::new(listener);
+        self.on_mouse_down(MouseButton::Right, {
+            let listener = listener.clone();
+            move |_, window, cx| {
+                (listener)(window, cx);
+            }
+        })
+        .on_mouse_down(MouseButton::Left, move |event, window, cx| {
+            if event.click_count == 2 {
+                (listener)(window, cx);
+            }
+        })
+    }
+}
+
+impl<E: InteractiveElement> InteractiveElementExt for E {}
 
 pub trait StatefulInteractiveElementExt: StatefulInteractiveElement + Sized {
     /// Refine the style of this element, applying the given style refinement.
