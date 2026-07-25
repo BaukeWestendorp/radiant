@@ -1,4 +1,4 @@
-use gpui::{App, ElementId, Entity, FontWeight, Pixels, Window, deferred, div, prelude::*, px};
+use gpui::{App, ElementId, Entity, FontWeight, MouseButton, Pixels, Window, div, prelude::*, px};
 
 mod column;
 mod delegate;
@@ -168,7 +168,7 @@ impl<D: TableDelegate> Table<D> {
         let columns = self.state().read(cx).delegate().columns();
 
         let cells = columns.iter().enumerate().map(|(column_ix, column)| {
-            self.render_cell(row, row_id, column_ix, column, window, cx)
+            self.render_cell(row, row_id, row_ix, column_ix, column, window, cx)
         });
 
         div()
@@ -187,6 +187,7 @@ impl<D: TableDelegate> Table<D> {
         &self,
         row: &D::Row,
         row_id: &D::RowId,
+        row_ix: usize,
         column_ix: usize,
         column: &Column<D>,
         window: &Window,
@@ -226,6 +227,46 @@ impl<D: TableDelegate> Table<D> {
             .bg(if is_selected { cx.theme().bg_selected } else { gpui::transparent_black() })
             .child(content)
             .children(selection_overlay)
+            .on_mouse_down(MouseButton::Left, {
+                let state = self.state().clone();
+                let column_id = column.id().to_string();
+                move |_, _, cx| {
+                    let column_id = column_id.clone();
+                    state.update(cx, |state, cx| {
+                        state.start_selection_drag(column_id, row_ix, cx);
+                        cx.notify();
+                    });
+                }
+            })
+            .on_mouse_move({
+                let state = self.state().clone();
+                move |_, _, cx| {
+                    if state.read(cx).is_dragging_selection() {
+                        state.update(cx, |state, cx| {
+                            state.update_selection_drag(row_ix, cx);
+                            cx.notify();
+                        });
+                    }
+                }
+            })
+            .on_mouse_up(MouseButton::Left, {
+                let state = self.state().clone();
+                move |_, _, cx| {
+                    state.update(cx, |state, cx| {
+                        state.stop_selection_drag(row_ix, cx);
+                        cx.notify();
+                    });
+                }
+            })
+            .on_mouse_up_out(MouseButton::Left, {
+                let state = self.state().clone();
+                move |_, _, cx| {
+                    state.update(cx, |state, cx| {
+                        state.stop_selection_drag(row_ix, cx);
+                        cx.notify();
+                    });
+                }
+            })
     }
 }
 

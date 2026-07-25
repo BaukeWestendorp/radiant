@@ -9,6 +9,8 @@ pub struct TableState<D: TableDelegate> {
 
     sorted_column: Option<(String, TableSortDirection)>,
     cached_row_order: Option<Vec<usize>>,
+
+    selection_drag: Option<(String, usize)>,
 }
 
 impl<D: TableDelegate + 'static> TableState<D> {
@@ -20,6 +22,8 @@ impl<D: TableDelegate + 'static> TableState<D> {
 
             sorted_column: None,
             cached_row_order: None,
+
+            selection_drag: None,
         }
     }
 
@@ -137,6 +141,43 @@ impl<D: TableDelegate + 'static> TableState<D> {
             }
             cx.notify();
         });
+    }
+
+    pub(crate) fn start_selection_drag(
+        &mut self,
+        column_id: String,
+        row_ix: usize,
+        cx: &mut Context<Self>,
+    ) {
+        self.selection_drag = Some((column_id, row_ix));
+        self.update_selection_drag(row_ix, cx);
+    }
+
+    pub(crate) fn is_dragging_selection(&self) -> bool {
+        self.selection_drag.is_some()
+    }
+
+    pub(crate) fn update_selection_drag(&mut self, current_row_ix: usize, cx: &mut Context<Self>) {
+        let Some((column_id, start_row_ix)) = self.selection_drag.clone() else {
+            return;
+        };
+
+        let start = start_row_ix.min(current_row_ix);
+        let end = start_row_ix.max(current_row_ix);
+
+        let rows = self.sorted_rows();
+        let selected_rows =
+            rows.into_iter().skip(start).take(end - start + 1).map(|(id, _)| id.clone()).collect();
+
+        self.selection.update(cx, |selection, cx| {
+            selection.column = Some(column_id);
+            selection.kind = TableSelectionKind::Multiple(selected_rows);
+            cx.notify();
+        });
+    }
+
+    pub(crate) fn stop_selection_drag(&mut self, _row_ix: usize, _cx: &mut Context<Self>) {
+        self.selection_drag = None;
     }
 }
 
