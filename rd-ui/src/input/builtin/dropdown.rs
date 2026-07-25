@@ -1,12 +1,14 @@
 use gpui::{
-    App, ElementId, Entity, FocusHandle, Focusable, MouseButton, RenderOnce, Window, deferred, div,
-    prelude::*,
+    App, AppContext, ElementId, Entity, FocusHandle, Focusable, MouseButton, RenderOnce, Window,
+    deferred, div, prelude::*,
 };
 
 use crate::{
     ActiveTheme, HslaExt, INPUT_HEIGHT, Icon, IconSize, IconVariant, InputDelegate, InputEvent,
     InputState, container, h_flex, interactive_container,
 };
+
+use super::LayoutDirection;
 
 pub trait DropdownValue: Clone {
     fn variants() -> Vec<Self>
@@ -76,11 +78,12 @@ impl<V: DropdownValue + 'static> InputDelegate for Dropdown<V> {
         DropdownElement { state }
     }
 
-    fn value_or_default(&self, cx: &App) -> Self::Value
-    where
-        Self::Value: Default,
-    {
+    fn value_or_default(&self, cx: &App) -> Self::Value {
         self.value.read(cx).clone()
+    }
+
+    fn form_layout_direction(&self) -> Option<LayoutDirection> {
+        Some(LayoutDirection::Horizontal)
     }
 }
 

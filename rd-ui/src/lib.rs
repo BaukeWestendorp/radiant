@@ -34,7 +34,8 @@ pub use init::init;
 pub use init::simple::build_simple_app;
 pub use input::{
     AutoInput, Dropdown, DropdownValue, Field, FieldValue, Form, FormDelegate, FormField,
-    INPUT_HEIGHT, Input, InputDelegate, InputEvent, InputState, OptionInput, Slider, TextInput,
+    INPUT_HEIGHT, Input, InputDelegate, InputEvent, InputState, LayoutDirection, OptionInput,
+    Slider, SliderValue, TextInput,
 };
 pub use keymap::{Keymap, KeymapBinding};
 pub use org::section;
@@ -42,7 +43,9 @@ pub use popup::{Popup, PopupAppExt};
 pub use root::Root;
 pub use scrollable::{Scrollable, ScrollableState};
 pub use settings::{SETTINGS_WINDOW_OPTIONS, SettingsAppExt};
-pub use table::{Column, Table, TableDelegate, TableEvent, TableSelection, TableState};
+pub use table::{
+    Column, EnumerableValue, Table, TableDelegate, TableEvent, TableSelection, TableState,
+};
 pub use tabs::{Tab, Tabs, TabsState, TabsVariant};
 pub use theme::{ActiveTheme, HslaExt};
 pub use tiles::{PoolTile, PoolTileDelegate, TileDelegate, TileGrid, TileGridState};

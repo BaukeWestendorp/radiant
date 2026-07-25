@@ -2,13 +2,16 @@
   "midi": [
     {
       "device_name": "nanoKONTROL2 SLIDER/KNOB",
-      "device_channel": 0,
-      "filter_type": "ControlChange",
-      "filter_controller": 0,
-      "filter_note": null,
-      "transform_invert": false,
-      "transform_max_output": 1.0,
-      "transform_min_output": 0.0,
+      "device_channel": {
+        "Single": 0
+      },
+      "filter": {
+        "ControlChange": {
+          "controller": {
+            "Single": 0
+          }
+        }
+      },
       "target": {
         "type": "ExecutorMaster",
         "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
@@ -17,13 +20,16 @@
     },
     {
       "device_name": "nanoKONTROL2 SLIDER/KNOB",
-      "device_channel": 0,
-      "filter_type": "ControlChange",
-      "filter_controller": 64,
-      "filter_note": null,
-      "transform_invert": false,
-      "transform_max_output": 1.0,
-      "transform_min_output": 0.0,
+      "device_channel": {
+        "Single": 0
+      },
+      "filter": {
+        "ControlChange": {
+          "controller": {
+            "Single": 64
+          }
+        }
+      },
       "target": {
         "type": "ExecutorButton",
         "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
@@ -33,13 +39,16 @@
     },
     {
       "device_name": "nanoKONTROL2 SLIDER/KNOB",
-      "device_channel": 0,
-      "filter_type": "ControlChange",
-      "filter_controller": 16,
-      "filter_note": null,
-      "transform_invert": false,
-      "transform_max_output": 1.0,
-      "transform_min_output": 0.0,
+      "device_channel": {
+        "Single": 0
+      },
+      "filter": {
+        "ControlChange": {
+          "controller": {
+            "Single": 16
+          }
+        }
+      },
       "target": {
         "type": "Encoder",
         "ix": 0
@@ -47,17 +56,19 @@
     },
     {
       "device_name": "nanoKONTROL2 SLIDER/KNOB",
-      "device_channel": 0,
-      "filter_type": "ControlChange",
-      "filter_controller": 43,
-      "filter_note": null,
-      "transform_invert": false,
-      "transform_max_output": 1.0,
-      "transform_min_output": 0.0,
+      "device_channel": {
+        "Single": 0
+      },
+      "filter": {
+        "ControlChange": {
+          "controller": {
+            "Single": 43
+          }
+        }
+      },
       "target": {
         "type": "HighlightToggle"
       }
     }
   ]
-
 }

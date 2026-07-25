@@ -1,4 +1,4 @@
-use gpui::{Entity, prelude::*};
+use gpui::{App, Entity, Window, prelude::*};
 
 use crate::{
     AutoInput, Dropdown, DropdownValue, Form, FormDelegate, FormField, Input, InputDelegate,
@@ -29,8 +29,8 @@ impl AutoInput for HasValue {
 
     fn build_input(
         initial_value: Self,
-        window: &mut gpui::Window,
-        cx: &mut gpui::App,
+        window: &mut Window,
+        cx: &mut App,
     ) -> Entity<InputState<Self::Delegate>> {
         cx.new(move |cx| {
             let dropdown = Dropdown::new(initial_value, cx.focus_handle(), window, cx);
@@ -47,18 +47,18 @@ pub struct OptionInput<T: AutoInput> {
 impl<T: AutoInput + Default + Clone> FormDelegate for OptionInput<T> {
     type Data = Option<T>;
 
-    fn fields(&self, cx: &gpui::App) -> Vec<FormField> {
-        let mut fields = vec![FormField::new("Has Value", Input::new(self.toggle.clone()))];
+    fn fields(&self, cx: &mut App) -> Vec<FormField> {
+        let mut fields = vec![FormField::new("Has Value", Input::new(self.toggle.clone()), cx)];
 
         let toggle_val = self.toggle.read(cx).value(cx).clone();
         if matches!(toggle_val, HasValue::Yes) {
-            fields.push(FormField::new("Value", Input::new(self.value.clone())));
+            fields.push(FormField::new("Value", Input::new(self.value.clone()), cx));
         }
 
         fields
     }
 
-    fn extract_data(&self, cx: &gpui::App) -> Option<Self::Data> {
+    fn extract_data(&self, cx: &App) -> Option<Self::Data> {
         let toggle_val = self.toggle.read(cx).value(cx).clone();
 
         match toggle_val {
@@ -76,8 +76,8 @@ impl<T: AutoInput + Default + Clone> AutoInput for Option<T> {
 
     fn build_input(
         initial_value: Self,
-        window: &mut gpui::Window,
-        cx: &mut gpui::App,
+        window: &mut Window,
+        cx: &mut App,
     ) -> Entity<InputState<Self::Delegate>> {
         use gpui::AppContext as _;
 

@@ -20,23 +20,23 @@ pub enum TriggerTarget {
     HighlightToggle,
     ExecutorMaster {
         #[facet(rename = "page")]
-        #[rd_ui(field_name = "Page")]
+        #[rd_ui(label = "Page")]
         page_id: ObjectId,
-        #[rd_ui(field_name = "Slot")]
+        #[rd_ui(label = "Slot")]
         slot: Slot,
     },
     ExecutorButton {
         #[facet(rename = "page")]
-        #[rd_ui(field_name = "Page")]
+        #[rd_ui(label = "Page")]
         page_id: ObjectId,
-        #[rd_ui(field_name = "Slot")]
+        #[rd_ui(label = "Slot")]
         slot: Slot,
-        #[rd_ui(field_name = "Button")]
+        #[rd_ui(label = "Button")]
         button: ExecutorButton,
     },
     Encoder {
         #[facet(rename = "ix")]
-        #[rd_ui(field_name = "Encoder")]
+        #[rd_ui(label = "Encoder")]
         encoder_ix: usize,
     },
 }

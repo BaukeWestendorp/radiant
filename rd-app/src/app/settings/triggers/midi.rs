@@ -29,7 +29,7 @@ impl MidiTabView {
         cx.subscribe(&table, |this, table, event, cx| match event {
             TableEvent::EditSubmitted => this.uncommitted_project.update(cx, |project, cx| {
                 project.trigger.midi =
-                    dbg!(table.read(cx).delegate().mappings.values().cloned().collect());
+                    table.read(cx).delegate().mappings.values().cloned().collect();
                 cx.notify();
             }),
         })
@@ -69,7 +69,6 @@ impl MidiMappingTable {
             let uncommitted_project = uncommitted_project.clone();
             move |event, window, cx| match event {
                 rd::Event::ProjectLoaded => {
-                    dbg!("project loaded");
                     this.update(cx, |this, cx| {
                         // FIXME: this.clear_selection(cx);
                         *this = TableState::new(
@@ -94,67 +93,22 @@ impl MidiMappingTable {
                         row.device_name.to_string().into_any_element()
                     }),
                 Column::<Self>::new("device_channel", "Device Channel")
-                    .with_sort_handler(|a, b| a.device_channel.cmp(&b.device_channel))
+                    .with_sort_handler(|a, b| {
+                        a.device_channel
+                            .partial_cmp(&b.device_channel)
+                            .unwrap_or(std::cmp::Ordering::Equal)
+                    })
                     .with_auto_enumerable_editor(|row| &mut row.device_channel)
                     .with_cell_builder(|row, _window, _cx| {
-                        row.device_channel
-                            .map(|v| v.to_string())
-                            .unwrap_or_default()
-                            .into_any_element()
+                        row.device_channel.to_string().into_any_element()
                     }),
-                Column::<Self>::new("filter_type", "Filter Type")
+                Column::<Self>::new("filter", "Filter")
                     .with_sort_handler(|a, b| {
-                        a.filter_type
-                            .partial_cmp(&b.filter_type)
-                            .unwrap_or(std::cmp::Ordering::Equal)
+                        a.filter.partial_cmp(&b.filter).unwrap_or(std::cmp::Ordering::Equal)
                     })
-                    .with_auto_editor(|row| &mut row.filter_type)
+                    .with_auto_editor(|row| &mut row.filter)
                     .with_cell_builder(|row, _window, _cx| {
-                        row.filter_type.to_string().into_any_element()
-                    }),
-                Column::<Self>::new("filter_controller", "Filter Controller")
-                    .with_sort_handler(|a, b| a.filter_controller.cmp(&b.filter_controller))
-                    .with_auto_enumerable_editor(|row| &mut row.filter_controller)
-                    .with_cell_builder(|row, _window, _cx| {
-                        row.filter_controller
-                            .map(|v| v.to_string())
-                            .unwrap_or_default()
-                            .into_any_element()
-                    }),
-                Column::<Self>::new("filter_note", "Filter Note")
-                    .with_sort_handler(|a, b| a.filter_note.cmp(&b.filter_note))
-                    .with_auto_enumerable_editor(|row| &mut row.filter_note)
-                    .with_cell_builder(|row, _window, _cx| {
-                        row.filter_note
-                            .map(|v| v.to_string())
-                            .unwrap_or_default()
-                            .into_any_element()
-                    }),
-                Column::<Self>::new("transform_min_output", "Min Output")
-                    .with_sort_handler(|a, b| {
-                        a.transform_min_output
-                            .partial_cmp(&b.transform_min_output)
-                            .unwrap_or(std::cmp::Ordering::Equal)
-                    })
-                    .with_auto_editor(|row| &mut row.transform_min_output)
-                    .with_cell_builder(|row, _window, _cx| {
-                        row.transform_min_output.to_string().into_any_element()
-                    }),
-                Column::<Self>::new("transform_max_output", "Max Output")
-                    .with_sort_handler(|a, b| {
-                        a.transform_max_output
-                            .partial_cmp(&b.transform_max_output)
-                            .unwrap_or(std::cmp::Ordering::Equal)
-                    })
-                    .with_auto_editor(|row| &mut row.transform_max_output)
-                    .with_cell_builder(|row, _window, _cx| {
-                        row.transform_max_output.to_string().into_any_element()
-                    }),
-                Column::<Self>::new("transform_invert", "Invert")
-                    .with_sort_handler(|a, b| a.transform_invert.cmp(&b.transform_invert))
-                    .with_auto_editor(|row| &mut row.transform_invert)
-                    .with_cell_builder(|row, _window, _cx| {
-                        row.transform_invert.to_string().into_any_element()
+                        row.filter.to_string().into_any_element()
                     }),
                 Column::<Self>::new("target", "Target")
                     .with_sort_handler(|a, b| {

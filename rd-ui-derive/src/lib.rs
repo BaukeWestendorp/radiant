@@ -138,7 +138,7 @@ fn expand_tagged_form_impl(
             for attr in &field.attrs {
                 if attr.path().is_ident("rd_ui") {
                     let _ = attr.parse_nested_meta(|meta| {
-                        if meta.path.is_ident("field_name") {
+                        if meta.path.is_ident("label") {
                             let value = meta.value()?;
                             let lit: syn::LitStr = value.parse()?;
                             f_label = lit.value();
@@ -182,7 +182,8 @@ fn expand_tagged_form_impl(
                 #(
                     fields.push(::rd_ui::FormField::new(
                         #field_labels,
-                        ::rd_ui::Input::new(self.#form_field_idents.clone())
+                        ::rd_ui::Input::new(self.#form_field_idents.clone()),
+                        cx
                     ));
                 )*
             }
@@ -244,10 +245,11 @@ fn expand_tagged_form_impl(
         impl ::rd_ui::FormDelegate for #form_name {
             type Data = #name;
 
-            fn fields(&self, cx: &::rd_ui::gpui::App) -> Vec<::rd_ui::FormField> {
+            fn fields(&self, cx: &mut ::rd_ui::gpui::App) -> Vec<::rd_ui::FormField> {
                 let mut fields = vec![::rd_ui::FormField::new(
                     "Kind",
-                    ::rd_ui::Input::new(self.kind.clone())
+                    ::rd_ui::Input::new(self.kind.clone()),
+                    cx
                 )];
 
                 match self.kind.read(cx).value(cx) {

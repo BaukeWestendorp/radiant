@@ -1,6 +1,13 @@
-use rd_midi::MidiPacket;
+use rd_midi::{MidiMessage, MidiPacket};
 
-use crate::{ExecutorId, project, services::trigger::Trigger};
+use crate::{
+    ExecutorId,
+    project::{
+        self,
+        midi::{MidiChannel, MidiController, MidiFilter, MidiNote},
+    },
+    services::trigger::Trigger,
+};
 
 pub struct MidiTriggerService {
     mappings: Vec<project::midi::MidiMapping>,
@@ -15,80 +22,86 @@ impl MidiTriggerService {
         Self { mappings, trigger_tx }
     }
 
+    fn matches_channel(filter_channel: &MidiChannel, packet_channel: u8) -> bool {
+        match filter_channel {
+            MidiChannel::All => true,
+            MidiChannel::Single(channel) => channel.get() == packet_channel,
+        }
+    }
+
+    fn matches_note(filter_note: &MidiNote, packet_note: u8) -> bool {
+        match filter_note {
+            MidiNote::All => true,
+            MidiNote::Single(note) => note.get() == packet_note,
+        }
+    }
+
+    fn matches_controller(filter_controller: &MidiController, packet_controller: u8) -> bool {
+        match filter_controller {
+            MidiController::All => true,
+            MidiController::Single(controller) => controller.get() == packet_controller,
+        }
+    }
+
     fn parse_trigger(&self, packet: MidiPacket) -> Option<Trigger> {
         let msg_channel = match &packet.message {
-            rd_midi::MidiMessage::ControlChange { channel, .. } => *channel,
-            rd_midi::MidiMessage::NoteOn { channel, .. } => *channel,
-            rd_midi::MidiMessage::NoteOff { channel, .. } => *channel,
-            rd_midi::MidiMessage::PitchBend { channel, .. } => *channel,
+            MidiMessage::ControlChange { channel, .. }
+            | MidiMessage::NoteOn { channel, .. }
+            | MidiMessage::NoteOff { channel, .. }
+            | MidiMessage::PitchBend { channel, .. } => *channel,
             _ => return None,
         };
 
-        for mapping in &self.mappings {
+        self.mappings.iter().find_map(|mapping| {
             if mapping.device_name != packet.port_name {
-                continue;
+                return None;
             }
 
-            if let Some(dev_channel) = mapping.device_channel {
-                if dev_channel != msg_channel {
-                    continue;
-                }
+            if !Self::matches_channel(&mapping.device_channel, msg_channel) {
+                return None;
             }
 
-            let (mut normalized_val, mut is_pressed) = match (&mapping.filter_type, &packet.message)
-            {
+            let (normalized_val, is_pressed) = match (&mapping.filter, &packet.message) {
                 (
-                    project::midi::FilterType::ControlChange,
-                    rd_midi::MidiMessage::ControlChange { controller: pkt_ctrl, value, .. },
-                ) if mapping.filter_controller.map_or(true, |c| c == *pkt_ctrl) => {
+                    MidiFilter::ControlChange { controller },
+                    MidiMessage::ControlChange { controller: pkt_ctrl, value, .. },
+                ) if Self::matches_controller(controller, *pkt_ctrl) => {
                     (*value as f32 / 127.0, *value > 0)
                 }
 
                 (
-                    project::midi::FilterType::NoteOn,
-                    rd_midi::MidiMessage::NoteOn { note: pkt_note, velocity, .. },
-                ) if mapping.filter_note.map_or(true, |n| n == *pkt_note) => {
+                    MidiFilter::NoteOn { note },
+                    MidiMessage::NoteOn { note: pkt_note, velocity, .. },
+                ) if Self::matches_note(note, *pkt_note) => {
                     (*velocity as f32 / 127.0, *velocity > 0)
                 }
 
-                (
-                    project::midi::FilterType::NoteOff,
-                    rd_midi::MidiMessage::NoteOff { note: pkt_note, .. },
-                ) if mapping.filter_note.map_or(true, |n| n == *pkt_note) => (0.0, false),
+                (MidiFilter::NoteOff { note }, MidiMessage::NoteOff { note: pkt_note, .. })
+                    if Self::matches_note(note, *pkt_note) =>
+                {
+                    (0.0, false)
+                }
 
                 (
-                    project::midi::FilterType::NoteOff,
-                    rd_midi::MidiMessage::NoteOn { note: pkt_note, velocity: 0, .. },
-                ) if mapping.filter_note.map_or(true, |n| n == *pkt_note) => (0.0, false),
+                    MidiFilter::NoteOff { note },
+                    MidiMessage::NoteOn { note: pkt_note, velocity: 0, .. },
+                ) if Self::matches_note(note, *pkt_note) => (0.0, false),
 
-                (
-                    project::midi::FilterType::PitchBend,
-                    rd_midi::MidiMessage::PitchBend { value, .. },
-                ) => ((*value as f32 + 8192.0) / 16383.0, *value > 0),
+                (MidiFilter::PitchBend, MidiMessage::PitchBend { value, .. }) => {
+                    ((*value as f32 + 8192.0) / 16383.0, *value > 0)
+                }
 
-                _ => continue,
+                _ => return None,
             };
 
-            if mapping.transform_invert {
-                normalized_val = 1.0 - normalized_val;
-                is_pressed = !is_pressed;
-            }
-
-            let final_value = mapping.transform_min_output
-                + (normalized_val * (mapping.transform_max_output - mapping.transform_min_output));
-
-            return match &mapping.target {
+            match &mapping.target {
                 project::TriggerTarget::HighlightToggle => {
-                    if is_pressed {
-                        Some(Trigger::ToggleHighlight)
-                    } else {
-                        None
-                    }
+                    is_pressed.then_some(Trigger::ToggleHighlight)
                 }
                 project::TriggerTarget::ExecutorMaster { page_id, slot } => {
                     Some(Trigger::ExecutorMaster {
                         executor_id: ExecutorId::new(*page_id, *slot),
-                        value: final_value,
+                        value: normalized_val,
                     })
                 }
                 project::TriggerTarget::ExecutorButton { page_id, slot, button } => {
@@ -98,13 +111,12 @@ impl MidiTriggerService {
                         pressed: is_pressed,
                     })
                 }
-                project::TriggerTarget::Encoder { encoder_ix } => {
-                    Some(Trigger::EncoderSetValue { encoder_ix: *encoder_ix, value: final_value })
-                }
-            };
-        }
-
-        None
+                project::TriggerTarget::Encoder { encoder_ix } => Some(Trigger::EncoderSetValue {
+                    encoder_ix: *encoder_ix,
+                    value: normalized_val,
+                }),
+            }
+        })
     }
 }
 

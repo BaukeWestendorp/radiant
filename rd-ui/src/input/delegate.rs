@@ -1,7 +1,7 @@
 use gpui::Window;
 use gpui::{App, Entity, Focusable, prelude::*};
 
-use crate::InputState;
+use crate::{InputState, LayoutDirection};
 
 pub trait InputDelegate: Focusable {
     type Value;
@@ -17,4 +17,8 @@ pub trait InputDelegate: Focusable {
     fn value_or_default(&self, cx: &App) -> Self::Value
     where
         Self::Value: Default;
+
+    fn form_layout_direction(&self) -> Option<LayoutDirection> {
+        None
+    }
 }

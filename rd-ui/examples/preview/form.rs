@@ -69,11 +69,11 @@ impl PreviewForm {
 impl FormDelegate for PreviewForm {
     type Data = PreviewFormData;
 
-    fn fields(&self, _cx: &App) -> Vec<FormField> {
+    fn fields(&self, cx: &mut App) -> Vec<FormField> {
         vec![
-            FormField::new("Enum Value", Input::new(self.enum_value.clone())),
-            FormField::new("Name", Input::new(self.name.clone())),
-            FormField::new("Slider", Input::new(self.slider.clone())),
+            FormField::new("Enum Value", Input::new(self.enum_value.clone()), cx),
+            FormField::new("Name", Input::new(self.name.clone()), cx),
+            FormField::new("Slider", Input::new(self.slider.clone()), cx),
         ]
     }
 
