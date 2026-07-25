@@ -8,7 +8,7 @@ use gpui::{
 };
 use gpui::{Pixels, prelude::*, px};
 
-use crate::{ActiveTheme, Binding};
+use crate::{ActiveTheme, Binding, HslaExt};
 
 /// Returns a `Div` as horizontal flex layout.
 #[inline(always)]
@@ -44,25 +44,6 @@ pub trait StyledExt: Styled + Sized {
 
 impl<E: Styled> StyledExt for E {}
 
-pub trait InteractiveElementExt: InteractiveElement + Sized {
-    fn on_edit(self, listener: impl Fn(&mut Window, &mut App) + 'static) -> Self {
-        let listener = Rc::new(listener);
-        self.on_mouse_down(MouseButton::Right, {
-            let listener = listener.clone();
-            move |_, window, cx| {
-                (listener)(window, cx);
-            }
-        })
-        .on_mouse_down(MouseButton::Left, move |event, window, cx| {
-            if event.click_count == 2 {
-                (listener)(window, cx);
-            }
-        })
-    }
-}
-
-impl<E: InteractiveElement> InteractiveElementExt for E {}
-
 pub trait StatefulInteractiveElementExt: StatefulInteractiveElement + Sized {
     /// Refine the style of this element, applying the given style refinement.
     fn action_tooltip(self, action: Box<dyn Action>) -> Self {
@@ -79,6 +60,41 @@ pub trait StatefulInteractiveElementExt: StatefulInteractiveElement + Sized {
                 Some(binding) => cx.new(|_| BindingView(binding)).into(),
                 None => cx.new(|_| Empty).into(),
             }
+        })
+    }
+
+    fn on_edit(self, cx: &App, listener: impl Fn(&mut Window, &mut App) + 'static) -> Self {
+        let listener = Rc::new(listener);
+        self.on_mouse_down(MouseButton::Right, {
+            let listener = listener.clone();
+            move |_, window, cx| {
+                (listener)(window, cx);
+            }
+        })
+        .on_mouse_down(MouseButton::Left, move |event, window, cx| {
+            if event.click_count == 2 {
+                (listener)(window, cx);
+            }
+        })
+        .hover(|mut e| {
+            let bg = e
+                .style()
+                .background
+                .as_ref()
+                .and_then(|e| e.color())
+                .and_then(|e| e.as_solid())
+                .unwrap_or(cx.theme().bg_primary);
+            e.bg(bg.hover())
+        })
+        .active(|mut e| {
+            let bg = e
+                .style()
+                .background
+                .as_ref()
+                .and_then(|e| e.color())
+                .and_then(|e| e.as_solid())
+                .unwrap_or(cx.theme().bg_primary);
+            e.bg(bg.active())
         })
     }
 }

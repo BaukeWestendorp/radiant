@@ -54,7 +54,7 @@ pub use typo::{article, h1, h2, h3, h4, h5, h6, link, sub};
 pub use util::{todo, z_stack};
 
 pub use element_ext::ElementExt;
-pub use styled_ext::{InteractiveElementExt, StyledExt, h_flex, v_flex};
+pub use styled_ext::{StatefulInteractiveElementExt, StyledExt, h_flex, v_flex};
 
 pub use ::gpui;
 

@@ -9,7 +9,8 @@ pub use delegate::*;
 pub use state::*;
 
 use crate::{
-    ActiveTheme, Button, Icon, IconSize, IconVariant, InteractiveElementExt, h_flex, todo, v_flex,
+    ActiveTheme, Button, Icon, IconSize, IconVariant, StatefulInteractiveElementExt, h_flex, todo,
+    v_flex,
 };
 
 const ROW_HEIGHT: Pixels = px(24.0);
@@ -67,6 +68,7 @@ impl<D: TableDelegate> Table<D> {
         };
 
         h_flex()
+            .id(format!("header-cell-{}", column.id()))
             .justify_between()
             .gap_1()
             .w_full()
@@ -105,7 +107,7 @@ impl<D: TableDelegate> Table<D> {
                         }),
                 )
             })
-            .on_edit({
+            .on_edit(cx, {
                 let state = self.state.clone();
                 let edit_handler = column.edit_handler.clone();
                 move |window, cx| {
