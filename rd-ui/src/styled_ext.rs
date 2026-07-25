@@ -63,7 +63,7 @@ pub trait StatefulInteractiveElementExt: StatefulInteractiveElement + Sized {
         })
     }
 
-    fn on_edit(self, cx: &App, listener: impl Fn(&mut Window, &mut App) + 'static) -> Self {
+    fn on_edit(self, listener: impl Fn(&mut Window, &mut App) + 'static) -> Self {
         let listener = Rc::new(listener);
         self.on_mouse_down(MouseButton::Right, {
             let listener = listener.clone();
@@ -75,26 +75,6 @@ pub trait StatefulInteractiveElementExt: StatefulInteractiveElement + Sized {
             if event.click_count == 2 {
                 (listener)(window, cx);
             }
-        })
-        .hover(|mut e| {
-            let bg = e
-                .style()
-                .background
-                .as_ref()
-                .and_then(|e| e.color())
-                .and_then(|e| e.as_solid())
-                .unwrap_or(cx.theme().bg_primary);
-            e.bg(bg.hover())
-        })
-        .active(|mut e| {
-            let bg = e
-                .style()
-                .background
-                .as_ref()
-                .and_then(|e| e.color())
-                .and_then(|e| e.as_solid())
-                .unwrap_or(cx.theme().bg_primary);
-            e.bg(bg.active())
         })
     }
 }

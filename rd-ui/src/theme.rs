@@ -37,13 +37,19 @@ impl HslaExt for Hsla {
 
     fn hover(&self) -> Hsla {
         let mut c = *self;
-        c.l = (c.l + 0.08).min(1.0);
+        let gamma = 2.2;
+        let l = c.l.powf(gamma);
+        let l = (l + 0.04).min(1.0);
+        c.l = l.powf(1.0 / gamma);
         c
     }
 
     fn active(&self) -> Hsla {
         let mut c = *self;
-        c.l = (c.l + 0.15).min(1.0);
+        let gamma = 2.2;
+        let l = c.l.powf(gamma);
+        let l = (l + 0.08).min(1.0);
+        c.l = l.powf(1.0 / gamma);
         c
     }
 }

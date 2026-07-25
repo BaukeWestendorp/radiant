@@ -9,8 +9,8 @@ pub use delegate::*;
 pub use state::*;
 
 use crate::{
-    ActiveTheme, Button, Icon, IconSize, IconVariant, StatefulInteractiveElementExt, h_flex, todo,
-    v_flex,
+    ActiveTheme, Button, HslaExt, Icon, IconSize, IconVariant, StatefulInteractiveElementExt,
+    h_flex, todo, v_flex,
 };
 
 const ROW_HEIGHT: Pixels = px(24.0);
@@ -67,6 +67,8 @@ impl<D: TableDelegate> Table<D> {
             _ => IconVariant::ArrowDownUp,
         };
 
+        let bg = if is_selected { cx.theme().bg_selected } else { cx.theme().bg_secondary };
+
         h_flex()
             .id(format!("header-cell-{}", column.id()))
             .justify_between()
@@ -78,6 +80,9 @@ impl<D: TableDelegate> Table<D> {
             .when(column_ix != 0, |e| e.border_l_1())
             .border_color(cx.theme().border_secondary)
             .child(div().font_weight(FontWeight::BOLD).child(column.name().to_string()))
+            .bg(bg)
+            .hover(|e| e.bg(bg.hover()))
+            .active(|e| e.bg(bg.active()))
             .when(column.sortable(), |e| {
                 e.child(
                     Button::new(format!("{}-sort", column.id()))
@@ -107,7 +112,17 @@ impl<D: TableDelegate> Table<D> {
                         }),
                 )
             })
-            .on_edit(cx, {
+            .on_click({
+                let column_id = column.id().to_string();
+                let state = self.state.clone();
+                move |_, _, cx| {
+                    state.update(cx, |state, cx| {
+                        state.select_all_in_column(&column_id, cx);
+                        cx.notify();
+                    })
+                }
+            })
+            .on_edit({
                 let state = self.state.clone();
                 let edit_handler = column.edit_handler.clone();
                 move |window, cx| {
