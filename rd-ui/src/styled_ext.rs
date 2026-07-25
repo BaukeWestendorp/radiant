@@ -8,7 +8,7 @@ use gpui::{
 };
 use gpui::{Pixels, prelude::*, px};
 
-use crate::{ActiveTheme, Binding, HslaExt};
+use crate::{ActiveTheme, Binding};
 
 /// Returns a `Div` as horizontal flex layout.
 #[inline(always)]
@@ -62,7 +62,11 @@ pub trait StatefulInteractiveElementExt: StatefulInteractiveElement + Sized {
             }
         })
     }
+}
 
+impl<E: StatefulInteractiveElement> StatefulInteractiveElementExt for E {}
+
+pub trait InteractiveElementExt: InteractiveElement + Sized {
     fn on_edit(self, listener: impl Fn(&mut Window, &mut App) + 'static) -> Self {
         let listener = Rc::new(listener);
         self.on_mouse_down(MouseButton::Right, {
@@ -79,7 +83,7 @@ pub trait StatefulInteractiveElementExt: StatefulInteractiveElement + Sized {
     }
 }
 
-impl<E: StatefulInteractiveElement> StatefulInteractiveElementExt for E {}
+impl<E: InteractiveElement> InteractiveElementExt for E {}
 
 pub(crate) trait FocusableExt<T: ParentElement + Styled + Sized> {
     /// Add focus ring to the element.

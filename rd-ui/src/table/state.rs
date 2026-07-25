@@ -121,19 +121,14 @@ impl<D: TableDelegate + 'static> TableState<D> {
     pub fn select_all_in_column(&self, id: impl Into<String>, cx: &mut App) {
         let id = id.into();
 
-        let selection = self.selection.read(cx);
-        if selection.column.as_deref() == Some(&id) {
-            return;
-        }
-
         let rows = self.sorted_rows();
-        let row_ids = rows.into_iter().map(|(id, _)| id.clone()).collect();
+        let row_ids = rows.into_iter().map(|(id, _)| id.clone()).collect::<Vec<_>>();
 
         self.selection.update(cx, |selection, cx| {
             selection.column = Some(id);
             match selection.kind {
                 TableSelectionKind::Single(_) => {
-                    selection.kind = TableSelectionKind::Multiple(row_ids);
+                    selection.kind = TableSelectionKind::Single(row_ids.first().cloned());
                 }
                 TableSelectionKind::Multiple(_) => {
                     selection.kind = TableSelectionKind::Multiple(row_ids);
@@ -147,10 +142,14 @@ impl<D: TableDelegate + 'static> TableState<D> {
         &mut self,
         column_id: String,
         row_ix: usize,
+        update_immediately: bool,
         cx: &mut Context<Self>,
     ) {
         self.selection_drag = Some((column_id, row_ix));
-        self.update_selection_drag(row_ix, cx);
+
+        if update_immediately {
+            self.update_selection_drag(row_ix, cx);
+        }
     }
 
     pub(crate) fn is_dragging_selection(&self) -> bool {
@@ -193,6 +192,13 @@ impl<D: TableDelegate> TableSelection<D> {
 
     pub fn multiple(column: Option<String>, rows: Vec<D::RowId>) -> Self {
         Self { column, kind: TableSelectionKind::Multiple(rows) }
+    }
+
+    pub fn row_ids(&self) -> Box<dyn Iterator<Item = &D::RowId> + '_> {
+        match &self.kind {
+            TableSelectionKind::Single(row) => Box::new(row.iter()),
+            TableSelectionKind::Multiple(rows) => Box::new(rows.iter()),
+        }
     }
 
     pub fn is_column_selected(&self, id: &str) -> bool {

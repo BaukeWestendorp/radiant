@@ -10,7 +10,7 @@ pub use state::*;
 
 use crate::{
     ActiveTheme, Button, HslaExt, Icon, IconSize, IconVariant, StatefulInteractiveElementExt,
-    h_flex, todo, v_flex,
+    h_flex, styled_ext::InteractiveElementExt, todo, v_flex,
 };
 
 const ROW_HEIGHT: Pixels = px(24.0);
@@ -111,7 +111,7 @@ impl<D: TableDelegate> Table<D> {
                         }),
                 )
             })
-            .on_click({
+            .on_mouse_down(MouseButton::Left, {
                 let column_id = column.id().to_string();
                 let state = self.state.clone();
                 move |_, _, cx| {
@@ -132,13 +132,8 @@ impl<D: TableDelegate> Table<D> {
                     });
 
                     if let Some(edit_handler) = &edit_handler {
-                        let row_ids = state
-                            .read(cx)
-                            .sorted_rows()
-                            .iter()
-                            .map(|(id, _)| (*id).clone())
-                            .collect();
-
+                        let row_ids =
+                            state.read(cx).selection().read(cx).row_ids().cloned().collect();
                         (edit_handler)(state.clone(), row_ids, window, cx);
                     }
                 }
@@ -227,15 +222,39 @@ impl<D: TableDelegate> Table<D> {
             .bg(if is_selected { cx.theme().bg_selected } else { gpui::transparent_black() })
             .child(content)
             .children(selection_overlay)
+            .on_edit({
+                let state = self.state().clone();
+                let edit_handler = column.edit_handler.clone();
+                move |window, cx| {
+                    if let Some(edit_handler) = &edit_handler {
+                        let row_ids =
+                            state.read(cx).selection().read(cx).row_ids().cloned().collect();
+                        (edit_handler)(state.clone(), row_ids, window, cx);
+                    }
+                }
+            })
             .on_mouse_down(MouseButton::Left, {
                 let state = self.state().clone();
                 let column_id = column.id().to_string();
-                move |_, _, cx| {
-                    let column_id = column_id.clone();
-                    state.update(cx, |state, cx| {
-                        state.start_selection_drag(column_id, row_ix, cx);
-                        cx.notify();
-                    });
+                let row_id = row_id.clone();
+
+                move |event, _window, cx| {
+                    if event.click_count == 1 {
+                        let is_already_selected = state
+                            .read(cx)
+                            .selection()
+                            .read(cx)
+                            .is_cell_selected(&column_id, &row_id);
+
+                        state.update(cx, |state, cx| {
+                            state.start_selection_drag(
+                                column_id.clone(),
+                                row_ix,
+                                !is_already_selected,
+                                cx,
+                            );
+                        });
+                    }
                 }
             })
             .on_mouse_move({
