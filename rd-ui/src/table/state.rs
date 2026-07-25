@@ -1,4 +1,4 @@
-use gpui::{Entity, EventEmitter, Window, prelude::*};
+use gpui::{App, Entity, EventEmitter, Window, prelude::*};
 
 use crate::TableDelegate;
 
@@ -16,7 +16,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
         Self {
             delegate,
 
-            selection: cx.new(|_| TableSelection::Multiple(Vec::new())),
+            selection: cx.new(|_| TableSelection::multiple(None, Vec::new())),
 
             sorted_column: None,
             cached_row_order: None,
@@ -113,9 +113,64 @@ impl<D: TableDelegate + 'static> TableState<D> {
 
         self.cached_row_order = Some(indexed_rows.into_iter().map(|(i, _)| i).collect());
     }
+
+    pub fn select_all_in_column(&self, id: impl Into<String>, cx: &mut App) {
+        let id = id.into();
+
+        let selection = self.selection.read(cx);
+        if selection.column.as_deref() == Some(&id) {
+            return;
+        }
+
+        let rows = self.sorted_rows();
+        let row_ids = rows.into_iter().map(|(id, _)| id.clone()).collect();
+
+        self.selection.update(cx, |selection, cx| {
+            selection.column = Some(id);
+            match selection.kind {
+                TableSelectionKind::Single(_) => {
+                    selection.kind = TableSelectionKind::Multiple(row_ids);
+                }
+                TableSelectionKind::Multiple(_) => {
+                    selection.kind = TableSelectionKind::Multiple(row_ids);
+                }
+            }
+            cx.notify();
+        });
+    }
 }
 
-pub enum TableSelection<D: TableDelegate> {
+pub struct TableSelection<D: TableDelegate> {
+    pub column: Option<String>,
+    pub kind: TableSelectionKind<D>,
+}
+
+impl<D: TableDelegate> TableSelection<D> {
+    pub fn single(column: Option<String>, row: Option<D::RowId>) -> Self {
+        Self { column, kind: TableSelectionKind::Single(row) }
+    }
+
+    pub fn multiple(column: Option<String>, rows: Vec<D::RowId>) -> Self {
+        Self { column, kind: TableSelectionKind::Multiple(rows) }
+    }
+
+    pub fn is_column_selected(&self, id: &str) -> bool {
+        self.column.as_deref() == Some(id)
+    }
+
+    pub fn is_row_selected(&self, row_id: &D::RowId) -> bool {
+        match &self.kind {
+            TableSelectionKind::Single(selected_row) => selected_row.as_ref() == Some(row_id),
+            TableSelectionKind::Multiple(selected_rows) => selected_rows.contains(row_id),
+        }
+    }
+
+    pub fn is_cell_selected(&self, column_id: &str, row_id: &D::RowId) -> bool {
+        self.is_column_selected(column_id) && self.is_row_selected(row_id)
+    }
+}
+
+pub enum TableSelectionKind<D: TableDelegate> {
     Single(Option<D::RowId>),
     Multiple(Vec<D::RowId>),
 }

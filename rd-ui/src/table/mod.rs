@@ -1,4 +1,4 @@
-use gpui::{App, ElementId, Entity, FontWeight, Pixels, Window, div, prelude::*, px};
+use gpui::{App, ElementId, Entity, FontWeight, Pixels, Window, deferred, div, prelude::*, px};
 
 mod column;
 mod delegate;
@@ -67,7 +67,7 @@ impl<D: TableDelegate> Table<D> {
             _ => IconVariant::ArrowDownUp,
         };
 
-        let bg = if is_selected { cx.theme().bg_selected } else { cx.theme().bg_secondary };
+        let bg = cx.theme().bg_secondary;
 
         h_flex()
             .id(format!("header-cell-{}", column.id()))
@@ -76,7 +76,6 @@ impl<D: TableDelegate> Table<D> {
             .w_full()
             .h(ROW_HEIGHT)
             .px_1()
-            .border_b_1()
             .when(column_ix != 0, |e| e.border_l_1())
             .border_color(cx.theme().border_secondary)
             .child(div().font_weight(FontWeight::BOLD).child(column.name().to_string()))
@@ -125,7 +124,13 @@ impl<D: TableDelegate> Table<D> {
             .on_edit({
                 let state = self.state.clone();
                 let edit_handler = column.edit_handler.clone();
+                let column_id = column.id().to_string();
                 move |window, cx| {
+                    state.update(cx, |state, cx| {
+                        state.select_all_in_column(&column_id, cx);
+                        cx.notify();
+                    });
+
                     if let Some(edit_handler) = &edit_handler {
                         let row_ids = state
                             .read(cx)
@@ -144,60 +149,83 @@ impl<D: TableDelegate> Table<D> {
         let state = self.state().read(cx);
         let rows = state.sorted_rows();
 
-        let cells =
-            rows.into_iter().enumerate().map(|(ix, (_, row))| self.render_row(ix, row, window, cx));
+        let cells = rows
+            .into_iter()
+            .enumerate()
+            .map(|(row_ix, (row_id, row))| self.render_row(row, row_id, row_ix, window, cx));
 
         div().flex().flex_col().children(cells)
     }
 
     fn render_row(
         &self,
-        row_ix: usize,
         row: &D::Row,
+        row_id: &D::RowId,
+        row_ix: usize,
         window: &Window,
         cx: &App,
     ) -> impl IntoElement {
         let columns = self.state().read(cx).delegate().columns();
 
-        let cells = columns
-            .iter()
-            .enumerate()
-            .map(|(ix, column)| self.render_cell(row, ix, column, window, cx));
+        let cells = columns.iter().enumerate().map(|(column_ix, column)| {
+            self.render_cell(row, row_id, column_ix, column, window, cx)
+        });
 
         div()
             .flex()
             .flex_row()
             .h(ROW_HEIGHT)
             .bg(cx.theme().bg_table_odd)
-            .when(row_ix.is_multiple_of(2), |e| e.bg(cx.theme().bg_table))
-            .when(row_ix != 0, |e| e.border_t_1())
+            .border_t_1()
             .border_color(cx.theme().border_secondary)
+            .cursor_crosshair()
+            .when(row_ix.is_multiple_of(2), |e| e.bg(cx.theme().bg_table))
             .children(cells)
     }
 
     fn render_cell(
         &self,
         row: &D::Row,
+        row_id: &D::RowId,
         column_ix: usize,
         column: &Column<D>,
         window: &Window,
         cx: &App,
     ) -> impl IntoElement {
         let content = match &column.cell_builder {
-            Some(cell_builder) => (cell_builder)(row, window, cx),
+            Some(cell_builder) => div()
+                .absolute()
+                .inset_0()
+                .flex()
+                .justify_between()
+                .gap_1()
+                .px_1()
+                .child((cell_builder)(row, window, cx))
+                .into_any_element(),
             None => todo(cx).into_any_element(),
         };
 
+        let is_selected =
+            self.state.read(cx).selection().read(cx).is_cell_selected(column.id(), row_id);
+
+        let selection_overlay = is_selected.then(|| {
+            div()
+                .absolute()
+                .inset_0()
+                .bottom_px()
+                .border_1()
+                .border_color(cx.theme().border_selected)
+        });
+
         div()
-            .flex()
-            .justify_between()
-            .gap_1()
+            .relative()
             .w_full()
             .h(ROW_HEIGHT)
-            .px_1()
             .when(column_ix != 0, |e| e.border_l_1())
             .border_color(cx.theme().border_secondary)
+            .bg(if is_selected { cx.theme().bg_selected } else { gpui::transparent_black() })
             .child(content)
+            .children(selection_overlay)
     }
 }
 

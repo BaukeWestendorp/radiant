@@ -13,8 +13,8 @@ pub struct TablePreview {
 
 impl TablePreview {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let selection_a = cx.new(|_| TableSelection::Multiple(Vec::new()));
-        let selection_b = cx.new(|_| TableSelection::Single(None));
+        let selection_a = cx.new(|_| TableSelection::multiple(None, Vec::new()));
+        let selection_b = cx.new(|_| TableSelection::single(None, None));
 
         Self {
             table_a: cx.new(|cx| {
