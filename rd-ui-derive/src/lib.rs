@@ -169,7 +169,13 @@ fn expand_tagged_form_impl(
             quote! { ( #( #original_field_binds ),* ) }
         };
 
-        from_arms.push(quote! { #name::#v_ident #pat => #kind_name::#v_ident });
+        let ignore_pat = if is_named {
+            quote! { { .. } }
+        } else {
+            quote! { ( .. ) }
+        };
+
+        from_arms.push(quote! { #name::#v_ident #ignore_pat => #kind_name::#v_ident });
 
         for (form_field_ident, ty) in form_field_idents.iter().zip(field_tys.iter()) {
             form_fields.push(quote! {
