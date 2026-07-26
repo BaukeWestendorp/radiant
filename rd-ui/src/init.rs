@@ -7,7 +7,7 @@ pub fn init(cx: &mut gpui::App) {
 }
 
 pub mod simple {
-    use gpui::{AnyView, prelude::*};
+    use gpui::{AnyView, Focusable, prelude::*};
     use gpui::{
         App, Entity, FocusHandle, FontWeight, Menu, MenuItem, Pixels, QuitMode, SharedString, Size,
         TitlebarOptions, Window, WindowBounds, WindowOptions, div, px, size,
@@ -104,11 +104,18 @@ pub mod simple {
                         },
                         |window, cx| {
                             let content = (build_content)(window, cx);
+
                             let title_bar_content =
                                 self.title_bar_content.map(|tbc| (tbc)(window, cx));
+
                             let view =
                                 cx.new(|cx| SimpleAppView::new(content, title_bar_content, cx));
-                            cx.new(|cx| Root::new(view, window, cx))
+
+                            cx.new(|cx| {
+                                let root = Root::new(view, window, cx);
+                                root.focus_handle(cx).focus(window, cx);
+                                root
+                            })
                         },
                     )
                     .unwrap();
