@@ -74,6 +74,8 @@ pub fn default_keymap() -> Keymap {
         KeymapBinding::new("Tab", "tab", "Root"),
         KeymapBinding::new("TabPrev", "shift-tab", "Root"),
 
+        KeymapBinding::new("Edit", "secondary-e", "Editable"),
+
         KeymapBinding::new("text_input::SelectAll", "secondary-a", "TextInput"),
         KeymapBinding::new("text_input::MoveRight", "right", "TextInput"),
         KeymapBinding::new("text_input::Backspace", "backspace", "TextInput"),
@@ -85,7 +87,6 @@ pub fn default_keymap() -> Keymap {
         KeymapBinding::new("text_input::Cut", "secondary-x", "TextInput"),
         KeymapBinding::new("text_input::SelectRight", "shift-right", "TextInput"),
         KeymapBinding::new("text_input::SelectLeft", "shift-left", "TextInput"),
-
         #[cfg(target_os = "macos")]      KeymapBinding::new("text_input::MoveToStartOfLine", "cmd-left", "TextInput"),
         #[cfg(not(target_os = "macos"))] KeymapBinding::new("text_input::MoveToStartOfLine", "home", "TextInput"),
         #[cfg(target_os = "macos")]      KeymapBinding::new("text_input::MoveToEndOfLine", "cmd-right", "TextInput"),

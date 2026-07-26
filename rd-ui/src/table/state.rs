@@ -10,7 +10,7 @@ pub struct TableState<D: TableDelegate> {
     sorted_column: Option<(String, TableSortDirection)>,
     cached_row_order: Option<Vec<usize>>,
 
-    selection_drag: Option<(String, usize)>,
+    pub(crate) selection_drag: Option<(String, usize)>,
 }
 
 impl<D: TableDelegate + 'static> TableState<D> {
@@ -138,18 +138,8 @@ impl<D: TableDelegate + 'static> TableState<D> {
         });
     }
 
-    pub(crate) fn start_selection_drag(
-        &mut self,
-        column_id: String,
-        row_ix: usize,
-        update_immediately: bool,
-        cx: &mut Context<Self>,
-    ) {
+    pub(crate) fn start_selection_drag(&mut self, column_id: String, row_ix: usize) {
         self.selection_drag = Some((column_id, row_ix));
-
-        if update_immediately {
-            self.update_selection_drag(row_ix, cx);
-        }
     }
 
     pub(crate) fn is_dragging_selection(&self) -> bool {
@@ -175,7 +165,8 @@ impl<D: TableDelegate + 'static> TableState<D> {
         });
     }
 
-    pub(crate) fn stop_selection_drag(&mut self, _row_ix: usize, _cx: &mut Context<Self>) {
+    pub(crate) fn stop_selection_drag(&mut self, row_ix: usize, cx: &mut Context<Self>) {
+        self.update_selection_drag(row_ix, cx);
         self.selection_drag = None;
     }
 }
@@ -201,6 +192,13 @@ impl<D: TableDelegate> TableSelection<D> {
         }
     }
 
+    pub fn count(&self) -> usize {
+        match &self.kind {
+            TableSelectionKind::Single(row) => row.iter().count(),
+            TableSelectionKind::Multiple(rows) => rows.len(),
+        }
+    }
+
     pub fn is_column_selected(&self, id: &str) -> bool {
         self.column.as_deref() == Some(id)
     }
@@ -214,6 +212,30 @@ impl<D: TableDelegate> TableSelection<D> {
 
     pub fn is_cell_selected(&self, column_id: &str, row_id: &D::RowId) -> bool {
         self.is_column_selected(column_id) && self.is_row_selected(row_id)
+    }
+
+    pub fn clear(&mut self) {
+        self.column = None;
+        match self.kind {
+            TableSelectionKind::Single(_) => self.kind = TableSelectionKind::Single(None),
+            TableSelectionKind::Multiple(_) => self.kind = TableSelectionKind::Multiple(Vec::new()),
+        }
+    }
+
+    pub fn select_cell(&mut self, column_id: String, row_id: D::RowId) {
+        match &self.kind {
+            TableSelectionKind::Single(_) => {
+                self.kind = TableSelectionKind::Single(Some(row_id));
+            }
+            TableSelectionKind::Multiple(selected_rows) => {
+                let mut new_selected_rows = selected_rows.clone();
+                if !new_selected_rows.contains(&row_id) {
+                    new_selected_rows.push(row_id);
+                }
+                self.kind = TableSelectionKind::Multiple(new_selected_rows);
+            }
+        }
+        self.column = Some(column_id);
     }
 }
 

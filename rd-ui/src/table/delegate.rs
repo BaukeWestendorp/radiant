@@ -15,6 +15,8 @@ pub trait TableDelegate {
     where
         Self: Sized;
 
+    fn row_count(&self) -> usize;
+
     fn row(&self, row_id: &Self::RowId) -> Option<&Self::Row>
     where
         Self: Sized;

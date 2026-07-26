@@ -108,6 +108,10 @@ impl TableDelegate for PreviewTableDelegate {
         self.items.iter()
     }
 
+    fn row_count(&self) -> usize {
+        self.items.len()
+    }
+
     fn row(&self, row_id: &Self::RowId) -> Option<&Self::Row> {
         self.items.get(row_id)
     }

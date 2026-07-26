@@ -6,7 +6,7 @@ use crate::{ActiveTheme, z_stack};
 pub(crate) mod action {
     pub const KEY_CONTEXT: &str = "Root";
 
-    gpui::actions!([Tab, TabPrev]);
+    gpui::actions!([Tab, TabPrev, Edit]);
 }
 
 pub struct Root {

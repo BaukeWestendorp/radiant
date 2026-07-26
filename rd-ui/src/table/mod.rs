@@ -9,8 +9,7 @@ pub use delegate::*;
 pub use state::*;
 
 use crate::{
-    ActiveTheme, Button, HslaExt, Icon, IconSize, IconVariant, StatefulInteractiveElementExt,
-    h_flex, styled_ext::InteractiveElementExt, todo, v_flex,
+    ActiveTheme, Button, Editable, HslaExt, Icon, IconSize, IconVariant, h_flex, todo, v_flex,
 };
 
 const ROW_HEIGHT: Pixels = px(24.0);
@@ -149,7 +148,17 @@ impl<D: TableDelegate> Table<D> {
             .enumerate()
             .map(|(row_ix, (row_id, row))| self.render_row(row, row_id, row_ix, window, cx));
 
-        div().flex().flex_col().children(cells)
+        div().flex().flex_col().children(cells).on_mouse_up_out(MouseButton::Left, {
+            let state = self.state().clone();
+            move |_, _, cx| {
+                state.update(cx, |state, cx| {
+                    if let Some(last_row_ix) = state.delegate().row_count().checked_sub(1) {
+                        state.stop_selection_drag(last_row_ix, cx);
+                        cx.notify();
+                    }
+                });
+            }
+        })
     }
 
     fn render_row(
@@ -224,9 +233,21 @@ impl<D: TableDelegate> Table<D> {
             .children(selection_overlay)
             .on_edit({
                 let state = self.state().clone();
+                let column_id = column.id().to_string();
+                let row_id = row_id.clone();
                 let edit_handler = column.edit_handler.clone();
                 move |window, cx| {
                     if let Some(edit_handler) = &edit_handler {
+                        if !is_selected {
+                            let column_id = column_id.clone();
+                            let row_id = row_id.clone();
+                            state.read(cx).selection().clone().update(cx, move |selection, cx| {
+                                selection.clear();
+                                selection.select_cell(column_id, row_id);
+                                cx.notify();
+                            });
+                        }
+
                         let row_ids =
                             state.read(cx).selection().read(cx).row_ids().cloned().collect();
                         (edit_handler)(state.clone(), row_ids, window, cx);
@@ -236,25 +257,11 @@ impl<D: TableDelegate> Table<D> {
             .on_mouse_down(MouseButton::Left, {
                 let state = self.state().clone();
                 let column_id = column.id().to_string();
-                let row_id = row_id.clone();
-
-                move |event, _window, cx| {
-                    if event.click_count == 1 {
-                        let is_already_selected = state
-                            .read(cx)
-                            .selection()
-                            .read(cx)
-                            .is_cell_selected(&column_id, &row_id);
-
-                        state.update(cx, |state, cx| {
-                            state.start_selection_drag(
-                                column_id.clone(),
-                                row_ix,
-                                !is_already_selected,
-                                cx,
-                            );
-                        });
-                    }
+                move |_, _window, cx| {
+                    state.update(cx, |state, cx| {
+                        state.start_selection_drag(column_id.clone(), row_ix);
+                        cx.notify();
+                    });
                 }
             })
             .on_mouse_move({
@@ -262,22 +269,22 @@ impl<D: TableDelegate> Table<D> {
                 move |_, _, cx| {
                     if state.read(cx).is_dragging_selection() {
                         state.update(cx, |state, cx| {
+                            let Some((_, first_row_ix)) = &state.selection_drag else {
+                                return;
+                            };
+
+                            if *first_row_ix == row_ix {
+                                return;
+                            }
+
                             state.update_selection_drag(row_ix, cx);
+
                             cx.notify();
                         });
                     }
                 }
             })
             .on_mouse_up(MouseButton::Left, {
-                let state = self.state().clone();
-                move |_, _, cx| {
-                    state.update(cx, |state, cx| {
-                        state.stop_selection_drag(row_ix, cx);
-                        cx.notify();
-                    });
-                }
-            })
-            .on_mouse_up_out(MouseButton::Left, {
                 let state = self.state().clone();
                 move |_, _, cx| {
                     state.update(cx, |state, cx| {

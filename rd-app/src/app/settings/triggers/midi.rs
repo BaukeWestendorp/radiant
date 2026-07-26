@@ -136,6 +136,10 @@ impl TableDelegate for MidiMappingTable {
         self.mappings.iter()
     }
 
+    fn row_count(&self) -> usize {
+        self.mappings.len()
+    }
+
     fn row(&self, row_id: &Self::RowId) -> Option<&Self::Row> {
         self.mappings.get(row_id)
     }
