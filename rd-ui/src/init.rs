@@ -37,7 +37,7 @@ pub mod simple {
     impl Default for SimpleAppBuilder {
         fn default() -> Self {
             Self {
-                window_title: "Preview App".into(),
+                window_title: "RD-UI Application".into(),
                 window_size: size(px(1080.0), px(720.0)),
                 title_bar_content: None,
                 activate: true,
