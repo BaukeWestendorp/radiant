@@ -70,7 +70,11 @@ impl MidiMappingTable {
             move |event, window, cx| match event {
                 rd::Event::ProjectLoaded => {
                     this.update(cx, |this, cx| {
-                        // FIXME: this.clear_selection(cx);
+                        this.selection().update(cx, |selection, cx| {
+                            selection.clear();
+                            cx.notify();
+                        });
+
                         *this = TableState::new(
                             MidiMappingTable::new(uncommitted_project.clone(), window, cx),
                             window,
