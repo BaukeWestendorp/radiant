@@ -19,11 +19,11 @@ impl TablePreview {
         Self {
             table_a: cx.new(|cx| {
                 let delegate = PreviewTableDelegate::new();
-                TableState::new(delegate, window, cx).with_selection(selection_a)
+                TableState::new(delegate, cx.focus_handle(), window, cx).with_selection(selection_a)
             }),
             table_b: cx.new(|cx| {
                 let delegate = PreviewTableDelegate::new();
-                TableState::new(delegate, window, cx).with_selection(selection_b)
+                TableState::new(delegate, cx.focus_handle(), window, cx).with_selection(selection_b)
             }),
         }
     }
@@ -102,6 +102,10 @@ impl TableDelegate for PreviewTableDelegate {
 
     fn columns(&self) -> &[Column<Self>] {
         &self.columns
+    }
+
+    fn column(&self, column_id: &str) -> Option<&Column<Self>> {
+        self.columns.iter().find(|c| c.id() == column_id)
     }
 
     fn rows(&self) -> impl Iterator<Item = (&Self::RowId, &Self::Row)> {

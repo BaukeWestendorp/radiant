@@ -1,6 +1,6 @@
-use gpui::{App, Entity, EventEmitter, Window, prelude::*};
+use gpui::{App, Entity, EventEmitter, FocusHandle, Focusable, Window, prelude::*};
 
-use crate::TableDelegate;
+use crate::{EditableAppExt, TableDelegate};
 
 pub struct TableState<D: TableDelegate> {
     delegate: D,
@@ -11,10 +11,28 @@ pub struct TableState<D: TableDelegate> {
     cached_row_order: Option<Vec<usize>>,
 
     pub(crate) selection_drag: Option<(String, usize)>,
+
+    focus_handle: FocusHandle,
 }
 
 impl<D: TableDelegate + 'static> TableState<D> {
-    pub fn new(delegate: D, _window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(
+        delegate: D,
+        focus_handle: FocusHandle,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
+        let this = cx.entity();
+        cx.set_edit_handler(&focus_handle, window, move |window, cx| {
+            let selection = this.read(cx).selection().read(cx);
+            let Some(column_id) = &selection.column_id else { return };
+            let Some(column) = this.read(cx).delegate().column(column_id) else { return };
+            let row_ids = selection.row_ids().cloned().collect();
+            if let Some(edit_handler) = column.edit_handler.clone() {
+                (edit_handler)(this.clone(), row_ids, window, cx);
+            }
+        });
+
         Self {
             delegate,
 
@@ -22,6 +40,8 @@ impl<D: TableDelegate + 'static> TableState<D> {
 
             sorted_column: None,
             cached_row_order: None,
+
+            focus_handle,
 
             selection_drag: None,
         }
@@ -125,7 +145,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
         let row_ids = rows.into_iter().map(|(id, _)| id.clone()).collect::<Vec<_>>();
 
         self.selection.update(cx, |selection, cx| {
-            selection.column = Some(id);
+            selection.column_id = Some(id);
             match selection.kind {
                 TableSelectionKind::Single(_) => {
                     selection.kind = TableSelectionKind::Single(row_ids.first().cloned());
@@ -138,8 +158,14 @@ impl<D: TableDelegate + 'static> TableState<D> {
         });
     }
 
-    pub(crate) fn start_selection_drag(&mut self, column_id: String, row_ix: usize) {
+    pub(crate) fn start_selection_drag(
+        &mut self,
+        column_id: String,
+        row_ix: usize,
+        cx: &mut Context<Self>,
+    ) {
         self.selection_drag = Some((column_id, row_ix));
+        self.update_selection_drag(row_ix, cx);
     }
 
     pub(crate) fn is_dragging_selection(&self) -> bool {
@@ -159,7 +185,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
             rows.into_iter().skip(start).take(end - start + 1).map(|(id, _)| id.clone()).collect();
 
         self.selection.update(cx, |selection, cx| {
-            selection.column = Some(column_id);
+            selection.column_id = Some(column_id);
             selection.kind = TableSelectionKind::Multiple(selected_rows);
             cx.notify();
         });
@@ -171,18 +197,24 @@ impl<D: TableDelegate + 'static> TableState<D> {
     }
 }
 
+impl<D: TableDelegate + 'static> Focusable for TableState<D> {
+    fn focus_handle(&self, _cx: &App) -> FocusHandle {
+        self.focus_handle.clone()
+    }
+}
+
 pub struct TableSelection<D: TableDelegate> {
-    pub column: Option<String>,
+    pub column_id: Option<String>,
     pub kind: TableSelectionKind<D>,
 }
 
 impl<D: TableDelegate> TableSelection<D> {
     pub fn single(column: Option<String>, row: Option<D::RowId>) -> Self {
-        Self { column, kind: TableSelectionKind::Single(row) }
+        Self { column_id: column, kind: TableSelectionKind::Single(row) }
     }
 
     pub fn multiple(column: Option<String>, rows: Vec<D::RowId>) -> Self {
-        Self { column, kind: TableSelectionKind::Multiple(rows) }
+        Self { column_id: column, kind: TableSelectionKind::Multiple(rows) }
     }
 
     pub fn row_ids(&self) -> Box<dyn Iterator<Item = &D::RowId> + '_> {
@@ -200,7 +232,7 @@ impl<D: TableDelegate> TableSelection<D> {
     }
 
     pub fn is_column_selected(&self, id: &str) -> bool {
-        self.column.as_deref() == Some(id)
+        self.column_id.as_deref() == Some(id)
     }
 
     pub fn is_row_selected(&self, row_id: &D::RowId) -> bool {
@@ -215,7 +247,7 @@ impl<D: TableDelegate> TableSelection<D> {
     }
 
     pub fn clear(&mut self) {
-        self.column = None;
+        self.column_id = None;
         match self.kind {
             TableSelectionKind::Single(_) => self.kind = TableSelectionKind::Single(None),
             TableSelectionKind::Multiple(_) => self.kind = TableSelectionKind::Multiple(Vec::new()),
@@ -235,7 +267,7 @@ impl<D: TableDelegate> TableSelection<D> {
                 self.kind = TableSelectionKind::Multiple(new_selected_rows);
             }
         }
-        self.column = Some(column_id);
+        self.column_id = Some(column_id);
     }
 }
 

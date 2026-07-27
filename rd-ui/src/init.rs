@@ -2,6 +2,7 @@ pub fn init(cx: &mut gpui::App) {
     crate::theme::init(cx);
     crate::popup::init(cx);
     crate::settings::init(cx);
+    crate::editable::init(cx);
 
     simple::action::init(cx);
 }

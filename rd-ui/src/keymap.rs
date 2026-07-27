@@ -73,8 +73,7 @@ pub fn default_keymap() -> Keymap {
         KeymapBinding::new("Quit", "secondary-q", "Root"),
         KeymapBinding::new("Tab", "tab", "Root"),
         KeymapBinding::new("TabPrev", "shift-tab", "Root"),
-
-        KeymapBinding::new("Edit", "secondary-e", "Editable"),
+        KeymapBinding::new("Edit", "enter", "Root"),
 
         KeymapBinding::new("text_input::SelectAll", "secondary-a", "TextInput"),
         KeymapBinding::new("text_input::MoveRight", "right", "TextInput"),
@@ -112,7 +111,6 @@ pub fn default_keymap() -> Keymap {
         KeymapBinding::new("table::ExtendSelectionNext", "secondary-down", "Table"),
         KeymapBinding::new("table::DeleteSelection", "delete", "Table"),
         KeymapBinding::new("table::ClearSelection", "escape", "Table"),
-        KeymapBinding::new("table::EditSelection", "enter", "Table"),
         KeymapBinding::new("table::PrevColumn", "left", "Table"),
         KeymapBinding::new("table::NextColumn", "right", "Table"),
     ])

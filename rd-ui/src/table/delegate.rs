@@ -11,6 +11,10 @@ pub trait TableDelegate {
     where
         Self: Sized;
 
+    fn column(&self, column_id: &str) -> Option<&Column<Self>>
+    where
+        Self: Sized;
+
     fn rows(&self) -> impl Iterator<Item = (&Self::RowId, &Self::Row)>
     where
         Self: Sized;

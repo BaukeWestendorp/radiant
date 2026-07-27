@@ -1,4 +1,6 @@
-use gpui::{App, ElementId, Entity, FontWeight, MouseButton, Pixels, Window, div, prelude::*, px};
+use gpui::{
+    App, ElementId, Entity, Focusable, FontWeight, MouseButton, Pixels, Window, div, prelude::*, px,
+};
 
 mod column;
 mod delegate;
@@ -8,9 +10,7 @@ pub use column::*;
 pub use delegate::*;
 pub use state::*;
 
-use crate::{
-    ActiveTheme, Button, Editable, HslaExt, Icon, IconSize, IconVariant, h_flex, todo, v_flex,
-};
+use crate::{ActiveTheme, Button, HslaExt, Icon, IconSize, IconVariant, h_flex, todo, v_flex};
 
 const ROW_HEIGHT: Pixels = px(24.0);
 
@@ -117,24 +117,17 @@ impl<D: TableDelegate> Table<D> {
                     state.update(cx, |state, cx| {
                         state.select_all_in_column(&column_id, cx);
                         cx.notify();
-                    })
+                    });
                 }
             })
-            .on_edit({
-                let state = self.state.clone();
-                let edit_handler = column.edit_handler.clone();
+            .on_mouse_down(MouseButton::Right, {
                 let column_id = column.id().to_string();
-                move |window, cx| {
+                let state = self.state.clone();
+                move |_, _, cx| {
                     state.update(cx, |state, cx| {
                         state.select_all_in_column(&column_id, cx);
                         cx.notify();
                     });
-
-                    if let Some(edit_handler) = &edit_handler {
-                        let row_ids =
-                            state.read(cx).selection().read(cx).row_ids().cloned().collect();
-                        (edit_handler)(state.clone(), row_ids, window, cx);
-                    }
                 }
             })
     }
@@ -148,17 +141,32 @@ impl<D: TableDelegate> Table<D> {
             .enumerate()
             .map(|(row_ix, (row_id, row))| self.render_row(row, row_id, row_ix, window, cx));
 
-        div().flex().flex_col().children(cells).on_mouse_up_out(MouseButton::Left, {
-            let state = self.state().clone();
-            move |_, _, cx| {
-                state.update(cx, |state, cx| {
-                    if let Some(last_row_ix) = state.delegate().row_count().checked_sub(1) {
-                        state.stop_selection_drag(last_row_ix, cx);
-                        cx.notify();
-                    }
-                });
-            }
-        })
+        div()
+            .flex()
+            .flex_col()
+            .children(cells)
+            .on_mouse_up_out(MouseButton::Left, {
+                let state = self.state().clone();
+                move |_, _, cx| {
+                    state.update(cx, |state, cx| {
+                        if let Some(last_row_ix) = state.delegate().row_count().checked_sub(1) {
+                            state.stop_selection_drag(last_row_ix, cx);
+                            cx.notify();
+                        }
+                    });
+                }
+            })
+            .on_mouse_up_out(MouseButton::Right, {
+                let state = self.state().clone();
+                move |_, _, cx| {
+                    state.update(cx, |state, cx| {
+                        if let Some(last_row_ix) = state.delegate().row_count().checked_sub(1) {
+                            state.stop_selection_drag(last_row_ix, cx);
+                            cx.notify();
+                        }
+                    });
+                }
+            })
     }
 
     fn render_row(
@@ -231,36 +239,27 @@ impl<D: TableDelegate> Table<D> {
             .bg(if is_selected { cx.theme().bg_selected } else { gpui::transparent_black() })
             .child(content)
             .children(selection_overlay)
-            .on_edit({
-                let state = self.state().clone();
-                let column_id = column.id().to_string();
-                let row_id = row_id.clone();
-                let edit_handler = column.edit_handler.clone();
-                move |window, cx| {
-                    if let Some(edit_handler) = &edit_handler {
-                        if !is_selected {
-                            let column_id = column_id.clone();
-                            let row_id = row_id.clone();
-                            state.read(cx).selection().clone().update(cx, move |selection, cx| {
-                                selection.clear();
-                                selection.select_cell(column_id, row_id);
-                                cx.notify();
-                            });
-                        }
-
-                        let row_ids =
-                            state.read(cx).selection().read(cx).row_ids().cloned().collect();
-                        (edit_handler)(state.clone(), row_ids, window, cx);
-                    }
-                }
-            })
             .on_mouse_down(MouseButton::Left, {
                 let state = self.state().clone();
                 let column_id = column.id().to_string();
                 move |_, _window, cx| {
                     state.update(cx, |state, cx| {
-                        state.start_selection_drag(column_id.clone(), row_ix);
-                        cx.notify();
+                        if !is_selected {
+                            state.start_selection_drag(column_id.clone(), row_ix, cx);
+                            cx.notify();
+                        }
+                    });
+                }
+            })
+            .on_mouse_down(MouseButton::Right, {
+                let state = self.state().clone();
+                let column_id = column.id().to_string();
+                move |_, _window, cx| {
+                    state.update(cx, |state, cx| {
+                        if !is_selected {
+                            state.start_selection_drag(column_id.clone(), row_ix, cx);
+                            cx.notify();
+                        }
                     });
                 }
             })
@@ -293,13 +292,29 @@ impl<D: TableDelegate> Table<D> {
                     });
                 }
             })
+            .on_mouse_up(MouseButton::Right, {
+                let state = self.state().clone();
+                move |_, _, cx| {
+                    state.update(cx, |state, cx| {
+                        state.stop_selection_drag(row_ix, cx);
+                        cx.notify();
+                    });
+                }
+            })
     }
 }
 
 impl<D: TableDelegate + 'static> RenderOnce for Table<D> {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
-        v_flex().id(self.id.clone()).size_full().child(self.render_header(window, cx)).child(
-            div().id("body").overflow_scroll().size_full().child(self.render_body(window, cx)),
-        )
+        let focus_handle = self.state.focus_handle(cx);
+
+        v_flex()
+            .id(self.id.clone())
+            .track_focus(&focus_handle)
+            .size_full()
+            .child(self.render_header(window, cx))
+            .child(
+                div().id("body").overflow_scroll().size_full().child(self.render_body(window, cx)),
+            )
     }
 }

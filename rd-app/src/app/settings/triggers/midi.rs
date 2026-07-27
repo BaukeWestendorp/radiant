@@ -21,6 +21,7 @@ impl MidiTabView {
         let table = cx.new(|cx| {
             TableState::new(
                 MidiMappingTable::new(uncommitted_project.clone(), window, cx),
+                cx.focus_handle(),
                 window,
                 cx,
             )
@@ -77,6 +78,7 @@ impl MidiMappingTable {
 
                         *this = TableState::new(
                             MidiMappingTable::new(uncommitted_project.clone(), window, cx),
+                            cx.focus_handle(),
                             window,
                             cx,
                         );
@@ -134,6 +136,10 @@ impl TableDelegate for MidiMappingTable {
 
     fn columns(&self) -> &[Column<Self>] {
         &self.columns
+    }
+
+    fn column(&self, column_id: &str) -> Option<&Column<Self>> {
+        self.columns.iter().find(|c| c.id() == column_id)
     }
 
     fn rows(&self) -> impl Iterator<Item = (&Self::RowId, &Self::Row)> {
