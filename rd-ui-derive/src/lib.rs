@@ -16,7 +16,7 @@ pub fn derive_input(input: TokenStream) -> TokenStream {
                 data.variants.iter().all(|variant| matches!(variant.fields, Fields::Unit));
 
             if all_unit {
-                return TokenStream::from(expand_dropdown_impl(name, data));
+                return TokenStream::from(expand_picker_impl(name, data));
             } else {
                 return TokenStream::from(expand_tagged_form_impl(name, data, &input.vis));
             }
@@ -29,7 +29,7 @@ pub fn derive_input(input: TokenStream) -> TokenStream {
     }
 }
 
-fn expand_dropdown_impl(name: &Ident, data: &DataEnum) -> proc_macro2::TokenStream {
+fn expand_picker_impl(name: &Ident, data: &DataEnum) -> proc_macro2::TokenStream {
     let mut variants_list = Vec::new();
     let mut match_arms = Vec::new();
 
@@ -47,7 +47,7 @@ fn expand_dropdown_impl(name: &Ident, data: &DataEnum) -> proc_macro2::TokenStre
     }
 
     quote! {
-        impl ::rd_ui::DropdownValue for #name {
+        impl ::rd_ui::PickerValue for #name {
             fn variants() -> Vec<Self>
             where
                 Self: Sized
@@ -65,7 +65,7 @@ fn expand_dropdown_impl(name: &Ident, data: &DataEnum) -> proc_macro2::TokenStre
         }
 
         impl ::rd_ui::AutoInput for #name {
-            type Delegate = ::rd_ui::Dropdown<Self>;
+            type Delegate = ::rd_ui::Picker<Self>;
 
             fn build_input(
                 initial_value: Self,
@@ -75,7 +75,11 @@ fn expand_dropdown_impl(name: &Ident, data: &DataEnum) -> proc_macro2::TokenStre
                 use ::rd_ui::gpui::AppContext as _;
                 cx.new(|cx| {
                     ::rd_ui::InputState::new(
-                        ::rd_ui::Dropdown::new(initial_value, cx.focus_handle(), window, cx),
+                        if <Self as ::rd_ui::PickerValue>::variants().len() > 5 {
+                            ::rd_ui::Picker::dropdown(initial_value, cx.focus_handle(), window, cx)
+                        } else {
+                            ::rd_ui::Picker::inline(initial_value, cx.focus_handle(), window, cx)
+                        },
                         window,
                         cx,
                     )
@@ -230,7 +234,7 @@ fn expand_tagged_form_impl(
     }
 
     quote! {
-        #[derive(Clone, ::rd_ui::Input)]
+        #[derive(Clone, Copy, PartialEq, ::rd_ui::Input)]
         #vis enum #kind_name {
             #( #kind_variants ),*
         }
@@ -244,7 +248,7 @@ fn expand_tagged_form_impl(
         }
 
         #vis struct #form_name {
-            kind: ::rd_ui::gpui::Entity<::rd_ui::InputState<::rd_ui::Dropdown<#kind_name>>>,
+            kind: ::rd_ui::gpui::Entity<::rd_ui::InputState<::rd_ui::Picker<#kind_name>>>,
             #( #form_fields, )*
         }
 

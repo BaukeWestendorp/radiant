@@ -35,9 +35,9 @@ pub use icon::{Icon, IconSize, IconVariant};
 pub use init::init;
 pub use init::simple::build_simple_app;
 pub use input::{
-    AutoInput, Dropdown, DropdownValue, Field, FieldValue, Form, FormDelegate, FormField,
-    INPUT_HEIGHT, Input, InputDelegate, InputEvent, InputState, LayoutDirection, OptionInput,
-    Slider, SliderValue, TextInput,
+    AutoInput, Field, FieldValue, Form, FormDelegate, FormField, INPUT_HEIGHT, Input,
+    InputDelegate, InputEvent, InputState, LayoutDirection, OptionInput, Picker, PickerKind,
+    PickerValue, Slider, SliderValue, TextInput,
 };
 pub use keymap::{Keymap, KeymapBinding};
 pub use org::section;

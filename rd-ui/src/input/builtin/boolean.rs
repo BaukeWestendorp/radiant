@@ -1,8 +1,8 @@
 use gpui::{App, Entity, Window, prelude::*};
 
-use crate::{AutoInput, Dropdown, DropdownValue, InputState};
+use crate::{AutoInput, InputState, Picker, PickerValue};
 
-impl DropdownValue for bool {
+impl PickerValue for bool {
     fn variants() -> Vec<Self> {
         vec![false, true]
     }
@@ -16,7 +16,7 @@ impl DropdownValue for bool {
 }
 
 impl AutoInput for bool {
-    type Delegate = Dropdown<bool>;
+    type Delegate = Picker<bool>;
 
     fn build_input(
         initial_value: Self,
@@ -24,8 +24,8 @@ impl AutoInput for bool {
         cx: &mut App,
     ) -> Entity<InputState<Self::Delegate>> {
         cx.new(move |cx| {
-            let dropdown = Dropdown::new(initial_value, cx.focus_handle(), window, cx);
-            InputState::new(dropdown, window, cx)
+            let picker = Picker::inline(initial_value, cx.focus_handle(), window, cx);
+            InputState::new(picker, window, cx)
         })
     }
 }

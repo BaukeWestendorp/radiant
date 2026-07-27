@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use gpui::prelude::*;
 use gpui::{Entity, Window, div};
 use rd_ui::{
-    ActiveTheme, Column, DropdownValue, Table, TableDelegate, TableSelection, TableState, section,
+    ActiveTheme, Column, PickerValue, Table, TableDelegate, TableSelection, TableState, section,
 };
 
 pub struct TablePreview {

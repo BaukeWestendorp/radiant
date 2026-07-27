@@ -1,8 +1,7 @@
 use gpui::{App, Entity, Window, prelude::*};
 
 use crate::{
-    AutoInput, Dropdown, DropdownValue, Form, FormDelegate, FormField, Input, InputDelegate,
-    InputState,
+    AutoInput, Form, FormDelegate, FormField, Input, InputDelegate, InputState, Picker, PickerValue,
 };
 
 #[derive(Clone, PartialEq)]
@@ -11,7 +10,7 @@ enum HasValue {
     Yes,
 }
 
-impl DropdownValue for HasValue {
+impl PickerValue for HasValue {
     fn variants() -> Vec<Self> {
         vec![HasValue::No, HasValue::Yes]
     }
@@ -25,7 +24,7 @@ impl DropdownValue for HasValue {
 }
 
 impl AutoInput for HasValue {
-    type Delegate = Dropdown<HasValue>;
+    type Delegate = Picker<HasValue>;
 
     fn build_input(
         initial_value: Self,
@@ -33,14 +32,14 @@ impl AutoInput for HasValue {
         cx: &mut App,
     ) -> Entity<InputState<Self::Delegate>> {
         cx.new(move |cx| {
-            let dropdown = Dropdown::new(initial_value, cx.focus_handle(), window, cx);
-            InputState::new(dropdown, window, cx)
+            let picker = Picker::inline(initial_value, cx.focus_handle(), window, cx);
+            InputState::new(picker, window, cx)
         })
     }
 }
 
 pub struct OptionInput<T: AutoInput> {
-    toggle: Entity<InputState<Dropdown<HasValue>>>,
+    toggle: Entity<InputState<Picker<HasValue>>>,
     value: Entity<InputState<T::Delegate>>,
 }
 

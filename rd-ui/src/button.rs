@@ -9,7 +9,7 @@ use smallvec::SmallVec;
 
 use crate::styled_ext::{FocusableExt, StatefulInteractiveElementExt};
 use crate::theme::HslaExt;
-use crate::{ActiveTheme, Icon};
+use crate::{ActiveTheme, Icon, StyledExt};
 
 #[derive(IntoElement)]
 pub struct Button {
@@ -17,6 +17,7 @@ pub struct Button {
     base: Stateful<Div>,
     style: StyleRefinement,
     disabled: bool,
+    focusable: bool,
     selected: bool,
     tab_index: isize,
     tab_stop: bool,
@@ -34,6 +35,7 @@ impl Button {
             base: div().id(id),
             style: StyleRefinement::default(),
             disabled: false,
+            focusable: true,
             selected: false,
             tab_index: 0,
             tab_stop: true,
@@ -47,6 +49,11 @@ impl Button {
 
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
+        self
+    }
+
+    pub fn focusable(mut self, focusable: bool) -> Self {
+        self.focusable = focusable;
         self
     }
 
@@ -96,7 +103,7 @@ impl RenderOnce for Button {
 
         let focus_handle =
             window.use_keyed_state(self.id.clone(), cx, |_, cx| cx.focus_handle()).read(cx).clone();
-        let is_focused = focus_handle.is_focused(window);
+        let is_focused = self.focusable && focus_handle.is_focused(window);
 
         self.base
             .relative()
@@ -112,7 +119,7 @@ impl RenderOnce for Button {
             .border_1()
             .rounded(cx.theme().radius)
             .text_color(text_color)
-            .occlude()
+            .block_mouse_except_scroll()
             .when(self.disabled, |e| {
                 e.bg(bg.disabled())
                     .border_color(border_color.disabled())
@@ -126,7 +133,11 @@ impl RenderOnce for Button {
                             .border_color(border_color.active())
                             .top(cx.theme().button_depression)
                     })
-                    .track_focus(&focus_handle.tab_index(self.tab_index).tab_stop(self.tab_stop))
+                    .when(self.focusable, |e| {
+                        e.track_focus(
+                            &focus_handle.tab_index(self.tab_index).tab_stop(self.tab_stop),
+                        )
+                    })
             })
             .when_some(self.on_click, |this, on_click| {
                 this.on_click(move |event, window, cx| {
@@ -150,6 +161,7 @@ impl RenderOnce for Button {
             })
             .when(cx.theme().shadow, |e| e.shadow_xs())
             .focus_ring(is_focused, px(1.0), window, cx)
+            .refine_style(&self.style)
             .children(self.icon)
             .children(self.children)
     }

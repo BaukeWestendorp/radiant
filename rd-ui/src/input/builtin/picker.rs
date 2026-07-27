@@ -1,16 +1,16 @@
 use gpui::{
     App, AppContext, ElementId, Entity, FocusHandle, Focusable, MouseButton, RenderOnce, Window,
-    deferred, div, prelude::*,
+    deferred, div, prelude::*, px,
 };
 
 use crate::{
-    ActiveTheme, HslaExt, INPUT_HEIGHT, Icon, IconSize, IconVariant, InputDelegate, InputEvent,
-    InputState, container, h_flex, interactive_container,
+    ActiveTheme, Button, HslaExt, INPUT_HEIGHT, Icon, IconSize, IconVariant, InputDelegate,
+    InputEvent, InputState, container, h_flex, interactive_container, styled_ext::FocusableExt,
 };
 
 use super::LayoutDirection;
 
-pub trait DropdownValue: Clone {
+pub trait PickerValue: Clone + PartialEq {
     fn variants() -> Vec<Self>
     where
         Self: Sized;
@@ -18,23 +18,49 @@ pub trait DropdownValue: Clone {
     fn label(&self) -> String;
 }
 
-pub struct Dropdown<V: DropdownValue> {
-    value: Entity<V>,
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum PickerKind {
+    #[default]
+    Inline,
+    Dropdown,
+}
 
+pub struct Picker<V: PickerValue> {
+    value: Entity<V>,
     focus_handle: FocusHandle,
+    picker_kind: PickerKind,
 
     is_opened: bool,
 }
 
-impl<V: DropdownValue + 'static> Dropdown<V> {
+impl<V: PickerValue + 'static> Picker<V> {
     pub fn new(
         value: V,
         focus_handle: FocusHandle,
+        picker_kind: PickerKind,
         _window: &mut Window,
         cx: &mut Context<InputState<Self>>,
     ) -> Self {
         let value = cx.new(|_| value);
-        Self { value, focus_handle, is_opened: false }
+        Self { value, focus_handle, picker_kind, is_opened: false }
+    }
+
+    pub fn inline(
+        value: V,
+        focus_handle: FocusHandle,
+        window: &mut Window,
+        cx: &mut Context<InputState<Self>>,
+    ) -> Self {
+        Self::new(value, focus_handle, PickerKind::Inline, window, cx)
+    }
+
+    pub fn dropdown(
+        value: V,
+        focus_handle: FocusHandle,
+        window: &mut Window,
+        cx: &mut Context<InputState<Self>>,
+    ) -> Self {
+        Self::new(value, focus_handle, PickerKind::Dropdown, window, cx)
     }
 
     pub fn value<'a>(&'a self, cx: &'a App) -> &'a V {
@@ -67,7 +93,7 @@ impl<V: DropdownValue + 'static> Dropdown<V> {
     }
 }
 
-impl<V: DropdownValue + 'static> InputDelegate for Dropdown<V> {
+impl<V: PickerValue + 'static> InputDelegate for Picker<V> {
     type Value = V;
 
     fn new_element(
@@ -75,7 +101,7 @@ impl<V: DropdownValue + 'static> InputDelegate for Dropdown<V> {
         _window: &mut Window,
         _cx: &mut App,
     ) -> impl IntoElement {
-        DropdownElement { state }
+        PickerElement { state }
     }
 
     fn value_or_default(&self, cx: &App) -> Self::Value {
@@ -83,23 +109,37 @@ impl<V: DropdownValue + 'static> InputDelegate for Dropdown<V> {
     }
 
     fn form_layout_direction(&self) -> Option<LayoutDirection> {
-        Some(LayoutDirection::Horizontal)
+        match self.picker_kind {
+            PickerKind::Inline => None,
+            PickerKind::Dropdown => Some(LayoutDirection::Horizontal),
+        }
     }
 }
 
-impl<V: DropdownValue + 'static> Focusable for Dropdown<V> {
+impl<V: PickerValue + 'static> Focusable for Picker<V> {
     fn focus_handle(&self, _cx: &App) -> FocusHandle {
         self.focus_handle.clone()
     }
 }
 
 #[derive(IntoElement)]
-struct DropdownElement<V: DropdownValue + 'static> {
-    state: Entity<InputState<Dropdown<V>>>,
+struct PickerElement<V: PickerValue + 'static> {
+    state: Entity<InputState<Picker<V>>>,
 }
 
-impl<V: DropdownValue + 'static> RenderOnce for DropdownElement<V> {
+impl<V: PickerValue + 'static> RenderOnce for PickerElement<V> {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let picker_kind = self.state.read(cx).picker_kind;
+
+        match picker_kind {
+            PickerKind::Dropdown => self.render_dropdown(window, cx).into_any_element(),
+            PickerKind::Inline => self.render_inline(window, cx).into_any_element(),
+        }
+    }
+}
+
+impl<V: PickerValue + 'static> PickerElement<V> {
+    fn render_dropdown(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let id = ElementId::View(self.state.entity_id());
         let focus_handle = self.state.focus_handle(cx).clone();
         let open = self.state.read(cx).is_opened;
@@ -197,5 +237,40 @@ impl<V: DropdownValue + 'static> RenderOnce for DropdownElement<V> {
                     .child(h_flex().size_full().gap_2().child(preview).child(icon)),
             )
             .children(picker)
+    }
+
+    fn render_inline(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let id = ElementId::View(self.state.entity_id());
+        let focus_handle = self.state.focus_handle(cx);
+        let variants = V::variants();
+
+        div()
+            .id(id)
+            .track_focus(&focus_handle)
+            .focus_ring(focus_handle.is_focused(window), px(1.0), window, cx)
+            .child(container(window, cx).p_1().flex().gap_1().children(
+                variants.into_iter().enumerate().map(|(ix, variant)| {
+                    let label = variant.label();
+
+                    let selected = self.state.read(cx).value(cx) == &variant;
+
+                    Button::new(("picker-value", ix))
+                        .selected(selected)
+                        .focusable(false)
+                        .w_full()
+                        .child(label)
+                        .block_mouse_except_scroll()
+                        .on_click({
+                            let state = self.state.clone();
+                            let variant = variant.clone();
+                            move |_, _, cx| {
+                                state.update(cx, |state, cx| {
+                                    state.set_value(variant.clone(), cx);
+                                    cx.notify();
+                                });
+                            }
+                        })
+                }),
+            ))
     }
 }

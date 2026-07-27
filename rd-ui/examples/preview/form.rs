@@ -1,7 +1,5 @@
 use gpui::{App, Entity, Window, div, prelude::*};
-use rd_ui::{
-    Dropdown, Field, Form, FormDelegate, FormField, Input, InputEvent, InputState, Slider,
-};
+use rd_ui::{Field, Form, FormDelegate, FormField, Input, InputEvent, InputState, Picker, Slider};
 
 pub struct FormPreview {
     form: Entity<InputState<Form<PreviewForm>>>,
@@ -36,9 +34,10 @@ impl Render for FormPreview {
 }
 
 struct PreviewForm {
-    enum_value: Entity<InputState<Dropdown<EnumValue>>>,
+    enum_value: Entity<InputState<Picker<EnumValue>>>,
     name: Entity<InputState<Field<String>>>,
     slider: Entity<InputState<Slider<f64>>>,
+    picker: Entity<InputState<Picker<EnumValue>>>,
 }
 
 impl PreviewForm {
@@ -46,7 +45,7 @@ impl PreviewForm {
         Self {
             enum_value: cx.new(|cx| {
                 InputState::new(
-                    Dropdown::new(EnumValue::Alpha, cx.focus_handle(), window, cx),
+                    Picker::dropdown(EnumValue::Alpha, cx.focus_handle(), window, cx),
                     window,
                     cx,
                 )
@@ -58,6 +57,13 @@ impl PreviewForm {
                     Slider::new(cx.focus_handle(), window, cx)
                         .with_min(Some(0.0), cx)
                         .with_max(Some(1.0), cx),
+                    window,
+                    cx,
+                )
+            }),
+            picker: cx.new(|cx| {
+                InputState::new(
+                    Picker::inline(EnumValue::Alpha, cx.focus_handle(), window, cx),
                     window,
                     cx,
                 )
@@ -74,6 +80,7 @@ impl FormDelegate for PreviewForm {
             FormField::new("Enum Value", Input::new(self.enum_value.clone()), cx),
             FormField::new("Name", Input::new(self.name.clone()), cx),
             FormField::new("Slider", Input::new(self.slider.clone()), cx),
+            FormField::new("Picker", Input::new(self.picker.clone()), cx),
         ]
     }
 
@@ -94,7 +101,7 @@ struct PreviewFormData {
     slider: f64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 #[derive(rd_ui::Input)]
 enum EnumValue {
     Alpha,
