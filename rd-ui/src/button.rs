@@ -3,13 +3,13 @@ use gpui::{
     Window, div, prelude::*,
 };
 
-use crate::{ActiveTheme, FocusableExt, HslaExt, Icon, StyledExt, h_flex};
+use crate::{ActiveTheme, FocusableExt, HslaExt, Icon, IconSize, IconVariant, StyledExt, h_flex};
 
 #[derive(IntoElement)]
 pub struct Button {
     id: ElementId,
     label: Option<SharedString>,
-    icon: Option<Icon>,
+    icon: Option<IconVariant>,
     focus_handle: FocusHandle,
     style: StyleRefinement,
     variant: ButtonVariant,
@@ -36,7 +36,7 @@ impl Button {
         self
     }
 
-    pub fn icon(mut self, icon: Icon) -> Self {
+    pub fn icon(mut self, icon: IconVariant) -> Self {
         self.icon = Some(icon);
         self
     }
@@ -110,7 +110,7 @@ impl RenderOnce for Button {
                         .px_1()
                         .border_r_1()
                         .border_color(border_color)
-                        .child(icon),
+                        .child(Icon::new(icon, IconSize::ExtraSmall)),
                 )
             })
             .when_some(self.label, |e, label| {

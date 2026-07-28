@@ -1,6 +1,6 @@
 use gpui::{Entity, Window, div, prelude::*};
 use rd::Project;
-use rd_ui::{Tab, Tabs, TabsState, TabsVariant};
+use rd_ui::{IconVariant, Tab, Tabs, TabsState, TabsVariant};
 
 mod midi;
 
@@ -25,11 +25,10 @@ impl TriggersTabView {
 impl Render for TriggersTabView {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         div().size_full().child(
-            Tabs::new("tabs", self.tabs.clone()).variant(TabsVariant::Top).tabs(vec![Tab::new(
-                "midi",
-                "MIDI",
-                self.midi_tab.clone().into_any_element(),
-            )]),
+            Tabs::new("tabs", self.tabs.clone()).variant(TabsVariant::Top).tabs(vec![
+                Tab::new("midi", "MIDI", self.midi_tab.clone().into_any_element())
+                    .icon(IconVariant::KeyboardMusic),
+            ]),
         )
     }
 }

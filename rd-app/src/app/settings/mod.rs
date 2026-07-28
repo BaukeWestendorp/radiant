@@ -39,7 +39,7 @@ impl Render for SettingsRootView {
             .child(
                 Button::new("save", cx.focus_handle())
                     .label("Save Settings")
-                    .icon(Icon::new(IconVariant::Save, IconSize::ExtraSmall))
+                    .icon(IconVariant::Save)
                     .on_click(cx.listener(|this, _, _, cx| {
                         if let Err(err) = cx.update_project(|project, cx| {
                             *project = this.uncommitted_project.read(cx).clone();
@@ -51,11 +51,14 @@ impl Render for SettingsRootView {
 
         v_flex()
             .size_full()
-            .child(Tabs::new("tabs", self.tabs.clone()).tabs(vec![Tab::new(
-                "triggers",
-                "Triggers",
-                self.triggers_tab.clone().into_any_element(),
-            )]))
+            .child(Tabs::new("tabs", self.tabs.clone()).tabs(vec![
+                Tab::new(
+                    "triggers",
+                    "Triggers",
+                    self.triggers_tab.clone().into_any_element(),
+                )
+                .icon(IconVariant::Plug)
+            ]))
             .child(bottom_bar)
     }
 }

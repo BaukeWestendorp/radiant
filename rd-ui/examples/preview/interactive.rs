@@ -59,7 +59,7 @@ impl Render for InteractivePreview {
                         .child(
                             Button::new("click-me-too", cx.focus_handle())
                                 .label("Click Me Too")
-                                .icon(Icon::new(IconVariant::Plus, IconSize::ExtraSmall))
+                                .icon(IconVariant::Plus)
                                 .on_click(|_, _, _| {
                                     log::info!("button clicked (with icon)");
                                 }),

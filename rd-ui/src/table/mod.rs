@@ -10,9 +10,7 @@ pub use column::*;
 pub use delegate::*;
 pub use state::*;
 
-use crate::{
-    ActiveTheme, Button, ButtonVariant, HslaExt, Icon, IconSize, IconVariant, h_flex, todo, v_flex,
-};
+use crate::{ActiveTheme, Button, ButtonVariant, HslaExt, IconVariant, h_flex, todo, v_flex};
 
 const ROW_HEIGHT: Pixels = px(24.0);
 
@@ -87,7 +85,7 @@ impl<D: TableDelegate> Table<D> {
             .when(column.sortable(), |e| {
                 e.child(
                     Button::new(format!("{}-sort", column.id()), cx.focus_handle())
-                        .icon(Icon::new(sort_icon, IconSize::ExtraSmall))
+                        .icon(sort_icon)
                         .variant(if selected {
                             ButtonVariant::Primary
                         } else {
