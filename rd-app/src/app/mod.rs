@@ -62,7 +62,7 @@ pub fn run(showfile_path: Option<PathBuf>) -> anyhow::Result<()> {
 
     log::info!("Starting Radiant application");
 
-    rd_ui::build_simple_app().run(|window, cx| {
+    rd_ui::build_app().run(|window, cx| {
         engine::init(engine, cx);
         init(cx);
 

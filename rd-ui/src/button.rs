@@ -1,169 +1,121 @@
-use std::rc::Rc;
-
 use gpui::{
-    Action, AnyElement, App, ClickEvent, Div, ElementId, Interactivity, Stateful, StyleRefinement,
-    Window, div,
+    App, ClickEvent, ElementId, FocusHandle, Focusable, Hsla, SharedString, StyleRefinement,
+    Window, div, prelude::*,
 };
-use gpui::{prelude::*, px};
-use smallvec::SmallVec;
 
-use crate::styled_ext::{FocusableExt, StatefulInteractiveElementExt};
-use crate::theme::HslaExt;
-use crate::{ActiveTheme, Icon, StyledExt};
+use crate::{ActiveTheme, FocusableExt, HslaExt, Icon, StyledExt, h_flex};
 
 #[derive(IntoElement)]
 pub struct Button {
     id: ElementId,
-    base: Stateful<Div>,
-    style: StyleRefinement,
-    disabled: bool,
-    focusable: bool,
-    selected: bool,
-    tab_index: isize,
-    tab_stop: bool,
-    on_click: Option<Rc<dyn Fn(&ClickEvent, &mut Window, &mut App)>>,
-    action: Option<Box<dyn Action>>,
-    children: SmallVec<[AnyElement; 2]>,
+    label: Option<SharedString>,
     icon: Option<Icon>,
+    focus_handle: FocusHandle,
+    style: StyleRefinement,
+    variant: ButtonVariant,
+    is_disabled: bool,
+    on_click: Option<Box<dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static>>,
 }
 
 impl Button {
-    pub fn new(id: impl Into<ElementId>) -> Self {
-        let id = id.into();
+    pub fn new(id: impl Into<ElementId>, focus_handle: FocusHandle) -> Self {
         Self {
-            id: id.clone(),
-            base: div().id(id),
-            style: StyleRefinement::default(),
-            disabled: false,
-            focusable: true,
-            selected: false,
-            tab_index: 0,
-            tab_stop: true,
-
-            on_click: None,
-            action: None,
-            children: SmallVec::new(),
+            id: id.into(),
+            label: None,
             icon: None,
+            focus_handle,
+            style: StyleRefinement::default(),
+            variant: Default::default(),
+            is_disabled: false,
+            on_click: None,
         }
     }
 
+    pub fn label(mut self, label: impl Into<SharedString>) -> Self {
+        self.label = Some(label.into());
+        self
+    }
+
+    pub fn icon(mut self, icon: Icon) -> Self {
+        self.icon = Some(icon);
+        self
+    }
+
+    pub fn variant(mut self, variant: ButtonVariant) -> Self {
+        self.variant = variant;
+        self
+    }
+
     pub fn disabled(mut self, disabled: bool) -> Self {
-        self.disabled = disabled;
+        self.is_disabled = disabled;
         self
     }
 
-    pub fn focusable(mut self, focusable: bool) -> Self {
-        self.focusable = focusable;
-        self
-    }
-
-    pub fn selected(mut self, selected: bool) -> Self {
-        self.selected = selected;
-        self
-    }
-
-    pub fn tab_index(mut self, tab_index: isize) -> Self {
-        self.tab_index = tab_index;
-        self
-    }
-
-    pub fn tab_stop(mut self, tab_stop: bool) -> Self {
-        self.tab_stop = tab_stop;
-        self
-    }
-
-    pub fn on_click<F>(mut self, handler: F) -> Self
-    where
-        F: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
-    {
-        self.on_click = Some(Rc::new(handler));
-        self
-    }
-
-    pub fn action(mut self, action: impl Action) -> Self {
-        self.action = Some(Box::new(action));
-        self
-    }
-
-    pub fn icon(mut self, icon: impl Into<Icon>) -> Self {
-        self.icon = Some(icon.into());
+    pub fn on_click(
+        mut self,
+        listener: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+    ) -> Self {
+        self.on_click = Some(Box::new(listener));
         self
     }
 }
 
 impl RenderOnce for Button {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
-        let clickable = !self.disabled;
+        let style = self.variant.style(cx);
 
-        let (bg, border_color, text_color) = if self.selected {
-            (cx.theme().bg_selected, cx.theme().border_selected, cx.theme().fg_selected)
-        } else {
-            (cx.theme().bg_tertiary, cx.theme().border_tertiary, cx.theme().fg_primary)
-        };
+        let mut bg = style.bg;
+        let mut text_color = style.text_color;
+        let mut border_color = style.border_color;
 
-        let focus_handle =
-            window.use_keyed_state(self.id.clone(), cx, |_, cx| cx.focus_handle()).read(cx).clone();
-        let is_focused = self.focusable && focus_handle.is_focused(window);
+        if self.is_disabled {
+            bg = bg.disabled();
+            text_color = text_color.disabled();
+            border_color = border_color.disabled();
+        }
 
-        self.base
-            .relative()
+        let shadow = cx.theme().shadow && style.shadow;
+
+        div()
+            .id(self.id)
+            .track_focus(&self.focus_handle)
+            .min_size_2()
             .flex()
             .items_center()
             .justify_center()
-            .px_2()
-            .when(self.icon.is_some() && self.children.is_empty(), |e| e.px_0p5())
-            .min_size_2()
-            .gap_1()
+            .refine_style(&self.style)
             .bg(bg)
-            .border_color(border_color)
             .border_1()
+            .border_color(border_color)
             .rounded(cx.theme().radius)
             .text_color(text_color)
+            .when(self.is_disabled, |e| e.cursor_not_allowed())
+            .when(!self.is_disabled, |e| {
+                e.hover(|e| e.bg(style.bg_hover))
+                    .active(|e| e.bg(style.bg_active).top(cx.theme().button_depression))
+                    .on_click(move |event, window, cx| {
+                        if let Some(on_click) = &self.on_click {
+                            (on_click)(event, window, cx)
+                        }
+                    })
+            })
+            .when(shadow, |e| e.shadow_xs())
             .block_mouse_except_scroll()
-            .when(self.disabled, |e| {
-                e.bg(bg.disabled())
-                    .border_color(border_color.disabled())
-                    .text_color(text_color.disabled())
-                    .cursor_not_allowed()
+            .focus_ring(self.focus_handle.is_focused(window), window, cx)
+            .when_some(self.icon, |e, icon| {
+                e.child(
+                    h_flex()
+                        .justify_center()
+                        .h_full()
+                        .px_1()
+                        .border_r_1()
+                        .border_color(border_color)
+                        .child(icon),
+                )
             })
-            .when(!self.disabled, |e| {
-                e.hover(|e| e.bg(bg.hover()).border_color(border_color.hover()))
-                    .active(|e| {
-                        e.bg(bg.active())
-                            .border_color(border_color.active())
-                            .top(cx.theme().button_depression)
-                    })
-                    .when(self.focusable, |e| {
-                        e.track_focus(
-                            &focus_handle.tab_index(self.tab_index).tab_stop(self.tab_stop),
-                        )
-                    })
+            .when_some(self.label, |e, label| {
+                e.child(div().w_full().px_2().text_center().child(label))
             })
-            .when_some(self.on_click, |this, on_click| {
-                this.on_click(move |event, window, cx| {
-                    if !clickable {
-                        cx.stop_propagation();
-                        return;
-                    }
-
-                    on_click(event, window, cx);
-                })
-            })
-            .when_some(self.action, |this, action| {
-                this.action_tooltip(action.boxed_clone()).on_click(move |_, window, cx| {
-                    if !clickable {
-                        cx.stop_propagation();
-                        return;
-                    }
-
-                    window.dispatch_action(action.boxed_clone(), cx);
-                })
-            })
-            .when(cx.theme().shadow, |e| e.shadow_xs())
-            .focus_ring(is_focused, px(1.0), window, cx)
-            .refine_style(&self.style)
-            .children(self.icon)
-            .children(self.children)
     }
 }
 
@@ -173,14 +125,97 @@ impl Styled for Button {
     }
 }
 
-impl ParentElement for Button {
-    fn extend(&mut self, elements: impl IntoIterator<Item = AnyElement>) {
-        self.children.extend(elements)
+impl Focusable for Button {
+    fn focus_handle(&self, _cx: &App) -> FocusHandle {
+        self.focus_handle.clone()
     }
 }
 
-impl InteractiveElement for Button {
-    fn interactivity(&mut self) -> &mut Interactivity {
-        self.base.interactivity()
+#[derive(Default, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ButtonVariant {
+    #[default]
+    Primary,
+    Secondary,
+    Ghost,
+    Danger,
+    Warning,
+}
+
+struct VariantStyle {
+    bg: Hsla,
+    bg_hover: Hsla,
+    bg_active: Hsla,
+    border_color: Hsla,
+    text_color: Hsla,
+    shadow: bool,
+}
+
+impl ButtonVariant {
+    fn style(&self, cx: &App) -> VariantStyle {
+        let theme = cx.theme();
+
+        match self {
+            Self::Primary => {
+                let mut bg = theme.accent;
+                bg.fade_out(0.5);
+
+                VariantStyle {
+                    bg,
+                    bg_hover: bg.hover(),
+                    bg_active: bg.active(),
+                    border_color: theme.accent,
+                    text_color: theme.fg_primary,
+                    shadow: true,
+                }
+            }
+            Self::Secondary => {
+                let bg = theme.bg_tertiary;
+
+                VariantStyle {
+                    bg,
+                    bg_hover: bg.hover(),
+                    bg_active: bg.active(),
+                    border_color: theme.border_tertiary,
+                    text_color: theme.fg_primary,
+                    shadow: true,
+                }
+            }
+            Self::Ghost => VariantStyle {
+                bg: theme.bg_primary.opacity(0.0),
+                bg_hover: theme.bg_secondary,
+                bg_active: theme.bg_tertiary,
+                border_color: theme.border_primary.opacity(0.0),
+                text_color: theme.fg_secondary,
+                shadow: false,
+            },
+            Self::Danger => {
+                let bg = theme.indicate.danger;
+                let mut border_color = bg;
+                border_color.l -= 0.2;
+
+                VariantStyle {
+                    bg,
+                    bg_hover: bg.hover(),
+                    bg_active: bg.active(),
+                    border_color,
+                    text_color: theme.fg_primary,
+                    shadow: true,
+                }
+            }
+            Self::Warning => {
+                let bg = theme.indicate.warning;
+                let mut border_color = bg;
+                border_color.l -= 0.2;
+
+                VariantStyle {
+                    bg,
+                    bg_hover: bg.hover(),
+                    bg_active: bg.active(),
+                    border_color,
+                    text_color: theme.fg_primary,
+                    shadow: true,
+                }
+            }
+        }
     }
 }

@@ -256,11 +256,13 @@ fn expand_tagged_form_impl(
             type Data = #name;
 
             fn fields(&self, cx: &mut ::rd_ui::gpui::App) -> Vec<::rd_ui::FormField> {
-                let mut fields = vec![::rd_ui::FormField::new(
-                    "Kind",
-                    ::rd_ui::Input::new(self.kind.clone()),
-                    cx
-                )];
+                let mut fields = vec![
+                    ::rd_ui::FormField::new(
+                        "Kind",
+                        ::rd_ui::Input::new(self.kind.clone()),
+                        cx
+                    ).with_label_hidden(true)
+                ];
 
                 match self.kind.read(cx).value(cx) {
                     #( #fields_match_arms, )*

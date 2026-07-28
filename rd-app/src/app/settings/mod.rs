@@ -37,9 +37,9 @@ impl Render for SettingsRootView {
             .border_t_1()
             .border_color(cx.theme().border_primary)
             .child(
-                Button::new("save")
+                Button::new("save", cx.focus_handle())
+                    .label("Save Settings")
                     .icon(Icon::new(IconVariant::Save, IconSize::ExtraSmall))
-                    .child("Save Settings")
                     .on_click(cx.listener(|this, _, _, cx| {
                         if let Err(err) = cx.update_project(|project, cx| {
                             *project = this.uncommitted_project.read(cx).clone();

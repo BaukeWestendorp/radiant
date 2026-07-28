@@ -169,8 +169,7 @@ impl Render for Popup {
                             .child(message.clone()),
                     )
                     .child(
-                        Button::new("close")
-                            .child("Close")
+                        Button::new("close", cx.focus_handle())
                             .on_click(|_, window, cx| cx.close_popup(window)),
                     )
                     .into_any_element(),

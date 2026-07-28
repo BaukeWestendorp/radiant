@@ -10,7 +10,9 @@ pub use column::*;
 pub use delegate::*;
 pub use state::*;
 
-use crate::{ActiveTheme, Button, HslaExt, Icon, IconSize, IconVariant, h_flex, todo, v_flex};
+use crate::{
+    ActiveTheme, Button, ButtonVariant, HslaExt, Icon, IconSize, IconVariant, h_flex, todo, v_flex,
+};
 
 const ROW_HEIGHT: Pixels = px(24.0);
 
@@ -58,9 +60,10 @@ impl<D: TableDelegate> Table<D> {
         cx: &App,
     ) -> impl IntoElement {
         let state = self.state.read(cx);
-        let is_active_sort = state.sorted_column() == Some(column.id());
+        let active_sort = state.sorted_column() == Some(column.id());
+        let selected = self.state.read(cx).sorted_column() == Some(column.id());
 
-        let sort_icon = match (is_active_sort, state.sort_direction()) {
+        let sort_icon = match (active_sort, state.sort_direction()) {
             (true, Some(TableSortDirection::Ascending)) => IconVariant::ArrowDownAZ,
             (true, Some(TableSortDirection::Descending)) => IconVariant::ArrowUpZA,
             _ => IconVariant::ArrowDownUp,
@@ -83,9 +86,13 @@ impl<D: TableDelegate> Table<D> {
             .active(|e| e.bg(bg.active()))
             .when(column.sortable(), |e| {
                 e.child(
-                    Button::new(format!("{}-sort", column.id()))
+                    Button::new(format!("{}-sort", column.id()), cx.focus_handle())
                         .icon(Icon::new(sort_icon, IconSize::ExtraSmall))
-                        .selected(self.state.read(cx).sorted_column() == Some(column.id()))
+                        .variant(if selected {
+                            ButtonVariant::Primary
+                        } else {
+                            ButtonVariant::Secondary
+                        })
                         .on_click({
                             let column_id = column.id().to_string();
                             let state = self.state.clone();

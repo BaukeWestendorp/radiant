@@ -30,8 +30,8 @@ mod app {
     use crate::typo::TypoPreview;
 
     pub fn run() -> anyhow::Result<()> {
-        rd_ui::build_simple_app()
-            .window_title("MaakUI Preview")
+        rd_ui::build_app()
+            .window_title("RD-UI Preview")
             .run(|window, cx| cx.new(|cx| PreviewApp::new(window, cx)));
 
         Ok(())

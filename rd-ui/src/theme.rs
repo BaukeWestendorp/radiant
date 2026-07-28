@@ -17,14 +17,13 @@ impl ActiveTheme for App {
 }
 
 pub trait HslaExt {
-    /// Returns a disabled variant of the color (lower alpha and desaturated).
     fn disabled(&self) -> Hsla;
 
-    /// Returns a hover variant of the color (slightly lighter).
     fn hover(&self) -> Hsla;
 
-    /// Returns an active variant of the color (lighter).
     fn active(&self) -> Hsla;
+
+    fn contrast(&self) -> Hsla;
 }
 
 impl HslaExt for Hsla {
@@ -37,19 +36,25 @@ impl HslaExt for Hsla {
 
     fn hover(&self) -> Hsla {
         let mut c = *self;
-        let gamma = 2.2;
+        let gamma = 1.8;
         let l = c.l.powf(gamma);
-        let l = (l + 0.04).min(1.0);
+        let l = (l + 0.06).min(1.0);
         c.l = l.powf(1.0 / gamma);
         c
     }
 
     fn active(&self) -> Hsla {
         let mut c = *self;
-        let gamma = 2.2;
+        let gamma = 1.8;
         let l = c.l.powf(gamma);
-        let l = (l + 0.08).min(1.0);
+        let l = (l + 0.10).min(1.0);
         c.l = l.powf(1.0 / gamma);
+        c
+    }
+
+    fn contrast(&self) -> Hsla {
+        let mut c = *self;
+        c.l = if c.l > 0.5 { 0.1 } else { 0.9 };
         c
     }
 }
@@ -203,40 +208,28 @@ impl Global for Theme {}
 
 #[derive(Debug, Clone)]
 pub struct IndicationColors {
+    pub danger: Hsla,
     pub warning: Hsla,
-    pub error: Hsla,
+    pub info: Hsla,
     pub success: Hsla,
-
-    pub programmer: Hsla,
-    pub highlight: Hsla,
-    pub playback: Hsla,
-    pub rename: Hsla,
 }
 
 impl IndicationColors {
     pub fn light() -> Self {
         Self {
+            danger: rgb(0xed2320).into(),
             warning: rgb(0xffc94d).into(),
-            error: rgb(0xed2320).into(),
+            info: rgb(0x3bb2f6).into(),
             success: rgb(0x9ce152).into(),
-
-            programmer: rgb(0xed2320).into(),
-            highlight: rgb(0xffc94d).into(),
-            playback: rgb(0x9ce152).into(),
-            rename: rgb(0xffa94d).into(),
         }
     }
 
     pub fn dark() -> Self {
         Self {
+            danger: rgb(0xed2320).into(),
             warning: rgb(0xffc94d).into(),
-            error: rgb(0xed2320).into(),
+            info: rgb(0x3bb2f6).into(),
             success: rgb(0x9ce152).into(),
-
-            programmer: rgb(0xed2320).into(),
-            highlight: rgb(0xffc94d).into(),
-            playback: rgb(0x9ce152).into(),
-            rename: rgb(0xffa94d).into(),
         }
     }
 }

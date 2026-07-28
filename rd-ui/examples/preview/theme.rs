@@ -99,7 +99,7 @@ impl Render for ThemePreview {
                                 )),
                         )
                         .child(row("warning", t.indicate.warning, t.fg_primary, cx))
-                        .child(row("error", t.indicate.error, t.fg_primary, cx))
+                        .child(row("danger", t.indicate.danger, t.fg_primary, cx))
                         .child(row("success", t.indicate.success, t.fg_primary, cx)),
                 ),
             )

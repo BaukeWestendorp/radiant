@@ -6,9 +6,10 @@ use gpui::{
 use crate::{ActiveTheme, Button, Input, InputDelegate, InputEvent, InputState, h_flex, v_flex};
 
 pub struct FormField {
-    pub label: SharedString,
-    pub input: AnyElement,
-    pub direction: LayoutDirection,
+    label: SharedString,
+    label_hidden: bool,
+    input: AnyElement,
+    direction: LayoutDirection,
 }
 
 impl FormField {
@@ -28,7 +29,17 @@ impl FormField {
             .form_layout_direction()
             .unwrap_or(LayoutDirection::Vertical);
 
-        Self { label: label.into(), input: input.into_any_element(), direction }
+        Self {
+            label: label.into(),
+            label_hidden: false,
+            input: input.into_any_element(),
+            direction,
+        }
+    }
+
+    pub fn with_label_hidden(mut self, hidden: bool) -> Self {
+        self.label_hidden = hidden;
+        self
     }
 
     pub fn with_direction(mut self, direction: LayoutDirection) -> Self {
@@ -124,30 +135,21 @@ impl<D: FormDelegate + 'static> RenderOnce for FormElement<D> {
                     match field.direction {
                         LayoutDirection::Vertical => v_flex()
                             .w_full()
-                            .items_center()
-                            .child(
-                                label.border_b_1().border_color(cx.theme().border_primary).w_full(),
-                            )
-                            .child(
-                                input
-                                    .w_full()
-                                    .p_2()
-                                    .bg(cx.theme().contrast.opacity(0.025))
-                                    .border_b_1()
-                                    .border_x_1()
-                                    .border_color(cx.theme().contrast.opacity(0.05))
-                                    .rounded_b(cx.theme().radius),
-                            ),
-                        LayoutDirection::Horizontal => {
-                            h_flex().w_full().gap_2().child(label.w_full()).child(input.w_full())
-                        }
+                            .gap_1()
+                            .when(!field.label_hidden, |e| e.child(label.w_full()))
+                            .child(input.w_full()),
+                        LayoutDirection::Horizontal => h_flex()
+                            .w_full()
+                            .gap_2()
+                            .when(!field.label_hidden, |e| e.child(label.w_full()))
+                            .child(input.w_full()),
                     }
                 })
                 .collect::<Vec<_>>()
         });
 
         let has_submit_button = self.state.read(cx).is_root_input();
-        let submit_button = Button::new("submit").child("Submit").on_click({
+        let submit_button = Button::new("submit", cx.focus_handle()).label("Submit").on_click({
             let state = self.state.clone();
             move |_, _, cx| {
                 state.update(cx, |state, cx| state.submit(cx));

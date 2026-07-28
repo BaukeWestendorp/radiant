@@ -1,7 +1,7 @@
 use gpui::prelude::*;
 use gpui::{AnyElement, App, ElementId, Entity, Window, div};
 
-use crate::{ActiveTheme, Button, h_flex, v_flex};
+use crate::{ActiveTheme, Button, ButtonVariant, h_flex, v_flex};
 
 #[derive(Debug, Clone)]
 pub struct TabsState {
@@ -67,26 +67,30 @@ impl RenderOnce for Tabs {
             let mut content: AnyElement = div().into_any_element();
 
             for tab in self.tabs.into_iter() {
-                let is_selected = selected_id.as_ref().map_or(false, |sel| sel == &tab.id);
+                let selected = selected_id.as_ref().map_or(false, |sel| sel == &tab.id);
                 let state = self.state.clone();
 
                 let Tab { id: tab_id, label, disabled, content: tab_content } = tab;
 
-                if is_selected {
+                if selected {
                     content = tab_content;
                 }
 
                 tab_buttons.push(
-                    Button::new(tab_id.clone())
+                    Button::new(tab_id.clone(), cx.focus_handle())
+                        .label(label)
                         .disabled(disabled)
-                        .selected(is_selected)
+                        .variant(if selected {
+                            ButtonVariant::Primary
+                        } else {
+                            ButtonVariant::Secondary
+                        })
                         .on_click(move |_, _, cx| {
                             state.update(cx, |state, cx| {
                                 state.set_selected(tab_id.clone());
                                 cx.notify();
                             });
-                        })
-                        .child(label),
+                        }),
                 );
             }
 

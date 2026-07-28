@@ -1,11 +1,12 @@
 use gpui::{
     App, AppContext, ElementId, Entity, FocusHandle, Focusable, MouseButton, RenderOnce, Window,
-    deferred, div, prelude::*, px,
+    deferred, div, prelude::*,
 };
 
 use crate::{
-    ActiveTheme, Button, HslaExt, INPUT_HEIGHT, Icon, IconSize, IconVariant, InputDelegate,
-    InputEvent, InputState, container, h_flex, interactive_container, styled_ext::FocusableExt,
+    ActiveTheme, Button, ButtonVariant, HslaExt, INPUT_HEIGHT, Icon, IconSize, IconVariant,
+    InputDelegate, InputEvent, InputState, container, h_flex, interactive_container,
+    util::FocusableExt,
 };
 
 use super::LayoutDirection;
@@ -247,19 +248,22 @@ impl<V: PickerValue + 'static> PickerElement<V> {
         div()
             .id(id)
             .track_focus(&focus_handle)
-            .focus_ring(focus_handle.is_focused(window), px(1.0), window, cx)
-            .child(container(window, cx).p_1().flex().gap_1().children(
+            .focus_ring(focus_handle.is_focused(window), window, cx)
+            .w_full()
+            .child(container(window, cx).w_full().p_1().flex().gap_1().children(
                 variants.into_iter().enumerate().map(|(ix, variant)| {
                     let label = variant.label();
 
                     let selected = self.state.read(cx).value(cx) == &variant;
 
-                    Button::new(("picker-value", ix))
-                        .selected(selected)
-                        .focusable(false)
+                    Button::new(("picker-value", ix), cx.focus_handle())
+                        .label(label)
+                        .variant(if selected {
+                            ButtonVariant::Primary
+                        } else {
+                            ButtonVariant::Secondary
+                        })
                         .w_full()
-                        .child(label)
-                        .block_mouse_except_scroll()
                         .on_click({
                             let state = self.state.clone();
                             let variant = variant.clone();

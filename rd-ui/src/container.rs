@@ -1,13 +1,12 @@
+use gpui::prelude::*;
 use gpui::{
     AnyElement, App, Div, ElementId, FocusHandle, Hsla, Interactivity, Stateful, StyleRefinement,
     Window, div,
 };
-use gpui::{prelude::*, px};
 use smallvec::SmallVec;
 
-use crate::HslaExt;
-use crate::styled_ext::FocusableExt;
-use crate::theme::ActiveTheme;
+use crate::util::FocusableExt;
+use crate::{ActiveTheme, HslaExt};
 
 pub fn container(window: &Window, cx: &App) -> Container {
     Container::new(window, cx)
@@ -271,6 +270,6 @@ impl RenderOnce for InteractiveContainer {
                 })
                 .children(self.children),
             )
-            .focus_ring(is_focused, px(1.0), window, cx)
+            .focus_ring(is_focused, window, cx)
     }
 }

@@ -5,22 +5,14 @@ use gpui::{
 };
 use smallvec::SmallVec;
 
-use crate::{ActiveTheme, StyledExt};
+use crate::{ActiveTheme, StatefulInteractiveElementExt};
 
 pub const TITLE_BAR_HEIGHT: Pixels = px(34.);
-#[cfg(target_os = "macos")]
-pub const TITLE_BAR_LEFT_PADDING: Pixels = px(80.);
-#[cfg(not(target_os = "macos"))]
-pub const TITLE_BAR_LEFT_PADDING: Pixels = px(12.);
-#[cfg(target_os = "macos")]
-pub const TITLE_BAR_RIGHT_PADDING: Pixels = px(9.0);
-#[cfg(not(target_os = "macos"))]
-pub const TITLE_BAR_RIGHT_PADDING: Pixels = px(0.0);
 
 #[derive(IntoElement)]
 pub struct TitleBar {
     style: StyleRefinement,
-    children: SmallVec<[AnyElement; 1]>,
+    children: SmallVec<[AnyElement; 2]>,
 }
 
 impl TitleBar {
@@ -32,8 +24,27 @@ impl TitleBar {
 impl RenderOnce for TitleBar {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let is_client_decorated = matches!(window.window_decorations(), Decorations::Client { .. });
+        let is_fullscreen = window.is_fullscreen();
         let is_linux = cfg!(target_os = "linux");
         let is_macos = cfg!(target_os = "macos");
+
+        const DEFAULT_PADDING: Pixels = px(12.0);
+        const MACOS_TRAFFIC_LIGHT_PADDING: Pixels = px(80.0);
+        let padding_left = if is_macos {
+            if is_fullscreen { DEFAULT_PADDING } else { MACOS_TRAFFIC_LIGHT_PADDING }
+        } else if is_linux {
+            DEFAULT_PADDING
+        } else {
+            DEFAULT_PADDING
+        };
+
+        let padding_right = if is_macos {
+            DEFAULT_PADDING
+        } else if is_linux {
+            DEFAULT_PADDING
+        } else {
+            DEFAULT_PADDING
+        };
 
         div()
             .id("title-bar")
@@ -43,26 +54,19 @@ impl RenderOnce for TitleBar {
             .justify_between()
             .min_h(TITLE_BAR_HEIGHT)
             .max_h(TITLE_BAR_HEIGHT)
-            .pl(TITLE_BAR_LEFT_PADDING)
-            .pr(TITLE_BAR_RIGHT_PADDING)
+            .pl(padding_left)
+            .pr(padding_right)
             .border_b_1()
             .border_color(cx.theme().title_bar_border)
             .bg(cx.theme().title_bar)
-            .refine_style(&self.style)
             .when(is_linux, |e| {
-                // FIXME: Add `on_double_click` helper.
-                e.on_click(|event, window, _| {
-                    if event.click_count() == 2 {
-                        window.zoom_window();
-                    }
+                e.on_double_click(|_, window, _| {
+                    window.zoom_window();
                 })
             })
             .when(is_macos, |e| {
-                e.on_click(|event, window, _| {
-                    // FIXME: Add `on_double_click` helper.
-                    if event.click_count() == 2 {
-                        window.titlebar_double_click();
-                    }
+                e.on_double_click(|_, window, _| {
+                    window.titlebar_double_click();
                 })
             })
             .child(
@@ -71,7 +75,6 @@ impl RenderOnce for TitleBar {
                     .items_center()
                     .id("bar")
                     .window_control_area(WindowControlArea::Drag)
-                    .when(window.is_fullscreen(), |e| e.pl_3())
                     .h_full()
                     .justify_between()
                     .flex_shrink_0()
