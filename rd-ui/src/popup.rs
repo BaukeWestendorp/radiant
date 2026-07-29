@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc};
 
 use gpui::{
     AnyView, AnyWindowHandle, App, BoxShadow, Context, Entity, Focusable, FontWeight, Global,
@@ -19,7 +19,7 @@ pub trait PopupAppExt {
         popup_builder: F,
     );
 
-    fn close_popup(&mut self, window: &Window);
+    fn close_popup(&mut self, window: &mut Window);
 }
 
 impl PopupAppExt for App {
@@ -36,10 +36,16 @@ impl PopupAppExt for App {
         });
     }
 
-    fn close_popup(&mut self, window: &Window) {
+    fn close_popup(&mut self, window: &mut Window) {
         PopupGlobal::global(self).popup_stacks.clone().update(self, |stacks, cx| {
             if let Some(stack) = stacks.get_mut(&window.window_handle()) {
-                stack.pop();
+                if let Some(popped) = stack.pop() {
+                    popped.update(cx, |popped, cx| {
+                        if let Some(on_close) = popped.on_close.take() {
+                            on_close(window, cx);
+                        }
+                    });
+                }
             }
             cx.notify();
         });
@@ -78,11 +84,16 @@ pub(crate) fn render_overlay(
 pub struct Popup {
     title: SharedString,
     kind: PopupKind,
+    on_close: Option<Box<dyn FnOnce(&mut Window, &mut App)>>,
 }
 
 impl Popup {
     pub fn message(title: impl Into<SharedString>, message: impl Into<SharedString>) -> Self {
-        Self { title: title.into(), kind: PopupKind::Message { message: message.into() } }
+        Self {
+            title: title.into(),
+            kind: PopupKind::Message { message: message.into() },
+            on_close: None,
+        }
     }
 
     pub fn input<S: InputDelegate + 'static>(
@@ -90,8 +101,13 @@ impl Popup {
         input: Entity<InputState<S>>,
         window: &mut Window,
         cx: &mut App,
-        on_submit: impl FnOnce(&S::Value, &mut App) + 'static,
-    ) -> Self {
+        on_submit: impl Fn(&S::Value, &mut App) + 'static,
+    ) -> Self
+    where
+        S::Value: Default,
+    {
+        let on_submit = Rc::new(on_submit);
+
         window.defer(cx, {
             let input = input.clone();
             move |window, cx| {
@@ -101,12 +117,14 @@ impl Popup {
 
         let mut on_submit = Some(on_submit);
         window
-            .subscribe(&input, cx, move |_, event, window, cx| match event {
-                InputEvent::Submit(value) => {
-                    if let Some(on_submit) = on_submit.take() {
+            .subscribe(&input, cx, {
+                let on_submit = Rc::clone(&on_submit);
+                move |_, event, window, cx| match event {
+                    InputEvent::Submit(value) => {
                         on_submit(value, cx);
-                        cx.close_popup(window);
+                        cx.close_popup(window)
                     }
+                    _ => {}
                 }
                 _ => {}
             })
@@ -114,11 +132,24 @@ impl Popup {
 
         let wrapper = cx.new(|_| InputPopup { input: input.clone() });
 
-        Self { title: title.into(), kind: PopupKind::Input { input: wrapper.into() } }
+        let on_close = move |_: &mut Window, cx: &mut App| {
+            let value = input.read(cx).value_or_default(cx);
+            (on_submit)(&value, cx);
+        };
+
+        Self {
+            title: title.into(),
+            kind: PopupKind::Input { input: wrapper.into() },
+            on_close: Some(Box::new(on_close)),
+        }
     }
 
     pub fn custom(title: impl Into<SharedString>, content: impl Into<AnyView>) -> Self {
-        Self { title: title.into(), kind: PopupKind::Custom { content: content.into() } }
+        Self {
+            title: title.into(),
+            kind: PopupKind::Custom { content: content.into() },
+            on_close: None,
+        }
     }
 
     pub fn title(&self) -> &SharedString {

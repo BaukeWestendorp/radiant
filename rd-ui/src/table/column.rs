@@ -105,7 +105,7 @@ impl<D: TableDelegate + 'static> Column<D> {
         input_builder: B,
     ) -> Self
     where
-        I::Value: Clone,
+        I::Value: Clone + Default,
     {
         let field_selector = Rc::new(field_selector);
         let input_builder = Rc::new(input_builder);
@@ -137,7 +137,7 @@ impl<D: TableDelegate + 'static> Column<D> {
         )
     }
 
-    pub fn with_auto_editor<V: AutoInput, F: Fn(&mut D::Row) -> &mut V + 'static>(
+    pub fn with_auto_editor<V: AutoInput + Default, F: Fn(&mut D::Row) -> &mut V + 'static>(
         self,
         field_selector: F,
     ) -> Self {
@@ -154,7 +154,7 @@ impl<D: TableDelegate + 'static> Column<D> {
         input_builder: B,
     ) -> Self
     where
-        I::Value: EnumerableValue,
+        I::Value: EnumerableValue + Default,
     {
         let field_selector = Rc::new(field_selector);
         let input_builder = Rc::new(input_builder);
@@ -186,7 +186,7 @@ impl<D: TableDelegate + 'static> Column<D> {
     }
 
     pub fn with_auto_enumerable_editor<
-        V: AutoInput + EnumerableValue,
+        V: AutoInput + EnumerableValue + Default,
         F: Fn(&mut D::Row) -> &mut V + 'static,
     >(
         self,

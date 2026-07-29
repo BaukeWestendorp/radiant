@@ -132,9 +132,10 @@ struct Item {
     gamma: Protocol,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[derive(rd_ui::Input)]
 pub enum Protocol {
+    #[default]
     Artnet,
     Sacn,
     PosiStageNet,

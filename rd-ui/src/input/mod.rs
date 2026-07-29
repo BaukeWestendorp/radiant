@@ -1,4 +1,4 @@
-use gpui::{App, Entity, Window, prelude::*};
+use gpui::{App, Entity, Window, div, prelude::*};
 
 mod builtin;
 mod delegate;
@@ -25,7 +25,7 @@ impl<D: InputDelegate> Input<D> {
 
 impl<D: InputDelegate + 'static> RenderOnce for Input<D> {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
-        D::new_element(self.state, window, cx)
+        div().w_full().child(D::new_element(self.state, window, cx))
     }
 }
 
