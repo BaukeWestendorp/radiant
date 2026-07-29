@@ -6,6 +6,64 @@ pub use error::Error;
 /// This module contains data types for error handling.
 mod error;
 
+#[cfg(feature = "rd-ui")]
+mod rd_ui;
+
+/// Represents an 8-bit DMX value from 0-255.
+///
+/// # Examples
+///
+/// ```
+/// # use rd_dmx::Value;
+/// let val = Value(128); // Create a DMX value of 128
+/// let min = Value(0);   // Minimum DMX value
+/// let max = Value(255); // Maximum DMX value
+/// ```
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(facet::Facet)]
+#[facet(pod)]
+pub struct Value(pub u8);
+
+impl Value {
+    /// The minimum valid DMX value.
+    pub const MIN: Self = Value(0);
+
+    /// The maximum valid DMX value.
+    pub const MAX: Self = Value(255);
+
+    /// Returns the inner value as `u8`.
+    pub fn as_u8(&self) -> u8 {
+        self.0
+    }
+}
+
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl From<u8> for Value {
+    fn from(v: u8) -> Self {
+        Value(v)
+    }
+}
+
+impl From<Value> for u8 {
+    fn from(v: Value) -> Self {
+        v.0
+    }
+}
+
+impl str::FromStr for Value {
+    type Err = std::num::ParseIntError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let v = u8::from_str(s)?;
+        Ok(Value(v))
+    }
+}
+
 /// A DMX channel.
 ///
 /// Ensures that the channel number is valid when constructed.
@@ -64,7 +122,7 @@ impl Channel {
     ///
     /// This method will panic if the channel is 0.
     pub const fn new_unchecked(channel: u16) -> Self {
-        assert!(channel > 0);
+        assert!(channel >= Self::MIN.0 && channel <= Self::MAX.0);
         Self(channel)
     }
 
@@ -111,61 +169,6 @@ impl str::FromStr for Channel {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let channel = s.parse::<u16>().map_err(|_| Error::ParseChannelFailed(s.to_string()))?;
         Self::new(channel)
-    }
-}
-
-/// Represents an 8-bit DMX value from 0-255.
-///
-/// # Examples
-///
-/// ```
-/// # use rd_dmx::Value;
-/// let val = Value(128); // Create a DMX value of 128
-/// let min = Value(0);   // Minimum DMX value
-/// let max = Value(255); // Maximum DMX value
-/// ```
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(facet::Facet)]
-#[facet(pod)]
-pub struct Value(pub u8);
-
-impl Value {
-    /// The minimum valid DMX value.
-    pub const MIN: Self = Value(0);
-
-    /// The maximum valid DMX value.
-    pub const MAX: Self = Value(255);
-
-    /// Returns the inner value as `u8`.
-    pub fn as_u8(&self) -> u8 {
-        self.0
-    }
-}
-
-impl fmt::Display for Value {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl From<u8> for Value {
-    fn from(v: u8) -> Self {
-        Value(v)
-    }
-}
-
-impl From<Value> for u8 {
-    fn from(v: Value) -> Self {
-        v.0
-    }
-}
-
-impl str::FromStr for Value {
-    type Err = std::num::ParseIntError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let v = u8::from_str(s)?;
-        Ok(Value(v))
     }
 }
 
@@ -411,7 +414,7 @@ impl UniverseId {
     ///
     ///
     pub const fn new_unchecked(id: u16) -> Self {
-        assert!(id > 0 && id <= 512);
+        assert!(id >= Self::MIN.0 && id <= Self::MAX.0);
         Self(id)
     }
 }

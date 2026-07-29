@@ -109,7 +109,7 @@ impl ArtnetOutputInstanceTable {
                     }),
                 Column::<Self>::new("local_universe", "Local Universe")
                     .with_sort_handler(|a, b| a.local_universe.cmp(&b.local_universe))
-                    // .with_auto_editor(|row| &mut row.local_universe)
+                    .with_auto_editor(|row| &mut row.local_universe)
                     .with_cell_builder(|row, _window, _cx| {
                         row.local_universe.to_string().into_any_element()
                     }),
