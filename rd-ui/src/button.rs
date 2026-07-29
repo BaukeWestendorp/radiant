@@ -108,8 +108,7 @@ impl RenderOnce for Button {
                         .justify_center()
                         .h_full()
                         .px_1()
-                        .border_r_1()
-                        .border_color(border_color)
+                        .when(self.label.is_some(), |e| e.border_r_1().border_color(border_color))
                         .child(Icon::new(icon, IconSize::ExtraSmall)),
                 )
             })
