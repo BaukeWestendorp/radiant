@@ -19,6 +19,8 @@ pub enum Error {
     InvalidDataByte(u8),
     /// Invalid status byte in MIDI message: {0}
     InvalidStatusByte(u8),
+    /// Invalid MIDI value
+    InvalidMidiValue,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

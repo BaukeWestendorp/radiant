@@ -16,7 +16,7 @@ log.workspace = true
 rd-artnet = { workspace = true, features = ["facet", "rd-ui"] }
 rd-dmx.workspace = true
 rd-service.workspace = true
-rd-midi.workspace = true
+rd-midi = { workspace = true, features = ["rd-ui"] }
 uuid = { workspace = true, features = ["v4"] }
 ariadne = "0.6.0"
 rand = "0.10.2"

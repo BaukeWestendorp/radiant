@@ -4926,6 +4926,7 @@ dependencies = [
  "midir",
  "pretty_env_logger",
  "rd-service",
+ "rd-ui",
 ]
 
 [[package]]

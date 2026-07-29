@@ -1,4 +1,4 @@
-use rd_midi::{MidiMessage, MidiPacket};
+use rd_midi::{MidiMessage, MidiPacket, u4, u7};
 
 use crate::{
     ExecutorId,
@@ -22,24 +22,24 @@ impl MidiTriggerService {
         Self { mappings, trigger_tx }
     }
 
-    fn matches_channel(filter_channel: &MidiChannel, packet_channel: u8) -> bool {
+    fn matches_channel(filter_channel: &MidiChannel, packet_channel: u4) -> bool {
         match filter_channel {
             MidiChannel::All => true,
-            MidiChannel::Single(channel) => channel.get() == packet_channel,
+            MidiChannel::Single(channel) => channel.get() == packet_channel.get(),
         }
     }
 
-    fn matches_note(filter_note: &MidiNote, packet_note: u8) -> bool {
+    fn matches_note(filter_note: &MidiNote, packet_note: u7) -> bool {
         match filter_note {
             MidiNote::All => true,
-            MidiNote::Single(note) => note.get() == packet_note,
+            MidiNote::Single(note) => note.get() == packet_note.get(),
         }
     }
 
-    fn matches_controller(filter_controller: &MidiController, packet_controller: u8) -> bool {
+    fn matches_controller(filter_controller: &MidiController, packet_controller: u7) -> bool {
         match filter_controller {
             MidiController::All => true,
-            MidiController::Single(controller) => controller.get() == packet_controller,
+            MidiController::Single(controller) => controller.get() == packet_controller.get(),
         }
     }
 
@@ -66,14 +66,14 @@ impl MidiTriggerService {
                     MidiFilter::ControlChange { controller },
                     MidiMessage::ControlChange { controller: pkt_ctrl, value, .. },
                 ) if Self::matches_controller(controller, *pkt_ctrl) => {
-                    (*value as f32 / 127.0, *value > 0)
+                    (value.get() as f32 / 127.0, value.get() > 0)
                 }
 
                 (
                     MidiFilter::NoteOn { note },
                     MidiMessage::NoteOn { note: pkt_note, velocity, .. },
                 ) if Self::matches_note(note, *pkt_note) => {
-                    (*velocity as f32 / 127.0, *velocity > 0)
+                    (velocity.get() as f32 / 127.0, velocity.get() > 0)
                 }
 
                 (MidiFilter::NoteOff { note }, MidiMessage::NoteOff { note: pkt_note, .. })
@@ -84,8 +84,8 @@ impl MidiTriggerService {
 
                 (
                     MidiFilter::NoteOff { note },
-                    MidiMessage::NoteOn { note: pkt_note, velocity: 0, .. },
-                ) if Self::matches_note(note, *pkt_note) => (0.0, false),
+                    MidiMessage::NoteOn { note: pkt_note, velocity, .. },
+                ) if Self::matches_note(note, *pkt_note) && velocity.get() == 0 => (0.0, false),
 
                 (MidiFilter::PitchBend, MidiMessage::PitchBend { value, .. }) => {
                     ((*value as f32 + 8192.0) / 16383.0, *value > 0)
