@@ -1,6 +1,6 @@
 use gpui::{App, prelude::*};
 use gpui::{Window, div};
-use rd_ui::{Button, ButtonVariant, Icon, IconSize, IconVariant, section};
+use rd_ui::{Button, ButtonVariant, IconVariant, section};
 
 pub struct InteractivePreview {}
 

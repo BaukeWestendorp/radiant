@@ -2,7 +2,6 @@ use std::convert::TryFrom;
 use std::fmt;
 
 use anyhow::Context;
-use rd_ui::EnumerableValue;
 
 use crate::project::TriggerTarget;
 
@@ -21,22 +20,22 @@ pub struct MidiMapping {
 #[cfg_attr(feature = "rd-ui", derive(rd_ui::Input))]
 #[repr(C)]
 pub enum MidiFilter {
-    #[rd_ui(label = "Control Change")]
+    #[cfg_attr(feature = "rd-ui", rd_ui(label = "Control Change"))]
     ControlChange {
-        #[rd_ui(label = "Controller")]
+        #[cfg_attr(feature = "rd-ui", rd_ui(label = "Controller"))]
         controller: MidiController,
     },
-    #[rd_ui(label = "Note On")]
+    #[cfg_attr(feature = "rd-ui", rd_ui(label = "Note On"))]
     NoteOn {
-        #[rd_ui(label = "Note")]
+        #[cfg_attr(feature = "rd-ui", rd_ui(label = "Note"))]
         note: MidiNote,
     },
-    #[rd_ui(label = "Note Off")]
+    #[cfg_attr(feature = "rd-ui", rd_ui(label = "Note Off"))]
     NoteOff {
-        #[rd_ui(label = "Note")]
+        #[cfg_attr(feature = "rd-ui", rd_ui(label = "Note"))]
         note: MidiNote,
     },
-    #[rd_ui(label = "Pitch Bend")]
+    #[cfg_attr(feature = "rd-ui", rd_ui(label = "Pitch Bend"))]
     PitchBend,
 }
 
@@ -69,7 +68,7 @@ impl fmt::Display for MidiFilter {
 pub enum MidiChannel {
     #[default]
     All,
-    Single(#[rd_ui(label = "Channel")] u4),
+    Single(#[cfg_attr(feature = "rd-ui", rd_ui(label = "Channel"))] u4),
 }
 
 impl std::fmt::Display for MidiChannel {
@@ -81,7 +80,8 @@ impl std::fmt::Display for MidiChannel {
     }
 }
 
-impl EnumerableValue for MidiChannel {
+#[cfg(feature = "rd-ui")]
+impl rd_ui::EnumerableValue for MidiChannel {
     fn enumerated_value(&self, offset: usize) -> Self {
         match self {
             MidiChannel::All => MidiChannel::All,
@@ -101,7 +101,7 @@ impl EnumerableValue for MidiChannel {
 pub enum MidiNote {
     #[default]
     All,
-    Single(#[rd_ui(label = "Note")] u7),
+    Single(#[cfg_attr(feature = "rd-ui", rd_ui(label = "Note"))] u7),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
@@ -111,7 +111,7 @@ pub enum MidiNote {
 pub enum MidiController {
     #[default]
     All,
-    Single(#[rd_ui(label = "Controller")] u7),
+    Single(#[cfg_attr(feature = "rd-ui", rd_ui(label = "Controller"))] u7),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -159,6 +159,7 @@ impl rd_ui::AutoInput for u7 {
     }
 }
 
+#[cfg(feature = "rd-ui")]
 impl rd_ui::SliderValue for u7 {
     fn to_f64(&self) -> f64 {
         self.0 as f64
@@ -242,6 +243,7 @@ impl rd_ui::AutoInput for u4 {
     }
 }
 
+#[cfg(feature = "rd-ui")]
 impl rd_ui::SliderValue for u4 {
     fn to_f64(&self) -> f64 {
         self.0 as f64
