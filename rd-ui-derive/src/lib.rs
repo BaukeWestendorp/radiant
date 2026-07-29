@@ -1,6 +1,8 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{Data, DataEnum, DeriveInput, Error, Fields, Ident, Visibility, parse_macro_input};
+use syn::{
+    Data, DataEnum, DataStruct, DeriveInput, Error, Fields, Ident, Visibility, parse_macro_input,
+};
 
 #[proc_macro_derive(Input, attributes(rd_ui))]
 pub fn derive_input(input: TokenStream) -> TokenStream {
@@ -8,8 +10,8 @@ pub fn derive_input(input: TokenStream) -> TokenStream {
     let name = &input.ident;
 
     match &input.data {
-        Data::Struct(_) => {
-            todo!("Convert this to a Form if all fields implement AutoInput")
+        Data::Struct(data) => {
+            return TokenStream::from(expand_struct_form_impl(name, data, &input.vis));
         }
         Data::Enum(data) => {
             let all_unit =
@@ -83,6 +85,129 @@ fn expand_picker_impl(name: &Ident, data: &DataEnum) -> proc_macro2::TokenStream
                         window,
                         cx,
                     )
+                })
+            }
+        }
+    }
+}
+
+fn expand_struct_form_impl(
+    name: &Ident,
+    data: &DataStruct,
+    vis: &Visibility,
+) -> proc_macro2::TokenStream {
+    let form_name = format_ident!("{}Form", name);
+
+    let mut form_fields = Vec::new();
+    let mut fields_push = Vec::new();
+    let mut extract_fields = Vec::new();
+    let mut field_builds = Vec::new();
+    let mut form_struct_inits = Vec::new();
+
+    for (f_idx, field) in data.fields.iter().enumerate() {
+        let ty = &field.ty;
+
+        let mut f_label =
+            if let Some(ident) = &field.ident { ident.to_string() } else { f_idx.to_string() };
+
+        for attr in &field.attrs {
+            if attr.path().is_ident("rd_ui") {
+                let _ = attr.parse_nested_meta(|meta| {
+                    if meta.path.is_ident("label") {
+                        let value = meta.value()?;
+                        let lit: syn::LitStr = value.parse()?;
+                        f_label = lit.value();
+                    }
+                    Ok(())
+                });
+            }
+        }
+
+        let form_field_ident = if let Some(ident) = &field.ident {
+            ident.clone()
+        } else {
+            format_ident!("f{}", f_idx)
+        };
+
+        form_fields.push(quote! {
+            #form_field_ident: ::rd_ui::gpui::Entity<::rd_ui::InputState<<#ty as ::rd_ui::AutoInput>::Delegate>>
+        });
+
+        let access = if let Some(ident) = &field.ident {
+            quote! { initial_value.#ident }
+        } else {
+            let idx = syn::Index::from(f_idx);
+            quote! { initial_value.#idx }
+        };
+
+        field_builds.push(quote! {
+            let #form_field_ident = <#ty as ::rd_ui::AutoInput>::build_input(#access, window, cx);
+        });
+
+        form_struct_inits.push(quote! { #form_field_ident });
+
+        fields_push.push(quote! {
+            fields.push(::rd_ui::FormField::new(
+                #f_label,
+                ::rd_ui::Input::new(self.#form_field_ident.clone()),
+                cx
+            ));
+        });
+
+        let extract_val =
+            quote! { self.#form_field_ident.read(cx).delegate().value_or_default(cx).clone() };
+        if let Some(ident) = &field.ident {
+            extract_fields.push(quote! { #ident: #extract_val });
+        } else {
+            extract_fields.push(quote! { #extract_val });
+        }
+    }
+
+    let extract_expr = match &data.fields {
+        Fields::Named(_) => quote! { #name { #( #extract_fields ),* } },
+        Fields::Unnamed(_) => quote! { #name( #( #extract_fields ),* ) },
+        Fields::Unit => quote! { #name },
+    };
+
+    quote! {
+        #vis struct #form_name {
+            #( #form_fields, )*
+        }
+
+        impl ::rd_ui::FormDelegate for #form_name {
+            type Data = #name;
+
+            fn fields(&self, cx: &mut ::rd_ui::gpui::App) -> Vec<::rd_ui::FormField> {
+                let mut fields = Vec::new();
+                #( #fields_push )*
+                fields
+            }
+
+            fn extract_data(&self, cx: &::rd_ui::gpui::App) -> Option<Self::Data> {
+                use ::rd_ui::InputDelegate as _;
+                Some(#extract_expr)
+            }
+        }
+
+        impl ::rd_ui::AutoInput for #name {
+            type Delegate = ::rd_ui::Form<#form_name>;
+
+            fn build_input(
+                initial_value: Self,
+                window: &mut ::rd_ui::gpui::Window,
+                cx: &mut ::rd_ui::gpui::App,
+            ) -> ::rd_ui::gpui::Entity<::rd_ui::InputState<Self::Delegate>> {
+                use ::rd_ui::gpui::AppContext as _;
+
+                #( #field_builds )*
+
+                cx.new(move |cx| {
+                    let delegate = #form_name {
+                        #( #form_struct_inits, )*
+                    };
+
+                    let form = ::rd_ui::Form::new(delegate, cx.focus_handle(), window, cx);
+                    ::rd_ui::InputState::new(form, window, cx)
                 })
             }
         }
