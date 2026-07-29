@@ -3,13 +3,6 @@ use rd_artnet::PortAddress;
 #[derive(Debug, Clone, Default)]
 #[derive(facet::Facet)]
 #[facet(deny_unknown_fields)]
-pub struct OutputConfig {
-    pub artnet: ArtnetOutputConfig,
-}
-
-#[derive(Debug, Clone, Default)]
-#[derive(facet::Facet)]
-#[facet(deny_unknown_fields)]
 pub struct ArtnetOutputConfig {
     pub network: rd_artnet::NodeNetworkConfig,
     pub instances: Vec<ArtnetOutputInstanceConfig>,
