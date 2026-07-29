@@ -1,16 +1,16 @@
 use gpui::{Entity, Window, prelude::*};
 use rd::Project;
-use rd_ui::{
-    ActiveTheme, Button, Icon, IconSize, IconVariant, Tab, Tabs, TabsState, h_flex, v_flex,
-};
+use rd_ui::{ActiveTheme, Button, IconVariant, Tab, Tabs, TabsState, h_flex, v_flex};
 
 use crate::app::engine::EngineAppExt;
 
+mod dmx_output;
 mod triggers;
 
 pub struct SettingsRootView {
     tabs: Entity<TabsState>,
     triggers_tab: Entity<triggers::TriggersTabView>,
+    dmx_output_tab: Entity<dmx_output::DmxOutputTabView>,
 
     uncommitted_project: Entity<Project>,
 }
@@ -22,6 +22,10 @@ impl SettingsRootView {
             tabs: cx.new(|_| TabsState::new().with_selected("triggers")),
             triggers_tab: cx
                 .new(|cx| triggers::TriggersTabView::new(uncommitted_project.clone(), window, cx)),
+            dmx_output_tab: cx.new(|cx| {
+                dmx_output::DmxOutputTabView::new(uncommitted_project.clone(), window, cx)
+            }),
+
             uncommitted_project,
         }
     }
@@ -57,7 +61,13 @@ impl Render for SettingsRootView {
                     "Triggers",
                     self.triggers_tab.clone().into_any_element(),
                 )
-                .icon(IconVariant::Plug)
+                .icon(IconVariant::Joystick),
+                Tab::new(
+                    "dmx-output",
+                    "DMX Output",
+                    self.dmx_output_tab.clone().into_any_element(),
+                )
+                .icon(IconVariant::CircleArrowOutUpRight)
             ]))
             .child(bottom_bar)
     }
