@@ -115,7 +115,6 @@ impl Popup {
             }
         });
 
-        let mut on_submit = Some(on_submit);
         window
             .subscribe(&input, cx, {
                 let on_submit = Rc::clone(&on_submit);
@@ -126,7 +125,6 @@ impl Popup {
                     }
                     _ => {}
                 }
-                _ => {}
             })
             .detach();
 

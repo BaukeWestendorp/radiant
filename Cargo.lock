@@ -4900,6 +4900,7 @@ dependencies = [
  "modular-bitfield",
  "pretty_env_logger",
  "rand 0.10.2",
+ "rd-ui",
  "socket2",
  "spin_sleep",
  "thiserror 2.0.18",

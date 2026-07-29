@@ -384,11 +384,11 @@ fn handle_packet(inner: &Arc<Inner>, packet: Packet, source_ip: Ipv4Addr) -> cra
 
                             reply.sw_in_mut()[ix] = port
                                 .input()
-                                .unwrap_or(PortAddress::from_raw(0).unwrap())
+                                .unwrap_or(PortAddress::from_absolute(0).unwrap())
                                 .universe();
                             reply.sw_out_mut()[ix] = port
                                 .output()
-                                .unwrap_or(PortAddress::from_raw(0).unwrap())
+                                .unwrap_or(PortAddress::from_absolute(0).unwrap())
                                 .universe();
                         }
                         None => {

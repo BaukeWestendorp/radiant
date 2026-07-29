@@ -41,6 +41,12 @@ pub enum TriggerTarget {
     },
 }
 
+impl Default for TriggerTarget {
+    fn default() -> Self {
+        TriggerTarget::HighlightToggle
+    }
+}
+
 impl fmt::Display for TriggerTarget {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

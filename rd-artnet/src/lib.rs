@@ -1,12 +1,18 @@
 mod error;
-#[cfg(feature = "node")]
-mod node;
 mod packet;
 
 pub use error::*;
+pub use packet::*;
+
+#[cfg(feature = "node")]
+mod node;
+#[cfg(feature = "rd-ui")]
+mod rd_ui;
+
 #[cfg(feature = "node")]
 pub use node::*;
-pub use packet::*;
+#[cfg(feature = "rd-ui")]
+pub use rd_ui::*;
 
 pub const PORT: u16 = 6454;
 
@@ -145,7 +151,7 @@ impl PortAddress {
         PortAddress(address)
     }
 
-    pub fn from_raw(address: u16) -> crate::Result<Self> {
+    pub fn from_absolute(address: u16) -> crate::Result<Self> {
         if address < 32768 {
             Ok(PortAddress(address))
         } else {
@@ -174,7 +180,7 @@ impl TryFrom<u16> for PortAddress {
     type Error = crate::Error;
 
     fn try_from(value: u16) -> crate::Result<Self> {
-        PortAddress::from_raw(value)
+        PortAddress::from_absolute(value)
     }
 }
 
@@ -220,6 +226,21 @@ impl TryFrom<u8> for NetId {
     }
 }
 
+impl std::str::FromStr for NetId {
+    type Err = crate::Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let value: u8 = s.parse().map_err(|_| crate::Error::InvalidNetId)?;
+        NetId::new(value)
+    }
+}
+
+impl std::fmt::Display for NetId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[cfg_attr(feature = "facet", derive(facet::Facet))]
 #[cfg_attr(feature = "facet", facet(transparent))]
@@ -248,6 +269,21 @@ impl TryFrom<u8> for SubNetId {
     }
 }
 
+impl std::str::FromStr for SubNetId {
+    type Err = crate::Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let value: u8 = s.parse().map_err(|_| crate::Error::InvalidSubNetId)?;
+        SubNetId::new(value)
+    }
+}
+
+impl std::fmt::Display for SubNetId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[cfg_attr(feature = "facet", derive(facet::Facet))]
 #[cfg_attr(feature = "facet", facet(transparent))]
@@ -273,5 +309,20 @@ impl TryFrom<u8> for UniverseId {
 
     fn try_from(value: u8) -> crate::Result<Self> {
         UniverseId::new(value)
+    }
+}
+
+impl std::str::FromStr for UniverseId {
+    type Err = crate::Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let value: u8 = s.parse().map_err(|_| crate::Error::InvalidUniverseId)?;
+        UniverseId::new(value)
+    }
+}
+
+impl std::fmt::Display for UniverseId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }

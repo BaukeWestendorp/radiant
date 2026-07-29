@@ -32,8 +32,8 @@ pub use grid::{dot_grid, line_grid, scrollable_line_grid};
 pub use icon::{Icon, IconSize, IconVariant};
 pub use input::{
     AutoInput, Field, FieldValue, Form, FormDelegate, FormField, INPUT_HEIGHT, Input,
-    InputDelegate, InputEvent, InputState, LayoutDirection, OptionInput, Picker, PickerKind,
-    PickerValue, Slider, SliderValue, TextInput,
+    InputDelegate, InputEvent, InputState, Labelled, LayoutDirection, OptionInput, Picker,
+    PickerKind, PickerValue, Slider, SliderValue, TextInput,
 };
 pub use keymap::{Keymap, KeymapBinding};
 pub use org::section;

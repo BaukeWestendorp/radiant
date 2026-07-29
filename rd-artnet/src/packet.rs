@@ -134,11 +134,11 @@ impl Packet {
                     prot_ver: u16::from_be_bytes([poll_data[0], poll_data[1]]),
                     flags: ArtPollFlags::from_bytes([poll_data[2]]),
                     diag_priority: DiagnosticPriority::try_from(poll_data[3])?,
-                    target_port_address_top: PortAddress::from_raw(u16::from_be_bytes([
+                    target_port_address_top: PortAddress::from_absolute(u16::from_be_bytes([
                         poll_data[4],
                         poll_data[5],
                     ]))?,
-                    target_port_address_bottom: PortAddress::from_raw(u16::from_be_bytes([
+                    target_port_address_bottom: PortAddress::from_absolute(u16::from_be_bytes([
                         poll_data[6],
                         poll_data[7],
                     ]))?,
@@ -251,7 +251,7 @@ impl Packet {
                     prot_ver: u16::from_be_bytes([header[0], header[1]]),
                     sequence: header[2],
                     physical: header[3],
-                    port_address: PortAddress::from_raw(u16::from_le_bytes([
+                    port_address: PortAddress::from_absolute(u16::from_le_bytes([
                         header[4], header[5],
                     ]))?,
                     length,

@@ -30,7 +30,7 @@ fn main() -> rd_artnet::Result<()> {
                 }
             }),
         )
-        .with_port(PortConfig::new(PortDirection::Output(PortAddress::from_raw(1).unwrap()))),
+        .with_port(PortConfig::new(PortDirection::Output(PortAddress::from_absolute(1).unwrap()))),
     )?;
 
     thread::sleep(Duration::from_secs(3600));

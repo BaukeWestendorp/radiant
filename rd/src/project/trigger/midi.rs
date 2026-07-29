@@ -39,6 +39,12 @@ pub enum MidiFilter {
     PitchBend,
 }
 
+impl Default for MidiFilter {
+    fn default() -> Self {
+        MidiFilter::ControlChange { controller: MidiController::All }
+    }
+}
+
 impl fmt::Display for MidiFilter {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

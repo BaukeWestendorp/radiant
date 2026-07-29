@@ -13,7 +13,7 @@ facet-validate.workspace = true
 facet-json.workspace = true
 flume.workspace = true
 log.workspace = true
-rd-artnet = { workspace = true, features = ["facet"] }
+rd-artnet = { workspace = true, features = ["facet", "rd-ui"] }
 rd-dmx.workspace = true
 rd-service.workspace = true
 rd-midi.workspace = true

@@ -103,7 +103,7 @@ impl ArtnetOutputInstanceTable {
                     .with_cell_builder(|row, _window, _cx| row.name.to_string().into_any_element()),
                 Column::<Self>::new("port_address", "Port Address")
                     .with_sort_handler(|a, b| a.port_address.cmp(&b.port_address))
-                    // .with_auto_editor(|row| &mut row.port_address)
+                    .with_auto_editor(|row| &mut row.port_address)
                     .with_cell_builder(|row, _window, _cx| {
                         row.port_address.to_string().into_any_element()
                     }),

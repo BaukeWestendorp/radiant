@@ -127,24 +127,7 @@ impl<D: FormDelegate + 'static> RenderOnce for FormElement<D> {
                 .delegate()
                 .fields(cx)
                 .into_iter()
-                .map(|field| {
-                    let label =
-                        div().text_sm().text_color(cx.theme().fg_secondary).child(field.label);
-                    let input = div().child(field.input);
-
-                    match field.direction {
-                        LayoutDirection::Vertical => v_flex()
-                            .w_full()
-                            .gap_1()
-                            .when(!field.label_hidden, |e| e.child(label.w_full()))
-                            .child(input.w_full()),
-                        LayoutDirection::Horizontal => h_flex()
-                            .w_full()
-                            .gap_2()
-                            .when(!field.label_hidden, |e| e.child(label.w_full()))
-                            .child(input.w_full()),
-                    }
-                })
+                .map(|field| Labelled::new(field.label, field.input, field.direction))
                 .collect::<Vec<_>>()
         });
 
@@ -161,5 +144,38 @@ impl<D: FormDelegate + 'static> RenderOnce for FormElement<D> {
             .size_full()
             .children(fields)
             .when(has_submit_button, |e| e.child(submit_button))
+    }
+}
+
+#[derive(IntoElement)]
+pub struct Labelled {
+    label: SharedString,
+    content: AnyElement,
+    direction: LayoutDirection,
+}
+
+impl Labelled {
+    pub fn new(
+        label: impl Into<SharedString>,
+        content: impl Into<AnyElement>,
+        direction: LayoutDirection,
+    ) -> Self {
+        Self { label: label.into(), content: content.into(), direction }
+    }
+}
+
+impl RenderOnce for Labelled {
+    fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let label = div().text_sm().text_color(cx.theme().fg_secondary).child(self.label);
+        let content = div().child(self.content);
+
+        match self.direction {
+            LayoutDirection::Vertical => {
+                v_flex().w_full().gap_1().child(label.w_full()).child(content.w_full())
+            }
+            LayoutDirection::Horizontal => {
+                h_flex().w_full().gap_2().child(label.w_full()).child(content.w_full())
+            }
+        }
     }
 }
