@@ -121,8 +121,8 @@ impl Theme {
             bg_primary: rgb(0xffffff).into(),
             bg_secondary: rgb(0xf4f4f4).into(),
             bg_tertiary: rgb(0xeaeaea).into(),
-            bg_selected: hsla(0.6, 0.508, 0.89, 1.).into(),
-            bg_selected_extra: hsla(0.605, 0.213, 0.76, 1.).into(),
+            bg_selected: hsla(0.561, 0.708, 0.89, 1.).into(),
+            bg_selected_extra: hsla(0.561, 0.313, 0.76, 1.).into(),
             bg_focus: hsla(0.6, 0.608, 0.95, 1.).into(),
             bg_table: rgb(0xffffff).into(),
             bg_table_odd: rgb(0xf9f9f8).into(),
@@ -164,8 +164,8 @@ impl Theme {
             bg_primary: rgb(0x100f0f).into(),
             bg_secondary: rgb(0x1c1b1a).into(),
             bg_tertiary: rgb(0x302e2d).into(),
-            bg_selected: rgb(0x232a36).into(),
-            bg_selected_extra: rgb(0x556683).into(),
+            bg_selected: hsla(0.561, 0.313, 0.275, 1.),
+            bg_selected_extra: hsla(0.561, 0.213, 0.424, 1.),
             bg_focus: rgb(0x153649).into(),
             bg_table: rgb(0x100f0f).into(),
             bg_table_odd: rgb(0x151414).into(),
@@ -217,7 +217,7 @@ pub struct IndicationColors {
 impl IndicationColors {
     pub fn light() -> Self {
         Self {
-            danger: rgb(0xed2320).into(),
+            danger: rgb(0xe12e2c).into(),
             warning: rgb(0xffc94d).into(),
             info: rgb(0x3bb2f6).into(),
             success: rgb(0x9ce152).into(),
@@ -226,7 +226,7 @@ impl IndicationColors {
 
     pub fn dark() -> Self {
         Self {
-            danger: rgb(0xed2320).into(),
+            danger: rgb(0xe12e2c).into(),
             warning: rgb(0xffc94d).into(),
             info: rgb(0x3bb2f6).into(),
             success: rgb(0x9ce152).into(),
