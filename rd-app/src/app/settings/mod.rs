@@ -1,4 +1,4 @@
-use gpui::{Entity, Window, prelude::*};
+use gpui::{Entity, Window, prelude::*, px};
 use rd::Project;
 use rd_ui::{ActiveTheme, Button, IconVariant, Tab, Tabs, TabsState, h_flex, v_flex};
 
@@ -33,10 +33,11 @@ impl SettingsRootView {
 
 impl Render for SettingsRootView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let bottom_bar = h_flex()
+        let action_bar = h_flex()
             .justify_end()
+            .h(px(32.0))
             .w_full()
-            .p_1()
+            .p_2()
             .bg(cx.theme().bg_primary)
             .border_t_1()
             .border_color(cx.theme().border_primary)
@@ -69,6 +70,6 @@ impl Render for SettingsRootView {
                 )
                 .icon(IconVariant::CircleArrowOutUpRight)
             ]))
-            .child(bottom_bar)
+            .child(action_bar)
     }
 }

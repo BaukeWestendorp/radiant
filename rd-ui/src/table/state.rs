@@ -1,6 +1,6 @@
 use gpui::{App, Entity, EventEmitter, FocusHandle, Focusable, Window, prelude::*};
 
-use crate::{EditableAppExt, TableDelegate};
+use crate::TableDelegate;
 
 pub struct TableState<D: TableDelegate> {
     delegate: D,
@@ -19,20 +19,9 @@ impl<D: TableDelegate + 'static> TableState<D> {
     pub fn new(
         delegate: D,
         focus_handle: FocusHandle,
-        window: &mut Window,
+        _window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
-        let this = cx.entity();
-        cx.set_edit_handler(&focus_handle, window, move |window, cx| {
-            let selection = this.read(cx).selection().read(cx);
-            let Some(column_id) = &selection.column_id else { return };
-            let Some(column) = this.read(cx).delegate().column(column_id) else { return };
-            let row_ids = selection.row_ids().cloned().collect();
-            if let Some(edit_handler) = column.edit_handler.clone() {
-                (edit_handler)(this.clone(), row_ids, window, cx);
-            }
-        });
-
         Self {
             delegate,
 
@@ -195,6 +184,13 @@ impl<D: TableDelegate + 'static> TableState<D> {
         self.update_selection_drag(row_ix, cx);
         self.selection_drag = None;
     }
+
+    pub fn can_edit(&self, cx: &App) -> bool {
+        let selection = self.selection().read(cx);
+        let Some(column_id) = &selection.column_id else { return false };
+        let Some(column) = self.delegate.column(column_id) else { return false };
+        !selection.is_empty() && column.editable()
+    }
 }
 
 impl<D: TableDelegate + 'static> Focusable for TableState<D> {
@@ -229,6 +225,10 @@ impl<D: TableDelegate> TableSelection<D> {
             TableSelectionKind::Single(row) => row.iter().count(),
             TableSelectionKind::Multiple(rows) => rows.len(),
         }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.count() == 0
     }
 
     pub fn is_column_selected(&self, id: &str) -> bool {

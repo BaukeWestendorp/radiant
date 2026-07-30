@@ -4,7 +4,6 @@ mod button;
 
 mod app;
 mod container;
-mod editable;
 mod grid;
 mod icon;
 mod input;
@@ -27,7 +26,6 @@ pub use asset::Assets;
 pub use binding::Binding;
 pub use button::{Button, ButtonVariant};
 pub use container::{ContainerStyle, container, interactive_container};
-pub use editable::EditableAppExt;
 pub use grid::{dot_grid, line_grid, scrollable_line_grid};
 pub use icon::{Icon, IconSize, IconVariant};
 pub use input::{
@@ -63,6 +61,9 @@ pub fn init(cx: &mut gpui::App) {
     crate::theme::init(cx);
     crate::popup::init(cx);
     crate::settings::init(cx);
-    crate::editable::init(cx);
     crate::app::action::init(cx);
+}
+
+pub mod action {
+    gpui::actions!([Edit, Delete, ClearSelection, SelectAll]);
 }

@@ -146,4 +146,10 @@ impl TableDelegate for ArtnetOutputInstanceTable {
     fn row_mut(&mut self, row_id: &Self::RowId) -> Option<&mut Self::Row> {
         self.instances.get_mut(row_id)
     }
+
+    fn delete_rows<'a>(&mut self, row_ids: impl Iterator<Item = &'a Self::RowId>) {
+        for row_id in row_ids {
+            self.instances.remove(row_id);
+        }
+    }
 }

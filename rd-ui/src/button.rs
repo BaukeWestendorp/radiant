@@ -1,9 +1,12 @@
 use gpui::{
-    App, ClickEvent, ElementId, FocusHandle, Focusable, Hsla, SharedString, StyleRefinement,
-    Window, div, prelude::*,
+    Action, App, ClickEvent, ElementId, FocusHandle, Focusable, Hsla, SharedString,
+    StyleRefinement, Window, div, prelude::*,
 };
 
-use crate::{ActiveTheme, FocusableExt, HslaExt, Icon, IconSize, IconVariant, StyledExt, h_flex};
+use crate::{
+    ActiveTheme, FocusableExt, HslaExt, Icon, IconSize, IconVariant, StatefulInteractiveElementExt,
+    StyledExt, h_flex,
+};
 
 #[derive(IntoElement)]
 pub struct Button {
@@ -15,6 +18,8 @@ pub struct Button {
     variant: ButtonVariant,
     is_disabled: bool,
     on_click: Option<Box<dyn Fn(&ClickEvent, &mut Window, &mut App) + 'static>>,
+    action: Option<Box<dyn Action>>,
+    action_for: Option<FocusHandle>,
 }
 
 impl Button {
@@ -28,6 +33,8 @@ impl Button {
             variant: Default::default(),
             is_disabled: false,
             on_click: None,
+            action: None,
+            action_for: None,
         }
     }
 
@@ -56,6 +63,17 @@ impl Button {
         listener: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
     ) -> Self {
         self.on_click = Some(Box::new(listener));
+        self
+    }
+
+    pub fn action<A: Action>(mut self, action: A) -> Self {
+        self.action = Some(Box::new(action));
+        self
+    }
+
+    pub fn action_for<A: Action>(mut self, action: A, focus_handle: FocusHandle) -> Self {
+        self.action = Some(Box::new(action));
+        self.action_for = Some(focus_handle);
         self
     }
 }
@@ -89,6 +107,7 @@ impl RenderOnce for Button {
             .border_color(border_color)
             .rounded(cx.theme().radius)
             .text_color(text_color)
+            .when_some(self.action.as_ref(), |e, action| e.action_tooltip(action.boxed_clone()))
             .when(self.is_disabled, |e| e.cursor_not_allowed())
             .when(!self.is_disabled, |e| {
                 e.hover(|e| e.bg(style.bg_hover))
@@ -96,6 +115,16 @@ impl RenderOnce for Button {
                     .on_click(move |event, window, cx| {
                         if let Some(on_click) = &self.on_click {
                             (on_click)(event, window, cx)
+                        }
+
+                        if let Some(action) = &self.action {
+                            if let Some(focus_handle) = &self.action_for {
+                                focus_handle.focus(window, cx);
+                                let action = action.boxed_clone();
+                                cx.defer(move |cx| cx.dispatch_action(action.as_ref()));
+                            } else {
+                                window.dispatch_action(action.boxed_clone(), cx);
+                            }
                         }
                     })
             })

@@ -35,4 +35,8 @@ pub trait TableDelegate {
     {
         self.rows().map(|(row_id, _)| row_id)
     }
+
+    fn delete_rows<'a>(&mut self, row_ids: impl Iterator<Item = &'a Self::RowId>)
+    where
+        Self: Sized + 'a;
 }

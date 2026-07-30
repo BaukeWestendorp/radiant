@@ -1,4 +1,4 @@
-use gpui::{AnyView, FocusHandle, MouseButton, ReadGlobal, Window, div};
+use gpui::{AnyView, FocusHandle, Window, div};
 use gpui::{App, Focusable, prelude::*};
 
 use crate::{ActiveTheme, z_stack};
@@ -6,7 +6,7 @@ use crate::{ActiveTheme, z_stack};
 pub(crate) mod action {
     pub const KEY_CONTEXT: &str = "Root";
 
-    gpui::actions!([Tab, TabPrev, Edit]);
+    gpui::actions!([Tab, TabPrev]);
 }
 
 pub struct Root {
@@ -36,14 +36,6 @@ impl Root {
     ) {
         window.focus_prev(cx);
     }
-
-    fn handle_edit(&mut self, _: &action::Edit, window: &mut Window, cx: &mut Context<Self>) {
-        if let Some(edit_handler) =
-            crate::editable::EditableGlobal::global(cx).current_handler.clone()
-        {
-            (edit_handler)(window, cx)
-        }
-    }
 }
 
 impl Focusable for Root {
@@ -64,14 +56,6 @@ impl Render for Root {
             .key_context(action::KEY_CONTEXT)
             .on_action(cx.listener(Self::handle_action_tab))
             .on_action(cx.listener(Self::handle_action_tab_prev))
-            .on_action(cx.listener(Self::handle_edit))
-            .capture_any_mouse_up(|event, window, cx| {
-                if event.button != MouseButton::Right {
-                    return;
-                }
-
-                window.dispatch_action(Box::new(action::Edit), cx);
-            })
             .relative()
             .size_full()
             .bg(cx.theme().bg_primary)

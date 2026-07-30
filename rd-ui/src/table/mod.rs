@@ -125,14 +125,16 @@ impl<D: TableDelegate> Table<D> {
                     });
                 }
             })
-            .on_mouse_down(MouseButton::Right, {
+            .on_mouse_up(MouseButton::Right, {
                 let column_id = column.id().to_string();
                 let state = self.state.clone();
-                move |_, _, cx| {
+                move |_, window, cx| {
                     state.update(cx, |state, cx| {
                         state.select_all_in_column(&column_id, cx);
                         cx.notify();
                     });
+
+                    window.dispatch_action(Box::new(crate::action::Edit), cx);
                 }
             })
     }
@@ -146,32 +148,34 @@ impl<D: TableDelegate> Table<D> {
             .enumerate()
             .map(|(row_ix, (row_id, row))| self.render_row(row, row_id, row_ix, window, cx));
 
-        div()
-            .flex()
-            .flex_col()
-            .children(cells)
-            .on_mouse_up_out(MouseButton::Left, {
-                let state = self.state().clone();
-                move |_, _, cx| {
-                    state.update(cx, |state, cx| {
-                        if let Some(last_row_ix) = state.delegate().row_count().checked_sub(1) {
-                            state.stop_selection_drag(last_row_ix, cx);
-                            cx.notify();
-                        }
-                    });
-                }
-            })
-            .on_mouse_up_out(MouseButton::Right, {
-                let state = self.state().clone();
-                move |_, _, cx| {
-                    state.update(cx, |state, cx| {
-                        if let Some(last_row_ix) = state.delegate().row_count().checked_sub(1) {
-                            state.stop_selection_drag(last_row_ix, cx);
-                            cx.notify();
-                        }
-                    });
-                }
-            })
+        div().id("body").overflow_scroll().size_full().child(
+            div()
+                .flex()
+                .flex_col()
+                .children(cells)
+                .on_mouse_up_out(MouseButton::Left, {
+                    let state = self.state().clone();
+                    move |_, _, cx| {
+                        state.update(cx, |state, cx| {
+                            if let Some(last_row_ix) = state.delegate().row_count().checked_sub(1) {
+                                state.stop_selection_drag(last_row_ix, cx);
+                                cx.notify();
+                            }
+                        });
+                    }
+                })
+                .on_mouse_up_out(MouseButton::Right, {
+                    let state = self.state().clone();
+                    move |_, _, cx| {
+                        state.update(cx, |state, cx| {
+                            if let Some(last_row_ix) = state.delegate().row_count().checked_sub(1) {
+                                state.stop_selection_drag(last_row_ix, cx);
+                                cx.notify();
+                            }
+                        });
+                    }
+                }),
+        )
     }
 
     fn render_row(
@@ -299,13 +303,50 @@ impl<D: TableDelegate> Table<D> {
             })
             .on_mouse_up(MouseButton::Right, {
                 let state = self.state().clone();
-                move |_, _, cx| {
+                move |_, window, cx| {
                     state.update(cx, |state, cx| {
                         state.stop_selection_drag(row_ix, cx);
                         cx.notify();
                     });
+
+                    window.dispatch_action(Box::new(crate::action::Edit), cx);
                 }
             })
+    }
+
+    fn render_action_bar(&self, _window: &Window, cx: &App) -> impl IntoElement {
+        h_flex()
+            .justify_between()
+            .h(px(32.0))
+            .bg(cx.theme().bg_secondary)
+            .border_t_1()
+            .border_color(cx.theme().border_secondary)
+            .px_2()
+            .child(div().text_color(cx.theme().fg_secondary).child(format!(
+                "{}/{} row{} selected",
+                self.state.read(cx).selection().read(cx).count(),
+                self.state.read(cx).delegate().row_count(),
+                if self.state.read(cx).delegate().row_count() == 1 { "" } else { "s" }
+            )))
+            .child(
+                div()
+                    .flex()
+                    .gap_2()
+                    .child(
+                        Button::new("edit-selection", cx.focus_handle())
+                            .label("Edit")
+                            .variant(ButtonVariant::Secondary)
+                            .disabled(!self.state.read(cx).can_edit(cx))
+                            .action_for(crate::action::Edit, self.state.focus_handle(cx)),
+                    )
+                    .child(
+                        Button::new("delete-selection", cx.focus_handle())
+                            .label("Delete")
+                            .disabled(self.state.read(cx).selection().read(cx).is_empty())
+                            .variant(ButtonVariant::Danger)
+                            .action_for(crate::action::Delete, self.state.focus_handle(cx)),
+                    ),
+            )
     }
 }
 
@@ -318,8 +359,63 @@ impl<D: TableDelegate + 'static> RenderOnce for Table<D> {
             .track_focus(&focus_handle)
             .size_full()
             .child(self.render_header(window, cx))
-            .child(
-                div().id("body").overflow_scroll().size_full().child(self.render_body(window, cx)),
-            )
+            .child(self.render_body(window, cx))
+            .child(self.render_action_bar(window, cx))
+            .on_action::<crate::action::Edit>({
+                let state = self.state.clone();
+                move |_, window, cx| {
+                    let selection = state.read(cx).selection().read(cx);
+                    let Some(column_id) = &selection.column_id else { return };
+                    let Some(column) = state.read(cx).delegate().column(column_id) else { return };
+                    let row_ids = selection.row_ids().cloned().collect();
+                    if let Some(edit_handler) = column.edit_handler.clone() {
+                        (edit_handler)(state.clone(), row_ids, window, cx);
+                    }
+                }
+            })
+            .on_action::<crate::action::Delete>({
+                let state = self.state.clone();
+                move |_, _, cx| {
+                    state.update(cx, |state, cx| {
+                        let selection = state.selection().read(cx);
+                        state.delegate_mut().delete_rows(selection.row_ids());
+                        state.selection().update(cx, |selection, cx| {
+                            selection.clear();
+                            cx.notify();
+                        });
+                    });
+                }
+            })
+            .on_action::<crate::action::ClearSelection>({
+                let state = self.state.clone();
+                move |_, _, cx| {
+                    state.update(cx, |state, cx| {
+                        state.selection().update(cx, |selection, cx| {
+                            selection.clear();
+                            cx.notify();
+                        });
+                    });
+                }
+            })
+            .on_action::<crate::action::SelectAll>({
+                let state = self.state.clone();
+                move |_, _, cx| {
+                    state.update(cx, |state, cx| {
+                        state.selection().update(cx, |selection, cx| {
+                            let Some(column_id) = selection.column_id.clone().or_else(|| {
+                                state.delegate().columns().first().map(|c| c.id().to_string())
+                            }) else {
+                                return;
+                            };
+
+                            for row_id in state.delegate().row_ids() {
+                                selection.select_cell(column_id.clone(), row_id.clone());
+                            }
+
+                            cx.notify();
+                        });
+                    });
+                }
+            })
     }
 }
