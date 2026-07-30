@@ -4,7 +4,7 @@ use crate::{ExecutorButton, ObjectId, Slot};
 
 pub mod midi;
 
-#[derive(Default, Clone)]
+#[derive(Clone, PartialEq, Default)]
 #[derive(facet::Facet)]
 #[facet(deny_unknown_fields)]
 pub struct TriggerConfig {

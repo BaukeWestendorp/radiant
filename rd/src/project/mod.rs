@@ -12,7 +12,7 @@ pub use trigger::*;
 const RELATIVE_OUTPUT_PATH: &str = "output.json";
 const RELATIVE_TRIGGER_PATH: &str = "trigger.json";
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, PartialEq)]
 #[derive(facet::Facet)]
 #[facet(deny_unknown_fields)]
 pub struct Project {

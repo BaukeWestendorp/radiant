@@ -33,18 +33,22 @@ impl SettingsRootView {
 
 impl Render for SettingsRootView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let project_changed = *self.uncommitted_project.read(cx)
+            != cx.engine().with_project(|project| project.clone());
+
         let action_bar = h_flex()
             .justify_end()
             .h(px(32.0))
             .w_full()
             .p_2()
-            .bg(cx.theme().bg_primary)
+            .bg(cx.theme().bg_secondary)
             .border_t_1()
-            .border_color(cx.theme().border_primary)
+            .border_color(cx.theme().border_secondary)
             .child(
                 Button::new("save", cx.focus_handle())
                     .label("Save Settings")
                     .icon(IconVariant::Save)
+                    .disabled(!project_changed)
                     .on_click(cx.listener(|this, _, _, cx| {
                         if let Err(err) = cx.update_project(|project, cx| {
                             *project = this.uncommitted_project.read(cx).clone();
