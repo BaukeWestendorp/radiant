@@ -99,17 +99,17 @@ impl ArtnetOutputInstanceTable {
             columns: vec![
                 Column::<Self>::new("name", "Name")
                     .with_sort_handler(|a, b| a.name.cmp(&b.name))
-                    .with_auto_editor(|row| &mut row.name)
+                    .with_auto_enumerable_editor(|row| &mut row.name)
                     .with_cell_builder(|row, _window, _cx| row.name.to_string().into_any_element()),
                 Column::<Self>::new("port_address", "Port Address")
                     .with_sort_handler(|a, b| a.port_address.cmp(&b.port_address))
-                    .with_auto_editor(|row| &mut row.port_address)
+                    .with_auto_enumerable_editor(|row| &mut row.port_address)
                     .with_cell_builder(|row, _window, _cx| {
                         row.port_address.to_string().into_any_element()
                     }),
                 Column::<Self>::new("local_universe", "Local Universe")
                     .with_sort_handler(|a, b| a.local_universe.cmp(&b.local_universe))
-                    .with_auto_editor(|row| &mut row.local_universe)
+                    .with_auto_enumerable_editor(|row| &mut row.local_universe)
                     .with_cell_builder(|row, _window, _cx| {
                         row.local_universe.to_string().into_any_element()
                     }),

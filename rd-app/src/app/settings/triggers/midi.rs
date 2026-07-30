@@ -103,7 +103,7 @@ impl MidiMappingTable {
                             .partial_cmp(&b.device_channel)
                             .unwrap_or(std::cmp::Ordering::Equal)
                     })
-                    .with_auto_enumerable_editor(|row| &mut row.device_channel)
+                    .with_auto_editor(|row| &mut row.device_channel)
                     .with_cell_builder(|row, _window, _cx| {
                         row.device_channel.to_string().into_any_element()
                     }),

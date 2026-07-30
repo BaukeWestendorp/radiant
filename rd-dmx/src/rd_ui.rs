@@ -1,5 +1,5 @@
 use rd_ui::{
-    AutoInput, Field, FieldValue, InputState, Slider, SliderValue,
+    AutoInput, EnumerableValue, Field, FieldValue, InputState, Slider, SliderValue,
     gpui::{App, AppContext, Entity, Window},
 };
 
@@ -44,6 +44,13 @@ impl AutoInput for Value {
     }
 }
 
+impl EnumerableValue for Value {
+    fn enumerated_value(&self, offset: usize) -> Self {
+        let new_value = self.0 as usize + offset;
+        Self(new_value as u8)
+    }
+}
+
 impl SliderValue for Channel {
     fn to_f64(&self) -> f64 {
         self.0 as f64
@@ -83,6 +90,13 @@ impl AutoInput for Channel {
     }
 }
 
+impl EnumerableValue for Channel {
+    fn enumerated_value(&self, offset: usize) -> Self {
+        let new_value = self.0 as usize + offset;
+        Self::new_unchecked(new_value as u16)
+    }
+}
+
 impl SliderValue for UniverseId {
     fn to_f64(&self) -> f64 {
         self.0 as f64
@@ -119,6 +133,13 @@ impl AutoInput for UniverseId {
                 Slider::new(cx.focus_handle(), window, cx).with_value(Some(initial_value), cx);
             InputState::new(slider, window, cx)
         })
+    }
+}
+
+impl EnumerableValue for UniverseId {
+    fn enumerated_value(&self, offset: usize) -> Self {
+        let new_value = self.0 as usize + offset;
+        Self::new_unchecked(new_value as u16)
     }
 }
 
@@ -173,5 +194,11 @@ impl AutoInput for Address {
             let field = Field::new(cx.focus_handle(), window, cx).with_value(initial_value, cx);
             InputState::new(field, window, cx)
         })
+    }
+}
+
+impl EnumerableValue for Address {
+    fn enumerated_value(&self, offset: usize) -> Self {
+        self.with_channel_offset(offset as i32).unwrap()
     }
 }

@@ -1,6 +1,6 @@
 use rd_ui::{
-    AutoInput, Input, InputDelegate, InputEvent, InputState, Labelled, LayoutDirection, Slider,
-    SliderValue,
+    AutoInput, EnumerableValue, Input, InputDelegate, InputEvent, InputState, Labelled,
+    LayoutDirection, Slider, SliderValue,
     gpui::{App, Entity, FocusHandle, Focusable, Window, prelude::*},
     h_flex, v_flex,
 };
@@ -172,6 +172,13 @@ impl AutoInput for PortAddress {
     }
 }
 
+impl EnumerableValue for PortAddress {
+    fn enumerated_value(&self, offset: usize) -> Self {
+        let absolute = self.as_u16() as usize + offset;
+        PortAddress::from_absolute(absolute as u16).unwrap_or_default()
+    }
+}
+
 impl SliderValue for NetId {
     fn to_f64(&self) -> f64 {
         self.0 as f64
@@ -207,6 +214,13 @@ impl AutoInput for NetId {
                 Slider::new(cx.focus_handle(), window, cx).with_value(Some(initial_value), cx);
             InputState::new(slider, window, cx)
         })
+    }
+}
+
+impl EnumerableValue for NetId {
+    fn enumerated_value(&self, offset: usize) -> Self {
+        let new_value = self.0 as usize + offset;
+        NetId(new_value as u8)
     }
 }
 
@@ -248,6 +262,13 @@ impl AutoInput for SubNetId {
     }
 }
 
+impl EnumerableValue for SubNetId {
+    fn enumerated_value(&self, offset: usize) -> Self {
+        let new_value = self.0 as usize + offset;
+        SubNetId(new_value as u8)
+    }
+}
+
 impl SliderValue for UniverseId {
     fn to_f64(&self) -> f64 {
         self.0 as f64
@@ -283,5 +304,12 @@ impl AutoInput for UniverseId {
                 Slider::new(cx.focus_handle(), window, cx).with_value(Some(initial_value), cx);
             InputState::new(slider, window, cx)
         })
+    }
+}
+
+impl EnumerableValue for UniverseId {
+    fn enumerated_value(&self, offset: usize) -> Self {
+        let new_value = self.0 as usize + offset;
+        UniverseId(new_value as u8)
     }
 }
