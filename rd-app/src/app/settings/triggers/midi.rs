@@ -94,7 +94,6 @@ impl MidiMappingTable {
             columns: vec![
                 Column::<Self>::new("device_name", "Device Name")
                     .with_sort_handler(|a, b| a.device_name.cmp(&b.device_name))
-                    .with_auto_enumerable_editor(|row| &mut row.device_name)
                     .with_cell_builder(|row, _window, _cx| {
                         row.device_name.to_string().into_any_element()
                     }),

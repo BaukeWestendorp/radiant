@@ -229,6 +229,7 @@ impl<D: TableDelegate> Table<D> {
 
         let is_selected =
             self.state.read(cx).selection().read(cx).is_cell_selected(column.id(), row_id);
+        let is_editable = column.editable();
 
         let selection_overlay = is_selected.then(|| {
             div()
@@ -248,6 +249,7 @@ impl<D: TableDelegate> Table<D> {
             .bg(if is_selected { cx.theme().bg_selected } else { gpui::transparent_black() })
             .child(content)
             .children(selection_overlay)
+            .when(!is_editable, |e| e.opacity(0.75))
             .on_mouse_down(MouseButton::Left, {
                 let state = self.state().clone();
                 let column_id = column.id().to_string();
