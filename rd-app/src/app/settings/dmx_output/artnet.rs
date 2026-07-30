@@ -26,6 +26,19 @@ impl ArtnetOutputTabView {
             )
         });
 
+        cx.observe_in(&uncommitted_project, window, |this, uncommitted_project, window, cx| {
+            this.table.update(cx, |table, cx| {
+                *table = TableState::new(
+                    ArtnetOutputInstanceTable::new(uncommitted_project.clone(), window, cx),
+                    cx.focus_handle(),
+                    window,
+                    cx,
+                );
+                cx.notify();
+            });
+        })
+        .detach();
+
         cx.subscribe(&table, |this, table, event, cx| match event {
             TableEvent::EditSubmitted => this.uncommitted_project.update(cx, |project, cx| {
                 project.output.artnet.instances =
