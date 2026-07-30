@@ -15,11 +15,6 @@ pub trait EngineAppExt {
         f: F,
     ) -> anyhow::Result<R>;
 
-    fn on_engine_event(
-        &mut self,
-        handler: impl FnMut(&rd::Event, &mut App) + 'static,
-    ) -> Subscription;
-
     fn on_engine_event_in(
         &mut self,
         window: &mut Window,
@@ -39,14 +34,6 @@ impl EngineAppExt for App {
         EngineGlobal::update_global(self, |engine, cx| {
             engine.engine.update_project(|project| (f)(project, cx))
         })
-    }
-
-    fn on_engine_event(
-        &mut self,
-        mut handler: impl FnMut(&rd::Event, &mut App) + 'static,
-    ) -> Subscription {
-        let event_buffer = EngineGlobal::global(self).event_buffer.clone();
-        self.subscribe(&event_buffer, move |_, event, cx| handler(event, cx))
     }
 
     fn on_engine_event_in(

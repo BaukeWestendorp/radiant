@@ -169,7 +169,7 @@ impl Theme {
             border_tile_header: accent.with_s(0.386).with_l(0.725),
 
             accent,
-            indicate: IndicationColors::light(accent),
+            indicate: IndicationColors::light(),
 
             contrast: rgb(0x000000).into(),
 
@@ -213,7 +213,7 @@ impl Theme {
             border_tile_header: accent.with_s(0.38).with_l(0.27),
 
             accent,
-            indicate: IndicationColors::dark(accent),
+            indicate: IndicationColors::dark(),
 
             contrast: rgb(0xffffff).into(),
 
@@ -242,7 +242,7 @@ pub struct IndicationColors {
 }
 
 impl IndicationColors {
-    pub fn light(accent: Hsla) -> Self {
+    pub fn light() -> Self {
         Self {
             danger: rgb(0xe12e2c).into(),
             warning: rgb(0xffc94d).into(),
@@ -251,7 +251,7 @@ impl IndicationColors {
         }
     }
 
-    pub fn dark(accent: Hsla) -> Self {
+    pub fn dark() -> Self {
         Self {
             danger: rgb(0xe12e2c).into(),
             warning: rgb(0xffc94d).into(),

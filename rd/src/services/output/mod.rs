@@ -14,7 +14,7 @@ pub struct OutputService {
     artnet_output_service: Mutex<Service<artnet::ArtnetOutputService, Notified>>,
 
     notify_tx: flume::Sender<()>,
-    multiverse: Arc<RwLock<Multiverse>>,
+    _multiverse: Arc<RwLock<Multiverse>>,
 }
 
 impl OutputService {
@@ -29,12 +29,12 @@ impl OutputService {
             )),
 
             notify_tx,
-            multiverse,
+            _multiverse: multiverse,
         }
     }
 
-    pub fn update_multiverse(&self, multiverse: Multiverse) {
-        *self.multiverse.write().unwrap() = multiverse;
+    pub fn _update_multiverse(&self, multiverse: Multiverse) {
+        *self._multiverse.write().unwrap() = multiverse;
     }
 }
 
@@ -44,7 +44,7 @@ impl Default for OutputService {
 
         Self {
             notify_tx,
-            multiverse: Arc::new(RwLock::new(Multiverse::new())),
+            _multiverse: Arc::new(RwLock::new(Multiverse::new())),
 
             artnet_output_service: Mutex::new(Service::new(
                 Default::default(),
