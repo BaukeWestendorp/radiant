@@ -338,6 +338,7 @@ impl<D: TableDelegate> Table<D> {
                         Button::new("edit-selection", cx.focus_handle())
                             .label("Edit")
                             .variant(ButtonVariant::Secondary)
+                            .icon(IconVariant::SquarePen)
                             .disabled(!self.state.read(cx).can_edit(cx))
                             .action_for(crate::action::Edit, self.state.focus_handle(cx)),
                     )
@@ -346,6 +347,7 @@ impl<D: TableDelegate> Table<D> {
                             .label("Delete")
                             .disabled(self.state.read(cx).selection().read(cx).is_empty())
                             .variant(ButtonVariant::Danger)
+                            .icon(IconVariant::Trash2)
                             .action_for(crate::action::Delete, self.state.focus_handle(cx)),
                     ),
             )
