@@ -1,4 +1,4 @@
-use gpui::{App, Entity, EventEmitter, FocusHandle, Focusable, Window, prelude::*};
+use gpui::{App, Context, Entity, EventEmitter, FocusHandle, Focusable, Window, prelude::*};
 
 use crate::TableDelegate;
 
@@ -8,7 +8,7 @@ pub struct TableState<D: TableDelegate> {
     selection: Entity<TableSelection<D>>,
 
     sorted_column: Option<(String, TableSortDirection)>,
-    cached_row_order: Option<Vec<usize>>,
+    cached_row_order: Option<Vec<D::RowId>>,
 
     pub(crate) selection_drag: Option<(String, usize)>,
 
@@ -23,7 +23,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
         cx: &mut Context<Self>,
     ) -> Self {
         let first_sortable_column_id =
-            delegate.columns().iter().find(|col| col.sortable()).map(|col| col.id().to_string());
+            delegate.columns(cx).find(|col| col.sortable()).map(|col| col.id().to_string());
 
         let mut this = Self {
             delegate,
@@ -39,7 +39,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
         };
 
         if let Some(column_id) = first_sortable_column_id {
-            this.sort_by_column(column_id, TableSortDirection::Ascending);
+            this.sort_by_column(column_id, TableSortDirection::Ascending, cx);
         }
 
         this
@@ -47,11 +47,6 @@ impl<D: TableDelegate + 'static> TableState<D> {
 
     pub fn delegate(&self) -> &D {
         &self.delegate
-    }
-
-    pub fn delegate_mut(&mut self) -> &mut D {
-        self.cached_row_order = None;
-        &mut self.delegate
     }
 
     pub fn selection(&self) -> &Entity<TableSelection<D>> {
@@ -71,17 +66,22 @@ impl<D: TableDelegate + 'static> TableState<D> {
         self.sorted_column.as_ref().map(|(_, direction)| *direction)
     }
 
-    pub fn sorted_rows(&self) -> Vec<(&D::RowId, &D::Row)> {
-        let mut rows = self.delegate.rows().into_iter().collect::<Vec<_>>();
+    pub fn sorted_rows<'a>(&'a self, cx: &'a App) -> Vec<(&'a D::RowId, &'a D::Row)> {
+        let rows_map = self.delegate.rows().read(cx);
 
         if let Some(order) = &self.cached_row_order {
-            if order.len() == rows.len() {
-                return order.iter().map(|i| rows[*i]).collect();
+            if order.len() == rows_map.len() {
+                return order
+                    .iter()
+                    .filter_map(|id| rows_map.get(id).map(|row| (id, row)))
+                    .collect();
             }
         }
 
+        let mut rows: Vec<_> = rows_map.iter().collect();
+
         if let Some((col_id, direction)) = &self.sorted_column {
-            if let Some(column) = self.delegate.columns().iter().find(|c| c.id() == col_id) {
+            if let Some(column) = self.delegate.columns(cx).find(|c| c.id() == col_id) {
                 if let Some(sort_handler) = &column.sort_handler {
                     rows.sort_by(|(_, a), (_, b)| {
                         let cmp = sort_handler(a, b);
@@ -97,9 +97,14 @@ impl<D: TableDelegate + 'static> TableState<D> {
         rows
     }
 
-    pub fn sort_by_column(&mut self, column_id: impl Into<String>, direction: TableSortDirection) {
+    pub fn sort_by_column(
+        &mut self,
+        column_id: impl Into<String>,
+        direction: TableSortDirection,
+        cx: &App,
+    ) {
         self.sorted_column = Some((column_id.into(), direction));
-        self.update_sort_cache();
+        self.update_sort_cache(cx);
     }
 
     pub fn clear_sort(&mut self) {
@@ -107,13 +112,13 @@ impl<D: TableDelegate + 'static> TableState<D> {
         self.cached_row_order = None;
     }
 
-    pub fn update_sort_cache(&mut self) {
+    pub fn update_sort_cache(&mut self, cx: &App) {
         let Some((col_id, direction)) = &self.sorted_column else {
             self.cached_row_order = None;
             return;
         };
 
-        let Some(column) = self.delegate.columns().iter().find(|c| c.id() == col_id) else {
+        let Some(column) = self.delegate.columns(cx).find(|c| c.id() == col_id) else {
             self.cached_row_order = None;
             return;
         };
@@ -123,9 +128,10 @@ impl<D: TableDelegate + 'static> TableState<D> {
             return;
         };
 
-        let mut indexed_rows: Vec<_> = self.delegate.rows().into_iter().enumerate().collect();
+        let rows_map = self.delegate.rows().read(cx);
+        let mut rows: Vec<_> = rows_map.iter().collect();
 
-        indexed_rows.sort_by(|(_, (_, a)), (_, (_, b))| {
+        rows.sort_by(|(_, a), (_, b)| {
             let cmp = sort_handler(a, b);
             match direction {
                 TableSortDirection::Ascending => cmp,
@@ -133,13 +139,13 @@ impl<D: TableDelegate + 'static> TableState<D> {
             }
         });
 
-        self.cached_row_order = Some(indexed_rows.into_iter().map(|(i, _)| i).collect());
+        self.cached_row_order = Some(rows.into_iter().map(|(id, _)| (*id).clone()).collect());
     }
 
     pub fn select_all_in_column(&self, id: impl Into<String>, cx: &mut App) {
         let id = id.into();
 
-        let rows = self.sorted_rows();
+        let rows = self.sorted_rows(cx);
         let row_ids = rows.into_iter().map(|(id, _)| id.clone()).collect::<Vec<_>>();
 
         self.selection.update(cx, |selection, cx| {
@@ -178,7 +184,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
         let start = start_row_ix.min(current_row_ix);
         let end = start_row_ix.max(current_row_ix);
 
-        let rows = self.sorted_rows();
+        let rows = self.sorted_rows(cx);
         let selected_rows =
             rows.into_iter().skip(start).take(end - start + 1).map(|(id, _)| id.clone()).collect();
 
@@ -197,7 +203,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
     pub fn can_edit(&self, cx: &App) -> bool {
         let selection = self.selection().read(cx);
         let Some(column_id) = &selection.column_id else { return false };
-        let Some(column) = self.delegate.column(column_id) else { return false };
+        let Some(column) = self.delegate.column(column_id, cx) else { return false };
         !selection.is_empty() && column.editable()
     }
 }

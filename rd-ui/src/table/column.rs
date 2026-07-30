@@ -79,9 +79,11 @@ impl<D: TableDelegate + 'static> Column<D> {
 
             let Some(first_value) = table.update(cx, {
                 let initial_value = Rc::clone(&initial_value);
-                move |state, _| {
-                    let row = state.delegate_mut().row_mut(first_row_id)?;
-                    Some(initial_value(row))
+                move |state, cx| {
+                    state.delegate().rows().update(cx, |rows, _| {
+                        let row = rows.get_mut(first_row_id)?;
+                        Some(initial_value(row))
+                    })
                 }
             }) else {
                 return;
@@ -122,14 +124,17 @@ impl<D: TableDelegate + 'static> Column<D> {
 
                 Popup::input("Edit value(s)", input, window, cx, move |new_value: &I::Value, cx| {
                     table.update(cx, |state, cx| {
-                        for row_id in &row_ids {
-                            if let Some(row) = state.delegate_mut().row_mut(row_id) {
-                                let target_field = field_selector(row);
-                                *target_field = new_value.clone();
+                        state.delegate().rows().update(cx, |rows, cx| {
+                            for row_id in &row_ids {
+                                if let Some(row) = rows.get_mut(row_id) {
+                                    let target_field = field_selector(row);
+                                    *target_field = new_value.clone();
+                                }
                             }
-
                             cx.notify();
-                        }
+                        });
+                        state.update_sort_cache(cx);
+                        cx.notify();
                         cx.emit(TableEvent::EditSubmitted);
                     });
                 })
@@ -171,13 +176,17 @@ impl<D: TableDelegate + 'static> Column<D> {
 
                 Popup::input("Edit value(s)", input, window, cx, move |new_value: &I::Value, cx| {
                     table.update(cx, |state, cx| {
-                        for (offset, row_id) in row_ids.iter().enumerate() {
-                            if let Some(row) = state.delegate_mut().row_mut(row_id) {
-                                let target_field = field_selector(row);
-                                *target_field = new_value.enumerated_value(offset);
+                        state.delegate().rows().update(cx, |rows, cx| {
+                            for (offset, row_id) in row_ids.iter().enumerate() {
+                                if let Some(row) = rows.get_mut(row_id) {
+                                    let target_field = field_selector(row);
+                                    *target_field = new_value.enumerated_value(offset);
+                                }
                             }
                             cx.notify();
-                        }
+                        });
+                        state.update_sort_cache(cx);
+                        cx.notify();
                         cx.emit(TableEvent::EditSubmitted);
                     });
                 })

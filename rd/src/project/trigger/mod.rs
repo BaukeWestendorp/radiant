@@ -4,6 +4,8 @@ use crate::{ExecutorButton, ObjectId, Slot};
 
 pub mod midi;
 
+pub use midi::*;
+
 #[derive(Clone, PartialEq, Default)]
 #[derive(facet::Facet)]
 #[facet(deny_unknown_fields)]

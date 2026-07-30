@@ -1,4 +1,8 @@
-use std::hash::Hash;
+use std::{collections::HashMap, hash::Hash};
+
+use gpui::Entity;
+
+use gpui::App;
 
 use crate::Column;
 
@@ -7,36 +11,15 @@ pub trait TableDelegate {
 
     type RowId: Clone + Hash + Eq;
 
-    fn columns(&self) -> &[Column<Self>]
+    fn columns(&self, cx: &App) -> impl Iterator<Item = &Column<Self>>
     where
         Self: Sized;
 
-    fn column(&self, column_id: &str) -> Option<&Column<Self>>
+    fn column(&self, column_id: &str, cx: &App) -> Option<&Column<Self>>
     where
         Self: Sized;
 
-    fn rows(&self) -> impl Iterator<Item = (&Self::RowId, &Self::Row)>
-    where
-        Self: Sized;
+    fn rows(&self) -> Entity<HashMap<Self::RowId, Self::Row>>;
 
-    fn row_count(&self) -> usize;
-
-    fn row(&self, row_id: &Self::RowId) -> Option<&Self::Row>
-    where
-        Self: Sized;
-
-    fn row_mut(&mut self, row_id: &Self::RowId) -> Option<&mut Self::Row>
-    where
-        Self: Sized;
-
-    fn row_ids(&self) -> impl Iterator<Item = &Self::RowId>
-    where
-        Self: Sized,
-    {
-        self.rows().map(|(row_id, _)| row_id)
-    }
-
-    fn delete_rows<'a>(&mut self, row_ids: impl Iterator<Item = &'a Self::RowId>)
-    where
-        Self: Sized + 'a;
+    fn insert_new_row(&self, _cx: &mut App) -> Option<Self::RowId>;
 }

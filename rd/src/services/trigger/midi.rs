@@ -1,45 +1,40 @@
 use rd_midi::{MidiMessage, MidiPacket, u4, u7};
 
-use crate::{
-    ExecutorId,
-    project::{
-        self,
-        midi::{MidiChannel, MidiController, MidiFilter, MidiNote},
-    },
-    services::trigger::Trigger,
-};
+use crate::{ExecutorId, project, services::trigger::Trigger};
 
 pub struct MidiTriggerService {
-    mappings: Vec<project::midi::MidiMapping>,
+    mappings: Vec<project::MidiMapping>,
     trigger_tx: flume::Sender<Trigger>,
 }
 
 impl MidiTriggerService {
-    pub fn new(
-        mappings: Vec<project::midi::MidiMapping>,
-        trigger_tx: flume::Sender<Trigger>,
-    ) -> Self {
+    pub fn new(mappings: Vec<project::MidiMapping>, trigger_tx: flume::Sender<Trigger>) -> Self {
         Self { mappings, trigger_tx }
     }
 
-    fn matches_channel(filter_channel: &MidiChannel, packet_channel: u4) -> bool {
+    fn matches_channel(filter_channel: &project::MidiChannel, packet_channel: u4) -> bool {
         match filter_channel {
-            MidiChannel::All => true,
-            MidiChannel::Single(channel) => channel.get() == packet_channel.get(),
+            project::MidiChannel::All => true,
+            project::MidiChannel::Single(channel) => channel.get() == packet_channel.get(),
         }
     }
 
-    fn matches_note(filter_note: &MidiNote, packet_note: u7) -> bool {
+    fn matches_note(filter_note: &project::MidiNote, packet_note: u7) -> bool {
         match filter_note {
-            MidiNote::All => true,
-            MidiNote::Single(note) => note.get() == packet_note.get(),
+            project::MidiNote::All => true,
+            project::MidiNote::Single(note) => note.get() == packet_note.get(),
         }
     }
 
-    fn matches_controller(filter_controller: &MidiController, packet_controller: u7) -> bool {
+    fn matches_controller(
+        filter_controller: &project::MidiController,
+        packet_controller: u7,
+    ) -> bool {
         match filter_controller {
-            MidiController::All => true,
-            MidiController::Single(controller) => controller.get() == packet_controller.get(),
+            project::MidiController::All => true,
+            project::MidiController::Single(controller) => {
+                controller.get() == packet_controller.get()
+            }
         }
     }
 
@@ -63,31 +58,30 @@ impl MidiTriggerService {
 
             let (normalized_val, is_pressed) = match (&mapping.filter, &packet.message) {
                 (
-                    MidiFilter::ControlChange { controller },
+                    project::MidiFilter::ControlChange { controller },
                     MidiMessage::ControlChange { controller: pkt_ctrl, value, .. },
                 ) if Self::matches_controller(controller, *pkt_ctrl) => {
                     (value.get() as f32 / 127.0, value.get() > 0)
                 }
 
                 (
-                    MidiFilter::NoteOn { note },
+                    project::MidiFilter::NoteOn { note },
                     MidiMessage::NoteOn { note: pkt_note, velocity, .. },
                 ) if Self::matches_note(note, *pkt_note) => {
                     (velocity.get() as f32 / 127.0, velocity.get() > 0)
                 }
 
-                (MidiFilter::NoteOff { note }, MidiMessage::NoteOff { note: pkt_note, .. })
-                    if Self::matches_note(note, *pkt_note) =>
-                {
-                    (0.0, false)
-                }
+                (
+                    project::MidiFilter::NoteOff { note },
+                    MidiMessage::NoteOff { note: pkt_note, .. },
+                ) if Self::matches_note(note, *pkt_note) => (0.0, false),
 
                 (
-                    MidiFilter::NoteOff { note },
+                    project::MidiFilter::NoteOff { note },
                     MidiMessage::NoteOn { note: pkt_note, velocity, .. },
                 ) if Self::matches_note(note, *pkt_note) && velocity.get() == 0 => (0.0, false),
 
-                (MidiFilter::PitchBend, MidiMessage::PitchBend { value, .. }) => {
+                (project::MidiFilter::PitchBend, MidiMessage::PitchBend { value, .. }) => {
                     ((*value as f32 + 8192.0) / 16383.0, *value > 0)
                 }
 

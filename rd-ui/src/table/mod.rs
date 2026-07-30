@@ -15,6 +15,10 @@ use crate::{
     h_flex, todo, v_flex,
 };
 
+pub mod action {
+    gpui::actions!(table, [Add]);
+}
+
 const ROW_HEIGHT: Pixels = px(24.0);
 
 #[derive(IntoElement)]
@@ -39,12 +43,10 @@ impl<D: TableDelegate> Table<D> {
     }
 
     fn render_header(&self, window: &Window, cx: &App) -> impl IntoElement {
-        let columns = self.state().read(cx).delegate().columns();
+        let columns = self.state().read(cx).delegate().columns(cx);
 
-        let cells = columns
-            .iter()
-            .enumerate()
-            .map(|(ix, column)| self.render_header_cell(column, ix, window, cx));
+        let cells =
+            columns.enumerate().map(|(ix, column)| self.render_header_cell(column, ix, window, cx));
 
         h_flex()
             .bg(cx.theme().bg_secondary)
@@ -104,11 +106,13 @@ impl<D: TableDelegate> Table<D> {
                                             .sort_by_column(
                                                 &column_id,
                                                 TableSortDirection::Ascending,
+                                                cx,
                                             ),
                                         Some(TableSortDirection::Ascending) => state
                                             .sort_by_column(
                                                 &column_id,
                                                 TableSortDirection::Descending,
+                                                cx,
                                             ),
                                     }
 
@@ -147,7 +151,7 @@ impl<D: TableDelegate> Table<D> {
 
     fn render_body(&self, window: &Window, cx: &App) -> impl IntoElement {
         let state = self.state().read(cx);
-        let rows = state.sorted_rows();
+        let rows = state.sorted_rows(cx);
 
         let cells = rows
             .into_iter()
@@ -163,7 +167,9 @@ impl<D: TableDelegate> Table<D> {
                     let state = self.state().clone();
                     move |_, _, cx| {
                         state.update(cx, |state, cx| {
-                            if let Some(last_row_ix) = state.delegate().row_count().checked_sub(1) {
+                            if let Some(last_row_ix) =
+                                state.delegate().rows().read(cx).len().checked_sub(1)
+                            {
                                 state.stop_selection_drag(last_row_ix, cx);
                                 cx.notify();
                             }
@@ -174,7 +180,9 @@ impl<D: TableDelegate> Table<D> {
                     let state = self.state().clone();
                     move |_, _, cx| {
                         state.update(cx, |state, cx| {
-                            if let Some(last_row_ix) = state.delegate().row_count().checked_sub(1) {
+                            if let Some(last_row_ix) =
+                                state.delegate().rows().read(cx).len().checked_sub(1)
+                            {
                                 state.stop_selection_drag(last_row_ix, cx);
                                 cx.notify();
                             }
@@ -192,9 +200,9 @@ impl<D: TableDelegate> Table<D> {
         window: &Window,
         cx: &App,
     ) -> impl IntoElement {
-        let columns = self.state().read(cx).delegate().columns();
+        let columns = self.state().read(cx).delegate().columns(cx);
 
-        let cells = columns.iter().enumerate().map(|(column_ix, column)| {
+        let cells = columns.enumerate().map(|(column_ix, column)| {
             self.render_cell(row, row_id, row_ix, column_ix, column, window, cx)
         });
 
@@ -327,6 +335,8 @@ impl<D: TableDelegate> Table<D> {
     }
 
     fn render_action_bar(&self, _window: &Window, cx: &App) -> impl IntoElement {
+        let row_count = self.state.read(cx).delegate().rows().read(cx).len();
+
         h_flex()
             .justify_between()
             .h(px(32.0))
@@ -337,13 +347,20 @@ impl<D: TableDelegate> Table<D> {
             .child(div().text_color(cx.theme().fg_secondary).child(format!(
                 "{}/{} row{} selected",
                 self.state.read(cx).selection().read(cx).count(),
-                self.state.read(cx).delegate().row_count(),
-                if self.state.read(cx).delegate().row_count() == 1 { "" } else { "s" }
+                row_count,
+                if row_count == 1 { "" } else { "s" }
             )))
             .child(
                 div()
                     .flex()
                     .gap_2()
+                    .child(
+                        Button::new("add-row", cx.focus_handle())
+                            .label("Add")
+                            .variant(ButtonVariant::Secondary)
+                            .icon(IconVariant::Plus)
+                            .action_for(action::Add, self.state.focus_handle(cx)),
+                    )
                     .child(
                         Button::new("edit-selection", cx.focus_handle())
                             .label("Edit")
@@ -375,12 +392,23 @@ impl<D: TableDelegate + 'static> RenderOnce for Table<D> {
             .child(self.render_header(window, cx))
             .child(self.render_body(window, cx))
             .child(self.render_action_bar(window, cx))
+            .on_action::<action::Add>({
+                let state = self.state.clone();
+                move |_, _, cx| {
+                    state.update(cx, |state, cx| {
+                        state.delegate().insert_new_row(cx);
+                        cx.notify();
+                    });
+                }
+            })
             .on_action::<crate::action::Edit>({
                 let state = self.state.clone();
                 move |_, window, cx| {
                     let selection = state.read(cx).selection().read(cx);
                     let Some(column_id) = &selection.column_id else { return };
-                    let Some(column) = state.read(cx).delegate().column(column_id) else { return };
+                    let Some(column) = state.read(cx).delegate().column(column_id, cx) else {
+                        return;
+                    };
                     let row_ids = selection.row_ids().cloned().collect();
                     if let Some(edit_handler) = column.edit_handler.clone() {
                         (edit_handler)(state.clone(), row_ids, window, cx);
@@ -391,12 +419,20 @@ impl<D: TableDelegate + 'static> RenderOnce for Table<D> {
                 let state = self.state.clone();
                 move |_, _, cx| {
                     state.update(cx, |state, cx| {
-                        let selection = state.selection().read(cx);
-                        state.delegate_mut().delete_rows(selection.row_ids());
+                        state.delegate().rows().update(cx, |items, cx| {
+                            let selection = state.selection().read(cx);
+                            for row_id in selection.row_ids() {
+                                items.remove(row_id);
+                            }
+                            cx.notify();
+                        });
+
                         state.selection().update(cx, |selection, cx| {
                             selection.clear();
                             cx.notify();
                         });
+
+                        state.update_sort_cache(cx);
                     });
                 }
             })
@@ -417,13 +453,15 @@ impl<D: TableDelegate + 'static> RenderOnce for Table<D> {
                     state.update(cx, |state, cx| {
                         state.selection().update(cx, |selection, cx| {
                             let Some(column_id) = selection.column_id.clone().or_else(|| {
-                                state.delegate().columns().first().map(|c| c.id().to_string())
+                                state.delegate().columns(cx).next().map(|c| c.id().to_string())
                             }) else {
                                 return;
                             };
 
-                            for row_id in state.delegate().row_ids() {
-                                selection.select_cell(column_id.clone(), row_id.clone());
+                            let row_ids: Vec<_> =
+                                state.delegate().rows().read(cx).keys().cloned().collect();
+                            for row_id in row_ids {
+                                selection.select_cell(column_id.clone(), row_id);
                             }
 
                             cx.notify();

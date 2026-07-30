@@ -1,14 +1,12 @@
 use std::collections::HashMap;
 
-use gpui::{Entity, Window, div, prelude::*};
-use rd_ui::{Column, Table, TableDelegate, TableEvent, TableState};
+use gpui::{App, Entity, Window, div, prelude::*};
+use rd_ui::{Column, Table, TableDelegate, TableState};
 use uuid::Uuid;
-
-use crate::app::engine::EngineAppExt;
 
 pub struct ArtnetOutputTabView {
     table: Entity<TableState<ArtnetOutputInstanceTable>>,
-    uncommitted_project: Entity<rd::Project>,
+    instances: Entity<HashMap<Uuid, rd::project::artnet::ArtnetOutputInstanceConfig>>,
 }
 
 impl ArtnetOutputTabView {
@@ -17,38 +15,52 @@ impl ArtnetOutputTabView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
+        let instances = cx.new(|cx| {
+            uncommitted_project
+                .read(cx)
+                .output
+                .artnet
+                .instances
+                .iter()
+                .map(|instance| (Uuid::new_v4(), instance.clone()))
+                .collect::<HashMap<_, _>>()
+        });
+
+        cx.observe(&uncommitted_project, move |this, uncommitted_project, cx| {
+            let new_instances = uncommitted_project
+                .read(cx)
+                .output
+                .artnet
+                .instances
+                .iter()
+                .map(|instance| (Uuid::new_v4(), instance.clone()))
+                .collect::<HashMap<_, _>>();
+
+            this.instances.write(cx, new_instances);
+        })
+        .detach();
+
+        cx.observe(&instances, {
+            let uncommitted_project = uncommitted_project.clone();
+            move |_, instances, cx| {
+                let new_instances = instances.read(cx).values().cloned().collect();
+                uncommitted_project.update(cx, |project, _| {
+                    project.output.artnet.instances = new_instances;
+                });
+            }
+        })
+        .detach();
+
         let table = cx.new(|cx| {
             TableState::new(
-                ArtnetOutputInstanceTable::new(uncommitted_project.clone(), window, cx),
+                ArtnetOutputInstanceTable::new(instances.clone(), window, cx),
                 cx.focus_handle(),
                 window,
                 cx,
             )
         });
 
-        cx.observe_in(&uncommitted_project, window, |this, uncommitted_project, window, cx| {
-            this.table.update(cx, |table, cx| {
-                *table = TableState::new(
-                    ArtnetOutputInstanceTable::new(uncommitted_project.clone(), window, cx),
-                    cx.focus_handle(),
-                    window,
-                    cx,
-                );
-                cx.notify();
-            });
-        })
-        .detach();
-
-        cx.subscribe(&table, |this, table, event, cx| match event {
-            TableEvent::EditSubmitted => this.uncommitted_project.update(cx, |project, cx| {
-                project.output.artnet.instances =
-                    table.read(cx).delegate().instances.values().cloned().collect();
-                cx.notify();
-            }),
-        })
-        .detach();
-
-        Self { table, uncommitted_project }
+        Self { table, instances }
     }
 }
 
@@ -65,49 +77,15 @@ impl Render for ArtnetOutputTabView {
 
 struct ArtnetOutputInstanceTable {
     columns: Vec<Column<Self>>,
-    instances: HashMap<Uuid, rd::project::artnet::ArtnetOutputInstanceConfig>,
+    instances: Entity<HashMap<Uuid, rd::project::artnet::ArtnetOutputInstanceConfig>>,
 }
 
 impl ArtnetOutputInstanceTable {
     fn new(
-        uncommitted_project: Entity<rd::Project>,
-        window: &mut Window,
-        cx: &mut Context<TableState<Self>>,
+        instances: Entity<HashMap<Uuid, rd::project::artnet::ArtnetOutputInstanceConfig>>,
+        _window: &mut Window,
+        _cx: &mut Context<TableState<Self>>,
     ) -> Self {
-        let instances = uncommitted_project
-            .read(cx)
-            .output
-            .artnet
-            .instances
-            .iter()
-            .map(|instance| (Uuid::new_v4(), instance.clone()))
-            .collect();
-
-        let this = cx.entity();
-        cx.on_engine_event_in(window, {
-            let uncommitted_project = uncommitted_project.clone();
-            move |event, window, cx| match event {
-                rd::Event::ProjectLoaded => {
-                    this.update(cx, |this, cx| {
-                        this.selection().update(cx, |selection, cx| {
-                            selection.clear();
-                            cx.notify();
-                        });
-
-                        *this = TableState::new(
-                            ArtnetOutputInstanceTable::new(uncommitted_project.clone(), window, cx),
-                            cx.focus_handle(),
-                            window,
-                            cx,
-                        );
-                        cx.notify();
-                    });
-                }
-                _ => {}
-            }
-        })
-        .detach();
-
         Self {
             columns: vec![
                 Column::<Self>::new("name", "Name")
@@ -136,33 +114,31 @@ impl TableDelegate for ArtnetOutputInstanceTable {
     type Row = rd::project::artnet::ArtnetOutputInstanceConfig;
     type RowId = Uuid;
 
-    fn columns(&self) -> &[Column<Self>] {
-        &self.columns
+    fn columns(&self, _cx: &App) -> impl Iterator<Item = &Column<Self>> {
+        self.columns.iter()
     }
 
-    fn column(&self, column_id: &str) -> Option<&Column<Self>> {
+    fn column(&self, column_id: &str, _cx: &App) -> Option<&Column<Self>> {
         self.columns.iter().find(|c| c.id() == column_id)
     }
 
-    fn rows(&self) -> impl Iterator<Item = (&Self::RowId, &Self::Row)> {
-        self.instances.iter()
+    fn rows(&self) -> Entity<HashMap<Self::RowId, Self::Row>> {
+        self.instances.clone()
     }
 
-    fn row_count(&self) -> usize {
-        self.instances.len()
-    }
+    fn insert_new_row(&self, cx: &mut App) -> Option<Self::RowId> {
+        let new_instance = rd::project::artnet::ArtnetOutputInstanceConfig {
+            name: "FIXME".to_string(),
+            port_address: Default::default(),
+            local_universe: Default::default(),
+        };
+        let new_id = Uuid::new_v4();
 
-    fn row(&self, row_id: &Self::RowId) -> Option<&Self::Row> {
-        self.instances.get(row_id)
-    }
+        self.instances.update(cx, |instances, cx| {
+            instances.insert(new_id, new_instance);
+            cx.notify();
+        });
 
-    fn row_mut(&mut self, row_id: &Self::RowId) -> Option<&mut Self::Row> {
-        self.instances.get_mut(row_id)
-    }
-
-    fn delete_rows<'a>(&mut self, row_ids: impl Iterator<Item = &'a Self::RowId>) {
-        for row_id in row_ids {
-            self.instances.remove(row_id);
-        }
+        Some(new_id)
     }
 }

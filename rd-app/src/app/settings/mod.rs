@@ -13,13 +13,26 @@ pub struct SettingsRootView {
     tabs: Entity<TabsState>,
     triggers_tab: Entity<triggers::TriggersTabView>,
     dmx_output_tab: Entity<dmx_output::DmxOutputTabView>,
-
     uncommitted_project: Entity<Project>,
 }
 
 impl SettingsRootView {
     pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let uncommitted_project = cx.new(|cx| cx.engine().with_project(|project| project.clone()));
+
+        let this = cx.entity();
+        cx.on_engine_event_in(window, {
+            move |event, window, cx| match event {
+                rd::Event::ProjectLoaded => {
+                    this.update(cx, |this, cx| {
+                        *this = Self::new(window, cx);
+                        cx.notify();
+                    });
+                }
+                _ => {}
+            }
+        })
+        .detach();
 
         Self {
             tabs: cx.new(|_| TabsState::new().with_selected("triggers")),
@@ -28,7 +41,6 @@ impl SettingsRootView {
             dmx_output_tab: cx.new(|cx| {
                 dmx_output::DmxOutputTabView::new(uncommitted_project.clone(), window, cx)
             }),
-
             uncommitted_project,
         }
     }

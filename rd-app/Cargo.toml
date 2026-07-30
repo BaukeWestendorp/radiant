@@ -13,6 +13,8 @@ flume.workspace = true
 gpui.workspace = true
 log.workspace = true
 pretty_env_logger.workspace = true
+rd-artnet.workspace = true
+rd-dmx.workspace = true
 rd-ui.workspace = true
 rd = { workspace = true, features = ["rd-ui"] }
 facet.workspace = true

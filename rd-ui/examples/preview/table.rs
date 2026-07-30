@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use gpui::prelude::*;
+use gpui::{App, prelude::*};
 use gpui::{Entity, Window, div};
 use rd_ui::{
     ActiveTheme, Column, PickerValue, Table, TableDelegate, TableSelection, TableState, section,
@@ -18,11 +18,11 @@ impl TablePreview {
 
         Self {
             table_a: cx.new(|cx| {
-                let delegate = PreviewTableDelegate::new();
+                let delegate = PreviewTableDelegate::new(cx);
                 TableState::new(delegate, cx.focus_handle(), window, cx).with_selection(selection_a)
             }),
             table_b: cx.new(|cx| {
-                let delegate = PreviewTableDelegate::new();
+                let delegate = PreviewTableDelegate::new(cx);
                 TableState::new(delegate, cx.focus_handle(), window, cx).with_selection(selection_b)
             }),
         }
@@ -59,23 +59,23 @@ impl Render for TablePreview {
 }
 
 struct PreviewTableDelegate {
-    items: HashMap<String, Item>,
+    items: Entity<HashMap<String, Item>>,
 
     columns: Vec<Column<Self>>,
 }
 
 impl PreviewTableDelegate {
-    fn new() -> Self {
+    fn new(cx: &mut App) -> Self {
         Self {
             #[rustfmt::skip]
-            items: HashMap::from([
+            items: cx.new(|_| HashMap::from([
                 ("row-001".into(), Item { alpha: 1, beta: "one".into(), gamma: Protocol::Artnet }),
                 ("row-002".into(), Item { alpha: 2, beta: "two".into(), gamma: Protocol::Artnet }),
                 ("row-003".into(), Item { alpha: 3, beta: "three".into(), gamma: Protocol::Artnet }),
                 ("row-004".into(), Item { alpha: 5, beta: "five".into(), gamma: Protocol::Artnet }),
                 ("row-005".into(),Item { alpha: 8, beta: "eight".into(), gamma: Protocol::Artnet }),
                 ("row-006".into(),Item { alpha: 13, beta: "thirteen".into(), gamma: Protocol::Artnet }),
-            ]),
+            ])),
             columns: vec![
                 Column::new("alpha", "Alpha")
                     .with_sort_handler(|a: &Item, b: &Item| a.alpha.cmp(&b.alpha))
@@ -97,41 +97,33 @@ impl PreviewTableDelegate {
 }
 
 impl TableDelegate for PreviewTableDelegate {
-    type RowId = String;
     type Row = Item;
+    type RowId = String;
 
-    fn columns(&self) -> &[Column<Self>] {
-        &self.columns
+    fn columns(&self, _cx: &App) -> impl Iterator<Item = &Column<Self>> {
+        self.columns.iter()
     }
 
-    fn column(&self, column_id: &str) -> Option<&Column<Self>> {
+    fn column(&self, column_id: &str, _cx: &App) -> Option<&Column<Self>> {
         self.columns.iter().find(|c| c.id() == column_id)
     }
 
-    fn rows(&self) -> impl Iterator<Item = (&Self::RowId, &Self::Row)> {
-        self.items.iter()
+    fn rows(&self) -> Entity<HashMap<Self::RowId, Self::Row>> {
+        self.items.clone()
     }
 
-    fn row_count(&self) -> usize {
-        self.items.len()
-    }
-
-    fn row(&self, row_id: &Self::RowId) -> Option<&Self::Row> {
-        self.items.get(row_id)
-    }
-
-    fn row_mut(&mut self, row_id: &Self::RowId) -> Option<&mut Self::Row> {
-        self.items.get_mut(row_id)
-    }
-
-    fn delete_rows<'a>(&mut self, row_ids: impl Iterator<Item = &'a Self::RowId>) {
-        for row_id in row_ids {
-            self.items.remove(row_id);
-        }
+    fn insert_new_row(&self, cx: &mut App) -> Option<Self::RowId> {
+        let new_id = format!("row-{:03}", self.rows().read(cx).len() + 1);
+        let new_item = Item::default();
+        self.items.update(cx, |items, cx| {
+            items.insert(new_id.clone(), new_item);
+            cx.notify();
+        });
+        Some(new_id)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Item {
     alpha: u32,
     beta: String,
