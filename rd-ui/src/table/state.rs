@@ -22,7 +22,10 @@ impl<D: TableDelegate + 'static> TableState<D> {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
-        Self {
+        let first_sortable_column_id =
+            delegate.columns().iter().find(|col| col.sortable()).map(|col| col.id().to_string());
+
+        let mut this = Self {
             delegate,
 
             selection: cx.new(|_| TableSelection::multiple(None, Vec::new())),
@@ -33,7 +36,13 @@ impl<D: TableDelegate + 'static> TableState<D> {
             focus_handle,
 
             selection_drag: None,
+        };
+
+        if let Some(column_id) = first_sortable_column_id {
+            this.sort_by_column(column_id, TableSortDirection::Ascending);
         }
+
+        this
     }
 
     pub fn delegate(&self) -> &D {
