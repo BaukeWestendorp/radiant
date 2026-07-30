@@ -10,7 +10,10 @@ pub use column::*;
 pub use delegate::*;
 pub use state::*;
 
-use crate::{ActiveTheme, Button, ButtonVariant, HslaExt, IconVariant, h_flex, todo, v_flex};
+use crate::{
+    ActiveTheme, Button, ButtonVariant, HslaExt, IconVariant, StatefulInteractiveElementExt,
+    h_flex, todo, v_flex,
+};
 
 const ROW_HEIGHT: Pixels = px(24.0);
 
@@ -137,6 +140,9 @@ impl<D: TableDelegate> Table<D> {
                     window.dispatch_action(Box::new(crate::action::Edit), cx);
                 }
             })
+            .on_double_click(|_, window, cx| {
+                window.dispatch_action(Box::new(crate::action::Edit), cx);
+            })
     }
 
     fn render_body(&self, window: &Window, cx: &App) -> impl IntoElement {
@@ -193,6 +199,7 @@ impl<D: TableDelegate> Table<D> {
         });
 
         div()
+            .id(format!("row-{}", row_ix))
             .flex()
             .flex_row()
             .h(ROW_HEIGHT)
@@ -202,6 +209,9 @@ impl<D: TableDelegate> Table<D> {
             .cursor_crosshair()
             .when(row_ix.is_multiple_of(2), |e| e.bg(cx.theme().bg_table))
             .children(cells)
+            .on_double_click(|_, window, cx| {
+                window.dispatch_action(Box::new(crate::action::Edit), cx);
+            })
     }
 
     fn render_cell(
