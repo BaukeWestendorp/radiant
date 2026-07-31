@@ -44,6 +44,11 @@ impl ArtnetOutputTabView {
             let uncommitted_project = uncommitted_project.clone();
             move |_, instances, cx| {
                 let new_instances = instances.read(cx).values().cloned().collect();
+
+                if new_instances == uncommitted_project.read(cx).output.artnet.instances {
+                    return;
+                }
+
                 uncommitted_project.update(cx, |project, _| {
                     project.output.artnet.instances = new_instances;
                 });

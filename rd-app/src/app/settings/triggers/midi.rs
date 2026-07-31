@@ -43,6 +43,11 @@ impl MidiTabView {
             let uncommitted_project = uncommitted_project.clone();
             move |_, mappings, cx| {
                 let new_mappings = mappings.read(cx).values().cloned().collect();
+
+                if new_mappings == uncommitted_project.read(cx).trigger.midi {
+                    return;
+                }
+
                 uncommitted_project.update(cx, |project, _| {
                     project.trigger.midi = new_mappings;
                 });
