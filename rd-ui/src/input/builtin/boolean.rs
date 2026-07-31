@@ -1,19 +1,6 @@
 use gpui::{App, Entity, Window, prelude::*};
 
-use crate::{AutoInput, InputState, Picker, PickerValue};
-
-impl PickerValue for bool {
-    fn variants() -> Vec<Self> {
-        vec![false, true]
-    }
-
-    fn label(&self) -> String {
-        match self {
-            false => "No".to_string(),
-            true => "Yes".to_string(),
-        }
-    }
-}
+use crate::{AutoInput, InputState, Picker};
 
 impl AutoInput for bool {
     type Delegate = Picker<bool>;
@@ -24,7 +11,12 @@ impl AutoInput for bool {
         cx: &mut App,
     ) -> Entity<InputState<Self::Delegate>> {
         cx.new(move |cx| {
-            let picker = Picker::inline(initial_value, cx.focus_handle(), window, cx);
+            let picker = Picker::builder(initial_value, [true, false])
+                .label_fn(|v| match v {
+                    true => "Yes".to_string(),
+                    false => "No".to_string(),
+                })
+                .build(cx.focus_handle(), window, cx);
             InputState::new(picker, window, cx)
         })
     }

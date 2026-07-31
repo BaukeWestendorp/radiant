@@ -45,7 +45,12 @@ impl PreviewForm {
         Self {
             enum_value: cx.new(|cx| {
                 InputState::new(
-                    Picker::dropdown(EnumValue::Alpha, cx.focus_handle(), window, cx),
+                    Picker::builder(
+                        EnumValue::Alpha,
+                        [EnumValue::Alpha, EnumValue::Beta, EnumValue::Gamma],
+                    )
+                    .dropdown()
+                    .build(cx.focus_handle(), window, cx),
                     window,
                     cx,
                 )
@@ -63,7 +68,12 @@ impl PreviewForm {
             }),
             picker: cx.new(|cx| {
                 InputState::new(
-                    Picker::inline(EnumValue::Alpha, cx.focus_handle(), window, cx),
+                    Picker::builder(
+                        EnumValue::Alpha,
+                        [EnumValue::Alpha, EnumValue::Beta, EnumValue::Gamma],
+                    )
+                    .inline()
+                    .build(cx.focus_handle(), window, cx),
                     window,
                     cx,
                 )
@@ -107,4 +117,14 @@ enum EnumValue {
     Alpha,
     Beta,
     Gamma,
+}
+
+impl std::fmt::Display for EnumValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            EnumValue::Alpha => write!(f, "Alpha"),
+            EnumValue::Beta => write!(f, "Beta"),
+            EnumValue::Gamma => write!(f, "Gamma"),
+        }
+    }
 }

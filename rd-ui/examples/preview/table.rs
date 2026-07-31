@@ -2,9 +2,7 @@ use std::collections::HashMap;
 
 use gpui::{App, prelude::*};
 use gpui::{Entity, Window, div};
-use rd_ui::{
-    ActiveTheme, Column, PickerValue, Table, TableDelegate, TableSelection, TableState, section,
-};
+use rd_ui::{ActiveTheme, Column, Table, TableDelegate, TableSelection, TableState, section};
 
 pub struct TablePreview {
     table_a: Entity<TableState<PreviewTableDelegate>>,
@@ -89,7 +87,7 @@ impl PreviewTableDelegate {
                     .with_sort_handler(|a: &Item, b: &Item| {
                         a.gamma.partial_cmp(&b.gamma).unwrap_or(std::cmp::Ordering::Equal)
                     })
-                    .with_cell_builder(|row: &Item, _, _| row.gamma.label().into_any_element())
+                    .with_cell_builder(|row: &Item, _, _| row.gamma.to_string().into_any_element())
                     .with_auto_editor(|row: &mut Item| &mut row.gamma),
             ],
         }
@@ -138,4 +136,15 @@ pub enum Protocol {
     Sacn,
     PosiStageNet,
     Dmx512,
+}
+
+impl std::fmt::Display for Protocol {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Protocol::Artnet => write!(f, "Art-Net"),
+            Protocol::Sacn => write!(f, "sACN"),
+            Protocol::PosiStageNet => write!(f, "PosiStageNet"),
+            Protocol::Dmx512 => write!(f, "DMX512"),
+        }
+    }
 }

@@ -49,23 +49,6 @@ fn expand_picker_impl(name: &Ident, data: &DataEnum) -> proc_macro2::TokenStream
     }
 
     quote! {
-        impl ::rd_ui::PickerValue for #name {
-            fn variants() -> Vec<Self>
-            where
-                Self: Sized
-            {
-                vec![
-                    #( #variants_list, )*
-                ]
-            }
-
-            fn label(&self) -> String {
-                match self {
-                    #( #match_arms, )*
-                }
-            }
-        }
-
         impl ::rd_ui::AutoInput for #name {
             type Delegate = ::rd_ui::Picker<Self>;
 
@@ -76,11 +59,22 @@ fn expand_picker_impl(name: &Ident, data: &DataEnum) -> proc_macro2::TokenStream
             ) -> ::rd_ui::gpui::Entity<::rd_ui::InputState<Self::Delegate>> {
                 use ::rd_ui::gpui::AppContext as _;
                 cx.new(|cx| {
+                    let options = vec![ #( #variants_list, )* ];
                     ::rd_ui::InputState::new(
-                        if <Self as ::rd_ui::PickerValue>::variants().len() > 5 {
-                            ::rd_ui::Picker::dropdown(initial_value, cx.focus_handle(), window, cx)
+                        if options.len() > 5 {
+                            ::rd_ui::Picker::builder(initial_value, options)
+                                .label_fn(|v| match v {
+                                    #( #match_arms, )*
+                                })
+                                .dropdown()
+                                .build(cx.focus_handle(), window, cx)
                         } else {
-                            ::rd_ui::Picker::inline(initial_value, cx.focus_handle(), window, cx)
+                            ::rd_ui::Picker::builder(initial_value, options)
+                                .label_fn(|v| match v {
+                                    #( #match_arms, )*
+                                })
+                                .inline()
+                                .build(cx.focus_handle(), window, cx)
                         },
                         window,
                         cx,

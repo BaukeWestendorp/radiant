@@ -2,22 +2,15 @@ use gpui::{
     App, AppContext, ElementId, Entity, FocusHandle, Focusable, MouseButton, RenderOnce, Window,
     deferred, div, prelude::*,
 };
+use std::fmt::Display;
+use std::marker::PhantomData;
+use std::sync::Arc;
 
 use crate::{
     ActiveTheme, Button, ButtonVariant, HslaExt, INPUT_HEIGHT, Icon, IconSize, IconVariant,
-    InputDelegate, InputEvent, InputState, container, h_flex, interactive_container,
-    util::FocusableExt,
+    InputDelegate, InputEvent, InputState, LayoutDirection, container, h_flex,
+    interactive_container, util::FocusableExt,
 };
-
-use super::LayoutDirection;
-
-pub trait PickerValue: Clone + PartialEq {
-    fn variants() -> Vec<Self>
-    where
-        Self: Sized;
-
-    fn label(&self) -> String;
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum PickerKind {
@@ -26,46 +19,46 @@ pub enum PickerKind {
     Dropdown,
 }
 
-pub struct Picker<V: PickerValue> {
+pub struct LabelMissing;
+pub struct LabelProvided;
+
+pub struct Picker<V: Clone + PartialEq> {
     value: Entity<V>,
+    options: Vec<V>,
     focus_handle: FocusHandle,
     picker_kind: PickerKind,
-
     is_opened: bool,
+    label_fn: Arc<dyn Fn(&V) -> String + 'static>,
 }
 
-impl<V: PickerValue + 'static> Picker<V> {
-    pub fn new(
-        value: V,
-        focus_handle: FocusHandle,
-        picker_kind: PickerKind,
-        _window: &mut Window,
-        cx: &mut Context<InputState<Self>>,
-    ) -> Self {
-        let value = cx.new(|_| value);
-        Self { value, focus_handle, picker_kind, is_opened: false }
-    }
+pub struct PickerBuilder<V, LabelState> {
+    value: V,
+    options: Vec<V>,
+    picker_kind: PickerKind,
+    label_fn: Option<Arc<dyn Fn(&V) -> String + 'static>>,
+    _marker: PhantomData<LabelState>,
+}
 
-    pub fn inline(
+impl<V: Clone + PartialEq + 'static> Picker<V> {
+    pub fn builder(
         value: V,
-        focus_handle: FocusHandle,
-        window: &mut Window,
-        cx: &mut Context<InputState<Self>>,
-    ) -> Self {
-        Self::new(value, focus_handle, PickerKind::Inline, window, cx)
-    }
-
-    pub fn dropdown(
-        value: V,
-        focus_handle: FocusHandle,
-        window: &mut Window,
-        cx: &mut Context<InputState<Self>>,
-    ) -> Self {
-        Self::new(value, focus_handle, PickerKind::Dropdown, window, cx)
+        options: impl IntoIterator<Item = V>,
+    ) -> PickerBuilder<V, LabelMissing> {
+        PickerBuilder {
+            value,
+            options: options.into_iter().collect(),
+            picker_kind: PickerKind::default(),
+            label_fn: None,
+            _marker: PhantomData,
+        }
     }
 
     pub fn value<'a>(&'a self, cx: &'a App) -> &'a V {
         self.value.read(cx)
+    }
+
+    pub fn options(&self) -> &[V] {
+        &self.options
     }
 
     pub fn set_value(&mut self, value: V, cx: &mut Context<InputState<Self>>) {
@@ -94,7 +87,69 @@ impl<V: PickerValue + 'static> Picker<V> {
     }
 }
 
-impl<V: PickerValue + 'static> InputDelegate for Picker<V> {
+impl<V: Clone + PartialEq + 'static, L> PickerBuilder<V, L> {
+    pub fn kind(mut self, kind: PickerKind) -> Self {
+        self.picker_kind = kind;
+        self
+    }
+
+    pub fn inline(mut self) -> Self {
+        self.picker_kind = PickerKind::Inline;
+        self
+    }
+
+    pub fn dropdown(mut self) -> Self {
+        self.picker_kind = PickerKind::Dropdown;
+        self
+    }
+}
+
+impl<V: Clone + PartialEq + 'static> PickerBuilder<V, LabelMissing> {
+    pub fn label_fn(
+        self,
+        label_fn: impl Fn(&V) -> String + 'static,
+    ) -> PickerBuilder<V, LabelProvided> {
+        PickerBuilder {
+            value: self.value,
+            options: self.options,
+            picker_kind: self.picker_kind,
+            label_fn: Some(Arc::new(label_fn)),
+            _marker: PhantomData,
+        }
+    }
+}
+
+impl<V: Clone + PartialEq + Display + 'static> PickerBuilder<V, LabelMissing> {
+    pub fn build(
+        self,
+        focus_handle: FocusHandle,
+        window: &mut Window,
+        cx: &mut Context<InputState<Picker<V>>>,
+    ) -> Picker<V> {
+        self.label_fn(|v| v.to_string()).build(focus_handle, window, cx)
+    }
+}
+
+impl<V: Clone + PartialEq + 'static> PickerBuilder<V, LabelProvided> {
+    pub fn build(
+        self,
+        focus_handle: FocusHandle,
+        _window: &mut Window,
+        cx: &mut Context<InputState<Picker<V>>>,
+    ) -> Picker<V> {
+        let value = cx.new(|_| self.value);
+        Picker {
+            value,
+            options: self.options,
+            focus_handle,
+            picker_kind: self.picker_kind,
+            is_opened: false,
+            label_fn: self.label_fn.expect("LabelProvided bound should mean this is valid"),
+        }
+    }
+}
+
+impl<V: Clone + PartialEq + 'static> InputDelegate for Picker<V> {
     type Value = V;
 
     fn new_element(
@@ -117,18 +172,18 @@ impl<V: PickerValue + 'static> InputDelegate for Picker<V> {
     }
 }
 
-impl<V: PickerValue + 'static> Focusable for Picker<V> {
+impl<V: Clone + PartialEq + 'static> Focusable for Picker<V> {
     fn focus_handle(&self, _cx: &App) -> FocusHandle {
         self.focus_handle.clone()
     }
 }
 
 #[derive(IntoElement)]
-struct PickerElement<V: PickerValue + 'static> {
+struct PickerElement<V: Clone + PartialEq + 'static> {
     state: Entity<InputState<Picker<V>>>,
 }
 
-impl<V: PickerValue + 'static> RenderOnce for PickerElement<V> {
+impl<V: Clone + PartialEq + 'static> RenderOnce for PickerElement<V> {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let picker_kind = self.state.read(cx).picker_kind;
 
@@ -139,19 +194,28 @@ impl<V: PickerValue + 'static> RenderOnce for PickerElement<V> {
     }
 }
 
-impl<V: PickerValue + 'static> PickerElement<V> {
+impl<V: Clone + PartialEq + 'static> PickerElement<V> {
     fn render_dropdown(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let id = ElementId::View(self.state.entity_id());
         let focus_handle = self.state.focus_handle(cx).clone();
-        let open = self.state.read(cx).is_opened;
-        let variants = V::variants();
+
+        let (open, variants, label_fn) = {
+            let state = self.state.read(cx);
+            (state.is_opened, state.options.clone(), state.label_fn.clone())
+        };
+
+        let current_value_label = {
+            let state = self.state.read(cx);
+            let v = state.value.read(cx);
+            (state.label_fn)(v)
+        };
 
         let preview = h_flex()
             .size_full()
             .overflow_x_hidden()
             .whitespace_nowrap()
             .text_ellipsis() // FIXME: Why the fuck does this never properly work.
-            .child(self.state.read(cx).value.read(cx).label());
+            .child(current_value_label);
 
         let icon = Icon::new(IconVariant::ChevronDown, IconSize::Small);
 
@@ -165,7 +229,7 @@ impl<V: PickerValue + 'static> PickerElement<V> {
                     .min_w_full()
                     .child(div().flex().flex_col().gap_1().child(div().children(
                         variants.into_iter().enumerate().map(|(ix, variant)| {
-                            let label = variant.label();
+                            let label = label_fn(&variant);
                             div()
                                 .group("picker-list")
                                 .px_1()
@@ -243,7 +307,11 @@ impl<V: PickerValue + 'static> PickerElement<V> {
     fn render_inline(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let id = ElementId::View(self.state.entity_id());
         let focus_handle = self.state.focus_handle(cx);
-        let variants = V::variants();
+
+        let (variants, label_fn) = {
+            let state = self.state.read(cx);
+            (state.options.clone(), state.label_fn.clone())
+        };
 
         div()
             .id(id)
@@ -252,8 +320,7 @@ impl<V: PickerValue + 'static> PickerElement<V> {
             .w_full()
             .child(container(window, cx).w_full().p_1().flex().gap_1().children(
                 variants.into_iter().enumerate().map(|(ix, variant)| {
-                    let label = variant.label();
-
+                    let label = label_fn(&variant);
                     let selected = self.state.read(cx).value(cx) == &variant;
 
                     Button::new(("picker-value", ix), cx.focus_handle())
