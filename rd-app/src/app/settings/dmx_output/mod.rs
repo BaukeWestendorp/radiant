@@ -6,7 +6,7 @@ mod artnet;
 
 pub struct DmxOutputTabView {
     tabs: Entity<TabsState>,
-    artnet_tab: Entity<artnet::ArtnetOutputTabView>,
+    pub(crate) artnet_tab: Entity<artnet::ArtnetOutputTabView>,
 }
 
 impl DmxOutputTabView {

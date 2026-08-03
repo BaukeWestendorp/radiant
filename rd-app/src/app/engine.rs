@@ -1,4 +1,6 @@
-use gpui::{App, AppContext, Entity, EventEmitter, Global, ReadGlobal, Subscription, Window};
+use gpui::{
+    App, AppContext, Context, Entity, EventEmitter, Global, ReadGlobal, Subscription, Window,
+};
 
 pub(crate) fn init(engine: rd::Engine, cx: &mut App) {
     let engine_global = EngineGlobal::new(engine, cx);

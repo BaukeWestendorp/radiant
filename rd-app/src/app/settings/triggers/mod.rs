@@ -6,7 +6,7 @@ mod midi;
 
 pub struct TriggersTabView {
     tabs: Entity<TabsState>,
-    midi_tab: Entity<midi::MidiTabView>,
+    pub(crate) midi_tab: Entity<midi::MidiTabView>,
 }
 
 impl TriggersTabView {
