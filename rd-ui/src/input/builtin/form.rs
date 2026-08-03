@@ -121,7 +121,7 @@ impl<D: FormDelegate + 'static> RenderOnce for FormElement<D> {
                     Some(label) => {
                         Labelled::new(label, field.input, field.direction).into_any_element()
                     }
-                    None => field.input,
+                    None => h_flex().w_full().child(field.input).into_any_element(),
                 })
                 .collect::<Vec<_>>()
         });
@@ -161,16 +161,13 @@ impl Labelled {
 
 impl RenderOnce for Labelled {
     fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
-        let label = div().text_sm().text_color(cx.theme().fg_secondary).child(self.label);
-        let content = div().child(self.content);
+        let label =
+            h_flex().w_full().text_sm().text_color(cx.theme().fg_secondary).child(self.label);
+        let content = h_flex().w_full().child(self.content);
 
         match self.direction {
-            LayoutDirection::Vertical => {
-                v_flex().w_full().gap_1().child(label.w_full()).child(content.w_full())
-            }
-            LayoutDirection::Horizontal => {
-                h_flex().w_full().gap_2().child(label.w_full()).child(content.w_full())
-            }
+            LayoutDirection::Vertical => v_flex().w_full().gap_1().child(label).child(content),
+            LayoutDirection::Horizontal => h_flex().w_full().gap_2().child(label).child(content),
         }
     }
 }

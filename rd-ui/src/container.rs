@@ -6,7 +6,7 @@ use gpui::{
 use smallvec::SmallVec;
 
 use crate::util::FocusableExt;
-use crate::{ActiveTheme, HslaExt};
+use crate::{ActiveTheme, HslaExt, h_flex};
 
 pub fn container(window: &Window, cx: &App) -> Container {
     Container::new(window, cx)
@@ -231,45 +231,42 @@ impl RenderOnce for InteractiveContainer {
             style = style.disabled();
         }
 
-        div()
-            .child(
-                if self.disabled || self.selected {
-                    self.base
-                        .focusable()
-                        // We have to use this instead of .block_mouse_down()
-                        // because that implementation only blocks MouseButton::Left.
-                        .on_any_mouse_down(|_, _, cx| cx.stop_propagation())
-                } else if let Some(focus_handle) = &self.focus_handle {
-                    self.base.track_focus(focus_handle)
-                } else {
-                    self.base.focusable()
-                }
-                .bg(style.background)
-                .border_1()
-                .border_color(style.border)
-                .rounded(cx.theme().radius)
-                .text_color(style.text_color)
-                .overflow_hidden()
-                .occlude()
-                .when(self.disabled, |e| e.cursor_not_allowed())
-                .when(!self.disabled, |e| {
-                    let hover_active_style = if !is_focused && !self.selected {
-                        ContainerStyle::normal(window, cx)
-                    } else {
-                        style
-                    };
+        if self.disabled || self.selected {
+            self.base
+                .focusable()
+                // We have to use this instead of .block_mouse_down()
+                // because that implementation only blocks MouseButton::Left.
+                .on_any_mouse_down(|_, _, cx| cx.stop_propagation())
+        } else if let Some(focus_handle) = &self.focus_handle {
+            self.base.track_focus(focus_handle)
+        } else {
+            self.base.focusable()
+        }
+        .bg(style.background)
+        .border_1()
+        .border_color(style.border)
+        .rounded(cx.theme().radius)
+        .text_color(style.text_color)
+        .overflow_hidden()
+        .occlude()
+        .when(self.disabled, |e| e.cursor_not_allowed())
+        .when(!self.disabled, |e| {
+            let hover_active_style = if !is_focused && !self.selected {
+                ContainerStyle::normal(window, cx)
+            } else {
+                style
+            };
 
-                    e.hover(|e| {
-                        e.bg(hover_active_style.hovered().background)
-                            .border_color(hover_active_style.hovered().border)
-                    })
-                    .active(|e| {
-                        e.bg(hover_active_style.active().background)
-                            .border_color(hover_active_style.active().border)
-                    })
-                })
-                .children(self.children),
-            )
-            .focus_ring(is_focused, window, cx)
+            e.hover(|e| {
+                e.bg(hover_active_style.hovered().background)
+                    .border_color(hover_active_style.hovered().border)
+            })
+            .active(|e| {
+                e.bg(hover_active_style.active().background)
+                    .border_color(hover_active_style.active().border)
+            })
+        })
+        .children(self.children)
+        .focus_ring(is_focused, window, cx)
     }
 }

@@ -10,6 +10,8 @@ pub use delegate::*;
 pub use event::*;
 pub use state::*;
 
+use crate::h_flex;
+
 pub const INPUT_HEIGHT: gpui::Pixels = gpui::px(26.0);
 
 #[derive(IntoElement)]
@@ -25,7 +27,7 @@ impl<D: InputDelegate> Input<D> {
 
 impl<D: InputDelegate + 'static> RenderOnce for Input<D> {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
-        div().w_full().child(D::new_element(self.state, window, cx))
+        h_flex().w_full().child(D::new_element(self.state, window, cx))
     }
 }
 
