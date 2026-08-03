@@ -117,31 +117,25 @@ fn expand_struct_form_impl(
     let mut extract_fields = Vec::new();
     let mut field_builds = Vec::new();
     let mut form_struct_inits = Vec::new();
+    let mut first_form_field_ident = None;
 
     for (f_idx, field) in data.fields.iter().enumerate() {
         let ty = &field.ty;
 
-        let mut f_label =
-            if let Some(ident) = &field.ident { ident.to_string() } else { f_idx.to_string() };
-
-        for attr in &field.attrs {
-            if attr.path().is_ident("rd_ui") {
-                let _ = attr.parse_nested_meta(|meta| {
-                    if meta.path.is_ident("label") {
-                        let value = meta.value()?;
-                        let lit: syn::LitStr = value.parse()?;
-                        f_label = lit.value();
-                    }
-                    Ok(())
-                });
-            }
-        }
+        let f_label = parse_rd_ui_label(
+            &field.attrs,
+            if let Some(ident) = &field.ident { ident.to_string() } else { f_idx.to_string() },
+        );
 
         let form_field_ident = if let Some(ident) = &field.ident {
             ident.clone()
         } else {
             format_ident!("f{}", f_idx)
         };
+
+        if first_form_field_ident.is_none() {
+            first_form_field_ident = Some(form_field_ident.clone());
+        }
 
         form_fields.push(quote! {
             #form_field_ident: ::rd_ui::gpui::Entity<::rd_ui::InputState<<#ty as ::rd_ui::AutoInput>::Delegate>>
@@ -161,11 +155,13 @@ fn expand_struct_form_impl(
         form_struct_inits.push(quote! { #form_field_ident });
 
         fields_push.push(quote! {
-            fields.push(::rd_ui::FormField::new(
-                #f_label,
-                ::rd_ui::Input::new(self.#form_field_ident.clone()),
-                cx
-            ));
+            fields.push(
+                ::rd_ui::FormField::new(
+                    ::rd_ui::Input::new(self.#form_field_ident.clone()),
+                    cx
+                )
+                .with_label(#f_label)
+            );
         });
 
         let extract_val =
@@ -181,6 +177,14 @@ fn expand_struct_form_impl(
         Fields::Named(_) => quote! { #name { #( #extract_fields ),* } },
         Fields::Unnamed(_) => quote! { #name( #( #extract_fields ),* ) },
         Fields::Unit => quote! { #name },
+    };
+
+    let preferred_focus_handle = if let Some(first_form_field_ident) = first_form_field_ident {
+        quote! {
+            Some(::rd_ui::gpui::Focusable::focus_handle(&self.#first_form_field_ident, cx))
+        }
+    } else {
+        quote! { None }
     };
 
     quote! {
@@ -200,6 +204,13 @@ fn expand_struct_form_impl(
             fn extract_data(&self, cx: &::rd_ui::gpui::App) -> Option<Self::Data> {
                 use ::rd_ui::InputDelegate as _;
                 Some(#extract_expr)
+            }
+
+            fn preferred_focus_handle(
+                &self,
+                cx: &::rd_ui::gpui::App,
+            ) -> Option<::rd_ui::gpui::FocusHandle> {
+                #preferred_focus_handle
             }
         }
 
@@ -244,6 +255,7 @@ fn expand_tagged_form_impl(
     let mut form_fields = Vec::new();
     let mut fields_match_arms = Vec::new();
     let mut extract_match_arms = Vec::new();
+    let mut preferred_focus_match_arms = Vec::new();
 
     let mut init_extractions = Vec::new();
     let mut field_builds = Vec::new();
@@ -263,6 +275,9 @@ fn expand_tagged_form_impl(
             from_arms.push(quote! { #name::#v_ident => #kind_name::#v_ident });
             fields_match_arms.push(quote! { #kind_name::#v_ident => {} });
             extract_match_arms.push(quote! { #kind_name::#v_ident => Some(#name::#v_ident) });
+            preferred_focus_match_arms.push(quote! {
+                #kind_name::#v_ident => Some(::rd_ui::gpui::Focusable::focus_handle(&self.kind, cx))
+            });
             continue;
         }
 
@@ -299,6 +314,8 @@ fn expand_tagged_form_impl(
             field_labels.push(f_label);
             form_field_idents.push(form_field_ident);
         }
+
+        let first_form_field_ident = form_field_idents[0].clone();
 
         let is_named = matches!(variant.fields, Fields::Named(_));
         let pat = if is_named {
@@ -338,6 +355,12 @@ fn expand_tagged_form_impl(
                     let #original_field_binds = self.#form_field_idents.read(cx).delegate().value_or_default(cx).clone();
                 )*
                 Some(#name::#v_ident #pat)
+            }
+        });
+
+        preferred_focus_match_arms.push(quote! {
+            #kind_name::#v_ident => {
+                Some(::rd_ui::gpui::Focusable::focus_handle(&self.#first_form_field_ident, cx))
             }
         });
 
@@ -444,6 +467,15 @@ fn expand_tagged_form_impl(
                 let kind = self.kind.read(cx).value(cx).clone();
                 match kind {
                     #( #extract_match_arms, )*
+                }
+            }
+
+            fn preferred_focus_handle(
+                &self,
+                cx: &::rd_ui::gpui::App,
+            ) -> Option<::rd_ui::gpui::FocusHandle> {
+                match self.kind.read(cx).value(cx) {
+                    #( #preferred_focus_match_arms, )*
                 }
             }
         }

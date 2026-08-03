@@ -38,10 +38,18 @@ impl FormField {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum LayoutDirection {
+    #[default]
     Vertical,
     Horizontal,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum FormFocusBehavior {
+    #[default]
+    FirstField,
+    Form,
 }
 
 pub trait FormDelegate {
@@ -50,12 +58,16 @@ pub trait FormDelegate {
     fn fields(&self, cx: &mut App) -> Vec<FormField>;
 
     fn extract_data(&self, cx: &App) -> Option<Self::Data>;
+
+    fn preferred_focus_handle(&self, _cx: &App) -> Option<FocusHandle> {
+        None
+    }
 }
 
 pub struct Form<D: FormDelegate> {
     delegate: D,
-
     focus_handle: FocusHandle,
+    focus_behavior: FormFocusBehavior,
 }
 
 impl<D: FormDelegate + 'static> Form<D> {
@@ -65,7 +77,7 @@ impl<D: FormDelegate + 'static> Form<D> {
         _window: &mut Window,
         _cx: &mut Context<InputState<Self>>,
     ) -> Self {
-        Self { delegate, focus_handle }
+        Self { delegate, focus_handle, focus_behavior: FormFocusBehavior::default() }
     }
 
     pub fn delegate(&self) -> &D {
@@ -99,8 +111,14 @@ impl<D: FormDelegate + 'static> InputDelegate for Form<D> {
 }
 
 impl<D: FormDelegate + 'static> Focusable for Form<D> {
-    fn focus_handle(&self, _cx: &App) -> FocusHandle {
-        self.focus_handle.clone()
+    fn focus_handle(&self, cx: &App) -> FocusHandle {
+        match self.focus_behavior {
+            FormFocusBehavior::FirstField => self
+                .delegate
+                .preferred_focus_handle(cx)
+                .unwrap_or_else(|| self.focus_handle.clone()),
+            FormFocusBehavior::Form => self.focus_handle.clone(),
+        }
     }
 }
 

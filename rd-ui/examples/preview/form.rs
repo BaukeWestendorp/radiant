@@ -1,4 +1,4 @@
-use gpui::{App, Entity, Window, div, prelude::*};
+use gpui::{App, Entity, FocusHandle, Focusable, Window, div, prelude::*};
 use rd_ui::{Field, Form, FormDelegate, FormField, Input, InputEvent, InputState, Picker, Slider};
 
 pub struct FormPreview {
@@ -100,6 +100,10 @@ impl FormDelegate for PreviewForm {
             name: self.name.read(cx).value(cx)?.clone(),
             slider: self.slider.read(cx).value(cx)?.clone(),
         })
+    }
+
+    fn preferred_focus_handle(&self, cx: &App) -> Option<FocusHandle> {
+        Some(self.enum_value.focus_handle(cx))
     }
 }
 

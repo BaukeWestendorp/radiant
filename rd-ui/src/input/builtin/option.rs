@@ -1,4 +1,4 @@
-use gpui::{App, Entity, Window, prelude::*};
+use gpui::{App, Entity, Focusable, Window, prelude::*};
 
 use crate::{AutoInput, Form, FormDelegate, FormField, Input, InputDelegate, InputState, Picker};
 
@@ -30,6 +30,14 @@ impl<T: AutoInput + Default + Clone> FormDelegate for OptionInput<T> {
                 let inner_val = self.value.read(cx).delegate().value_or_default(cx).clone();
                 Some(Some(inner_val))
             }
+        }
+    }
+
+    fn preferred_focus_handle(&self, cx: &App) -> Option<gpui::FocusHandle> {
+        if self.has_value.read(cx).value(cx).clone() {
+            Some(self.value.focus_handle(cx))
+        } else {
+            Some(self.has_value.focus_handle(cx))
         }
     }
 }

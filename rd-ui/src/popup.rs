@@ -1,8 +1,9 @@
 use std::{collections::HashMap, rc::Rc};
 
 use gpui::{
-    AnyView, AnyWindowHandle, App, BoxShadow, Context, Entity, Focusable, FontWeight, Global,
-    IntoElement, ReadGlobal, SharedString, Styled, Window, div, hsla, point, prelude::*, px,
+    AnyView, AnyWindowHandle, App, BoxShadow, Context, Entity, FocusHandle, Focusable, FontWeight,
+    Global, IntoElement, ReadGlobal, SharedString, Styled, Window, div, hsla, point, prelude::*,
+    px,
 };
 
 use crate::{
@@ -117,19 +118,19 @@ impl Popup {
     {
         let on_submit = Rc::new(on_submit);
 
-        window.defer(cx, {
-            let input = input.clone();
-            move |window, cx| {
-                input.focus_handle(cx).focus(window, cx);
-            }
-        });
-
         let form = cx.new(|cx| {
             InputState::new(
                 Form::new(InputPopupForm { input: input.clone() }, cx.focus_handle(), window, cx),
                 window,
                 cx,
             )
+        });
+
+        window.defer(cx, {
+            let form = form.clone();
+            move |window, cx| {
+                form.focus_handle(cx).focus(window, cx);
+            }
         });
 
         window
@@ -275,6 +276,10 @@ where
 
     fn extract_data(&self, cx: &App) -> Option<Self::Data> {
         Some(self.input.read(cx).value_or_default(cx))
+    }
+
+    fn preferred_focus_handle(&self, cx: &App) -> Option<FocusHandle> {
+        Some(self.input.focus_handle(cx))
     }
 }
 

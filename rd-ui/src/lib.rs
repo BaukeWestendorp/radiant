@@ -29,8 +29,8 @@ pub use container::{ContainerStyle, container, interactive_container};
 pub use grid::{dot_grid, line_grid, scrollable_line_grid};
 pub use icon::{Icon, IconSize, IconVariant};
 pub use input::{
-    AutoInput, Field, FieldValue, Form, FormDelegate, FormField, INPUT_HEIGHT, Input,
-    InputDelegate, InputEvent, InputState, Labelled, LayoutDirection, OptionInput, Picker,
+    AutoInput, Field, FieldValue, Form, FormDelegate, FormField, FormFocusBehavior, INPUT_HEIGHT,
+    Input, InputDelegate, InputEvent, InputState, Labelled, LayoutDirection, OptionInput, Picker,
     PickerKind, Slider, SliderValue, TextInput,
 };
 pub use keymap::{Keymap, KeymapBinding};
