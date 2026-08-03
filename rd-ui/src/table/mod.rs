@@ -344,12 +344,27 @@ impl<D: TableDelegate> Table<D> {
             .border_t_1()
             .border_color(cx.theme().border_secondary)
             .px_2()
-            .child(div().text_color(cx.theme().fg_secondary).child(format!(
-                "{}/{} row{} selected",
-                self.state.read(cx).selection().read(cx).count(),
-                row_count,
-                if row_count == 1 { "" } else { "s" }
-            )))
+            .child(
+                div()
+                    .flex()
+                    .text_color(cx.theme().fg_secondary)
+                    .child({
+                        let count = self.state.read(cx).selection().read(cx).count();
+                        div()
+                            .text_color(if count == 0 {
+                                cx.theme().fg_secondary
+                            } else {
+                                cx.theme().accent
+                            })
+                            .child(format!("{}", count))
+                    })
+                    .child(div().child("/"))
+                    .child(format!(
+                        "{} row{} selected",
+                        row_count,
+                        if row_count == 1 { "" } else { "s" }
+                    )),
+            )
             .child(
                 div()
                     .flex()
