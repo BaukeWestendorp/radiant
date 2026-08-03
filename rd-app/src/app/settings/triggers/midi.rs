@@ -88,7 +88,9 @@ impl MidiMappingTable {
         Self {
             columns: vec![
                 Column::<Self>::new("device_name", "Device Name")
-                    .with_sort_handler(|a, b| natord::compare(&a.device_name, &b.device_name))
+                    .with_sort_handler(|a, b| {
+                        natord::compare_ignore_case(&a.device_name, &b.device_name)
+                    })
                     .with_cell_builder(|row, _window, _cx| {
                         row.device_name.to_string().into_any_element()
                     }),

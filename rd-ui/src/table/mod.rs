@@ -441,11 +441,9 @@ impl<D: TableDelegate + 'static> RenderOnce for Table<D> {
             .on_action::<crate::action::ClearSelection>({
                 let state = self.state.clone();
                 move |_, _, cx| {
-                    state.update(cx, |state, cx| {
-                        state.selection().update(cx, |selection, cx| {
-                            selection.clear();
-                            cx.notify();
-                        });
+                    state.read(cx).selection().clone().update(cx, |selection, cx| {
+                        selection.clear();
+                        cx.notify();
                     });
                 }
             })
@@ -468,6 +466,7 @@ impl<D: TableDelegate + 'static> RenderOnce for Table<D> {
 
                             cx.notify();
                         });
+                        cx.notify();
                     });
                 }
             })

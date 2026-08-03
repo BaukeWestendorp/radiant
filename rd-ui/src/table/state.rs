@@ -25,6 +25,26 @@ impl<D: TableDelegate + 'static> TableState<D> {
         let first_sortable_column_id =
             delegate.columns(cx).find(|col| col.sortable()).map(|col| col.id().to_string());
 
+        cx.observe(&delegate.rows(), |this, _, cx| {
+            let rows = this.delegate.rows().clone();
+            this.selection().update(cx, |selection, cx| {
+                let mut should_clear = false;
+                for row_id in selection.row_ids() {
+                    if !rows.read(cx).contains_key(row_id) {
+                        should_clear = true;
+                        break;
+                    }
+                }
+
+                if should_clear {
+                    selection.clear();
+                    cx.notify();
+                }
+            });
+            cx.notify();
+        })
+        .detach();
+
         let mut this = Self {
             delegate,
 
