@@ -1,5 +1,4 @@
 use gpui::{Entity, Window, div, prelude::*};
-use rd::Project;
 use rd_ui::{IconVariant, Tab, Tabs, TabsState, TabsVariant};
 
 mod artnet;
@@ -11,7 +10,7 @@ pub struct DmxOutputTabView {
 
 impl DmxOutputTabView {
     pub fn new(
-        uncommitted_project: Entity<Project>,
+        uncommitted_project: Entity<rd::Project>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {

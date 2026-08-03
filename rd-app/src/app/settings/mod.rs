@@ -1,5 +1,4 @@
 use gpui::{Entity, Window, prelude::*, px};
-use rd::Project;
 use rd_ui::{
     ActiveTheme, Button, ButtonVariant, IconVariant, Tab, Tabs, TabsState, h_flex, v_flex,
 };
@@ -13,7 +12,7 @@ pub struct SettingsRootView {
     tabs: Entity<TabsState>,
     triggers_tab: Entity<triggers::TriggersTabView>,
     dmx_output_tab: Entity<dmx_output::DmxOutputTabView>,
-    uncommitted_project: Entity<Project>,
+    uncommitted_project: Entity<rd::Project>,
 }
 
 impl SettingsRootView {

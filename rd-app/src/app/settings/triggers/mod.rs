@@ -1,5 +1,4 @@
 use gpui::{Entity, Window, div, prelude::*};
-use rd::Project;
 use rd_ui::{IconVariant, Tab, Tabs, TabsState, TabsVariant};
 
 mod midi;
@@ -11,7 +10,7 @@ pub struct TriggersTabView {
 
 impl TriggersTabView {
     pub fn new(
-        uncommitted_project: Entity<Project>,
+        uncommitted_project: Entity<rd::Project>,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {

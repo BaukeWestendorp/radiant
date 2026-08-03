@@ -87,10 +87,10 @@ impl FormDelegate for PreviewForm {
 
     fn fields(&self, cx: &mut App) -> Vec<FormField> {
         vec![
-            FormField::new("Enum Value", Input::new(self.enum_value.clone()), cx),
-            FormField::new("Name", Input::new(self.name.clone()), cx),
-            FormField::new("Slider", Input::new(self.slider.clone()), cx),
-            FormField::new("Picker", Input::new(self.picker.clone()), cx),
+            FormField::new(Input::new(self.enum_value.clone()), cx).with_label("Enum Value"),
+            FormField::new(Input::new(self.name.clone()), cx).with_label("Name"),
+            FormField::new(Input::new(self.slider.clone()), cx).with_label("Slider"),
+            FormField::new(Input::new(self.picker.clone()), cx).with_label("Picker"),
         ]
     }
 

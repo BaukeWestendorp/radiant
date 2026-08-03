@@ -310,10 +310,9 @@ fn expand_tagged_form_impl(
             #kind_name::#v_ident => {
                 #(
                     fields.push(::rd_ui::FormField::new(
-                        #field_labels,
                         ::rd_ui::Input::new(self.#form_field_idents.clone()),
                         cx
-                    ));
+                    ).with_label((#field_labels)));
                 )*
             }
         });
@@ -377,10 +376,9 @@ fn expand_tagged_form_impl(
             fn fields(&self, cx: &mut ::rd_ui::gpui::App) -> Vec<::rd_ui::FormField> {
                 let mut fields = vec![
                     ::rd_ui::FormField::new(
-                        "Kind",
                         ::rd_ui::Input::new(self.kind.clone()),
                         cx
-                    ).with_label_hidden(true)
+                    )
                 ];
 
                 match self.kind.read(cx).value(cx) {

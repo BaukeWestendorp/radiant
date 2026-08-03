@@ -6,18 +6,13 @@ use gpui::{
 use crate::{ActiveTheme, Button, Input, InputDelegate, InputEvent, InputState, h_flex, v_flex};
 
 pub struct FormField {
-    label: SharedString,
-    label_hidden: bool,
+    label: Option<SharedString>,
     input: AnyElement,
     direction: LayoutDirection,
 }
 
 impl FormField {
-    pub fn new<D: InputDelegate>(
-        label: impl Into<SharedString>,
-        input: Input<D>,
-        cx: &mut App,
-    ) -> Self {
+    pub fn new<D: InputDelegate>(input: Input<D>, cx: &mut App) -> Self {
         input.state.update(cx, |input, _| {
             input.set_is_root_input(false);
         });
@@ -29,16 +24,11 @@ impl FormField {
             .form_layout_direction()
             .unwrap_or(LayoutDirection::Vertical);
 
-        Self {
-            label: label.into(),
-            label_hidden: false,
-            input: input.into_any_element(),
-            direction,
-        }
+        Self { label: None, input: input.into_any_element(), direction }
     }
 
-    pub fn with_label_hidden(mut self, hidden: bool) -> Self {
-        self.label_hidden = hidden;
+    pub fn with_label(mut self, label: impl Into<SharedString>) -> Self {
+        self.label = Some(label.into());
         self
     }
 
@@ -127,7 +117,12 @@ impl<D: FormDelegate + 'static> RenderOnce for FormElement<D> {
                 .delegate()
                 .fields(cx)
                 .into_iter()
-                .map(|field| Labelled::new(field.label, field.input, field.direction))
+                .map(|field| match field.label {
+                    Some(label) => {
+                        Labelled::new(label, field.input, field.direction).into_any_element()
+                    }
+                    None => field.input,
+                })
                 .collect::<Vec<_>>()
         });
 

@@ -5,7 +5,10 @@ use gpui::{
     IntoElement, ReadGlobal, SharedString, Styled, Window, div, hsla, point, prelude::*, px,
 };
 
-use crate::{ActiveTheme, Button, InputDelegate, InputEvent, h_flex, input::InputState, v_flex};
+use crate::{
+    ActiveTheme, Button, Form, FormDelegate, FormField, Input, InputDelegate, InputEvent, h_flex,
+    input::InputState, v_flex,
+};
 
 pub(crate) fn init(cx: &mut App) {
     let popup_stacks = cx.new(|_| HashMap::new());
@@ -19,7 +22,7 @@ pub trait PopupAppExt {
         popup_builder: F,
     );
 
-    fn close_popup(&mut self, window: &mut Window);
+    fn close_popup(&mut self, reason: PopupCloseReason, window: &mut Window);
 }
 
 impl PopupAppExt for App {
@@ -36,13 +39,13 @@ impl PopupAppExt for App {
         });
     }
 
-    fn close_popup(&mut self, window: &mut Window) {
+    fn close_popup(&mut self, reason: PopupCloseReason, window: &mut Window) {
         PopupGlobal::global(self).popup_stacks.clone().update(self, |stacks, cx| {
             if let Some(stack) = stacks.get_mut(&window.window_handle()) {
                 if let Some(popped) = stack.pop() {
                     popped.update(cx, |popped, cx| {
                         if let Some(on_close) = popped.on_close.take() {
-                            on_close(window, cx);
+                            on_close(reason, window, cx);
                         }
                     });
                 }
@@ -76,7 +79,7 @@ pub(crate) fn render_overlay(
             .occlude()
             .size_full()
             .bg(gpui::black().opacity(0.25))
-            .on_any_mouse_down(|_, window, cx| cx.close_popup(window))
+            .on_any_mouse_down(|_, window, cx| cx.close_popup(PopupCloseReason::Dismissed, window))
             .child(popup)
     }))
 }
@@ -84,7 +87,13 @@ pub(crate) fn render_overlay(
 pub struct Popup {
     title: SharedString,
     kind: PopupKind,
-    on_close: Option<Box<dyn FnOnce(&mut Window, &mut App)>>,
+    on_close: Option<Box<dyn FnOnce(PopupCloseReason, &mut Window, &mut App)>>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PopupCloseReason {
+    Dismissed,
+    Submitted,
 }
 
 impl Popup {
@@ -115,22 +124,47 @@ impl Popup {
             }
         });
 
+        let form = cx.new(|cx| {
+            InputState::new(
+                Form::new(InputPopupForm { input: input.clone() }, cx.focus_handle(), window, cx),
+                window,
+                cx,
+            )
+        });
+
         window
             .subscribe(&input, cx, {
                 let on_submit = Rc::clone(&on_submit);
                 move |_, event, window, cx| match event {
                     InputEvent::Submit(value) => {
                         on_submit(value, cx);
-                        cx.close_popup(window)
+                        cx.close_popup(PopupCloseReason::Submitted, window)
                     }
                     _ => {}
                 }
             })
             .detach();
 
-        let wrapper = cx.new(|_| InputPopup { input: input.clone() });
+        window
+            .subscribe(&form, cx, {
+                let on_submit = Rc::clone(&on_submit);
+                move |_, event, window, cx| match event {
+                    InputEvent::Submit(value) => {
+                        on_submit(value, cx);
+                        cx.close_popup(PopupCloseReason::Submitted, window)
+                    }
+                    _ => {}
+                }
+            })
+            .detach();
 
-        let on_close = move |_: &mut Window, cx: &mut App| {
+        let wrapper = cx.new(|_| InputPopup { input: form.clone() });
+
+        let on_close = move |reason: PopupCloseReason, _: &mut Window, cx: &mut App| {
+            if reason == PopupCloseReason::Submitted {
+                return;
+            }
+
             let value = input.read(cx).value_or_default(cx);
             (on_submit)(&value, cx);
         };
@@ -197,10 +231,9 @@ impl Render for Popup {
                             .text_center()
                             .child(message.clone()),
                     )
-                    .child(
-                        Button::new("close", cx.focus_handle())
-                            .on_click(|_, window, cx| cx.close_popup(window)),
-                    )
+                    .child(Button::new("close", cx.focus_handle()).on_click(|_, window, cx| {
+                        cx.close_popup(PopupCloseReason::Dismissed, window)
+                    }))
                     .into_any_element(),
                 PopupKind::Input { input } => input.clone().into_any_element(),
                 PopupKind::Custom { content } => content.clone().into_any_element(),
@@ -222,6 +255,26 @@ impl Render for Popup {
             })
             .child(header)
             .child(content)
+    }
+}
+
+struct InputPopupForm<S: InputDelegate> {
+    input: Entity<InputState<S>>,
+}
+
+impl<S> FormDelegate for InputPopupForm<S>
+where
+    S: InputDelegate + 'static,
+    S::Value: Default,
+{
+    type Data = S::Value;
+
+    fn fields(&self, cx: &mut App) -> Vec<FormField> {
+        vec![FormField::new(Input::new(self.input.clone()), cx)]
+    }
+
+    fn extract_data(&self, cx: &App) -> Option<Self::Data> {
+        Some(self.input.read(cx).value_or_default(cx))
     }
 }
 

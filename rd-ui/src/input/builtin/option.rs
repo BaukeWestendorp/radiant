@@ -11,11 +11,12 @@ impl<T: AutoInput + Default + Clone> FormDelegate for OptionInput<T> {
     type Data = Option<T>;
 
     fn fields(&self, cx: &mut App) -> Vec<FormField> {
-        let mut fields = vec![FormField::new("Has Value", Input::new(self.has_value.clone()), cx)];
+        let mut fields =
+            vec![FormField::new(Input::new(self.has_value.clone()), cx).with_label("Has Value")];
 
         let has_value = self.has_value.read(cx).value(cx).clone();
         if has_value {
-            fields.push(FormField::new("Value", Input::new(self.value.clone()), cx));
+            fields.push(FormField::new(Input::new(self.value.clone()), cx).with_label("Value"));
         }
 
         fields
