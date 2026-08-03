@@ -1,6 +1,4 @@
-use gpui::{
-    App, AppContext, Context, Entity, EventEmitter, Global, ReadGlobal, Subscription, Window,
-};
+use gpui::{App, AppContext, Entity, EventEmitter, Global, ReadGlobal};
 
 pub(crate) fn init(engine: rd::Engine, cx: &mut App) {
     let engine_global = EngineGlobal::new(engine, cx);
@@ -9,27 +7,11 @@ pub(crate) fn init(engine: rd::Engine, cx: &mut App) {
 
 pub trait EngineAppExt {
     fn engine(&self) -> &rd::Engine;
-
-    fn on_engine_event_in(
-        &mut self,
-        window: &mut Window,
-        handler: impl FnMut(&rd::Event, &mut Window, &mut App) + 'static,
-    ) -> Subscription;
 }
 
 impl EngineAppExt for App {
     fn engine(&self) -> &rd::Engine {
         &EngineGlobal::global(self).engine
-    }
-
-    fn on_engine_event_in(
-        &mut self,
-        window: &mut Window,
-        mut handler: impl FnMut(&rd::Event, &mut Window, &mut App) + 'static,
-    ) -> Subscription {
-        let event_buffer = EngineGlobal::global(self).event_buffer.clone();
-        window
-            .subscribe(&event_buffer, self, move |_, event, window, cx| handler(event, window, cx))
     }
 }
 
