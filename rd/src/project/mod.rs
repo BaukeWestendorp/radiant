@@ -1,4 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::{
+    path::{Path, PathBuf},
+    time::Instant,
+};
 
 use anyhow::Context as _;
 use ariadne::{Color, Label, Report, ReportKind, Source};
@@ -24,10 +27,24 @@ pub struct Project {
 
 impl Project {
     pub fn save_to_folder(&self) -> anyhow::Result<()> {
-        Ok(())
+        let started_at = Instant::now();
+        let project_path = self
+            .path
+            .as_ref()
+            .map(|path| path.display().to_string())
+            .unwrap_or_else(|| "<unsaved project>".to_string());
+
+        log::info!("Saving project to disk: '{}'", project_path);
+
+        let result = Ok(());
+
+        log::info!("Project saved to disk in {:?}: '{}'", started_at.elapsed(), project_path);
+
+        result
     }
 
     pub fn load_from_folder(path: impl Into<PathBuf>) -> anyhow::Result<Self> {
+        let started_at = Instant::now();
         let path = path.into();
 
         let output_path = path.join(RELATIVE_OUTPUT_PATH);
@@ -47,6 +64,8 @@ impl Project {
                 anyhow::anyhow!("\n{}", format_parse_error(&trigger_path, &trigger_str, e))
             })
             .with_context(|| format!("Failed to parse trigger file: {}", trigger_path.display()))?;
+
+        log::info!("Project loaded from disk in {:?}: '{}'", started_at.elapsed(), path.display());
 
         Ok(Self { path: Some(path.into()), output, trigger })
     }

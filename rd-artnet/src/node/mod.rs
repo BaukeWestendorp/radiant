@@ -46,10 +46,9 @@ impl Node {
         #[cfg(not(windows))]
         socket.set_reuse_port(true)?;
         socket.set_broadcast(true)?;
-        // Set a read timeout so the receiver thread can cleanly exit
-        // when checking stop_rx, otherwise it blocks forever on read.
-        // FIXME: This feels a bit hacky as it will take 500ms to shut down the Node.
-        socket.set_read_timeout(Some(Duration::from_millis(500)))?;
+        // Set a read timeout so the receiver thread can periodically check
+        // for shutdown while still using blocking socket reads.
+        socket.set_read_timeout(Some(Duration::from_millis(50)))?;
         socket.bind(&socket2::SockAddr::from(addr))?;
         let socket: UdpSocket = socket.into();
 
@@ -252,7 +251,10 @@ fn start_poller(inner: Arc<Inner>, stop_rx: flume::Receiver<()>) -> JoinHandle<(
             let now = Instant::now();
 
             if let Some(to_sleep) = next_tick.checked_duration_since(now) {
-                thread::sleep(to_sleep);
+                match stop_rx.recv_timeout(to_sleep) {
+                    Ok(()) | Err(flume::RecvTimeoutError::Disconnected) => break,
+                    Err(flume::RecvTimeoutError::Timeout) => {}
+                }
             } else {
                 log::warn!("Poller cycle overrun detected. Skipping sleep interval");
                 next_tick = now;

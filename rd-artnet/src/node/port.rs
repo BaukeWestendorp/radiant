@@ -119,7 +119,9 @@ impl PortManager {
                                 None
                             }
                             Err(flume::RecvError::Disconnected) => {
-                                log::error!("Frame scheduler notifier disconnected");
+                                log::debug!(
+                                    "Frame scheduler notifier disconnected during shutdown"
+                                );
                                 return Some(ControlFlow::Break(()));
                             }
                         })

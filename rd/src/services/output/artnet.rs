@@ -106,6 +106,7 @@ impl rd_service::Delegate for ArtnetOutputService {
     }
 
     fn on_stop(&self) -> Result<(), Self::Error> {
+        let _ = self.service_notify_tx.write().unwrap().take();
         let _ = self.node.write().unwrap().take();
         Ok(())
     }

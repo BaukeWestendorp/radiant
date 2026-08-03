@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use anyhow::Context;
 use rd_service::{Scheduled, Service};
@@ -130,6 +130,9 @@ struct EngineInner {
 
 impl EngineInner {
     pub fn load_project(&mut self, project: Project, commander: &Commander) -> anyhow::Result<()> {
+        let started_at = Instant::now();
+        let project_path = project_path_label(&project);
+
         if self.is_dirty {
             self.unload_project()?;
         }
@@ -137,14 +140,7 @@ impl EngineInner {
         self.services = Services::new(&self.project, commander.clone());
         self.start()?;
 
-        log::info!(
-            "Project loaded: '{}'",
-            self.project
-                .path
-                .as_ref()
-                .map(|p| p.display().to_string())
-                .unwrap_or("<unsaved project>".to_string())
-        );
+        log::info!("Project loaded in {:?}: '{}'", started_at.elapsed(), project_path);
 
         self.emit(Event::ProjectLoaded);
 
@@ -152,18 +148,14 @@ impl EngineInner {
     }
 
     pub fn unload_project(&mut self) -> anyhow::Result<Project> {
+        let started_at = Instant::now();
+        let project_path = project_path_label(&self.project);
+
         self.stop()?;
         self.services = Services::default();
         let old_project = std::mem::take(&mut self.project);
 
-        log::info!(
-            "Project unloaded: '{}'",
-            self.project
-                .path
-                .as_ref()
-                .map(|p| p.display().to_string())
-                .unwrap_or("<unsaved project>".to_string())
-        );
+        log::info!("Project unloaded in {:?}: '{}'", started_at.elapsed(), project_path);
 
         self.emit(Event::ProjectUnloaded);
 
@@ -171,17 +163,13 @@ impl EngineInner {
     }
 
     pub fn reload_project(&mut self, commander: &Commander) -> anyhow::Result<()> {
+        let started_at = Instant::now();
+        let project_path = project_path_label(&self.project);
+
         let project = self.unload_project()?;
         self.load_project(project, commander)?;
 
-        log::info!(
-            "Project reloaded: '{}'",
-            self.project
-                .path
-                .as_ref()
-                .map(|p| p.display().to_string())
-                .unwrap_or("<unsaved project>".to_string())
-        );
+        log::info!("Project reloaded in {:?}: '{}'", started_at.elapsed(), project_path);
 
         self.emit(Event::ProjectReloaded);
 
@@ -196,9 +184,11 @@ impl EngineInner {
                 self.emit(Event::HighlightChanged { highlight: self.highlight });
             }
             Command::Save { path } => {
+                let started_at = Instant::now();
                 self.project
                     .save_to_folder()
                     .with_context(|| format!("Saving project to '{}'", path.display()))?;
+                log::info!("Project saved in {:?}: '{}'", started_at.elapsed(), path.display());
                 self.emit(Event::Saved { path: path.to_owned() });
                 self.is_dirty = false;
             }
@@ -211,16 +201,32 @@ impl EngineInner {
     }
 
     fn start(&mut self) -> anyhow::Result<()> {
+        let started_at = Instant::now();
+
+        let output_started_at = Instant::now();
         self.services.output.start().context("Output service failed to start")?;
+        log::info!("Output service started in {:?}", output_started_at.elapsed());
+
+        let trigger_started_at = Instant::now();
         self.services.trigger.start().context("Trigger service failed to start")?;
-        log::debug!("All services started successfully");
+        log::info!("Trigger service started in {:?}", trigger_started_at.elapsed());
+
+        log::info!("All services started in {:?}", started_at.elapsed());
         Ok::<(), anyhow::Error>(()).context("Services failed to start")
     }
 
     fn stop(&mut self) -> anyhow::Result<()> {
+        let started_at = Instant::now();
+
+        let output_started_at = Instant::now();
         self.services.output.stop().context("Output service failed to stop")?;
+        log::info!("Output service stopped in {:?}", output_started_at.elapsed());
+
+        let trigger_started_at = Instant::now();
         self.services.trigger.stop().context("Trigger service failed to stop")?;
-        log::debug!("All services stopped successfully");
+        log::info!("Trigger service stopped in {:?}", trigger_started_at.elapsed());
+
+        log::info!("All services stopped in {:?}", started_at.elapsed());
         Ok::<(), anyhow::Error>(()).context("Services failed to stop")
     }
 
@@ -252,6 +258,14 @@ impl Services {
             ),
         }
     }
+}
+
+fn project_path_label(project: &Project) -> String {
+    project
+        .path
+        .as_ref()
+        .map(|p| p.display().to_string())
+        .unwrap_or_else(|| "<unsaved project>".to_string())
 }
 
 impl Default for Services {
