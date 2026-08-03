@@ -6,14 +6,14 @@ use crate::Project;
 #[derive(facet::Facet)]
 #[facet(tag = "type")]
 #[repr(C)]
-pub enum Command {
+pub enum EngineCommand {
     HighlightToggle,
 
     Save { path: PathBuf },
 }
 
 pub(crate) enum EngineRequest {
-    Execute { command: Command, reply_tx: Option<flume::Sender<anyhow::Result<()>>> },
+    Execute { command: EngineCommand, reply_tx: Option<flume::Sender<anyhow::Result<()>>> },
     LoadProject { project: Project, reply_tx: flume::Sender<anyhow::Result<()>> },
     ReplaceProject { project: Project, reply_tx: flume::Sender<anyhow::Result<()>> },
     UnloadProject { reply_tx: flume::Sender<anyhow::Result<Project>> },
@@ -21,21 +21,21 @@ pub(crate) enum EngineRequest {
     Stop,
 }
 
-pub struct Commander {
+pub struct EngineDispatcher {
     tx: flume::Sender<EngineRequest>,
 }
 
-impl Commander {
+impl EngineDispatcher {
     pub(crate) fn new(tx: flume::Sender<EngineRequest>) -> Self {
         Self { tx }
     }
 
-    pub fn execute(&self, command: Command) {
+    pub fn execute(&self, command: EngineCommand) {
         let _ = self.tx.send(EngineRequest::Execute { command, reply_tx: None });
     }
 }
 
-impl Default for Commander {
+impl Default for EngineDispatcher {
     fn default() -> Self {
         let (tx, rx) = flume::unbounded();
         drop(rx);
@@ -43,7 +43,7 @@ impl Default for Commander {
     }
 }
 
-impl Clone for Commander {
+impl Clone for EngineDispatcher {
     fn clone(&self) -> Self {
         Self { tx: flume::Sender::clone(&self.tx) }
     }

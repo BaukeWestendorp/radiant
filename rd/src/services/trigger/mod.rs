@@ -4,7 +4,7 @@ use rd_midi::MidiInputServiceRunner;
 use rd_service::Service;
 
 use crate::{
-    Command, Commander, ExecutorButton, ExecutorId, project,
+    EngineCommand, EngineDispatcher, ExecutorButton, ExecutorId, project,
     services::trigger::midi::MidiTriggerService,
 };
 
@@ -21,18 +21,18 @@ pub enum Trigger {
 }
 
 pub struct TriggerService {
-    commander: Commander,
+    dispatcher: EngineDispatcher,
 }
 
 impl TriggerService {
-    pub fn new(commander: Commander) -> Self {
-        Self { commander }
+    pub fn new(dispatcher: EngineDispatcher) -> Self {
+        Self { dispatcher }
     }
 }
 
 impl Default for TriggerService {
     fn default() -> Self {
-        Self { commander: Commander::default() }
+        Self { dispatcher: EngineDispatcher::default() }
     }
 }
 
@@ -47,7 +47,7 @@ impl rd_service::Delegate for TriggerService {
     fn on_frame(&self, trigger: Trigger) -> Result<(), Self::Error> {
         match trigger {
             Trigger::ToggleHighlight => {
-                self.commander.execute(Command::HighlightToggle);
+                self.dispatcher.execute(EngineCommand::HighlightToggle);
             }
 
             Trigger::ExecutorMaster { executor_id, value } => {

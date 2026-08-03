@@ -15,7 +15,7 @@ gpui::actions!(cmd, [Save, Highlight]);
 pub(crate) fn init(cx: &mut App) {
     cx.on_action::<Save>(|_, cx| match cx.engine().with_project(|p| p.path.clone()) {
         Some(path) => {
-            cx.engine().execute(rd::Command::Save { path });
+            cx.engine().execute(rd::EngineCommand::Save { path });
         }
         None => {
             let path_prompt = cx.prompt_for_new_path(Path::new(""), None);
@@ -23,7 +23,7 @@ pub(crate) fn init(cx: &mut App) {
                 Ok(Ok(path)) => match path {
                     Some(path) => {
                         cx.update(|cx| {
-                            cx.engine().execute(rd::Command::Save { path });
+                            cx.engine().execute(rd::EngineCommand::Save { path });
                         });
                     }
                     None => {
@@ -43,7 +43,7 @@ pub(crate) fn init(cx: &mut App) {
     });
 
     cx.on_action::<Highlight>(|_, cx| {
-        cx.engine().execute(rd::Command::HighlightToggle);
+        cx.engine().execute(rd::EngineCommand::HighlightToggle);
     });
 
     cx.on_action::<SettingsOpen>(|_, cx| {

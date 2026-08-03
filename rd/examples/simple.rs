@@ -1,6 +1,6 @@
 use std::{thread, time::Duration};
 
-use rd::{Command, Engine, Project};
+use rd::{Engine, EngineCommand, Project};
 
 fn main() -> anyhow::Result<()> {
     pretty_env_logger::init();
@@ -24,7 +24,7 @@ fn main() -> anyhow::Result<()> {
         let path = engine.with_project(|project| {
             project.path.as_ref().expect("Project should have a path").to_path_buf()
         });
-        Command::Save { path }
+        EngineCommand::Save { path }
     });
 
     thread::sleep(Duration::from_secs(3600));
