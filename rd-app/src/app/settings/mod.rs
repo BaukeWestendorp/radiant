@@ -65,11 +65,15 @@ impl Render for SettingsRootView {
                     .icon(IconVariant::Save)
                     .disabled(!project_changed)
                     .on_click(cx.listener(|this, _, _, cx| {
-                        if let Err(err) = cx.update_project(|project, cx| {
-                            *project = this.uncommitted_project.read(cx).clone();
-                        }) {
-                            log::error!("Failed to update project: {err:#}");
-                        }
+                        let engine = cx.engine().clone();
+                        let project = this.uncommitted_project.read(cx).clone();
+
+                        cx.spawn(async move |_, _| {
+                            if let Err(err) = engine.replace_project_async(project).await {
+                                log::error!("Failed to update project: {err:#}");
+                            }
+                        })
+                        .detach();
                     })),
             )
             .child(

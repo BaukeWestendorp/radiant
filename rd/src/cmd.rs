@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use crate::Project;
+
 #[derive(Debug, Clone)]
 #[derive(facet::Facet)]
 #[facet(tag = "type")]
@@ -10,23 +12,33 @@ pub enum Command {
     Save { path: PathBuf },
 }
 
+pub(crate) enum EngineRequest {
+    Execute { command: Command, reply_tx: Option<flume::Sender<anyhow::Result<()>>> },
+    LoadProject { project: Project, reply_tx: flume::Sender<anyhow::Result<()>> },
+    ReplaceProject { project: Project, reply_tx: flume::Sender<anyhow::Result<()>> },
+    UnloadProject { reply_tx: flume::Sender<anyhow::Result<Project>> },
+    ReloadProject { reply_tx: flume::Sender<anyhow::Result<()>> },
+    Stop,
+}
+
 pub struct Commander {
-    tx: flume::Sender<Command>,
+    tx: flume::Sender<EngineRequest>,
 }
 
 impl Commander {
-    pub(crate) fn new(tx: flume::Sender<Command>) -> Self {
+    pub(crate) fn new(tx: flume::Sender<EngineRequest>) -> Self {
         Self { tx }
     }
 
     pub fn execute(&self, command: Command) {
-        let _ = self.tx.send(command);
+        let _ = self.tx.send(EngineRequest::Execute { command, reply_tx: None });
     }
 }
 
 impl Default for Commander {
     fn default() -> Self {
-        let (tx, _rx) = flume::bounded(0);
+        let (tx, rx) = flume::unbounded();
+        drop(rx);
         Self { tx }
     }
 }

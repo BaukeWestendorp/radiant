@@ -54,7 +54,7 @@ pub(crate) fn init(cx: &mut App) {
 }
 
 pub fn run(showfile_path: Option<PathBuf>) -> anyhow::Result<()> {
-    let mut engine = rd::Engine::new();
+    let engine = rd::Engine::new();
     if let Some(showfile_path) = showfile_path {
         let project = rd::Project::load_from_folder(showfile_path)?;
         engine.load_project(project)?;

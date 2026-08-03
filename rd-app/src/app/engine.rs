@@ -1,6 +1,4 @@
-use gpui::{
-    App, AppContext, Entity, EventEmitter, Global, ReadGlobal, Subscription, UpdateGlobal, Window,
-};
+use gpui::{App, AppContext, Entity, EventEmitter, Global, ReadGlobal, Subscription, Window};
 
 pub(crate) fn init(engine: rd::Engine, cx: &mut App) {
     let engine_global = EngineGlobal::new(engine, cx);
@@ -9,11 +7,6 @@ pub(crate) fn init(engine: rd::Engine, cx: &mut App) {
 
 pub trait EngineAppExt {
     fn engine(&self) -> &rd::Engine;
-
-    fn update_project<R, F: FnOnce(&mut rd::Project, &mut App) -> R>(
-        &mut self,
-        f: F,
-    ) -> anyhow::Result<R>;
 
     fn on_engine_event_in(
         &mut self,
@@ -25,15 +18,6 @@ pub trait EngineAppExt {
 impl EngineAppExt for App {
     fn engine(&self) -> &rd::Engine {
         &EngineGlobal::global(self).engine
-    }
-
-    fn update_project<R, F: FnOnce(&mut rd::Project, &mut App) -> R>(
-        &mut self,
-        f: F,
-    ) -> anyhow::Result<R> {
-        EngineGlobal::update_global(self, |engine, cx| {
-            engine.engine.update_project(|project| (f)(project, cx))
-        })
     }
 
     fn on_engine_event_in(

@@ -8,7 +8,7 @@ fn main() -> anyhow::Result<()> {
     let path = std::env::args().nth(1).expect("Please provide a path to the project folder");
 
     let project = Project::load_from_folder(path)?;
-    let mut engine = Engine::new();
+    let engine = Engine::new();
     engine.load_project(project)?;
 
     thread::spawn({

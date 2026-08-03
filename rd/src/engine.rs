@@ -5,31 +5,35 @@ use std::time::{Duration, Instant};
 use anyhow::Context;
 use rd_service::{Scheduled, Service};
 
+use crate::cmd::EngineRequest;
 use crate::{
-    Command, Commander, Project,
+    Command, Commander, Event, Events, Project,
     services::{
         output::OutputService,
         trigger::{TriggerService, TriggerServiceRunner},
     },
 };
-use crate::{Event, Events};
 
 /// Can be cloned safely as it acts like a handle.
+#[derive(Clone)]
 pub struct Engine {
+    shared: Arc<EngineShared>,
+}
+
+struct EngineShared {
     inner: Arc<Mutex<EngineInner>>,
     commander: Commander,
     events: Events,
-
-    // NOTE: We keep the handle so the thread isn't completely detached.
-    _cmd_thread: Arc<JoinHandle<()>>,
+    request_tx: flume::Sender<EngineRequest>,
+    request_thread: Mutex<Option<JoinHandle<()>>>,
 }
 
 impl Engine {
     pub fn new() -> Self {
-        let (cmd_tx, cmd_rx) = flume::unbounded();
+        let (request_tx, request_rx) = flume::unbounded();
         let (event_tx, event_rx) = flume::unbounded();
 
-        let commander = Commander::new(cmd_tx);
+        let commander = Commander::new(request_tx.clone());
         let events = Events::new(event_rx);
 
         let inner = Arc::new(Mutex::new(EngineInner {
@@ -41,80 +45,174 @@ impl Engine {
             event_tx,
         }));
 
-        let cmd_thread = thread::spawn({
+        let request_thread = thread::spawn({
             let inner = Arc::clone(&inner);
+            let commander = commander.clone();
             move || {
-                while let Ok(command) = cmd_rx.recv() {
-                    let mut state = inner.lock().unwrap();
-                    if let Err(err) = state.execute(command) {
-                        log::error!("Command execution failed: {err:#}");
+                while let Ok(request) = request_rx.recv() {
+                    match request {
+                        EngineRequest::Execute { command, reply_tx } => {
+                            let result = inner.lock().unwrap().execute(command);
+                            log_request_error(&result, "Command execution failed");
+                            if let Some(reply_tx) = reply_tx {
+                                let _ = reply_tx.send(result);
+                            }
+                        }
+                        EngineRequest::LoadProject { project, reply_tx } => {
+                            let result = inner.lock().unwrap().load_project(project, &commander);
+                            log_request_error(&result, "Project load failed");
+                            let _ = reply_tx.send(result);
+                        }
+                        EngineRequest::ReplaceProject { project, reply_tx } => {
+                            let result = inner.lock().unwrap().replace_project(project, &commander);
+                            log_request_error(&result, "Project replace failed");
+                            let _ = reply_tx.send(result);
+                        }
+                        EngineRequest::UnloadProject { reply_tx } => {
+                            let result = inner.lock().unwrap().unload_project();
+                            log_request_error(&result, "Project unload failed");
+                            let _ = reply_tx.send(result);
+                        }
+                        EngineRequest::ReloadProject { reply_tx } => {
+                            let result = inner.lock().unwrap().reload_project(&commander);
+                            log_request_error(&result, "Project reload failed");
+                            let _ = reply_tx.send(result);
+                        }
+                        EngineRequest::Stop => {
+                            if let Err(err) = inner.lock().unwrap().stop() {
+                                log::error!("Failed to stop engine: {err:#}");
+                            }
+                            break;
+                        }
                     }
                 }
             }
         });
 
-        Self { inner, commander, events, _cmd_thread: Arc::new(cmd_thread) }
+        Self {
+            shared: Arc::new(EngineShared {
+                inner,
+                commander,
+                events,
+                request_tx,
+                request_thread: Mutex::new(Some(request_thread)),
+            }),
+        }
     }
 
     pub fn with_project<F, R>(&self, f: F) -> R
     where
         F: FnOnce(&Project) -> R,
     {
-        let state = self.inner.lock().unwrap();
+        let state = self.shared.inner.lock().unwrap();
         f(&state.project)
     }
 
-    pub fn update_project<F, R>(&mut self, f: F) -> anyhow::Result<R>
+    pub fn update_project<F, R>(&self, f: F) -> anyhow::Result<R>
     where
         F: FnOnce(&mut Project) -> R,
     {
-        let mut project = self.unload_project()?;
-        let result = (f)(&mut project);
-        self.load_project(project)?;
+        let mut project = self.with_project(Clone::clone);
+        let result = f(&mut project);
+        self.replace_project(project)?;
 
         Ok(result)
     }
 
-    pub fn load_project(&mut self, project: Project) -> anyhow::Result<()> {
-        self.inner.lock().unwrap().load_project(project, &self.commander)
+    pub fn load_project(&self, project: Project) -> anyhow::Result<()> {
+        self.request(|reply_tx| EngineRequest::LoadProject { project, reply_tx })
     }
 
-    pub fn unload_project(&mut self) -> anyhow::Result<Project> {
-        self.inner.lock().unwrap().unload_project()
+    pub async fn load_project_async(&self, project: Project) -> anyhow::Result<()> {
+        self.request_async(|reply_tx| EngineRequest::LoadProject { project, reply_tx }).await
     }
 
-    pub fn reload_project(&mut self) -> anyhow::Result<()> {
-        self.inner.lock().unwrap().reload_project(&self.commander)
+    pub fn replace_project(&self, project: Project) -> anyhow::Result<()> {
+        self.request(|reply_tx| EngineRequest::ReplaceProject { project, reply_tx })
+    }
+
+    pub async fn replace_project_async(&self, project: Project) -> anyhow::Result<()> {
+        self.request_async(|reply_tx| EngineRequest::ReplaceProject { project, reply_tx }).await
+    }
+
+    pub fn unload_project(&self) -> anyhow::Result<Project> {
+        self.request(|reply_tx| EngineRequest::UnloadProject { reply_tx })
+    }
+
+    pub async fn unload_project_async(&self) -> anyhow::Result<Project> {
+        self.request_async(|reply_tx| EngineRequest::UnloadProject { reply_tx }).await
+    }
+
+    pub fn reload_project(&self) -> anyhow::Result<()> {
+        self.request(|reply_tx| EngineRequest::ReloadProject { reply_tx })
+    }
+
+    pub async fn reload_project_async(&self) -> anyhow::Result<()> {
+        self.request_async(|reply_tx| EngineRequest::ReloadProject { reply_tx }).await
     }
 
     pub fn commander(&self) -> Commander {
-        self.commander.clone()
+        self.shared.commander.clone()
     }
 
     pub fn events(&self) -> Events {
-        self.events.clone()
+        self.shared.events.clone()
     }
 
     pub fn execute(&self, command: Command) {
-        self.commander.execute(command);
+        self.shared.commander.execute(command);
+    }
+
+    pub fn execute_async(&self, command: Command) -> anyhow::Result<()> {
+        self.request(|reply_tx| EngineRequest::Execute { command, reply_tx: Some(reply_tx) })
+    }
+
+    pub async fn execute_async_async(&self, command: Command) -> anyhow::Result<()> {
+        self.request_async(|reply_tx| EngineRequest::Execute { command, reply_tx: Some(reply_tx) })
+            .await
+    }
+
+    fn request<T>(
+        &self,
+        build_request: impl FnOnce(flume::Sender<anyhow::Result<T>>) -> EngineRequest,
+    ) -> anyhow::Result<T> {
+        let (reply_tx, reply_rx) = flume::bounded(1);
+        self.shared
+            .request_tx
+            .send(build_request(reply_tx))
+            .context("Engine request queue disconnected")?;
+        reply_rx.recv().context("Engine request reply channel disconnected")?
+    }
+
+    async fn request_async<T>(
+        &self,
+        build_request: impl FnOnce(flume::Sender<anyhow::Result<T>>) -> EngineRequest,
+    ) -> anyhow::Result<T> {
+        let (reply_tx, reply_rx) = flume::bounded(1);
+        self.shared
+            .request_tx
+            .send(build_request(reply_tx))
+            .context("Engine request queue disconnected")?;
+        reply_rx.recv_async().await.context("Engine request reply channel disconnected")?
     }
 }
 
-impl Clone for Engine {
-    fn clone(&self) -> Self {
-        Self {
-            inner: Arc::clone(&self.inner),
-            commander: Commander::clone(&self.commander),
-            events: Events::clone(&self.events),
-            _cmd_thread: Arc::clone(&self._cmd_thread),
-        }
+impl Default for Engine {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
-impl Drop for Engine {
+impl Drop for EngineShared {
     fn drop(&mut self) {
-        if let Err(err) = self.inner.lock().unwrap().stop() {
-            log::error!("Failed to stop engine: {err:#}");
+        if self.request_tx.send(EngineRequest::Stop).is_err() {
+            if let Err(err) = self.inner.lock().unwrap().stop() {
+                log::error!("Failed to stop engine: {err:#}");
+            }
+        }
+
+        if let Some(handle) = self.request_thread.lock().unwrap().take() {
+            let _ = handle.join().map_err(|_| log::error!("Failed to join engine request thread"));
         }
     }
 }
@@ -145,6 +243,26 @@ impl EngineInner {
         self.emit(Event::ProjectLoaded);
 
         Ok::<(), anyhow::Error>(()).context("Could not load project")
+    }
+
+    pub fn replace_project(
+        &mut self,
+        project: Project,
+        commander: &Commander,
+    ) -> anyhow::Result<()> {
+        if self.is_dirty {
+            self.unload_project()?;
+        }
+
+        self.project = project;
+        self.services = Services::new(&self.project, commander.clone());
+        self.start()?;
+
+        log::info!("Project replaced: '{}'", project_path_label(&self.project));
+
+        self.emit(Event::ProjectLoaded);
+
+        Ok::<(), anyhow::Error>(()).context("Could not replace project")
     }
 
     pub fn unload_project(&mut self) -> anyhow::Result<Project> {
@@ -257,6 +375,12 @@ impl Services {
                 TriggerServiceRunner::new(&project.trigger),
             ),
         }
+    }
+}
+
+fn log_request_error<T>(result: &anyhow::Result<T>, context: &str) {
+    if let Err(err) = result {
+        log::error!("{context}: {err:#}");
     }
 }
 
