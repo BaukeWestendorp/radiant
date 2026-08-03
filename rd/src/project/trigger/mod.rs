@@ -13,7 +13,7 @@ pub struct TriggerConfig {
     pub midi: Vec<midi::MidiMapping>,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[derive(facet::Facet)]
 #[cfg_attr(feature = "rd-ui", derive(rd_ui::Input))]
 #[facet(tag = "type")]

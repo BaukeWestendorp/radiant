@@ -12,7 +12,7 @@ pub struct MidiMapping {
     pub target: TriggerTarget,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[derive(facet::Facet)]
 #[cfg_attr(feature = "rd-ui", derive(rd_ui::Input))]
 #[repr(C)]
@@ -64,7 +64,7 @@ impl std::fmt::Display for MidiFilter {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 #[derive(facet::Facet)]
 #[cfg_attr(feature = "rd-ui", derive(rd_ui::Input))]
 #[repr(C)]
@@ -97,7 +97,7 @@ impl rd_ui::EnumerableValue for MidiChannel {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 #[derive(facet::Facet)]
 #[cfg_attr(feature = "rd-ui", derive(rd_ui::Input))]
 #[repr(C)]
@@ -107,7 +107,7 @@ pub enum MidiNote {
     Single(#[cfg_attr(feature = "rd-ui", rd_ui(label = "Note"))] u7),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 #[derive(facet::Facet)]
 #[cfg_attr(feature = "rd-ui", derive(rd_ui::Input))]
 #[repr(C)]

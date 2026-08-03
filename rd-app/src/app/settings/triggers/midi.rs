@@ -88,32 +88,24 @@ impl MidiMappingTable {
         Self {
             columns: vec![
                 Column::<Self>::new("device_name", "Device Name")
-                    .with_sort_handler(|a, b| a.device_name.cmp(&b.device_name))
+                    .with_sort_handler(|a, b| natord::compare(&a.device_name, &b.device_name))
                     .with_cell_builder(|row, _window, _cx| {
                         row.device_name.to_string().into_any_element()
                     }),
                 Column::<Self>::new("device_channel", "Device Channel")
-                    .with_sort_handler(|a, b| {
-                        a.device_channel
-                            .partial_cmp(&b.device_channel)
-                            .unwrap_or(std::cmp::Ordering::Equal)
-                    })
+                    .with_sort_handler(|a, b| a.device_channel.cmp(&b.device_channel))
                     .with_auto_editor(|row| &mut row.device_channel)
                     .with_cell_builder(|row, _window, _cx| {
                         row.device_channel.to_string().into_any_element()
                     }),
                 Column::<Self>::new("filter", "Filter")
-                    .with_sort_handler(|a, b| {
-                        a.filter.partial_cmp(&b.filter).unwrap_or(std::cmp::Ordering::Equal)
-                    })
+                    .with_sort_handler(|a, b| a.filter.cmp(&b.filter))
                     .with_auto_editor(|row| &mut row.filter)
                     .with_cell_builder(|row, _window, _cx| {
                         row.filter.to_string().into_any_element()
                     }),
                 Column::<Self>::new("target", "Target")
-                    .with_sort_handler(|a, b| {
-                        a.target.partial_cmp(&b.target).unwrap_or(std::cmp::Ordering::Equal)
-                    })
+                    .with_sort_handler(|a, b| a.target.cmp(&b.target))
                     .with_auto_editor(|row| &mut row.target)
                     .with_cell_builder(|row, _window, _cx| {
                         row.target.to_string().into_any_element()
@@ -140,12 +132,25 @@ impl TableDelegate for MidiMappingTable {
         self.mappings.clone()
     }
 
-    fn insert_new_row(&self, cx: &mut App) -> Option<Self::RowId> {
-        let new_mapping = rd::project::midi::MidiMapping {
-            device_name: "FIXME".to_string(),
-            device_channel: rd::project::MidiChannel::default(),
-            filter: rd::project::MidiFilter::default(),
-            target: rd::project::TriggerTarget::default(),
+    fn insert_new_row(
+        &self,
+        last_item_id: Option<Self::RowId>,
+        cx: &mut App,
+    ) -> Option<Self::RowId> {
+        let last_item = last_item_id.and_then(|id| self.rows().read(cx).get(&id));
+        let new_mapping = match last_item {
+            Some(last_mapping) => rd::project::midi::MidiMapping {
+                device_name: last_mapping.device_name.clone(),
+                device_channel: rd::project::MidiChannel::default(),
+                filter: rd::project::MidiFilter::default(),
+                target: rd::project::TriggerTarget::default(),
+            },
+            None => rd::project::midi::MidiMapping {
+                device_name: "FIXME".to_string(),
+                device_channel: rd::project::MidiChannel::default(),
+                filter: rd::project::MidiFilter::default(),
+                target: rd::project::TriggerTarget::default(),
+            },
         };
         let new_id = Uuid::new_v4();
         self.mappings.update(cx, |mappings, cx| {

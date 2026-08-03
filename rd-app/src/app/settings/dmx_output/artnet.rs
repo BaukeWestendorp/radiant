@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use gpui::{App, Entity, Window, div, prelude::*};
-use rd_ui::{Column, Table, TableDelegate, TableState};
+use rd_ui::{Column, EnumerableValue, Table, TableDelegate, TableState};
 use uuid::Uuid;
 
 pub struct ArtnetOutputTabView {
@@ -94,7 +94,7 @@ impl ArtnetOutputInstanceTable {
         Self {
             columns: vec![
                 Column::<Self>::new("name", "Name")
-                    .with_sort_handler(|a, b| a.name.cmp(&b.name))
+                    .with_sort_handler(|a, b| natord::compare(&a.name, &b.name))
                     .with_auto_enumerable_editor(|row| &mut row.name)
                     .with_cell_builder(|row, _window, _cx| row.name.to_string().into_any_element()),
                 Column::<Self>::new("port_address", "Port Address")
@@ -131,14 +131,26 @@ impl TableDelegate for ArtnetOutputInstanceTable {
         self.instances.clone()
     }
 
-    fn insert_new_row(&self, cx: &mut App) -> Option<Self::RowId> {
-        let new_instance = rd::project::artnet::ArtnetOutputInstanceConfig {
-            name: "FIXME".to_string(),
-            port_address: Default::default(),
-            local_universe: Default::default(),
+    fn insert_new_row(
+        &self,
+        last_item_id: Option<Self::RowId>,
+        cx: &mut App,
+    ) -> Option<Self::RowId> {
+        let last_item = last_item_id.and_then(|id| self.rows().read(cx).get(&id));
+        let new_instance = match last_item {
+            Some(last_instance) => rd::project::artnet::ArtnetOutputInstanceConfig {
+                name: last_instance.name.enumerated_value(1),
+                port_address: last_instance.port_address.enumerated_value(1),
+                local_universe: last_instance.local_universe.enumerated_value(1),
+            },
+            _ => rd::project::artnet::ArtnetOutputInstanceConfig {
+                name: "Art-Net Output 1".to_string(),
+                port_address: Default::default(),
+                local_universe: Default::default(),
+            },
         };
-        let new_id = Uuid::new_v4();
 
+        let new_id = Uuid::new_v4();
         self.instances.update(cx, |instances, cx| {
             instances.insert(new_id, new_instance);
             cx.notify();

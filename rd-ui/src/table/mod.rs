@@ -396,7 +396,9 @@ impl<D: TableDelegate + 'static> RenderOnce for Table<D> {
                 let state = self.state.clone();
                 move |_, _, cx| {
                     state.update(cx, |state, cx| {
-                        state.delegate().insert_new_row(cx);
+                        let last_item_id =
+                            state.sorted_rows(cx).last().map(|(id, _)| (*id).clone());
+                        state.delegate().insert_new_row(last_item_id, cx);
                         cx.notify();
                     });
                 }

@@ -21,5 +21,9 @@ pub trait TableDelegate {
 
     fn rows(&self) -> Entity<HashMap<Self::RowId, Self::Row>>;
 
-    fn insert_new_row(&self, _cx: &mut App) -> Option<Self::RowId>;
+    fn insert_new_row(
+        &self,
+        last_item_id: Option<Self::RowId>,
+        cx: &mut App,
+    ) -> Option<Self::RowId>;
 }

@@ -20,3 +20,4 @@ rd = { workspace = true, features = ["rd-ui"] }
 facet.workspace = true
 figue = "4.0.5"
 uuid = { workspace = true, features = ["v4"] }
+natord = "1.0.9"

@@ -110,7 +110,11 @@ impl TableDelegate for PreviewTableDelegate {
         self.items.clone()
     }
 
-    fn insert_new_row(&self, cx: &mut App) -> Option<Self::RowId> {
+    fn insert_new_row(
+        &self,
+        _last_item_id: Option<Self::RowId>,
+        cx: &mut App,
+    ) -> Option<Self::RowId> {
         let new_id = format!("row-{:03}", self.rows().read(cx).len() + 1);
         let new_item = Item::default();
         self.items.update(cx, |items, cx| {
