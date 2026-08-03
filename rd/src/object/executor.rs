@@ -8,8 +8,11 @@ use crate::{ObjectId, Slot};
 #[repr(C)]
 pub enum ExecutorButton {
     #[default]
+    #[rd_ui(label = "Button 1")]
     Button1,
+    #[rd_ui(label = "Button 2")]
     Button2,
+    #[rd_ui(label = "Button 3")]
     Button3,
 }
 

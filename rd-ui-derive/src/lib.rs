@@ -1,7 +1,8 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{
-    Data, DataEnum, DataStruct, DeriveInput, Error, Fields, Ident, Visibility, parse_macro_input,
+    Attribute, Data, DataEnum, DataStruct, DeriveInput, Error, Fields, Ident, Visibility,
+    parse_macro_input,
 };
 
 #[proc_macro_derive(Input, attributes(rd_ui))]
@@ -31,20 +32,39 @@ pub fn derive_input(input: TokenStream) -> TokenStream {
     }
 }
 
+fn parse_rd_ui_label(attrs: &[Attribute], default: String) -> String {
+    let mut label = default;
+
+    for attr in attrs {
+        if attr.path().is_ident("rd_ui") {
+            let _ = attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident("label") {
+                    let value = meta.value()?;
+                    let lit: syn::LitStr = value.parse()?;
+                    label = lit.value();
+                }
+                Ok(())
+            });
+        }
+    }
+
+    label
+}
+
 fn expand_picker_impl(name: &Ident, data: &DataEnum) -> proc_macro2::TokenStream {
     let mut variants_list = Vec::new();
     let mut match_arms = Vec::new();
 
     for variant in &data.variants {
         let var_ident = &variant.ident;
-        let var_name_str = var_ident.to_string();
+        let var_label = parse_rd_ui_label(&variant.attrs, var_ident.to_string());
 
         variants_list.push(quote! {
             #name::#var_ident
         });
 
         match_arms.push(quote! {
-            #name::#var_ident => #var_name_str.to_string()
+            #name::#var_ident => #var_label.to_string()
         });
     }
 
@@ -217,6 +237,8 @@ fn expand_tagged_form_impl(
     let form_name = format_ident!("{}Form", name);
 
     let mut kind_variants = Vec::new();
+    let mut kind_variants_list = Vec::new();
+    let mut kind_match_arms = Vec::new();
     let mut from_arms = Vec::new();
 
     let mut form_fields = Vec::new();
@@ -229,7 +251,11 @@ fn expand_tagged_form_impl(
 
     for (v_idx, variant) in data.variants.iter().enumerate() {
         let v_ident = &variant.ident;
+        let variant_label = parse_rd_ui_label(&variant.attrs, v_ident.to_string());
+
         kind_variants.push(quote! { #v_ident });
+        kind_variants_list.push(quote! { #kind_name::#v_ident });
+        kind_match_arms.push(quote! { #kind_name::#v_ident => #variant_label.to_string() });
 
         let is_unit = matches!(variant.fields, Fields::Unit);
 
@@ -255,21 +281,10 @@ fn expand_tagged_form_impl(
                 quote!(#ident)
             };
 
-            let mut f_label =
-                if let Some(ident) = &field.ident { ident.to_string() } else { f_idx.to_string() };
-
-            for attr in &field.attrs {
-                if attr.path().is_ident("rd_ui") {
-                    let _ = attr.parse_nested_meta(|meta| {
-                        if meta.path.is_ident("label") {
-                            let value = meta.value()?;
-                            let lit: syn::LitStr = value.parse()?;
-                            f_label = lit.value();
-                        }
-                        Ok(())
-                    });
-                }
-            }
+            let f_label = parse_rd_ui_label(
+                &field.attrs,
+                if let Some(ident) = &field.ident { ident.to_string() } else { f_idx.to_string() },
+            );
 
             let field_base_ident = if let Some(ident) = &field.ident {
                 ident.clone()
@@ -352,9 +367,44 @@ fn expand_tagged_form_impl(
     }
 
     quote! {
-        #[derive(Clone, Copy, PartialEq, ::rd_ui::Input)]
+        #[derive(Clone, Copy, PartialEq)]
         #vis enum #kind_name {
             #( #kind_variants ),*
+        }
+
+        impl ::rd_ui::AutoInput for #kind_name {
+            type Delegate = ::rd_ui::Picker<Self>;
+
+            fn build_input(
+                initial_value: Self,
+                window: &mut ::rd_ui::gpui::Window,
+                cx: &mut ::rd_ui::gpui::App,
+            ) -> ::rd_ui::gpui::Entity<::rd_ui::InputState<Self::Delegate>> {
+                use ::rd_ui::gpui::AppContext as _;
+
+                cx.new(|cx| {
+                    let options = vec![ #( #kind_variants_list, )* ];
+                    ::rd_ui::InputState::new(
+                        if options.len() > 5 {
+                            ::rd_ui::Picker::builder(initial_value, options)
+                                .label_fn(|v| match v {
+                                    #( #kind_match_arms, )*
+                                })
+                                .dropdown()
+                                .build(cx.focus_handle(), window, cx)
+                        } else {
+                            ::rd_ui::Picker::builder(initial_value, options)
+                                .label_fn(|v| match v {
+                                    #( #kind_match_arms, )*
+                                })
+                                .inline()
+                                .build(cx.focus_handle(), window, cx)
+                        },
+                        window,
+                        cx,
+                    )
+                })
+            }
         }
 
         impl From<#name> for #kind_name {
