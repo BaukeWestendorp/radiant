@@ -697,7 +697,6 @@ impl TextInput {
                 blink_cursor.start(cx);
             });
         }
-        cx.emit(InputEvent::Focus);
     }
 
     fn handle_blur(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
@@ -711,7 +710,6 @@ impl TextInput {
         self.blink_cursor.update(cx, |blink_cursor, cx| {
             blink_cursor.stop(cx);
         });
-        cx.emit(InputEvent::Blur);
     }
 }
 

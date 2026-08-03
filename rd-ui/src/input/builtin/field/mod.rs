@@ -33,13 +33,8 @@ impl<V: FieldValue + 'static> Field<V> {
             text_input
         });
 
-        cx.subscribe(&text_input, |this, _, event, cx| {
+        cx.subscribe(&text_input, |_, _, event, cx| {
             match event {
-                InputEvent::Focus => cx.emit(InputEvent::Focus),
-                InputEvent::Blur => {
-                    this.commit_value(cx);
-                    cx.emit(InputEvent::Blur);
-                }
                 InputEvent::Submit(s) => {
                     if let Some(v) = FieldValue::from_str(s) {
                         cx.emit(InputEvent::Submit(v))
@@ -73,12 +68,6 @@ impl<V: FieldValue + 'static> Field<V> {
     pub fn with_value(self, value: V, cx: &mut Context<InputState<Self>>) -> Self {
         self.set_value(value.into(), cx);
         self
-    }
-
-    fn commit_value(&self, cx: &mut Context<InputState<Self>>) {
-        if let Some(v) = self.value(cx) {
-            self.set_value(v, cx);
-        }
     }
 
     pub fn placeholder<'a>(&self, cx: &'a App) -> &'a SharedString {

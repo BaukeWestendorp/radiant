@@ -6,7 +6,7 @@ use gpui::{
 use smallvec::SmallVec;
 
 use crate::util::FocusableExt;
-use crate::{ActiveTheme, HslaExt, h_flex};
+use crate::{ActiveTheme, HslaExt};
 
 pub fn container(window: &Window, cx: &App) -> Container {
     Container::new(window, cx)

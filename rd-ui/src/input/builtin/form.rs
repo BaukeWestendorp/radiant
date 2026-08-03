@@ -1,6 +1,6 @@
 use gpui::{
     AnyElement, App, Entity, FocusHandle, Focusable, IntoElement, RenderOnce, SharedString, Window,
-    div, prelude::*,
+    prelude::*,
 };
 
 use crate::{ActiveTheme, Button, Input, InputDelegate, InputEvent, InputState, h_flex, v_flex};

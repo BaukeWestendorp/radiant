@@ -1,4 +1,4 @@
-use gpui::{App, Entity, Window, div, prelude::*};
+use gpui::{App, Entity, Window, prelude::*};
 
 mod builtin;
 mod delegate;

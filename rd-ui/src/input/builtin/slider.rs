@@ -223,8 +223,9 @@ impl<T: SliderValue> Slider<T> {
         let element_id = ElementId::View(cx.entity_id());
 
         let text_input = cx.new(|cx| {
-            let mut text_input = TextInput::new(element_id.clone(), focus_handle, window, cx)
-                .px(rems(0.125).to_pixels(window.rem_size()));
+            let mut text_input =
+                TextInput::new(element_id.clone(), focus_handle.clone(), window, cx)
+                    .px(rems(0.125).to_pixels(window.rem_size()));
             text_input.set_text("0".into(), cx);
             text_input.set_interactive(false, cx);
             text_input.set_validator(|text| {
@@ -236,15 +237,15 @@ impl<T: SliderValue> Slider<T> {
             text_input
         });
 
-        cx.subscribe(&text_input, |this, _, event, cx| {
+        cx.on_blur(&focus_handle, window, |this, _, cx| {
+            this.commit_value(cx);
+            this.text_input.update(cx, |input, cx| input.set_interactive(false, cx));
+        })
+        .detach();
+
+        cx.subscribe(&text_input, |_, _, event, cx| {
             cx.notify();
             match event {
-                InputEvent::Focus => cx.emit(InputEvent::Focus),
-                InputEvent::Blur => {
-                    this.commit_value(cx);
-                    this.text_input.update(cx, |input, cx| input.set_interactive(false, cx));
-                    cx.emit(InputEvent::Blur);
-                }
                 InputEvent::Submit(s) => {
                     if let Ok(v) = s.parse::<T>() {
                         cx.emit(InputEvent::Submit(v))
@@ -429,7 +430,6 @@ impl<T: SliderValue> Slider<T> {
 
     fn commit_value(&mut self, cx: &mut Context<InputState<Self>>) {
         self.set_value(self.value(cx), cx);
-        self.submit(cx);
     }
 
     pub fn is_slider(&self) -> bool {

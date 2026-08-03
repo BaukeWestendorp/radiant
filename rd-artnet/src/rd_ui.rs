@@ -29,8 +29,6 @@ impl PortAddressInput {
 
         cx.subscribe(&absolute, move |this, _, event, cx| {
             cx.emit(match event {
-                InputEvent::Focus => InputEvent::Focus,
-                InputEvent::Blur => InputEvent::Blur,
                 InputEvent::Submit(_) => InputEvent::Submit(this.value_or_default(cx)),
                 InputEvent::Change(_) => InputEvent::Change(this.value_or_default(cx)),
             });
@@ -51,7 +49,6 @@ impl PortAddressInput {
                             .update(cx, |universe, cx| universe.set_value(Some(pa.universe()), cx));
                     }
                 }
-                _ => {}
             }
         })
         .detach();
@@ -67,7 +64,6 @@ impl PortAddressInput {
                     this.absolute.update(cx, |abs, cx| abs.set_value(Some(new_abs), cx));
                 }
             }
-            _ => {}
         })
         .detach();
 
@@ -82,7 +78,6 @@ impl PortAddressInput {
                     this.absolute.update(cx, |abs, cx| abs.set_value(Some(new_abs), cx));
                 }
             }
-            _ => {}
         })
         .detach();
 
@@ -97,7 +92,6 @@ impl PortAddressInput {
                     this.absolute.update(cx, |abs, cx| abs.set_value(Some(new_abs), cx));
                 }
             }
-            _ => {}
         })
         .detach();
 
