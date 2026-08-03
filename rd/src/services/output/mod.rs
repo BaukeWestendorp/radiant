@@ -64,7 +64,7 @@ impl rd_service::Delegate for OutputService {
     }
 
     fn on_frame(&self, _instant: Instant) -> Result<(), Self::Error> {
-        let _ = self.notify_tx.send(());
+        let _ = self.notify_tx.try_send(());
         Ok(())
     }
 

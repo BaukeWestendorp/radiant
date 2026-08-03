@@ -99,7 +99,7 @@ impl rd_service::Delegate for ArtnetOutputService {
     fn on_frame(&self, _data: Self::Data) -> Result<(), Self::Error> {
         let service_notify_tx_guard = self.service_notify_tx.read().unwrap();
         if let Some(service_notify_tx) = service_notify_tx_guard.as_ref() {
-            let _ = service_notify_tx.send(());
+            let _ = service_notify_tx.try_send(());
         }
 
         Ok(())
