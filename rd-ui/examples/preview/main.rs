@@ -1,3 +1,4 @@
+mod form;
 mod interactive;
 mod misc;
 mod scrollable;
@@ -16,8 +17,9 @@ fn main() -> anyhow::Result<()> {
 mod app {
     use gpui::prelude::*;
     use gpui::{Entity, Window, div};
-    use rd_ui::{ConfigAppExt as _, Tab, Tabs, TabsState, TabsVariant};
+    use rd_ui::{Tab, Tabs, TabsState, TabsVariant};
 
+    use crate::form::FormPreview;
     use crate::interactive::InteractivePreview;
     use crate::misc::MiscPreview;
     use crate::scrollable::ScrollablePreview;
@@ -28,18 +30,8 @@ mod app {
     use crate::typo::TypoPreview;
 
     pub fn run() -> anyhow::Result<()> {
-        rd_ui::build_simple_app()
-            .window_title("MaakUI Preview")
-            .config(
-                rd_ui::config::Config::builder()
-                    .add_source(rd_ui::config::File::from(
-                        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-                            .join("examples")
-                            .join("preview")
-                            .join("config.toml"),
-                    ))
-                    .build()?,
-            )
+        rd_ui::build_app()
+            .window_title("RD-UI Preview")
             .run(|window, cx| cx.new(|cx| PreviewApp::new(window, cx)));
 
         Ok(())
@@ -48,6 +40,7 @@ mod app {
     struct PreviewApp {
         tabs: Entity<TabsState>,
 
+        tab_form: Entity<FormPreview>,
         tab_interactive: Entity<InteractivePreview>,
         tab_tabs: Entity<TabsPreview>,
         tab_table: Entity<TablePreview>,
@@ -62,12 +55,9 @@ mod app {
     impl PreviewApp {
         fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
             Self {
-                tabs: cx.new(|cx| {
-                    let selected =
-                        cx.config().get_string("current_tab").unwrap_or("button".to_string());
-                    TabsState::new().with_selected(selected)
-                }),
+                tabs: cx.new(|_| TabsState::new().with_selected("form")),
 
+                tab_form: cx.new(|cx| FormPreview::new(window, cx)),
                 tab_interactive: cx.new(|cx| InteractivePreview::new(window, cx)),
                 tab_tabs: cx.new(|cx| TabsPreview::new(window, cx)),
                 tab_table: cx.new(|cx| TablePreview::new(window, cx)),
@@ -83,8 +73,9 @@ mod app {
     impl Render for PreviewApp {
         fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
             div().size_full().child(
-                // FIXME: TabVariant::Sidebar fucks with the table width.
-                Tabs::new("preview-pages", self.tabs.clone(), TabsVariant::Top).tabs([
+                // FIXME: TabVariant::Sidebar fucks with the table width. But maybe not anymore???
+                Tabs::new("preview-pages", self.tabs.clone()).variant(TabsVariant::Top).tabs([
+                    Tab::new("form", "Form", self.tab_form.clone().into_any_element()),
                     Tab::new(
                         "interactive",
                         "Interactive",

@@ -3,16 +3,27 @@ name = "rd"
 version.workspace = true
 edition.workspace = true
 
-[[bin]]
-name = "radiant"
-path = "src/main.rs"
+[features]
+rd-ui = ["dep:rd-ui"]
 
 [dependencies]
 anyhow.workspace = true
-clap = { version = "4.5.56", features = ["derive"] }
+facet = { workspace = true, features = ["uuid", "nonzero"] }
+facet-validate.workspace = true
+facet-json.workspace = true
 flume.workspace = true
-gpui.workspace = true
 log.workspace = true
-pretty_env_logger = "0.5.0"
-rd-ui.workspace = true
-rd-engine = { workspace = true, features = ["rd-ui"] }
+rd-artnet = { workspace = true, features = ["facet", "rd-ui"] }
+rd-dmx = { workspace = true, features = ["rd-ui"] }
+rd-service.workspace = true
+rd-midi = { workspace = true, features = ["rd-ui"] }
+uuid = { workspace = true, features = ["v4"] }
+ariadne = "0.6.0"
+rand = "0.10.2"
+
+# feature = "rd-ui"
+rd-ui = { workspace = true, optional = true, features = ["derive"] }
+
+[dev-dependencies]
+anyhow.workspace = true
+pretty_env_logger.workspace = true

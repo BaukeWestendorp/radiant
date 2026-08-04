@@ -48,7 +48,6 @@ impl Render for ThemePreview {
                         .child(row("bg_secondary", t.bg_secondary, t.fg_primary, cx))
                         .child(row("bg_tertiary", t.bg_tertiary, t.fg_primary, cx))
                         .child(row("bg_selected", t.bg_selected, t.fg_primary, cx))
-                        .child(row("bg_selected_extra", t.bg_selected_extra, t.fg_primary, cx))
                         .child(row("bg_table", t.bg_table, t.fg_primary, cx))
                         .child(row("bg_table_odd", t.bg_table_odd, t.fg_primary, cx))
                         .child(row("bg_tile_header", t.bg_tile_header, t.fg_primary, cx)),
@@ -99,7 +98,7 @@ impl Render for ThemePreview {
                                 )),
                         )
                         .child(row("warning", t.indicate.warning, t.fg_primary, cx))
-                        .child(row("error", t.indicate.error, t.fg_primary, cx))
+                        .child(row("danger", t.indicate.danger, t.fg_primary, cx))
                         .child(row("success", t.indicate.success, t.fg_primary, cx)),
                 ),
             )

@@ -1,11 +1,15 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc};
 
 use gpui::{
-    AnyView, AnyWindowHandle, App, BoxShadow, Context, Entity, Focusable, FontWeight, Global,
-    IntoElement, ReadGlobal, SharedString, Styled, Window, div, hsla, point, prelude::*, px,
+    AnyView, AnyWindowHandle, App, BoxShadow, Context, Entity, FocusHandle, Focusable, FontWeight,
+    Global, IntoElement, ReadGlobal, SharedString, Styled, Window, div, hsla, point, prelude::*,
+    px,
 };
 
-use crate::{ActiveTheme, Button, Field, FieldEvent, FieldState, h_flex, v_flex};
+use crate::{
+    ActiveTheme, Button, Form, FormDelegate, FormField, Input, InputDelegate, InputEvent, h_flex,
+    input::InputState, v_flex,
+};
 
 pub(crate) fn init(cx: &mut App) {
     let popup_stacks = cx.new(|_| HashMap::new());
@@ -19,7 +23,7 @@ pub trait PopupAppExt {
         popup_builder: F,
     );
 
-    fn close_popup(&mut self, window: &Window);
+    fn close_popup(&mut self, reason: PopupCloseReason, window: &mut Window);
 }
 
 impl PopupAppExt for App {
@@ -36,10 +40,16 @@ impl PopupAppExt for App {
         });
     }
 
-    fn close_popup(&mut self, window: &Window) {
+    fn close_popup(&mut self, reason: PopupCloseReason, window: &mut Window) {
         PopupGlobal::global(self).popup_stacks.clone().update(self, |stacks, cx| {
             if let Some(stack) = stacks.get_mut(&window.window_handle()) {
-                stack.pop();
+                if let Some(popped) = stack.pop() {
+                    popped.update(cx, |popped, cx| {
+                        if let Some(on_close) = popped.on_close.take() {
+                            on_close(reason, window, cx);
+                        }
+                    });
+                }
             }
             cx.notify();
         });
@@ -70,7 +80,7 @@ pub(crate) fn render_overlay(
             .occlude()
             .size_full()
             .bg(gpui::black().opacity(0.25))
-            .on_any_mouse_down(|_, window, cx| cx.close_popup(window))
+            .on_any_mouse_down(|_, window, cx| cx.close_popup(PopupCloseReason::Dismissed, window))
             .child(popup)
     }))
 }
@@ -78,37 +88,101 @@ pub(crate) fn render_overlay(
 pub struct Popup {
     title: SharedString,
     kind: PopupKind,
+    on_close: Option<Box<dyn FnOnce(PopupCloseReason, &mut Window, &mut App)>>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PopupCloseReason {
+    Dismissed,
+    Submitted,
 }
 
 impl Popup {
-    pub fn yes_no(title: impl Into<SharedString>) -> Self {
-        Self { title: title.into(), kind: PopupKind::YesNo }
-    }
-
     pub fn message(title: impl Into<SharedString>, message: impl Into<SharedString>) -> Self {
-        Self { title: title.into(), kind: PopupKind::Message { message: message.into() } }
+        Self {
+            title: title.into(),
+            kind: PopupKind::Message { message: message.into() },
+            on_close: None,
+        }
     }
 
-    pub fn text(
+    pub fn input<S: InputDelegate + 'static>(
         title: impl Into<SharedString>,
-        field: Entity<FieldState<SharedString>>,
+        input: Entity<InputState<S>>,
         window: &mut Window,
         cx: &mut App,
-    ) -> Self {
-        field.focus_handle(cx).focus(window, cx);
+        on_submit: impl Fn(&S::Value, &mut App) + 'static,
+    ) -> Self
+    where
+        S::Value: Default,
+    {
+        let on_submit = Rc::new(on_submit);
+
+        let form = cx.new(|cx| {
+            InputState::new(
+                Form::new(InputPopupForm { input: input.clone() }, cx.focus_handle(), window, cx),
+                window,
+                cx,
+            )
+        });
+
+        window.defer(cx, {
+            let form = form.clone();
+            move |window, cx| {
+                form.focus_handle(cx).focus(window, cx);
+            }
+        });
 
         window
-            .subscribe(&field, cx, |_, event, window, cx| match event {
-                FieldEvent::Submit(_) => cx.close_popup(window),
-                _ => {}
+            .subscribe(&input, cx, {
+                let on_submit = Rc::clone(&on_submit);
+                move |_, event, window, cx| match event {
+                    InputEvent::Submit(value) => {
+                        on_submit(value, cx);
+                        cx.close_popup(PopupCloseReason::Submitted, window)
+                    }
+                    _ => {}
+                }
             })
             .detach();
 
-        Self { title: title.into(), kind: PopupKind::Text { field } }
+        window
+            .subscribe(&form, cx, {
+                let on_submit = Rc::clone(&on_submit);
+                move |_, event, window, cx| match event {
+                    InputEvent::Submit(value) => {
+                        on_submit(value, cx);
+                        cx.close_popup(PopupCloseReason::Submitted, window)
+                    }
+                    _ => {}
+                }
+            })
+            .detach();
+
+        let wrapper = cx.new(|_| InputPopup { input: form.clone() });
+
+        let on_close = move |reason: PopupCloseReason, _: &mut Window, cx: &mut App| {
+            if reason == PopupCloseReason::Submitted {
+                return;
+            }
+
+            let value = input.read(cx).value_or_default(cx);
+            (on_submit)(&value, cx);
+        };
+
+        Self {
+            title: title.into(),
+            kind: PopupKind::Input { input: wrapper.into() },
+            on_close: Some(Box::new(on_close)),
+        }
     }
 
-    pub fn custom(content: impl Into<AnyView>, title: impl Into<SharedString>) -> Self {
-        Self { title: title.into(), kind: PopupKind::Custom { content: content.into() } }
+    pub fn custom(title: impl Into<SharedString>, content: impl Into<AnyView>) -> Self {
+        Self {
+            title: title.into(),
+            kind: PopupKind::Custom { content: content.into() },
+            on_close: None,
+        }
     }
 
     pub fn title(&self) -> &SharedString {
@@ -117,9 +191,8 @@ impl Popup {
 }
 
 pub enum PopupKind {
-    YesNo,
     Message { message: SharedString },
-    Text { field: Entity<FieldState<SharedString>> },
+    Input { input: AnyView },
     Custom { content: AnyView },
 }
 
@@ -147,7 +220,6 @@ impl Render for Popup {
             .border_color(cx.theme().border_primary)
             .rounded_b(cx.theme().radius)
             .child(match &self.kind {
-                PopupKind::YesNo => todo!(),
                 PopupKind::Message { message } => v_flex()
                     .size_full()
                     .items_center()
@@ -160,20 +232,11 @@ impl Render for Popup {
                             .text_center()
                             .child(message.clone()),
                     )
-                    .child(
-                        Button::new("close")
-                            .child("Close")
-                            .on_click(|_, window, cx| cx.close_popup(window)),
-                    )
+                    .child(Button::new("close", cx.focus_handle()).on_click(|_, window, cx| {
+                        cx.close_popup(PopupCloseReason::Dismissed, window)
+                    }))
                     .into_any_element(),
-                PopupKind::Text { field: input } => div()
-                    .flex()
-                    .justify_center()
-                    .items_center()
-                    .size_full()
-                    .p_2()
-                    .child(div().w_full().child(Field::new(input.clone())))
-                    .into_any_element(),
+                PopupKind::Input { input } => input.clone().into_any_element(),
                 PopupKind::Custom { content } => content.clone().into_any_element(),
             });
 
@@ -193,5 +256,45 @@ impl Render for Popup {
             })
             .child(header)
             .child(content)
+    }
+}
+
+struct InputPopupForm<S: InputDelegate> {
+    input: Entity<InputState<S>>,
+}
+
+impl<S> FormDelegate for InputPopupForm<S>
+where
+    S: InputDelegate + 'static,
+    S::Value: Default,
+{
+    type Data = S::Value;
+
+    fn fields(&self, cx: &mut App) -> Vec<FormField> {
+        vec![FormField::new(Input::new(self.input.clone()), cx)]
+    }
+
+    fn extract_data(&self, cx: &App) -> Option<Self::Data> {
+        Some(self.input.read(cx).value_or_default(cx))
+    }
+
+    fn preferred_focus_handle(&self, cx: &App) -> Option<FocusHandle> {
+        Some(self.input.focus_handle(cx))
+    }
+}
+
+struct InputPopup<S: InputDelegate> {
+    input: Entity<InputState<S>>,
+}
+
+impl<S: InputDelegate + 'static> Render for InputPopup<S> {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        div()
+            .flex()
+            .justify_center()
+            .items_center()
+            .size_full()
+            .p_2()
+            .child(div().w_full().child(S::new_element(self.input.clone(), window, cx)))
     }
 }

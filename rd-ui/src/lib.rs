@@ -2,11 +2,10 @@ mod asset;
 mod binding;
 mod button;
 
+mod app;
 mod container;
-mod form;
 mod grid;
 mod icon;
-mod init;
 mod input;
 mod keymap;
 mod org;
@@ -22,41 +21,49 @@ mod title_bar;
 mod typo;
 mod util;
 
-mod element_ext;
-mod styled_ext;
-
-pub(crate) mod feature;
-
+pub use app::{AppBuilder, build_app};
 pub use asset::Assets;
 pub use binding::Binding;
-pub use button::Button;
+pub use button::{Button, ButtonVariant};
 pub use container::{ContainerStyle, container, interactive_container};
-pub use form::{Form, FormDelegate, FormEvent, FormNode, FormState};
 pub use grid::{dot_grid, line_grid, scrollable_line_grid};
 pub use icon::{Icon, IconSize, IconVariant};
-pub use init::init;
-pub use init::simple::build_simple_app;
-pub use input::field::{Field, FieldEvent, FieldState, FieldValue};
-pub use input::number_field::{NumberField, NumberFieldState};
+pub use input::{
+    AutoInput, Field, FieldValue, Form, FormDelegate, FormField, FormFocusBehavior, INPUT_HEIGHT,
+    Input, InputDelegate, InputEvent, InputState, Labelled, LayoutDirection, OptionInput, Picker,
+    PickerKind, Slider, SliderValue, TextInput,
+};
 pub use keymap::{Keymap, KeymapBinding};
 pub use org::section;
 pub use popup::{Popup, PopupAppExt};
 pub use root::Root;
 pub use scrollable::{Scrollable, ScrollableState};
 pub use settings::{SETTINGS_WINDOW_OPTIONS, SettingsAppExt};
-pub use table::{Column, Table, TableDelegate, TableSelection, TableState};
+pub use table::{
+    Column, EnumerableValue, Table, TableDelegate, TableEvent, TableSelection, TableState,
+};
 pub use tabs::{Tab, Tabs, TabsState, TabsVariant};
 pub use theme::{ActiveTheme, HslaExt};
 pub use tiles::{PoolTile, PoolTileDelegate, TileDelegate, TileGrid, TileGridState};
-pub use title_bar::{TITLE_BAR_HEIGHT, TITLE_BAR_LEFT_PADDING, TITLE_BAR_RIGHT_PADDING, TitleBar};
+pub use title_bar::{TITLE_BAR_HEIGHT, TitleBar};
 pub use typo::{article, h1, h2, h3, h4, h5, h6, link, sub};
-pub use util::{todo, z_stack};
-
-pub use element_ext::ElementExt;
-pub use styled_ext::{StyledExt, h_flex, v_flex};
-
-pub use feature::config::ConfigAppExt;
-
-pub use ::config;
+pub use util::{
+    FocusableExt, StatefulInteractiveElementExt, StyledExt, StyledParentExt, h_flex, todo, v_flex,
+    z_stack,
+};
 
 pub use ::gpui;
+
+#[cfg(feature = "derive")]
+pub use rd_ui_derive::*;
+
+pub fn init(cx: &mut gpui::App) {
+    crate::theme::init(cx);
+    crate::popup::init(cx);
+    crate::settings::init(cx);
+    crate::app::action::init(cx);
+}
+
+pub mod action {
+    gpui::actions!([Edit, Delete, ClearSelection, SelectAll]);
+}

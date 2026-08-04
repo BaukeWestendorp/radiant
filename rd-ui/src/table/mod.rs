@@ -1,8 +1,5 @@
-use std::ops::Range;
-
 use gpui::{
-    AnyElement, App, Div, ElementId, Entity, FontWeight, ListSizingBehavior, MouseButton,
-    MouseDownEvent, MouseMoveEvent, Pixels, Window, div, prelude::*, uniform_list,
+    App, ElementId, Entity, Focusable, FontWeight, MouseButton, Pixels, Window, div, prelude::*, px,
 };
 
 mod column;
@@ -13,425 +10,480 @@ pub use column::*;
 pub use delegate::*;
 pub use state::*;
 
-use crate::{ActiveTheme, ElementExt, Icon, IconSize, IconVariant, h_flex, theme::HslaExt};
+use crate::{
+    ActiveTheme, Button, ButtonVariant, HslaExt, IconVariant, StatefulInteractiveElementExt,
+    h_flex, todo, v_flex,
+};
 
-pub(crate) mod action {
-    pub const KEY_CONTEXT: &str = "Table";
-
-    gpui::actions!(
-        table,
-        [
-            ClearSelection,
-            EditSelection,
-            DeleteSelection,
-            ToggleExpandSelection,
-            NextColumn,
-            PrevColumn,
-            NextRow,
-            PrevRow,
-            ExtendSelectionNext,
-            ExtendSelectionPrev,
-            SelectAll,
-        ]
-    );
+pub mod action {
+    gpui::actions!(table, [Add]);
 }
+
+const ROW_HEIGHT: Pixels = px(24.0);
 
 #[derive(IntoElement)]
 pub struct Table<D: TableDelegate + 'static> {
+    id: ElementId,
+
     state: Entity<TableState<D>>,
 }
 
-impl<D: TableDelegate + 'static> Table<D> {
-    pub fn new(state: Entity<TableState<D>>) -> Self {
-        Self { state }
+impl<D: TableDelegate> Table<D> {
+    pub fn new(
+        id: impl Into<ElementId>,
+        state: Entity<TableState<D>>,
+        _window: &mut Window,
+        _cx: &mut App,
+    ) -> Self {
+        Self { id: id.into(), state }
+    }
+
+    pub fn state(&self) -> &Entity<TableState<D>> {
+        &self.state
+    }
+
+    fn render_header(&self, window: &Window, cx: &App) -> impl IntoElement {
+        let columns = self.state().read(cx).delegate().columns(cx);
+
+        let cells =
+            columns.enumerate().map(|(ix, column)| self.render_header_cell(column, ix, window, cx));
+
+        h_flex()
+            .bg(cx.theme().bg_secondary)
+            .border_b_1()
+            .border_color(cx.theme().border_secondary)
+            .children(cells)
+    }
+
+    fn render_header_cell(
+        &self,
+        column: &Column<D>,
+        column_ix: usize,
+        _window: &Window,
+        cx: &App,
+    ) -> impl IntoElement {
+        let state = self.state.read(cx);
+        let active_sort = state.sorted_column() == Some(column.id());
+        let selected = self.state.read(cx).sorted_column() == Some(column.id());
+
+        let sort_icon = match (active_sort, state.sort_direction()) {
+            (true, Some(TableSortDirection::Ascending)) => IconVariant::ArrowDownAZ,
+            (true, Some(TableSortDirection::Descending)) => IconVariant::ArrowUpZA,
+            _ => IconVariant::ArrowDownUp,
+        };
+
+        let bg = cx.theme().bg_secondary;
+
+        h_flex()
+            .id(format!("header-cell-{}", column.id()))
+            .justify_between()
+            .gap_1()
+            .w_full()
+            .h(ROW_HEIGHT)
+            .px_1()
+            .when(column_ix != 0, |e| e.border_l_1())
+            .border_color(cx.theme().border_secondary)
+            .child(div().font_weight(FontWeight::BOLD).child(column.name().to_string()))
+            .bg(bg)
+            .hover(|e| e.bg(bg.hover()))
+            .active(|e| e.bg(bg.active()))
+            .when(column.sortable(), |e| {
+                e.child(
+                    Button::new(format!("{}-sort", column.id()), cx.focus_handle())
+                        .icon(sort_icon)
+                        .variant(if selected {
+                            ButtonVariant::Primary
+                        } else {
+                            ButtonVariant::Secondary
+                        })
+                        .on_click({
+                            let column_id = column.id().to_string();
+                            let state = self.state.clone();
+                            move |_, _, cx| {
+                                state.update(cx, |state, cx| {
+                                    match state.sort_direction() {
+                                        Some(TableSortDirection::Descending) | None => state
+                                            .sort_by_column(
+                                                &column_id,
+                                                TableSortDirection::Ascending,
+                                                cx,
+                                            ),
+                                        Some(TableSortDirection::Ascending) => state
+                                            .sort_by_column(
+                                                &column_id,
+                                                TableSortDirection::Descending,
+                                                cx,
+                                            ),
+                                    }
+
+                                    cx.notify();
+                                })
+                            }
+                        }),
+                )
+            })
+            .on_mouse_down(MouseButton::Left, {
+                let column_id = column.id().to_string();
+                let state = self.state.clone();
+                move |_, _, cx| {
+                    state.update(cx, |state, cx| {
+                        state.select_all_in_column(&column_id, cx);
+                        cx.notify();
+                    });
+                }
+            })
+            .on_mouse_up(MouseButton::Right, {
+                let column_id = column.id().to_string();
+                let state = self.state.clone();
+                move |_, window, cx| {
+                    state.update(cx, |state, cx| {
+                        state.select_all_in_column(&column_id, cx);
+                        cx.notify();
+                    });
+
+                    window.dispatch_action(Box::new(crate::action::Edit), cx);
+                }
+            })
+            .on_double_click(|_, window, cx| {
+                window.dispatch_action(Box::new(crate::action::Edit), cx);
+            })
+    }
+
+    fn render_body(&self, window: &Window, cx: &App) -> impl IntoElement {
+        let state = self.state().read(cx);
+        let rows = state.sorted_rows(cx);
+
+        let cells = rows
+            .into_iter()
+            .enumerate()
+            .map(|(row_ix, (row_id, row))| self.render_row(row, row_id, row_ix, window, cx));
+
+        div().id("body").overflow_scroll().size_full().child(
+            div()
+                .flex()
+                .flex_col()
+                .children(cells)
+                .on_mouse_up_out(MouseButton::Left, {
+                    let state = self.state().clone();
+                    move |_, _, cx| {
+                        state.update(cx, |state, cx| {
+                            if let Some(last_row_ix) =
+                                state.delegate().rows().read(cx).len().checked_sub(1)
+                            {
+                                state.stop_selection_drag(last_row_ix, cx);
+                                cx.notify();
+                            }
+                        });
+                    }
+                })
+                .on_mouse_up_out(MouseButton::Right, {
+                    let state = self.state().clone();
+                    move |_, _, cx| {
+                        state.update(cx, |state, cx| {
+                            if let Some(last_row_ix) =
+                                state.delegate().rows().read(cx).len().checked_sub(1)
+                            {
+                                state.stop_selection_drag(last_row_ix, cx);
+                                cx.notify();
+                            }
+                        });
+                    }
+                }),
+        )
+    }
+
+    fn render_row(
+        &self,
+        row: &D::Row,
+        row_id: &D::RowId,
+        row_ix: usize,
+        window: &Window,
+        cx: &App,
+    ) -> impl IntoElement {
+        let columns = self.state().read(cx).delegate().columns(cx);
+
+        let cells = columns.enumerate().map(|(column_ix, column)| {
+            self.render_cell(row, row_id, row_ix, column_ix, column, window, cx)
+        });
+
+        div()
+            .id(format!("row-{}", row_ix))
+            .flex()
+            .flex_row()
+            .h(ROW_HEIGHT)
+            .bg(cx.theme().bg_table_odd)
+            .border_t_1()
+            .border_color(cx.theme().border_secondary)
+            .cursor_crosshair()
+            .when(row_ix.is_multiple_of(2), |e| e.bg(cx.theme().bg_table))
+            .children(cells)
+            .on_double_click(|_, window, cx| {
+                window.dispatch_action(Box::new(crate::action::Edit), cx);
+            })
+    }
+
+    fn render_cell(
+        &self,
+        row: &D::Row,
+        row_id: &D::RowId,
+        row_ix: usize,
+        column_ix: usize,
+        column: &Column<D>,
+        window: &Window,
+        cx: &App,
+    ) -> impl IntoElement {
+        let content = match &column.cell_builder {
+            Some(cell_builder) => div()
+                .absolute()
+                .inset_0()
+                .flex()
+                .justify_between()
+                .gap_1()
+                .px_1()
+                .child((cell_builder)(row, window, cx))
+                .into_any_element(),
+            None => todo(cx).into_any_element(),
+        };
+
+        let is_selected =
+            self.state.read(cx).selection().read(cx).is_cell_selected(column.id(), row_id);
+        let is_editable = column.editable();
+
+        let selection_overlay = is_selected.then(|| {
+            div()
+                .absolute()
+                .inset_0()
+                .bottom_px()
+                .border_1()
+                .border_color(cx.theme().border_selected)
+        });
+
+        div()
+            .relative()
+            .w_full()
+            .h(ROW_HEIGHT)
+            .when(column_ix != 0, |e| e.border_l_1())
+            .border_color(cx.theme().border_secondary)
+            .bg(if is_selected { cx.theme().bg_selected } else { gpui::transparent_black() })
+            .child(content)
+            .children(selection_overlay)
+            .when(!is_editable, |e| e.opacity(0.75))
+            .on_mouse_down(MouseButton::Left, {
+                let state = self.state().clone();
+                let column_id = column.id().to_string();
+                move |_, _window, cx| {
+                    state.update(cx, |state, cx| {
+                        if !is_selected {
+                            state.start_selection_drag(column_id.clone(), row_ix, cx);
+                            cx.notify();
+                        }
+                    });
+                }
+            })
+            .on_mouse_down(MouseButton::Right, {
+                let state = self.state().clone();
+                let column_id = column.id().to_string();
+                move |_, _window, cx| {
+                    state.update(cx, |state, cx| {
+                        if !is_selected {
+                            state.start_selection_drag(column_id.clone(), row_ix, cx);
+                            cx.notify();
+                        }
+                    });
+                }
+            })
+            .on_mouse_move({
+                let state = self.state().clone();
+                move |_, _, cx| {
+                    if state.read(cx).is_dragging_selection() {
+                        state.update(cx, |state, cx| {
+                            let Some((_, first_row_ix)) = &state.selection_drag else {
+                                return;
+                            };
+
+                            if *first_row_ix == row_ix {
+                                return;
+                            }
+
+                            state.update_selection_drag(row_ix, cx);
+
+                            cx.notify();
+                        });
+                    }
+                }
+            })
+            .on_mouse_up(MouseButton::Left, {
+                let state = self.state().clone();
+                move |_, _, cx| {
+                    state.update(cx, |state, cx| {
+                        state.stop_selection_drag(row_ix, cx);
+                        cx.notify();
+                    });
+                }
+            })
+            .on_mouse_up(MouseButton::Right, {
+                let state = self.state().clone();
+                move |_, window, cx| {
+                    state.update(cx, |state, cx| {
+                        state.stop_selection_drag(row_ix, cx);
+                        cx.notify();
+                    });
+
+                    window.dispatch_action(Box::new(crate::action::Edit), cx);
+                }
+            })
+    }
+
+    fn render_action_bar(&self, _window: &Window, cx: &App) -> impl IntoElement {
+        let row_count = self.state.read(cx).delegate().rows().read(cx).len();
+
+        h_flex()
+            .justify_between()
+            .h(px(32.0))
+            .bg(cx.theme().bg_secondary)
+            .border_t_1()
+            .border_color(cx.theme().border_secondary)
+            .px_2()
+            .child(
+                div()
+                    .flex()
+                    .text_color(cx.theme().fg_secondary)
+                    .child({
+                        let count = self.state.read(cx).selection().read(cx).count();
+                        div()
+                            .text_color(if count == 0 {
+                                cx.theme().fg_secondary
+                            } else {
+                                cx.theme().accent
+                            })
+                            .child(format!("{}", count))
+                    })
+                    .child(div().child("/"))
+                    .child(format!(
+                        "{} row{} selected",
+                        row_count,
+                        if row_count == 1 { "" } else { "s" }
+                    )),
+            )
+            .child(
+                div()
+                    .flex()
+                    .gap_2()
+                    .child(
+                        Button::new("add-row", cx.focus_handle())
+                            .label("Add")
+                            .variant(ButtonVariant::Secondary)
+                            .icon(IconVariant::Plus)
+                            .action_for(action::Add, self.state.focus_handle(cx)),
+                    )
+                    .child(
+                        Button::new("edit-selection", cx.focus_handle())
+                            .label("Edit")
+                            .variant(ButtonVariant::Secondary)
+                            .icon(IconVariant::SquarePen)
+                            .disabled(!self.state.read(cx).can_edit(cx))
+                            .action_for(crate::action::Edit, self.state.focus_handle(cx)),
+                    )
+                    .child(
+                        Button::new("delete-selection", cx.focus_handle())
+                            .label("Delete")
+                            .disabled(self.state.read(cx).selection().read(cx).is_empty())
+                            .variant(ButtonVariant::Danger)
+                            .icon(IconVariant::Trash2)
+                            .action_for(crate::action::Delete, self.state.focus_handle(cx)),
+                    ),
+            )
     }
 }
 
 impl<D: TableDelegate + 'static> RenderOnce for Table<D> {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
-        let (header, body) = self.state.update(cx, |state, cx| {
-            (
-                state.render_header(window, cx).into_any_element(),
-                state.render_body(window, cx).into_any_element(),
-            )
-        });
+        let focus_handle = self.state.focus_handle(cx);
 
-        let focus_handle = &self.state.read(cx).focus_handle;
-
-        div()
-            .id("table")
-            .track_focus(focus_handle)
-            .key_context(action::KEY_CONTEXT)
-            .flex()
-            .flex_col()
+        v_flex()
+            .id(self.id.clone())
+            .track_focus(&focus_handle)
             .size_full()
-            .bg(cx.theme().bg_primary)
-            .on_prepaint({
+            .child(self.render_header(window, cx))
+            .child(self.render_body(window, cx))
+            .child(self.render_action_bar(window, cx))
+            .on_action::<action::Add>({
                 let state = self.state.clone();
-                move |bounds, _, cx| {
+                move |_, _, cx| {
                     state.update(cx, |state, cx| {
-                        if state.bounds != bounds {
-                            state.bounds = bounds;
-                            state.reset_column_widths(cx)
-                        }
-                    })
-                }
-            })
-            .on_action::<action::ClearSelection>({
-                let state = self.state.clone();
-                move |_, _window, cx| {
-                    state.update(cx, |state, cx| state.clear_selection(cx));
-                }
-            })
-            .on_action::<action::ToggleExpandSelection>({
-                let state = self.state.clone();
-                move |_, _window, cx| {
-                    state.update(cx, |state, cx| state.toggle_expand_selected_rows(cx));
-                }
-            })
-            .on_action::<action::SelectAll>({
-                let state = self.state.clone();
-                move |_, _window, cx| {
-                    state.update(cx, |state, cx| {
-                        state.select_all(cx);
+                        let last_item_id =
+                            state.sorted_rows(cx).last().map(|(id, _)| (*id).clone());
+                        state.delegate().insert_new_row(last_item_id, cx);
+                        cx.notify();
                     });
                 }
             })
-            .on_action::<action::NextColumn>({
+            .on_action::<crate::action::Edit>({
                 let state = self.state.clone();
-                move |_, _window, cx| {
-                    state.update(cx, |state, cx| {
-                        let ix = state.selected_column_ix() + 1;
-                        state.set_selected_column_ix(ix, cx);
-                    });
-                }
-            })
-            .on_action::<action::PrevColumn>({
-                let state = self.state.clone();
-                move |_, _window, cx| {
-                    state.update(cx, |state, cx| {
-                        let ix = state.selected_column_ix().saturating_sub(1);
-                        state.set_selected_column_ix(ix, cx);
-                    });
-                }
-            })
-            .on_action::<action::NextRow>({
-                let state = self.state.clone();
-                move |_, _window, cx| {
-                    state.update(cx, |state, cx| state.move_selection_by(1, false, cx));
-                }
-            })
-            .on_action::<action::PrevRow>({
-                let state = self.state.clone();
-                move |_, _window, cx| {
-                    state.update(cx, |state, cx| state.move_selection_by(-1, false, cx));
-                }
-            })
-            .on_action::<action::ExtendSelectionNext>({
-                let state = self.state.clone();
-                move |_, _window, cx| {
-                    state.update(cx, |state, cx| state.move_selection_by(1, true, cx));
-                }
-            })
-            .on_action::<action::ExtendSelectionPrev>({
-                let state = self.state.clone();
-                move |_, _window, cx| {
-                    state.update(cx, |state, cx| state.move_selection_by(-1, true, cx));
-                }
-            })
-            .on_action::<action::EditSelection>({
-                let state = self.state.clone();
-                move |_, _window, cx| {
-                    state.update(cx, |state, cx| state.edit_selection(cx));
-                }
-            })
-            .on_action::<action::DeleteSelection>({
-                let state = self.state.clone();
-                move |_, _window, cx| {
-                    state.update(cx, |state, cx| state.delete_selection(cx));
-                }
-            })
-            .child(header)
-            .child(body)
-    }
-}
-
-impl<D: TableDelegate + 'static> TableState<D> {
-    fn row_height(&self, window: &Window) -> Pixels {
-        window.line_height()
-    }
-
-    fn column_width(&self, col_ix: usize) -> Pixels {
-        self.column_widths[col_ix]
-    }
-
-    fn is_last_column(&self, col_ix: usize, cx: &Context<Self>) -> bool {
-        col_ix == self.delegate().column_count(cx) - 1
-    }
-
-    pub fn render_header(&self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let height = self.row_height(window);
-        let column_count = self.delegate().column_count(cx);
-
-        let headers = (0..column_count)
-            .map(|col_ix| self.render_header_cell(col_ix, cx).into_any_element())
-            .collect::<Vec<_>>();
-
-        h_flex()
-            .id("table-head")
-            .w_full()
-            .min_h(height)
-            .max_h(height)
-            .bg(cx.theme().bg_secondary)
-            .children(headers)
-    }
-
-    fn render_header_cell(&self, col_ix: usize, cx: &mut Context<Self>) -> impl IntoElement {
-        let label = self.delegate().column(col_ix, cx).label().to_owned();
-
-        div()
-            .id(ElementId::named_usize("table-header-cell", col_ix))
-            .w(self.column_width(col_ix))
-            .h_full()
-            .px_1()
-            .flex_shrink_0()
-            .overflow_hidden()
-            .whitespace_nowrap()
-            .bg(cx.theme().bg_secondary)
-            .border_b_1()
-            .when(!self.is_last_column(col_ix, cx), |e| e.border_r_1())
-            .border_color(cx.theme().border_primary)
-            .font_weight(FontWeight::BOLD)
-            .hover(|e| e.bg(cx.theme().bg_secondary.hover()))
-            .active(|e| e.bg(cx.theme().bg_secondary.active()))
-            .on_mouse_down(
-                MouseButton::Left,
-                cx.listener(move |this, _, _, cx| {
-                    this.selected_column_ix = col_ix;
-                    this.select_all(cx);
-                }),
-            )
-            .child(label)
-    }
-
-    pub fn render_body(&self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let visible_rows = self.visible_rows(cx);
-        let row_count = visible_rows.len();
-
-        uniform_list(
-            "table-list",
-            row_count,
-            cx.processor(move |this, range: Range<usize>, window, cx| {
-                range
-                    .map(|row_ix| {
-                        let (row_id, depth) = &visible_rows[row_ix];
-                        this.render_row(*depth, row_id, row_ix, row_count, window, cx)
-                            .into_any_element()
-                    })
-                    .collect()
-            }),
-        )
-        .flex()
-        .flex_col()
-        .size_full()
-        .with_sizing_behavior(ListSizingBehavior::Infer)
-        .track_scroll(&self.vertical_scroll_handle)
-    }
-
-    fn render_row(
-        &self,
-        depth: usize,
-        row_id: &D::RowId,
-        row_ix: usize,
-        total_rows: usize,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> impl IntoElement {
-        let row_height = self.row_height(window);
-        let column_count = self.delegate().column_count(cx);
-
-        let is_row_selected = self.selection_contains(row_id, cx);
-        let bg = if is_row_selected {
-            cx.theme().bg_selected
-        } else if row_ix % 2 == 0 {
-            cx.theme().bg_table
-        } else {
-            cx.theme().bg_table_odd
-        };
-
-        let cells = (0..column_count)
-            .map(|col_ix| self.render_cell(row_id, col_ix, depth, window, cx))
-            .collect::<Vec<_>>();
-
-        h_flex()
-            .id(ElementId::named_usize("table-row", row_ix))
-            .w_full()
-            .min_h(row_height)
-            .max_h(row_height)
-            .bg(bg)
-            .when(row_ix + 1 < total_rows, |e| {
-                e.border_b_1().border_color(cx.theme().border_primary)
-            })
-            .when(is_row_selected, |e| e.border_color(cx.theme().border_tertiary))
-            .hover(|e| e.bg(bg.hover()))
-            .active(|e| e.bg(bg.active()))
-            .children(cells)
-    }
-
-    fn render_cell(
-        &self,
-        row_id: &D::RowId,
-        col_ix: usize,
-        depth: usize,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> Div {
-        let selected_col = self.selected_column_ix();
-        let is_selected_row = self.selection_contains(row_id, cx);
-        let is_selected_cell = is_selected_row && col_ix == selected_col;
-
-        let base = div()
-            .relative()
-            .w(self.column_width(col_ix))
-            .h_full()
-            .flex_shrink_0()
-            .overflow_hidden()
-            .whitespace_nowrap()
-            .when(!self.is_last_column(col_ix, cx), |e| {
-                e.border_r_1().border_color(cx.theme().border_primary)
-            })
-            .when(is_selected_cell, |e| {
-                e.bg(cx.theme().bg_selected_extra).child(
-                    div().absolute().inset_0().border_1().border_color(cx.theme().border_selected),
-                )
-            })
-            .on_mouse_down(
-                MouseButton::Left,
-                cx.listener({
-                    let row_id = row_id.clone();
-                    move |this, event: &MouseDownEvent, _, cx| {
-                        this.on_cell_mouse_down(
-                            row_id.clone(),
-                            col_ix,
-                            event.modifiers.secondary(),
-                            cx,
-                        );
+                move |_, window, cx| {
+                    let selection = state.read(cx).selection().read(cx);
+                    let Some(column_id) = &selection.column_id else { return };
+                    let Some(column) = state.read(cx).delegate().column(column_id, cx) else {
+                        return;
+                    };
+                    let row_ids = selection.row_ids().cloned().collect();
+                    if let Some(edit_handler) = column.edit_handler.clone() {
+                        (edit_handler)(state.clone(), row_ids, window, cx);
                     }
-                }),
-            )
-            .on_mouse_move(cx.listener({
-                let row_id = row_id.clone();
-                move |this, event: &MouseMoveEvent, _, cx| {
-                    this.on_cell_mouse_move(row_id.clone(), event.modifiers.secondary(), cx);
                 }
-            }))
-            .on_mouse_up(
-                MouseButton::Left,
-                cx.listener(move |this, _event, _, cx| {
-                    this.on_cell_mouse_up(cx);
-                }),
-            )
-            .on_mouse_up_out(
-                MouseButton::Left,
-                cx.listener(move |this, _event, _, cx| {
-                    this.on_cell_mouse_up_out(cx);
-                }),
-            );
+            })
+            .on_action::<crate::action::Delete>({
+                let state = self.state.clone();
+                move |_, _, cx| {
+                    state.update(cx, |state, cx| {
+                        state.delegate().rows().update(cx, |items, cx| {
+                            let selection = state.selection().read(cx);
+                            for row_id in selection.row_ids() {
+                                items.remove(row_id);
+                            }
+                            cx.notify();
+                        });
 
-        let content = self.render_cell_content(row_id, col_ix, depth, window, cx);
+                        state.selection().update(cx, |selection, cx| {
+                            selection.clear();
+                            cx.notify();
+                        });
 
-        base.child(content)
-    }
+                        state.update_sort_cache(cx);
+                    });
+                }
+            })
+            .on_action::<crate::action::ClearSelection>({
+                let state = self.state.clone();
+                move |_, _, cx| {
+                    state.read(cx).selection().clone().update(cx, |selection, cx| {
+                        selection.clear();
+                        cx.notify();
+                    });
+                }
+            })
+            .on_action::<crate::action::SelectAll>({
+                let state = self.state.clone();
+                move |_, _, cx| {
+                    state.update(cx, |state, cx| {
+                        state.selection().update(cx, |selection, cx| {
+                            let Some(column_id) = selection.column_id.clone().or_else(|| {
+                                state.delegate().columns(cx).next().map(|c| c.id().to_string())
+                            }) else {
+                                return;
+                            };
 
-    fn render_cell_content(
-        &self,
-        row_id: &D::RowId,
-        col_ix: usize,
-        depth: usize,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        let base = self.delegate().render_cell(row_id, col_ix, window, cx).into_any_element();
+                            let row_ids: Vec<_> =
+                                state.delegate().rows().read(cx).keys().cloned().collect();
+                            for row_id in row_ids {
+                                selection.select_cell(column_id.clone(), row_id);
+                            }
 
-        if !self.is_tree() || col_ix != 0 {
-            return base;
-        }
-
-        self.render_tree_cell(base, row_id, depth, window, cx)
-    }
-
-    fn render_tree_cell(
-        &self,
-        base: AnyElement,
-        row_id: &D::RowId,
-        depth: usize,
-        window: &Window,
-        cx: &mut Context<Self>,
-    ) -> AnyElement {
-        let row_height = self.row_height(window);
-        let is_collapsible = self.is_collapsible(row_id);
-        let is_expanded = self.is_expanded(row_id);
-
-        let prefix = self
-            .render_tree_prefix(row_id, depth, row_height, is_collapsible, is_expanded, cx)
-            .into_any_element();
-
-        h_flex()
-            .h_full()
-            .when(depth == 0, |e| e.font_weight(FontWeight::BOLD))
-            .when(depth > 0, |e| e.text_color(cx.theme().fg_secondary))
-            .child(prefix)
-            .child(base)
-            .into_any_element()
-    }
-
-    fn render_tree_prefix(
-        &self,
-        row_id: &D::RowId,
-        depth: usize,
-        row_height: Pixels,
-        is_collapsible: bool,
-        is_expanded: bool,
-        cx: &mut Context<Self>,
-    ) -> impl IntoElement {
-        let mut items = Vec::with_capacity(depth + 1);
-
-        for level in 0..=depth {
-            let item = if level == 0 && is_collapsible {
-                self.render_expand_button(row_id.clone(), is_expanded, row_height, cx)
-                    .into_any_element()
-            } else {
-                div().w(row_height).h_full().into_any_element()
-            };
-            items.push(item);
-        }
-
-        h_flex().flex_row_reverse().children(items)
-    }
-
-    fn render_expand_button(
-        &self,
-        row_id: D::RowId,
-        expanded: bool,
-        size: Pixels,
-        cx: &mut Context<Self>,
-    ) -> impl IntoElement {
-        let icon = if expanded {
-            Icon::new(IconVariant::ChevronDown, IconSize::ExtraSmall)
-        } else {
-            Icon::new(IconVariant::ChevronRight, IconSize::ExtraSmall)
-        };
-
-        h_flex()
-            .id("expand-button")
-            .w(size)
-            .h_full()
-            .justify_center()
-            .block_mouse_except_scroll()
-            .on_click(cx.listener(move |this, _, _, cx| {
-                this.rows.toggle_expanded(row_id.clone());
-                cx.notify();
-            }))
-            .child(icon)
+                            cx.notify();
+                        });
+                        cx.notify();
+                    });
+                }
+            })
     }
 }

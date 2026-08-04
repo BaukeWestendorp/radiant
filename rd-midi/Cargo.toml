@@ -1,0 +1,22 @@
+[package]
+name = "rd-midi"
+version.workspace = true
+edition.workspace = true
+
+[features]
+rd-ui = ["dep:rd-ui"]
+
+[dependencies]
+facet.workspace = true
+facet-error.workspace = true
+flume.workspace = true
+log.workspace = true
+midir = "0.10.0"
+rd-service.workspace = true
+
+# feature = "rd-ui"
+rd-ui = { workspace = true, optional = true, features = ["derive"] }
+
+[dev-dependencies]
+anyhow.workspace = true
+pretty_env_logger.workspace = true

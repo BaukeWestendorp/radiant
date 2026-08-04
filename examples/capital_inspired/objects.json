@@ -419,8 +419,11 @@
               "fixtures": "All",
               "content": {
                 "Static": {
-                  "ColorAdd_W": {
+                  "ColorAdd_B": {
                     "Clamped": 0.0
+                  },
+                  "ColorSub_Y": {
+                    "Clamped": 1.0
                   },
                   "ColorSub_M": {
                     "Clamped": 1.0
@@ -428,16 +431,13 @@
                   "ColorAdd_R": {
                     "Clamped": 1.0
                   },
-                  "ColorSub_Y": {
-                    "Clamped": 1.0
-                  },
                   "ColorSub_C": {
                     "Clamped": 0.0
                   },
-                  "ColorAdd_B": {
+                  "ColorAdd_G": {
                     "Clamped": 0.0
                   },
-                  "ColorAdd_G": {
+                  "ColorAdd_W": {
                     "Clamped": 0.0
                   }
                 }
@@ -452,25 +452,25 @@
               "fixtures": "All",
               "content": {
                 "Static": {
-                  "ColorSub_Y": {
-                    "Clamped": 1.0
-                  },
-                  "ColorSub_C": {
-                    "Clamped": 1.0
-                  },
-                  "ColorSub_M": {
-                    "Clamped": 0.0
-                  },
                   "ColorAdd_R": {
-                    "Clamped": 0.0
-                  },
-                  "ColorAdd_W": {
                     "Clamped": 0.0
                   },
                   "ColorAdd_G": {
                     "Clamped": 1.0
                   },
+                  "ColorSub_C": {
+                    "Clamped": 1.0
+                  },
                   "ColorAdd_B": {
+                    "Clamped": 0.0
+                  },
+                  "ColorSub_Y": {
+                    "Clamped": 1.0
+                  },
+                  "ColorSub_M": {
+                    "Clamped": 0.0
+                  },
+                  "ColorAdd_W": {
                     "Clamped": 0.0
                   }
                 }
@@ -485,26 +485,26 @@
               "fixtures": "All",
               "content": {
                 "Static": {
-                  "ColorSub_Y": {
-                    "Clamped": 0.0
-                  },
-                  "ColorSub_M": {
+                  "ColorAdd_B": {
                     "Clamped": 1.0
                   },
                   "ColorAdd_R": {
                     "Clamped": 0.0
-                  },
-                  "ColorAdd_G": {
-                    "Clamped": 0.0
-                  },
-                  "ColorAdd_B": {
-                    "Clamped": 1.0
                   },
                   "ColorAdd_W": {
                     "Clamped": 0.0
                   },
                   "ColorSub_C": {
                     "Clamped": 1.0
+                  },
+                  "ColorSub_Y": {
+                    "Clamped": 0.0
+                  },
+                  "ColorSub_M": {
+                    "Clamped": 1.0
+                  },
+                  "ColorAdd_G": {
+                    "Clamped": 0.0
                   }
                 }
               }
@@ -521,22 +521,22 @@
                   "ColorAdd_R": {
                     "Clamped": 1.0
                   },
-                  "ColorSub_C": {
-                    "Clamped": 0.0
-                  },
-                  "ColorAdd_G": {
-                    "Clamped": 1.0
-                  },
                   "ColorSub_M": {
-                    "Clamped": 0.0
-                  },
-                  "ColorAdd_B": {
                     "Clamped": 0.0
                   },
                   "ColorSub_Y": {
                     "Clamped": 1.0
                   },
                   "ColorAdd_W": {
+                    "Clamped": 0.0
+                  },
+                  "ColorAdd_G": {
+                    "Clamped": 1.0
+                  },
+                  "ColorSub_C": {
+                    "Clamped": 0.0
+                  },
+                  "ColorAdd_B": {
                     "Clamped": 0.0
                   }
                 }

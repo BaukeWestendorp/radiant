@@ -1,0 +1,23 @@
+[package]
+name = "rd-app"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "radiant"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+flume.workspace = true
+gpui.workspace = true
+log.workspace = true
+pretty_env_logger.workspace = true
+rd-artnet.workspace = true
+rd-dmx.workspace = true
+rd-ui.workspace = true
+rd = { workspace = true, features = ["rd-ui"] }
+facet.workspace = true
+figue = "4.0.5"
+uuid = { workspace = true, features = ["v4"] }
+natord = "1.0.9"

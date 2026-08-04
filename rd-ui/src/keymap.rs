@@ -37,7 +37,7 @@ impl Keymap {
                     }
                 }
                 Err(err) => {
-                    log::warn!("Failed to generate Action for {}: {err}", binding.action_name);
+                    log::warn!("Failed to generate Action for {}: {err:#}", binding.action_name);
                     None
                 }
             })
@@ -46,8 +46,6 @@ impl Keymap {
         cx.bind_keys(key_bindings);
     }
 }
-
-// ... rest of your code ...
 
 pub struct KeymapBinding {
     action_name: String,
@@ -76,6 +74,12 @@ pub fn default_keymap() -> Keymap {
         KeymapBinding::new("Tab", "tab", "Root"),
         KeymapBinding::new("TabPrev", "shift-tab", "Root"),
 
+        KeymapBinding::new("Edit", "enter", "Root"),
+        KeymapBinding::new("Delete", "delete", "Root"),
+        KeymapBinding::new("Delete", "backspace", "Root"),
+        KeymapBinding::new("ClearSelection", "escape", "Root"),
+        KeymapBinding::new("SelectAll", "secondary-a", "Root"),
+
         KeymapBinding::new("text_input::SelectAll", "secondary-a", "TextInput"),
         KeymapBinding::new("text_input::MoveRight", "right", "TextInput"),
         KeymapBinding::new("text_input::Backspace", "backspace", "TextInput"),
@@ -87,7 +91,6 @@ pub fn default_keymap() -> Keymap {
         KeymapBinding::new("text_input::Cut", "secondary-x", "TextInput"),
         KeymapBinding::new("text_input::SelectRight", "shift-right", "TextInput"),
         KeymapBinding::new("text_input::SelectLeft", "shift-left", "TextInput"),
-
         #[cfg(target_os = "macos")]      KeymapBinding::new("text_input::MoveToStartOfLine", "cmd-left", "TextInput"),
         #[cfg(not(target_os = "macos"))] KeymapBinding::new("text_input::MoveToStartOfLine", "home", "TextInput"),
         #[cfg(target_os = "macos")]      KeymapBinding::new("text_input::MoveToEndOfLine", "cmd-right", "TextInput"),
@@ -113,7 +116,6 @@ pub fn default_keymap() -> Keymap {
         KeymapBinding::new("table::ExtendSelectionNext", "secondary-down", "Table"),
         KeymapBinding::new("table::DeleteSelection", "delete", "Table"),
         KeymapBinding::new("table::ClearSelection", "escape", "Table"),
-        KeymapBinding::new("table::EditSelection", "enter", "Table"),
         KeymapBinding::new("table::PrevColumn", "left", "Table"),
         KeymapBinding::new("table::NextColumn", "right", "Table"),
     ])

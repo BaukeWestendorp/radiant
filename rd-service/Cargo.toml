@@ -4,10 +4,12 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+facet.workspace = true
+facet-error.workspace = true
 flume.workspace = true
 log.workspace = true
 spin_sleep = "1.3.3"
-thiserror = "2.0.18"
 
 [dev-dependencies]
 anyhow.workspace = true
+pretty_env_logger.workspace = true

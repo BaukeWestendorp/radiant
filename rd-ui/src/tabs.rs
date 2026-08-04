@@ -1,7 +1,7 @@
 use gpui::prelude::*;
 use gpui::{AnyElement, App, ElementId, Entity, Window, div};
 
-use crate::{ActiveTheme, Button, h_flex, v_flex};
+use crate::{ActiveTheme, Button, ButtonVariant, IconVariant, h_flex, v_flex};
 
 #[derive(Debug, Clone)]
 pub struct TabsState {
@@ -44,8 +44,13 @@ pub struct Tabs {
 }
 
 impl Tabs {
-    pub fn new(id: impl Into<ElementId>, state: Entity<TabsState>, variant: TabsVariant) -> Self {
-        Self { id: id.into(), state, variant, tabs: Vec::new() }
+    pub fn new(id: impl Into<ElementId>, state: Entity<TabsState>) -> Self {
+        Self { id: id.into(), state, variant: TabsVariant::default(), tabs: Vec::new() }
+    }
+
+    pub fn variant(mut self, variant: TabsVariant) -> Self {
+        self.variant = variant;
+        self
     }
 
     pub fn tabs(mut self, tabs: impl IntoIterator<Item = Tab>) -> Self {
@@ -62,27 +67,35 @@ impl RenderOnce for Tabs {
             let mut content: AnyElement = div().into_any_element();
 
             for tab in self.tabs.into_iter() {
-                let is_selected = selected_id.as_ref().map_or(false, |sel| sel == &tab.id);
+                let selected = selected_id.as_ref().map_or(false, |sel| sel == &tab.id);
                 let state = self.state.clone();
 
-                let Tab { id: tab_id, label, disabled, content: tab_content } = tab;
+                let Tab { id: tab_id, label, icon, disabled, content: tab_content } = tab;
 
-                if is_selected {
+                if selected {
                     content = tab_content;
                 }
 
-                tab_buttons.push(
-                    Button::new(tab_id.clone())
-                        .disabled(disabled)
-                        .selected(is_selected)
-                        .on_click(move |_, _, cx| {
-                            state.update(cx, |state, cx| {
-                                state.set_selected(tab_id.clone());
-                                cx.notify();
-                            });
-                        })
-                        .child(label),
-                );
+                let mut button = Button::new(tab_id.clone(), cx.focus_handle())
+                    .label(label)
+                    .disabled(disabled)
+                    .variant(if selected {
+                        ButtonVariant::Primary
+                    } else {
+                        ButtonVariant::Secondary
+                    })
+                    .on_click(move |_, _, cx| {
+                        state.update(cx, |state, cx| {
+                            state.set_selected(tab_id.clone());
+                            cx.notify();
+                        });
+                    });
+
+                if let Some(icon) = icon {
+                    button = button.icon(icon);
+                }
+
+                tab_buttons.push(button);
             }
 
             (tab_buttons, content)
@@ -131,6 +144,7 @@ impl RenderOnce for Tabs {
 pub struct Tab {
     pub id: ElementId,
     pub label: String,
+    pub icon: Option<IconVariant>,
     pub content: AnyElement,
     pub disabled: bool,
 }
@@ -141,17 +155,29 @@ impl Tab {
         label: impl Into<String>,
         content: impl Into<AnyElement>,
     ) -> Self {
-        Self { id: id.into(), label: label.into(), content: content.into(), disabled: false }
+        Self {
+            id: id.into(),
+            label: label.into(),
+            icon: None,
+            content: content.into(),
+            disabled: false,
+        }
     }
 
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
     }
+
+    pub fn icon(mut self, icon: IconVariant) -> Self {
+        self.icon = Some(icon);
+        self
+    }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum TabsVariant {
     Top,
+    #[default]
     Sidebar,
 }

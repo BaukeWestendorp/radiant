@@ -1,7 +1,7 @@
 use std::{
     sync::atomic::{AtomicUsize, Ordering},
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use rd_service::{Delegate, Scheduled, Service};
@@ -12,6 +12,7 @@ struct ExampleSchedulerDelegate {
 
 impl Delegate for ExampleSchedulerDelegate {
     type Error = anyhow::Error;
+    type Data = Instant;
 
     fn on_start(&self) -> Result<(), Self::Error> {
         println!("Scheduler started.");
@@ -19,9 +20,13 @@ impl Delegate for ExampleSchedulerDelegate {
         Ok(())
     }
 
-    fn on_frame(&self) -> Result<(), Self::Error> {
+    fn on_frame(&self, instant: Instant) -> Result<(), Self::Error> {
         self.frames_processed.fetch_add(1, Ordering::SeqCst);
-        println!("Processed frame: {}", self.frames_processed.load(Ordering::SeqCst));
+        println!(
+            "Processed frame: {} at {:?}",
+            self.frames_processed.load(Ordering::SeqCst),
+            instant
+        );
         Ok(())
     }
 
@@ -35,6 +40,8 @@ impl Delegate for ExampleSchedulerDelegate {
 }
 
 fn main() -> rd_service::Result<()> {
+    pretty_env_logger::init();
+
     let mut service = Service::new(
         ExampleSchedulerDelegate { frames_processed: AtomicUsize::new(9) },
         Scheduled::new(Duration::from_secs_f64(1.0 / 44.0)),

@@ -1,0 +1,86 @@
+use gpui::{App, SharedString, Window, prelude::*};
+
+pub trait FieldValue: Clone {
+    fn from_str(s: &str) -> Option<Self>
+    where
+        Self: Sized;
+
+    fn to_shared_string(&self) -> impl Into<SharedString>;
+
+    fn validator(s: &str) -> bool;
+
+    fn submit_validator(s: &str) -> bool;
+
+    fn render_overlay(_window: &mut Window, _cx: &mut App) -> Option<impl IntoElement> {
+        Option::<gpui::Empty>::None
+    }
+}
+
+macro_rules! impl_field_value_parse_num {
+    ($($t:ty),*) => {
+        $(
+            impl $crate::FieldValue for $t {
+                fn from_str(s: &str) -> Option<Self> {
+                    s.parse().ok()
+                }
+
+                fn to_shared_string(&self) -> impl Into<$crate::gpui::SharedString> {
+                    self.to_string()
+                }
+
+                fn validator(s: &str) -> bool {
+                    s.parse::<$t>().is_ok()
+                }
+
+                fn submit_validator(s: &str) -> bool {
+                    s.parse::<$t>().is_ok()
+                }
+            }
+        )*
+    };
+}
+
+impl_field_value_parse_num!(
+    f32, f64, i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize
+);
+
+macro_rules! impl_field_value_string {
+    ($($t:ty),*) => {
+        $(
+            impl FieldValue for $t {
+                fn from_str(s: &str) -> Option<Self> {
+                    Some(s.into())
+                }
+
+                fn to_shared_string(&self) -> impl Into<SharedString> {
+                    self.clone()
+                }
+
+                fn validator(s: &str) -> bool {
+                    !s.trim().is_empty()
+                }
+
+                fn submit_validator(s: &str) -> bool {
+                    !s.trim().is_empty()
+                }
+            }
+
+            impl $crate::AutoInput for $t {
+                type Delegate = $crate::Field<$t>;
+
+                fn build_input(
+                    initial_value: Self,
+                    window: &mut Window,
+                    cx: &mut App,
+                ) -> $crate::gpui::Entity<$crate::InputState<Self::Delegate>> {
+                    cx.new(|cx| {
+                        let field = $crate::Field::new(cx.focus_handle(), window, cx).with_value(initial_value, cx);
+                        $crate::InputState::new(field, window, cx)
+                    })
+                }
+            }
+        )*
+    };
+}
+
+impl_field_value_string!(SharedString, String);

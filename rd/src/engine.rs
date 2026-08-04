@@ -1,97 +1,410 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use std::thread::{self, JoinHandle};
+use std::time::{Duration, Instant};
 
-use gpui::{App, AppContext, Entity, EventEmitter, Global, ReadGlobal, Subscription};
-use rd_engine::{EngineHandle, EngineSnapshot, cmd::Command, event::Event};
+use anyhow::Context;
+use rd_service::{Scheduled, Service};
 
-pub(crate) fn init(handle: EngineHandle, cx: &mut App) {
-    let engine_global = EngineGlobal::new(handle, cx);
-    cx.set_global(engine_global);
+use crate::cmd::EngineRequest;
+use crate::{
+    EngineCommand, EngineDispatcher, Event, Events, Project,
+    services::{
+        output::OutputService,
+        trigger::{TriggerService, TriggerServiceRunner},
+    },
+};
+
+/// Can be cloned safely as it acts like a handle.
+#[derive(Clone)]
+pub struct Engine {
+    runtime: Arc<EngineRuntime>,
 }
 
-pub trait EngineAppExt {
-    fn engine(&self) -> &EngineHandle;
-
-    fn engine_snapshot(&self) -> Arc<EngineSnapshot>;
-
-    fn execute_engine_cmd(&self, command: Command);
-
-    fn try_execute_engine_cmd(&self, command: Command);
-
-    fn on_engine_event(&mut self, handler: impl FnMut(&Event, &mut App) + 'static) -> Subscription;
+struct EngineRuntime {
+    state: Arc<Mutex<EngineState>>,
+    dispatcher: EngineDispatcher,
+    events: Events,
+    request_tx: flume::Sender<EngineRequest>,
+    request_thread: Mutex<Option<JoinHandle<()>>>,
 }
 
-impl EngineAppExt for App {
-    fn engine(&self) -> &EngineHandle {
-        &EngineGlobal::global(self).handle
-    }
+impl Engine {
+    pub fn new() -> Self {
+        let (request_tx, request_rx) = flume::unbounded();
+        let (event_tx, event_rx) = flume::unbounded();
 
-    fn engine_snapshot(&self) -> Arc<EngineSnapshot> {
-        self.engine().snapshot()
-    }
+        let dispatcher = EngineDispatcher::new(request_tx.clone());
+        let events = Events::new(event_rx);
 
-    fn execute_engine_cmd(&self, command: Command) {
-        if let Err(err) = self.engine().execute(command) {
-            log::error!("Failed to execute command: {err}");
-        }
-    }
+        let state = Arc::new(Mutex::new(EngineState {
+            project: Default::default(),
+            services: Services::default(),
+            highlight: false,
 
-    fn try_execute_engine_cmd(&self, command: Command) {
-        if let Err(err) = self.engine().try_execute(command) {
-            log::error!("Failed to execute command: {err}");
-        }
-    }
+            is_dirty: false,
+            event_tx,
+        }));
 
-    fn on_engine_event(
-        &mut self,
-        mut handler: impl FnMut(&Event, &mut App) + 'static,
-    ) -> Subscription {
-        let event_buffer = EngineGlobal::global(self).event_buffer.clone();
-        self.subscribe(&event_buffer, move |_, event, cx| handler(event, cx))
-    }
-}
-
-trait EngineAppExtPrivate {
-    fn emit_engine_event(&mut self, event: Event);
-}
-
-impl EngineAppExtPrivate for App {
-    fn emit_engine_event(&mut self, event: Event) {
-        let event_buffer = EngineGlobal::global(self).event_buffer.clone();
-        event_buffer.update(self, |_, cx| cx.emit(event));
-    }
-}
-
-struct EngineEventBus;
-
-impl EventEmitter<Event> for EngineEventBus {}
-
-struct EngineGlobal {
-    handle: EngineHandle,
-    event_buffer: Entity<EngineEventBus>,
-}
-
-impl EngineGlobal {
-    pub fn new(handle: EngineHandle, cx: &mut App) -> Self {
-        let event_buffer = cx.new(|_| EngineEventBus);
-
-        cx.spawn({
-            let handle = handle.clone();
-            async move |cx| {
-                let event_listener = handle.event_listener();
-                while let Ok(first_event) = event_listener.recv_async().await {
-                    let _ = cx.update(|cx| {
-                        cx.emit_engine_event(first_event);
-                        while let Ok(event) = event_listener.try_recv() {
-                            cx.emit_engine_event(event);
+        let request_thread = thread::spawn({
+            let state = Arc::clone(&state);
+            let dispatcher = dispatcher.clone();
+            move || {
+                while let Ok(request) = request_rx.recv() {
+                    match request {
+                        EngineRequest::Execute { command, reply_tx } => {
+                            let result = state.lock().unwrap().execute(command);
+                            log_request_error(&result, "Command execution failed");
+                            if let Some(reply_tx) = reply_tx {
+                                let _ = reply_tx.send(result);
+                            }
                         }
-                    });
+                        EngineRequest::LoadProject { project, reply_tx } => {
+                            let result = state.lock().unwrap().load_project(project, &dispatcher);
+                            log_request_error(&result, "Project load failed");
+                            let _ = reply_tx.send(result);
+                        }
+                        EngineRequest::ReplaceProject { project, reply_tx } => {
+                            let result =
+                                state.lock().unwrap().replace_project(project, &dispatcher);
+                            log_request_error(&result, "Project replace failed");
+                            let _ = reply_tx.send(result);
+                        }
+                        EngineRequest::UnloadProject { reply_tx } => {
+                            let result = state.lock().unwrap().unload_project();
+                            log_request_error(&result, "Project unload failed");
+                            let _ = reply_tx.send(result);
+                        }
+                        EngineRequest::ReloadProject { reply_tx } => {
+                            let result = state.lock().unwrap().reload_project(&dispatcher);
+                            log_request_error(&result, "Project reload failed");
+                            let _ = reply_tx.send(result);
+                        }
+                        EngineRequest::Stop => {
+                            if let Err(err) = state.lock().unwrap().stop() {
+                                log::error!("Failed to stop engine: {err:#}");
+                            }
+                            break;
+                        }
+                    }
                 }
             }
-        })
-        .detach();
+        });
 
-        Self { handle, event_buffer }
+        Self {
+            runtime: Arc::new(EngineRuntime {
+                state,
+                dispatcher,
+                events,
+                request_tx,
+                request_thread: Mutex::new(Some(request_thread)),
+            }),
+        }
+    }
+
+    pub fn with_project<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce(&Project) -> R,
+    {
+        let state = self.runtime.state.lock().unwrap();
+        f(&state.project)
+    }
+
+    pub fn update_project<F, R>(&self, f: F) -> anyhow::Result<R>
+    where
+        F: FnOnce(&mut Project) -> R,
+    {
+        let mut project = self.with_project(Clone::clone);
+        let result = f(&mut project);
+        self.replace_project(project)?;
+
+        Ok(result)
+    }
+
+    pub fn load_project(&self, project: Project) -> anyhow::Result<()> {
+        self.request(|reply_tx| EngineRequest::LoadProject { project, reply_tx })
+    }
+
+    pub async fn load_project_async(&self, project: Project) -> anyhow::Result<()> {
+        self.request_async(|reply_tx| EngineRequest::LoadProject { project, reply_tx }).await
+    }
+
+    pub fn replace_project(&self, project: Project) -> anyhow::Result<()> {
+        self.request(|reply_tx| EngineRequest::ReplaceProject { project, reply_tx })
+    }
+
+    pub async fn replace_project_async(&self, project: Project) -> anyhow::Result<()> {
+        self.request_async(|reply_tx| EngineRequest::ReplaceProject { project, reply_tx }).await
+    }
+
+    pub fn unload_project(&self) -> anyhow::Result<Project> {
+        self.request(|reply_tx| EngineRequest::UnloadProject { reply_tx })
+    }
+
+    pub async fn unload_project_async(&self) -> anyhow::Result<Project> {
+        self.request_async(|reply_tx| EngineRequest::UnloadProject { reply_tx }).await
+    }
+
+    pub fn reload_project(&self) -> anyhow::Result<()> {
+        self.request(|reply_tx| EngineRequest::ReloadProject { reply_tx })
+    }
+
+    pub async fn reload_project_async(&self) -> anyhow::Result<()> {
+        self.request_async(|reply_tx| EngineRequest::ReloadProject { reply_tx }).await
+    }
+
+    pub fn dispatcher(&self) -> EngineDispatcher {
+        self.runtime.dispatcher.clone()
+    }
+
+    pub fn events(&self) -> Events {
+        self.runtime.events.clone()
+    }
+
+    pub fn execute(&self, command: EngineCommand) {
+        self.runtime.dispatcher.execute(command);
+    }
+
+    pub async fn execute_async(&self, command: EngineCommand) -> anyhow::Result<()> {
+        self.request_async(|reply_tx| EngineRequest::Execute { command, reply_tx: Some(reply_tx) })
+            .await
+    }
+
+    fn request<T>(
+        &self,
+        build_request: impl FnOnce(flume::Sender<anyhow::Result<T>>) -> EngineRequest,
+    ) -> anyhow::Result<T> {
+        let (reply_tx, reply_rx) = flume::bounded(1);
+        self.runtime
+            .request_tx
+            .send(build_request(reply_tx))
+            .context("Engine request queue disconnected")?;
+        reply_rx.recv().context("Engine request reply channel disconnected")?
+    }
+
+    async fn request_async<T>(
+        &self,
+        build_request: impl FnOnce(flume::Sender<anyhow::Result<T>>) -> EngineRequest,
+    ) -> anyhow::Result<T> {
+        let (reply_tx, reply_rx) = flume::bounded(1);
+        self.runtime
+            .request_tx
+            .send(build_request(reply_tx))
+            .context("Engine request queue disconnected")?;
+        reply_rx.recv_async().await.context("Engine request reply channel disconnected")?
     }
 }
 
-impl Global for EngineGlobal {}
+impl Default for Engine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Drop for EngineRuntime {
+    fn drop(&mut self) {
+        if self.request_tx.send(EngineRequest::Stop).is_err() {
+            if let Err(err) = self.state.lock().unwrap().stop() {
+                log::error!("Failed to stop engine: {err:#}");
+            }
+        }
+
+        if let Some(handle) = self.request_thread.lock().unwrap().take() {
+            let _ = handle.join().map_err(|_| log::error!("Failed to join engine request thread"));
+        }
+    }
+}
+
+struct EngineState {
+    project: Project,
+    services: Services,
+    highlight: bool,
+
+    is_dirty: bool,
+    event_tx: flume::Sender<Event>,
+}
+
+impl EngineState {
+    pub fn load_project(
+        &mut self,
+        project: Project,
+        dispatcher: &EngineDispatcher,
+    ) -> anyhow::Result<()> {
+        let started_at = Instant::now();
+        let project_path = project_path_label(&project);
+
+        if self.is_dirty {
+            self.unload_project()?;
+        }
+        self.project = project;
+        self.services = Services::new(&self.project, dispatcher.clone());
+        self.start()?;
+
+        log::info!("Project loaded in {:?}: '{}'", started_at.elapsed(), project_path);
+
+        self.emit(Event::ProjectLoaded);
+
+        Ok::<(), anyhow::Error>(()).context("Could not load project")
+    }
+
+    pub fn replace_project(
+        &mut self,
+        project: Project,
+        dispatcher: &EngineDispatcher,
+    ) -> anyhow::Result<()> {
+        let started_at = Instant::now();
+        let project_path = project_path_label(&project);
+
+        self.unload_project()?;
+
+        self.project = project;
+        self.services = Services::new(&self.project, dispatcher.clone());
+        self.start()?;
+
+        log::info!("Project replaced in {:?}: '{}'", started_at.elapsed(), project_path);
+
+        self.emit(Event::ProjectLoaded);
+
+        Ok::<(), anyhow::Error>(()).context("Could not replace project")
+    }
+
+    pub fn unload_project(&mut self) -> anyhow::Result<Project> {
+        let started_at = Instant::now();
+        let project_path = project_path_label(&self.project);
+
+        self.stop()?;
+        self.services = Services::default();
+        let old_project = std::mem::take(&mut self.project);
+
+        log::info!("Project unloaded in {:?}: '{}'", started_at.elapsed(), project_path);
+
+        self.emit(Event::ProjectUnloaded);
+
+        Ok::<Project, anyhow::Error>(old_project).context("Could not unload project")
+    }
+
+    pub fn reload_project(&mut self, dispatcher: &EngineDispatcher) -> anyhow::Result<()> {
+        let started_at = Instant::now();
+        let project_path = project_path_label(&self.project);
+
+        let project = self.unload_project()?;
+        self.load_project(project, dispatcher)?;
+
+        log::info!("Project reloaded in {:?}: '{}'", started_at.elapsed(), project_path);
+
+        self.emit(Event::ProjectReloaded);
+
+        Ok::<(), anyhow::Error>(()).context("Could not reload project")
+    }
+
+    pub fn execute(&mut self, command: EngineCommand) -> anyhow::Result<()> {
+        self.is_dirty = true;
+        match &command {
+            EngineCommand::HighlightToggle => {
+                self.highlight = !self.highlight;
+                self.emit(Event::HighlightChanged { highlight: self.highlight });
+            }
+            EngineCommand::Save { path } => {
+                let started_at = Instant::now();
+                self.project
+                    .save_to_folder()
+                    .with_context(|| format!("Saving project to '{}'", path.display()))?;
+                log::info!("Project saved in {:?}: '{}'", started_at.elapsed(), path.display());
+                self.emit(Event::Saved { path: path.to_owned() });
+                self.is_dirty = false;
+            }
+        }
+
+        log::info!("Command executed: {:?}", command);
+
+        Ok::<(), anyhow::Error>(())
+            .with_context(|| format!("Command '{:?}' could not be executed", command))
+    }
+
+    fn start(&mut self) -> anyhow::Result<()> {
+        let started_at = Instant::now();
+
+        let output_started_at = Instant::now();
+        self.services.output.start().context("Output service failed to start")?;
+        log::info!("Output service started in {:?}", output_started_at.elapsed());
+
+        let trigger_started_at = Instant::now();
+        self.services.trigger.start().context("Trigger service failed to start")?;
+        log::info!("Trigger service started in {:?}", trigger_started_at.elapsed());
+
+        log::info!("All services started in {:?}", started_at.elapsed());
+        Ok::<(), anyhow::Error>(()).context("Services failed to start")
+    }
+
+    fn stop(&mut self) -> anyhow::Result<()> {
+        let started_at = Instant::now();
+
+        let output_started_at = Instant::now();
+        self.services.output.stop().context("Output service failed to stop")?;
+        log::info!("Output service stopped in {:?}", output_started_at.elapsed());
+
+        let trigger_started_at = Instant::now();
+        self.services.trigger.stop().context("Trigger service failed to stop")?;
+        log::info!("Trigger service stopped in {:?}", trigger_started_at.elapsed());
+
+        log::info!("All services stopped in {:?}", started_at.elapsed());
+        Ok::<(), anyhow::Error>(()).context("Services failed to stop")
+    }
+
+    fn emit(&mut self, event: Event) {
+        log::debug!("Event emitted: {:?}", event);
+        let _ = self.event_tx.send(event);
+    }
+}
+
+struct Services {
+    pub output: Service<OutputService, Scheduled>,
+    pub trigger: Service<TriggerService, TriggerServiceRunner>,
+}
+
+impl Services {
+    const DMX_OUTPUT_FREQUENCY: u32 = 40;
+    const DMX_OUTPUT_INTERVAL: Duration =
+        Duration::new(0, 1_000_000_000 / Self::DMX_OUTPUT_FREQUENCY);
+
+    pub fn new(project: &Project, dispatcher: EngineDispatcher) -> Self {
+        Self {
+            output: Service::new(
+                OutputService::new(&project.output),
+                Scheduled::new(Self::DMX_OUTPUT_INTERVAL),
+            ),
+            trigger: Service::new(
+                TriggerService::new(dispatcher),
+                TriggerServiceRunner::new(&project.trigger),
+            ),
+        }
+    }
+}
+
+fn log_request_error<T>(result: &anyhow::Result<T>, context: &str) {
+    if let Err(err) = result {
+        log::error!("{context}: {err:#}");
+    }
+}
+
+fn project_path_label(project: &Project) -> String {
+    project
+        .path
+        .as_ref()
+        .map(|p| p.display().to_string())
+        .unwrap_or_else(|| "<unsaved project>".to_string())
+}
+
+impl Default for Services {
+    fn default() -> Self {
+        Self {
+            output: Service::new(
+                OutputService::default(),
+                Scheduled::new(Self::DMX_OUTPUT_INTERVAL),
+            ),
+            trigger: Service::new(
+                TriggerService::new(Default::default()),
+                TriggerServiceRunner::new(&Default::default()),
+            ),
+        }
+    }
+}

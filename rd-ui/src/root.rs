@@ -1,5 +1,5 @@
-use gpui::prelude::*;
-use gpui::{AnyView, Window, div};
+use gpui::{AnyView, FocusHandle, Window, div};
+use gpui::{App, Focusable, prelude::*};
 
 use crate::{ActiveTheme, z_stack};
 
@@ -11,11 +11,13 @@ pub(crate) mod action {
 
 pub struct Root {
     view: AnyView,
+
+    focus_handle: FocusHandle,
 }
 
 impl Root {
-    pub fn new(view: impl Into<AnyView>, _window: &mut Window, _cx: &mut Context<Self>) -> Self {
-        Self { view: view.into() }
+    pub fn new(view: impl Into<AnyView>, _window: &mut Window, cx: &mut Context<Self>) -> Self {
+        Self { view: view.into(), focus_handle: cx.focus_handle() }
     }
 
     pub fn view(&self) -> &AnyView {
@@ -36,6 +38,12 @@ impl Root {
     }
 }
 
+impl Focusable for Root {
+    fn focus_handle(&self, _cx: &App) -> gpui::FocusHandle {
+        self.focus_handle.clone()
+    }
+}
+
 impl Render for Root {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         window.set_rem_size(cx.theme().font_size);
@@ -44,6 +52,7 @@ impl Render for Root {
 
         div()
             .id("root")
+            .track_focus(&self.focus_handle)
             .key_context(action::KEY_CONTEXT)
             .on_action(cx.listener(Self::handle_action_tab))
             .on_action(cx.listener(Self::handle_action_tab_prev))

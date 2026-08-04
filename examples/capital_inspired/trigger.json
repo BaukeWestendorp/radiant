@@ -1,0 +1,74 @@
+{
+  "midi": [
+    {
+      "device_name": "nanoKONTROL2 SLIDER/KNOB",
+      "device_channel": {
+        "Single": 0
+      },
+      "filter": {
+        "ControlChange": {
+          "controller": {
+            "Single": 0
+          }
+        }
+      },
+      "target": {
+        "type": "ExecutorMaster",
+        "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+        "slot": 1
+      }
+    },
+    {
+      "device_name": "nanoKONTROL2 SLIDER/KNOB",
+      "device_channel": {
+        "Single": 0
+      },
+      "filter": {
+        "ControlChange": {
+          "controller": {
+            "Single": 64
+          }
+        }
+      },
+      "target": {
+        "type": "ExecutorButton",
+        "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+        "slot": 1,
+        "button": "Button1"
+      }
+    },
+    {
+      "device_name": "nanoKONTROL2 SLIDER/KNOB",
+      "device_channel": {
+        "Single": 0
+      },
+      "filter": {
+        "ControlChange": {
+          "controller": {
+            "Single": 16
+          }
+        }
+      },
+      "target": {
+        "type": "Encoder",
+        "ix": 0
+      }
+    },
+    {
+      "device_name": "nanoKONTROL2 SLIDER/KNOB",
+      "device_channel": {
+        "Single": 0
+      },
+      "filter": {
+        "ControlChange": {
+          "controller": {
+            "Single": 43
+          }
+        }
+      },
+      "target": {
+        "type": "HighlightToggle"
+      }
+    }
+  ]
+}

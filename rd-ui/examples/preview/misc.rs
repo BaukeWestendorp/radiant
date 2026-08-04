@@ -33,14 +33,16 @@ impl MiscPreview {
 
 impl Render for MiscPreview {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().child(Tabs::new("misc-tabs", self.tabs.clone(), TabsVariant::Top).tabs([
-            Tab::new("binding", "Bindings", self.binding.clone().into_any_element()),
-            Tab::new("grid", "Grid", self.grid.clone().into_any_element()),
-            Tab::new("icon", "Icon", self.icon.clone().into_any_element()),
-            Tab::new("org", "Organization", self.org.clone().into_any_element()),
-            Tab::new("settings", "Settings", self.settings.clone().into_any_element()),
-            Tab::new("title_bar", "Title Bar", self.title_bar.clone().into_any_element()),
-        ]))
+        div().size_full().child(
+            Tabs::new("misc-tabs", self.tabs.clone()).variant(TabsVariant::Top).tabs([
+                Tab::new("binding", "Bindings", self.binding.clone().into_any_element()),
+                Tab::new("grid", "Grid", self.grid.clone().into_any_element()),
+                Tab::new("icon", "Icon", self.icon.clone().into_any_element()),
+                Tab::new("org", "Organization", self.org.clone().into_any_element()),
+                Tab::new("settings", "Settings", self.settings.clone().into_any_element()),
+                Tab::new("title_bar", "Title Bar", self.title_bar.clone().into_any_element()),
+            ]),
+        )
     }
 }
 
@@ -202,23 +204,27 @@ impl SettingsPreview {
 }
 
 impl Render for SettingsPreview {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div().p_2().size_full().flex().flex_col().gap_2().child(
             section("Settings window").size_full().child(
                 div()
                     .flex()
                     .gap_2()
                     .flex_wrap()
-                    .child(Button::new("open-settings").child("Open Settings").on_click(
-                        |_, _window, cx| {
-                            cx.open_settings(None, |_window, cx| cx.new(|_| EmptyView).into());
-                        },
-                    ))
-                    .child(Button::new("close-settings").child("Close Settings").on_click(
-                        |_, _window, cx| {
-                            cx.close_settings();
-                        },
-                    )),
+                    .child(
+                        Button::new("open-settings", cx.focus_handle())
+                            .label("Open Settings")
+                            .on_click(|_, _window, cx| {
+                                cx.open_settings(None, |_window, cx| cx.new(|_| EmptyView).into());
+                            }),
+                    )
+                    .child(
+                        Button::new("close-settings", cx.focus_handle())
+                            .label("Close Settings")
+                            .on_click(|_, _window, cx| {
+                                cx.close_settings();
+                            }),
+                    ),
             ),
         )
     }
@@ -233,10 +239,14 @@ impl TitleBarPreview {
 }
 
 impl Render for TitleBarPreview {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let title_bar_no_children = TitleBar::new();
         let title_bar_children = TitleBar::new().child(
-            div().flex().gap_2().child("Hello World").child(Button::new("button").child("Button")),
+            div()
+                .flex()
+                .gap_2()
+                .child("Hello World")
+                .child(Button::new("button", cx.focus_handle()).label("Button")),
         );
 
         div()

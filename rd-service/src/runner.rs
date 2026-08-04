@@ -1,17 +1,17 @@
 use std::{
-    sync::{
-        Arc,
-        atomic::{AtomicBool, Ordering},
-    },
+    ops::ControlFlow,
     time::{Duration, Instant},
 };
 
-pub trait Runner: Send + 'static {
+pub trait Runner {
+    type Error: std::fmt::Display;
+    type Data;
+
     fn start(
         &mut self,
-        running: Arc<AtomicBool>,
-        notify_tx: flume::Sender<()>,
-    ) -> crate::Result<()>;
+        stop_rx: flume::Receiver<()>,
+        notify_tx: flume::Sender<Self::Data>,
+    ) -> Result<(), Self::Error>;
 }
 
 pub struct Scheduled {
@@ -29,15 +29,23 @@ impl Scheduled {
 }
 
 impl Runner for Scheduled {
+    type Error = crate::Error;
+    type Data = Instant;
+
     fn start(
         &mut self,
-        running: Arc<AtomicBool>,
-        notify_tx: flume::Sender<()>,
-    ) -> crate::Result<()> {
+        stop_rx: flume::Receiver<()>,
+        notify_tx: flume::Sender<Self::Data>,
+    ) -> Result<(), Self::Error> {
         let sleeper = spin_sleep::SpinSleeper::default();
         let mut next_tick = Instant::now() + self.interval;
 
-        while running.load(Ordering::SeqCst) {
+        loop {
+            match stop_rx.try_recv() {
+                Ok(()) | Err(flume::TryRecvError::Disconnected) => break,
+                Err(flume::TryRecvError::Empty) => {}
+            }
+
             let now = Instant::now();
             if now < next_tick {
                 sleeper.sleep_until(next_tick);
@@ -48,7 +56,7 @@ impl Runner for Scheduled {
                     next_tick += self.interval * ticks_missed;
                 }
             }
-            let _ = notify_tx.try_send(());
+            let _ = notify_tx.try_send(Instant::now());
             next_tick += self.interval;
         }
 
@@ -67,21 +75,32 @@ impl Notified {
 }
 
 impl Runner for Notified {
+    type Error = crate::Error;
+    type Data = ();
+
     fn start(
         &mut self,
-        running: Arc<AtomicBool>,
-        notify_tx: flume::Sender<()>,
-    ) -> crate::Result<()> {
-        while running.load(Ordering::SeqCst) {
-            match self.notify_rx.recv_timeout(Duration::from_millis(50)) {
-                Ok(_) => {
-                    let _ = notify_tx.try_send(());
-                }
-                Err(flume::RecvTimeoutError::Timeout) => continue,
-                Err(flume::RecvTimeoutError::Disconnected) => {
-                    log::warn!("Notify channel disconnected, stopping runner.");
-                    break;
-                }
+        stop_rx: flume::Receiver<()>,
+        notify_tx: flume::Sender<Self::Data>,
+    ) -> Result<(), Self::Error> {
+        loop {
+            match flume::Selector::new()
+                .recv(&stop_rx, |_| Some(ControlFlow::Break(())))
+                .recv(&self.notify_rx, |n| match n {
+                    Ok(()) => {
+                        let _ = notify_tx.send(());
+                        None
+                    }
+                    Err(flume::RecvError::Disconnected) => {
+                        log::warn!("Notify channel disconnected, stopping runner.");
+                        Some(ControlFlow::Break(()))
+                    }
+                })
+                .wait()
+            {
+                Some(ControlFlow::Break(())) => break,
+                Some(ControlFlow::Continue(())) => continue,
+                None => {}
             }
         }
 
