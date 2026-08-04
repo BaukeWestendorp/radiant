@@ -1,10 +1,84 @@
 use std::rc::Rc;
 
-use gpui::{AnyElement, App, Entity, SharedString, Window};
+use gpui::{AnyElement, App, AppContext, Entity, FocusHandle, Focusable, SharedString, Window};
 
-use crate::{AutoInput, InputDelegate, InputState, Popup, PopupAppExt, TableDelegate, TableState};
+use crate::{
+    AutoInput, Form, FormDelegate, FormField, Input, InputDelegate, InputState, LayoutDirection,
+    Picker, Popup, PopupAppExt, TableDelegate, TableState,
+};
 
 use super::TableEvent;
+
+#[derive(Clone, Default)]
+struct EnumerableEditData<V> {
+    enumerate: bool,
+    value: V,
+}
+
+struct EnumerableEditForm<I: InputDelegate> {
+    enumerate: Option<Entity<InputState<Picker<bool>>>>,
+    value: Entity<InputState<I>>,
+}
+
+impl<I> FormDelegate for EnumerableEditForm<I>
+where
+    I: InputDelegate + 'static,
+    I::Value: Default + Clone,
+{
+    type Data = EnumerableEditData<I::Value>;
+
+    fn fields(&self, cx: &mut App) -> Vec<FormField> {
+        let mut fields = Vec::new();
+
+        if let Some(enumerate) = &self.enumerate {
+            fields.push(
+                FormField::new(Input::new(enumerate.clone()), cx)
+                    .with_label("Enumerate")
+                    .with_direction(LayoutDirection::Horizontal),
+            );
+        }
+
+        fields.push(FormField::new(Input::new(self.value.clone()), cx));
+        fields
+    }
+
+    fn extract_data(&self, cx: &App) -> Option<Self::Data> {
+        Some(EnumerableEditData {
+            enumerate: self
+                .enumerate
+                .as_ref()
+                .map(|enumerate| *enumerate.read(cx).value(cx))
+                .unwrap_or(false),
+            value: self.value.read(cx).delegate().value_or_default(cx).clone(),
+        })
+    }
+
+    fn preferred_focus_handle(&self, cx: &App) -> Option<FocusHandle> {
+        Some(Focusable::focus_handle(&self.value, cx))
+    }
+}
+
+fn build_enumerable_edit_input<I, B>(
+    initial_value: I::Value,
+    multiple: bool,
+    input_builder: B,
+    window: &mut Window,
+    cx: &mut App,
+) -> Entity<InputState<Form<EnumerableEditForm<I>>>>
+where
+    I: InputDelegate + 'static,
+    I::Value: Default + Clone,
+    B: Fn(I::Value, &mut Window, &mut App) -> Entity<InputState<I>>,
+{
+    let enumerate = multiple.then(|| <bool as AutoInput>::build_input(true, window, cx));
+    let value = input_builder(initial_value, window, cx);
+
+    cx.new(move |cx| {
+        let delegate = EnumerableEditForm { enumerate, value };
+        let form = Form::new(delegate, cx.focus_handle(), window, cx);
+        InputState::new(form, window, cx)
+    })
+}
 
 pub struct Column<D: TableDelegate> {
     id: SharedString,
@@ -171,25 +245,42 @@ impl<D: TableDelegate + 'static> Column<D> {
             },
             move |first_value, table, row_ids, window, cx| {
                 let field_selector = Rc::clone(&field_selector);
+                let input_builder = Rc::clone(&input_builder);
 
-                let input = input_builder(first_value, window, cx);
+                let input = build_enumerable_edit_input(
+                    first_value,
+                    row_ids.len() > 1,
+                    move |value, window, cx| input_builder(value, window, cx),
+                    window,
+                    cx,
+                );
 
-                Popup::input("Edit value(s)", input, window, cx, move |new_value: &I::Value, cx| {
-                    table.update(cx, |state, cx| {
-                        state.delegate().rows().update(cx, |rows, cx| {
-                            for (offset, row_id) in row_ids.iter().enumerate() {
-                                if let Some(row) = rows.get_mut(row_id) {
-                                    let target_field = field_selector(row);
-                                    *target_field = new_value.enumerated_value(offset);
+                Popup::input(
+                    "Edit value(s)",
+                    input,
+                    window,
+                    cx,
+                    move |edit: &EnumerableEditData<I::Value>, cx| {
+                        table.update(cx, |state, cx| {
+                            state.delegate().rows().update(cx, |rows, cx| {
+                                for (offset, row_id) in row_ids.iter().enumerate() {
+                                    if let Some(row) = rows.get_mut(row_id) {
+                                        let target_field = field_selector(row);
+                                        *target_field = if edit.enumerate {
+                                            edit.value.enumerated_value(offset)
+                                        } else {
+                                            edit.value.clone()
+                                        };
+                                    }
                                 }
-                            }
+                                cx.notify();
+                            });
+                            state.update_sort_cache(cx);
                             cx.notify();
+                            cx.emit(TableEvent::EditSubmitted);
                         });
-                        state.update_sort_cache(cx);
-                        cx.notify();
-                        cx.emit(TableEvent::EditSubmitted);
-                    });
-                })
+                    },
+                )
             },
         )
     }
