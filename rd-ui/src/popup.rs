@@ -106,15 +106,15 @@ impl Popup {
         }
     }
 
-    pub fn input<S: InputDelegate + 'static>(
+    pub fn input<D: InputDelegate + 'static>(
         title: impl Into<SharedString>,
-        input: Entity<InputState<S>>,
+        input: Entity<InputState<D>>,
         window: &mut Window,
         cx: &mut App,
-        on_submit: impl Fn(&S::Value, &mut App) + 'static,
+        on_submit: impl Fn(&D::Value, &mut App) + 'static,
     ) -> Self
     where
-        S::Value: Default,
+        D::Value: Default,
     {
         let on_submit = Rc::new(on_submit);
 
@@ -259,16 +259,16 @@ impl Render for Popup {
     }
 }
 
-struct InputPopupForm<S: InputDelegate> {
-    input: Entity<InputState<S>>,
+struct InputPopupForm<D: InputDelegate> {
+    input: Entity<InputState<D>>,
 }
 
-impl<S> FormDelegate for InputPopupForm<S>
+impl<D> FormDelegate for InputPopupForm<D>
 where
-    S: InputDelegate + 'static,
-    S::Value: Default,
+    D: InputDelegate + 'static,
+    D::Value: Default,
 {
-    type Data = S::Value;
+    type Data = D::Value;
 
     fn fields(&self, cx: &mut App) -> Vec<FormField> {
         vec![FormField::new(Input::new(self.input.clone()), cx)]
@@ -283,11 +283,11 @@ where
     }
 }
 
-struct InputPopup<S: InputDelegate> {
-    input: Entity<InputState<S>>,
+struct InputPopup<D: InputDelegate> {
+    input: Entity<InputState<D>>,
 }
 
-impl<S: InputDelegate + 'static> Render for InputPopup<S> {
+impl<D: InputDelegate + 'static> Render for InputPopup<D> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
             .flex()
@@ -295,6 +295,6 @@ impl<S: InputDelegate + 'static> Render for InputPopup<S> {
             .items_center()
             .size_full()
             .p_2()
-            .child(div().w_full().child(S::new_element(self.input.clone(), window, cx)))
+            .child(div().w_full().child(D::new_element(self.input.clone(), window, cx)))
     }
 }
