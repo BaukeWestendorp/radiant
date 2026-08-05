@@ -87,7 +87,7 @@ pub struct Column<D: TableDelegate> {
     pub(crate) cell_builder: Option<Box<dyn Fn(&D::Row, &Window, &App) -> AnyElement>>,
     /// After finishing the edit, you need to emit `TableEvent::EditSubmitted`.
     pub(crate) edit_handler:
-        Option<Rc<dyn Fn(Entity<TableState<D>>, Vec<D::RowId>, &mut Window, &mut App)>>,
+        Option<Rc<dyn Fn(Entity<TableState<D>>, Vec<usize>, &mut Window, &mut App)>>,
     pub(crate) sort_handler: Option<Box<dyn Fn(&D::Row, &D::Row) -> std::cmp::Ordering>>,
 }
 
@@ -128,7 +128,7 @@ impl<D: TableDelegate + 'static> Column<D> {
 
     pub fn with_edit_handler(
         mut self,
-        edit_handler: impl Fn(Entity<TableState<D>>, Vec<D::RowId>, &mut Window, &mut App) + 'static,
+        edit_handler: impl Fn(Entity<TableState<D>>, Vec<usize>, &mut Window, &mut App) + 'static,
     ) -> Self {
         self.edit_handler = Some(Rc::new(edit_handler));
         self
@@ -137,7 +137,7 @@ impl<D: TableDelegate + 'static> Column<D> {
     pub fn with_input_popup_edit_handler<
         V: 'static,
         S: Fn(&mut D::Row) -> V + 'static,
-        P: Fn(V, Entity<TableState<D>>, Vec<D::RowId>, &mut Window, &mut App) -> Popup + 'static,
+        P: Fn(V, Entity<TableState<D>>, Vec<usize>, &mut Window, &mut App) -> Popup + 'static,
     >(
         self,
         initial_value: S,
@@ -155,7 +155,7 @@ impl<D: TableDelegate + 'static> Column<D> {
                 let initial_value = Rc::clone(&initial_value);
                 move |state, cx| {
                     state.delegate().rows().update(cx, |rows, _| {
-                        let row = rows.get_mut(first_row_id)?;
+                        let row = rows.get_mut(*first_row_id)?;
                         Some(initial_value(row))
                     })
                 }
@@ -199,8 +199,8 @@ impl<D: TableDelegate + 'static> Column<D> {
                 Popup::input("Edit value(s)", input, window, cx, move |new_value: &I::Value, cx| {
                     table.update(cx, |state, cx| {
                         state.delegate().rows().update(cx, |rows, cx| {
-                            for row_id in &row_ids {
-                                if let Some(row) = rows.get_mut(row_id) {
+                            for row_ix in &row_ids {
+                                if let Some(row) = rows.get_mut(*row_ix) {
                                     let target_field = field_selector(row);
                                     *target_field = new_value.clone();
                                 }
@@ -263,8 +263,8 @@ impl<D: TableDelegate + 'static> Column<D> {
                     move |edit: &EnumerableEditData<I::Value>, cx| {
                         table.update(cx, |state, cx| {
                             state.delegate().rows().update(cx, |rows, cx| {
-                                for (offset, row_id) in row_ids.iter().enumerate() {
-                                    if let Some(row) = rows.get_mut(row_id) {
+                                for (offset, row_ix) in row_ids.iter().enumerate() {
+                                    if let Some(row) = rows.get_mut(*row_ix) {
                                         let target_field = field_selector(row);
                                         *target_field = if edit.enumerate {
                                             edit.value.enumerated_value(offset)

@@ -1,12 +1,9 @@
-use std::collections::HashMap;
-
 use gpui::{App, Entity, Window, div, prelude::*};
 use rd_ui::{Column, EnumerableValue, Table, TableDelegate, TableState};
-use uuid::Uuid;
 
 pub struct ArtnetOutputTabView {
     table: Entity<TableState<ArtnetOutputInstanceTable>>,
-    instances: Entity<HashMap<Uuid, rd::project::artnet::ArtnetOutputInstanceConfig>>,
+    instances: Entity<Vec<rd::project::artnet::ArtnetOutputInstanceConfig>>,
 }
 
 impl ArtnetOutputTabView {
@@ -15,35 +12,17 @@ impl ArtnetOutputTabView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
-        let instances = cx.new(|cx| {
-            uncommitted_project
-                .read(cx)
-                .output
-                .artnet
-                .instances
-                .iter()
-                .map(|instance| (Uuid::new_v4(), instance.clone()))
-                .collect::<HashMap<_, _>>()
-        });
+        let instances = cx.new(|cx| uncommitted_project.read(cx).output.artnet.instances.clone());
 
         cx.observe(&uncommitted_project, move |this, uncommitted_project, cx| {
-            let new_instances = uncommitted_project
-                .read(cx)
-                .output
-                .artnet
-                .instances
-                .iter()
-                .map(|instance| (Uuid::new_v4(), instance.clone()))
-                .collect::<HashMap<_, _>>();
-
-            this.instances.write(cx, new_instances);
+            this.instances.write(cx, uncommitted_project.read(cx).output.artnet.instances.clone());
         })
         .detach();
 
         cx.observe(&instances, {
             let uncommitted_project = uncommitted_project.clone();
             move |_, instances, cx| {
-                let new_instances = instances.read(cx).values().cloned().collect();
+                let new_instances = instances.read(cx).clone();
 
                 if new_instances == uncommitted_project.read(cx).output.artnet.instances {
                     return;
@@ -82,12 +61,12 @@ impl Render for ArtnetOutputTabView {
 
 struct ArtnetOutputInstanceTable {
     columns: Vec<Column<Self>>,
-    instances: Entity<HashMap<Uuid, rd::project::artnet::ArtnetOutputInstanceConfig>>,
+    instances: Entity<Vec<rd::project::artnet::ArtnetOutputInstanceConfig>>,
 }
 
 impl ArtnetOutputInstanceTable {
     fn new(
-        instances: Entity<HashMap<Uuid, rd::project::artnet::ArtnetOutputInstanceConfig>>,
+        instances: Entity<Vec<rd::project::artnet::ArtnetOutputInstanceConfig>>,
         _window: &mut Window,
         _cx: &mut Context<TableState<Self>>,
     ) -> Self {
@@ -117,7 +96,6 @@ impl ArtnetOutputInstanceTable {
 
 impl TableDelegate for ArtnetOutputInstanceTable {
     type Row = rd::project::artnet::ArtnetOutputInstanceConfig;
-    type RowId = Uuid;
 
     fn columns(&self, _cx: &App) -> impl Iterator<Item = &Column<Self>> {
         self.columns.iter()
@@ -127,16 +105,12 @@ impl TableDelegate for ArtnetOutputInstanceTable {
         self.columns.iter().find(|c| c.id() == column_id)
     }
 
-    fn rows(&self) -> Entity<HashMap<Self::RowId, Self::Row>> {
+    fn rows(&self) -> Entity<Vec<Self::Row>> {
         self.instances.clone()
     }
 
-    fn insert_new_row(
-        &self,
-        last_item_id: Option<Self::RowId>,
-        cx: &mut App,
-    ) -> Option<Self::RowId> {
-        let last_item = last_item_id.and_then(|id| self.rows().read(cx).get(&id));
+    fn insert_new_row(&self, last_item_ix: Option<usize>, cx: &mut App) -> Option<usize> {
+        let last_item = last_item_ix.and_then(|ix| self.rows().read(cx).get(ix));
         let new_instance = match last_item {
             Some(last_instance) => rd::project::artnet::ArtnetOutputInstanceConfig {
                 name: last_instance.name.enumerated_value(1),
@@ -150,12 +124,12 @@ impl TableDelegate for ArtnetOutputInstanceTable {
             },
         };
 
-        let new_id = Uuid::new_v4();
+        let new_ix = self.instances.read(cx).len();
         self.instances.update(cx, |instances, cx| {
-            instances.insert(new_id, new_instance);
+            instances.push(new_instance);
             cx.notify();
         });
 
-        Some(new_id)
+        Some(new_ix)
     }
 }

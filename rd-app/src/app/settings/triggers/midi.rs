@@ -1,13 +1,10 @@
-use std::collections::HashMap;
-
 use gpui::{App, Entity, Window, div, prelude::*};
 
 use rd_ui::{Column, Table, TableDelegate, TableState};
-use uuid::Uuid;
 
 pub struct MidiTabView {
     table: Entity<TableState<MidiMappingTable>>,
-    mappings: Entity<HashMap<Uuid, rd::project::MidiMapping>>,
+    mappings: Entity<Vec<rd::project::MidiMapping>>,
 }
 
 impl MidiTabView {
@@ -16,33 +13,17 @@ impl MidiTabView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
-        let mappings = cx.new(|cx| {
-            uncommitted_project
-                .read(cx)
-                .trigger
-                .midi
-                .iter()
-                .map(|mapping| (Uuid::new_v4(), mapping.clone()))
-                .collect::<HashMap<_, _>>()
-        });
+        let mappings = cx.new(|cx| uncommitted_project.read(cx).trigger.midi.clone());
 
         cx.observe(&uncommitted_project, move |this, uncommitted_project, cx| {
-            let new_mappings = uncommitted_project
-                .read(cx)
-                .trigger
-                .midi
-                .iter()
-                .map(|mapping| (Uuid::new_v4(), mapping.clone()))
-                .collect::<HashMap<_, _>>();
-
-            this.mappings.write(cx, new_mappings);
+            this.mappings.write(cx, uncommitted_project.read(cx).trigger.midi.clone());
         })
         .detach();
 
         cx.observe(&mappings, {
             let uncommitted_project = uncommitted_project.clone();
             move |_, mappings, cx| {
-                let new_mappings = mappings.read(cx).values().cloned().collect();
+                let new_mappings = mappings.read(cx).clone();
 
                 if new_mappings == uncommitted_project.read(cx).trigger.midi {
                     return;
@@ -76,12 +57,12 @@ impl Render for MidiTabView {
 
 struct MidiMappingTable {
     columns: Vec<Column<Self>>,
-    mappings: Entity<HashMap<Uuid, rd::project::MidiMapping>>,
+    mappings: Entity<Vec<rd::project::MidiMapping>>,
 }
 
 impl MidiMappingTable {
     fn new(
-        mappings: Entity<HashMap<Uuid, rd::project::MidiMapping>>,
+        mappings: Entity<Vec<rd::project::MidiMapping>>,
         _window: &mut Window,
         _cx: &mut Context<TableState<Self>>,
     ) -> Self {
@@ -120,7 +101,6 @@ impl MidiMappingTable {
 
 impl TableDelegate for MidiMappingTable {
     type Row = rd::project::midi::MidiMapping;
-    type RowId = Uuid;
 
     fn columns(&self, _cx: &App) -> impl Iterator<Item = &Column<Self>> {
         self.columns.iter()
@@ -130,16 +110,12 @@ impl TableDelegate for MidiMappingTable {
         self.columns.iter().find(|c| c.id() == column_id)
     }
 
-    fn rows(&self) -> Entity<HashMap<Self::RowId, Self::Row>> {
+    fn rows(&self) -> Entity<Vec<Self::Row>> {
         self.mappings.clone()
     }
 
-    fn insert_new_row(
-        &self,
-        last_item_id: Option<Self::RowId>,
-        cx: &mut App,
-    ) -> Option<Self::RowId> {
-        let last_item = last_item_id.and_then(|id| self.rows().read(cx).get(&id));
+    fn insert_new_row(&self, last_item_ix: Option<usize>, cx: &mut App) -> Option<usize> {
+        let last_item = last_item_ix.and_then(|ix| self.rows().read(cx).get(ix));
         let new_mapping = match last_item {
             Some(last_mapping) => rd::project::midi::MidiMapping {
                 device_name: last_mapping.device_name.clone(),
@@ -154,11 +130,12 @@ impl TableDelegate for MidiMappingTable {
                 target: rd::project::TriggerTarget::default(),
             },
         };
-        let new_id = Uuid::new_v4();
+
+        let new_ix = self.mappings.read(cx).len();
         self.mappings.update(cx, |mappings, cx| {
-            mappings.insert(new_id, new_mapping);
+            mappings.push(new_mapping);
             cx.notify();
         });
-        Some(new_id)
+        Some(new_ix)
     }
 }

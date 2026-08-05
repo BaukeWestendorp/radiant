@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use gpui::{App, prelude::*};
 use gpui::{Entity, Window, div};
 use rd_ui::{ActiveTheme, Column, Table, TableDelegate, TableSelection, TableState, section};
@@ -57,7 +55,7 @@ impl Render for TablePreview {
 }
 
 struct PreviewTableDelegate {
-    items: Entity<HashMap<String, Item>>,
+    items: Entity<Vec<Item>>,
 
     columns: Vec<Column<Self>>,
 }
@@ -66,14 +64,14 @@ impl PreviewTableDelegate {
     fn new(cx: &mut App) -> Self {
         Self {
             #[rustfmt::skip]
-            items: cx.new(|_| HashMap::from([
-                ("row-001".into(), Item { alpha: 1, beta: "one".into(), gamma: Protocol::Artnet }),
-                ("row-002".into(), Item { alpha: 2, beta: "two".into(), gamma: Protocol::Artnet }),
-                ("row-003".into(), Item { alpha: 3, beta: "three".into(), gamma: Protocol::Artnet }),
-                ("row-004".into(), Item { alpha: 5, beta: "five".into(), gamma: Protocol::Artnet }),
-                ("row-005".into(),Item { alpha: 8, beta: "eight".into(), gamma: Protocol::Artnet }),
-                ("row-006".into(),Item { alpha: 13, beta: "thirteen".into(), gamma: Protocol::Artnet }),
-            ])),
+            items: cx.new(|_| vec![
+                Item { alpha: 1, beta: "one".into(), gamma: Protocol::Artnet },
+                Item { alpha: 2, beta: "two".into(), gamma: Protocol::Artnet },
+                Item { alpha: 3, beta: "three".into(), gamma: Protocol::Artnet },
+                Item { alpha: 5, beta: "five".into(), gamma: Protocol::Artnet },
+                Item { alpha: 8, beta: "eight".into(), gamma: Protocol::Artnet },
+                Item { alpha: 13, beta: "thirteen".into(), gamma: Protocol::Artnet },
+            ]),
             columns: vec![
                 Column::new("alpha", "Alpha")
                     .with_sort_handler(|a: &Item, b: &Item| a.alpha.cmp(&b.alpha))
@@ -96,7 +94,7 @@ impl PreviewTableDelegate {
 
 impl TableDelegate for PreviewTableDelegate {
     type Row = Item;
-    type RowId = String;
+
 
     fn columns(&self, _cx: &App) -> impl Iterator<Item = &Column<Self>> {
         self.columns.iter()
@@ -106,22 +104,22 @@ impl TableDelegate for PreviewTableDelegate {
         self.columns.iter().find(|c| c.id() == column_id)
     }
 
-    fn rows(&self) -> Entity<HashMap<Self::RowId, Self::Row>> {
+    fn rows(&self) -> Entity<Vec<Self::Row>> {
         self.items.clone()
     }
 
     fn insert_new_row(
         &self,
-        _last_item_id: Option<Self::RowId>,
+        _last_item_ix: Option<usize>,
         cx: &mut App,
-    ) -> Option<Self::RowId> {
-        let new_id = format!("row-{:03}", self.rows().read(cx).len() + 1);
+    ) -> Option<usize> {
+        let new_ix = self.rows().read(cx).len();
         let new_item = Item::default();
         self.items.update(cx, |items, cx| {
-            items.insert(new_id.clone(), new_item);
+            items.push(new_item);
             cx.notify();
         });
-        Some(new_id)
+        Some(new_ix)
     }
 }
 

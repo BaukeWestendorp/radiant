@@ -156,7 +156,9 @@ impl<D: TableDelegate> Table<D> {
         let cells = rows
             .into_iter()
             .enumerate()
-            .map(|(row_ix, (row_id, row))| self.render_row(row, row_id, row_ix, window, cx));
+            .map(|(row_ix, (row_ix_in_source, row))| {
+                self.render_row(row, row_ix_in_source, row_ix, window, cx)
+            });
 
         div().id("body").overflow_scroll().size_full().child(
             div()
@@ -195,7 +197,7 @@ impl<D: TableDelegate> Table<D> {
     fn render_row(
         &self,
         row: &D::Row,
-        row_id: &D::RowId,
+        row_ix_in_source: usize,
         row_ix: usize,
         window: &Window,
         cx: &App,
@@ -203,7 +205,7 @@ impl<D: TableDelegate> Table<D> {
         let columns = self.state().read(cx).delegate().columns(cx);
 
         let cells = columns.enumerate().map(|(column_ix, column)| {
-            self.render_cell(row, row_id, row_ix, column_ix, column, window, cx)
+            self.render_cell(row, row_ix_in_source, row_ix, column_ix, column, window, cx)
         });
 
         div()
@@ -225,7 +227,7 @@ impl<D: TableDelegate> Table<D> {
     fn render_cell(
         &self,
         row: &D::Row,
-        row_id: &D::RowId,
+        row_ix_in_source: usize,
         row_ix: usize,
         column_ix: usize,
         column: &Column<D>,
@@ -245,8 +247,12 @@ impl<D: TableDelegate> Table<D> {
             None => todo(cx).into_any_element(),
         };
 
-        let is_selected =
-            self.state.read(cx).selection().read(cx).is_cell_selected(column.id(), row_id);
+        let is_selected = self
+            .state
+            .read(cx)
+            .selection()
+            .read(cx)
+            .is_cell_selected(column.id(), row_ix_in_source);
         let is_editable = column.editable();
 
         let selection_overlay = is_selected.then(|| {
@@ -411,9 +417,8 @@ impl<D: TableDelegate + 'static> RenderOnce for Table<D> {
                 let state = self.state.clone();
                 move |_, _, cx| {
                     state.update(cx, |state, cx| {
-                        let last_item_id =
-                            state.sorted_rows(cx).last().map(|(id, _)| (*id).clone());
-                        state.delegate().insert_new_row(last_item_id, cx);
+                        let last_item_ix = state.sorted_rows(cx).last().map(|(row_ix, _)| *row_ix);
+                        state.delegate().insert_new_row(last_item_ix, cx);
                         cx.notify();
                     });
                 }
@@ -438,8 +443,14 @@ impl<D: TableDelegate + 'static> RenderOnce for Table<D> {
                     state.update(cx, |state, cx| {
                         state.delegate().rows().update(cx, |items, cx| {
                             let selection = state.selection().read(cx);
-                            for row_id in selection.row_ids() {
-                                items.remove(row_id);
+                            let mut row_ids: Vec<_> = selection.row_ids().copied().collect();
+                            row_ids.sort_unstable();
+                            row_ids.dedup();
+
+                            for row_ix in row_ids.into_iter().rev() {
+                                if row_ix < items.len() {
+                                    items.remove(row_ix);
+                                }
                             }
                             cx.notify();
                         });
@@ -473,10 +484,9 @@ impl<D: TableDelegate + 'static> RenderOnce for Table<D> {
                                 return;
                             };
 
-                            let row_ids: Vec<_> =
-                                state.delegate().rows().read(cx).keys().cloned().collect();
-                            for row_id in row_ids {
-                                selection.select_cell(column_id.clone(), row_id);
+                            let row_count = state.delegate().rows().read(cx).len();
+                            for row_ix in 0..row_count {
+                                selection.select_cell(column_id.clone(), row_ix);
                             }
 
                             cx.notify();

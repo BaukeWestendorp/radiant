@@ -1,15 +1,9 @@
-use std::{collections::HashMap, hash::Hash};
-
-use gpui::Entity;
-
-use gpui::App;
+use gpui::{App, Entity};
 
 use crate::Column;
 
 pub trait TableDelegate {
     type Row;
-
-    type RowId: Clone + Hash + Eq;
 
     fn columns(&self, cx: &App) -> impl Iterator<Item = &Column<Self>>
     where
@@ -19,11 +13,7 @@ pub trait TableDelegate {
     where
         Self: Sized;
 
-    fn rows(&self) -> Entity<HashMap<Self::RowId, Self::Row>>;
+    fn rows(&self) -> Entity<Vec<Self::Row>>;
 
-    fn insert_new_row(
-        &self,
-        last_item_id: Option<Self::RowId>,
-        cx: &mut App,
-    ) -> Option<Self::RowId>;
+    fn insert_new_row(&self, last_item_ix: Option<usize>, cx: &mut App) -> Option<usize>;
 }

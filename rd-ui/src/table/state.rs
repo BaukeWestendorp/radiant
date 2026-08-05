@@ -5,10 +5,10 @@ use crate::TableDelegate;
 pub struct TableState<D: TableDelegate> {
     delegate: D,
 
-    selection: Entity<TableSelection<D>>,
+    selection: Entity<TableSelection>,
 
     sorted_column: Option<(String, TableSortDirection)>,
-    cached_row_order: Option<Vec<D::RowId>>,
+    cached_row_order: Option<Vec<usize>>,
 
     pub(crate) selection_drag: Option<(String, usize)>,
 
@@ -26,21 +26,20 @@ impl<D: TableDelegate + 'static> TableState<D> {
             delegate.columns(cx).find(|col| col.sortable()).map(|col| col.id().to_string());
 
         cx.observe(&delegate.rows(), |this, _, cx| {
-            let rows = this.delegate.rows().clone();
-            this.selection().update(cx, |selection, cx| {
-                let mut should_clear = false;
-                for row_id in selection.row_ids() {
-                    if !rows.read(cx).contains_key(row_id) {
-                        should_clear = true;
-                        break;
-                    }
-                }
+            let row_count = this.delegate.rows().read(cx).len();
+            let should_clear = {
+                let selection = this.selection().read(cx);
+                selection.row_ids().any(|row_ix| *row_ix >= row_count)
+            };
 
-                if should_clear {
+            if should_clear {
+                this.selection().update(cx, |selection, cx| {
                     selection.clear();
                     cx.notify();
-                }
-            });
+                });
+            }
+
+            this.update_sort_cache(cx);
             cx.notify();
         })
         .detach();
@@ -69,11 +68,11 @@ impl<D: TableDelegate + 'static> TableState<D> {
         &self.delegate
     }
 
-    pub fn selection(&self) -> &Entity<TableSelection<D>> {
+    pub fn selection(&self) -> &Entity<TableSelection> {
         &self.selection
     }
 
-    pub fn with_selection(mut self, selection: Entity<TableSelection<D>>) -> Self {
+    pub fn with_selection(mut self, selection: Entity<TableSelection>) -> Self {
         self.selection = selection;
         self
     }
@@ -86,24 +85,24 @@ impl<D: TableDelegate + 'static> TableState<D> {
         self.sorted_column.as_ref().map(|(_, direction)| *direction)
     }
 
-    pub fn sorted_rows<'a>(&'a self, cx: &'a App) -> Vec<(&'a D::RowId, &'a D::Row)> {
-        let rows_map = self.delegate.rows().read(cx);
+    pub fn sorted_rows<'a>(&'a self, cx: &'a App) -> Vec<(usize, &'a D::Row)> {
+        let rows = self.delegate.rows().read(cx);
 
         if let Some(order) = &self.cached_row_order {
-            if order.len() == rows_map.len() {
+            if order.len() == rows.len() {
                 return order
                     .iter()
-                    .filter_map(|id| rows_map.get(id).map(|row| (id, row)))
+                    .filter_map(|row_ix| rows.get(*row_ix).map(|row| (*row_ix, row)))
                     .collect();
             }
         }
 
-        let mut rows: Vec<_> = rows_map.iter().collect();
+        let mut sorted_rows: Vec<_> = rows.iter().enumerate().collect();
 
         if let Some((col_id, direction)) = &self.sorted_column {
             if let Some(column) = self.delegate.columns(cx).find(|c| c.id() == col_id) {
                 if let Some(sort_handler) = &column.sort_handler {
-                    rows.sort_by(|(_, a), (_, b)| {
+                    sorted_rows.sort_by(|(_, a), (_, b)| {
                         let cmp = sort_handler(a, b);
                         match direction {
                             TableSortDirection::Ascending => cmp,
@@ -114,7 +113,7 @@ impl<D: TableDelegate + 'static> TableState<D> {
             }
         }
 
-        rows
+        sorted_rows
     }
 
     pub fn sort_by_column(
@@ -148,10 +147,10 @@ impl<D: TableDelegate + 'static> TableState<D> {
             return;
         };
 
-        let rows_map = self.delegate.rows().read(cx);
-        let mut rows: Vec<_> = rows_map.iter().collect();
+        let rows = self.delegate.rows().read(cx);
+        let mut sorted_rows: Vec<_> = rows.iter().enumerate().collect();
 
-        rows.sort_by(|(_, a), (_, b)| {
+        sorted_rows.sort_by(|(_, a), (_, b)| {
             let cmp = sort_handler(a, b);
             match direction {
                 TableSortDirection::Ascending => cmp,
@@ -159,20 +158,20 @@ impl<D: TableDelegate + 'static> TableState<D> {
             }
         });
 
-        self.cached_row_order = Some(rows.into_iter().map(|(id, _)| (*id).clone()).collect());
+        self.cached_row_order = Some(sorted_rows.into_iter().map(|(row_ix, _)| row_ix).collect());
     }
 
     pub fn select_all_in_column(&self, id: impl Into<String>, cx: &mut App) {
         let id = id.into();
 
-        let rows = self.sorted_rows(cx);
-        let row_ids = rows.into_iter().map(|(id, _)| id.clone()).collect::<Vec<_>>();
+        let row_ids =
+            self.sorted_rows(cx).into_iter().map(|(row_ix, _)| row_ix).collect::<Vec<_>>();
 
         self.selection.update(cx, |selection, cx| {
             selection.column_id = Some(id);
             match selection.kind {
                 TableSelectionKind::Single(_) => {
-                    selection.kind = TableSelectionKind::Single(row_ids.first().cloned());
+                    selection.kind = TableSelectionKind::Single(row_ids.first().copied());
                 }
                 TableSelectionKind::Multiple(_) => {
                     selection.kind = TableSelectionKind::Multiple(row_ids);
@@ -204,9 +203,13 @@ impl<D: TableDelegate + 'static> TableState<D> {
         let start = start_row_ix.min(current_row_ix);
         let end = start_row_ix.max(current_row_ix);
 
-        let rows = self.sorted_rows(cx);
-        let selected_rows =
-            rows.into_iter().skip(start).take(end - start + 1).map(|(id, _)| id.clone()).collect();
+        let selected_rows = self
+            .sorted_rows(cx)
+            .into_iter()
+            .skip(start)
+            .take(end - start + 1)
+            .map(|(row_ix, _)| row_ix)
+            .collect();
 
         self.selection.update(cx, |selection, cx| {
             selection.column_id = Some(column_id);
@@ -234,21 +237,21 @@ impl<D: TableDelegate + 'static> Focusable for TableState<D> {
     }
 }
 
-pub struct TableSelection<D: TableDelegate> {
+pub struct TableSelection {
     pub column_id: Option<String>,
-    pub kind: TableSelectionKind<D>,
+    pub kind: TableSelectionKind,
 }
 
-impl<D: TableDelegate> TableSelection<D> {
-    pub fn single(column: Option<String>, row: Option<D::RowId>) -> Self {
+impl TableSelection {
+    pub fn single(column: Option<String>, row: Option<usize>) -> Self {
         Self { column_id: column, kind: TableSelectionKind::Single(row) }
     }
 
-    pub fn multiple(column: Option<String>, rows: Vec<D::RowId>) -> Self {
+    pub fn multiple(column: Option<String>, rows: Vec<usize>) -> Self {
         Self { column_id: column, kind: TableSelectionKind::Multiple(rows) }
     }
 
-    pub fn row_ids(&self) -> Box<dyn Iterator<Item = &D::RowId> + '_> {
+    pub fn row_ids(&self) -> Box<dyn Iterator<Item = &usize> + '_> {
         match &self.kind {
             TableSelectionKind::Single(row) => Box::new(row.iter()),
             TableSelectionKind::Multiple(rows) => Box::new(rows.iter()),
@@ -270,15 +273,15 @@ impl<D: TableDelegate> TableSelection<D> {
         self.column_id.as_deref() == Some(id)
     }
 
-    pub fn is_row_selected(&self, row_id: &D::RowId) -> bool {
+    pub fn is_row_selected(&self, row_ix: usize) -> bool {
         match &self.kind {
-            TableSelectionKind::Single(selected_row) => selected_row.as_ref() == Some(row_id),
-            TableSelectionKind::Multiple(selected_rows) => selected_rows.contains(row_id),
+            TableSelectionKind::Single(selected_row) => *selected_row == Some(row_ix),
+            TableSelectionKind::Multiple(selected_rows) => selected_rows.contains(&row_ix),
         }
     }
 
-    pub fn is_cell_selected(&self, column_id: &str, row_id: &D::RowId) -> bool {
-        self.is_column_selected(column_id) && self.is_row_selected(row_id)
+    pub fn is_cell_selected(&self, column_id: &str, row_ix: usize) -> bool {
+        self.is_column_selected(column_id) && self.is_row_selected(row_ix)
     }
 
     pub fn clear(&mut self) {
@@ -289,15 +292,15 @@ impl<D: TableDelegate> TableSelection<D> {
         }
     }
 
-    pub fn select_cell(&mut self, column_id: String, row_id: D::RowId) {
+    pub fn select_cell(&mut self, column_id: String, row_ix: usize) {
         match &self.kind {
             TableSelectionKind::Single(_) => {
-                self.kind = TableSelectionKind::Single(Some(row_id));
+                self.kind = TableSelectionKind::Single(Some(row_ix));
             }
             TableSelectionKind::Multiple(selected_rows) => {
                 let mut new_selected_rows = selected_rows.clone();
-                if !new_selected_rows.contains(&row_id) {
-                    new_selected_rows.push(row_id);
+                if !new_selected_rows.contains(&row_ix) {
+                    new_selected_rows.push(row_ix);
                 }
                 self.kind = TableSelectionKind::Multiple(new_selected_rows);
             }
@@ -306,9 +309,9 @@ impl<D: TableDelegate> TableSelection<D> {
     }
 }
 
-pub enum TableSelectionKind<D: TableDelegate> {
-    Single(Option<D::RowId>),
-    Multiple(Vec<D::RowId>),
+pub enum TableSelectionKind {
+    Single(Option<usize>),
+    Multiple(Vec<usize>),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
