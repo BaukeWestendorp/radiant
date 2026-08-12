@@ -7,7 +7,6 @@ edition.workspace = true
 default = ["node"]
 node = ["dep:flume", "dep:if-addrs", "dep:mac_address", "dep:socket2"]
 facet = ["dep:facet", "dep:facet-validate"]
-rd-ui = ["dep:rd-ui"]
 
 [dependencies]
 log.workspace = true
@@ -27,9 +26,6 @@ thiserror = "2.0.18"
 # feature = "facet"
 facet = { workspace = true, features = ["net"], optional = true }
 facet-validate = { workspace = true, optional = true }
-
-# feature = "rd-ui"
-rd-ui = { workspace = true, optional = true, features = ["derive"] }
 
 [dev-dependencies]
 pretty_env_logger.workspace = true

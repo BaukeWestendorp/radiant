@@ -6,13 +6,9 @@ pub use packet::*;
 
 #[cfg(feature = "node")]
 mod node;
-#[cfg(feature = "rd-ui")]
-mod rd_ui;
 
 #[cfg(feature = "node")]
 pub use node::*;
-#[cfg(feature = "rd-ui")]
-pub use rd_ui::*;
 
 pub const PORT: u16 = 6454;
 

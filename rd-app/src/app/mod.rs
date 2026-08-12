@@ -1,7 +1,10 @@
 use std::path::{Path, PathBuf};
 
-use gpui::{App, Window, prelude::*};
-use rd_ui::{SettingsAppExt, todo};
+use rd_ui::{
+    AppBuilder, SettingsAppExt,
+    gpui::{App, Window, prelude::*},
+    todo,
+};
 
 use crate::app::engine::EngineAppExt;
 
@@ -9,11 +12,15 @@ mod engine;
 mod keymap;
 mod settings;
 
-gpui::actions!([SettingsOpen]);
-gpui::actions!(cmd, [Save, Highlight]);
+pub(crate) mod action {
+    use rd_ui::gpui;
+
+    gpui::actions!([SettingsOpen]);
+    gpui::actions!(cmd, [Save, Highlight]);
+}
 
 pub(crate) fn init(cx: &mut App) {
-    cx.on_action::<Save>(|_, cx| match cx.engine().with_project(|p| p.path.clone()) {
+    cx.on_action::<action::Save>(|_, cx| match cx.engine().with_project(|p| p.path.clone()) {
         Some(path) => {
             cx.engine().execute(rd::EngineCommand::Save { path });
         }
@@ -42,12 +49,12 @@ pub(crate) fn init(cx: &mut App) {
         }
     });
 
-    cx.on_action::<Highlight>(|_, cx| {
+    cx.on_action::<action::Highlight>(|_, cx| {
         cx.engine().execute(rd::EngineCommand::HighlightToggle);
     });
 
-    cx.on_action::<SettingsOpen>(|_, cx| {
-        cx.open_settings(Some(rd_ui::SETTINGS_WINDOW_OPTIONS), |window, cx| {
+    cx.on_action::<action::SettingsOpen>(|_, cx| {
+        cx.open_settings(Some(rd_ui::settings_window_options(cx)), |window, cx| {
             cx.new(|cx| settings::SettingsRootView::new(window, cx)).into()
         });
     });
@@ -62,7 +69,7 @@ pub fn run(showfile_path: Option<PathBuf>) -> anyhow::Result<()> {
 
     log::info!("Starting Radiant application");
 
-    rd_ui::build_app().run(|window, cx| {
+    AppBuilder::new().with_window_title("Radiant").run(|window, cx| {
         engine::init(engine, cx);
         init(cx);
 

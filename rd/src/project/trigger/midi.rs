@@ -14,25 +14,11 @@ pub struct MidiMapping {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[derive(facet::Facet)]
-#[cfg_attr(feature = "rd-ui", derive(rd_ui::Input))]
 #[repr(C)]
 pub enum MidiFilter {
-    #[cfg_attr(feature = "rd-ui", rd_ui(label = "Control Change"))]
-    ControlChange {
-        #[cfg_attr(feature = "rd-ui", rd_ui(label = "Controller"))]
-        controller: MidiController,
-    },
-    #[cfg_attr(feature = "rd-ui", rd_ui(label = "Note On"))]
-    NoteOn {
-        #[cfg_attr(feature = "rd-ui", rd_ui(label = "Note"))]
-        note: MidiNote,
-    },
-    #[cfg_attr(feature = "rd-ui", rd_ui(label = "Note Off"))]
-    NoteOff {
-        #[cfg_attr(feature = "rd-ui", rd_ui(label = "Note"))]
-        note: MidiNote,
-    },
-    #[cfg_attr(feature = "rd-ui", rd_ui(label = "Pitch Bend"))]
+    ControlChange { controller: MidiController },
+    NoteOn { note: MidiNote },
+    NoteOff { note: MidiNote },
     PitchBend,
 }
 
@@ -66,12 +52,11 @@ impl std::fmt::Display for MidiFilter {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 #[derive(facet::Facet)]
-#[cfg_attr(feature = "rd-ui", derive(rd_ui::Input))]
 #[repr(C)]
 pub enum MidiChannel {
     #[default]
     All,
-    Single(#[cfg_attr(feature = "rd-ui", rd_ui(label = "Channel"))] u4),
+    Single(u4),
 }
 
 impl std::fmt::Display for MidiChannel {
@@ -83,36 +68,20 @@ impl std::fmt::Display for MidiChannel {
     }
 }
 
-#[cfg(feature = "rd-ui")]
-impl rd_ui::EnumerableValue for MidiChannel {
-    fn enumerated_value(&self, offset: usize) -> Self {
-        match self {
-            MidiChannel::All => MidiChannel::All,
-            MidiChannel::Single(channel) => {
-                let new_channel = channel.get().saturating_add(offset as u8);
-                let clamped_channel = new_channel.min(u4::MAX);
-                MidiChannel::Single(u4::new(clamped_channel).unwrap())
-            }
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 #[derive(facet::Facet)]
-#[cfg_attr(feature = "rd-ui", derive(rd_ui::Input))]
 #[repr(C)]
 pub enum MidiNote {
     #[default]
     All,
-    Single(#[cfg_attr(feature = "rd-ui", rd_ui(label = "Note"))] u7),
+    Single(u7),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 #[derive(facet::Facet)]
-#[cfg_attr(feature = "rd-ui", derive(rd_ui::Input))]
 #[repr(C)]
 pub enum MidiController {
     #[default]
     All,
-    Single(#[cfg_attr(feature = "rd-ui", rd_ui(label = "Controller"))] u7),
+    Single(u7),
 }

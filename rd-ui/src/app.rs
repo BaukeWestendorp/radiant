@@ -1,30 +1,21 @@
-use gpui::{AnyView, Focusable, prelude::*};
 use gpui::{
-    App, Entity, FocusHandle, FontWeight, Menu, MenuItem, Pixels, QuitMode, SharedString, Size,
-    TitlebarOptions, Window, WindowBounds, WindowOptions, div, px, size,
+    AnyView, App, Entity, FocusHandle, Focusable, Pixels, QuitMode, SharedString, Size,
+    TitlebarOptions, Window, WindowBounds, WindowOptions, div, prelude::*, px, size,
 };
 
-use crate::{ActiveTheme, Root, TitleBar, h_flex};
+use crate::{ActiveTheme, Keymap, Root, StyledExt, comp::TitleBar, h_flex};
 
 pub(crate) mod action {
-    gpui::actions!([Quit]);
-
-    pub(crate) fn init(cx: &mut gpui::App) {
-        cx.on_action::<Quit>(|_, cx| cx.quit());
-    }
-}
-
-type TitleBarBuilderFn = Box<dyn FnOnce(&mut Window, &mut App) -> AnyView>;
-
-pub fn build_app() -> AppBuilder {
-    AppBuilder::new()
+    gpui::actions!(app, [Quit]);
 }
 
 pub struct AppBuilder {
     window_title: SharedString,
     window_size: Size<Pixels>,
-    title_bar_content: Option<TitleBarBuilderFn>,
-    activate: bool,
+    quit_mode: QuitMode,
+    activated: bool,
+    keymap: Keymap,
+    settings_window_content: Option<Box<dyn Fn(&mut Window, &mut App) -> AnyView>>,
 }
 
 impl Default for AppBuilder {
@@ -32,8 +23,10 @@ impl Default for AppBuilder {
         Self {
             window_title: "RD-UI Application".into(),
             window_size: size(px(1080.0), px(720.0)),
-            title_bar_content: None,
-            activate: true,
+            quit_mode: QuitMode::LastWindowClosed,
+            activated: true,
+            keymap: Keymap::default(),
+            settings_window_content: None,
         }
     }
 }
@@ -43,26 +36,36 @@ impl AppBuilder {
         Self::default()
     }
 
-    pub fn window_title(mut self, window_title: impl Into<SharedString>) -> Self {
+    pub fn with_window_title(mut self, window_title: impl Into<SharedString>) -> Self {
         self.window_title = window_title.into();
         self
     }
 
-    pub fn window_size(mut self, window_size: Size<Pixels>) -> Self {
+    pub fn with_window_size(mut self, window_size: Size<Pixels>) -> Self {
         self.window_size = window_size;
         self
     }
 
-    pub fn title_bar_content(
-        mut self,
-        build_content: impl FnOnce(&mut Window, &mut App) -> AnyView + 'static,
-    ) -> Self {
-        self.title_bar_content = Some(Box::new(build_content));
+    pub fn with_quit_mode(mut self, quit_mode: QuitMode) -> Self {
+        self.quit_mode = quit_mode;
         self
     }
 
-    pub fn activate(mut self, activate: bool) -> Self {
-        self.activate = activate;
+    pub fn with_activated(mut self, activated: bool) -> Self {
+        self.activated = activated;
+        self
+    }
+
+    pub fn with_keymap(mut self, keymap: Keymap) -> Self {
+        self.keymap = keymap;
+        self
+    }
+
+    pub fn with_settings_window_content(
+        mut self,
+        settings_window_content: impl Fn(&mut Window, &mut App) -> AnyView + 'static,
+    ) -> Self {
+        self.settings_window_content = Some(Box::new(settings_window_content));
         self
     }
 
@@ -72,16 +75,17 @@ impl AppBuilder {
     {
         gpui_platform::application()
             .with_assets(crate::Assets::default())
-            .with_quit_mode(QuitMode::LastWindowClosed)
+            .with_quit_mode(self.quit_mode)
             .run(move |cx: &mut App| {
                 crate::init(cx);
-                crate::keymap::default_keymap().apply(cx);
 
-                cx.set_menus([Menu::new("").items([MenuItem::action("Quit", action::Quit)])]);
+                self.keymap.apply(cx);
 
-                if self.activate {
+                if self.activated {
                     cx.activate(true);
                 }
+
+                cx.on_action::<action::Quit>(|_, cx| cx.quit());
 
                 cx.open_window(
                     WindowOptions {
@@ -96,12 +100,11 @@ impl AppBuilder {
                     |window, cx| {
                         let content = (build_content)(window, cx);
 
-                        let title_bar_content = self.title_bar_content.map(|tbc| (tbc)(window, cx));
-
-                        let view = cx.new(|cx| AppView::new(content, title_bar_content, cx));
+                        let view = cx.new(|cx| AppView::new(content, cx));
 
                         cx.new(|cx| {
-                            let root = Root::new(view, window, cx);
+                            let mut root = Root::new(view, window, cx);
+                            root.set_settings_window_content(self.settings_window_content);
                             root.focus_handle(cx).focus(window, cx);
                             root
                         })
@@ -114,13 +117,12 @@ impl AppBuilder {
 
 struct AppView<V: Render + 'static> {
     content: Entity<V>,
-    title_bar_content: Option<AnyView>,
     focus_handle: FocusHandle,
 }
 
 impl<V: Render + 'static> AppView<V> {
-    fn new(content: Entity<V>, title_bar_content: Option<AnyView>, cx: &mut Context<Self>) -> Self {
-        Self { content, title_bar_content, focus_handle: cx.focus_handle() }
+    fn new(content: Entity<V>, cx: &mut Context<Self>) -> Self {
+        Self { content, focus_handle: cx.focus_handle() }
     }
 
     fn render_title_bar_content(
@@ -128,17 +130,9 @@ impl<V: Render + 'static> AppView<V> {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
-        h_flex()
-            .size_full()
-            .justify_between()
-            .gap_2()
-            .child(
-                div()
-                    .font_weight(FontWeight::BOLD)
-                    .text_color(cx.theme().fg_secondary)
-                    .child(window.window_title()),
-            )
-            .children(self.title_bar_content.clone())
+        h_flex().size_full().justify_between().gap_2().child(
+            div().font_bold().text_color(cx.theme().fg_secondary).child(window.window_title()),
+        )
     }
 }
 

@@ -166,48 +166,6 @@ impl TryFrom<u8> for u7 {
     }
 }
 
-#[cfg(feature = "rd-ui")]
-impl rd_ui::AutoInput for u7 {
-    type Delegate = rd_ui::Slider<u7>;
-
-    fn build_input(
-        initial_value: Self,
-        window: &mut rd_ui::gpui::Window,
-        cx: &mut rd_ui::gpui::App,
-    ) -> rd_ui::gpui::Entity<rd_ui::InputState<Self::Delegate>> {
-        use rd_ui::gpui::AppContext as _;
-        cx.new(move |cx| {
-            let slider = rd_ui::Slider::new(cx.focus_handle(), window, cx)
-                .with_value(Some(initial_value), cx);
-            rd_ui::InputState::new(slider, window, cx)
-        })
-    }
-}
-
-#[cfg(feature = "rd-ui")]
-impl rd_ui::SliderValue for u7 {
-    fn to_f64(&self) -> f64 {
-        self.0 as f64
-    }
-
-    fn from_f64(value: f64) -> Self {
-        let clamped = value.clamp(Self::MIN as f64, Self::MAX as f64);
-        Self(clamped as u8)
-    }
-
-    fn min_value() -> Option<Self> {
-        Some(Self(Self::MIN))
-    }
-
-    fn max_value() -> Option<Self> {
-        Some(Self(Self::MAX))
-    }
-
-    fn step_value() -> Option<Self> {
-        Some(Self(1))
-    }
-}
-
 impl std::str::FromStr for u7 {
     type Err = crate::Error;
 
@@ -247,48 +205,6 @@ impl TryFrom<u8> for u4 {
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         Self::new(value).ok_or(crate::Error::InvalidMidiValue)
-    }
-}
-
-#[cfg(feature = "rd-ui")]
-impl rd_ui::AutoInput for u4 {
-    type Delegate = rd_ui::Slider<u4>;
-
-    fn build_input(
-        initial_value: Self,
-        window: &mut rd_ui::gpui::Window,
-        cx: &mut rd_ui::gpui::App,
-    ) -> rd_ui::gpui::Entity<rd_ui::InputState<Self::Delegate>> {
-        use rd_ui::gpui::AppContext as _;
-        cx.new(move |cx| {
-            let slider = rd_ui::Slider::new(cx.focus_handle(), window, cx)
-                .with_value(Some(initial_value), cx);
-            rd_ui::InputState::new(slider, window, cx)
-        })
-    }
-}
-
-#[cfg(feature = "rd-ui")]
-impl rd_ui::SliderValue for u4 {
-    fn to_f64(&self) -> f64 {
-        self.0 as f64
-    }
-
-    fn from_f64(value: f64) -> Self {
-        let clamped = value.clamp(Self::MIN as f64, Self::MAX as f64);
-        Self(clamped as u8)
-    }
-
-    fn min_value() -> Option<Self> {
-        Some(Self(Self::MIN))
-    }
-
-    fn max_value() -> Option<Self> {
-        Some(Self(Self::MAX))
-    }
-
-    fn step_value() -> Option<Self> {
-        Some(Self(1))
     }
 }
 

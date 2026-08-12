@@ -3,12 +3,6 @@ name = "rd-dmx"
 version.workspace = true
 edition.workspace = true
 
-[features]
-rd-ui = ["dep:rd-ui"]
-
 [dependencies]
 facet.workspace = true
 facet-error.workspace = true
-
-# feature = "rd-ui"
-rd-ui = { workspace = true, optional = true, features = ["derive"] }

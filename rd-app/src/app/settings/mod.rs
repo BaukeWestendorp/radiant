@@ -1,17 +1,21 @@
-use gpui::{Entity, Window, prelude::*, px};
 use rd_ui::{
-    ActiveTheme, Button, ButtonVariant, IconVariant, Tab, Tabs, TabsState, h_flex, v_flex,
+    ActiveTheme,
+    comp::{
+        Button, ButtonVariant, Disableable, IconVariant, Labelled,
+        stateful::{Tab, Tabs, TabsDirection},
+    },
+    gpui::{Entity, Window, prelude::*, px},
+    h_flex, v_flex,
 };
 
 use crate::app::engine::EngineAppExt;
 
 mod dmx_output;
+mod patch;
 mod triggers;
 
 pub struct SettingsRootView {
-    tabs: Entity<TabsState>,
-    triggers_tab: Entity<triggers::TriggersTabView>,
-    dmx_output_tab: Entity<dmx_output::DmxOutputTabView>,
+    tabs: Entity<Tabs>,
     uncommitted_project: Entity<rd::Project>,
 }
 
@@ -20,11 +24,42 @@ impl SettingsRootView {
         let uncommitted_project = cx.new(|cx| cx.engine().with_project(|project| project.clone()));
 
         Self {
-            tabs: cx.new(|_| TabsState::new().with_selected("triggers")),
-            triggers_tab: cx
-                .new(|cx| triggers::TriggersTabView::new(uncommitted_project.clone(), window, cx)),
-            dmx_output_tab: cx.new(|cx| {
-                dmx_output::DmxOutputTabView::new(uncommitted_project.clone(), window, cx)
+            tabs: cx.new(|cx| {
+                Tabs::new("tabs", window, cx)
+                    .with_selected(0)
+                    .with_direction(TabsDirection::Vertical)
+                    .with_tab(Tab::new("Patch", cx).with_icon(IconVariant::Spotlight).with_content(
+                        cx.new(|cx| {
+                            patch::PatchTabView::new(uncommitted_project.clone(), window, cx)
+                        }),
+                        cx,
+                    ))
+                    .with_tab(
+                        Tab::new("Triggers", cx).with_icon(IconVariant::Joystick).with_content(
+                            cx.new(|cx| {
+                                triggers::TriggersTabView::new(
+                                    uncommitted_project.clone(),
+                                    window,
+                                    cx,
+                                )
+                            }),
+                            cx,
+                        ),
+                    )
+                    .with_tab(
+                        Tab::new("DMX Output", cx)
+                            .with_icon(IconVariant::CircleArrowOutUpRight)
+                            .with_content(
+                                cx.new(|cx| {
+                                    dmx_output::DmxOutputTabView::new(
+                                        uncommitted_project.clone(),
+                                        window,
+                                        cx,
+                                    )
+                                }),
+                                cx,
+                            ),
+                    )
             }),
             uncommitted_project,
         }
@@ -32,7 +67,7 @@ impl SettingsRootView {
 }
 
 impl Render for SettingsRootView {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let project_changed = *self.uncommitted_project.read(cx)
             != cx.engine().with_project(|project| project.clone());
 
@@ -45,10 +80,10 @@ impl Render for SettingsRootView {
             .border_color(cx.theme().border_secondary)
             .gap_2()
             .child(
-                Button::new("save", cx.focus_handle())
-                    .label("Save")
-                    .icon(IconVariant::Save)
-                    .disabled(!project_changed)
+                Button::new("save", window, cx)
+                    .with_label("Save")
+                    .with_icon(IconVariant::Save)
+                    .with_disabled(!project_changed, cx)
                     .on_click(cx.listener(|this, _, _, cx| {
                         let engine = cx.engine().clone();
                         let project = this.uncommitted_project.read(cx).clone();
@@ -62,11 +97,11 @@ impl Render for SettingsRootView {
                     })),
             )
             .child(
-                Button::new("discard", cx.focus_handle())
-                    .label("Discard")
-                    .icon(IconVariant::RotateCcw)
-                    .disabled(!project_changed)
-                    .variant(ButtonVariant::Secondary)
+                Button::new("discard", window, cx)
+                    .with_label("Discard")
+                    .with_icon(IconVariant::RotateCcw)
+                    .with_disabled(!project_changed, cx)
+                    .with_variant(ButtonVariant::Secondary)
                     .on_click(cx.listener(|this, _, _, cx| {
                         this.uncommitted_project.update(cx, |uncommitted_project, cx| {
                             *uncommitted_project =
@@ -76,22 +111,6 @@ impl Render for SettingsRootView {
                     })),
             );
 
-        v_flex()
-            .size_full()
-            .child(Tabs::new("tabs", self.tabs.clone()).tabs(vec![
-                Tab::new(
-                    "triggers",
-                    "Triggers",
-                    self.triggers_tab.clone().into_any_element(),
-                )
-                .icon(IconVariant::Joystick),
-                Tab::new(
-                    "dmx-output",
-                    "DMX Output",
-                    self.dmx_output_tab.clone().into_any_element(),
-                )
-                .icon(IconVariant::CircleArrowOutUpRight)
-            ]))
-            .child(action_bar)
+        v_flex().size_full().child(self.tabs.clone()).child(action_bar)
     }
 }

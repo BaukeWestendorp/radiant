@@ -1,5 +1,5 @@
 [workspace]
-members = ["rd", "rd-artnet", "rd-app", "rd-dmx", "rd-midi", "rd-service", "rd-ui", "rd-ui-derive"]
+members = ["rd", "rd-artnet", "rd-app", "rd-dmx", "rd-midi", "rd-service", "rd-ui"]
 resolver = "3"
 
 [workspace.package]
@@ -13,7 +13,6 @@ rd-dmx = { path = "rd-dmx" }
 rd-midi = { path = "rd-midi" }
 rd-service = { path = "rd-service" }
 rd-ui = { path = "rd-ui" }
-rd-ui-derive = { path = "rd-ui-derive" }
 
 anyhow = "1.0"
 
@@ -26,8 +25,9 @@ log = "0.4.29"
 pretty_env_logger = "0.5.0"
 
 facet = "0.46.5"
-facet-json = "0.46.1"
 facet-error = "0.46.5"
+facet-json = "0.46.1"
+facet-reflect = "0.46.5"
 facet-validate = "0.46.5"
 
 serde = { version = "1.0.228", features = ["derive"] }

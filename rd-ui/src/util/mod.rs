@@ -1,0 +1,25 @@
+use gpui::{App, Div, div, prelude::*};
+
+use crate::ActiveTheme;
+
+mod style;
+
+pub use style::*;
+
+pub fn todo(cx: &App) -> Div {
+    div()
+        .size_full()
+        .border_1()
+        .border_color(cx.theme().indicate.warning)
+        .bg(cx.theme().indicate.warning.opacity(0.25))
+        .text_color(cx.theme().indicate.warning)
+        .flex()
+        .justify_center()
+        .items_center()
+        .child("TODO")
+}
+
+pub fn z_stack(children: impl IntoIterator<Item = impl IntoElement>) -> Div {
+    let children = children.into_iter().map(|child| div().size_full().child(child).absolute());
+    div().relative().children(children)
+}

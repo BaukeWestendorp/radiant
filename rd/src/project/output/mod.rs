@@ -1,4 +1,6 @@
-pub mod artnet;
+mod artnet;
+
+pub use artnet::*;
 
 #[derive(Debug, Clone, PartialEq, Default)]
 #[derive(facet::Facet)]

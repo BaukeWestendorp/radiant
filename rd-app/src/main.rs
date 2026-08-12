@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 mod app;
+mod comp;
 
 #[inline]
 fn init_logger() {

@@ -1,147 +1,36 @@
-mod form;
-mod interactive;
-mod misc;
-mod scrollable;
-mod table;
-mod tabs;
-mod theme;
-mod tiles;
-mod typo;
+use rd_ui::{
+    AppBuilder,
+    comp::stateful::Tabs,
+    gpui::{Entity, Window, div, prelude::*},
+};
 
-fn main() -> anyhow::Result<()> {
-    pretty_env_logger::formatted_builder().filter_level(log::LevelFilter::Debug).init();
-    app::run()?;
-    Ok(())
+use crate::catalog::build_root_tabs;
+
+mod catalog;
+mod layout;
+mod stories;
+
+fn main() {
+    pretty_env_logger::formatted_builder().filter_level(log::LevelFilter::Info).init();
+
+    AppBuilder::new()
+        .with_window_title("RD-UI Preview")
+        .with_settings_window_content(|_window, cx| cx.new(|_| gpui::Empty).into())
+        .run(|window, cx| cx.new(|cx| PreviewRootView::new(window, cx)));
 }
 
-mod app {
-    use gpui::prelude::*;
-    use gpui::{Entity, Window, div};
-    use rd_ui::{Tab, Tabs, TabsState, TabsVariant};
+struct PreviewRootView {
+    tabs: Entity<Tabs>,
+}
 
-    use crate::form::FormPreview;
-    use crate::interactive::InteractivePreview;
-    use crate::misc::MiscPreview;
-    use crate::scrollable::ScrollablePreview;
-    use crate::table::TablePreview;
-    use crate::tabs::TabsPreview;
-    use crate::theme::ThemePreview;
-    use crate::tiles::TilesPreview;
-    use crate::typo::TypoPreview;
-
-    pub fn run() -> anyhow::Result<()> {
-        rd_ui::build_app()
-            .window_title("RD-UI Preview")
-            .run(|window, cx| cx.new(|cx| PreviewApp::new(window, cx)));
-
-        Ok(())
-    }
-
-    struct PreviewApp {
-        tabs: Entity<TabsState>,
-
-        tab_form: Entity<FormPreview>,
-        tab_interactive: Entity<InteractivePreview>,
-        tab_tabs: Entity<TabsPreview>,
-        tab_table: Entity<TablePreview>,
-        tab_scrollable: Entity<ScrollablePreview>,
-        tab_theme: Entity<ThemePreview>,
-        tab_tiles: Entity<TilesPreview>,
-        tab_typo: Entity<TypoPreview>,
-
-        tab_misc: Entity<MiscPreview>,
-    }
-
-    impl PreviewApp {
-        fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-            Self {
-                tabs: cx.new(|_| TabsState::new().with_selected("form")),
-
-                tab_form: cx.new(|cx| FormPreview::new(window, cx)),
-                tab_interactive: cx.new(|cx| InteractivePreview::new(window, cx)),
-                tab_tabs: cx.new(|cx| TabsPreview::new(window, cx)),
-                tab_table: cx.new(|cx| TablePreview::new(window, cx)),
-                tab_scrollable: cx.new(|cx| ScrollablePreview::new(window, cx)),
-                tab_theme: cx.new(|cx| ThemePreview::new(window, cx)),
-                tab_tiles: cx.new(|cx| TilesPreview::new(window, cx)),
-                tab_typo: cx.new(|cx| TypoPreview::new(window, cx)),
-                tab_misc: cx.new(|cx| MiscPreview::new(window, cx)),
-            }
-        }
-    }
-
-    impl Render for PreviewApp {
-        fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-            div().size_full().child(
-                // FIXME: TabVariant::Sidebar fucks with the table width. But maybe not anymore???
-                Tabs::new("preview-pages", self.tabs.clone()).variant(TabsVariant::Top).tabs([
-                    Tab::new("form", "Form", self.tab_form.clone().into_any_element()),
-                    Tab::new(
-                        "interactive",
-                        "Interactive",
-                        self.tab_interactive.clone().into_any_element(),
-                    ),
-                    Tab::new("typo", "Typography", self.tab_typo.clone().into_any_element()),
-                    Tab::new("theme", "Theme", self.tab_theme.clone().into_any_element()),
-                    Tab::new("tabs", "Tabs", self.tab_tabs.clone().into_any_element()),
-                    Tab::new("table", "Table", self.tab_table.clone().into_any_element()),
-                    Tab::new(
-                        "scrollable",
-                        "Scrollable",
-                        self.tab_scrollable.clone().into_any_element(),
-                    ),
-                    Tab::new("tiles", "Tiles", self.tab_tiles.clone().into_any_element()),
-                    Tab::new("misc", "Miscellaneous", self.tab_misc.clone().into_any_element()),
-                ]),
-            )
-        }
+impl PreviewRootView {
+    fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        Self { tabs: build_root_tabs(window, cx) }
     }
 }
 
-pub fn alpha_content() -> gpui::Div {
-    use gpui::{ParentElement as _, Styled as _};
-
-    gpui::div()
-        .size_full()
-        .p_2()
-        .flex()
-        .justify_center()
-        .items_center()
-        .border_1()
-        .border_color(gpui::red())
-        .bg(gpui::red().opacity(0.2))
-        .child("Alpha")
-        .font_weight(gpui::FontWeight::BOLD)
-}
-
-pub fn beta_content() -> gpui::Div {
-    use gpui::{ParentElement as _, Styled as _};
-
-    gpui::div()
-        .size_full()
-        .p_2()
-        .flex()
-        .justify_center()
-        .items_center()
-        .border_1()
-        .border_color(gpui::green())
-        .bg(gpui::green().opacity(0.2))
-        .child("Beta")
-        .font_weight(gpui::FontWeight::BOLD)
-}
-
-pub fn gamma_content() -> gpui::Div {
-    use gpui::{ParentElement as _, Styled as _};
-
-    gpui::div()
-        .size_full()
-        .p_2()
-        .flex()
-        .justify_center()
-        .items_center()
-        .border_1()
-        .border_color(gpui::blue())
-        .bg(gpui::blue().opacity(0.2))
-        .child("Gamma")
-        .font_weight(gpui::FontWeight::BOLD)
+impl Render for PreviewRootView {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        div().size_full().child(self.tabs.clone())
+    }
 }

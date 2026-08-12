@@ -1,300 +1,178 @@
-use std::{collections::HashMap, rc::Rc};
-
 use gpui::{
-    AnyView, AnyWindowHandle, App, BoxShadow, Context, Entity, FocusHandle, Focusable, FontWeight,
-    Global, IntoElement, ReadGlobal, SharedString, Styled, Window, div, hsla, point, prelude::*,
-    px,
+    AnyView, App, Entity, EventEmitter, Focusable, Global, ReadGlobal, SharedString, UpdateGlobal,
+    Window, div, prelude::*,
 };
 
 use crate::{
-    ActiveTheme, Button, Form, FormDelegate, FormField, Input, InputDelegate, InputEvent, h_flex,
-    input::InputState, v_flex,
+    ActiveTheme, Emphasis, StyledExt, c_flex,
+    comp::{Button, ButtonVariant, IconVariant, Labelled, stateful},
+    h_flex, v_flex,
 };
 
 pub(crate) fn init(cx: &mut App) {
-    let popup_stacks = cx.new(|_| HashMap::new());
-    cx.set_global(PopupGlobal { popup_stacks });
+    cx.set_global(PopupGlobal::default());
+}
+
+pub(crate) mod action {
+    pub const KEY_CONTEXT: &str = "Popup";
+
+    gpui::actions!(popup, [Dismiss]);
+}
+
+pub struct InputPopup<T, Input>
+where
+    T: 'static,
+    Input: Render + EventEmitter<stateful::event::Change<T>>,
+{
+    input: Entity<Input>,
+
+    _marker: std::marker::PhantomData<T>,
+}
+
+impl<T, Input> InputPopup<T, Input>
+where
+    T: 'static,
+    Input: Render + Focusable + EventEmitter<stateful::event::Change<T>>,
+{
+    pub fn new(input: Entity<Input>, window: &mut Window, cx: &mut App) -> Self {
+        input.focus_handle(cx).focus(window, cx);
+
+        Self { input, _marker: std::marker::PhantomData }
+    }
+
+    pub fn with_on_change(
+        self,
+        window: &mut Window,
+        cx: &mut App,
+        on_change: impl Fn(&T, &mut Window, &mut App) + 'static,
+    ) -> Self {
+        window
+            .subscribe(&self.input, cx, move |_, event: &stateful::event::Change<T>, window, cx| {
+                let value = &event.0;
+                (on_change)(value, window, cx)
+            })
+            .detach();
+        self
+    }
+}
+
+impl<T, Input> InputPopup<T, Input>
+where
+    T: 'static,
+    Input: Render
+        + EventEmitter<stateful::event::Change<T>>
+        + EventEmitter<stateful::event::Submit<T>>,
+{
+    pub fn with_on_submit(
+        self,
+        window: &mut Window,
+        cx: &mut App,
+        on_submit: impl Fn(&T, &mut Window, &mut App) + 'static,
+    ) -> Self {
+        window
+            .subscribe(&self.input, cx, move |_, event: &stateful::event::Submit<T>, window, cx| {
+                let value = &event.0;
+                (on_submit)(value, window, cx)
+            })
+            .detach();
+        self
+    }
+}
+
+impl<T, Input> Render for InputPopup<T, Input>
+where
+    T: 'static,
+    Input: Render + EventEmitter<stateful::event::Change<T>>,
+{
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        c_flex().size_full().p_2().child(self.input.clone())
+    }
 }
 
 pub trait PopupAppExt {
-    fn open_popup<F: FnOnce(&mut Window, &mut App) -> Popup>(
-        &mut self,
-        window: &mut Window,
-        popup_builder: F,
-    );
+    fn set_popup(&mut self, title: impl Into<SharedString>, popup: impl Into<AnyView>);
 
-    fn close_popup(&mut self, reason: PopupCloseReason, window: &mut Window);
+    fn dismiss_popup(&mut self);
 }
 
 impl PopupAppExt for App {
-    fn open_popup<F: FnOnce(&mut Window, &mut App) -> Popup>(
-        &mut self,
-        window: &mut Window,
-        popup_builder: F,
-    ) {
-        let popup = (popup_builder)(window, self);
-        let popup_view = self.new(|_| popup);
-        PopupGlobal::global(self).popup_stacks.clone().update(self, |stacks, cx| {
-            stacks.entry(window.window_handle()).or_default().push(popup_view);
+    fn set_popup(&mut self, title: impl Into<SharedString>, popup: impl Into<AnyView>) {
+        PopupGlobal::update_global(self, |popup_global, _| {
+            popup_global.title = Some(title.into());
+            popup_global.content = Some(popup.into());
+        })
+    }
+
+    fn dismiss_popup(&mut self) {
+        PopupGlobal::update_global(self, |popup_global, _| {
+            popup_global.title = None;
+            popup_global.content = None;
+        })
+    }
+}
+
+pub(crate) struct PopupOverlay {}
+
+impl PopupOverlay {
+    pub fn new(_window: &mut Window, cx: &mut Context<Self>) -> Self {
+        cx.observe_global::<PopupGlobal>(|_, cx| {
             cx.notify();
-        });
-    }
+        })
+        .detach();
 
-    fn close_popup(&mut self, reason: PopupCloseReason, window: &mut Window) {
-        PopupGlobal::global(self).popup_stacks.clone().update(self, |stacks, cx| {
-            if let Some(stack) = stacks.get_mut(&window.window_handle()) {
-                if let Some(popped) = stack.pop() {
-                    popped.update(cx, |popped, cx| {
-                        if let Some(on_close) = popped.on_close.take() {
-                            on_close(reason, window, cx);
-                        }
-                    });
-                }
-            }
-            cx.notify();
-        });
+        Self {}
     }
 }
 
-pub(crate) struct PopupGlobal {
-    pub popup_stacks: Entity<HashMap<AnyWindowHandle, Vec<Entity<Popup>>>>,
-}
-
-impl Global for PopupGlobal {}
-
-pub(crate) fn render_overlay(
-    window: &mut Window,
-    cx: &mut Context<'_, crate::Root>,
-) -> impl IntoElement {
-    let last_popup = PopupGlobal::global(cx)
-        .popup_stacks
-        .read(cx)
-        .get(&window.window_handle())
-        .and_then(|stack| stack.last().cloned());
-
-    div().size_full().children(last_popup.map(|popup| {
-        div()
-            .flex()
-            .justify_center()
-            .items_center()
-            .occlude()
-            .size_full()
-            .bg(gpui::black().opacity(0.25))
-            .on_any_mouse_down(|_, window, cx| cx.close_popup(PopupCloseReason::Dismissed, window))
-            .child(popup)
-    }))
-}
-
-pub struct Popup {
-    title: SharedString,
-    kind: PopupKind,
-    on_close: Option<Box<dyn FnOnce(PopupCloseReason, &mut Window, &mut App)>>,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PopupCloseReason {
-    Dismissed,
-    Submitted,
-}
-
-impl Popup {
-    pub fn message(title: impl Into<SharedString>, message: impl Into<SharedString>) -> Self {
-        Self {
-            title: title.into(),
-            kind: PopupKind::Message { message: message.into() },
-            on_close: None,
-        }
-    }
-
-    pub fn input<D: InputDelegate + 'static>(
-        title: impl Into<SharedString>,
-        input: Entity<InputState<D>>,
-        window: &mut Window,
-        cx: &mut App,
-        on_submit: impl Fn(&D::Value, &mut App) + 'static,
-    ) -> Self
-    where
-        D::Value: Default,
-    {
-        let on_submit = Rc::new(on_submit);
-
-        let form = cx.new(|cx| {
-            InputState::new(
-                Form::new(InputPopupForm { input: input.clone() }, cx.focus_handle(), window, cx),
-                window,
-                cx,
-            )
-        });
-
-        window.defer(cx, {
-            let form = form.clone();
-            move |window, cx| {
-                form.focus_handle(cx).focus(window, cx);
-            }
-        });
-
-        window
-            .subscribe(&input, cx, {
-                let on_submit = Rc::clone(&on_submit);
-                move |_, event, window, cx| match event {
-                    InputEvent::Submit(value) => {
-                        on_submit(value, cx);
-                        cx.close_popup(PopupCloseReason::Submitted, window)
-                    }
-                    _ => {}
-                }
-            })
-            .detach();
-
-        window
-            .subscribe(&form, cx, {
-                let on_submit = Rc::clone(&on_submit);
-                move |_, event, window, cx| match event {
-                    InputEvent::Submit(value) => {
-                        on_submit(value, cx);
-                        cx.close_popup(PopupCloseReason::Submitted, window)
-                    }
-                    _ => {}
-                }
-            })
-            .detach();
-
-        let wrapper = cx.new(|_| InputPopup { input: form.clone() });
-
-        let on_close = move |reason: PopupCloseReason, _: &mut Window, cx: &mut App| {
-            if reason == PopupCloseReason::Submitted {
-                return;
-            }
-
-            let value = input.read(cx).value_or_default(cx);
-            (on_submit)(&value, cx);
-        };
-
-        Self {
-            title: title.into(),
-            kind: PopupKind::Input { input: wrapper.into() },
-            on_close: Some(Box::new(on_close)),
-        }
-    }
-
-    pub fn custom(title: impl Into<SharedString>, content: impl Into<AnyView>) -> Self {
-        Self {
-            title: title.into(),
-            kind: PopupKind::Custom { content: content.into() },
-            on_close: None,
-        }
-    }
-
-    pub fn title(&self) -> &SharedString {
-        &self.title
-    }
-}
-
-pub enum PopupKind {
-    Message { message: SharedString },
-    Input { input: AnyView },
-    Custom { content: AnyView },
-}
-
-impl Render for Popup {
+impl Render for PopupOverlay {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let title = self.title().clone();
+        let title = PopupGlobal::global(cx).title.clone().unwrap_or_default();
+
+        let Some(content) = PopupGlobal::global(cx).content.clone() else {
+            return gpui::Empty.into_any_element();
+        };
 
         let header = h_flex()
             .px_2()
-            .min_w_full()
-            .min_h(window.line_height() * 1.5)
-            .max_h(window.line_height() * 1.5)
-            .bg(cx.theme().bg_tile_header)
-            .border_1()
-            .border_color(cx.theme().border_tile_header)
-            .rounded_t(cx.theme().radius)
-            .text_color(cx.theme().fg_tile_header)
-            .font_weight(FontWeight::BOLD)
-            .child(title);
-
-        let content = div()
-            .size_full()
-            .bg(cx.theme().bg_primary)
-            .border_1()
+            .py_1()
+            .w_full()
+            .justify_between()
+            .border_b_1()
             .border_color(cx.theme().border_primary)
-            .rounded_b(cx.theme().radius)
-            .child(match &self.kind {
-                PopupKind::Message { message } => v_flex()
-                    .size_full()
-                    .items_center()
-                    .gap_2()
-                    .p_2()
-                    .child(
-                        div()
-                            .text_color(cx.theme().fg_secondary)
-                            .w_1_2()
-                            .text_center()
-                            .child(message.clone()),
-                    )
-                    .child(Button::new("close", cx.focus_handle()).on_click(|_, window, cx| {
-                        cx.close_popup(PopupCloseReason::Dismissed, window)
-                    }))
-                    .into_any_element(),
-                PopupKind::Input { input } => input.clone().into_any_element(),
-                PopupKind::Custom { content } => content.clone().into_any_element(),
-            });
+            .bg(cx.theme().bg_secondary)
+            .font_bold()
+            .child(div().text_color(cx.theme().fg_secondary).child(title))
+            .child(
+                Button::new("close", window, cx)
+                    .with_variant(ButtonVariant::Ghost)
+                    .with_icon(IconVariant::X)
+                    .with_action(action::Dismiss)
+                    .text_color(cx.theme().indicate.danger),
+            );
 
-        v_flex()
+        c_flex()
+            .id("popup")
+            .key_context(action::KEY_CONTEXT)
             .occlude()
-            .min_w(px(320.0))
-            .max_w_5_6()
-            .max_h_5_6()
-            .when(cx.theme().shadow, |e| {
-                e.shadow(vec![BoxShadow {
-                    color: hsla(0.0, 0.0, 0.0, 0.3),
-                    offset: point(px(0.0), px(0.0)),
-                    blur_radius: px(24.0),
-                    spread_radius: px(-1.0),
-                    inset: false,
-                }])
-            })
-            .child(header)
-            .child(content)
-    }
-}
-
-struct InputPopupForm<D: InputDelegate> {
-    input: Entity<InputState<D>>,
-}
-
-impl<D> FormDelegate for InputPopupForm<D>
-where
-    D: InputDelegate + 'static,
-    D::Value: Default,
-{
-    type Data = D::Value;
-
-    fn fields(&self, cx: &mut App) -> Vec<FormField> {
-        vec![FormField::new(Input::new(self.input.clone()), cx)]
-    }
-
-    fn extract_data(&self, cx: &App) -> Option<Self::Data> {
-        Some(self.input.read(cx).value_or_default(cx))
-    }
-
-    fn preferred_focus_handle(&self, cx: &App) -> Option<FocusHandle> {
-        Some(self.input.focus_handle(cx))
-    }
-}
-
-struct InputPopup<D: InputDelegate> {
-    input: Entity<InputState<D>>,
-}
-
-impl<D: InputDelegate + 'static> Render for InputPopup<D> {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .flex()
-            .justify_center()
-            .items_center()
+            .bg(cx.theme().contrast.opacity(0.25))
             .size_full()
-            .p_2()
-            .child(div().w_full().child(D::new_element(self.input.clone(), window, cx)))
+            .on_action::<action::Dismiss>(cx.listener(|_, _, _, cx| cx.dismiss_popup()))
+            .child(
+                v_flex()
+                    .emphasis_bordered(Emphasis::Primary, cx)
+                    .min_w_72()
+                    .child(header)
+                    .child(content)
+                    .on_mouse_down_out(cx.listener(|_, _, _, cx| cx.dismiss_popup())),
+            )
+            .into_any_element()
     }
 }
+
+#[derive(Default)]
+struct PopupGlobal {
+    pub title: Option<SharedString>,
+    pub content: Option<AnyView>,
+}
+
+impl Global for PopupGlobal {}

@@ -6,9 +6,6 @@ pub use error::Error;
 /// This module contains data types for error handling.
 mod error;
 
-#[cfg(feature = "rd-ui")]
-mod rd_ui;
-
 /// Represents an 8-bit DMX value from 0-255.
 ///
 /// # Examples

@@ -5,6 +5,7 @@
 {
   "file_scan_exclusions": [
     "rd-ui/assets/",
+    "rd-ui2/assets/",
     "*.gdtf"
   ]
 }

@@ -3,9 +3,6 @@ name = "rd"
 version.workspace = true
 edition.workspace = true
 
-[features]
-rd-ui = ["dep:rd-ui"]
-
 [dependencies]
 anyhow.workspace = true
 facet = { workspace = true, features = ["uuid", "nonzero"] }
@@ -13,16 +10,13 @@ facet-validate.workspace = true
 facet-json.workspace = true
 flume.workspace = true
 log.workspace = true
-rd-artnet = { workspace = true, features = ["facet", "rd-ui"] }
-rd-dmx = { workspace = true, features = ["rd-ui"] }
+rd-artnet = { workspace = true, features = ["facet"] }
+rd-dmx.workspace = true
 rd-service.workspace = true
-rd-midi = { workspace = true, features = ["rd-ui"] }
+rd-midi.workspace = true
 uuid = { workspace = true, features = ["v4"] }
 ariadne = "0.6.0"
 rand = "0.10.2"
-
-# feature = "rd-ui"
-rd-ui = { workspace = true, optional = true, features = ["derive"] }
 
 [dev-dependencies]
 anyhow.workspace = true

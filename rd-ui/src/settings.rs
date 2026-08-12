@@ -1,31 +1,10 @@
 use gpui::{
-    AnyView, AnyWindowHandle, App, BorrowAppContext, FontWeight, Global, Window, WindowOptions, div,
+    AnyView, AnyWindowHandle, App, BorrowAppContext, FontWeight, Global, TitlebarOptions, Window,
+    WindowBackgroundAppearance, WindowBounds, WindowKind, WindowOptions, div, px, size,
 };
 use gpui::{SharedString, prelude::*};
 
-use crate::{ActiveTheme, Root, TitleBar, h_flex, v_flex};
-
-pub const SETTINGS_WINDOW_OPTIONS: WindowOptions = WindowOptions {
-    titlebar: Some(gpui::TitlebarOptions {
-        title: Some(SharedString::new_static("Settings")),
-        appears_transparent: true,
-        traffic_light_position: None,
-    }),
-    window_bounds: None,
-    focus: true,
-    show: true,
-    kind: gpui::WindowKind::Normal,
-    is_movable: true,
-    is_resizable: true,
-    is_minimizable: false,
-    display_id: None,
-    window_background: gpui::WindowBackgroundAppearance::Opaque,
-    app_id: None,
-    window_min_size: None,
-    window_decorations: None,
-    icon: None,
-    tabbing_identifier: None,
-};
+use crate::{ActiveTheme, Root, comp::TitleBar, h_flex, v_flex};
 
 pub(crate) fn init(cx: &mut App) {
     cx.set_global(SettingsAgent::default())
@@ -144,5 +123,29 @@ impl Render for SettingsRoot {
             .size_full()
             .child(TitleBar::new().child(self.render_title_bar_content(window, cx)))
             .child(div().size_full().overflow_hidden().child(self.render_content(window, cx)))
+    }
+}
+
+pub fn settings_window_options(cx: &App) -> WindowOptions {
+    WindowOptions {
+        titlebar: Some(TitlebarOptions {
+            title: Some(SharedString::new_static("Settings")),
+            appears_transparent: true,
+            traffic_light_position: None,
+        }),
+        window_bounds: Some(WindowBounds::centered(size(px(1080.0), px(720.0)), cx)),
+        focus: true,
+        show: true,
+        kind: WindowKind::Normal,
+        is_movable: true,
+        is_resizable: true,
+        is_minimizable: false,
+        display_id: None,
+        window_background: WindowBackgroundAppearance::Opaque,
+        app_id: None,
+        window_min_size: None,
+        window_decorations: None,
+        icon: None,
+        tabbing_identifier: None,
     }
 }

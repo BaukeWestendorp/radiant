@@ -4,15 +4,11 @@ use crate::{ObjectId, Slot};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
 #[derive(facet::Facet)]
-#[cfg_attr(feature = "rd-ui", derive(rd_ui::Input))]
 #[repr(C)]
 pub enum ExecutorButton {
     #[default]
-    #[cfg_attr(feature = "rd-ui", rd_ui(label = "Button 1"))]
     Button1,
-    #[cfg_attr(feature = "rd-ui", rd_ui(label = "Button 2"))]
     Button2,
-    #[cfg_attr(feature = "rd-ui", rd_ui(label = "Button 3"))]
     Button3,
 }
 

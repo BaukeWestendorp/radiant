@@ -1,11 +1,15 @@
-use gpui::{Entity, Window, div, prelude::*};
-use rd_ui::{IconVariant, Tab, Tabs, TabsState, TabsVariant};
+use rd_ui::{
+    comp::{
+        IconVariant, Labelled,
+        stateful::{Tab, Tabs, TabsDirection},
+    },
+    gpui::{Entity, Window, div, prelude::*},
+};
 
 mod artnet;
 
 pub struct DmxOutputTabView {
-    tabs: Entity<TabsState>,
-    pub(crate) artnet_tab: Entity<artnet::ArtnetOutputTabView>,
+    tabs: Entity<Tabs>,
 }
 
 impl DmxOutputTabView {
@@ -15,9 +19,20 @@ impl DmxOutputTabView {
         cx: &mut Context<Self>,
     ) -> Self {
         Self {
-            tabs: cx.new(|_| TabsState::new().with_selected("artnet")),
-            artnet_tab: cx.new(|cx| {
-                artnet::ArtnetOutputTabView::new(uncommitted_project.clone(), window, cx)
+            tabs: cx.new(|cx| {
+                Tabs::new("tabs", window, cx)
+                    .with_selected(0)
+                    .with_direction(TabsDirection::Horizontal)
+                    .with_tab(Tab::new("Art-Net", cx).with_icon(IconVariant::Network).with_content(
+                        cx.new(|cx| {
+                            artnet::ArtnetOutputTabView::new(
+                                uncommitted_project.clone(),
+                                window,
+                                cx,
+                            )
+                        }),
+                        cx,
+                    ))
             }),
         }
     }
@@ -25,11 +40,6 @@ impl DmxOutputTabView {
 
 impl Render for DmxOutputTabView {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().child(
-            Tabs::new("tabs", self.tabs.clone()).variant(TabsVariant::Top).tabs(vec![
-                Tab::new("artnet", "Art-Net", self.artnet_tab.clone().into_any_element())
-                    .icon(IconVariant::Network),
-            ]),
-        )
+        div().size_full().child(self.tabs.clone())
     }
 }

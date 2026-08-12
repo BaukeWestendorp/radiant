@@ -1,10 +1,10 @@
-use gpui::{App, Entity, Window, div, prelude::*};
-
-use rd_ui::{Column, Table, TableDelegate, TableState};
+use rd_ui::{
+    comp::stateful::{Table, TableColumn},
+    gpui::{Entity, Window, div, prelude::*},
+};
 
 pub struct MidiTabView {
-    table: Entity<TableState<MidiMappingTable>>,
-    mappings: Entity<Vec<rd::project::MidiMapping>>,
+    table: Entity<Table<rd::project::MidiMapping>>,
 }
 
 impl MidiTabView {
@@ -15,8 +15,11 @@ impl MidiTabView {
     ) -> Self {
         let mappings = cx.new(|cx| uncommitted_project.read(cx).trigger.midi.clone());
 
-        cx.observe(&uncommitted_project, move |this, uncommitted_project, cx| {
-            this.mappings.write(cx, uncommitted_project.read(cx).trigger.midi.clone());
+        cx.observe(&uncommitted_project, {
+            let mappings = mappings.clone();
+            move |_, uncommitted_project, cx| {
+                mappings.write(cx, uncommitted_project.read(cx).trigger.midi.clone());
+            }
         })
         .detach();
 
@@ -37,105 +40,24 @@ impl MidiTabView {
         .detach();
 
         let table = cx.new(|cx| {
-            TableState::new(
-                MidiMappingTable::new(mappings.clone(), window, cx),
-                cx.focus_handle(),
-                window,
-                cx,
-            )
+            Table::new("midi-triggers", mappings.clone(), window, cx).with_columns(vec![
+                TableColumn::<rd::project::MidiMapping>::new("Device Name")
+                    .with_element(|row, _, _| row.device_name.to_string().into_any_element()),
+                TableColumn::<rd::project::MidiMapping>::new("Device Channel")
+                    .with_element(|row, _, _| row.device_channel.to_string().into_any_element()),
+                TableColumn::<rd::project::MidiMapping>::new("Filter")
+                    .with_element(|row, _, _| row.filter.to_string().into_any_element()),
+                TableColumn::<rd::project::MidiMapping>::new("Target")
+                    .with_element(|row, _, _| row.target.to_string().into_any_element()),
+            ])
         });
 
-        Self { table, mappings }
+        Self { table }
     }
 }
 
 impl Render for MidiTabView {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().child(Table::new("midi-triggers", self.table.clone(), window, cx))
-    }
-}
-
-struct MidiMappingTable {
-    columns: Vec<Column<Self>>,
-    mappings: Entity<Vec<rd::project::MidiMapping>>,
-}
-
-impl MidiMappingTable {
-    fn new(
-        mappings: Entity<Vec<rd::project::MidiMapping>>,
-        _window: &mut Window,
-        _cx: &mut Context<TableState<Self>>,
-    ) -> Self {
-        Self {
-            columns: vec![
-                Column::<Self>::new("device_name", "Device Name")
-                    .with_sort_handler(|a, b| {
-                        natord::compare_ignore_case(&a.device_name, &b.device_name)
-                    })
-                    .with_cell_builder(|row, _window, _cx| {
-                        row.device_name.to_string().into_any_element()
-                    }),
-                Column::<Self>::new("device_channel", "Device Channel")
-                    .with_sort_handler(|a, b| a.device_channel.cmp(&b.device_channel))
-                    .with_auto_editor(|row| &mut row.device_channel)
-                    .with_cell_builder(|row, _window, _cx| {
-                        row.device_channel.to_string().into_any_element()
-                    }),
-                Column::<Self>::new("filter", "Filter")
-                    .with_sort_handler(|a, b| a.filter.cmp(&b.filter))
-                    .with_auto_editor(|row| &mut row.filter)
-                    .with_cell_builder(|row, _window, _cx| {
-                        row.filter.to_string().into_any_element()
-                    }),
-                Column::<Self>::new("target", "Target")
-                    .with_sort_handler(|a, b| a.target.cmp(&b.target))
-                    .with_auto_editor(|row| &mut row.target)
-                    .with_cell_builder(|row, _window, _cx| {
-                        row.target.to_string().into_any_element()
-                    }),
-            ],
-            mappings,
-        }
-    }
-}
-
-impl TableDelegate for MidiMappingTable {
-    type Row = rd::project::midi::MidiMapping;
-
-    fn columns(&self, _cx: &App) -> impl Iterator<Item = &Column<Self>> {
-        self.columns.iter()
-    }
-
-    fn column(&self, column_id: &str, _cx: &App) -> Option<&Column<Self>> {
-        self.columns.iter().find(|c| c.id() == column_id)
-    }
-
-    fn rows(&self) -> Entity<Vec<Self::Row>> {
-        self.mappings.clone()
-    }
-
-    fn insert_new_row(&self, last_item_ix: Option<usize>, cx: &mut App) -> Option<usize> {
-        let last_item = last_item_ix.and_then(|ix| self.rows().read(cx).get(ix));
-        let new_mapping = match last_item {
-            Some(last_mapping) => rd::project::midi::MidiMapping {
-                device_name: last_mapping.device_name.clone(),
-                device_channel: rd::project::MidiChannel::default(),
-                filter: rd::project::MidiFilter::default(),
-                target: rd::project::TriggerTarget::default(),
-            },
-            None => rd::project::midi::MidiMapping {
-                device_name: "FIXME".to_string(),
-                device_channel: rd::project::MidiChannel::default(),
-                filter: rd::project::MidiFilter::default(),
-                target: rd::project::TriggerTarget::default(),
-            },
-        };
-
-        let new_ix = self.mappings.read(cx).len();
-        self.mappings.update(cx, |mappings, cx| {
-            mappings.push(new_mapping);
-            cx.notify();
-        });
-        Some(new_ix)
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        div().size_full().child(self.table.clone())
     }
 }

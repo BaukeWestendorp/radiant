@@ -6,7 +6,7 @@ pub mod midi;
 
 pub use midi::*;
 
-#[derive(Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 #[derive(facet::Facet)]
 #[facet(deny_unknown_fields)]
 pub struct TriggerConfig {
@@ -15,34 +15,23 @@ pub struct TriggerConfig {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 #[derive(facet::Facet)]
-#[cfg_attr(feature = "rd-ui", derive(rd_ui::Input))]
 #[facet(tag = "type")]
 #[repr(C)]
 pub enum TriggerTarget {
-    #[cfg_attr(feature = "rd-ui", rd_ui(label = "Highlight Toggle"))]
     HighlightToggle,
-    #[cfg_attr(feature = "rd-ui", rd_ui(label = "Executor Master"))]
     ExecutorMaster {
         #[facet(rename = "page")]
-        #[cfg_attr(feature = "rd-ui", rd_ui(label = "Page"))]
         page_id: ObjectId,
-        #[cfg_attr(feature = "rd-ui", rd_ui(label = "Slot"))]
         slot: Slot,
     },
-    #[cfg_attr(feature = "rd-ui", rd_ui(label = "Executor Button"))]
     ExecutorButton {
         #[facet(rename = "page")]
-        #[cfg_attr(feature = "rd-ui", rd_ui(label = "Page"))]
         page_id: ObjectId,
-        #[cfg_attr(feature = "rd-ui", rd_ui(label = "Slot"))]
         slot: Slot,
-        #[cfg_attr(feature = "rd-ui", rd_ui(label = "Button"))]
         button: ExecutorButton,
     },
-    #[cfg_attr(feature = "rd-ui", rd_ui(label = "Encoder"))]
     Encoder {
         #[facet(rename = "ix")]
-        #[cfg_attr(feature = "rd-ui", rd_ui(label = "Encoder"))]
         encoder_ix: usize,
     },
 }

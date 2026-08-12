@@ -12,7 +12,7 @@ const REFRESH_RATE: u16 = 40;
 
 #[derive(Default)]
 pub struct ArtnetOutputService {
-    config: project::artnet::ArtnetOutputConfig,
+    config: project::ArtnetOutputConfig,
 
     node: RwLock<Option<rd_artnet::Node>>,
     service_notify_tx: RwLock<Option<flume::Sender<()>>>,
@@ -20,10 +20,7 @@ pub struct ArtnetOutputService {
 }
 
 impl ArtnetOutputService {
-    pub fn new(
-        config: project::artnet::ArtnetOutputConfig,
-        multiverse: Arc<RwLock<Multiverse>>,
-    ) -> Self {
+    pub fn new(config: project::ArtnetOutputConfig, multiverse: Arc<RwLock<Multiverse>>) -> Self {
         Self { config, node: RwLock::new(None), service_notify_tx: RwLock::new(None), multiverse }
     }
 }
