@@ -35,6 +35,18 @@ impl SettingsRootView {
                         cx,
                     ))
                     .with_tab(
+                        Tab::new("DMX Output", cx).with_icon(IconVariant::Target).with_content(
+                            cx.new(|cx| {
+                                dmx_output::DmxOutputTabView::new(
+                                    uncommitted_project.clone(),
+                                    window,
+                                    cx,
+                                )
+                            }),
+                            cx,
+                        ),
+                    )
+                    .with_tab(
                         Tab::new("Triggers", cx).with_icon(IconVariant::Joystick).with_content(
                             cx.new(|cx| {
                                 triggers::TriggersTabView::new(
@@ -45,20 +57,6 @@ impl SettingsRootView {
                             }),
                             cx,
                         ),
-                    )
-                    .with_tab(
-                        Tab::new("DMX Output", cx)
-                            .with_icon(IconVariant::CircleArrowOutUpRight)
-                            .with_content(
-                                cx.new(|cx| {
-                                    dmx_output::DmxOutputTabView::new(
-                                        uncommitted_project.clone(),
-                                        window,
-                                        cx,
-                                    )
-                                }),
-                                cx,
-                            ),
                     )
             }),
             uncommitted_project,

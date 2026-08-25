@@ -1,3 +1,4 @@
+use gpui::SharedString;
 use rd_ui::{
     comp::{Disableable, Label, Labelled, stateful::Field},
     gpui::{Entity, Window, prelude::*},
@@ -7,13 +8,14 @@ use rd_ui::{
 use crate::layout::PreviewStory;
 
 pub struct InputPreview {
-    empty: Entity<Field>,
-    with_placeholder: Entity<Field>,
-    prefilled: Entity<Field>,
-    masked: Entity<Field>,
-    disabled: Entity<Field>,
-    digits_only: Entity<Field>,
-    submit_validated: Entity<Field>,
+    empty: Entity<Field<SharedString>>,
+    with_placeholder: Entity<Field<SharedString>>,
+    prefilled: Entity<Field<SharedString>>,
+    masked: Entity<Field<SharedString>>,
+    disabled: Entity<Field<SharedString>>,
+    integer: Entity<Field<i32>>,
+    custom: Entity<Field<CustomValue>>,
+    submit_validated: Entity<Field<SharedString>>,
 }
 
 impl InputPreview {
@@ -23,27 +25,44 @@ impl InputPreview {
             with_placeholder: cx.new(|cx| {
                 Field::new("field-placeholder", window, cx).with_placeholder("Type to search…", cx)
             }),
-            prefilled: cx
-                .new(|cx| Field::new("field-prefilled", window, cx).with_text("Radiant UI", cx)),
+            prefilled: cx.new(|cx| {
+                Field::new("field-prefilled", window, cx).with_value("Radiant UI".into(), cx)
+            }),
             masked: cx.new(|cx| {
                 Field::new("field-masked", window, cx)
-                    .with_text("super-secret", cx)
+                    .with_value("super-secret".into(), cx)
                     .with_masked(true, cx)
             }),
             disabled: cx.new(|cx| {
                 Field::new("field-disabled", window, cx)
-                    .with_text("Disabled value", cx)
+                    .with_value("Text Value".into(), cx)
                     .with_disabled(true, cx)
             }),
-            digits_only: cx.new(|cx| {
+            integer: cx.new(|cx| {
                 Field::new("field-digits-only", window, cx)
                     .with_placeholder("Digits only", cx)
-                    .with_validator(cx, |text| text.chars().all(|char| char.is_ascii_digit()))
+                    .with_value(42, cx)
+            }),
+            custom: cx.new(|cx| {
+                Field::custom(
+                    "field-custom",
+                    window,
+                    cx,
+                    |text| {
+                        if text.starts_with("custom:") {
+                            Some(CustomValue(text[7..].to_string()))
+                        } else {
+                            None
+                        }
+                    },
+                    |value: &CustomValue| format!("custom:{}", value.0).into(),
+                )
+                .with_placeholder("Custom value", cx)
             }),
             submit_validated: cx.new(|cx| {
                 Field::new("field-submit-validated", window, cx)
                     .with_placeholder("Press Enter after typing at least 3 characters", cx)
-                    .with_submit_validator(cx, |text| text.trim().len() >= 3)
+                    .with_submit_validator(cx, |text: &SharedString| text.trim().len() >= 3)
             }),
         }
     }
@@ -68,6 +87,7 @@ impl Render for InputPreview {
                     )
                     .child(Label::new("prefilled", self.prefilled.clone()).with_label("Prefilled"))
                     .child(Label::new("masked", self.masked.clone()).with_label("Masked"))
+                    .child(Label::new("custom", self.custom.clone()).with_label("Custom"))
                     .child(Label::new("disabled", self.disabled.clone()).with_label("Disabled")),
             ))
             .child(PreviewStory::new(
@@ -76,10 +96,7 @@ impl Render for InputPreview {
                     .w_full()
                     .gap_2()
                     .p_2()
-                    .child(
-                        Label::new("digits_only", self.digits_only.clone())
-                            .with_label("Live validator"),
-                    )
+                    .child(Label::new("integer", self.integer.clone()).with_label("Live validator"))
                     .child(
                         Label::new("submit_validated", self.submit_validated.clone())
                             .with_label("Submit validator"),
@@ -87,3 +104,6 @@ impl Render for InputPreview {
             ))
     }
 }
+
+#[derive(Clone)]
+struct CustomValue(String);

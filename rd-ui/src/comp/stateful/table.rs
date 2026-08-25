@@ -1,10 +1,13 @@
+use std::rc::Rc;
+
 use gpui::{
     AnyElement, App, ElementId, Entity, EventEmitter, FocusHandle, Focusable, MouseButton,
     MouseMoveEvent, Pixels, SharedString, Window, div, prelude::*,
 };
 
 use crate::{
-    ActiveTheme, Emphasis, StyledExt, StyledParentExt, StyledStatefulInteractiveElementExt,
+    ActiveTheme, Emphasis, InputPopup, PopupAppExt, StyledExt, StyledParentExt,
+    StyledStatefulInteractiveElementExt,
     comp::{FocusableComponent, INPUT_SIZE, Identifiable, stateful},
     h_flex, v_flex,
 };
@@ -193,7 +196,7 @@ impl<Row: 'static> Table<Row> {
 
         if let Some(column) = self.columns.get(self.selection.column) {
             if let Some(on_edit) = &column.on_edit {
-                on_edit(self.selection.rows(), window, cx);
+                on_edit(self.selection.rows(), &self.rows, window, cx);
             }
         }
     }
@@ -414,10 +417,12 @@ pub struct TableColumn<Row> {
     label: SharedString,
     // FIXME: It would be nice if we can make this` &mut App` instead of `&App`.
     render: Option<Box<dyn Fn(&Row, &mut Window, &App) -> AnyElement>>,
-    on_edit: Option<Box<dyn Fn(&[usize], &mut Window, &mut App) + 'static>>,
+    on_edit: Option<
+        Box<dyn Fn(&[usize], &Entity<Vec<Row>>, &mut Window, &mut Context<Table<Row>>) + 'static>,
+    >,
 }
 
-impl<Row> TableColumn<Row> {
+impl<Row: 'static> TableColumn<Row> {
     pub fn new(label: impl Into<SharedString>) -> Self {
         Self { label: label.into(), render: None, on_edit: None }
     }
@@ -452,16 +457,70 @@ impl<Row> TableColumn<Row> {
 
     pub fn set_on_edit<F>(&mut self, on_edit: F)
     where
-        F: Fn(&[usize], &mut Window, &mut App) + 'static,
+        F: Fn(&[usize], &Entity<Vec<Row>>, &mut Window, &mut Context<Table<Row>>) + 'static,
     {
         self.on_edit = Some(Box::new(on_edit));
     }
 
     pub fn with_on_edit<F>(mut self, on_edit: F) -> Self
     where
-        F: Fn(&[usize], &mut Window, &mut App) + 'static,
+        F: Fn(&[usize], &Entity<Vec<Row>>, &mut Window, &mut Context<Table<Row>>) + 'static,
     {
         self.on_edit = Some(Box::new(on_edit));
+        self
+    }
+
+    pub fn with_editor<V, Input, CreateField, Apply>(
+        mut self,
+        popup_title: impl Into<String>,
+        create_field: CreateField,
+        apply: Apply,
+    ) -> Self
+    where
+        V: Clone + 'static,
+        Input: Render
+            + Focusable
+            + EventEmitter<stateful::event::Submit<Option<V>>>
+            + EventEmitter<stateful::event::Change<Option<V>>>
+            + 'static,
+        CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
+        Apply: Fn(&mut Row, &V, usize) + 'static,
+    {
+        let popup_title = popup_title.into();
+
+        let apply = Rc::new(apply);
+
+        self.on_edit = Some(Box::new(move |row_ixs, rows, window, cx| {
+            let row_ixs = row_ixs.to_vec();
+            let rows = rows.clone();
+            let popup_title = popup_title.clone();
+
+            let field = create_field(window, cx);
+            let apply = Rc::clone(&apply);
+
+            let popup = InputPopup::new(field, window, cx).with_on_submit(
+                window,
+                cx,
+                move |value, window, cx| {
+                    let Some(value) = value else { return };
+
+                    rows.update(cx, |rows, cx| {
+                        for (i, row_ix) in row_ixs.iter().enumerate() {
+                            if let Some(row) = rows.get_mut(*row_ix) {
+                                apply(row, value, i);
+                            }
+                        }
+                        cx.notify();
+                    });
+
+                    cx.dismiss_popup(window);
+                },
+            );
+            let popup = cx.new(move |_| popup);
+
+            cx.set_popup(&popup_title, popup, window);
+        }));
+
         self
     }
 }

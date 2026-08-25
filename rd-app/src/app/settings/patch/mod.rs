@@ -1,10 +1,9 @@
 use rd_ui::{
-    InputPopup, PopupAppExt,
     comp::stateful::{Field, Table, TableColumn},
     gpui::{Entity, Window, div, prelude::*},
 };
 
-use crate::comp::stateful::{AddressField, FixtureIdField};
+use crate::comp::stateful::{address_field, fixture_id_field};
 
 pub struct PatchTabView {
     table: Entity<Table<rd::project::FixtureConfig>>,
@@ -46,105 +45,31 @@ impl PatchTabView {
             Table::new("table", fixtures.clone(), window, cx).with_columns(vec![
                 TableColumn::<rd::project::FixtureConfig>::new("Id")
                     .with_element(|row, _, _| row.id.to_string().into_any_element())
-                    .with_on_edit({
-                        let fixtures = fixtures.clone();
-                        move |row_ixs, window, cx| {
-                            let popup = cx.new(|cx| {
-                                let row_ixs = row_ixs.to_vec();
-                                let fixtures = fixtures.clone();
-                                InputPopup::new(
-                                    cx.new(|cx| FixtureIdField::new("fid", window, cx).w_full()),
-                                    window,
-                                    cx,
-                                )
-                                .with_on_submit(
-                                    window,
-                                    cx,
-                                    move |value, _, cx| {
-                                        let Some(value) = value else { return };
-                                        fixtures.update(cx, |fixtures, cx| {
-                                            for row_ix in &row_ixs {
-                                                if let Some(row) = fixtures.get_mut(*row_ix) {
-                                                    row.id = *value;
-                                                }
-                                                cx.notify();
-                                            }
-                                        });
-                                        cx.dismiss_popup();
-                                    },
-                                )
-                            });
-                            cx.set_popup("Edit Fixture ID", popup);
-                        }
-                    }),
+                    .with_editor(
+                        "Edit Fixture ID",
+                        |window, cx| cx.new(|cx| fixture_id_field("fid", window, cx).w_full()),
+                        |row, value, n| row.id = *value + (n as u32),
+                    ),
                 TableColumn::<rd::project::FixtureConfig>::new("Name")
                     .with_element(|row, _, _| row.name.to_string().into_any_element())
-                    .with_on_edit({
-                        let fixtures = fixtures.clone();
-                        move |row_ixs, window, cx| {
-                            let popup = cx.new(|cx| {
-                                let row_ixs = row_ixs.to_vec();
-                                let fixtures = fixtures.clone();
-                                InputPopup::new(
-                                    cx.new(|cx| Field::new("name", window, cx).w_full()),
-                                    window,
-                                    cx,
-                                )
-                                .with_on_submit(
-                                    window,
-                                    cx,
-                                    move |value, _, cx| {
-                                        fixtures.update(cx, |fixtures, cx| {
-                                            let name = value.to_string().trim().to_string();
-                                            for row_ix in &row_ixs {
-                                                if let Some(row) = fixtures.get_mut(*row_ix) {
-                                                    row.name = name.clone();
-                                                }
-                                                cx.notify();
-                                            }
-                                        });
-                                        cx.dismiss_popup();
-                                    },
-                                )
-                            });
-                            cx.set_popup("Edit Fixture Name", popup);
-                        }
-                    }),
+                    .with_editor(
+                        "Edit Fixture Name",
+                        |window, cx| cx.new(|cx| Field::<String>::new("name", window, cx).w_full()),
+                        |row, value, n| {
+                            let base_name = value.clone().trim().to_string();
+                            row.name =
+                                if n == 0 { base_name } else { format!("{} {}", base_name, n + 1) };
+                        },
+                    ),
                 TableColumn::<rd::project::FixtureConfig>::new("Address")
                     .with_element(|row, _, _| row.dmx_address.to_string().into_any_element())
-                    .with_on_edit({
-                        let fixtures = fixtures.clone();
-                        move |row_ixs, window, cx| {
-                            let popup = cx.new(|cx| {
-                                let row_ixs = row_ixs.to_vec();
-                                let fixtures = fixtures.clone();
-                                InputPopup::new(
-                                    cx.new(|cx| AddressField::new("address", window, cx).w_full()),
-                                    window,
-                                    cx,
-                                )
-                                .with_on_submit(
-                                    window,
-                                    cx,
-                                    move |value, _, cx| {
-                                        let Some(value) = value else { return };
-                                        fixtures.update(cx, |fixtures, cx| {
-                                            for row_ix in &row_ixs {
-                                                if let Some(row) = fixtures.get_mut(*row_ix) {
-                                                    row.dmx_address = *value;
-                                                }
-                                                cx.notify();
-                                            }
-                                        });
-                                        cx.dismiss_popup();
-                                    },
-                                )
-                            });
-                            cx.set_popup("Edit Fixture Address", popup);
-                        }
-                    }),
+                    .with_editor(
+                        "Edit Fixture Address",
+                        |window, cx| cx.new(|cx| address_field("address", window, cx).w_full()),
+                        |row, value, _| row.dmx_address = *value,
+                    ),
                 TableColumn::<rd::project::FixtureConfig>::new("Kind")
-                    .with_element(|row, _, _| row.fixture_kind.to_string().into_any_element()),
+                    .with_element(|row, _, _| row.fixture_kind.to_string().into_any_element()), // FIXME: Add editor
             ])
         });
 

@@ -22,8 +22,8 @@ impl FormPreview {
                 FormInput::new(
                     cx.new(|cx| Field::new("name", window, cx)),
                     KeyPath::<FormData, _>::new(
-                        |data| data.name.clone().into(),
-                        |data, val: SharedString| data.name = val.to_string(),
+                        |d| Some(d.name.clone().into()),
+                        |d, val: Option<SharedString>| d.name = val.unwrap_or_default().to_string(),
                     ),
                     cx,
                 ),

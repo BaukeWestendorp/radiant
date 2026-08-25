@@ -2,6 +2,7 @@ use gpui::{
     App, ElementId, Entity, EventEmitter, FocusHandle, Focusable, SharedString, StyleRefinement,
     Window, prelude::*, px,
 };
+use std::sync::Arc;
 
 use crate::{
     ActiveTheme, Emphasis, StyledExt, StyledParentExt, StyledStatefulInteractiveElementExt,
@@ -12,40 +13,84 @@ use crate::{
     h_flex,
 };
 
-pub struct Field {
+pub struct Field<T> {
     text_input: Entity<TextInput>,
     style: StyleRefinement,
+    parser: Arc<dyn Fn(&str) -> Option<T> + Send + Sync + 'static>,
+    formatter: Arc<dyn Fn(&T) -> SharedString + Send + Sync + 'static>,
 }
 
-impl Field {
+impl<T: FieldValue + Clone + 'static> Field<T> {
     pub fn new(id: impl Into<ElementId>, window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let this = Self::custom(id, window, cx, T::parse, |v| v.format());
+        let parser = this.parser.clone();
+
+        this.text_input.update(cx, |input, _| {
+            input.set_validator(T::validate_input);
+            input.set_submit_validator(move |s| {
+                if let Some(parsed) = parser(s) {
+                    T::validate_submit(s) && parsed.validate()
+                } else {
+                    false
+                }
+            });
+        });
+
+        this
+    }
+}
+
+impl<T: Clone + 'static> Field<T> {
+    pub fn custom(
+        id: impl Into<ElementId>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+        parser: impl Fn(&str) -> Option<T> + Send + Sync + 'static,
+        formatter: impl Fn(&T) -> SharedString + Send + Sync + 'static,
+    ) -> Self {
         let text_input = cx.new(move |cx| {
             TextInput::new(id, window, cx).with_text_size(cx.theme().font_size - px(1.0))
         });
-        cx.subscribe(&text_input, |_, _, event: &stateful::event::Submit<SharedString>, cx| {
-            cx.emit(stateful::event::Submit(event.0.clone()))
-        })
+
+        cx.subscribe(
+            &text_input,
+            |this: &mut Self, _, _: &stateful::event::Submit<SharedString>, cx| {
+                cx.emit(stateful::event::Submit(this.value(cx)));
+            },
+        )
         .detach();
-        cx.subscribe(&text_input, |_, _, event: &stateful::event::Change<SharedString>, cx| {
-            cx.emit(stateful::event::Change(event.0.clone()))
-        })
+
+        cx.subscribe(
+            &text_input,
+            |this: &mut Self, _, _: &stateful::event::Change<SharedString>, cx| {
+                cx.emit(stateful::event::Change(this.value(cx)));
+            },
+        )
         .detach();
-        Self { text_input, style: StyleRefinement::default() }
+
+        Self {
+            text_input,
+            style: StyleRefinement::default(),
+            parser: Arc::new(parser),
+            formatter: Arc::new(formatter),
+        }
     }
 
-    pub fn text<'a>(&self, cx: &'a App) -> &'a SharedString {
-        self.text_input.read(cx).text()
+    pub fn value(&self, cx: &App) -> Option<T> {
+        let text = self.text_input.read(cx).text();
+        (self.parser)(text.as_ref())
     }
 
-    pub fn set_text(&self, text: impl Into<SharedString>, cx: &mut Context<Self>) {
+    pub fn set_value(&self, value: T, cx: &mut Context<Self>) {
+        let text = (self.formatter)(&value);
         self.text_input.update(cx, |this, cx| {
-            this.set_text(text.into(), cx);
+            this.set_text(text, cx);
             this.move_to_end_of_line(cx);
         });
     }
 
-    pub fn with_text(self, text: impl Into<SharedString>, cx: &mut Context<Self>) -> Self {
-        self.set_text(text.into(), cx);
+    pub fn with_value(self, value: T, cx: &mut Context<Self>) -> Self {
+        self.set_value(value, cx);
         self
     }
 
@@ -88,20 +133,61 @@ impl Field {
         self
     }
 
-    pub fn set_validator<F: Fn(&str) -> bool + 'static>(&self, cx: &mut App, validator: F) {
-        self.text_input.update(cx, |text_field, _cx| text_field.set_validator(validator));
+    pub fn set_text_validator<F: Fn(&str) -> bool + Send + Sync + 'static>(
+        &self,
+        cx: &mut App,
+        validator: F,
+    ) {
+        self.text_input.update(cx, |text_field, _cx| {
+            text_field.set_validator(validator);
+        });
     }
 
-    pub fn with_validator<F: Fn(&str) -> bool + 'static>(self, cx: &mut App, validator: F) -> Self {
+    pub fn with_text_validator<F: Fn(&str) -> bool + Send + Sync + 'static>(
+        self,
+        cx: &mut App,
+        validator: F,
+    ) -> Self {
+        self.set_text_validator(cx, validator);
+        self
+    }
+
+    pub fn set_validator<F: Fn(&T) -> bool + Send + Sync + 'static>(
+        &self,
+        cx: &mut App,
+        validator: F,
+    ) {
+        let parser = self.parser.clone();
+        self.text_input.update(cx, |text_field, _cx| {
+            text_field.set_validator(move |s| {
+                if let Some(parsed) = parser(s) { validator(&parsed) } else { false }
+            });
+        });
+    }
+
+    pub fn with_validator<F: Fn(&T) -> bool + Send + Sync + 'static>(
+        self,
+        cx: &mut App,
+        validator: F,
+    ) -> Self {
         self.set_validator(cx, validator);
         self
     }
 
-    pub fn set_submit_validator<F: Fn(&str) -> bool + 'static>(&self, cx: &mut App, validator: F) {
-        self.text_input.update(cx, |text_field, _cx| text_field.set_submit_validator(validator));
+    pub fn set_submit_validator<F: Fn(&T) -> bool + Send + Sync + 'static>(
+        &self,
+        cx: &mut App,
+        validator: F,
+    ) {
+        let parser = self.parser.clone();
+        self.text_input.update(cx, |text_field, _cx| {
+            text_field.set_submit_validator(move |s| {
+                if let Some(parsed) = parser(s) { validator(&parsed) } else { false }
+            });
+        });
     }
 
-    pub fn with_submit_validator<F: Fn(&str) -> bool + 'static>(
+    pub fn with_submit_validator<F: Fn(&T) -> bool + Send + Sync + 'static>(
         self,
         cx: &mut App,
         validator: F,
@@ -111,19 +197,19 @@ impl Field {
     }
 }
 
-impl Styled for Field {
+impl<T: 'static> Styled for Field<T> {
     fn style(&mut self) -> &mut StyleRefinement {
         &mut self.style
     }
 }
 
-impl Focusable for Field {
+impl<T: 'static> Focusable for Field<T> {
     fn focus_handle(&self, cx: &App) -> FocusHandle {
         self.text_input.read(cx).focus_handle(cx)
     }
 }
 
-impl FocusableComponent for Field {
+impl<T: 'static> FocusableComponent for Field<T> {
     fn set_focus_handle(&mut self, focus_handle: FocusHandle, cx: &mut App) {
         self.text_input.update(cx, |text_input, cx| {
             text_input.set_focus_handle(focus_handle, cx);
@@ -131,7 +217,7 @@ impl FocusableComponent for Field {
     }
 }
 
-impl Disableable for Field {
+impl<T: 'static> Disableable for Field<T> {
     fn disabled(&self, cx: &App) -> bool {
         self.text_input.read(cx).disabled(cx)
     }
@@ -144,13 +230,13 @@ impl Disableable for Field {
     }
 }
 
-impl Identifiable for Field {
+impl<T: 'static> Identifiable for Field<T> {
     fn id<'a>(&'a self, cx: &'a App) -> &'a ElementId {
         self.text_input.read(cx).id(cx)
     }
 }
 
-impl Render for Field {
+impl<T: 'static> Render for Field<T> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         h_flex()
             .id(self.id(cx).clone())
@@ -167,15 +253,77 @@ impl Render for Field {
     }
 }
 
-impl EventEmitter<stateful::event::Submit<SharedString>> for Field {}
-impl EventEmitter<stateful::event::Change<SharedString>> for Field {}
+impl<T: Clone + 'static> EventEmitter<stateful::event::Submit<Option<T>>> for Field<T> {}
+impl<T: Clone + 'static> EventEmitter<stateful::event::Change<Option<T>>> for Field<T> {}
 
-impl FormWidget<SharedString> for Field {
-    fn get_value(&self, cx: &App) -> SharedString {
-        self.text(cx).clone()
+impl<T: Clone + 'static> FormWidget<Option<T>> for Field<T> {
+    fn get_value(&self, cx: &App) -> Option<T> {
+        self.value(cx)
     }
 
-    fn set_value(&mut self, value: SharedString, cx: &mut Context<Self>) {
-        self.set_text(value, cx);
+    fn set_value(&mut self, value: Option<T>, cx: &mut Context<Self>) {
+        if let Some(val) = value {
+            Field::set_value(self, val, cx);
+        } else {
+            self.clear(cx);
+        }
     }
 }
+
+pub trait FieldValue: Sized {
+    fn parse(text: &str) -> Option<Self>;
+
+    fn format(&self) -> SharedString;
+
+    fn validate_input(text: &str) -> bool {
+        text.is_empty() || Self::parse(text).is_some()
+    }
+
+    fn validate_submit(text: &str) -> bool {
+        Self::parse(text).is_some()
+    }
+
+    fn validate(&self) -> bool {
+        true
+    }
+}
+
+impl FieldValue for String {
+    fn parse(text: &str) -> Option<Self> {
+        Some(text.to_string())
+    }
+
+    fn format(&self) -> SharedString {
+        self.clone().into()
+    }
+}
+
+impl FieldValue for SharedString {
+    fn parse(text: &str) -> Option<Self> {
+        Some(text.into())
+    }
+
+    fn format(&self) -> SharedString {
+        self.clone()
+    }
+}
+
+macro_rules! impl_field_value_for_numeric {
+    ($($t:ty),*) => {
+        $(
+            impl FieldValue for $t {
+                fn parse(text: &str) -> Option<Self> {
+                    text.parse::<$t>().ok()
+                }
+
+                fn format(&self) -> SharedString {
+                    self.to_string().into()
+                }
+            }
+        )*
+    };
+}
+
+impl_field_value_for_numeric!(
+    i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize, f32, f64
+);

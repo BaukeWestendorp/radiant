@@ -1,6 +1,6 @@
 use gpui::{
-    AnyView, App, Entity, EventEmitter, Focusable, Global, ReadGlobal, SharedString, UpdateGlobal,
-    Window, div, prelude::*,
+    AnyView, App, Entity, EventEmitter, FocusHandle, Focusable, Global, ReadGlobal, SharedString,
+    UpdateGlobal, Window, div, prelude::*,
 };
 
 use crate::{
@@ -85,28 +85,47 @@ where
     Input: Render + EventEmitter<stateful::event::Change<T>>,
 {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        c_flex().size_full().p_2().child(self.input.clone())
+        v_flex().items_center().gap_2().size_full().p_2().child(self.input.clone())
     }
 }
 
 pub trait PopupAppExt {
-    fn set_popup(&mut self, title: impl Into<SharedString>, popup: impl Into<AnyView>);
+    fn set_popup(
+        &mut self,
+        title: impl Into<SharedString>,
+        popup: impl Into<AnyView>,
+        window: &mut Window,
+    );
 
-    fn dismiss_popup(&mut self);
+    fn dismiss_popup(&mut self, window: &mut Window);
 }
 
 impl PopupAppExt for App {
-    fn set_popup(&mut self, title: impl Into<SharedString>, popup: impl Into<AnyView>) {
+    fn set_popup(
+        &mut self,
+        title: impl Into<SharedString>,
+        popup: impl Into<AnyView>,
+        window: &mut Window,
+    ) {
+        let focus_handle = window.focused(self);
         PopupGlobal::update_global(self, |popup_global, _| {
             popup_global.title = Some(title.into());
             popup_global.content = Some(popup.into());
+            popup_global.last_focus_handle = focus_handle;
         })
     }
 
-    fn dismiss_popup(&mut self) {
-        PopupGlobal::update_global(self, |popup_global, _| {
+    fn dismiss_popup(&mut self, window: &mut Window) {
+        PopupGlobal::update_global(self, |popup_global, cx| {
             popup_global.title = None;
             popup_global.content = None;
+
+            // FIXME: This does not work
+            if let Some(focus_handle) = popup_global.last_focus_handle.take() {
+                window.defer(cx, move |window, cx| {
+                    focus_handle.focus(window, cx);
+                });
+            }
         })
     }
 }
@@ -156,14 +175,14 @@ impl Render for PopupOverlay {
             .occlude()
             .bg(cx.theme().contrast.opacity(0.25))
             .size_full()
-            .on_action::<action::Dismiss>(cx.listener(|_, _, _, cx| cx.dismiss_popup()))
+            .on_action::<action::Dismiss>(cx.listener(|_, _, window, cx| cx.dismiss_popup(window)))
             .child(
                 v_flex()
                     .emphasis_bordered(Emphasis::Primary, cx)
                     .min_w_72()
                     .child(header)
                     .child(content)
-                    .on_mouse_down_out(cx.listener(|_, _, _, cx| cx.dismiss_popup())),
+                    .on_mouse_down_out(cx.listener(|_, _, window, cx| cx.dismiss_popup(window))),
             )
             .into_any_element()
     }
@@ -173,6 +192,7 @@ impl Render for PopupOverlay {
 struct PopupGlobal {
     pub title: Option<SharedString>,
     pub content: Option<AnyView>,
+    pub last_focus_handle: Option<FocusHandle>,
 }
 
 impl Global for PopupGlobal {}
