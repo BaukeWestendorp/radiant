@@ -1,4 +1,5 @@
 use rd_ui::{
+    Emphasis, StyledExt,
     comp::{
         IconVariant, Labelled,
         stateful::{Tab, Tabs, TabsDirection},
@@ -39,7 +40,9 @@ impl DmxOutputTabView {
 }
 
 impl Render for DmxOutputTabView {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().child(self.tabs.clone())
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        div().size_full().p_2().child(
+            div().size_full().emphasis_bordered(Emphasis::Primary, cx).child(self.tabs.clone()),
+        )
     }
 }

@@ -1,4 +1,5 @@
 use rd_ui::{
+    Emphasis, StyledExt,
     comp::stateful::{Field, Table, TableColumn},
     gpui::{Entity, Window, div, prelude::*},
 };
@@ -80,7 +81,9 @@ impl PatchTabView {
 }
 
 impl Render for PatchTabView {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().child(self.table.clone())
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        div().size_full().p_2().child(
+            div().size_full().emphasis_bordered(Emphasis::Primary, cx).child(self.table.clone()),
+        )
     }
 }
