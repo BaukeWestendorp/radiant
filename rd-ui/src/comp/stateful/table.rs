@@ -30,7 +30,7 @@ pub struct Table<Row> {
     selection: TableSelection,
 
     on_delete: Option<Box<dyn Fn(&[usize], usize, &mut Window, &mut App) + 'static>>,
-    on_edit: Option<Box<dyn Fn(&[usize], usize, &mut Window, &mut App) + 'static>>,
+    on_edit: Option<Box<dyn Fn(&[usize], usize, FocusHandle, &mut Window, &mut App) + 'static>>,
 }
 
 impl<Row: 'static> Table<Row> {
@@ -110,14 +110,14 @@ impl<Row: 'static> Table<Row> {
 
     pub fn set_on_edit<F>(&mut self, on_edit: F)
     where
-        F: Fn(&[usize], usize, &mut Window, &mut App) + 'static,
+        F: Fn(&[usize], usize, FocusHandle, &mut Window, &mut App) + 'static,
     {
         self.on_edit = Some(Box::new(on_edit));
     }
 
     pub fn with_on_edit<F>(mut self, on_edit: F) -> Self
     where
-        F: Fn(&[usize], usize, &mut Window, &mut App) + 'static,
+        F: Fn(&[usize], usize, FocusHandle, &mut Window, &mut App) + 'static,
     {
         self.on_edit = Some(Box::new(on_edit));
         self
@@ -190,13 +190,21 @@ impl<Row: 'static> Table<Row> {
     }
 
     pub fn edit_selection(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        // FIXME: It would be nice if the field could be preloaded with the (first) value that is being edited.
+
         if let Some(on_edit) = &self.on_edit {
-            on_edit(self.selection.rows(), self.selection.column, window, cx);
+            on_edit(
+                self.selection.rows(),
+                self.selection.column,
+                self.focus_handle.clone(),
+                window,
+                cx,
+            );
         }
 
         if let Some(column) = self.columns.get(self.selection.column) {
             if let Some(on_edit) = &column.on_edit {
-                on_edit(self.selection.rows(), &self.rows, window, cx);
+                on_edit(self.selection.rows(), &self.rows, self.focus_handle.clone(), window, cx);
             }
         }
     }
@@ -418,7 +426,10 @@ pub struct TableColumn<Row> {
     // FIXME: It would be nice if we can make this` &mut App` instead of `&App`.
     render: Option<Box<dyn Fn(&Row, &mut Window, &App) -> AnyElement>>,
     on_edit: Option<
-        Box<dyn Fn(&[usize], &Entity<Vec<Row>>, &mut Window, &mut Context<Table<Row>>) + 'static>,
+        Box<
+            dyn Fn(&[usize], &Entity<Vec<Row>>, FocusHandle, &mut Window, &mut Context<Table<Row>>)
+                + 'static,
+        >,
     >,
 }
 
@@ -457,14 +468,16 @@ impl<Row: 'static> TableColumn<Row> {
 
     pub fn set_on_edit<F>(&mut self, on_edit: F)
     where
-        F: Fn(&[usize], &Entity<Vec<Row>>, &mut Window, &mut Context<Table<Row>>) + 'static,
+        F: Fn(&[usize], &Entity<Vec<Row>>, FocusHandle, &mut Window, &mut Context<Table<Row>>)
+            + 'static,
     {
         self.on_edit = Some(Box::new(on_edit));
     }
 
     pub fn with_on_edit<F>(mut self, on_edit: F) -> Self
     where
-        F: Fn(&[usize], &Entity<Vec<Row>>, &mut Window, &mut Context<Table<Row>>) + 'static,
+        F: Fn(&[usize], &Entity<Vec<Row>>, FocusHandle, &mut Window, &mut Context<Table<Row>>)
+            + 'static,
     {
         self.on_edit = Some(Box::new(on_edit));
         self
@@ -490,7 +503,7 @@ impl<Row: 'static> TableColumn<Row> {
 
         let apply = Rc::new(apply);
 
-        self.on_edit = Some(Box::new(move |row_ixs, rows, window, cx| {
+        self.on_edit = Some(Box::new(move |row_ixs, rows, table_focus_handle, window, cx| {
             let row_ixs = row_ixs.to_vec();
             let rows = rows.clone();
             let popup_title = popup_title.clone();
@@ -518,7 +531,7 @@ impl<Row: 'static> TableColumn<Row> {
             );
             let popup = cx.new(move |_| popup);
 
-            cx.set_popup(&popup_title, popup, window);
+            cx.set_popup(&popup_title, popup, Some(table_focus_handle));
         }));
 
         self

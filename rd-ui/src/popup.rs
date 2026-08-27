@@ -94,7 +94,7 @@ pub trait PopupAppExt {
         &mut self,
         title: impl Into<SharedString>,
         popup: impl Into<AnyView>,
-        window: &mut Window,
+        return_focus_handle: Option<FocusHandle>,
     );
 
     fn dismiss_popup(&mut self, window: &mut Window);
@@ -105,13 +105,12 @@ impl PopupAppExt for App {
         &mut self,
         title: impl Into<SharedString>,
         popup: impl Into<AnyView>,
-        window: &mut Window,
+        return_focus_handle: Option<FocusHandle>,
     ) {
-        let focus_handle = window.focused(self);
         PopupGlobal::update_global(self, |popup_global, _| {
             popup_global.title = Some(title.into());
             popup_global.content = Some(popup.into());
-            popup_global.last_focus_handle = focus_handle;
+            popup_global.return_focus_handle = return_focus_handle;
         })
     }
 
@@ -119,12 +118,8 @@ impl PopupAppExt for App {
         PopupGlobal::update_global(self, |popup_global, cx| {
             popup_global.title = None;
             popup_global.content = None;
-
-            // FIXME: This does not work
-            if let Some(focus_handle) = popup_global.last_focus_handle.take() {
-                window.defer(cx, move |window, cx| {
-                    focus_handle.focus(window, cx);
-                });
+            if let Some(focus_handle) = popup_global.return_focus_handle.take() {
+                focus_handle.focus(window, cx);
             }
         })
     }
@@ -192,7 +187,7 @@ impl Render for PopupOverlay {
 struct PopupGlobal {
     pub title: Option<SharedString>,
     pub content: Option<AnyView>,
-    pub last_focus_handle: Option<FocusHandle>,
+    pub return_focus_handle: Option<FocusHandle>,
 }
 
 impl Global for PopupGlobal {}
