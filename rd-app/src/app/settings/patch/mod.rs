@@ -3,7 +3,10 @@ use rd_ui::{
     gpui::{Entity, Window, div, prelude::*},
 };
 
-use crate::comp::stateful::{address_field, fixture_id_field};
+use crate::{
+    comp::stateful::{address_field, fixture_id_field},
+    util::Incrementable,
+};
 
 pub struct PatchTabView {
     table: Entity<Table<rd::project::FixtureConfig>>,
@@ -48,25 +51,24 @@ impl PatchTabView {
                     .with_editor(
                         "Edit Fixture ID",
                         |window, cx| cx.new(|cx| fixture_id_field("fid", window, cx).w_full()),
-                        |row, value, n| row.id = *value + (n as u32),
+                        |row, value, n| row.id = value.increment_by(n),
                     ),
                 TableColumn::<rd::project::FixtureConfig>::new("Name")
                     .with_element(|row, _, _| row.name.to_string().into_any_element())
                     .with_editor(
                         "Edit Fixture Name",
                         |window, cx| cx.new(|cx| Field::<String>::new("name", window, cx).w_full()),
-                        |row, value, n| {
-                            let base_name = value.clone().trim().to_string();
-                            row.name =
-                                if n == 0 { base_name } else { format!("{} {}", base_name, n + 1) };
-                        },
+                        |row, value, n| row.name = value.increment_by(n),
                     ),
                 TableColumn::<rd::project::FixtureConfig>::new("Address")
                     .with_element(|row, _, _| row.dmx_address.to_string().into_any_element())
                     .with_editor(
                         "Edit Fixture Address",
                         |window, cx| cx.new(|cx| address_field("address", window, cx).w_full()),
-                        |row, value, _| row.dmx_address = *value,
+                        |row, value, n| {
+                            let channel_count = 1;
+                            row.dmx_address = value.increment_by(n * channel_count);
+                        },
                     ),
                 TableColumn::<rd::project::FixtureConfig>::new("Kind")
                     .with_element(|row, _, _| row.fixture_kind.to_string().into_any_element()), // FIXME: Add editor
