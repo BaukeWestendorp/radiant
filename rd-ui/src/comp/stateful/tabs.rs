@@ -151,9 +151,8 @@ impl Render for Tabs {
             .children(self.tabs.iter().enumerate().map(|(ix, tab)| {
                 let selected = self.selected == Some(ix);
                 let label = h_flex()
-                    .w_full()
+                    .size_full()
                     .gap_1()
-                    .items_center()
                     .when_some(tab.icon(), |e, icon| e.child(Icon::new(icon, IconSize::ExtraSmall)))
                     .when_some(tab.label(), |e, label| e.child(label.clone()));
 
@@ -162,6 +161,7 @@ impl Render for Tabs {
                     .track_focus(&tab.focus_handle)
                     .focus_ring(&tab.focus_handle, window, cx)
                     .w_full()
+                    .h(crate::comp::INPUT_SIZE)
                     .px_2()
                     .bg(cx.theme().bg_secondary)
                     .text_color(cx.theme().fg_secondary)
