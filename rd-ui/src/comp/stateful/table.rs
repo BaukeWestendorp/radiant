@@ -238,7 +238,7 @@ impl<Row: 'static> Table<Row> {
                 }))
         });
 
-        h_flex().w_full().h(self.row_height()).children(cells)
+        h_flex().w_full().min_h(self.row_height()).max_h(self.row_height()).children(cells)
     }
 
     fn render_body(&self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -335,7 +335,8 @@ impl<Row: 'static> Table<Row> {
         h_flex()
             .emphasis(Emphasis::Secondary, cx)
             .w_full()
-            .h(self.row_height())
+            .min_h(self.row_height())
+            .max_h(self.row_height())
             .px_1()
             .border_t_1()
             .border_color(cx.theme().border_secondary)
