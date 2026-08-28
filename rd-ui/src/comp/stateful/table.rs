@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
 use gpui::{
-    AnyElement, App, ElementId, Entity, EventEmitter, FocusHandle, Focusable, MouseButton,
-    MouseMoveEvent, Pixels, SharedString, Window, div, prelude::*,
+    AnyElement, App, ElementId, Entity, EventEmitter, FocusHandle, Focusable, MouseButton, Pixels,
+    SharedString, UniformListScrollHandle, Window, div, prelude::*, uniform_list,
 };
 
 use crate::{
@@ -23,199 +23,237 @@ pub(crate) mod action {
 
 pub struct Table<Row> {
     id: ElementId,
-    focus_handle: FocusHandle,
-
-    rows: Entity<Vec<Row>>,
-    columns: Vec<TableColumn<Row>>,
-    selection: TableSelection,
-
-    on_delete: Option<Box<dyn Fn(&[usize], usize, &mut Window, &mut App) + 'static>>,
-    on_edit: Option<Box<dyn Fn(&[usize], usize, FocusHandle, &mut Window, &mut App) + 'static>>,
+    state: Entity<TableState<Row>>,
 }
 
 impl<Row: 'static> Table<Row> {
     pub fn new(
         id: impl Into<ElementId>,
         rows: Entity<Vec<Row>>,
-        _window: &mut Window,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
-        Self {
-            id: id.into(),
-            focus_handle: cx.focus_handle().tab_stop(true),
+        let state = cx.new(|cx| TableState::new(rows, window, cx));
 
-            rows,
-            columns: Vec::new(),
-            selection: TableSelection::default(),
+        cx.subscribe(&state, |_, _, _: &stateful::event::SelectionChanged, cx| {
+            cx.emit(stateful::event::SelectionChanged);
+        })
+        .detach();
 
-            on_delete: None,
-            on_edit: None,
-        }
+        Self { id: id.into(), state }
     }
 
-    pub fn rows(&self) -> Entity<Vec<Row>> {
-        self.rows.clone()
+    pub fn rows(&self, cx: &App) -> Entity<Vec<Row>> {
+        self.state.read(cx).rows.clone()
     }
 
-    pub fn columns(&self) -> &[TableColumn<Row>] {
-        &self.columns
+    pub fn columns<'a>(&'a self, cx: &'a App) -> &'a [TableColumn<Row>] {
+        &self.state.read(cx).columns
     }
 
-    pub fn set_columns(&mut self, columns: Vec<TableColumn<Row>>) {
-        self.columns = columns;
+    pub fn set_columns(&mut self, columns: Vec<TableColumn<Row>>, cx: &mut Context<Self>) {
+        self.state.update(cx, |state, _cx| {
+            state.columns = columns;
+        });
     }
 
-    pub fn with_columns(mut self, columns: Vec<TableColumn<Row>>) -> Self {
-        self.columns = columns;
+    pub fn with_columns(mut self, columns: Vec<TableColumn<Row>>, cx: &mut Context<Self>) -> Self {
+        self.set_columns(columns, cx);
         self
     }
 
-    pub fn selection(&self) -> &TableSelection {
-        &self.selection
-    }
-
-    pub fn selection_mut(&mut self) -> &mut TableSelection {
-        &mut self.selection
+    pub fn selection<'a>(&'a self, cx: &'a App) -> &'a TableSelection {
+        &self.state.read(cx).selection
     }
 
     pub fn set_selection(&mut self, selection: TableSelection, cx: &mut Context<Self>) {
-        self.selection = selection;
-        cx.emit(stateful::event::SelectionChanged);
+        self.state.update(cx, |state, cx| {
+            state.selection = selection;
+            cx.emit(stateful::event::SelectionChanged);
+        });
     }
 
-    pub fn with_selection(mut self, selection: TableSelection) -> Self {
-        self.selection = selection;
+    pub fn with_selection(mut self, selection: TableSelection, cx: &mut Context<Self>) -> Self {
+        self.set_selection(selection, cx);
         self
     }
 
     pub fn selected_rows<'a>(&'a self, cx: &'a App) -> Vec<&'a Row> {
-        let rows = self.rows.read(cx);
-        self.selection.rows().iter().filter_map(|&row_ix| rows.get(row_ix)).collect()
+        let state = self.state.read(cx);
+        let rows = state.rows.read(cx);
+        state.selection.rows().iter().filter_map(|&row_ix| rows.get(row_ix)).collect()
     }
 
-    pub fn set_on_delete<F>(&mut self, on_delete: F)
+    pub fn set_on_delete<F>(&mut self, cx: &mut Context<Self>, on_delete: F)
     where
         F: Fn(&[usize], usize, &mut Window, &mut App) + 'static,
     {
-        self.on_delete = Some(Box::new(on_delete));
+        self.state.update(cx, |state, _cx| {
+            state.on_delete = Some(Box::new(on_delete));
+        });
     }
 
-    pub fn with_on_delete<F>(mut self, on_delete: F) -> Self
+    pub fn with_on_delete<F>(mut self, cx: &mut Context<Self>, on_delete: F) -> Self
     where
         F: Fn(&[usize], usize, &mut Window, &mut App) + 'static,
     {
-        self.on_delete = Some(Box::new(on_delete));
+        self.set_on_delete(cx, on_delete);
         self
     }
 
-    pub fn set_on_edit<F>(&mut self, on_edit: F)
+    pub fn set_on_edit<F>(&mut self, cx: &mut Context<Self>, on_edit: F)
     where
         F: Fn(&[usize], usize, FocusHandle, &mut Window, &mut App) + 'static,
     {
-        self.on_edit = Some(Box::new(on_edit));
+        self.state.update(cx, |state, _cx| {
+            state.on_edit = Some(Box::new(on_edit));
+        });
     }
 
-    pub fn with_on_edit<F>(mut self, on_edit: F) -> Self
+    pub fn with_on_edit<F>(mut self, cx: &mut Context<Self>, on_edit: F) -> Self
     where
         F: Fn(&[usize], usize, FocusHandle, &mut Window, &mut App) + 'static,
     {
-        self.on_edit = Some(Box::new(on_edit));
+        self.set_on_edit(cx, on_edit);
         self
     }
 
     pub fn select_all(&mut self, cx: &mut Context<Self>) {
-        self.selection.select_all(self.rows.read(cx).len());
-        cx.emit(stateful::event::SelectionChanged);
+        self.state.update(cx, |state, cx| {
+            let len = state.rows.read(cx).len();
+            state.selection.select_all(len);
+            cx.emit(stateful::event::SelectionChanged);
+        });
     }
 
     pub fn select_prev_row(&mut self, preserve_existing: bool, cx: &mut Context<Self>) {
-        let Some(last_row_ix) = self.rows.read(cx).len().checked_sub(1) else {
-            return;
-        };
-        let row_ix =
-            self.selection.selected_row().map_or(last_row_ix, |row_ix| row_ix.saturating_sub(1));
-        self.selection.move_row_selection(row_ix, preserve_existing);
-        cx.emit(stateful::event::SelectionChanged);
+        self.state.update(cx, |state, cx| {
+            let Some(last_row_ix) = state.rows.read(cx).len().checked_sub(1) else {
+                return;
+            };
+            let row_ix = state
+                .selection
+                .selected_row()
+                .map_or(last_row_ix, |row_ix| row_ix.saturating_sub(1));
+            state.selection.move_row_selection(row_ix, preserve_existing);
+            cx.emit(stateful::event::SelectionChanged);
+        });
     }
 
     pub fn select_next_row(&mut self, preserve_existing: bool, cx: &mut Context<Self>) {
-        let Some(last_row_ix) = self.rows.read(cx).len().checked_sub(1) else {
-            return;
-        };
-        let row_ix =
-            self.selection.selected_row().map_or(0, |row_ix| (row_ix + 1).min(last_row_ix));
-        self.selection.move_row_selection(row_ix, preserve_existing);
-        cx.emit(stateful::event::SelectionChanged);
+        self.state.update(cx, |state, cx| {
+            let Some(last_row_ix) = state.rows.read(cx).len().checked_sub(1) else {
+                return;
+            };
+            let row_ix =
+                state.selection.selected_row().map_or(0, |row_ix| (row_ix + 1).min(last_row_ix));
+            state.selection.move_row_selection(row_ix, preserve_existing);
+            cx.emit(stateful::event::SelectionChanged);
+        });
     }
 
     pub fn select_prev_column(&mut self, cx: &mut Context<Self>) {
-        let Some(last_column_ix) = self.columns.len().checked_sub(1) else {
-            return;
-        };
-        if !self.selection.has_rows() {
-            if self.rows.read(cx).is_empty() {
+        self.state.update(cx, |state, cx| {
+            let Some(last_column_ix) = state.columns.len().checked_sub(1) else {
+                return;
+            };
+            if !state.selection.has_rows() {
+                if state.rows.read(cx).is_empty() {
+                    return;
+                }
+
+                state.selection.move_row_selection(0, false);
+                state.selection.move_column_selection(last_column_ix);
                 return;
             }
-
-            self.selection.move_row_selection(0, false);
-            self.selection.move_column_selection(last_column_ix);
-            return;
-        }
-        self.selection.move_column_selection(self.selection.column().saturating_sub(1));
-        cx.emit(stateful::event::SelectionChanged);
+            state.selection.move_column_selection(state.selection.column().saturating_sub(1));
+            cx.emit(stateful::event::SelectionChanged);
+        });
     }
 
     pub fn select_next_column(&mut self, cx: &mut Context<Self>) {
-        let Some(last_column_ix) = self.columns.len().checked_sub(1) else {
-            return;
-        };
-        if !self.selection.has_rows() {
-            if self.rows.read(cx).is_empty() {
+        self.state.update(cx, |state, cx| {
+            let Some(last_column_ix) = state.columns.len().checked_sub(1) else {
+                return;
+            };
+            if !state.selection.has_rows() {
+                if state.rows.read(cx).is_empty() {
+                    return;
+                }
+
+                state.selection.move_row_selection(0, false);
+                state.selection.move_column_selection(0);
                 return;
             }
-
-            self.selection.move_row_selection(0, false);
-            self.selection.move_column_selection(0);
-            return;
-        }
-        let column_ix = (self.selection.column() + 1).min(last_column_ix);
-        self.selection.move_column_selection(column_ix);
-        cx.emit(stateful::event::SelectionChanged);
+            let column_ix = (state.selection.column() + 1).min(last_column_ix);
+            state.selection.move_column_selection(column_ix);
+            cx.emit(stateful::event::SelectionChanged);
+        });
     }
 
     pub fn delete_selection(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        if let Some(on_delete) = &self.on_delete {
-            on_delete(self.selection.rows(), self.selection.column, window, cx);
+        // Temporarily extract the callback so we can pass `cx` to it without violating borrow rules
+        let mut on_delete_cb = self.state.update(cx, |state, _cx| state.on_delete.take());
+        let (rows, column) = self
+            .state
+            .update(cx, |state, _cx| (state.selection.rows().to_vec(), state.selection.column));
+
+        if let Some(on_delete) = &on_delete_cb {
+            on_delete(&rows, column, window, cx);
+        }
+
+        // Put the callback back
+        if let Some(cb) = on_delete_cb.take() {
+            self.state.update(cx, |state, _cx| state.on_delete = Some(cb));
         }
     }
 
     pub fn edit_selection(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         // FIXME: It would be nice if the field could be preloaded with the (first) value that is being edited.
 
-        if let Some(on_edit) = &self.on_edit {
-            on_edit(
-                self.selection.rows(),
-                self.selection.column,
-                self.focus_handle.clone(),
-                window,
-                cx,
-            );
+        // Temporarily extract callbacks to pass `cx` down safely
+        let mut on_edit_cb = self.state.update(cx, |state, _cx| state.on_edit.take());
+        let (rows, column, focus_handle, rows_entity) = self.state.update(cx, |state, _cx| {
+            (
+                state.selection.rows().to_vec(),
+                state.selection.column,
+                state.focus_handle.clone(),
+                state.rows.clone(),
+            )
+        });
+
+        if let Some(on_edit) = &on_edit_cb {
+            on_edit(&rows, column, focus_handle.clone(), window, cx);
         }
 
-        if let Some(column) = self.columns.get(self.selection.column) {
-            if let Some(on_edit) = &column.on_edit {
-                on_edit(self.selection.rows(), &self.rows, self.focus_handle.clone(), window, cx);
-            }
+        if let Some(cb) = on_edit_cb.take() {
+            self.state.update(cx, |state, _cx| state.on_edit = Some(cb));
+        }
+
+        let mut column_on_edit_cb = self.state.update(cx, |state, _cx| {
+            if let Some(col) = state.columns.get_mut(column) { col.on_edit.take() } else { None }
+        });
+
+        if let Some(on_edit) = &column_on_edit_cb {
+            on_edit(&rows, &rows_entity, focus_handle, window, cx);
+        }
+
+        if let Some(cb) = column_on_edit_cb.take() {
+            self.state.update(cx, |state, _cx| {
+                if let Some(col) = state.columns.get_mut(column) {
+                    col.on_edit = Some(cb);
+                }
+            });
         }
     }
 
     #[inline(always)]
-    fn row_height(&self) -> Pixels {
+    fn row_height() -> Pixels {
         INPUT_SIZE
     }
 
     fn render_header(&self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let cells = self.columns.iter().enumerate().map(|(ix, column)| {
+        let cells = self.state.read(cx).columns.iter().enumerate().map(|(ix, column)| {
             let id = format!("th-cell-{}", ix);
 
             h_flex()
@@ -231,39 +269,45 @@ impl<Row: 'static> Table<Row> {
                 .when(ix != 0, |e| e.border_l_1())
                 .child(column.label.clone())
                 .on_click(cx.listener(move |this, _, _, cx| {
-                    this.selection_mut().set_column(ix);
+                    this.state.update(cx, |state, _cx| state.selection.set_column(ix));
                     this.select_all(cx);
-                    cx.emit(stateful::event::SelectionChanged);
                     cx.notify();
                 }))
         });
 
-        h_flex().w_full().min_h(self.row_height()).max_h(self.row_height()).children(cells)
+        h_flex().w_full().min_h(Self::row_height()).max_h(Self::row_height()).children(cells)
     }
 
-    fn render_body(&self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let row_count = self.rows.read(cx).len();
-        let rows = (0..row_count)
-            .map(|row_ix| self.render_row(row_ix, window, cx).into_any_element())
-            .collect::<Vec<_>>();
+    fn render_body(&self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let row_count = self.state.read(cx).rows.read(cx).len();
 
-        v_flex().id("body").overflow_scroll().bg(cx.theme().bg_table).size_full().children(rows)
+        uniform_list("body", row_count, {
+            let state = self.state.clone();
+            move |range, window, cx| {
+                range
+                    .map(|row_ix| Self::render_row(&state, row_ix, window, cx).into_any_element())
+                    .collect()
+            }
+        })
+        .track_scroll(&self.state.read(cx).scroll_handle)
+        .bg(cx.theme().bg_table)
+        .size_full()
     }
 
     fn render_row(
-        &self,
+        state: &Entity<TableState<Row>>,
         row_ix: usize,
         window: &mut Window,
-        cx: &mut Context<Self>,
+        cx: &mut App,
     ) -> impl IntoElement {
-        let cells = self
+        let cells = state
+            .read(cx)
             .columns
             .iter()
             .enumerate()
             .map(|(col_ix, column)| {
-                let row = self.rows().read(cx).get(row_ix).unwrap();
-
-                let selected = self.selection.cell_selected(row_ix, col_ix);
+                let row = state.read(cx).rows.read(cx).get(row_ix).unwrap();
+                let selected = state.read(cx).selection.cell_selected(row_ix, col_ix);
 
                 h_flex()
                     .relative()
@@ -297,66 +341,80 @@ impl<Row: 'static> Table<Row> {
                                     .unwrap_or(div().into_any_element()),
                             ),
                     )
-                    .on_mouse_down(
-                        MouseButton::Left,
-                        cx.listener(move |this, _, _, cx| {
-                            let selection = this.selection_mut();
-                            selection.clear_rows();
-                            selection.start_row_selection(row_ix, col_ix);
-                            cx.emit(stateful::event::SelectionChanged);
-                            cx.notify();
-                        }),
-                    )
+                    .on_mouse_down(MouseButton::Left, {
+                        let state = state.clone();
+                        move |_, _, cx| {
+                            state.update(cx, |state, cx| {
+                                state.selection.clear_rows();
+                                state.selection.start_row_selection(row_ix, col_ix);
+                                cx.emit(stateful::event::SelectionChanged);
+                                cx.notify();
+                            });
+                        }
+                    })
             })
             .collect::<Vec<_>>();
 
         h_flex()
             .id(format!("row-{}", row_ix))
             .w_full()
-            .min_h(self.row_height())
-            .max_h(self.row_height())
+            .min_h(Self::row_height())
+            .max_h(Self::row_height())
             .when(!row_ix.is_multiple_of(2), |e| e.bg(cx.theme().bg_table_odd))
             .children(cells)
-            .on_mouse_move(cx.listener(move |this, event: &MouseMoveEvent, _, cx| {
-                if event.dragging() {
-                    this.selection_mut().update_row_selection(row_ix);
-                    cx.emit(stateful::event::SelectionChanged);
-                    cx.notify();
+            .on_mouse_move({
+                let state = state.clone();
+                move |event, _, cx| {
+                    if event.dragging() {
+                        state.update(cx, |state, cx| {
+                            state.selection.update_row_selection(row_ix);
+                            cx.emit(stateful::event::SelectionChanged);
+                            cx.notify();
+                        });
+                    }
                 }
-            }))
-            .capture_any_mouse_up(cx.listener(move |this, _, _, cx| {
-                this.selection_mut().commit_row_selection();
-                cx.emit(stateful::event::SelectionChanged);
-                cx.notify();
-            }))
+            })
+            .capture_any_mouse_up({
+                let state = state.clone();
+                move |_, _, cx| {
+                    state.update(cx, |state, cx| {
+                        state.selection.commit_row_selection();
+                        cx.emit(stateful::event::SelectionChanged);
+                        cx.notify();
+                    });
+                }
+            })
     }
 
     fn render_footer(&self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         h_flex()
             .emphasis(Emphasis::Secondary, cx)
             .w_full()
-            .min_h(self.row_height())
-            .max_h(self.row_height())
+            .min_h(Self::row_height())
+            .max_h(Self::row_height())
             .px_1()
             .border_t_1()
             .border_color(cx.theme().border_secondary)
             .child(
                 div()
                     .text_color(cx.theme().fg_secondary)
-                    .child(format!("{} rows", self.rows.read(cx).len())),
+                    .child(format!("{} rows", self.state.read(cx).rows.read(cx).len())),
             )
     }
 }
 
 impl<Row: 'static> Focusable for Table<Row> {
-    fn focus_handle(&self, _cx: &App) -> FocusHandle {
-        self.focus_handle.clone()
+    fn focus_handle(&self, cx: &App) -> FocusHandle {
+        self.state.read(cx).focus_handle.clone()
     }
 }
 
 impl<Row: 'static> FocusableComponent for Table<Row> {
-    fn set_focus_handle(&mut self, focus_handle: FocusHandle, _cx: &mut App) {
-        self.focus_handle = focus_handle;
+    fn set_focus_handle(&mut self, focus_handle: FocusHandle, cx: &mut App) {
+        self.state.update(cx, |state, cx| {
+            state.focus_handle = focus_handle;
+            cx.notify();
+        })
     }
 }
 
@@ -370,8 +428,8 @@ impl<Row: 'static> Render for Table<Row> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         v_flex()
             .id(self.id.clone())
-            .track_focus(&self.focus_handle)
-            .focus_ring(&self.focus_handle, window, cx)
+            .track_focus(&self.state.read(cx).focus_handle)
+            .focus_ring(&self.state.read(cx).focus_handle, window, cx)
             .key_context(action::KEY_CONTEXT)
             .size_full()
             .child(self.render_header(window, cx))
@@ -382,8 +440,11 @@ impl<Row: 'static> Render for Table<Row> {
                 cx.notify();
             }))
             .on_action::<crate::root::action::SelectionClear>(cx.listener(move |this, _, _, cx| {
-                this.selection_mut().clear_rows();
-                cx.notify();
+                this.state.update(cx, |state, cx| {
+                    state.selection.clear_rows();
+                    cx.emit(stateful::event::SelectionChanged);
+                    cx.notify();
+                });
             }))
             .on_action::<crate::root::action::Delete>(cx.listener(move |this, _, window, cx| {
                 this.delete_selection(window, cx);
@@ -421,6 +482,36 @@ impl<Row: 'static> Render for Table<Row> {
 }
 
 impl<Row: 'static> EventEmitter<stateful::event::SelectionChanged> for Table<Row> {}
+
+struct TableState<Row> {
+    focus_handle: FocusHandle,
+    scroll_handle: UniformListScrollHandle,
+
+    rows: Entity<Vec<Row>>,
+    columns: Vec<TableColumn<Row>>,
+    selection: TableSelection,
+
+    on_delete: Option<Box<dyn Fn(&[usize], usize, &mut Window, &mut App) + 'static>>,
+    on_edit: Option<Box<dyn Fn(&[usize], usize, FocusHandle, &mut Window, &mut App) + 'static>>,
+}
+
+impl<Row> TableState<Row> {
+    pub fn new(rows: Entity<Vec<Row>>, _window: &mut Window, cx: &mut Context<Self>) -> Self {
+        Self {
+            focus_handle: cx.focus_handle().tab_stop(true),
+            scroll_handle: UniformListScrollHandle::new(),
+
+            rows,
+            columns: Vec::new(),
+            selection: TableSelection::default(),
+
+            on_delete: None,
+            on_edit: None,
+        }
+    }
+}
+
+impl<Row: 'static> EventEmitter<stateful::event::SelectionChanged> for TableState<Row> {}
 
 pub struct TableColumn<Row> {
     label: SharedString,

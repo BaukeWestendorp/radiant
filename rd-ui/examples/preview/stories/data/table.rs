@@ -23,22 +23,25 @@ impl TablePreview {
         Self {
             table: cx.new(|cx| {
                 Table::new("table", rows, window, cx)
-                    .with_columns(vec![
-                        TableColumn::new("Alpha").with_element(|row: &Row, _, _| {
-                            h_flex().child(row.alpha.to_string()).into_any_element()
-                        }),
-                        TableColumn::new("Beta").with_element(|row: &Row, _, _| {
-                            h_flex().child(row.beta.clone()).into_any_element()
-                        }),
-                        TableColumn::new("Gamma").with_element(|row: &Row, _, _| {
-                            h_flex().child(row.gamma.to_string()).into_any_element()
-                        }),
-                    ])
-                    .with_selection(TableSelection::new(TableSelectionMode::Multiple))
-                    .with_on_delete(|row_ixs, _, _, _| {
+                    .with_columns(
+                        vec![
+                            TableColumn::new("Alpha").with_element(|row: &Row, _, _| {
+                                h_flex().child(row.alpha.to_string()).into_any_element()
+                            }),
+                            TableColumn::new("Beta").with_element(|row: &Row, _, _| {
+                                h_flex().child(row.beta.clone()).into_any_element()
+                            }),
+                            TableColumn::new("Gamma").with_element(|row: &Row, _, _| {
+                                h_flex().child(row.gamma.to_string()).into_any_element()
+                            }),
+                        ],
+                        cx,
+                    )
+                    .with_selection(TableSelection::new(TableSelectionMode::Multiple), cx)
+                    .with_on_delete(cx, |row_ixs, _, _, _| {
                         log::info!("Delete rows: {:?}", row_ixs);
                     })
-                    .with_on_edit(|row_ixs, _, _, _| {
+                    .with_on_edit(cx, |row_ixs, _, _, _, _| {
                         log::info!("Edit rows: {:?}", row_ixs);
                     })
             }),

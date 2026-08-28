@@ -40,16 +40,20 @@ impl MidiTabView {
         .detach();
 
         let table = cx.new(|cx| {
-            Table::new("midi-triggers", mappings.clone(), window, cx).with_columns(vec![
-                TableColumn::<rd::project::MidiMapping>::new("Device Name")
-                    .with_element(|row, _, _| row.device_name.to_string().into_any_element()),
-                TableColumn::<rd::project::MidiMapping>::new("Device Channel")
-                    .with_element(|row, _, _| row.device_channel.to_string().into_any_element()),
-                TableColumn::<rd::project::MidiMapping>::new("Filter")
-                    .with_element(|row, _, _| row.filter.to_string().into_any_element()),
-                TableColumn::<rd::project::MidiMapping>::new("Target")
-                    .with_element(|row, _, _| row.target.to_string().into_any_element()),
-            ])
+            Table::new("midi-triggers", mappings.clone(), window, cx).with_columns(
+                vec![
+                    TableColumn::<rd::project::MidiMapping>::new("Device Name")
+                        .with_element(|row, _, _| row.device_name.to_string().into_any_element()),
+                    TableColumn::<rd::project::MidiMapping>::new("Device Channel").with_element(
+                        |row, _, _| row.device_channel.to_string().into_any_element(),
+                    ),
+                    TableColumn::<rd::project::MidiMapping>::new("Filter")
+                        .with_element(|row, _, _| row.filter.to_string().into_any_element()),
+                    TableColumn::<rd::project::MidiMapping>::new("Target")
+                        .with_element(|row, _, _| row.target.to_string().into_any_element()),
+                ],
+                cx,
+            )
         });
 
         Self { table }
