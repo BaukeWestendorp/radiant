@@ -1,6 +1,6 @@
 use rd_ui::{
     Emphasis, StyledExt,
-    comp::stateful::{Field, Table, TableColumn},
+    comp::stateful::{Field, Table, TableCellEditor, TableColumn},
     gpui::{Entity, Window, div, prelude::*},
 };
 
@@ -50,30 +50,34 @@ impl PatchTabView {
                 vec![
                     TableColumn::<rd::project::FixtureConfig>::new("Id")
                         .with_element(|row, _, _| row.id.to_string().into_any_element())
-                        .with_editor(
+                        .with_editor(TableCellEditor::new(
                             "Edit Fixture ID",
                             |window, cx| cx.new(|cx| fixture_id_field("fid", window, cx).w_full()),
-                            |row, value, n| row.id = value.increment_by(n),
-                        ),
+                            |row: &mut rd::project::FixtureConfig, value, n| {
+                                row.id = value.increment_by(n)
+                            },
+                        )),
                     TableColumn::<rd::project::FixtureConfig>::new("Name")
                         .with_element(|row, _, _| row.name.to_string().into_any_element())
-                        .with_editor(
+                        .with_editor(TableCellEditor::new(
                             "Edit Fixture Name",
                             |window, cx| {
                                 cx.new(|cx| Field::<String>::new("name", window, cx).w_full())
                             },
-                            |row, value, n| row.name = value.increment_by(n),
-                        ),
+                            |row: &mut rd::project::FixtureConfig, value, n| {
+                                row.name = value.increment_by(n)
+                            },
+                        )),
                     TableColumn::<rd::project::FixtureConfig>::new("Address")
                         .with_element(|row, _, _| row.dmx_address.to_string().into_any_element())
-                        .with_editor(
+                        .with_editor(TableCellEditor::new(
                             "Edit Fixture Address",
                             |window, cx| cx.new(|cx| address_field("address", window, cx).w_full()),
-                            |row, value, n| {
+                            |row: &mut rd::project::FixtureConfig, value, n| {
                                 let channel_count = 1;
                                 row.dmx_address = value.increment_by(n * channel_count);
                             },
-                        ),
+                        )),
                     TableColumn::<rd::project::FixtureConfig>::new("Kind")
                         .with_element(|row, _, _| row.fixture_kind.to_string().into_any_element()), // FIXME: Add editor
                 ],

@@ -1,6 +1,6 @@
 use rd_artnet::PortAddress;
 use rd_ui::{
-    comp::stateful::{Field, Table, TableColumn},
+    comp::stateful::{Field, Table, TableCellEditor, TableColumn},
     gpui::{Entity, Window, div, prelude::*},
 };
 
@@ -47,12 +47,12 @@ impl ArtnetOutputTabView {
                 vec![
                     TableColumn::<rd::project::ArtnetOutputInstanceConfig>::new("Name")
                         .with_element(|row, _, _| row.name.to_string().into_any_element())
-                        .with_editor(
+                        .with_editor(TableCellEditor::new(
                             "Edit Instance Name",
                             |window, cx| {
                                 cx.new(|cx| Field::<String>::new("name", window, cx).w_full())
                             },
-                            |row, value, n| {
+                            |row: &mut rd::project::ArtnetOutputInstanceConfig, value, n| {
                                 let base_name = value.clone().trim().to_string();
                                 row.name = if n == 0 {
                                     base_name
@@ -60,15 +60,15 @@ impl ArtnetOutputTabView {
                                     format!("{} {}", base_name, n + 1)
                                 };
                             },
-                        ),
+                        )),
                     TableColumn::<rd::project::ArtnetOutputInstanceConfig>::new("Port Address")
                         .with_element(|row, _, _| row.port_address.to_string().into_any_element())
-                        .with_editor(
+                        .with_editor(TableCellEditor::new(
                             "Edit Port Address",
                             |window, cx| {
                                 cx.new(|cx| port_address_field("port_address", window, cx).w_full())
                             },
-                            |row, value, n| {
+                            |row: &mut rd::project::ArtnetOutputInstanceConfig, value, n| {
                                 let base_address = value.clone();
                                 if n == 0 {
                                     row.port_address = base_address
@@ -80,15 +80,15 @@ impl ArtnetOutputTabView {
                                     }
                                 };
                             },
-                        ),
+                        )),
                     TableColumn::<rd::project::ArtnetOutputInstanceConfig>::new("Local Universe")
                         .with_element(|row, _, _| row.local_universe.to_string().into_any_element())
-                        .with_editor(
+                        .with_editor(TableCellEditor::new(
                             "Edit Local Universe",
                             |window, cx| {
                                 cx.new(|cx| universe_id_field("universe_id", window, cx).w_full())
                             },
-                            |row, value, n| {
+                            |row: &mut rd::project::ArtnetOutputInstanceConfig, value, n| {
                                 let base_universe = value.clone();
                                 if n == 0 {
                                     row.local_universe = base_universe
@@ -100,7 +100,7 @@ impl ArtnetOutputTabView {
                                     }
                                 };
                             },
-                        ),
+                        )),
                 ],
                 cx,
             )

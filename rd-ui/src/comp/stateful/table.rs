@@ -520,6 +520,96 @@ impl<Row> TableState<Row> {
 
 impl<Row: 'static> EventEmitter<stateful::event::SelectionChanged> for TableState<Row> {}
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum PopupSize {
+    #[default]
+    Auto,
+}
+
+pub struct TableCellEditor<Row, V, Input, CreateField, Apply> {
+    popup_title: String,
+    create_field: CreateField,
+    apply: Apply,
+    popup_size: PopupSize,
+    _marker: std::marker::PhantomData<fn() -> (Row, V, Input)>,
+}
+
+impl<Row, V, Input, CreateField, Apply> TableCellEditor<Row, V, Input, CreateField, Apply>
+where
+    Row: 'static,
+    V: Clone + 'static,
+    Input: Render
+        + Focusable
+        + EventEmitter<stateful::event::Submit<Option<V>>>
+        + EventEmitter<stateful::event::Change<Option<V>>>
+        + 'static,
+    CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
+    Apply: Fn(&mut Row, &V, usize) + 'static,
+{
+    pub fn new(popup_title: impl Into<String>, create_field: CreateField, apply: Apply) -> Self {
+        Self {
+            popup_title: popup_title.into(),
+            create_field,
+            apply,
+            popup_size: PopupSize::default(),
+            _marker: std::marker::PhantomData,
+        }
+    }
+
+    pub fn set_popup_size(&mut self, size: PopupSize) {
+        self.popup_size = size;
+    }
+
+    pub fn with_popup_size(mut self, size: PopupSize) -> Self {
+        self.set_popup_size(size);
+        self
+    }
+
+    fn build(
+        self,
+    ) -> Box<
+        dyn Fn(&[usize], &Entity<Vec<Row>>, FocusHandle, &mut Window, &mut Context<Table<Row>>)
+            + 'static,
+    > {
+        let popup_title = self.popup_title;
+        let apply = Rc::new(self.apply);
+        let create_field = self.create_field;
+        let popup_size = self.popup_size;
+
+        Box::new(move |row_ixs, rows, table_focus_handle, window, cx| {
+            let row_ixs = row_ixs.to_vec();
+            let rows = rows.clone();
+            let popup_title = popup_title.clone();
+
+            let field = create_field(window, cx);
+            let apply = Rc::clone(&apply);
+
+            let popup = InputPopup::new(field, window, cx);
+
+            todo!("{popup_size:?}");
+
+            let popup = popup.with_on_submit(window, cx, move |value, window, cx| {
+                let Some(value) = value else { return };
+
+                rows.update(cx, |rows, cx| {
+                    for (i, row_ix) in row_ixs.iter().enumerate() {
+                        if let Some(row) = rows.get_mut(*row_ix) {
+                            apply(row, value, i);
+                        }
+                    }
+                    cx.notify();
+                });
+
+                cx.dismiss_popup(window);
+            });
+
+            let popup = cx.new(move |_| popup);
+
+            cx.set_popup(&popup_title, popup, Some(table_focus_handle));
+        })
+    }
+}
+
 pub struct TableColumn<Row> {
     label: SharedString,
     // FIXME: It would be nice if we can make this` &mut App` instead of `&App`.
@@ -582,11 +672,25 @@ impl<Row: 'static> TableColumn<Row> {
         self
     }
 
+    pub fn set_editor<V, Input, CreateField, Apply>(
+        &mut self,
+        editor: TableCellEditor<Row, V, Input, CreateField, Apply>,
+    ) where
+        V: Clone + 'static,
+        Input: Render
+            + Focusable
+            + EventEmitter<stateful::event::Submit<Option<V>>>
+            + EventEmitter<stateful::event::Change<Option<V>>>
+            + 'static,
+        CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
+        Apply: Fn(&mut Row, &V, usize) + 'static,
+    {
+        self.on_edit = Some(editor.build());
+    }
+
     pub fn with_editor<V, Input, CreateField, Apply>(
         mut self,
-        popup_title: impl Into<String>,
-        create_field: CreateField,
-        apply: Apply,
+        editor: TableCellEditor<Row, V, Input, CreateField, Apply>,
     ) -> Self
     where
         V: Clone + 'static,
@@ -598,41 +702,25 @@ impl<Row: 'static> TableColumn<Row> {
         CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
         Apply: Fn(&mut Row, &V, usize) + 'static,
     {
-        let popup_title = popup_title.into();
+        self.set_editor(editor);
+        self
+    }
 
-        let apply = Rc::new(apply);
-
-        self.on_edit = Some(Box::new(move |row_ixs, rows, table_focus_handle, window, cx| {
-            let row_ixs = row_ixs.to_vec();
-            let rows = rows.clone();
-            let popup_title = popup_title.clone();
-
-            let field = create_field(window, cx);
-            let apply = Rc::clone(&apply);
-
-            let popup = InputPopup::new(field, window, cx).with_on_submit(
-                window,
-                cx,
-                move |value, window, cx| {
-                    let Some(value) = value else { return };
-
-                    rows.update(cx, |rows, cx| {
-                        for (i, row_ix) in row_ixs.iter().enumerate() {
-                            if let Some(row) = rows.get_mut(*row_ix) {
-                                apply(row, value, i);
-                            }
-                        }
-                        cx.notify();
-                    });
-
-                    cx.dismiss_popup(window);
-                },
-            );
-            let popup = cx.new(move |_| popup);
-
-            cx.set_popup(&popup_title, popup, Some(table_focus_handle));
-        }));
-
+    pub fn editor<V, Input, CreateField, Apply>(
+        mut self,
+        editor: TableCellEditor<Row, V, Input, CreateField, Apply>,
+    ) -> Self
+    where
+        V: Clone + 'static,
+        Input: Render
+            + Focusable
+            + EventEmitter<stateful::event::Submit<Option<V>>>
+            + EventEmitter<stateful::event::Change<Option<V>>>
+            + 'static,
+        CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
+        Apply: Fn(&mut Row, &V, usize) + 'static,
+    {
+        self.set_editor(editor);
         self
     }
 }
