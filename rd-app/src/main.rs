@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 mod app;
 mod comp;
+mod engine;
 mod util;
 
 #[derive(clap::Parser)]

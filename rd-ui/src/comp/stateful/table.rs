@@ -78,6 +78,13 @@ impl<Row: 'static> Table<Row> {
         self
     }
 
+    pub fn clear_selection(&self, cx: &mut Context<Self>) {
+        self.state.update(cx, |state, cx| {
+            state.selection.clear_rows();
+            cx.emit(stateful::event::SelectionChanged);
+        });
+    }
+
     pub fn selected_rows<'a>(&'a self, cx: &'a App) -> Vec<&'a Row> {
         let state = self.state.read(cx);
         let rows = state.rows.read(cx);

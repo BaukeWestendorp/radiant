@@ -2,13 +2,11 @@ use std::path::{Path, PathBuf};
 
 use rd_ui::{
     AppBuilder, SettingsAppExt,
-    gpui::{App, Window, prelude::*},
-    todo,
+    gpui::{App, Entity, Window, div, prelude::*},
 };
 
-use crate::app::engine::EngineAppExt;
+use crate::{comp::stateful::FixtureKindPicker, engine::EngineAppExt};
 
-mod engine;
 mod keymap;
 mod settings;
 
@@ -70,7 +68,7 @@ pub fn run(showfile_path: Option<PathBuf>) -> anyhow::Result<()> {
     log::info!("Starting Radiant application");
 
     AppBuilder::new().with_window_title("Radiant").run(|window, cx| {
-        engine::init(engine, cx);
+        crate::engine::init(engine, cx);
         init(cx);
 
         keymap::default_keymap().apply(cx);
@@ -81,16 +79,18 @@ pub fn run(showfile_path: Option<PathBuf>) -> anyhow::Result<()> {
     Ok(())
 }
 
-struct AppView {}
+struct AppView {
+    fk_picker: Entity<FixtureKindPicker>,
+}
 
 impl AppView {
-    pub fn new(_window: &mut Window, _cx: &mut Context<Self>) -> Self {
-        Self {}
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+        Self { fk_picker: cx.new(|cx| FixtureKindPicker::new(window, cx)) }
     }
 }
 
 impl Render for AppView {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        todo(cx)
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        div().size_full().p_2().child(self.fk_picker.clone())
     }
 }

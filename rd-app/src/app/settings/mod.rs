@@ -8,7 +8,7 @@ use rd_ui::{
     h_flex, v_flex,
 };
 
-use crate::app::engine::EngineAppExt;
+use crate::engine::EngineAppExt;
 
 mod dmx_output;
 mod patch;

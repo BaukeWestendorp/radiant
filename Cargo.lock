@@ -4684,6 +4684,7 @@ dependencies = [
  "rd",
  "rd-artnet",
  "rd-dmx",
+ "rd-rigger",
  "rd-ui",
  "uuid",
 ]
