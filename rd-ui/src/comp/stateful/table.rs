@@ -6,7 +6,7 @@ use gpui::{
 };
 
 use crate::{
-    ActiveTheme, Emphasis, InputPopup, PopupAppExt, StyledExt, StyledParentExt,
+    ActiveTheme, Emphasis, InputPopup, PopupAppExt, PopupSize, StyledExt, StyledParentExt,
     StyledStatefulInteractiveElementExt,
     comp::{FocusableComponent, INPUT_SIZE, Identifiable, stateful},
     h_flex, v_flex,
@@ -520,12 +520,6 @@ impl<Row> TableState<Row> {
 
 impl<Row: 'static> EventEmitter<stateful::event::SelectionChanged> for TableState<Row> {}
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum PopupSize {
-    #[default]
-    Auto,
-}
-
 pub struct TableCellEditor<Row, V, Input, CreateField, Apply> {
     popup_title: String,
     create_field: CreateField,
@@ -540,8 +534,8 @@ where
     V: Clone + 'static,
     Input: Render
         + Focusable
-        + EventEmitter<stateful::event::Submit<Option<V>>>
-        + EventEmitter<stateful::event::Change<Option<V>>>
+        + EventEmitter<stateful::event::Submit<V>>
+        + EventEmitter<stateful::event::Change<V>>
         + 'static,
     CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
     Apply: Fn(&mut Row, &V, usize) + 'static,
@@ -586,11 +580,7 @@ where
 
             let popup = InputPopup::new(field, window, cx);
 
-            todo!("{popup_size:?}");
-
             let popup = popup.with_on_submit(window, cx, move |value, window, cx| {
-                let Some(value) = value else { return };
-
                 rows.update(cx, |rows, cx| {
                     for (i, row_ix) in row_ixs.iter().enumerate() {
                         if let Some(row) = rows.get_mut(*row_ix) {
@@ -605,7 +595,7 @@ where
 
             let popup = cx.new(move |_| popup);
 
-            cx.set_popup(&popup_title, popup, Some(table_focus_handle));
+            cx.set_popup(&popup_title, popup, popup_size, Some(table_focus_handle));
         })
     }
 }
@@ -679,8 +669,8 @@ impl<Row: 'static> TableColumn<Row> {
         V: Clone + 'static,
         Input: Render
             + Focusable
-            + EventEmitter<stateful::event::Submit<Option<V>>>
-            + EventEmitter<stateful::event::Change<Option<V>>>
+            + EventEmitter<stateful::event::Submit<V>>
+            + EventEmitter<stateful::event::Change<V>>
             + 'static,
         CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
         Apply: Fn(&mut Row, &V, usize) + 'static,
@@ -696,8 +686,8 @@ impl<Row: 'static> TableColumn<Row> {
         V: Clone + 'static,
         Input: Render
             + Focusable
-            + EventEmitter<stateful::event::Submit<Option<V>>>
-            + EventEmitter<stateful::event::Change<Option<V>>>
+            + EventEmitter<stateful::event::Submit<V>>
+            + EventEmitter<stateful::event::Change<V>>
             + 'static,
         CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
         Apply: Fn(&mut Row, &V, usize) + 'static,
@@ -714,8 +704,8 @@ impl<Row: 'static> TableColumn<Row> {
         V: Clone + 'static,
         Input: Render
             + Focusable
-            + EventEmitter<stateful::event::Submit<Option<V>>>
-            + EventEmitter<stateful::event::Change<Option<V>>>
+            + EventEmitter<stateful::event::Submit<V>>
+            + EventEmitter<stateful::event::Change<V>>
             + 'static,
         CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
         Apply: Fn(&mut Row, &V, usize) + 'static,

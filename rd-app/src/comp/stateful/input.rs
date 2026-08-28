@@ -2,9 +2,12 @@ use rd::project::FixtureKind;
 use rd_artnet::PortAddress;
 use rd_rigger::gdtf::{FixtureTypeId, Name};
 use rd_ui::{
-    ActiveTheme, Emphasis, StyledExt, c_flex,
-    comp::stateful::{self, Field, Table, TableColumn, TableSelection, TableSelectionMode},
-    gpui::{ElementId, Entity, Window, div, prelude::*},
+    ActiveTheme, Emphasis, StyledExt, StyledParentExt, c_flex,
+    comp::{
+        FocusableComponent,
+        stateful::{self, Field, Table, TableColumn, TableSelection, TableSelectionMode},
+    },
+    gpui::{App, ElementId, Entity, EventEmitter, FocusHandle, Focusable, Window, div, prelude::*},
     h_flex, v_flex,
 };
 use std::str::FromStr as _;
@@ -89,6 +92,9 @@ pub fn universe_id_field(
 }
 
 pub struct FixtureKindPicker {
+    id: ElementId,
+    focus_handle: FocusHandle,
+
     ftid_table: Entity<Table<FixtureTypeId>>,
     mode_table: Entity<Table<Name>>,
     fixture_kind: Entity<Option<FixtureKind>>,
@@ -98,7 +104,7 @@ pub struct FixtureKindPicker {
 }
 
 impl FixtureKindPicker {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(id: impl Into<ElementId>, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let ftid = cx.new(|_| None::<FixtureTypeId>);
         let mode = cx.new(|_| None::<Name>);
         let fixture_kind = cx.new(|_| None::<FixtureKind>);
@@ -115,10 +121,11 @@ impl FixtureKindPicker {
                     return;
                 };
 
-                this.fixture_kind.write(
-                    cx,
-                    Some(FixtureKind { fixture_type_id: *ftid, dmx_mode: mode.to_string() }),
-                );
+                let fixture_kind =
+                    FixtureKind { fixture_type_id: *ftid, dmx_mode: mode.to_string() };
+                this.fixture_kind.write(cx, Some(fixture_kind.clone()));
+
+                cx.emit(stateful::event::Submit::<FixtureKind>(fixture_kind));
             }
         })
         .detach();
@@ -255,7 +262,15 @@ impl FixtureKindPicker {
         })
         .detach();
 
-        Self { ftid_table, mode_table, ftid, mode, fixture_kind }
+        Self {
+            id: id.into(),
+            focus_handle: cx.focus_handle(),
+            ftid_table,
+            mode_table,
+            ftid,
+            mode,
+            fixture_kind,
+        }
     }
 
     pub fn ftid(&self) -> Entity<Option<FixtureTypeId>> {
@@ -272,8 +287,13 @@ impl FixtureKindPicker {
 }
 
 impl Render for FixtureKindPicker {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         v_flex()
+            .emphasis(Emphasis::Primary, cx)
+            .p_2()
+            .id(self.id.clone())
+            .track_focus(&self.focus_handle)
+            .focus_ring(&self.focus_handle, window, cx)
             .gap_2()
             .size_full()
             .child(
@@ -294,6 +314,7 @@ impl Render for FixtureKindPicker {
                                 .size_full()
                                 .child(
                                     div()
+                                        .p_2()
                                         .text_color(cx.theme().fg_secondary)
                                         .child("Select a fixture type to see its DMX modes"),
                                 )
@@ -303,27 +324,9 @@ impl Render for FixtureKindPicker {
             )
             .child(div().w_full().p_2().emphasis_bordered(Emphasis::Primary, cx).child(
                 if let Some(fixture_kind) = self.fixture_kind.read(cx) {
-                    let gdtf = cx.engine().with_project(|project| {
-                        project.patch.gdtfs.get(&fixture_kind.fixture_type_id).cloned()
-                    });
-
-                    if let Some(gdtf) = gdtf {
-                        h_flex()
-                            .child(div().text_color(cx.theme().fg_primary).child(format!(
-                                "{} {} ",
-                                gdtf.manufacturer().trim(),
-                                gdtf.name().trim(),
-                            )))
-                            .child(
-                                div()
-                                    .text_color(cx.theme().fg_secondary)
-                                    .child(format!("[{}]", fixture_kind.dmx_mode.trim())),
-                            )
-                    } else {
-                        div()
-                            .text_color(cx.theme().fg_secondary)
-                            .child("Selected fixture type not found in project")
-                    }
+                    let fk_label =
+                        cx.engine().with_project(|project| fixture_kind.display(project));
+                    div().child(fk_label)
                 } else {
                     div()
                         .text_color(cx.theme().fg_secondary)
@@ -333,3 +336,18 @@ impl Render for FixtureKindPicker {
             .into_any_element()
     }
 }
+
+impl Focusable for FixtureKindPicker {
+    fn focus_handle(&self, _cx: &App) -> FocusHandle {
+        self.focus_handle.clone()
+    }
+}
+
+impl FocusableComponent for FixtureKindPicker {
+    fn set_focus_handle(&mut self, focus_handle: FocusHandle, _cx: &mut App) {
+        self.focus_handle = focus_handle;
+    }
+}
+
+impl EventEmitter<stateful::event::Submit<FixtureKind>> for FixtureKindPicker {}
+impl EventEmitter<stateful::event::Change<FixtureKind>> for FixtureKindPicker {}

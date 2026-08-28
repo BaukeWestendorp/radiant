@@ -1,6 +1,8 @@
 use std::{collections::HashMap, sync::Arc};
 
-use rd_rigger::gdtf::{FixtureTypeId, Gdtf};
+use rd_rigger::gdtf::{FixtureTypeId, Gdtf, Name};
+
+use crate::Project;
 
 #[derive(Debug, Clone, PartialEq, Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -25,6 +27,26 @@ pub struct FixtureConfig {
 pub struct FixtureKind {
     pub fixture_type_id: FixtureTypeId,
     pub dmx_mode: String,
+}
+
+impl FixtureKind {
+    pub fn display(&self, project: &Project) -> String {
+        let Some(gdtf) = project.patch.gdtfs.get(&self.fixture_type_id) else {
+            return format!("{} [{}]", self.fixture_type_id, self.dmx_mode);
+        };
+
+        let Some(dmx_mode) = gdtf.dmx_mode(&Name::new(&self.dmx_mode)) else {
+            return format!("{} {} [{}]", gdtf.manufacturer(), gdtf.name(), self.dmx_mode);
+        };
+
+        format!(
+            "{} {} [{}, {}ch]",
+            gdtf.manufacturer(),
+            gdtf.name(),
+            dmx_mode.name(),
+            dmx_mode.max_channel_offset()
+        )
+    }
 }
 
 impl std::fmt::Display for FixtureKind {

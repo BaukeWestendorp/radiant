@@ -5,7 +5,7 @@ use gpui::{
 
 use crate::{
     ActiveTheme, Emphasis, StyledExt, c_flex,
-    comp::{Button, ButtonVariant, IconVariant, Labelled, stateful},
+    comp::{Button, ButtonVariant, IconVariant, Labelled, TITLE_BAR_HEIGHT, stateful},
     h_flex, v_flex,
 };
 
@@ -94,6 +94,7 @@ pub trait PopupAppExt {
         &mut self,
         title: impl Into<SharedString>,
         popup: impl Into<AnyView>,
+        size: PopupSize,
         return_focus_handle: Option<FocusHandle>,
     );
 
@@ -105,11 +106,13 @@ impl PopupAppExt for App {
         &mut self,
         title: impl Into<SharedString>,
         popup: impl Into<AnyView>,
+        size: PopupSize,
         return_focus_handle: Option<FocusHandle>,
     ) {
         PopupGlobal::update_global(self, |popup_global, _| {
             popup_global.title = Some(title.into());
             popup_global.content = Some(popup.into());
+            popup_global.size = size;
             popup_global.return_focus_handle = return_focus_handle;
         })
     }
@@ -118,6 +121,7 @@ impl PopupAppExt for App {
         PopupGlobal::update_global(self, |popup_global, cx| {
             popup_global.title = None;
             popup_global.content = None;
+            popup_global.size = PopupSize::default();
             if let Some(focus_handle) = popup_global.return_focus_handle.take() {
                 focus_handle.focus(window, cx);
             }
@@ -146,6 +150,8 @@ impl Render for PopupOverlay {
             return gpui::Empty.into_any_element();
         };
 
+        let size = PopupGlobal::global(cx).size;
+
         let header = h_flex()
             .px_2()
             .py_1()
@@ -167,14 +173,17 @@ impl Render for PopupOverlay {
         c_flex()
             .id("popup")
             .key_context(action::KEY_CONTEXT)
-            .occlude()
-            .bg(cx.theme().contrast.opacity(0.25))
             .size_full()
+            .occlude()
+            .p_4()
+            .bg(cx.theme().contrast.opacity(0.25))
             .on_action::<action::Dismiss>(cx.listener(|_, _, window, cx| cx.dismiss_popup(window)))
             .child(
                 v_flex()
+                    .mt(TITLE_BAR_HEIGHT)
                     .emphasis_bordered(Emphasis::Primary, cx)
-                    .min_w_72()
+                    .when(size == PopupSize::Auto, |e| e.min_w_72())
+                    .when(size == PopupSize::Max, |e| e.size_full())
                     .child(header)
                     .child(content)
                     .on_mouse_down_out(cx.listener(|_, _, window, cx| cx.dismiss_popup(window))),
@@ -187,7 +196,15 @@ impl Render for PopupOverlay {
 struct PopupGlobal {
     pub title: Option<SharedString>,
     pub content: Option<AnyView>,
+    pub size: PopupSize,
     pub return_focus_handle: Option<FocusHandle>,
 }
 
 impl Global for PopupGlobal {}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum PopupSize {
+    #[default]
+    Auto,
+    Max,
+}

@@ -1,11 +1,12 @@
 use rd_ui::{
-    Emphasis, StyledExt,
+    Emphasis, PopupSize, StyledExt,
     comp::stateful::{Field, Table, TableCellEditor, TableColumn},
     gpui::{Entity, Window, div, prelude::*},
 };
 
 use crate::{
-    comp::stateful::{address_field, fixture_id_field},
+    comp::stateful::{FixtureKindPicker, address_field, fixture_id_field},
+    engine::EngineAppExt,
     util::Incrementable,
 };
 
@@ -53,8 +54,9 @@ impl PatchTabView {
                         .with_editor(TableCellEditor::new(
                             "Edit Fixture ID",
                             |window, cx| cx.new(|cx| fixture_id_field("fid", window, cx).w_full()),
-                            |row: &mut rd::project::FixtureConfig, value, n| {
-                                row.id = value.increment_by(n)
+                            |row: &mut rd::project::FixtureConfig, value, i| {
+                                let Some(value) = value else { return };
+                                row.id = value.increment_by(i)
                             },
                         )),
                     TableColumn::<rd::project::FixtureConfig>::new("Name")
@@ -64,8 +66,9 @@ impl PatchTabView {
                             |window, cx| {
                                 cx.new(|cx| Field::<String>::new("name", window, cx).w_full())
                             },
-                            |row: &mut rd::project::FixtureConfig, value, n| {
-                                row.name = value.increment_by(n)
+                            |row: &mut rd::project::FixtureConfig, value, i| {
+                                let Some(value) = value else { return };
+                                row.name = value.increment_by(i)
                             },
                         )),
                     TableColumn::<rd::project::FixtureConfig>::new("Address")
@@ -73,13 +76,30 @@ impl PatchTabView {
                         .with_editor(TableCellEditor::new(
                             "Edit Fixture Address",
                             |window, cx| cx.new(|cx| address_field("address", window, cx).w_full()),
-                            |row: &mut rd::project::FixtureConfig, value, n| {
+                            |row: &mut rd::project::FixtureConfig, value, i| {
+                                let Some(value) = value else { return };
                                 let channel_count = 1;
-                                row.dmx_address = value.increment_by(n * channel_count);
+                                row.dmx_address = value.increment_by(i * channel_count);
                             },
                         )),
                     TableColumn::<rd::project::FixtureConfig>::new("Kind")
-                        .with_element(|row, _, _| row.fixture_kind.to_string().into_any_element()), // FIXME: Add editor
+                        .with_element(|row, _, cx| {
+                            cx.engine().with_project(|project| {
+                                row.fixture_kind.display(project).into_any_element()
+                            })
+                        })
+                        .with_editor(
+                            TableCellEditor::new(
+                                "Edit Fixture Kind",
+                                |window, cx| {
+                                    cx.new(|cx| FixtureKindPicker::new("fixture_kind", window, cx))
+                                },
+                                |row: &mut rd::project::FixtureConfig, value, _| {
+                                    row.fixture_kind = value.clone();
+                                },
+                            )
+                            .with_popup_size(PopupSize::Max),
+                        ),
                 ],
                 cx,
             )

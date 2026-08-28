@@ -2,10 +2,11 @@ use std::path::{Path, PathBuf};
 
 use rd_ui::{
     AppBuilder, SettingsAppExt,
-    gpui::{App, Entity, Window, div, prelude::*},
+    gpui::{App, Window, prelude::*},
+    todo,
 };
 
-use crate::{comp::stateful::FixtureKindPicker, engine::EngineAppExt};
+use crate::engine::EngineAppExt;
 
 mod keymap;
 mod settings;
@@ -79,18 +80,16 @@ pub fn run(showfile_path: Option<PathBuf>) -> anyhow::Result<()> {
     Ok(())
 }
 
-struct AppView {
-    fk_picker: Entity<FixtureKindPicker>,
-}
+struct AppView {}
 
 impl AppView {
-    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        Self { fk_picker: cx.new(|cx| FixtureKindPicker::new(window, cx)) }
+    pub fn new(_window: &mut Window, _cx: &mut Context<Self>) -> Self {
+        Self {}
     }
 }
 
 impl Render for AppView {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().p_2().child(self.fk_picker.clone())
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        todo(cx)
     }
 }
