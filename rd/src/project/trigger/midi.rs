@@ -3,8 +3,7 @@ use rd_midi::{u4, u7};
 use crate::project::TriggerTarget;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-#[derive(facet::Facet)]
-#[facet(deny_unknown_fields)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct MidiMapping {
     pub device_name: String,
     pub device_channel: MidiChannel,
@@ -13,8 +12,7 @@ pub struct MidiMapping {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-#[derive(facet::Facet)]
-#[repr(C)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum MidiFilter {
     ControlChange { controller: MidiController },
     NoteOn { note: MidiNote },
@@ -51,8 +49,7 @@ impl std::fmt::Display for MidiFilter {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
-#[derive(facet::Facet)]
-#[repr(C)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum MidiChannel {
     #[default]
     All,
@@ -69,8 +66,7 @@ impl std::fmt::Display for MidiChannel {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
-#[derive(facet::Facet)]
-#[repr(C)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum MidiNote {
     #[default]
     All,
@@ -78,8 +74,7 @@ pub enum MidiNote {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
-#[derive(facet::Facet)]
-#[repr(C)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum MidiController {
     #[default]
     All,

@@ -105,10 +105,9 @@ impl MidiTriggerService {
                         pressed: is_pressed,
                     })
                 }
-                project::TriggerTarget::Encoder { encoder_ix } => Some(Trigger::EncoderSetValue {
-                    encoder_ix: *encoder_ix,
-                    value: normalized_val,
-                }),
+                project::TriggerTarget::Encoder { index } => {
+                    Some(Trigger::EncoderSetValue { encoder_ix: *index, value: normalized_val })
+                }
             }
         })
     }

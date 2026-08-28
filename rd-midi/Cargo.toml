@@ -1,15 +1,22 @@
+
 [package]
 name = "rd-midi"
 version.workspace = true
 edition.workspace = true
 
+[features]
+serde = ["dep:serde"]
+
 [dependencies]
-facet.workspace = true
-facet-error.workspace = true
 flume.workspace = true
 log.workspace = true
-midir = "0.10.0"
 rd-service.workspace = true
+thiserror.workspace = true
+
+midir = "0.10.0"
+
+# feature = "serde"
+serde = { workspace = true, optional = true }
 
 [dev-dependencies]
 anyhow.workspace = true

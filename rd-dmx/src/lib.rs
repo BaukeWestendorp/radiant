@@ -17,8 +17,7 @@ mod error;
 /// let max = Value(255); // Maximum DMX value
 /// ```
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(facet::Facet)]
-#[facet(pod)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Value(pub u8);
 
 impl Value {
@@ -81,9 +80,6 @@ impl str::FromStr for Value {
 /// assert!(invalid_channel.is_err());
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(facet::Facet)]
-#[facet(transparent)]
-#[facet(invariants = (|channel: &Channel| Channel::new(channel.0).is_ok()))]
 pub struct Channel(u16);
 
 impl Channel {
@@ -169,6 +165,27 @@ impl str::FromStr for Channel {
     }
 }
 
+#[cfg(feature = "serde")]
+impl serde::Serialize for Channel {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_u16(self.0)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for Channel {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let channel = u16::deserialize(deserializer)?;
+        Channel::new(channel).map_err(serde::de::Error::custom)
+    }
+}
+
 /// A unique DMX address composed of a [`UniverseId`] and a [`Channel`].
 ///
 /// Each DMX address consists of two components:
@@ -191,8 +208,7 @@ impl str::FromStr for Channel {
 /// assert_eq!(addr.channel(), Channel::new(488).unwrap());
 /// ```
 #[derive(Debug, Clone, Default, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(facet::Facet)]
-#[facet(pod)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Address {
     /// The universe id for this address.
     universe: UniverseId,
@@ -359,9 +375,7 @@ impl str::FromStr for Address {
 /// assert!(invalid.is_err());
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(facet::Facet)]
-#[facet(transparent)]
-#[facet(invariants = (|uid: &UniverseId| UniverseId::new(uid.0).is_ok()))]
+
 pub struct UniverseId(u16);
 
 impl UniverseId {
@@ -445,6 +459,27 @@ impl str::FromStr for UniverseId {
     }
 }
 
+#[cfg(feature = "serde")]
+impl serde::Serialize for UniverseId {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_u16(self.0)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for UniverseId {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let id = u16::deserialize(deserializer)?;
+        UniverseId::new(id).map_err(serde::de::Error::custom)
+    }
+}
+
 /// A DMX universe that contains 512 [`Value`]s.
 ///
 /// The universe has:
@@ -458,8 +493,6 @@ impl str::FromStr for UniverseId {
 /// let universe = Universe::new();
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[derive(facet::Facet)]
-#[facet(pod)]
 pub struct Universe {
     values: [Value; 512],
 }
@@ -546,6 +579,36 @@ impl From<Universe> for Vec<u8> {
     }
 }
 
+#[cfg(feature = "serde")]
+impl serde::Serialize for Universe {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.values.serialize(serializer)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for Universe {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let values = Vec::<Value>::deserialize(deserializer)?;
+        if values.len() != 512 {
+            return Err(serde::de::Error::custom(format!(
+                "Expected 512 values for Universe, got {}",
+                values.len()
+            )));
+        }
+        let values = values.try_into().map_err(|_| {
+            serde::de::Error::custom("Failed to convert Vec<Value> into [Value; 512]")
+        })?;
+        Ok(Universe { values })
+    }
+}
+
 /// Contains multiple [`Universe`]s.
 ///
 /// # Examples
@@ -562,9 +625,9 @@ impl From<Universe> for Vec<u8> {
 /// let _removed_universe = multiverse.remove_universe(&id);
 /// ```
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
-#[derive(facet::Facet)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(transparent))]
 pub struct Multiverse {
-    #[facet(transparent)]
     universes: HashMap<UniverseId, Universe>,
 }
 

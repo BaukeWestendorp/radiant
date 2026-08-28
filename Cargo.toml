@@ -16,6 +16,7 @@ rd-service = { path = "rd-service" }
 rd-ui = { path = "rd-ui" }
 
 anyhow = "1.0"
+thiserror = "2.0"
 
 gpui = { git = "https://github.com/zed-industries/zed.git", rev = "d5fc4b7" }
 gpui_platform = { git = "https://github.com/zed-industries/zed.git", features = ["font-kit"], rev = "d5fc4b7" }
@@ -25,12 +26,7 @@ flume = "0.12.0"
 log = "0.4.29"
 pretty_env_logger = "0.5.0"
 
-facet = "0.46.5"
-facet-error = "0.46.5"
-facet-json = "0.46.1"
-facet-reflect = "0.46.5"
-facet-validate = "0.46.5"
-
-serde = { version = "1.0.228", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 
 uuid = "1.23.4"

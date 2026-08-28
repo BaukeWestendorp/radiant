@@ -479,18 +479,9 @@ fn handle_packet(inner: &Arc<Inner>, packet: Packet, source_ip: Ipv4Addr) -> cra
 }
 
 #[derive(Clone)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
-#[cfg_attr(feature = "facet", facet(tag = "type"))]
-#[repr(C)]
 pub enum FrameScheduler {
-    Internal {
-        refresh_rate: u16,
-    },
-    External {
-        refresh_rate: u16,
-        #[cfg_attr(feature = "facet", facet(opaque))]
-        notifier: Arc<Box<dyn Fn(flume::Sender<()>) + Send + Sync>>,
-    },
+    Internal { refresh_rate: u16 },
+    External { refresh_rate: u16, notifier: Arc<Box<dyn Fn(flume::Sender<()>) + Send + Sync>> },
 }
 
 impl FrameScheduler {
@@ -503,7 +494,7 @@ impl FrameScheduler {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct NodeState {
     pub indicator_state: IndicatorState,
     pub programming_authority: ProgrammingAuthority,
@@ -589,7 +580,7 @@ impl NodeRegistry {
 }
 
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct NetworkDetails {
     ip: Ipv4Addr,
     mask: Ipv4Addr,

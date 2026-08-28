@@ -6,7 +6,7 @@ pub use executor::*;
 
 mod executor;
 
-pub trait Object: for<'facet> facet::Facet<'facet> {
+pub trait Object: serde::Serialize + for<'de> serde::Deserialize<'de> {
     fn slot(&self) -> Slot;
 
     fn id(&self) -> ObjectId;
@@ -15,8 +15,8 @@ pub trait Object: for<'facet> facet::Facet<'facet> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[derive(facet::Facet)]
-#[facet(transparent)]
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(transparent)]
 pub struct ObjectId(Uuid);
 
 impl ObjectId {
@@ -36,8 +36,8 @@ impl fmt::Display for ObjectId {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(facet::Facet)]
-#[facet(transparent)]
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(transparent)]
 pub struct Slot(NonZeroU32);
 
 impl Slot {

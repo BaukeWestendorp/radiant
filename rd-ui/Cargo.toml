@@ -3,18 +3,11 @@ name = "rd-ui"
 version.workspace = true
 edition.workspace = true
 
-[features]
-facet = ["dep:facet", "dep:facet-reflect"]
-
 [dependencies]
 anyhow.workspace = true
 
 gpui.workspace = true
 gpui_platform.workspace = true
-
-# feature = "facet"
-facet = { workspace = true, optional = true }
-facet-reflect = { workspace = true, optional = true }
 
 log.workspace = true
 
@@ -22,7 +15,3 @@ smallvec = "1.15.1"
 
 [dev-dependencies]
 pretty_env_logger.workspace = true
-
-[[example]]
-name = "preview"
-required-features = ["facet"]

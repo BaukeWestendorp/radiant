@@ -7,33 +7,19 @@ pub mod midi;
 pub use midi::*;
 
 #[derive(Debug, Clone, PartialEq, Default)]
-#[derive(facet::Facet)]
-#[facet(deny_unknown_fields)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct TriggerConfig {
     pub midi: Vec<midi::MidiMapping>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-#[derive(facet::Facet)]
-#[facet(tag = "type")]
-#[repr(C)]
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(tag = "type")]
 pub enum TriggerTarget {
     HighlightToggle,
-    ExecutorMaster {
-        #[facet(rename = "page")]
-        page_id: ObjectId,
-        slot: Slot,
-    },
-    ExecutorButton {
-        #[facet(rename = "page")]
-        page_id: ObjectId,
-        slot: Slot,
-        button: ExecutorButton,
-    },
-    Encoder {
-        #[facet(rename = "ix")]
-        encoder_ix: usize,
-    },
+    ExecutorMaster { page_id: ObjectId, slot: Slot },
+    ExecutorButton { page_id: ObjectId, slot: Slot, button: ExecutorButton },
+    Encoder { index: usize },
 }
 
 impl Default for TriggerTarget {
@@ -52,8 +38,8 @@ impl fmt::Display for TriggerTarget {
             TriggerTarget::ExecutorButton { page_id, slot, button } => {
                 write!(f, "Executor Button {}.{}.{:?})", page_id, slot, button)
             }
-            TriggerTarget::Encoder { encoder_ix } => {
-                write!(f, "Encoder {}", encoder_ix)
+            TriggerTarget::Encoder { index } => {
+                write!(f, "Encoder {}", index)
             }
         }
     }

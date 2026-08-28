@@ -3,9 +3,8 @@ use std::path::PathBuf;
 use crate::Project;
 
 #[derive(Debug, Clone)]
-#[derive(facet::Facet)]
-#[facet(tag = "type")]
-#[repr(C)]
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(tag = "type")]
 pub enum EngineCommand {
     HighlightToggle,
 

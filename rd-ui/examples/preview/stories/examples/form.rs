@@ -1,6 +1,6 @@
 use rd_ui::{
     Emphasis, StyledExt, c_flex,
-    comp::stateful::{Checkbox, Field, Form, FormInput, KeyPath, Picker},
+    comp::stateful::{Checkbox, Field, Form, FormInput, KeyPath, Picker, PickerItem},
     gpui::{Entity, SharedString, Window, div, prelude::*},
 };
 
@@ -32,7 +32,18 @@ impl FormPreview {
 
             form.add_input(
                 FormInput::new(
-                    cx.new(|cx| Picker::<Color>::from_facet("color", window, cx).unwrap()),
+                    cx.new(|cx| {
+                        Picker::<Color>::new(
+                            "color",
+                            vec![
+                                PickerItem::new("red", Color::Red),
+                                PickerItem::new("green", Color::Green),
+                                PickerItem::new("blue", Color::Blue),
+                            ],
+                            window,
+                            cx,
+                        )
+                    }),
                     KeyPath::new(
                         |d: &FormData| d.color.clone(),
                         |d: &mut FormData, val: Option<Color>| d.color = val,
@@ -75,8 +86,6 @@ impl Render for FormPreview {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[derive(facet::Facet)]
-#[repr(u8)]
 pub enum Color {
     Red,
     Green,

@@ -4,8 +4,7 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
-facet.workspace = true
-facet-error.workspace = true
+thiserror.workspace = true
 flume.workspace = true
 log.workspace = true
 spin_sleep = "1.3.3"

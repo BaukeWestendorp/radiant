@@ -140,8 +140,8 @@ impl MidiMessage {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
-#[derive(facet::Facet)]
-#[facet(transparent)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(transparent))]
 #[allow(non_camel_case_types)]
 pub struct u7(u8);
 
@@ -182,8 +182,8 @@ impl std::fmt::Display for u7 {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
-#[derive(facet::Facet)]
-#[facet(transparent)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(transparent))]
 #[allow(non_camel_case_types)]
 pub struct u4(u8);
 

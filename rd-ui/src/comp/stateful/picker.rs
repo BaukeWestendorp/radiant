@@ -387,56 +387,6 @@ impl<T: 'static> FocusableComponent for Picker<T> {
 impl<T: 'static> EventEmitter<stateful::event::Change<Option<T>>> for Picker<T> {}
 impl<T: 'static> EventEmitter<stateful::event::Submit<Option<T>>> for Picker<T> {}
 
-#[cfg(feature = "facet")]
-impl<'facet, T: facet::Facet<'facet> + 'static> Picker<T> {
-    pub fn from_facet(
-        id: impl Into<ElementId>,
-        _window: &mut Window,
-        cx: &mut Context<Self>,
-    ) -> anyhow::Result<Self> {
-        use facet_reflect::{Partial, peek_enum_variants};
-
-        let variants = peek_enum_variants(T::SHAPE)
-            .ok_or_else(|| anyhow::anyhow!("Picker can only be created from enum facets"))?;
-
-        let items = variants
-            .iter()
-            .enumerate()
-            .map(|(ix, variant)| {
-                let label = variant.name;
-
-                let value = Partial::alloc::<T>()
-                    .map_err(|e| {
-                        anyhow::anyhow!("Failed to allocate enum variant for Picker: {e}")
-                    })?
-                    .select_nth_variant(ix)
-                    .map_err(|e| {
-                        anyhow::anyhow!("Failed to select enum variant at index {ix}: {e}")
-                    })?
-                    .build()
-                    .map_err(|e| anyhow::anyhow!("Failed to build variant at index {ix}: {e}"))?
-                    .materialize()
-                    .map_err(|e| {
-                        anyhow::anyhow!("Failed to materialize variant at index {ix}: {e}")
-                    })?;
-
-                Ok(PickerItem::new(label, value)
-                    .with_focus_handle(cx.focus_handle().tab_stop(true), cx))
-            })
-            .collect::<Result<Vec<_>, anyhow::Error>>()?;
-
-        Ok(Self {
-            id: id.into(),
-            items,
-            selection: None,
-            open: false,
-            kind: PickerKind::default(),
-            disabled: false,
-            focus_handle: cx.focus_handle(),
-        })
-    }
-}
-
 impl<T: Clone + 'static> Render for Picker<T> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         match self.kind {

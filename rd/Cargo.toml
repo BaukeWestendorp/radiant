@@ -5,17 +5,16 @@ edition.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-facet = { workspace = true, features = ["uuid", "nonzero"] }
-facet-validate.workspace = true
-facet-json.workspace = true
 flume.workspace = true
 log.workspace = true
-rd-artnet = { workspace = true, features = ["facet"] }
-rd-dmx.workspace = true
+rd-artnet = { workspace = true, features = ["serde"] }
+rd-dmx = { workspace = true, features = ["serde"] }
+rd-midi = { workspace = true, features = ["serde"] }
 rd-service.workspace = true
-rd-midi.workspace = true
-uuid = { workspace = true, features = ["v4"] }
-ariadne = "0.6.0"
+uuid = { workspace = true, features = ["v4", "serde"] }
+serde.workspace = true
+serde_json.workspace = true
+
 rand = "0.10.2"
 
 [dev-dependencies]

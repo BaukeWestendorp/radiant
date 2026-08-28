@@ -14,7 +14,7 @@
       },
       "target": {
         "type": "ExecutorMaster",
-        "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+        "page_id": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
         "slot": 1
       }
     },
@@ -32,7 +32,7 @@
       },
       "target": {
         "type": "ExecutorButton",
-        "page": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
+        "page_id": "77accb9e-3d6b-49fd-b0b4-a42f67e9563a",
         "slot": 1,
         "button": "Button1"
       }
@@ -51,7 +51,7 @@
       },
       "target": {
         "type": "Encoder",
-        "ix": 0
+        "index": 0
       }
     },
     {

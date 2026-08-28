@@ -11,8 +11,7 @@ pub struct PickerPreview {
     picker_inline: Entity<Picker<NoBoundEnum>>,
     picker_dropdown: Entity<Picker<ImplDisplayEnum>>,
     picker_dropdown_searchable: Entity<Picker<LongLabelEnum>>,
-    picker_facet: Entity<Picker<FacetEnum>>,
-    picker_disabled: Entity<Picker<FacetEnum>>,
+    picker_disabled: Entity<Picker<ImplDisplayEnum>>,
 }
 
 impl PickerPreview {
@@ -74,18 +73,20 @@ impl PickerPreview {
                 )
                 .with_kind(PickerKind::Dropdown { searchable: true })
             }),
-            picker_facet: cx.new(|cx| {
-                Picker::from_facet("picker-facet", window, cx)
-                    .unwrap()
-                    .with_kind(PickerKind::Inline)
-                    .with_selection(Some(0))
-            }),
             picker_disabled: cx.new(|cx| {
-                Picker::from_facet("picker-disabled", window, cx)
-                    .unwrap()
-                    .with_kind(PickerKind::Inline)
-                    .with_selection(Some(2))
-                    .with_disabled(true, cx)
+                Picker::new(
+                    "picker-disabled",
+                    vec![
+                        PickerItem::from(ImplDisplayEnum::One),
+                        PickerItem::from(ImplDisplayEnum::Two),
+                        PickerItem::from(ImplDisplayEnum::Three),
+                    ],
+                    window,
+                    cx,
+                )
+                .with_kind(PickerKind::Inline)
+                .with_selection(Some(2))
+                .with_disabled(true, cx)
             }),
         }
     }
@@ -102,7 +103,6 @@ impl Render for PickerPreview {
                 Label::new("dropdown_searchable", self.picker_dropdown_searchable.clone())
                     .with_label("Dropdown & Searchable"),
             )
-            .child(Label::new("facet", self.picker_facet.clone()).with_label("Facet-backed"))
             .child(Label::new("disabled", self.picker_disabled.clone()).with_label("Disabled"))
     }
 }
@@ -158,13 +158,4 @@ impl std::fmt::Display for LongLabelEnum {
             LongLabelEnum::NinthVeryLongValue => write!(f, "Ninth very long value"),
         }
     }
-}
-
-#[derive(Clone)]
-#[derive(facet::Facet)]
-#[repr(u8)]
-enum FacetEnum {
-    Red,
-    Green,
-    Blue,
 }

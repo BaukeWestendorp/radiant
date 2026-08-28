@@ -3,8 +3,7 @@ use std::fmt;
 use crate::{ObjectId, Slot};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[derive(facet::Facet)]
-#[repr(C)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum ExecutorButton {
     #[default]
     Button1,
@@ -13,9 +12,8 @@ pub enum ExecutorButton {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(facet::Facet)]
-#[facet(tag = "type")]
-#[repr(C)]
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(tag = "type")]
 pub enum ExecutorButtonAction {
     ToggleEnabled,
     SetEnabled { value: bool },
@@ -25,7 +23,7 @@ pub enum ExecutorButtonAction {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[derive(facet::Facet)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct ExecutorId {
     pub page: ObjectId,
     pub slot: Slot,

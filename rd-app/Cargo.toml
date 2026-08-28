@@ -16,7 +16,6 @@ rd-artnet.workspace = true
 rd-dmx.workspace = true
 rd-ui.workspace = true
 rd.workspace = true
-facet.workspace = true
-figue = "4.0.5"
 uuid = { workspace = true, features = ["v4"] }
 natord = "1.0.9"
+clap = { version = "4.6.6", features = ["derive"] }

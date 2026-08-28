@@ -1,9 +1,8 @@
 use std::path::PathBuf;
 
 #[derive(Debug)]
-#[derive(facet::Facet)]
-#[facet(tag = "type")]
-#[repr(C)]
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(tag = "type")]
 pub enum Event {
     ProjectLoaded,
     ProjectUnloaded,

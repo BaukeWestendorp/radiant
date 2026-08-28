@@ -6,7 +6,7 @@
   },
   {
     "label": "rd-ui preview",
-    "command": "cargo run -p rd-ui --example preview -F facet",
+    "command": "cargo run -p rd-ui --example preview",
     "env": { "RUST_LOG": "debug" },
   },
 ]

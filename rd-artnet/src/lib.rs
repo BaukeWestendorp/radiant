@@ -13,7 +13,6 @@ pub use node::*;
 pub const PORT: u16 = 6454;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct Universe {
     channels: [u8; 512],
 }
@@ -47,8 +46,31 @@ impl Default for Universe {
     }
 }
 
+#[cfg(feature = "serde")]
+impl serde::Serialize for Universe {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.channels.serialize(serializer)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for Universe {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let channels: Vec<u8> = Vec::deserialize(deserializer)?;
+        if channels.len() != 512 {
+            return Err(serde::de::Error::custom("Expected 512 channels"));
+        }
+        Ok(Universe { channels: channels.try_into().unwrap() })
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct Kiloverse {
     universes: Box<[Universe; 1024]>,
 }
@@ -73,8 +95,31 @@ impl Default for Kiloverse {
     }
 }
 
+#[cfg(feature = "serde")]
+impl serde::Serialize for Kiloverse {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.universes.serialize(serializer)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for Kiloverse {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let universes: Vec<Universe> = Vec::deserialize(deserializer)?;
+        if universes.len() != 1024 {
+            return Err(serde::de::Error::custom("Expected 1024 universes"));
+        }
+        Ok(Kiloverse { universes: universes.into_boxed_slice().try_into().unwrap() })
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
 #[repr(transparent)]
 pub struct FixedString<const N: usize>([u8; N]);
 
@@ -129,10 +174,28 @@ impl<const N: usize> TryFrom<&str> for FixedString<N> {
     }
 }
 
+#[cfg(feature = "serde")]
+impl<const N: usize> serde::Serialize for FixedString<N> {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de, const N: usize> serde::Deserialize<'de> for FixedString<N> {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Self::try_from_str(&s).map_err(serde::de::Error::custom)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
-#[cfg_attr(feature = "facet", facet(transparent))]
-#[cfg_attr(feature = "facet", facet(facet_validate::min = 0, facet_validate::max = 32767))]
 #[repr(transparent)]
 pub struct PortAddress(u16);
 
@@ -194,10 +257,28 @@ impl std::fmt::Display for PortAddress {
     }
 }
 
+#[cfg(feature = "serde")]
+impl serde::Serialize for PortAddress {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_u16(self.0)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for PortAddress {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = u16::deserialize(deserializer)?;
+        PortAddress::from_absolute(value).map_err(serde::de::Error::custom)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
-#[cfg_attr(feature = "facet", facet(transparent))]
-#[cfg_attr(feature = "facet", facet(facet_validate::min = 0, facet_validate::max = 127))]
 #[repr(transparent)]
 pub struct NetId(u8);
 
@@ -237,10 +318,28 @@ impl std::fmt::Display for NetId {
     }
 }
 
+#[cfg(feature = "serde")]
+impl serde::Serialize for NetId {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_u8(self.0)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for NetId {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = u8::deserialize(deserializer)?;
+        NetId::new(value).map_err(serde::de::Error::custom)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
-#[cfg_attr(feature = "facet", facet(transparent))]
-#[cfg_attr(feature = "facet", facet(facet_validate::min = 0, facet_validate::max = 15))]
 #[repr(transparent)]
 pub struct SubNetId(u8);
 
@@ -280,10 +379,28 @@ impl std::fmt::Display for SubNetId {
     }
 }
 
+#[cfg(feature = "serde")]
+impl serde::Serialize for SubNetId {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_u8(self.0)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for SubNetId {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = u8::deserialize(deserializer)?;
+        SubNetId::new(value).map_err(serde::de::Error::custom)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
-#[cfg_attr(feature = "facet", facet(transparent))]
-#[cfg_attr(feature = "facet", facet(facet_validate::min = 0, facet_validate::max = 15))]
 #[repr(transparent)]
 pub struct UniverseId(u8);
 
@@ -320,5 +437,26 @@ impl std::str::FromStr for UniverseId {
 impl std::fmt::Display for UniverseId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for UniverseId {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_u8(self.0)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for UniverseId {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = u8::deserialize(deserializer)?;
+        UniverseId::new(value).map_err(serde::de::Error::custom)
     }
 }

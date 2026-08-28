@@ -5,7 +5,6 @@ use crate::{
     SwMacro, SwRemote, Universe,
 };
 
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct NodeConfig {
     long_name: FixedString<64>,
     esta_man: u16,
@@ -381,8 +380,7 @@ impl NodeConfig {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
-#[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum PollReplyStrategy {
     /// Strictly comply with the Art-Net 4 specification by unicasting the ArtPollReply directly to the poller's IP.
     Unicast,
@@ -392,24 +390,22 @@ pub enum PollReplyStrategy {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
-#[cfg_attr(feature = "facet", facet(tag = "type"))]
-#[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(tag = "type"))]
 pub enum IpAssignment {
     Static { dhcp_capable: bool },
     Dhcp,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
-#[cfg_attr(feature = "facet", facet(tag = "type"))]
-#[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", serde(tag = "type"))]
 pub enum NodeNetworkConfig {
     Interface {
         /// When set to `None` it will try to select the first non-loopback interface.
         name: Option<String>,
         // Explicitly define the DHCP state of this system interface.
-        #[cfg_attr(feature = "facet", facet(default = IpAssignment::Dhcp))]
+        #[cfg_attr(feature = "serde", serde(default = "default_ip_assignment"))]
         assignment: IpAssignment,
     },
     Custom {
@@ -420,9 +416,17 @@ pub enum NodeNetworkConfig {
         // NOTE: Let's assume 'DHCP Capable', as the most common use for this crate
         // probably will be software built on top of an OS, which pretty much always
         // supports DHCP.
-        #[cfg_attr(feature = "facet", facet(default = true))]
+        #[cfg_attr(feature = "serde", serde(default = "default_dhcp_capable"))]
         dhcp_capable: bool,
     },
+}
+
+fn default_ip_assignment() -> IpAssignment {
+    IpAssignment::Dhcp
+}
+
+fn default_dhcp_capable() -> bool {
+    true
 }
 
 impl NodeNetworkConfig {
@@ -444,7 +448,6 @@ impl Default for NodeNetworkConfig {
 }
 
 #[derive(Clone)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
 pub struct BoundNodeConfig {
     bind_index: u8,
     net: NetId,
@@ -459,7 +462,6 @@ pub struct BoundNodeConfig {
     remotes: SwRemote,
     bg_queue_policy: BackgroundQueuePolicy,
     frame_scheduler: FrameScheduler,
-    #[cfg_attr(feature = "facet", facet(opaque))]
     dmx_provider: Arc<dyn Fn(&mut Universe, PortAddress) -> crate::Result<()> + Send + Sync>,
 }
 
@@ -680,7 +682,7 @@ impl BoundNodeConfig {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PortConfig {
     direction: PortDirection,
     physical: u8,
@@ -737,24 +739,21 @@ impl PortConfig {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
-#[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum MergeMode {
     Htp,
     Ltp,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
-#[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum OutputStyle {
     Continuous,
     Delta,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(feature = "facet", derive(facet::Facet))]
-#[repr(C)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum PortDirection {
     Input(PortAddress),
     Output(PortAddress),

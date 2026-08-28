@@ -1,10 +1,7 @@
 pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug)]
-#[derive(facet::Facet)]
-#[facet(derive(Error))]
-#[repr(C)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
-    // Service is already running
+    #[error("Service is already running")]
     ServiceAlreadyRunning,
 }
