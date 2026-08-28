@@ -10,6 +10,7 @@ log.workspace = true
 rd-artnet = { workspace = true, features = ["serde"] }
 rd-dmx = { workspace = true, features = ["serde"] }
 rd-midi = { workspace = true, features = ["serde"] }
+rd-rigger.workspace = true
 rd-service.workspace = true
 uuid = { workspace = true, features = ["v4", "serde"] }
 serde.workspace = true

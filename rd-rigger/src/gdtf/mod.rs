@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    fmt,
     path::{Component, Path, PathBuf},
     str::{self, FromStr as _},
 };
@@ -492,6 +493,12 @@ impl FixtureTypeId {
 impl From<Uuid> for FixtureTypeId {
     fn from(uuid: Uuid) -> Self {
         Self(uuid)
+    }
+}
+
+impl fmt::Display for FixtureTypeId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 

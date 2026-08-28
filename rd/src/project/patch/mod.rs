@@ -1,7 +1,14 @@
+use std::{collections::HashMap, sync::Arc};
+
+use rd_rigger::gdtf::{FixtureTypeId, Gdtf};
+
 #[derive(Debug, Clone, PartialEq, Default)]
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct PatchConfig {
     pub fixtures: Vec<FixtureConfig>,
+
+    #[serde(skip)]
+    pub gdtfs: HashMap<FixtureTypeId, Arc<Gdtf>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -23,24 +30,5 @@ pub struct FixtureKind {
 impl std::fmt::Display for FixtureKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} [{}]", self.fixture_type_id, self.dmx_mode)
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
-#[derive(serde::Serialize, serde::Deserialize)]
-#[serde(transparent)]
-pub struct FixtureTypeId(uuid::Uuid);
-
-impl std::ops::Deref for FixtureTypeId {
-    type Target = uuid::Uuid;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl std::fmt::Display for FixtureTypeId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
     }
 }
