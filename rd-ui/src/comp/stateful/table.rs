@@ -538,7 +538,7 @@ where
         + EventEmitter<stateful::event::Change<V>>
         + 'static,
     CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
-    Apply: Fn(&mut Row, &V, usize) + 'static,
+    Apply: Fn(&mut Row, &V, usize, &mut App) + 'static,
 {
     pub fn new(popup_title: impl Into<String>, create_field: CreateField, apply: Apply) -> Self {
         Self {
@@ -582,9 +582,10 @@ where
 
             let popup = popup.with_on_submit(window, cx, move |value, window, cx| {
                 rows.update(cx, |rows, cx| {
+                    // FIXME: This should be sorted by visual order.
                     for (i, row_ix) in row_ixs.iter().enumerate() {
                         if let Some(row) = rows.get_mut(*row_ix) {
-                            apply(row, value, i);
+                            apply(row, value, i, cx);
                         }
                     }
                     cx.notify();
@@ -673,7 +674,7 @@ impl<Row: 'static> TableColumn<Row> {
             + EventEmitter<stateful::event::Change<V>>
             + 'static,
         CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
-        Apply: Fn(&mut Row, &V, usize) + 'static,
+        Apply: Fn(&mut Row, &V, usize, &mut App) + 'static,
     {
         self.on_edit = Some(editor.build());
     }
@@ -690,7 +691,7 @@ impl<Row: 'static> TableColumn<Row> {
             + EventEmitter<stateful::event::Change<V>>
             + 'static,
         CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
-        Apply: Fn(&mut Row, &V, usize) + 'static,
+        Apply: Fn(&mut Row, &V, usize, &mut App) + 'static,
     {
         self.set_editor(editor);
         self
@@ -708,7 +709,7 @@ impl<Row: 'static> TableColumn<Row> {
             + EventEmitter<stateful::event::Change<V>>
             + 'static,
         CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
-        Apply: Fn(&mut Row, &V, usize) + 'static,
+        Apply: Fn(&mut Row, &V, usize, &mut App) + 'static,
     {
         self.set_editor(editor);
         self

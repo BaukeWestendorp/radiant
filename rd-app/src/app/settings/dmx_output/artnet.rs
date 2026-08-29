@@ -52,7 +52,7 @@ impl ArtnetOutputTabView {
                             |window, cx| {
                                 cx.new(|cx| Field::<String>::new("name", window, cx).w_full())
                             },
-                            |row: &mut rd::project::ArtnetOutputInstanceConfig, value, i| {
+                            |row: &mut rd::project::ArtnetOutputInstanceConfig, value, i, _| {
                                 let Some(value) = value else { return };
                                 let base_name = value.clone().trim().to_string();
                                 row.name = if i == 0 {
@@ -69,7 +69,7 @@ impl ArtnetOutputTabView {
                             |window, cx| {
                                 cx.new(|cx| port_address_field("port_address", window, cx).w_full())
                             },
-                            |row: &mut rd::project::ArtnetOutputInstanceConfig, value, i| {
+                            |row: &mut rd::project::ArtnetOutputInstanceConfig, value, i, _| {
                                 let Some(value) = value else { return };
                                 let base_address = value.clone();
                                 if i == 0 {
@@ -90,7 +90,7 @@ impl ArtnetOutputTabView {
                             |window, cx| {
                                 cx.new(|cx| universe_id_field("universe_id", window, cx).w_full())
                             },
-                            |row: &mut rd::project::ArtnetOutputInstanceConfig, value, i| {
+                            |row: &mut rd::project::ArtnetOutputInstanceConfig, value, i, _| {
                                 let Some(value) = value else { return };
                                 let base_universe = value.clone();
                                 if i == 0 {

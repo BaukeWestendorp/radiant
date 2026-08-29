@@ -14,6 +14,8 @@ use std::str::FromStr as _;
 
 use crate::engine::EngineAppExt;
 
+// FIXME: A lot of code in this file can be simplified with helpers for getting DMX Mode or Fixture Types.
+
 pub fn fixture_id_field(
     id: impl Into<ElementId>,
     window: &mut Window,

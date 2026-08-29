@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use rd_rigger::gdtf::{FixtureTypeId, Gdtf, Name};
+use rd_rigger::gdtf::{FixtureTypeId, Gdtf, Name, dmx::DmxMode};
 
 use crate::Project;
 
@@ -30,12 +30,21 @@ pub struct FixtureKind {
 }
 
 impl FixtureKind {
+    pub fn gdtf<'a>(&self, project: &'a Project) -> Option<&'a Gdtf> {
+        project.patch.gdtfs.get(&self.fixture_type_id).map(|gdtf| gdtf.as_ref())
+    }
+
+    pub fn dmx_mode<'a>(&self, project: &'a Project) -> Option<&'a DmxMode> {
+        let gdtf = self.gdtf(project)?;
+        gdtf.dmx_mode(&Name::new(&self.dmx_mode))
+    }
+
     pub fn display(&self, project: &Project) -> String {
-        let Some(gdtf) = project.patch.gdtfs.get(&self.fixture_type_id) else {
+        let Some(gdtf) = self.gdtf(project) else {
             return format!("{} [{}]", self.fixture_type_id, self.dmx_mode);
         };
 
-        let Some(dmx_mode) = gdtf.dmx_mode(&Name::new(&self.dmx_mode)) else {
+        let Some(dmx_mode) = self.dmx_mode(project) else {
             return format!("{} {} [{}]", gdtf.manufacturer(), gdtf.name(), self.dmx_mode);
         };
 

@@ -54,7 +54,7 @@ impl PatchTabView {
                         .with_editor(TableCellEditor::new(
                             "Edit Fixture ID",
                             |window, cx| cx.new(|cx| fixture_id_field("fid", window, cx).w_full()),
-                            |row: &mut rd::project::FixtureConfig, value, i| {
+                            |row: &mut rd::project::FixtureConfig, value, i, _| {
                                 let Some(value) = value else { return };
                                 row.id = value.increment_by(i)
                             },
@@ -66,7 +66,7 @@ impl PatchTabView {
                             |window, cx| {
                                 cx.new(|cx| Field::<String>::new("name", window, cx).w_full())
                             },
-                            |row: &mut rd::project::FixtureConfig, value, i| {
+                            |row: &mut rd::project::FixtureConfig, value, i, _| {
                                 let Some(value) = value else { return };
                                 row.name = value.increment_by(i)
                             },
@@ -76,10 +76,15 @@ impl PatchTabView {
                         .with_editor(TableCellEditor::new(
                             "Edit Fixture Address",
                             |window, cx| cx.new(|cx| address_field("address", window, cx).w_full()),
-                            |row: &mut rd::project::FixtureConfig, value, i| {
+                            |row: &mut rd::project::FixtureConfig, value, i, cx| {
                                 let Some(value) = value else { return };
-                                let channel_count = 1;
-                                row.dmx_address = value.increment_by(i * channel_count);
+                                let channel_count = cx.engine().with_project(|project| {
+                                    row.fixture_kind
+                                        .dmx_mode(project)
+                                        .map(|dmx_mode| dmx_mode.max_channel_offset() + 1)
+                                        .unwrap_or(1)
+                                });
+                                row.dmx_address = value.increment_by(i * channel_count as usize);
                             },
                         )),
                     TableColumn::<rd::project::FixtureConfig>::new("Kind")
@@ -94,7 +99,7 @@ impl PatchTabView {
                                 |window, cx| {
                                     cx.new(|cx| FixtureKindPicker::new("fixture_kind", window, cx))
                                 },
-                                |row: &mut rd::project::FixtureConfig, value, _| {
+                                |row: &mut rd::project::FixtureConfig, value, _, _| {
                                     row.fixture_kind = value.clone();
                                 },
                             )
