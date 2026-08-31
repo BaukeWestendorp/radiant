@@ -8,8 +8,11 @@ use gpui::{
 use crate::{
     ActiveTheme, Emphasis, InputPopup, PopupAppExt, PopupSize, StyledExt, StyledParentExt,
     StyledStatefulInteractiveElementExt,
-    comp::{FocusableComponent, INPUT_SIZE, Identifiable, stateful},
-    h_flex, v_flex,
+    comp::{
+        Button, ButtonVariant, FocusableComponent, INPUT_SIZE, IconVariant, Identifiable, Labelled,
+        stateful,
+    },
+    h_flex, root, v_flex,
 };
 
 pub(crate) mod action {
@@ -199,7 +202,6 @@ impl<Row: 'static> Table<Row> {
     }
 
     pub fn delete_selection(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        // Temporarily extract the callback so we can pass `cx` to it without violating borrow rules
         let mut on_delete_cb = self.state.update(cx, |state, _cx| state.on_delete.take());
         let (rows, column) = self
             .state
@@ -209,7 +211,6 @@ impl<Row: 'static> Table<Row> {
             on_delete(&rows, column, window, cx);
         }
 
-        // Put the callback back
         if let Some(cb) = on_delete_cb.take() {
             self.state.update(cx, |state, _cx| state.on_delete = Some(cb));
         }
@@ -218,8 +219,7 @@ impl<Row: 'static> Table<Row> {
     pub fn edit_selection(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         // FIXME: It would be nice if the field could be preloaded with the (first) value that is being edited.
 
-        // Temporarily extract callbacks to pass `cx` down safely
-        let mut on_edit_cb = self.state.update(cx, |state, _cx| state.on_edit.take());
+        let mut on_edit = self.state.update(cx, |state, _cx| state.on_edit.take());
         let (rows, column, focus_handle, rows_entity) = self.state.update(cx, |state, _cx| {
             (
                 state.selection.rows().to_vec(),
@@ -229,23 +229,23 @@ impl<Row: 'static> Table<Row> {
             )
         });
 
-        if let Some(on_edit) = &on_edit_cb {
+        if let Some(on_edit) = &on_edit {
             on_edit(&rows, column, focus_handle.clone(), window, cx);
         }
 
-        if let Some(cb) = on_edit_cb.take() {
+        if let Some(cb) = on_edit.take() {
             self.state.update(cx, |state, _cx| state.on_edit = Some(cb));
         }
 
-        let mut column_on_edit_cb = self.state.update(cx, |state, _cx| {
+        let mut column_on_edit = self.state.update(cx, |state, _cx| {
             if let Some(col) = state.columns.get_mut(column) { col.on_edit.take() } else { None }
         });
 
-        if let Some(on_edit) = &column_on_edit_cb {
+        if let Some(on_edit) = &column_on_edit {
             on_edit(&rows, &rows_entity, focus_handle, window, cx);
         }
 
-        if let Some(cb) = column_on_edit_cb.take() {
+        if let Some(cb) = column_on_edit.take() {
             self.state.update(cx, |state, _cx| {
                 if let Some(col) = state.columns.get_mut(column) {
                     col.on_edit = Some(cb);
@@ -393,19 +393,43 @@ impl<Row: 'static> Table<Row> {
             })
     }
 
-    fn render_footer(&self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render_footer(&self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         h_flex()
             .emphasis(Emphasis::Secondary, cx)
+            .justify_between()
             .w_full()
-            .min_h(Self::row_height())
-            .max_h(Self::row_height())
-            .px_1()
+            .p_1()
             .border_t_1()
             .border_color(cx.theme().border_secondary)
             .child(
-                div()
+                h_flex()
+                    .h(crate::comp::INPUT_SIZE)
                     .text_color(cx.theme().fg_secondary)
                     .child(format!("{} rows", self.state.read(cx).rows.read(cx).len())),
+            )
+            .child(
+                h_flex()
+                    .h(crate::comp::INPUT_SIZE)
+                    .gap_1()
+                    .h_full()
+                    .when(self.state.read(cx).is_editable(), |e| {
+                        e.child(
+                            Button::new("edit-row", window, cx)
+                                .with_action(root::action::Edit)
+                                .with_label("Edit")
+                                .with_variant(ButtonVariant::Secondary)
+                                .with_icon(IconVariant::SquarePen),
+                        )
+                    })
+                    .when(self.state.read(cx).on_delete.is_some(), |e| {
+                        e.child(
+                            Button::new("delete-row", window, cx)
+                                .with_action(root::action::Delete)
+                                .with_label("Delete")
+                                .with_variant(ButtonVariant::Danger)
+                                .with_icon(IconVariant::Trash),
+                        )
+                    }),
             )
     }
 }
@@ -515,6 +539,10 @@ impl<Row> TableState<Row> {
             on_delete: None,
             on_edit: None,
         }
+    }
+
+    fn is_editable(&self) -> bool {
+        self.on_edit.is_some() || self.columns.iter().any(|column| column.on_edit.is_some())
     }
 }
 
