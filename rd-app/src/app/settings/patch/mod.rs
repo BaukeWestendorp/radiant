@@ -46,68 +46,86 @@ impl PatchTabView {
         })
         .detach();
 
-        let table = cx.new(|cx| {
-            Table::new("table", fixtures.clone(), window, cx).with_columns(
-                vec![
-                    TableColumn::<rd::project::FixtureConfig>::new("Id")
-                        .with_element(|row, _, _| row.id.to_string().into_any_element())
-                        .with_editor(TableCellEditor::new(
-                            "Edit Fixture ID",
-                            |window, cx| cx.new(|cx| fixture_id_field("fid", window, cx).w_full()),
-                            |row: &mut rd::project::FixtureConfig, value, i, _| {
-                                let Some(value) = value else { return };
-                                row.id = value.increment_by(i)
-                            },
-                        )),
-                    TableColumn::<rd::project::FixtureConfig>::new("Name")
-                        .with_element(|row, _, _| row.name.to_string().into_any_element())
-                        .with_editor(TableCellEditor::new(
-                            "Edit Fixture Name",
-                            |window, cx| {
-                                cx.new(|cx| Field::<String>::new("name", window, cx).w_full())
-                            },
-                            |row: &mut rd::project::FixtureConfig, value, i, _| {
-                                let Some(value) = value else { return };
-                                row.name = value.increment_by(i)
-                            },
-                        )),
-                    TableColumn::<rd::project::FixtureConfig>::new("Address")
-                        .with_element(|row, _, _| row.dmx_address.to_string().into_any_element())
-                        .with_editor(TableCellEditor::new(
-                            "Edit Fixture Address",
-                            |window, cx| cx.new(|cx| address_field("address", window, cx).w_full()),
-                            |row: &mut rd::project::FixtureConfig, value, i, cx| {
-                                let Some(value) = value else { return };
-                                let channel_count = cx.engine().with_project(|project| {
-                                    row.fixture_kind
-                                        .dmx_mode(project)
-                                        .map(|dmx_mode| dmx_mode.max_channel_offset() + 1)
-                                        .unwrap_or(1)
-                                });
-                                row.dmx_address = value.increment_by(i * channel_count as usize);
-                            },
-                        )),
-                    TableColumn::<rd::project::FixtureConfig>::new("Kind")
-                        .with_element(|row, _, cx| {
-                            cx.engine().with_project(|project| {
-                                row.fixture_kind.display(project).into_any_element()
-                            })
-                        })
-                        .with_editor(
-                            TableCellEditor::new(
-                                "Edit Fixture Kind",
+        let table = cx.new(move |cx| {
+            Table::new("table", fixtures.clone(), window, cx)
+                .with_columns(
+                    vec![
+                        TableColumn::<rd::project::FixtureConfig>::new("Id")
+                            .with_element(|row, _, _| row.id.to_string().into_any_element())
+                            .with_editor(TableCellEditor::new(
+                                "Edit Fixture ID",
                                 |window, cx| {
-                                    cx.new(|cx| FixtureKindPicker::new("fixture_kind", window, cx))
+                                    cx.new(|cx| fixture_id_field("fid", window, cx).w_full())
                                 },
-                                |row: &mut rd::project::FixtureConfig, value, _, _| {
-                                    row.fixture_kind = value.clone();
+                                |row: &mut rd::project::FixtureConfig, value, i, _| {
+                                    let Some(value) = value else { return };
+                                    row.id = value.increment_by(i)
                                 },
-                            )
-                            .with_popup_size(PopupSize::Max),
-                        ),
-                ],
-                cx,
-            )
+                            )),
+                        TableColumn::<rd::project::FixtureConfig>::new("Name")
+                            .with_element(|row, _, _| row.name.to_string().into_any_element())
+                            .with_editor(TableCellEditor::new(
+                                "Edit Fixture Name",
+                                |window, cx| {
+                                    cx.new(|cx| Field::<String>::new("name", window, cx).w_full())
+                                },
+                                |row: &mut rd::project::FixtureConfig, value, i, _| {
+                                    let Some(value) = value else { return };
+                                    row.name = value.increment_by(i)
+                                },
+                            )),
+                        TableColumn::<rd::project::FixtureConfig>::new("Address")
+                            .with_element(|row, _, _| {
+                                row.dmx_address.to_string().into_any_element()
+                            })
+                            .with_editor(TableCellEditor::new(
+                                "Edit Fixture Address",
+                                |window, cx| {
+                                    cx.new(|cx| address_field("address", window, cx).w_full())
+                                },
+                                |row: &mut rd::project::FixtureConfig, value, i, cx| {
+                                    let Some(value) = value else { return };
+                                    let channel_count = cx.engine().with_project(|project| {
+                                        row.fixture_kind
+                                            .dmx_mode(project)
+                                            .map(|dmx_mode| dmx_mode.max_channel_offset() + 1)
+                                            .unwrap_or(1)
+                                    });
+                                    row.dmx_address =
+                                        value.increment_by(i * channel_count as usize);
+                                },
+                            )),
+                        TableColumn::<rd::project::FixtureConfig>::new("Kind")
+                            .with_element(|row, _, cx| {
+                                cx.engine().with_project(|project| {
+                                    row.fixture_kind.display(project).into_any_element()
+                                })
+                            })
+                            .with_editor(
+                                TableCellEditor::new(
+                                    "Edit Fixture Kind",
+                                    |window, cx| {
+                                        cx.new(|cx| {
+                                            FixtureKindPicker::new("fixture_kind", window, cx)
+                                        })
+                                    },
+                                    |row: &mut rd::project::FixtureConfig, value, _, _| {
+                                        row.fixture_kind = value.clone();
+                                    },
+                                )
+                                .with_popup_size(PopupSize::Max),
+                            ),
+                    ],
+                    cx,
+                )
+                .with_on_delete(cx, move |row_ixs, _, _, cx| {
+                    fixtures.update(cx, |fixtures, cx| {
+                        for ix in row_ixs.iter().rev() {
+                            fixtures.remove(*ix);
+                        }
+                        cx.notify();
+                    });
+                })
         });
 
         Self { table }

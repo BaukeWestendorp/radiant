@@ -40,20 +40,31 @@ impl MidiTabView {
         .detach();
 
         let table = cx.new(|cx| {
-            Table::new("midi-triggers", mappings.clone(), window, cx).with_columns(
-                vec![
-                    TableColumn::<rd::project::MidiMapping>::new("Device Name")
-                        .with_element(|row, _, _| row.device_name.to_string().into_any_element()),
-                    TableColumn::<rd::project::MidiMapping>::new("Device Channel").with_element(
-                        |row, _, _| row.device_channel.to_string().into_any_element(),
-                    ),
-                    TableColumn::<rd::project::MidiMapping>::new("Filter")
-                        .with_element(|row, _, _| row.filter.to_string().into_any_element()),
-                    TableColumn::<rd::project::MidiMapping>::new("Target")
-                        .with_element(|row, _, _| row.target.to_string().into_any_element()),
-                ],
-                cx,
-            )
+            Table::new("midi-triggers", mappings.clone(), window, cx)
+                .with_columns(
+                    vec![
+                        TableColumn::<rd::project::MidiMapping>::new("Device Name").with_element(
+                            |row, _, _| row.device_name.to_string().into_any_element(),
+                        ),
+                        TableColumn::<rd::project::MidiMapping>::new("Device Channel")
+                            .with_element(|row, _, _| {
+                                row.device_channel.to_string().into_any_element()
+                            }),
+                        TableColumn::<rd::project::MidiMapping>::new("Filter")
+                            .with_element(|row, _, _| row.filter.to_string().into_any_element()),
+                        TableColumn::<rd::project::MidiMapping>::new("Target")
+                            .with_element(|row, _, _| row.target.to_string().into_any_element()),
+                    ],
+                    cx,
+                )
+                .with_on_delete(cx, move |row_ixs, _, _, cx| {
+                    mappings.update(cx, |mappings, cx| {
+                        for ix in row_ixs.iter().rev() {
+                            mappings.remove(*ix);
+                        }
+                        cx.notify();
+                    });
+                })
         });
 
         Self { table }

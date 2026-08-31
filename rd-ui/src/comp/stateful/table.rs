@@ -9,8 +9,8 @@ use crate::{
     ActiveTheme, Emphasis, InputPopup, PopupAppExt, PopupSize, StyledExt, StyledParentExt,
     StyledStatefulInteractiveElementExt,
     comp::{
-        Button, ButtonVariant, FocusableComponent, INPUT_SIZE, IconVariant, Identifiable, Labelled,
-        stateful,
+        Button, ButtonVariant, Disableable, FocusableComponent, INPUT_SIZE, IconVariant,
+        Identifiable, Labelled, stateful,
     },
     h_flex, root, v_flex,
 };
@@ -415,6 +415,7 @@ impl<Row: 'static> Table<Row> {
                     .when(self.state.read(cx).is_editable(), |e| {
                         e.child(
                             Button::new("edit-row", window, cx)
+                                .with_disabled(self.selection(cx).rows().is_empty(), cx)
                                 .with_action(root::action::Edit)
                                 .with_label("Edit")
                                 .with_variant(ButtonVariant::Secondary)
@@ -424,6 +425,7 @@ impl<Row: 'static> Table<Row> {
                     .when(self.state.read(cx).on_delete.is_some(), |e| {
                         e.child(
                             Button::new("delete-row", window, cx)
+                                .with_disabled(self.selection(cx).rows().is_empty(), cx)
                                 .with_action(root::action::Delete)
                                 .with_label("Delete")
                                 .with_variant(ButtonVariant::Danger)
@@ -478,12 +480,17 @@ impl<Row: 'static> Render for Table<Row> {
                 });
             }))
             .on_action::<crate::root::action::Delete>(cx.listener(move |this, _, window, cx| {
-                this.delete_selection(window, cx);
+                if !this.selection(cx).rows().is_empty() {
+                    this.delete_selection(window, cx);
+                    this.clear_selection(cx);
+                }
                 cx.notify();
             }))
             .on_action::<crate::root::action::Edit>(cx.listener(move |this, _, window, cx| {
-                this.edit_selection(window, cx);
-                cx.notify();
+                if !this.selection(cx).rows().is_empty() {
+                    this.edit_selection(window, cx);
+                    cx.notify();
+                }
             }))
             .on_action::<action::PrevRow>(cx.listener(move |this, _, _, cx| {
                 this.select_prev_row(false, cx);

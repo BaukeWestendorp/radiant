@@ -43,47 +43,54 @@ impl ArtnetOutputTabView {
         .detach();
 
         let table = cx.new(|cx| {
-            Table::new("artnet-output-instances", instances.clone(), window, cx).with_columns(
-                vec![
-                    TableColumn::<rd::project::ArtnetOutputInstanceConfig>::new("Name")
-                        .with_element(|row, _, _| row.name.to_string().into_any_element())
-                        .with_editor(TableCellEditor::new(
-                            "Edit Instance Name",
-                            |window, cx| {
-                                cx.new(|cx| Field::<String>::new("name", window, cx).w_full())
-                            },
-                            |row: &mut rd::project::ArtnetOutputInstanceConfig, value, i, _| {
-                                let Some(value) = value else { return };
-                                let base_name = value.clone().trim().to_string();
-                                row.name = if i == 0 {
-                                    base_name
-                                } else {
-                                    format!("{} {}", base_name, i + 1)
-                                };
-                            },
-                        )),
-                    TableColumn::<rd::project::ArtnetOutputInstanceConfig>::new("Port Address")
-                        .with_element(|row, _, _| row.port_address.to_string().into_any_element())
-                        .with_editor(TableCellEditor::new(
-                            "Edit Port Address",
-                            |window, cx| {
-                                cx.new(|cx| port_address_field("port_address", window, cx).w_full())
-                            },
-                            |row: &mut rd::project::ArtnetOutputInstanceConfig, value, i, _| {
-                                let Some(value) = value else { return };
-                                let base_address = value.clone();
-                                if i == 0 {
-                                    row.port_address = base_address
-                                } else {
-                                    if let Ok(new_address) = PortAddress::from_absolute(
-                                        base_address.as_u16() + (i as u16),
-                                    ) {
-                                        row.port_address = new_address;
-                                    }
-                                };
-                            },
-                        )),
-                    TableColumn::<rd::project::ArtnetOutputInstanceConfig>::new("Local Universe")
+            Table::new("artnet-output-instances", instances.clone(), window, cx)
+                .with_columns(
+                    vec![
+                        TableColumn::<rd::project::ArtnetOutputInstanceConfig>::new("Name")
+                            .with_element(|row, _, _| row.name.to_string().into_any_element())
+                            .with_editor(TableCellEditor::new(
+                                "Edit Instance Name",
+                                |window, cx| {
+                                    cx.new(|cx| Field::<String>::new("name", window, cx).w_full())
+                                },
+                                |row: &mut rd::project::ArtnetOutputInstanceConfig, value, i, _| {
+                                    let Some(value) = value else { return };
+                                    let base_name = value.clone().trim().to_string();
+                                    row.name = if i == 0 {
+                                        base_name
+                                    } else {
+                                        format!("{} {}", base_name, i + 1)
+                                    };
+                                },
+                            )),
+                        TableColumn::<rd::project::ArtnetOutputInstanceConfig>::new("Port Address")
+                            .with_element(|row, _, _| {
+                                row.port_address.to_string().into_any_element()
+                            })
+                            .with_editor(TableCellEditor::new(
+                                "Edit Port Address",
+                                |window, cx| {
+                                    cx.new(|cx| {
+                                        port_address_field("port_address", window, cx).w_full()
+                                    })
+                                },
+                                |row: &mut rd::project::ArtnetOutputInstanceConfig, value, i, _| {
+                                    let Some(value) = value else { return };
+                                    let base_address = value.clone();
+                                    if i == 0 {
+                                        row.port_address = base_address
+                                    } else {
+                                        if let Ok(new_address) = PortAddress::from_absolute(
+                                            base_address.as_u16() + (i as u16),
+                                        ) {
+                                            row.port_address = new_address;
+                                        }
+                                    };
+                                },
+                            )),
+                        TableColumn::<rd::project::ArtnetOutputInstanceConfig>::new(
+                            "Local Universe",
+                        )
                         .with_element(|row, _, _| row.local_universe.to_string().into_any_element())
                         .with_editor(TableCellEditor::new(
                             "Edit Local Universe",
@@ -104,9 +111,17 @@ impl ArtnetOutputTabView {
                                 };
                             },
                         )),
-                ],
-                cx,
-            )
+                    ],
+                    cx,
+                )
+                .with_on_delete(cx, move |row_ixs, _, _, cx| {
+                    instances.update(cx, |instances, cx| {
+                        for ix in row_ixs.iter().rev() {
+                            instances.remove(*ix);
+                        }
+                        cx.notify();
+                    });
+                })
         });
 
         Self { table }
