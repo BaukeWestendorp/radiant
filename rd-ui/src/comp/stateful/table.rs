@@ -10,7 +10,8 @@ use crate::{
     StyledStatefulInteractiveElementExt,
     comp::{
         Button, ButtonVariant, Disableable, FocusableComponent, INPUT_SIZE, IconVariant,
-        Identifiable, Labelled, stateful,
+        Identifiable, Labelled,
+        stateful::{self, Submittable},
     },
     h_flex, root, v_flex,
 };
@@ -96,7 +97,7 @@ impl<Row: 'static> Table<Row> {
 
     pub fn set_on_delete<F>(&mut self, cx: &mut Context<Self>, on_delete: F)
     where
-        F: Fn(&[usize], usize, &mut Window, &mut App) + 'static,
+        F: Fn(&mut Self, &mut Window, &mut App) + 'static,
     {
         self.state.update(cx, |state, _cx| {
             state.on_delete = Some(Box::new(on_delete));
@@ -105,7 +106,7 @@ impl<Row: 'static> Table<Row> {
 
     pub fn with_on_delete<F>(mut self, cx: &mut Context<Self>, on_delete: F) -> Self
     where
-        F: Fn(&[usize], usize, &mut Window, &mut App) + 'static,
+        F: Fn(&mut Self, &mut Window, &mut App) + 'static,
     {
         self.set_on_delete(cx, on_delete);
         self
@@ -113,7 +114,7 @@ impl<Row: 'static> Table<Row> {
 
     pub fn set_on_edit<F>(&mut self, cx: &mut Context<Self>, on_edit: F)
     where
-        F: Fn(&[usize], usize, FocusHandle, &mut Window, &mut App) + 'static,
+        F: Fn(&mut Self, FocusHandle, &mut Window, &mut App) + 'static,
     {
         self.state.update(cx, |state, _cx| {
             state.on_edit = Some(Box::new(on_edit));
@@ -122,9 +123,26 @@ impl<Row: 'static> Table<Row> {
 
     pub fn with_on_edit<F>(mut self, cx: &mut Context<Self>, on_edit: F) -> Self
     where
-        F: Fn(&[usize], usize, FocusHandle, &mut Window, &mut App) + 'static,
+        F: Fn(&mut Self, FocusHandle, &mut Window, &mut App) + 'static,
     {
         self.set_on_edit(cx, on_edit);
+        self
+    }
+
+    pub fn set_on_add<F>(&mut self, cx: &mut Context<Self>, on_add: F)
+    where
+        F: Fn(&mut Self, &mut Window, &mut App) + 'static,
+    {
+        self.state.update(cx, |state, _cx| {
+            state.on_add = Some(Box::new(on_add));
+        });
+    }
+
+    pub fn with_on_add<F>(mut self, cx: &mut Context<Self>, on_add: F) -> Self
+    where
+        F: Fn(&mut Self, &mut Window, &mut App) + 'static,
+    {
+        self.set_on_add(cx, on_add);
         self
     }
 
@@ -203,12 +221,9 @@ impl<Row: 'static> Table<Row> {
 
     pub fn delete_selection(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let mut on_delete_cb = self.state.update(cx, |state, _cx| state.on_delete.take());
-        let (rows, column) = self
-            .state
-            .update(cx, |state, _cx| (state.selection.rows().to_vec(), state.selection.column));
 
         if let Some(on_delete) = &on_delete_cb {
-            on_delete(&rows, column, window, cx);
+            on_delete(self, window, cx);
         }
 
         if let Some(cb) = on_delete_cb.take() {
@@ -230,7 +245,7 @@ impl<Row: 'static> Table<Row> {
         });
 
         if let Some(on_edit) = &on_edit {
-            on_edit(&rows, column, focus_handle.clone(), window, cx);
+            on_edit(self, focus_handle.clone(), window, cx);
         }
 
         if let Some(cb) = on_edit.take() {
@@ -251,6 +266,18 @@ impl<Row: 'static> Table<Row> {
                     col.on_edit = Some(cb);
                 }
             });
+        }
+    }
+
+    pub fn add(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let mut on_add = self.state.update(cx, |state, _cx| state.on_add.take());
+
+        if let Some(on_add) = &on_add {
+            on_add(self, window, cx);
+        }
+
+        if let Some(cb) = on_add.take() {
+            self.state.update(cx, |state, _cx| state.on_add = Some(cb));
         }
     }
 
@@ -412,6 +439,15 @@ impl<Row: 'static> Table<Row> {
                     .h(crate::comp::INPUT_SIZE)
                     .gap_1()
                     .h_full()
+                    .when(self.state.read(cx).on_add.is_some(), |e| {
+                        e.child(
+                            Button::new("add-row", window, cx)
+                                .with_action(root::action::Add)
+                                .with_label("Add")
+                                .with_variant(ButtonVariant::Primary)
+                                .with_icon(IconVariant::Plus),
+                        )
+                    })
                     .when(self.state.read(cx).is_editable(), |e| {
                         e.child(
                             Button::new("edit-row", window, cx)
@@ -492,6 +528,10 @@ impl<Row: 'static> Render for Table<Row> {
                     cx.notify();
                 }
             }))
+            .on_action::<crate::root::action::Add>(cx.listener(move |this, _, window, cx| {
+                this.add(window, cx);
+                cx.notify();
+            }))
             .on_action::<action::PrevRow>(cx.listener(move |this, _, _, cx| {
                 this.select_prev_row(false, cx);
                 cx.notify();
@@ -529,8 +569,9 @@ struct TableState<Row> {
     columns: Vec<TableColumn<Row>>,
     selection: TableSelection,
 
-    on_delete: Option<Box<dyn Fn(&[usize], usize, &mut Window, &mut App) + 'static>>,
-    on_edit: Option<Box<dyn Fn(&[usize], usize, FocusHandle, &mut Window, &mut App) + 'static>>,
+    on_delete: Option<Box<dyn Fn(&mut Table<Row>, &mut Window, &mut App) + 'static>>,
+    on_edit: Option<Box<dyn Fn(&mut Table<Row>, FocusHandle, &mut Window, &mut App) + 'static>>,
+    on_add: Option<Box<dyn Fn(&mut Table<Row>, &mut Window, &mut App) + 'static>>,
 }
 
 impl<Row> TableState<Row> {
@@ -545,6 +586,7 @@ impl<Row> TableState<Row> {
 
             on_delete: None,
             on_edit: None,
+            on_add: None,
         }
     }
 
@@ -567,11 +609,7 @@ impl<Row, V, Input, CreateField, Apply> TableCellEditor<Row, V, Input, CreateFie
 where
     Row: 'static,
     V: Clone + 'static,
-    Input: Render
-        + Focusable
-        + EventEmitter<stateful::event::Submit<V>>
-        + EventEmitter<stateful::event::Change<V>>
-        + 'static,
+    Input: Render + Focusable + Submittable<V> + EventEmitter<stateful::event::Change<V>> + 'static,
     CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
     Apply: Fn(&mut Row, &V, usize, &mut App) + 'static,
 {
@@ -613,25 +651,25 @@ where
             let field = create_field(window, cx);
             let apply = Rc::clone(&apply);
 
-            let popup = InputPopup::new(field, window, cx);
-
-            let popup = popup.with_on_submit(window, cx, move |value, window, cx| {
-                rows.update(cx, |rows, cx| {
-                    // FIXME: This should be sorted by visual order.
-                    for (i, row_ix) in row_ixs.iter().enumerate() {
-                        if let Some(row) = rows.get_mut(*row_ix) {
-                            apply(row, value, i, cx);
+            let popup = InputPopup::new(field, window, cx).with_on_submit(
+                window,
+                cx,
+                move |value, _, cx| {
+                    rows.update(cx, |rows, cx| {
+                        // FIXME: This should be sorted by visual order.
+                        for (i, row_ix) in row_ixs.iter().enumerate() {
+                            if let Some(row) = rows.get_mut(*row_ix) {
+                                apply(row, value, i, cx);
+                            }
                         }
-                    }
-                    cx.notify();
-                });
-
-                cx.dismiss_popup(window);
-            });
+                        cx.notify();
+                    });
+                },
+            );
 
             let popup = cx.new(move |_| popup);
 
-            cx.set_popup(&popup_title, popup, popup_size, Some(table_focus_handle));
+            cx.push_popup(&popup_title, popup, popup_size, Some(table_focus_handle));
         })
     }
 }
@@ -705,7 +743,7 @@ impl<Row: 'static> TableColumn<Row> {
         V: Clone + 'static,
         Input: Render
             + Focusable
-            + EventEmitter<stateful::event::Submit<V>>
+            + Submittable<V>
             + EventEmitter<stateful::event::Change<V>>
             + 'static,
         CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
@@ -722,7 +760,7 @@ impl<Row: 'static> TableColumn<Row> {
         V: Clone + 'static,
         Input: Render
             + Focusable
-            + EventEmitter<stateful::event::Submit<V>>
+            + Submittable<V>
             + EventEmitter<stateful::event::Change<V>>
             + 'static,
         CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
@@ -740,7 +778,7 @@ impl<Row: 'static> TableColumn<Row> {
         V: Clone + 'static,
         Input: Render
             + Focusable
-            + EventEmitter<stateful::event::Submit<V>>
+            + Submittable<V>
             + EventEmitter<stateful::event::Change<V>>
             + 'static,
         CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,

@@ -76,6 +76,7 @@ impl Default for Keymap {
             KeymapBinding::new("root::OpenSettings", "secondary-,", "Root"),
             KeymapBinding::new("root::FocusNext", "tab", "Root"),
             KeymapBinding::new("root::FocusPrevious", "shift-tab", "Root"),
+            KeymapBinding::new("root::Add", "secondary-n", "Root"),
             KeymapBinding::new("root::Edit", "enter", "Root"),
             KeymapBinding::new("root::Delete", "delete", "Root"),
             KeymapBinding::new("root::Delete", "backspace", "Root"),

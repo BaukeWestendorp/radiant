@@ -7,7 +7,10 @@ use std::ops::Range;
 
 use crate::{
     ActiveTheme,
-    comp::{Disableable, FocusableComponent, Identifiable, stateful},
+    comp::{
+        Disableable, FocusableComponent, Identifiable,
+        stateful::{self, InputValue},
+    },
 };
 
 pub(crate) mod action {
@@ -113,7 +116,7 @@ impl TextInput {
         }
 
         self.text = text;
-        cx.emit(stateful::event::Change(self.text.clone()));
+        cx.emit(stateful::event::Change(InputValue::Valid(self.text.clone())));
         cx.notify();
     }
 

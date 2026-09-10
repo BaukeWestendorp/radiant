@@ -57,8 +57,9 @@ impl MidiTabView {
                     ],
                     cx,
                 )
-                .with_on_delete(cx, move |row_ixs, _, _, cx| {
+                .with_on_delete(cx, move |table, _, cx| {
                     mappings.update(cx, |mappings, cx| {
+                        let row_ixs = table.selection(cx).rows();
                         for ix in row_ixs.iter().rev() {
                             mappings.remove(*ix);
                         }

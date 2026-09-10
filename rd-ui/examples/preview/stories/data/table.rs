@@ -38,10 +38,12 @@ impl TablePreview {
                         cx,
                     )
                     .with_selection(TableSelection::new(TableSelectionMode::Multiple), cx)
-                    .with_on_delete(cx, |row_ixs, _, _, _| {
+                    .with_on_delete(cx, |table, _, cx| {
+                        let row_ixs = table.selection(cx).rows();
                         log::info!("Delete rows: {:?}", row_ixs);
                     })
-                    .with_on_edit(cx, |row_ixs, _, _, _, _| {
+                    .with_on_edit(cx, |table, _, _, cx| {
+                        let row_ixs = table.selection(cx).rows();
                         log::info!("Edit rows: {:?}", row_ixs);
                     })
             }),

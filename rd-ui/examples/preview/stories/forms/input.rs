@@ -1,6 +1,9 @@
 use gpui::SharedString;
 use rd_ui::{
-    comp::{Disableable, Label, Labelled, stateful::Field},
+    comp::{
+        Disableable, Label, Labelled,
+        stateful::{Field, InputValue},
+    },
     gpui::{Entity, Window, prelude::*},
     v_flex,
 };
@@ -50,9 +53,9 @@ impl InputPreview {
                     cx,
                     |text| {
                         if text.starts_with("custom:") {
-                            Some(CustomValue(text[7..].to_string()))
+                            InputValue::Valid(CustomValue(text[7..].to_string()))
                         } else {
-                            None
+                            InputValue::Invalid
                         }
                     },
                     |value: &CustomValue| format!("custom:{}", value.0).into(),

@@ -1,7 +1,7 @@
 use rd_ui::{
     Emphasis, StyledExt, c_flex,
-    comp::stateful::{Checkbox, Field, Form, FormInput, KeyPath, Picker, PickerItem},
-    gpui::{Entity, SharedString, Window, div, prelude::*},
+    comp::stateful::{Checkbox, Field, Form, FormInput, InputValue, KeyPath, Picker, PickerItem},
+    gpui::{Entity, Window, div, prelude::*},
 };
 
 pub struct FormPreview {
@@ -21,9 +21,9 @@ impl FormPreview {
             form.add_input(
                 FormInput::new(
                     cx.new(|cx| Field::new("name", window, cx)),
-                    KeyPath::<FormData, _>::new(
-                        |d| Some(d.name.clone().into()),
-                        |d, val: Option<SharedString>| d.name = val.unwrap_or_default().to_string(),
+                    KeyPath::new(
+                        |d: &FormData| InputValue::Valid(d.name.clone()),
+                        |d: &mut FormData, val: String| d.name = val,
                     ),
                     cx,
                 ),
@@ -45,7 +45,7 @@ impl FormPreview {
                         )
                     }),
                     KeyPath::new(
-                        |d: &FormData| d.color.clone(),
+                        |d: &FormData| InputValue::Valid(d.color.clone()),
                         |d: &mut FormData, val: Option<Color>| d.color = val,
                     ),
                     cx,
@@ -56,7 +56,10 @@ impl FormPreview {
             form.add_input(
                 FormInput::new(
                     cx.new(|cx| Checkbox::new("tos", window, cx)),
-                    KeyPath::new(|d: &FormData| d.tos, |d: &mut FormData, val: bool| d.tos = val),
+                    KeyPath::new(
+                        |d: &FormData| InputValue::Valid(d.tos),
+                        |d: &mut FormData, val: bool| d.tos = val,
+                    ),
                     cx,
                 ),
                 cx,

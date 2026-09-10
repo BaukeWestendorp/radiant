@@ -1,12 +1,18 @@
 use std::sync::Arc;
 
-use gpui::{AnyView, App, Entity, EventEmitter, Window, prelude::*};
+use gpui::{AnyView, App, Entity, EventEmitter, SharedString, Window, prelude::*};
 
-use crate::{comp::stateful, v_flex};
+use crate::{
+    comp::{
+        Icon, IconSize, IconVariant, Labelled,
+        stateful::{self, InputValue},
+    },
+    h_flex, v_flex,
+};
 
 pub struct Form<Data> {
     data: Entity<Data>,
-    inputs: Vec<FormInput<Data>>,
+    inputs: Vec<Entity<FormInput<Data>>>,
 }
 
 impl<Data: 'static> Form<Data> {
@@ -20,7 +26,7 @@ impl<Data: 'static> Form<Data> {
 
     pub fn add_input(&mut self, input: FormInput<Data>, cx: &mut App) {
         (input.push_to_view)(self.data.clone(), cx);
-        self.inputs.push(input);
+        self.inputs.push(cx.new(|_| input));
     }
 
     pub fn with_input(mut self, input: FormInput<Data>, cx: &mut App) -> Self {
@@ -31,12 +37,14 @@ impl<Data: 'static> Form<Data> {
 
 impl<Data: 'static> Render for Form<Data> {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        v_flex().size_full().gap_2().children(self.inputs.iter().map(|input| input.view.clone()))
+        v_flex().size_full().gap_2().children(self.inputs.iter().map(|input| input.clone()))
     }
 }
 
 pub struct FormInput<Data> {
     pub view: AnyView,
+    pub label: Option<SharedString>,
+    pub icon: Option<IconVariant>,
     pub push_to_view: Box<dyn Fn(Entity<Data>, &mut App)>,
     _data: std::marker::PhantomData<Data>,
 }
@@ -55,7 +63,7 @@ impl<Data: 'static> FormInput<Data> {
             let key_path = key_path.clone();
             move |form, view, _: &stateful::event::Submit<V>, cx| {
                 form.data.update(cx, |data, cx| {
-                    let new_value = view.read(cx).get_value(cx);
+                    let InputValue::Valid(new_value) = view.read(cx).value(cx) else { return };
                     (key_path.setter)(data, new_value);
                     cx.notify();
                 })
@@ -63,12 +71,16 @@ impl<Data: 'static> FormInput<Data> {
         })
         .detach();
 
+        // TODO: Update form.data on Change event if possible.
+
         // FIXME: Oefff
         let push_to_view = Box::new({
             let view = view.clone();
             let key_path = key_path.clone();
             move |data: Entity<Data>, cx: &mut App| {
-                let initial_value = (key_path.getter)(data.read(cx));
+                let InputValue::Valid(initial_value) = (key_path.getter)(data.read(cx)) else {
+                    return;
+                };
                 view.update(cx, |this, cx| {
                     this.set_value(initial_value, cx);
                     cx.notify();
@@ -76,12 +88,48 @@ impl<Data: 'static> FormInput<Data> {
             }
         }) as Box<dyn Fn(Entity<Data>, &mut App)>;
 
-        Self { view: view.into(), push_to_view, _data: std::marker::PhantomData }
+        Self {
+            view: view.into(),
+            label: None,
+            icon: None,
+            push_to_view,
+            _data: std::marker::PhantomData,
+        }
+    }
+}
+
+impl<Data: 'static> Render for FormInput<Data> {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        h_flex()
+            .gap_2()
+            .justify_between()
+            .w_full()
+            .when_some(self.icon, |e, icon| e.child(Icon::new(icon, IconSize::Small)))
+            .when_some(self.label.as_ref(), |e, label| e.child(label.clone().into_element()))
+            .child(self.view.clone())
+    }
+}
+
+impl<Data: 'static> Labelled for FormInput<Data> {
+    fn label(&self) -> Option<&SharedString> {
+        self.label.as_ref()
+    }
+
+    fn set_label(&mut self, label: impl Into<Option<SharedString>>) {
+        self.label = label.into();
+    }
+
+    fn icon(&self) -> Option<IconVariant> {
+        self.icon
+    }
+
+    fn set_icon(&mut self, icon: impl Into<Option<IconVariant>>) {
+        self.icon = icon.into();
     }
 }
 
 pub struct KeyPath<Data, V> {
-    pub getter: Arc<dyn Fn(&Data) -> V>,
+    pub getter: Arc<dyn Fn(&Data) -> InputValue<V>>,
     pub setter: Arc<dyn Fn(&mut Data, V)>,
 }
 
@@ -93,7 +141,7 @@ impl<Data, V> Clone for KeyPath<Data, V> {
 
 impl<Data, V> KeyPath<Data, V> {
     pub fn new(
-        getter: impl Fn(&Data) -> V + 'static,
+        getter: impl Fn(&Data) -> InputValue<V> + 'static,
         setter: impl Fn(&mut Data, V) + 'static,
     ) -> Self {
         Self { getter: Arc::new(getter), setter: Arc::new(setter) }
@@ -101,6 +149,6 @@ impl<Data, V> KeyPath<Data, V> {
 }
 
 pub trait FormWidget<V: 'static>: EventEmitter<stateful::event::Submit<V>> + Sized {
-    fn get_value(&self, cx: &App) -> V;
+    fn value(&self, cx: &App) -> InputValue<V>;
     fn set_value(&mut self, value: V, cx: &mut Context<Self>);
 }

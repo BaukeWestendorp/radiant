@@ -1,11 +1,14 @@
 use rd_ui::{
-    Emphasis, PopupSize, StyledExt,
+    Emphasis, InputPopup, PopupAppExt, PopupSize, StyledExt,
     comp::stateful::{Field, Table, TableCellEditor, TableColumn},
-    gpui::{Entity, Window, div, prelude::*},
+    gpui::{Entity, Focusable, Window, div, prelude::*},
 };
 
 use crate::{
-    comp::stateful::{FixtureKindPicker, address_field, fixture_id_field},
+    comp::stateful::{
+        FixtureConfigEditor, FixtureKindPicker, PartialFixtureConfig, address_field,
+        fixture_id_field,
+    },
     engine::EngineAppExt,
     util::Incrementable,
 };
@@ -58,7 +61,6 @@ impl PatchTabView {
                                     cx.new(|cx| fixture_id_field("fid", window, cx).w_full())
                                 },
                                 |row: &mut rd::project::FixtureConfig, value, i, _| {
-                                    let Some(value) = value else { return };
                                     row.id = value.increment_by(i)
                                 },
                             )),
@@ -67,10 +69,13 @@ impl PatchTabView {
                             .with_editor(TableCellEditor::new(
                                 "Edit Fixture Name",
                                 |window, cx| {
-                                    cx.new(|cx| Field::<String>::new("name", window, cx).w_full())
+                                    cx.new(|cx| {
+                                        Field::<String>::new("name", window, cx)
+                                            .with_placeholder("Fixture 1", cx)
+                                            .w_full()
+                                    })
                                 },
                                 |row: &mut rd::project::FixtureConfig, value, i, _| {
-                                    let Some(value) = value else { return };
                                     row.name = value.increment_by(i)
                                 },
                             )),
@@ -84,7 +89,6 @@ impl PatchTabView {
                                     cx.new(|cx| address_field("address", window, cx).w_full())
                                 },
                                 |row: &mut rd::project::FixtureConfig, value, i, cx| {
-                                    let Some(value) = value else { return };
                                     let channel_count = cx.engine().with_project(|project| {
                                         row.fixture_kind
                                             .dmx_mode(project)
@@ -118,13 +122,36 @@ impl PatchTabView {
                     ],
                     cx,
                 )
-                .with_on_delete(cx, move |row_ixs, _, _, cx| {
+                .with_on_delete(cx, move |table, _, cx| {
                     fixtures.update(cx, |fixtures, cx| {
+                        let row_ixs = table.selection(cx).rows();
                         for ix in row_ixs.iter().rev() {
                             fixtures.remove(*ix);
                         }
                         cx.notify();
                     });
+                })
+                .with_on_add(cx, move |table, window, cx| {
+                    let input = cx.new(|cx| {
+                        InputPopup::new(
+                            cx.new(|cx| {
+                                FixtureConfigEditor::new(
+                                    PartialFixtureConfig::default(),
+                                    window,
+                                    cx,
+                                )
+                            }),
+                            window,
+                            cx,
+                        )
+                    });
+
+                    cx.push_popup(
+                        "Add Fixture",
+                        input,
+                        PopupSize::Auto,
+                        Some(table.focus_handle(cx)),
+                    );
                 })
         });
 

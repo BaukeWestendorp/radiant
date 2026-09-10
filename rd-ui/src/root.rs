@@ -10,7 +10,7 @@ pub(crate) mod action {
 
     gpui::actions!(
         root,
-        [FocusNext, FocusPrevious, OpenSettings, Edit, Delete, SelectionAll, SelectionClear]
+        [FocusNext, FocusPrevious, OpenSettings, Add, Edit, Delete, SelectionAll, SelectionClear]
     );
 }
 

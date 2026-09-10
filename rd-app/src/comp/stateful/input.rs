@@ -2,12 +2,19 @@ use rd::project::FixtureKind;
 use rd_artnet::PortAddress;
 use rd_rigger::gdtf::{FixtureTypeId, Name};
 use rd_ui::{
-    ActiveTheme, Emphasis, StyledExt, StyledParentExt, c_flex,
+    ActiveTheme, Emphasis, InputPopup, PopupAppExt, PopupSize, StyledExt, StyledParentExt,
+    StyledStatefulInteractiveElementExt, c_flex,
     comp::{
-        FocusableComponent,
-        stateful::{self, Field, Table, TableColumn, TableSelection, TableSelectionMode},
+        Disableable, FocusableComponent, Icon, IconSize, IconVariant, Identifiable, Labelled,
+        stateful::{
+            self, Field, Form, FormInput, FormWidget, InputValue, KeyPath, Submittable, Table,
+            TableColumn, TableSelection, TableSelectionMode,
+        },
     },
-    gpui::{App, ElementId, Entity, EventEmitter, FocusHandle, Focusable, Window, div, prelude::*},
+    gpui::{
+        App, Div, ElementId, Entity, EventEmitter, FocusHandle, Focusable, StyleRefinement, Window,
+        div, prelude::*,
+    },
     h_flex, v_flex,
 };
 use std::str::FromStr as _;
@@ -21,10 +28,17 @@ pub fn fixture_id_field(
     window: &mut Window,
     cx: &mut Context<Field<u32>>,
 ) -> Field<u32> {
-    Field::custom(id, window, cx, |s| u32::from_str_radix(s, 10).ok(), |v| v.to_string().into())
-        .with_text_validator(cx, |s| s.is_empty() || u32::from_str_radix(s, 10).is_ok())
-        .with_validator(cx, |v| *v > 0)
-        .with_submit_validator(cx, |v| *v > 0)
+    Field::custom(
+        id,
+        window,
+        cx,
+        |s| u32::from_str_radix(s, 10).ok().into(),
+        |v| v.to_string().into(),
+    )
+    .with_placeholder("101", cx)
+    .with_text_validator(cx, |s| s.is_empty() || u32::from_str_radix(s, 10).is_ok())
+    .with_validator(cx, |v| *v > 0)
+    .with_submit_validator(cx, |v| *v > 0)
 }
 
 pub fn address_field(
@@ -32,32 +46,39 @@ pub fn address_field(
     window: &mut Window,
     cx: &mut Context<Field<rd_dmx::Address>>,
 ) -> Field<rd_dmx::Address> {
-    Field::custom(id, window, cx, |s| rd_dmx::Address::from_str(s).ok(), |v| v.to_string().into())
-        .with_text_validator(cx, |s| {
-            if s.is_empty() {
-                return true;
-            }
+    Field::custom(
+        id,
+        window,
+        cx,
+        |s| rd_dmx::Address::from_str(s).ok().into(),
+        |v| v.to_string().into(),
+    )
+    .with_placeholder("1.1", cx)
+    .with_text_validator(cx, |s| {
+        if s.is_empty() {
+            return true;
+        }
 
-            if s.starts_with('.') {
+        if s.starts_with('.') {
+            return false;
+        }
+
+        let mut parts = s.split('.');
+
+        let universe_str = parts.next().unwrap_or("");
+        if rd_dmx::UniverseId::from_str(universe_str).is_err() {
+            return false;
+        }
+
+        if let Some(channel_str) = parts.next() {
+            if !channel_str.is_empty() && rd_dmx::Channel::from_str(channel_str).is_err() {
                 return false;
             }
+        }
 
-            let mut parts = s.split('.');
-
-            let universe_str = parts.next().unwrap_or("");
-            if rd_dmx::UniverseId::from_str(universe_str).is_err() {
-                return false;
-            }
-
-            if let Some(channel_str) = parts.next() {
-                if !channel_str.is_empty() && rd_dmx::Channel::from_str(channel_str).is_err() {
-                    return false;
-                }
-            }
-
-            parts.next().is_none()
-        })
-        .with_submit_validator(cx, |_| true)
+        parts.next().is_none()
+    })
+    .with_submit_validator(cx, |_| true)
 }
 
 pub fn port_address_field(
@@ -69,9 +90,16 @@ pub fn port_address_field(
         id,
         window,
         cx,
-        |s| PortAddress::from_absolute(u16::from_str(s).ok()?).ok(),
+        |s| {
+            let Ok(v) = u16::from_str(s) else { return InputValue::Invalid };
+            let Ok(addr) = PortAddress::from_absolute(v) else {
+                return InputValue::Invalid;
+            };
+            InputValue::Valid(addr)
+        },
         |v| v.as_u16().to_string().into(),
     )
+    .with_placeholder("1", cx)
     .with_text_validator(cx, |s| s.is_empty() || u16::from_str(s).is_ok())
     .with_submit_validator(cx, |v| *v <= PortAddress::MAX)
     .with_placeholder("Absolute address", cx)
@@ -86,16 +114,25 @@ pub fn universe_id_field(
         id,
         window,
         cx,
-        |s| rd_dmx::UniverseId::from_str(s).ok(),
+        |s| {
+            let Ok(v) = u16::from_str(s) else { return InputValue::Invalid };
+            let Ok(universe_id) = rd_dmx::UniverseId::new(v) else {
+                return InputValue::Invalid;
+            };
+            InputValue::Valid(universe_id)
+        },
         |v| v.to_string().into(),
     )
+    .with_placeholder("1", cx)
     .with_text_validator(cx, |s| s.is_empty() || rd_dmx::UniverseId::from_str(s).is_ok())
     .with_submit_validator(cx, |_| true)
 }
-
 pub struct FixtureKindPicker {
     id: ElementId,
     focus_handle: FocusHandle,
+    style: StyleRefinement,
+    compact: bool,
+    disabled: bool,
 
     ftid_table: Entity<Table<FixtureTypeId>>,
     mode_table: Entity<Table<Name>>,
@@ -111,15 +148,17 @@ impl FixtureKindPicker {
         let mode = cx.new(|_| None::<Name>);
         let fixture_kind = cx.new(|_| None::<FixtureKind>);
 
-        cx.observe(&mode, {
-            move |this, mode, cx| {
+        cx.observe_in(&mode, window, {
+            move |this, mode, _window, cx| {
                 let Some(ftid) = this.ftid.read(cx) else {
                     this.fixture_kind.write(cx, None);
+                    cx.emit(stateful::event::Change::<FixtureKind>(InputValue::Invalid));
                     return;
                 };
 
                 let Some(mode) = mode.read(cx) else {
                     this.fixture_kind.write(cx, None);
+                    cx.emit(stateful::event::Change::<FixtureKind>(InputValue::Invalid));
                     return;
                 };
 
@@ -127,7 +166,8 @@ impl FixtureKindPicker {
                     FixtureKind { fixture_type_id: *ftid, dmx_mode: mode.to_string() };
                 this.fixture_kind.write(cx, Some(fixture_kind.clone()));
 
-                cx.emit(stateful::event::Submit::<FixtureKind>(fixture_kind));
+                cx.emit(stateful::event::Change::<FixtureKind>(InputValue::Valid(fixture_kind)));
+                cx.notify();
             }
         })
         .detach();
@@ -266,7 +306,10 @@ impl FixtureKindPicker {
 
         Self {
             id: id.into(),
-            focus_handle: cx.focus_handle(),
+            focus_handle: cx.focus_handle().tab_stop(true),
+            style: StyleRefinement::default(),
+            compact: false,
+            disabled: false,
             ftid_table,
             mode_table,
             ftid,
@@ -275,27 +318,24 @@ impl FixtureKindPicker {
         }
     }
 
-    pub fn ftid(&self) -> Entity<Option<FixtureTypeId>> {
-        self.ftid.clone()
+    pub fn compact(&self) -> bool {
+        self.compact
     }
 
-    pub fn mode(&self) -> Entity<Option<Name>> {
-        self.mode.clone()
+    pub fn set_compact(&mut self, compact: bool, cx: &mut Context<Self>) {
+        self.compact = compact;
+        cx.notify();
     }
 
-    pub fn fixture_kind(&self) -> Entity<Option<FixtureKind>> {
-        self.fixture_kind.clone()
+    pub fn with_compact(mut self, compact: bool, cx: &mut Context<Self>) -> Self {
+        self.set_compact(compact, cx);
+        self
     }
-}
 
-impl Render for FixtureKindPicker {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render_picker(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> Div {
         v_flex()
             .emphasis(Emphasis::Primary, cx)
             .p_2()
-            .id(self.id.clone())
-            .track_focus(&self.focus_handle)
-            .focus_ring(&self.focus_handle, window, cx)
             .gap_2()
             .size_full()
             .child(
@@ -335,7 +375,89 @@ impl Render for FixtureKindPicker {
                         .child("Select a fixture type and DMX mode to see its details")
                 },
             ))
-            .into_any_element()
+    }
+}
+
+impl Render for FixtureKindPicker {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        if self.compact() {
+            let selected_label = if let Some(fixture_kind) = self.fixture_kind.read(cx) {
+                cx.engine().with_project(|project| fixture_kind.display(project)).into_any_element()
+            } else {
+                "Select a Fixture Kind...".into_any_element()
+            };
+
+            div()
+                .id((self.id(cx).clone(), "preview"))
+                .when(!self.disabled(cx), |e| {
+                    e.track_focus(&self.focus_handle(cx)).focus_ring(
+                        &self.focus_handle(cx),
+                        window,
+                        cx,
+                    )
+                })
+                .h_flex()
+                .justify_between()
+                .gap_2()
+                .size_full()
+                .h(rd_ui::comp::INPUT_SIZE)
+                .px_1p5()
+                .py_0p5()
+                .min_w(rd_ui::comp::INPUT_SIZE * 2.0)
+                .w(rd_ui::comp::INPUT_SIZE * 6.0)
+                .when(self.disabled(cx), |e| e.disabled_emphasis_bordered(Emphasis::Secondary, cx))
+                .when(!self.disabled(cx), |e| {
+                    e.interactive_emphasis_bordered(Emphasis::Secondary, cx).on_click(cx.listener(
+                        |this, _, window, cx| {
+                            let input = cx.new(|cx| {
+                                FixtureKindPicker::new("fixture_kind", window, cx).size_full()
+                            });
+                            let fixture_kind = this.fixture_kind.clone();
+                            let popup = cx.new(|cx| {
+                                InputPopup::new(input, window, cx).with_on_submit(
+                                    window,
+                                    cx,
+                                    move |value, _, cx| {
+                                        fixture_kind.write(cx, Some(value.clone()));
+                                    },
+                                )
+                            });
+
+                            cx.push_popup(
+                                "Select Fixture Kind",
+                                popup,
+                                PopupSize::Max,
+                                Some(this.focus_handle.clone()),
+                            );
+
+                            cx.notify();
+                        },
+                    ))
+                })
+                .child(
+                    div()
+                        .w_full()
+                        .text_color(cx.theme().fg_primary)
+                        .when(self.fixture_kind.read(cx).is_none(), |e| {
+                            e.text_color(cx.theme().fg_secondary)
+                        })
+                        .overflow_x_hidden()
+                        .truncate()
+                        .text_ellipsis()
+                        .child(selected_label),
+                )
+                .child(Icon::new(IconVariant::ChevronDown, IconSize::ExtraSmall))
+                .refine_style(&self.style)
+                .into_any_element()
+        } else {
+            self.render_picker(window, cx).refine_style(&self.style).into_any_element()
+        }
+    }
+}
+
+impl Identifiable for FixtureKindPicker {
+    fn id<'a>(&'a self, _cx: &'a App) -> &'a ElementId {
+        &self.id
     }
 }
 
@@ -351,5 +473,172 @@ impl FocusableComponent for FixtureKindPicker {
     }
 }
 
+impl Disableable for FixtureKindPicker {
+    fn disabled(&self, _cx: &App) -> bool {
+        self.disabled
+    }
+
+    fn set_disabled(&mut self, disabled: bool, _cx: &mut App) {
+        self.disabled = disabled;
+    }
+}
+
+impl Styled for FixtureKindPicker {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
+impl FormWidget<FixtureKind> for FixtureKindPicker {
+    fn value(&self, cx: &App) -> InputValue<FixtureKind> {
+        self.fixture_kind.read(cx).clone().into()
+    }
+
+    fn set_value(&mut self, value: FixtureKind, cx: &mut Context<Self>) {
+        self.ftid.write(cx, Some(value.fixture_type_id));
+        self.mode.write(cx, Some(Name::new(value.dmx_mode)));
+    }
+}
+
 impl EventEmitter<stateful::event::Submit<FixtureKind>> for FixtureKindPicker {}
 impl EventEmitter<stateful::event::Change<FixtureKind>> for FixtureKindPicker {}
+
+impl Submittable<FixtureKind> for FixtureKindPicker {
+    fn value(&self, cx: &App) -> InputValue<FixtureKind> {
+        self.fixture_kind.read(cx).clone().into()
+    }
+}
+
+pub struct FixtureConfigEditor {
+    form: Entity<Form<PartialFixtureConfig>>,
+    focus_handle: FocusHandle,
+}
+
+impl FixtureConfigEditor {
+    pub fn new(partial: PartialFixtureConfig, window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let data = cx.new(|_| partial);
+        Self {
+            form: cx.new(|cx| {
+                Form::new(data, window, cx)
+                    .with_input(
+                        FormInput::new(
+                            cx.new(|cx| fixture_id_field("fixture_id", window, cx)),
+                            KeyPath::new(
+                                |d: &PartialFixtureConfig| d.id.into(),
+                                |d, value| d.id = Some(value),
+                            ),
+                            cx,
+                        )
+                        .with_label("Fixture ID"),
+                        cx,
+                    )
+                    .with_input(
+                        FormInput::new(
+                            cx.new(|cx| {
+                                Field::<String>::new("name", window, cx)
+                                    .with_placeholder("Fixture 1", cx)
+                            }),
+                            KeyPath::new(
+                                |d: &PartialFixtureConfig| InputValue::Valid(d.name.clone()),
+                                |d, value| d.name = value,
+                            ),
+                            cx,
+                        )
+                        .with_label("Name"),
+                        cx,
+                    )
+                    .with_input(
+                        FormInput::new(
+                            cx.new(|cx| address_field("dmx_address", window, cx)),
+                            KeyPath::new(
+                                |d: &PartialFixtureConfig| d.dmx_address.into(),
+                                |d, value| d.dmx_address = Some(value),
+                            ),
+                            cx,
+                        )
+                        .with_label("DMX Address"),
+                        cx,
+                    )
+                    .with_input(
+                        FormInput::new(
+                            cx.new(|cx| {
+                                FixtureKindPicker::new("fixture_kind", window, cx)
+                                    .with_compact(true, cx)
+                            }),
+                            KeyPath::new(
+                                |d: &PartialFixtureConfig| d.fixture_kind.clone().into(),
+                                |d, value| d.fixture_kind = Some(value),
+                            ),
+                            cx,
+                        )
+                        .with_label("Fixture Kind"),
+                        cx,
+                    )
+            }),
+            focus_handle: cx.focus_handle().tab_stop(true),
+        }
+    }
+}
+
+impl Render for FixtureConfigEditor {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        self.form.clone()
+    }
+}
+
+impl Focusable for FixtureConfigEditor {
+    fn focus_handle(&self, _cx: &App) -> FocusHandle {
+        self.focus_handle.clone()
+    }
+}
+
+impl FocusableComponent for FixtureConfigEditor {
+    fn set_focus_handle(&mut self, focus_handle: FocusHandle, _cx: &mut App) {
+        self.focus_handle = focus_handle;
+    }
+}
+
+impl FormWidget<rd::project::FixtureConfig> for FixtureConfigEditor {
+    fn value(&self, cx: &App) -> InputValue<rd::project::FixtureConfig> {
+        let partial = self.form.read(cx).data().read(cx);
+        let Some(id) = partial.id else { return InputValue::Invalid };
+        let name = partial.name.clone();
+        let Some(dmx_address) = partial.dmx_address else {
+            return InputValue::Invalid;
+        };
+        // FIMXE: FixtureConfig.fixture_kind should be renamed to `kind`.
+        let Some(fixture_kind) = partial.fixture_kind.clone() else {
+            return InputValue::Invalid;
+        };
+
+        InputValue::Valid(rd::project::FixtureConfig { id, name, dmx_address, fixture_kind })
+    }
+
+    fn set_value(&mut self, value: rd::project::FixtureConfig, cx: &mut Context<Self>) {
+        let partial = PartialFixtureConfig {
+            id: Some(value.id),
+            name: value.name,
+            dmx_address: Some(value.dmx_address),
+            fixture_kind: Some(value.fixture_kind),
+        };
+
+        self.form.read(cx).data().write(cx, partial);
+    }
+}
+
+impl EventEmitter<stateful::event::Submit<rd::project::FixtureConfig>> for FixtureConfigEditor {}
+impl EventEmitter<stateful::event::Change<rd::project::FixtureConfig>> for FixtureConfigEditor {}
+
+impl Submittable<rd::project::FixtureConfig> for FixtureConfigEditor {
+    fn value(&self, cx: &App) -> InputValue<rd::project::FixtureConfig> {
+        <Self as FormWidget<rd::project::FixtureConfig>>::value(self, cx)
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct PartialFixtureConfig {
+    pub id: Option<u32>,
+    pub name: String,
+    pub dmx_address: Option<rd_dmx::Address>,
+    pub fixture_kind: Option<FixtureKind>,
+}

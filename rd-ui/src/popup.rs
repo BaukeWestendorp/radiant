@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use gpui::{
     AnyView, App, Entity, EventEmitter, FocusHandle, Focusable, Global, ReadGlobal, SharedString,
     UpdateGlobal, Window, div, prelude::*,
@@ -5,7 +7,10 @@ use gpui::{
 
 use crate::{
     ActiveTheme, Emphasis, StyledExt, c_flex,
-    comp::{Button, ButtonVariant, IconVariant, Labelled, TITLE_BAR_HEIGHT, stateful},
+    comp::{
+        Button, ButtonVariant, Disableable, IconVariant, Labelled, TITLE_BAR_HEIGHT,
+        stateful::{self, InputValue, Submittable},
+    },
     h_flex, v_flex,
 };
 
@@ -19,13 +24,19 @@ pub(crate) mod action {
     gpui::actions!(popup, [Dismiss]);
 }
 
+struct Popup {
+    pub title: SharedString,
+    pub content: AnyView,
+    pub size: PopupSize,
+    pub return_focus_handle: Option<FocusHandle>,
+}
+
 pub struct InputPopup<T, Input>
 where
     T: 'static,
     Input: Render + EventEmitter<stateful::event::Change<T>>,
 {
     input: Entity<Input>,
-
     _marker: std::marker::PhantomData<T>,
 }
 
@@ -44,7 +55,7 @@ where
         self,
         window: &mut Window,
         cx: &mut App,
-        on_change: impl Fn(&T, &mut Window, &mut App) + 'static,
+        on_change: impl Fn(&InputValue<T>, &mut Window, &mut App) + 'static,
     ) -> Self {
         window
             .subscribe(&self.input, cx, move |_, event: &stateful::event::Change<T>, window, cx| {
@@ -59,9 +70,7 @@ where
 impl<T, Input> InputPopup<T, Input>
 where
     T: 'static,
-    Input: Render
-        + EventEmitter<stateful::event::Change<T>>
-        + EventEmitter<stateful::event::Submit<T>>,
+    Input: Render + Submittable<T> + EventEmitter<stateful::event::Change<T>>,
 {
     pub fn with_on_submit(
         self,
@@ -72,7 +81,8 @@ where
         window
             .subscribe(&self.input, cx, move |_, event: &stateful::event::Submit<T>, window, cx| {
                 let value = &event.0;
-                (on_submit)(value, window, cx)
+                (on_submit)(value, window, cx);
+                cx.pop_popup(window);
             })
             .detach();
         self
@@ -82,15 +92,25 @@ where
 impl<T, Input> Render for InputPopup<T, Input>
 where
     T: 'static,
-    Input: Render + EventEmitter<stateful::event::Change<T>>,
+    Input: Render + Submittable<T> + EventEmitter<stateful::event::Change<T>>,
 {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        v_flex().items_center().gap_2().size_full().p_2().child(self.input.clone())
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        v_flex().items_center().gap_2().size_full().p_2().child(self.input.clone()).child(
+            Button::new("submit", window, cx)
+                .w_full()
+                .with_label("Submit")
+                .with_disabled(!self.input.read(cx).can_submit(cx), cx)
+                .on_click(cx.listener(|this, _, _window, cx| {
+                    this.input.update(cx, |input, cx| {
+                        input.submit(cx);
+                    })
+                })),
+        )
     }
 }
 
 pub trait PopupAppExt {
-    fn set_popup(
+    fn push_popup(
         &mut self,
         title: impl Into<SharedString>,
         popup: impl Into<AnyView>,
@@ -98,11 +118,11 @@ pub trait PopupAppExt {
         return_focus_handle: Option<FocusHandle>,
     );
 
-    fn dismiss_popup(&mut self, window: &mut Window);
+    fn pop_popup(&mut self, window: &mut Window);
 }
 
 impl PopupAppExt for App {
-    fn set_popup(
+    fn push_popup(
         &mut self,
         title: impl Into<SharedString>,
         popup: impl Into<AnyView>,
@@ -110,19 +130,19 @@ impl PopupAppExt for App {
         return_focus_handle: Option<FocusHandle>,
     ) {
         PopupGlobal::update_global(self, |popup_global, _| {
-            popup_global.title = Some(title.into());
-            popup_global.content = Some(popup.into());
-            popup_global.size = size;
-            popup_global.return_focus_handle = return_focus_handle;
+            popup_global.popups.push(Popup {
+                title: title.into(),
+                content: popup.into(),
+                size,
+                return_focus_handle,
+            });
         })
     }
 
-    fn dismiss_popup(&mut self, window: &mut Window) {
+    fn pop_popup(&mut self, window: &mut Window) {
         PopupGlobal::update_global(self, |popup_global, cx| {
-            popup_global.title = None;
-            popup_global.content = None;
-            popup_global.size = PopupSize::default();
-            if let Some(focus_handle) = popup_global.return_focus_handle.take() {
+            let popped = popup_global.popups.pop();
+            if let Some(focus_handle) = popped.and_then(|p| p.return_focus_handle) {
                 focus_handle.focus(window, cx);
             }
         })
@@ -144,13 +164,13 @@ impl PopupOverlay {
 
 impl Render for PopupOverlay {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let title = PopupGlobal::global(cx).title.clone().unwrap_or_default();
-
-        let Some(content) = PopupGlobal::global(cx).content.clone() else {
+        let Some(popup) = PopupGlobal::global(cx).popups.last() else {
             return gpui::Empty.into_any_element();
         };
 
-        let size = PopupGlobal::global(cx).size;
+        let title = popup.title.clone();
+        let content = popup.content.clone();
+        let size = popup.size;
 
         let header = h_flex()
             .px_2()
@@ -177,7 +197,7 @@ impl Render for PopupOverlay {
             .occlude()
             .p_4()
             .bg(cx.theme().contrast.opacity(0.25))
-            .on_action::<action::Dismiss>(cx.listener(|_, _, window, cx| cx.dismiss_popup(window)))
+            .on_action::<action::Dismiss>(cx.listener(|_, _, window, cx| cx.pop_popup(window)))
             .child(
                 v_flex()
                     .mt(TITLE_BAR_HEIGHT)
@@ -186,7 +206,7 @@ impl Render for PopupOverlay {
                     .when(size == PopupSize::Max, |e| e.size_full())
                     .child(header)
                     .child(content)
-                    .on_mouse_down_out(cx.listener(|_, _, window, cx| cx.dismiss_popup(window))),
+                    .on_mouse_down_out(cx.listener(|_, _, window, cx| cx.pop_popup(window))),
             )
             .into_any_element()
     }
@@ -194,10 +214,7 @@ impl Render for PopupOverlay {
 
 #[derive(Default)]
 struct PopupGlobal {
-    pub title: Option<SharedString>,
-    pub content: Option<AnyView>,
-    pub size: PopupSize,
-    pub return_focus_handle: Option<FocusHandle>,
+    pub popups: Vec<Popup>,
 }
 
 impl Global for PopupGlobal {}

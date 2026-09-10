@@ -5,10 +5,10 @@ use gpui::{
 use std::sync::Arc;
 
 use crate::{
-    ActiveTheme, Emphasis, StyledExt, StyledParentExt, StyledStatefulInteractiveElementExt,
+    ActiveTheme, Emphasis, HslaExt, StyledExt, StyledParentExt,
     comp::{
         Disableable, FocusableComponent, Identifiable,
-        stateful::{self, FormWidget, TextInput},
+        stateful::{self, FormWidget, InputValue, Submittable, TextInput},
     },
     h_flex,
 };
@@ -16,7 +16,7 @@ use crate::{
 pub struct Field<T> {
     text_input: Entity<TextInput>,
     style: StyleRefinement,
-    parser: Arc<dyn Fn(&str) -> Option<T> + Send + Sync + 'static>,
+    parser: Arc<dyn Fn(&str) -> InputValue<T> + Send + Sync + 'static>,
     formatter: Arc<dyn Fn(&T) -> SharedString + Send + Sync + 'static>,
 }
 
@@ -28,7 +28,7 @@ impl<T: FieldValue + Clone + 'static> Field<T> {
         this.text_input.update(cx, |input, _| {
             input.set_validator(T::validate_input);
             input.set_submit_validator(move |s| {
-                if let Some(parsed) = parser(s) {
+                if let InputValue::Valid(parsed) = parser(s) {
                     T::validate_submit(s) && parsed.validate()
                 } else {
                     false
@@ -45,7 +45,7 @@ impl<T: Clone + 'static> Field<T> {
         id: impl Into<ElementId>,
         window: &mut Window,
         cx: &mut Context<Self>,
-        parser: impl Fn(&str) -> Option<T> + Send + Sync + 'static,
+        parser: impl Fn(&str) -> InputValue<T> + Send + Sync + 'static,
         formatter: impl Fn(&T) -> SharedString + Send + Sync + 'static,
     ) -> Self {
         let text_input = cx.new(move |cx| {
@@ -55,7 +55,8 @@ impl<T: Clone + 'static> Field<T> {
         cx.subscribe(
             &text_input,
             |this: &mut Self, _, _: &stateful::event::Submit<SharedString>, cx| {
-                cx.emit(stateful::event::Submit(this.value(cx)));
+                let InputValue::Valid(value) = this.value(cx) else { return };
+                cx.emit(stateful::event::Submit(value));
             },
         )
         .detach();
@@ -76,7 +77,7 @@ impl<T: Clone + 'static> Field<T> {
         }
     }
 
-    pub fn value(&self, cx: &App) -> Option<T> {
+    pub fn value(&self, cx: &App) -> InputValue<T> {
         let text = self.text_input.read(cx).text();
         (self.parser)(text.as_ref())
     }
@@ -160,7 +161,7 @@ impl<T: Clone + 'static> Field<T> {
         let parser = self.parser.clone();
         self.text_input.update(cx, |text_field, _cx| {
             text_field.set_validator(move |s| {
-                if let Some(parsed) = parser(s) { validator(&parsed) } else { false }
+                if let InputValue::Valid(parsed) = parser(s) { validator(&parsed) } else { false }
             });
         });
     }
@@ -182,7 +183,7 @@ impl<T: Clone + 'static> Field<T> {
         let parser = self.parser.clone();
         self.text_input.update(cx, |text_field, _cx| {
             text_field.set_submit_validator(move |s| {
-                if let Some(parsed) = parser(s) { validator(&parsed) } else { false }
+                if let InputValue::Valid(parsed) = parser(s) { validator(&parsed) } else { false }
             });
         });
     }
@@ -241,46 +242,53 @@ impl<T: 'static> Render for Field<T> {
         h_flex()
             .id(self.id(cx).clone())
             .focus_ring(&self.focus_handle(cx), window, cx)
+            .min_w(crate::comp::INPUT_SIZE * 2.0)
+            .w(crate::comp::INPUT_SIZE * 6.0)
             .h(crate::comp::INPUT_SIZE)
             .px_1p5()
             .py_0p5()
-            .min_w(crate::comp::INPUT_SIZE * 2.0)
-            .w(crate::comp::INPUT_SIZE * 6.0)
-            .when(!self.disabled(cx), |e| e.interactive_emphasis_bordered(Emphasis::Secondary, cx))
+            .when(!self.disabled(cx), |e| {
+                e.emphasis_bordered(Emphasis::Secondary, cx).hover(|e| {
+                    e.bg(Emphasis::Secondary.bg_color(cx).hover())
+                        .border_color(Emphasis::Secondary.border_color(cx).hover())
+                })
+            })
             .when(self.disabled(cx), |e| e.emphasis_bordered(Emphasis::Secondary, cx))
             .refine_style(&self.style)
             .child(self.text_input.clone())
     }
 }
 
-impl<T: Clone + 'static> EventEmitter<stateful::event::Submit<Option<T>>> for Field<T> {}
-impl<T: Clone + 'static> EventEmitter<stateful::event::Change<Option<T>>> for Field<T> {}
+impl<T: Clone + 'static> EventEmitter<stateful::event::Submit<T>> for Field<T> {}
+impl<T: Clone + 'static> EventEmitter<stateful::event::Change<T>> for Field<T> {}
 
-impl<T: Clone + 'static> FormWidget<Option<T>> for Field<T> {
-    fn get_value(&self, cx: &App) -> Option<T> {
+impl<T: Clone + 'static> Submittable<T> for Field<T> {
+    fn value(&self, cx: &App) -> InputValue<T> {
+        Field::<T>::value(&self, cx)
+    }
+}
+
+impl<T: Clone + 'static> FormWidget<T> for Field<T> {
+    fn value(&self, cx: &App) -> InputValue<T> {
         self.value(cx)
     }
 
-    fn set_value(&mut self, value: Option<T>, cx: &mut Context<Self>) {
-        if let Some(val) = value {
-            Field::set_value(self, val, cx);
-        } else {
-            self.clear(cx);
-        }
+    fn set_value(&mut self, value: T, cx: &mut Context<Self>) {
+        Field::set_value(self, value, cx);
     }
 }
 
 pub trait FieldValue: Sized {
-    fn parse(text: &str) -> Option<Self>;
+    fn parse(text: &str) -> InputValue<Self>;
 
     fn format(&self) -> SharedString;
 
     fn validate_input(text: &str) -> bool {
-        text.is_empty() || Self::parse(text).is_some()
+        text.is_empty() || Self::parse(text).is_valid()
     }
 
     fn validate_submit(text: &str) -> bool {
-        Self::parse(text).is_some()
+        Self::parse(text).is_valid()
     }
 
     fn validate(&self) -> bool {
@@ -289,8 +297,8 @@ pub trait FieldValue: Sized {
 }
 
 impl FieldValue for String {
-    fn parse(text: &str) -> Option<Self> {
-        Some(text.to_string())
+    fn parse(text: &str) -> InputValue<Self> {
+        InputValue::Valid(text.to_string())
     }
 
     fn format(&self) -> SharedString {
@@ -299,8 +307,8 @@ impl FieldValue for String {
 }
 
 impl FieldValue for SharedString {
-    fn parse(text: &str) -> Option<Self> {
-        Some(text.into())
+    fn parse(text: &str) -> InputValue<Self> {
+        InputValue::Valid(text.into())
     }
 
     fn format(&self) -> SharedString {
@@ -312,8 +320,8 @@ macro_rules! impl_field_value_for_numeric {
     ($($t:ty),*) => {
         $(
             impl FieldValue for $t {
-                fn parse(text: &str) -> Option<Self> {
-                    text.parse::<$t>().ok()
+                fn parse(text: &str) -> InputValue<Self> {
+                    text.parse::<$t>().ok().into()
                 }
 
                 fn format(&self) -> SharedString {

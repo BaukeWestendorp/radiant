@@ -9,7 +9,7 @@ use crate::{
     comp::{
         Button, ButtonVariant, Disableable, FocusableComponent, Icon, IconSize, IconVariant,
         Identifiable, Labelled,
-        stateful::{self, FormWidget},
+        stateful::{self, FormWidget, InputValue, Submittable},
     },
 };
 
@@ -67,7 +67,7 @@ impl<T: Clone + 'static> Picker<T> {
         self.selection = selection;
         let value = self.selected_item().as_ref().map(|item| item.value.clone());
         cx.emit(stateful::event::Submit(value.clone()));
-        cx.emit(stateful::event::Change(value));
+        cx.emit(stateful::event::Change(InputValue::Valid(value)));
         cx.notify();
     }
 
@@ -387,6 +387,13 @@ impl<T: 'static> FocusableComponent for Picker<T> {
 impl<T: 'static> EventEmitter<stateful::event::Change<Option<T>>> for Picker<T> {}
 impl<T: 'static> EventEmitter<stateful::event::Submit<Option<T>>> for Picker<T> {}
 
+impl<T: Clone + 'static> Submittable<Option<T>> for Picker<T> {
+    fn value(&self, _cx: &App) -> InputValue<Option<T>> {
+        let Some(item) = self.selected_item() else { return InputValue::Invalid };
+        InputValue::Valid(Some(item.value.clone()))
+    }
+}
+
 impl<T: Clone + 'static> Render for Picker<T> {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         match self.kind {
@@ -417,8 +424,9 @@ impl<T: Clone + 'static> Render for Picker<T> {
 }
 
 impl<T: Clone + PartialEq + 'static> FormWidget<Option<T>> for Picker<T> {
-    fn get_value(&self, _cx: &App) -> Option<T> {
-        Some(self.selected_item()?.value.clone())
+    fn value(&self, _cx: &App) -> InputValue<Option<T>> {
+        let Some(item) = self.selected_item() else { return InputValue::Invalid };
+        InputValue::Valid(Some(item.value.clone()))
     }
 
     fn set_value(&mut self, value: Option<T>, cx: &mut Context<Self>) {
