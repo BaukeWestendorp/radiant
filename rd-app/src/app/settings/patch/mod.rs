@@ -122,36 +122,54 @@ impl PatchTabView {
                     ],
                     cx,
                 )
-                .with_on_delete(cx, move |table, _, cx| {
-                    fixtures.update(cx, |fixtures, cx| {
-                        let row_ixs = table.selection(cx).rows();
-                        for ix in row_ixs.iter().rev() {
-                            fixtures.remove(*ix);
-                        }
-                        cx.notify();
-                    });
+                .with_on_delete(cx, {
+                    let fixtures = fixtures.clone();
+                    move |table, _, cx| {
+                        fixtures.update(cx, |fixtures, cx| {
+                            let row_ixs = table.selection(cx).rows();
+                            for ix in row_ixs.iter().rev() {
+                                fixtures.remove(*ix);
+                            }
+                            cx.notify();
+                        });
+                    }
                 })
-                .with_on_add(cx, move |table, window, cx| {
-                    let input = cx.new(|cx| {
-                        InputPopup::new(
-                            cx.new(|cx| {
-                                FixtureConfigEditor::new(
-                                    PartialFixtureConfig::default(),
-                                    window,
-                                    cx,
-                                )
-                            }),
-                            window,
-                            cx,
-                        )
-                    });
+                .with_on_add(cx, {
+                    let fixtures = fixtures.clone();
+                    move |table, window, cx| {
+                        let fixtures = fixtures.clone();
+                        let input = cx.new(|cx| {
+                            InputPopup::new(
+                                cx.new(|cx| {
+                                    FixtureConfigEditor::new(
+                                        PartialFixtureConfig::default(),
+                                        window,
+                                        cx,
+                                    )
+                                }),
+                                window,
+                                cx,
+                            )
+                            .with_on_submit(
+                                window,
+                                cx,
+                                move |value, window, cx| {
+                                    fixtures.update(cx, |fixtures, cx| {
+                                        fixtures.push(value.clone());
+                                        cx.notify();
+                                    });
+                                    cx.pop_popup(window);
+                                },
+                            )
+                        });
 
-                    cx.push_popup(
-                        "Add Fixture",
-                        input,
-                        PopupSize::Auto,
-                        Some(table.focus_handle(cx)),
-                    );
+                        cx.push_popup(
+                            "Add Fixture",
+                            input,
+                            PopupSize::Auto,
+                            Some(table.focus_handle(cx)),
+                        );
+                    }
                 })
         });
 

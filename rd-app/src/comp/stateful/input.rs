@@ -148,25 +148,31 @@ impl FixtureKindPicker {
         let mode = cx.new(|_| None::<Name>);
         let fixture_kind = cx.new(|_| None::<FixtureKind>);
 
+        cx.observe(&fixture_kind, |_, fixture_kind, cx| match fixture_kind.read(cx) {
+            Some(fixture_kind) => {
+                cx.emit(InputEvent::Change(InputValue::Valid(fixture_kind.clone())));
+            }
+            None => {
+                cx.emit(InputEvent::Change(InputValue::Invalid));
+            }
+        })
+        .detach();
+
         cx.observe_in(&mode, window, {
             move |this, mode, _window, cx| {
                 let Some(ftid) = this.ftid.read(cx) else {
                     this.fixture_kind.write(cx, None);
-                    cx.emit(InputEvent::Change::<FixtureKind>(InputValue::Invalid));
                     return;
                 };
 
                 let Some(mode) = mode.read(cx) else {
                     this.fixture_kind.write(cx, None);
-                    cx.emit(InputEvent::Change::<FixtureKind>(InputValue::Invalid));
                     return;
                 };
 
                 let fixture_kind =
                     FixtureKind { fixture_type_id: *ftid, dmx_mode: mode.to_string() };
                 this.fixture_kind.write(cx, Some(fixture_kind.clone()));
-
-                cx.emit(InputEvent::Change::<FixtureKind>(InputValue::Valid(fixture_kind)));
                 cx.notify();
             }
         })

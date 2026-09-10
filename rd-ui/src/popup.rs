@@ -49,18 +49,19 @@ where
         Self { input, _marker: std::marker::PhantomData }
     }
 
-    pub fn with_on_change(
+    pub fn with_on_change<E: 'static>(
         self,
         window: &mut Window,
-        cx: &mut App,
-        on_change: impl Fn(&InputValue<T>, &mut Window, &mut App) + 'static,
+        cx: &mut Context<E>,
+        on_change: impl Fn(&InputValue<T>, &mut Window, &mut Context<E>) + 'static,
     ) -> Self {
-        window
-            .subscribe(&self.input, cx, move |_, event: &InputEvent<T>, window, cx| match event {
+        cx.subscribe_in(&self.input, window, move |_, _, event: &InputEvent<T>, window, cx| {
+            match event {
                 InputEvent::Change(value) => (on_change)(value, window, cx),
                 _ => {}
-            })
-            .detach();
+            }
+        })
+        .detach();
         self
     }
 }
@@ -70,21 +71,22 @@ where
     T: 'static,
     Input: Render + Submittable<T> + EventEmitter<InputEvent<T>>,
 {
-    pub fn with_on_submit(
+    pub fn with_on_submit<E: 'static>(
         self,
         window: &mut Window,
-        cx: &mut App,
-        on_submit: impl Fn(&T, &mut Window, &mut App) + 'static,
+        cx: &mut Context<E>,
+        on_submit: impl Fn(&T, &mut Window, &mut Context<E>) + 'static,
     ) -> Self {
-        window
-            .subscribe(&self.input, cx, move |_, event: &InputEvent<T>, window, cx| match event {
+        cx.subscribe_in(&self.input, window, move |_, _, event: &InputEvent<T>, window, cx| {
+            match event {
                 InputEvent::Submit(value) => {
                     (on_submit)(value, window, cx);
                     cx.pop_popup(window);
                 }
                 _ => {}
-            })
-            .detach();
+            }
+        })
+        .detach();
         self
     }
 }
