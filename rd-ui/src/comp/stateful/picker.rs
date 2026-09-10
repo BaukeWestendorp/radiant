@@ -9,7 +9,7 @@ use crate::{
     comp::{
         Button, ButtonVariant, Disableable, FocusableComponent, Icon, IconSize, IconVariant,
         Identifiable, Labelled,
-        stateful::{self, FormWidget, InputValue, Submittable},
+        stateful::{FormWidget, InputEvent, InputValue, Submittable},
     },
 };
 
@@ -66,8 +66,8 @@ impl<T: Clone + 'static> Picker<T> {
     pub fn set_selection(&mut self, selection: Option<usize>, cx: &mut Context<Self>) {
         self.selection = selection;
         let value = self.selected_item().as_ref().map(|item| item.value.clone());
-        cx.emit(stateful::event::Submit(value.clone()));
-        cx.emit(stateful::event::Change(InputValue::Valid(value)));
+        cx.emit(InputEvent::Submit(value.clone()));
+        cx.emit(InputEvent::Change(InputValue::Valid(value)));
         cx.notify();
     }
 
@@ -384,8 +384,7 @@ impl<T: 'static> FocusableComponent for Picker<T> {
     }
 }
 
-impl<T: 'static> EventEmitter<stateful::event::Change<Option<T>>> for Picker<T> {}
-impl<T: 'static> EventEmitter<stateful::event::Submit<Option<T>>> for Picker<T> {}
+impl<T: 'static> EventEmitter<InputEvent<Option<T>>> for Picker<T> {}
 
 impl<T: Clone + 'static> Submittable<Option<T>> for Picker<T> {
     fn value(&self, _cx: &App) -> InputValue<Option<T>> {

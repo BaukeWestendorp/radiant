@@ -9,7 +9,7 @@ use crate::{
     ActiveTheme,
     comp::{
         Disableable, FocusableComponent, Identifiable,
-        stateful::{self, InputValue},
+        stateful::{InputEvent, InputValue},
     },
 };
 
@@ -116,7 +116,7 @@ impl TextInput {
         }
 
         self.text = text;
-        cx.emit(stateful::event::Change(InputValue::Valid(self.text.clone())));
+        cx.emit(InputEvent::Change(InputValue::Valid(self.text.clone())));
         cx.notify();
     }
 
@@ -642,7 +642,7 @@ impl TextInput {
     }
 
     fn handle_submit(&mut self, _: &action::Submit, _window: &mut Window, cx: &mut Context<Self>) {
-        cx.emit(stateful::event::Submit(self.text.clone()));
+        cx.emit(InputEvent::Submit(self.text.clone()));
     }
 
     fn handle_mouse_down(
@@ -908,8 +908,7 @@ impl Disableable for TextInput {
     }
 }
 
-impl EventEmitter<stateful::event::Submit<SharedString>> for TextInput {}
-impl EventEmitter<stateful::event::Change<SharedString>> for TextInput {}
+impl EventEmitter<InputEvent<SharedString>> for TextInput {}
 
 mod element {
     use super::TextInput;

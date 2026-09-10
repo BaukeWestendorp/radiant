@@ -8,7 +8,7 @@ use crate::{
     ActiveTheme, Emphasis, HslaExt, StyledExt, StyledParentExt,
     comp::{
         Disableable, FocusableComponent, Identifiable,
-        stateful::{self, FormWidget, InputValue, Submittable, TextInput},
+        stateful::{FormWidget, InputEvent, InputValue, Submittable, TextInput},
     },
     h_flex,
 };
@@ -52,21 +52,17 @@ impl<T: Clone + 'static> Field<T> {
             TextInput::new(id, window, cx).with_text_size(cx.theme().font_size - px(1.0))
         });
 
-        cx.subscribe(
-            &text_input,
-            |this: &mut Self, _, _: &stateful::event::Submit<SharedString>, cx| {
-                let InputValue::Valid(value) = this.value(cx) else { return };
-                cx.emit(stateful::event::Submit(value));
-            },
-        )
-        .detach();
-
-        cx.subscribe(
-            &text_input,
-            |this: &mut Self, _, _: &stateful::event::Change<SharedString>, cx| {
-                cx.emit(stateful::event::Change(this.value(cx)));
-            },
-        )
+        cx.subscribe(&text_input, |this: &mut Self, _, event: &InputEvent<SharedString>, cx| {
+            match event {
+                InputEvent::Submit(_) => {
+                    let InputValue::Valid(value) = this.value(cx) else { return };
+                    cx.emit(InputEvent::Submit(value));
+                }
+                InputEvent::Change(_) => {
+                    cx.emit(InputEvent::Change(this.value(cx)));
+                }
+            }
+        })
         .detach();
 
         Self {
@@ -259,8 +255,7 @@ impl<T: 'static> Render for Field<T> {
     }
 }
 
-impl<T: Clone + 'static> EventEmitter<stateful::event::Submit<T>> for Field<T> {}
-impl<T: Clone + 'static> EventEmitter<stateful::event::Change<T>> for Field<T> {}
+impl<T: Clone + 'static> EventEmitter<InputEvent<T>> for Field<T> {}
 
 impl<T: Clone + 'static> Submittable<T> for Field<T> {
     fn value(&self, cx: &App) -> InputValue<T> {

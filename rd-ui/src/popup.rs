@@ -7,7 +7,7 @@ use crate::{
     ActiveTheme, Emphasis, StyledExt, c_flex,
     comp::{
         Button, ButtonVariant, Disableable, IconVariant, Labelled, TITLE_BAR_HEIGHT,
-        stateful::{self, InputValue, Submittable},
+        stateful::{InputEvent, InputValue, Submittable},
     },
     h_flex, v_flex,
 };
@@ -32,7 +32,7 @@ struct Popup {
 pub struct InputPopup<T, Input>
 where
     T: 'static,
-    Input: Render + EventEmitter<stateful::event::Change<T>>,
+    Input: Render + EventEmitter<InputEvent<T>>,
 {
     input: Entity<Input>,
     _marker: std::marker::PhantomData<T>,
@@ -41,7 +41,7 @@ where
 impl<T, Input> InputPopup<T, Input>
 where
     T: 'static,
-    Input: Render + Focusable + EventEmitter<stateful::event::Change<T>>,
+    Input: Render + Focusable + EventEmitter<InputEvent<T>>,
 {
     pub fn new(input: Entity<Input>, window: &mut Window, cx: &mut App) -> Self {
         input.focus_handle(cx).focus(window, cx);
@@ -56,9 +56,9 @@ where
         on_change: impl Fn(&InputValue<T>, &mut Window, &mut App) + 'static,
     ) -> Self {
         window
-            .subscribe(&self.input, cx, move |_, event: &stateful::event::Change<T>, window, cx| {
-                let value = &event.0;
-                (on_change)(value, window, cx)
+            .subscribe(&self.input, cx, move |_, event: &InputEvent<T>, window, cx| match event {
+                InputEvent::Change(value) => (on_change)(value, window, cx),
+                _ => {}
             })
             .detach();
         self
@@ -68,7 +68,7 @@ where
 impl<T, Input> InputPopup<T, Input>
 where
     T: 'static,
-    Input: Render + Submittable<T> + EventEmitter<stateful::event::Change<T>>,
+    Input: Render + Submittable<T> + EventEmitter<InputEvent<T>>,
 {
     pub fn with_on_submit(
         self,
@@ -77,10 +77,12 @@ where
         on_submit: impl Fn(&T, &mut Window, &mut App) + 'static,
     ) -> Self {
         window
-            .subscribe(&self.input, cx, move |_, event: &stateful::event::Submit<T>, window, cx| {
-                let value = &event.0;
-                (on_submit)(value, window, cx);
-                cx.pop_popup(window);
+            .subscribe(&self.input, cx, move |_, event: &InputEvent<T>, window, cx| match event {
+                InputEvent::Submit(value) => {
+                    (on_submit)(value, window, cx);
+                    cx.pop_popup(window);
+                }
+                _ => {}
             })
             .detach();
         self
@@ -90,7 +92,7 @@ where
 impl<T, Input> Render for InputPopup<T, Input>
 where
     T: 'static,
-    Input: Render + Submittable<T> + EventEmitter<stateful::event::Change<T>>,
+    Input: Render + Submittable<T>,
 {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         v_flex().items_center().gap_2().size_full().p_2().child(self.input.clone()).child(

@@ -11,7 +11,7 @@ use crate::{
     comp::{
         Button, ButtonVariant, Disableable, FocusableComponent, INPUT_SIZE, IconVariant,
         Identifiable, Labelled,
-        stateful::{self, Submittable},
+        stateful::{SelectionEvent, Submittable},
     },
     h_flex, root, v_flex,
 };
@@ -39,10 +39,7 @@ impl<Row: 'static> Table<Row> {
     ) -> Self {
         let state = cx.new(|cx| TableState::new(rows, window, cx));
 
-        cx.subscribe(&state, |_, _, _: &stateful::event::SelectionChanged, cx| {
-            cx.emit(stateful::event::SelectionChanged);
-        })
-        .detach();
+        cx.subscribe(&state, |_, _, event: &SelectionEvent, cx| cx.emit(*event)).detach();
 
         Self { id: id.into(), state }
     }
@@ -73,7 +70,7 @@ impl<Row: 'static> Table<Row> {
     pub fn set_selection(&mut self, selection: TableSelection, cx: &mut Context<Self>) {
         self.state.update(cx, |state, cx| {
             state.selection = selection;
-            cx.emit(stateful::event::SelectionChanged);
+            cx.emit(SelectionEvent::Changed);
         });
     }
 
@@ -85,7 +82,7 @@ impl<Row: 'static> Table<Row> {
     pub fn clear_selection(&self, cx: &mut Context<Self>) {
         self.state.update(cx, |state, cx| {
             state.selection.clear_rows();
-            cx.emit(stateful::event::SelectionChanged);
+            cx.emit(SelectionEvent::Changed);
         });
     }
 
@@ -150,7 +147,7 @@ impl<Row: 'static> Table<Row> {
         self.state.update(cx, |state, cx| {
             let len = state.rows.read(cx).len();
             state.selection.select_all(len);
-            cx.emit(stateful::event::SelectionChanged);
+            cx.emit(SelectionEvent::Changed);
         });
     }
 
@@ -164,7 +161,7 @@ impl<Row: 'static> Table<Row> {
                 .selected_row()
                 .map_or(last_row_ix, |row_ix| row_ix.saturating_sub(1));
             state.selection.move_row_selection(row_ix, preserve_existing);
-            cx.emit(stateful::event::SelectionChanged);
+            cx.emit(SelectionEvent::Changed);
         });
     }
 
@@ -176,7 +173,7 @@ impl<Row: 'static> Table<Row> {
             let row_ix =
                 state.selection.selected_row().map_or(0, |row_ix| (row_ix + 1).min(last_row_ix));
             state.selection.move_row_selection(row_ix, preserve_existing);
-            cx.emit(stateful::event::SelectionChanged);
+            cx.emit(SelectionEvent::Changed);
         });
     }
 
@@ -195,7 +192,7 @@ impl<Row: 'static> Table<Row> {
                 return;
             }
             state.selection.move_column_selection(state.selection.column().saturating_sub(1));
-            cx.emit(stateful::event::SelectionChanged);
+            cx.emit(SelectionEvent::Changed);
         });
     }
 
@@ -215,7 +212,7 @@ impl<Row: 'static> Table<Row> {
             }
             let column_ix = (state.selection.column() + 1).min(last_column_ix);
             state.selection.move_column_selection(column_ix);
-            cx.emit(stateful::event::SelectionChanged);
+            cx.emit(SelectionEvent::Changed);
         });
     }
 
@@ -381,7 +378,7 @@ impl<Row: 'static> Table<Row> {
                             state.update(cx, |state, cx| {
                                 state.selection.clear_rows();
                                 state.selection.start_row_selection(row_ix, col_ix);
-                                cx.emit(stateful::event::SelectionChanged);
+                                cx.emit(SelectionEvent::Changed);
                                 cx.notify();
                             });
                         }
@@ -402,7 +399,7 @@ impl<Row: 'static> Table<Row> {
                     if event.dragging() {
                         state.update(cx, |state, cx| {
                             state.selection.update_row_selection(row_ix);
-                            cx.emit(stateful::event::SelectionChanged);
+                            cx.emit(SelectionEvent::Changed);
                             cx.notify();
                         });
                     }
@@ -413,7 +410,7 @@ impl<Row: 'static> Table<Row> {
                 move |_, _, cx| {
                     state.update(cx, |state, cx| {
                         state.selection.commit_row_selection();
-                        cx.emit(stateful::event::SelectionChanged);
+                        cx.emit(SelectionEvent::Changed);
                         cx.notify();
                     });
                 }
@@ -511,7 +508,7 @@ impl<Row: 'static> Render for Table<Row> {
             .on_action::<crate::root::action::SelectionClear>(cx.listener(move |this, _, _, cx| {
                 this.state.update(cx, |state, cx| {
                     state.selection.clear_rows();
-                    cx.emit(stateful::event::SelectionChanged);
+                    cx.emit(SelectionEvent::Changed);
                     cx.notify();
                 });
             }))
@@ -559,7 +556,7 @@ impl<Row: 'static> Render for Table<Row> {
     }
 }
 
-impl<Row: 'static> EventEmitter<stateful::event::SelectionChanged> for Table<Row> {}
+impl<Row: 'static> EventEmitter<SelectionEvent> for Table<Row> {}
 
 struct TableState<Row> {
     focus_handle: FocusHandle,
@@ -595,7 +592,7 @@ impl<Row> TableState<Row> {
     }
 }
 
-impl<Row: 'static> EventEmitter<stateful::event::SelectionChanged> for TableState<Row> {}
+impl<Row: 'static> EventEmitter<SelectionEvent> for TableState<Row> {}
 
 pub struct TableCellEditor<Row, V, Input, CreateField, Apply> {
     popup_title: String,
@@ -609,7 +606,7 @@ impl<Row, V, Input, CreateField, Apply> TableCellEditor<Row, V, Input, CreateFie
 where
     Row: 'static,
     V: Clone + 'static,
-    Input: Render + Focusable + Submittable<V> + EventEmitter<stateful::event::Change<V>> + 'static,
+    Input: Render + Focusable + Submittable<V> + 'static,
     CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
     Apply: Fn(&mut Row, &V, usize, &mut App) + 'static,
 {
@@ -741,11 +738,7 @@ impl<Row: 'static> TableColumn<Row> {
         editor: TableCellEditor<Row, V, Input, CreateField, Apply>,
     ) where
         V: Clone + 'static,
-        Input: Render
-            + Focusable
-            + Submittable<V>
-            + EventEmitter<stateful::event::Change<V>>
-            + 'static,
+        Input: Render + Focusable + Submittable<V> + 'static,
         CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
         Apply: Fn(&mut Row, &V, usize, &mut App) + 'static,
     {
@@ -758,11 +751,7 @@ impl<Row: 'static> TableColumn<Row> {
     ) -> Self
     where
         V: Clone + 'static,
-        Input: Render
-            + Focusable
-            + Submittable<V>
-            + EventEmitter<stateful::event::Change<V>>
-            + 'static,
+        Input: Render + Focusable + Submittable<V> + 'static,
         CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
         Apply: Fn(&mut Row, &V, usize, &mut App) + 'static,
     {
@@ -776,11 +765,7 @@ impl<Row: 'static> TableColumn<Row> {
     ) -> Self
     where
         V: Clone + 'static,
-        Input: Render
-            + Focusable
-            + Submittable<V>
-            + EventEmitter<stateful::event::Change<V>>
-            + 'static,
+        Input: Render + Focusable + Submittable<V> + 'static,
         CreateField: Fn(&mut Window, &mut Context<Table<Row>>) -> Entity<Input> + 'static,
         Apply: Fn(&mut Row, &V, usize, &mut App) + 'static,
     {

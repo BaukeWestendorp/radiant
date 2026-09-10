@@ -5,7 +5,7 @@ use gpui::{AnyView, App, Entity, EventEmitter, SharedString, Window, prelude::*}
 use crate::{
     comp::{
         Icon, IconSize, IconVariant, Labelled,
-        stateful::{self, InputValue},
+        stateful::{InputEvent, InputValue},
     },
     h_flex, v_flex,
 };
@@ -57,21 +57,25 @@ impl<Data: 'static> FormInput<Data> {
     ) -> Self
     where
         T: Render + FormWidget<V> + 'static,
-        V: 'static,
+        V: Clone + 'static,
     {
         cx.subscribe(&view, {
             let key_path = key_path.clone();
-            move |form, view, _: &stateful::event::Submit<V>, cx| {
-                form.data.update(cx, |data, cx| {
-                    let InputValue::Valid(new_value) = view.read(cx).value(cx) else { return };
-                    (key_path.setter)(data, new_value);
-                    cx.notify();
+            move |form, _, event: &InputEvent<V>, cx| {
+                form.data.update(cx, |data, cx| match event {
+                    InputEvent::Submit(value) => {
+                        (key_path.setter)(data, value.clone());
+                        cx.notify();
+                    }
+                    InputEvent::Change(value) => {
+                        let InputValue::Valid(value) = value else { return };
+                        (key_path.setter)(data, value.clone());
+                        cx.notify();
+                    }
                 })
             }
         })
         .detach();
-
-        // TODO: Update form.data on Change event if possible.
 
         // FIXME: Oefff
         let push_to_view = Box::new({
@@ -148,7 +152,7 @@ impl<Data, V> KeyPath<Data, V> {
     }
 }
 
-pub trait FormWidget<V: 'static>: EventEmitter<stateful::event::Submit<V>> + Sized {
+pub trait FormWidget<V: 'static>: EventEmitter<InputEvent<V>> + Sized {
     fn value(&self, cx: &App) -> InputValue<V>;
     fn set_value(&mut self, value: V, cx: &mut Context<Self>);
 }

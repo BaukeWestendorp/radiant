@@ -6,7 +6,7 @@ use crate::{
     Emphasis, StyledExt, StyledParentExt, StyledStatefulInteractiveElementExt, c_flex,
     comp::{
         Disableable, FocusableComponent, Identifiable,
-        stateful::{self, FormWidget, InputValue, Submittable},
+        stateful::{FormWidget, InputEvent, InputValue, Submittable},
     },
 };
 
@@ -35,8 +35,8 @@ impl Checkbox {
 
     pub fn set_checked(&mut self, checked: bool, cx: &mut Context<Self>) {
         self.checked = checked;
-        cx.emit(stateful::event::Submit(self.checked));
-        cx.emit(stateful::event::Change(InputValue::Valid(self.checked)));
+        cx.emit(InputEvent::Submit(self.checked));
+        cx.emit(InputEvent::Change(InputValue::Valid(self.checked)));
         cx.notify();
     }
 
@@ -110,8 +110,7 @@ impl Render for Checkbox {
     }
 }
 
-impl EventEmitter<stateful::event::Submit<bool>> for Checkbox {}
-impl EventEmitter<stateful::event::Change<bool>> for Checkbox {}
+impl EventEmitter<InputEvent<bool>> for Checkbox {}
 
 impl Submittable<bool> for Checkbox {
     fn value(&self, _cx: &App) -> InputValue<bool> {

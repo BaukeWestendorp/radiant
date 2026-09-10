@@ -16,13 +16,18 @@ pub use text_input::*;
 
 use gpui::{App, Context, EventEmitter};
 
-pub mod event {
-    pub struct Submit<T>(pub T);
-    pub struct Change<T>(pub super::InputValue<T>);
-    pub struct SelectionChanged;
+#[derive(Debug, Clone)]
+pub enum InputEvent<T> {
+    Submit(T),
+    Change(InputValue<T>),
 }
 
-pub trait Submittable<T: 'static>: EventEmitter<event::Submit<T>> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SelectionEvent {
+    Changed,
+}
+
+pub trait Submittable<T: 'static>: EventEmitter<InputEvent<T>> {
     fn value(&self, cx: &App) -> InputValue<T>;
 
     fn submit(&self, cx: &mut Context<Self>)
@@ -30,11 +35,12 @@ pub trait Submittable<T: 'static>: EventEmitter<event::Submit<T>> {
         Self: Sized,
     {
         if let InputValue::Valid(value) = self.value(cx) {
-            cx.emit(event::Submit(value))
+            cx.emit(InputEvent::Submit(value))
         }
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum InputValue<T> {
     Invalid,
     Valid(T),

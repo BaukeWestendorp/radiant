@@ -7,8 +7,8 @@ use rd_ui::{
     comp::{
         Disableable, FocusableComponent, Icon, IconSize, IconVariant, Identifiable, Labelled,
         stateful::{
-            self, Field, Form, FormInput, FormWidget, InputValue, KeyPath, Submittable, Table,
-            TableColumn, TableSelection, TableSelectionMode,
+            Field, Form, FormInput, FormWidget, InputEvent, InputValue, KeyPath, SelectionEvent,
+            Submittable, Table, TableColumn, TableSelection, TableSelectionMode,
         },
     },
     gpui::{
@@ -152,13 +152,13 @@ impl FixtureKindPicker {
             move |this, mode, _window, cx| {
                 let Some(ftid) = this.ftid.read(cx) else {
                     this.fixture_kind.write(cx, None);
-                    cx.emit(stateful::event::Change::<FixtureKind>(InputValue::Invalid));
+                    cx.emit(InputEvent::Change::<FixtureKind>(InputValue::Invalid));
                     return;
                 };
 
                 let Some(mode) = mode.read(cx) else {
                     this.fixture_kind.write(cx, None);
-                    cx.emit(stateful::event::Change::<FixtureKind>(InputValue::Invalid));
+                    cx.emit(InputEvent::Change::<FixtureKind>(InputValue::Invalid));
                     return;
                 };
 
@@ -166,7 +166,7 @@ impl FixtureKindPicker {
                     FixtureKind { fixture_type_id: *ftid, dmx_mode: mode.to_string() };
                 this.fixture_kind.write(cx, Some(fixture_kind.clone()));
 
-                cx.emit(stateful::event::Change::<FixtureKind>(InputValue::Valid(fixture_kind)));
+                cx.emit(InputEvent::Change::<FixtureKind>(InputValue::Valid(fixture_kind)));
                 cx.notify();
             }
         })
@@ -261,33 +261,35 @@ impl FixtureKindPicker {
             let mode_rows = mode_rows.clone();
             let mode_table = mode_table.clone();
             let ftid = ftid.clone();
-            move |_, ftid_table, _: &stateful::event::SelectionChanged, cx| {
-                let selected_ftid =
-                    ftid_table.read(cx).selected_rows(cx).first().map(|ftid| **ftid);
+            move |_, ftid_table, event: &SelectionEvent, cx| match event {
+                SelectionEvent::Changed => {
+                    let selected_ftid =
+                        ftid_table.read(cx).selected_rows(cx).first().map(|ftid| **ftid);
 
-                if &selected_ftid != ftid.read(cx) {
-                    mode_table.update(cx, |mode_table, cx| {
-                        mode_table.clear_selection(cx);
-                        cx.notify();
-                    })
-                }
-
-                ftid.write(cx, selected_ftid);
-
-                if let Some(selected_ftid) = selected_ftid {
-                    let Some(gdtf) = cx
-                        .engine()
-                        .with_project(|project| project.patch.gdtfs.get(&selected_ftid).cloned())
-                    else {
-                        mode_rows.update(cx, |mode_rows, cx| {
-                            mode_rows.clear();
+                    if &selected_ftid != ftid.read(cx) {
+                        mode_table.update(cx, |mode_table, cx| {
+                            mode_table.clear_selection(cx);
                             cx.notify();
-                        });
-                        return;
-                    };
+                        })
+                    }
 
-                    let modes = gdtf.dmx_modes().iter().map(|mode| mode.name().clone()).collect();
-                    mode_rows.write(cx, modes);
+                    ftid.write(cx, selected_ftid);
+
+                    if let Some(selected_ftid) = selected_ftid {
+                        let Some(gdtf) = cx.engine().with_project(|project| {
+                            project.patch.gdtfs.get(&selected_ftid).cloned()
+                        }) else {
+                            mode_rows.update(cx, |mode_rows, cx| {
+                                mode_rows.clear();
+                                cx.notify();
+                            });
+                            return;
+                        };
+
+                        let modes =
+                            gdtf.dmx_modes().iter().map(|mode| mode.name().clone()).collect();
+                        mode_rows.write(cx, modes);
+                    }
                 }
             }
         })
@@ -295,7 +297,7 @@ impl FixtureKindPicker {
 
         cx.subscribe(&mode_table, {
             let mode = mode.clone();
-            move |_, mode_table, _: &stateful::event::SelectionChanged, cx| {
+            move |_, mode_table, _: &SelectionEvent, cx| {
                 let selected_mode =
                     mode_table.read(cx).selected_rows(cx).first().map(|mode| (*mode).clone());
 
@@ -500,8 +502,7 @@ impl FormWidget<FixtureKind> for FixtureKindPicker {
     }
 }
 
-impl EventEmitter<stateful::event::Submit<FixtureKind>> for FixtureKindPicker {}
-impl EventEmitter<stateful::event::Change<FixtureKind>> for FixtureKindPicker {}
+impl EventEmitter<InputEvent<FixtureKind>> for FixtureKindPicker {}
 
 impl Submittable<FixtureKind> for FixtureKindPicker {
     fn value(&self, cx: &App) -> InputValue<FixtureKind> {
@@ -626,8 +627,7 @@ impl FormWidget<rd::project::FixtureConfig> for FixtureConfigEditor {
     }
 }
 
-impl EventEmitter<stateful::event::Submit<rd::project::FixtureConfig>> for FixtureConfigEditor {}
-impl EventEmitter<stateful::event::Change<rd::project::FixtureConfig>> for FixtureConfigEditor {}
+impl EventEmitter<InputEvent<rd::project::FixtureConfig>> for FixtureConfigEditor {}
 
 impl Submittable<rd::project::FixtureConfig> for FixtureConfigEditor {
     fn value(&self, cx: &App) -> InputValue<rd::project::FixtureConfig> {
