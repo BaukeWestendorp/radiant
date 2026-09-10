@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use gpui::{
     AnyView, App, Entity, EventEmitter, FocusHandle, Focusable, Global, ReadGlobal, SharedString,
     UpdateGlobal, Window, div, prelude::*,
@@ -99,11 +97,9 @@ where
             Button::new("submit", window, cx)
                 .w_full()
                 .with_label("Submit")
-                .with_disabled(!self.input.read(cx).can_submit(cx), cx)
+                .with_disabled(!self.input.read(cx).value(cx).is_valid(), cx)
                 .on_click(cx.listener(|this, _, _window, cx| {
-                    this.input.update(cx, |input, cx| {
-                        input.submit(cx);
-                    })
+                    this.input.update(cx, |input, cx| input.submit(cx))
                 })),
         )
     }

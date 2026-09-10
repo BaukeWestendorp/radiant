@@ -23,19 +23,13 @@ pub mod event {
 }
 
 pub trait Submittable<T: 'static>: EventEmitter<event::Submit<T>> {
-    fn can_submit(&self, cx: &App) -> bool {
-        self.value(cx).is_valid()
-    }
-
     fn value(&self, cx: &App) -> InputValue<T>;
 
     fn submit(&self, cx: &mut Context<Self>)
     where
         Self: Sized,
     {
-        if let InputValue::Valid(value) = self.value(cx)
-            && self.can_submit(cx)
-        {
+        if let InputValue::Valid(value) = self.value(cx) {
             cx.emit(event::Submit(value))
         }
     }
